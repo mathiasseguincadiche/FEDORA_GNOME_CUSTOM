@@ -15,6 +15,7 @@ FEDORA GNOME CUSTOM
 8) Suspend/resume doctor
 9) Storage doctor
 10) GNOME doctor
+11) Applications GTK4 doctor
 0) Quitter
 EOF
   read -rp 'Choix: ' choice
@@ -29,6 +30,7 @@ EOF
     8) "$REPO_ROOT/diagnostics/suspend-doctor" ;;
     9) "$REPO_ROOT/diagnostics/storage-doctor" ;;
     10) "$REPO_ROOT/diagnostics/gnome-doctor" ;;
+    11) "$REPO_ROOT/diagnostics/applications-doctor" ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac
