@@ -72,8 +72,7 @@ Arborescence :
 ├── cloud-init/
 ├── nvram/
 ├── snapshots/
-├── exports/
-└── shared/
+└── exports/
 ```
 
 Pool :
@@ -127,8 +126,6 @@ UEFI
 VirtIO disque/réseau
 cloud-init
 SSH
-VirtioFS /data/libvirt/shared → /mnt/hostshare
-memory backing memfd partagé requis
 ```
 
 Provisionnement :
@@ -139,6 +136,8 @@ bash scripts/kvm/create_ubuntu_devops_vm.sh \
 ```
 
 La VM reçoit le bootstrap DevOps versionné dans `guest/ubuntu-devops/bootstrap-devops.sh`.
+
+L'accès aux fichiers du guest depuis Fedora se fait par SSH/SFTP. Aucun partage de répertoire HOST↔VM n'est configuré.
 
 ### `windows-11`
 
@@ -186,6 +185,23 @@ bash scripts/kvm/runtime_certification.sh
 
 La certification automatise ce qui est fiable depuis le HOST (domaines, XML, Ubuntu SSH/DNS/Internet/stack DevOps, HOST↔Ubuntu, blocage Ubuntu→gateway LAN). Les contrôles Windows dépendants de son pare-feu ou de son état d'installation restent explicitement guidés.
 
+## Accès aux fichiers de la VM Ubuntu
+
+L'administration normale est SSH-first :
+
+```bash
+ssh mathias@<ip-ou-nom-de-la-vm>
+sftp mathias@<ip-ou-nom-de-la-vm>
+```
+
+Sous GNOME/Nautilus, l'accès graphique peut se faire via :
+
+```text
+sftp://mathias@<ip-ou-nom-de-la-vm>/
+```
+
+Cela permet d'accéder directement au `/home/mathias` de la VM sans ajouter de couche de partage de répertoire entre le HOST et l'invité.
+
 ## Interdictions
 
 - formatage/partitionnement automatique ;
@@ -196,4 +212,5 @@ La certification automatise ce qui est fiable depuis le HOST (domaines, XML, Ubu
 - VFIO/passthrough Arc B580 ;
 - VM surprise créée pendant APPLY ;
 - mot de passe en clair dans Git ;
-- interface physique codée en dur.
+- interface physique codée en dur ;
+- partage de répertoire HOST↔VM automatique.
