@@ -1,11 +1,29 @@
+# Hypervisor and libvirt system stack
 qemu-kvm
+qemu-img
 libvirt
 libvirt-client
 libvirt-daemon-kvm
 libvirt-daemon-config-network
+
+# Provisioning and graphical administration
 virt-install
 virt-manager
 virt-viewer
+
+# Firmware, TPM and guest filesystem tooling
 edk2-ovmf
 swtpm
+swtpm-tools
+virtiofsd
 guestfs-tools
+
+# Guest OS metadata
+osinfo-db
+osinfo-db-tools
+libosinfo
+
+# Network/security integration and dedicated storage labels
+nftables
+dnsmasq
+policycoreutils-python-utils
