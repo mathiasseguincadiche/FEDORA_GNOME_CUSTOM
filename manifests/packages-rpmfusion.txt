@@ -1,4 +1,4 @@
-ffmpeg
+# RPM Fusion multimedia completion
 ffmpegthumbnailer
 gstreamer1-plugins-bad-freeworld
 gstreamer1-plugins-ugly
