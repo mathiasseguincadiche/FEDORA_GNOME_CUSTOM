@@ -12,6 +12,29 @@ for pkg in gnome-shell nautilus gvfs-smb xdg-desktop-portal-gnome; do
     ((ko+=1))
   fi
 done
+
+if is_true "${ENABLE_DASH_TO_DOCK:-false}"; then
+  dash_pkg="${DASH_TO_DOCK_PACKAGE:-gnome-shell-extension-dash-to-dock}"
+  dash_uuid="${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"
+  if rpm -q "$dash_pkg" >/dev/null 2>&1; then
+    if ! $quiet; then ui_check OK 'Dash to Dock' 'Fedora RPM installed'; fi
+  else
+    if ! $quiet; then ui_check KO 'Dash to Dock' 'Fedora RPM missing'; fi
+    ((ko+=1))
+  fi
+  if command_exists gnome-extensions && gnome-extensions list 2>/dev/null | grep -Fxq "$dash_uuid"; then
+    if gnome-extensions info "$dash_uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+      if ! $quiet; then ui_check OK 'Dash to Dock' 'enabled in GNOME Shell'; fi
+    else
+      if ! $quiet; then ui_check KO 'Dash to Dock' 'installed but not enabled'; fi
+      ((ko+=1))
+    fi
+  elif [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+    if ! $quiet; then ui_check KO 'Dash to Dock' 'extension not visible to current GNOME session'; fi
+    ((ko+=1))
+  fi
+fi
+
 if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
   if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then
     if ! $quiet; then ui_check OK Wayland active; fi
