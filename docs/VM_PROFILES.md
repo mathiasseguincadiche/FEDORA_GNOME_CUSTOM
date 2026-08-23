@@ -20,10 +20,6 @@ cloud-init         oui
 SSH                oui, clé publique prioritaire
 utilisateur        mathias
 mot de passe       demandé au runtime, jamais versionné
-VirtioFS source    /data/libvirt/shared
-memory backing     memfd / shared
-VirtioFS tag       hostshare
-montage invité     /mnt/hostshare
 autostart          non
 ```
 
@@ -37,6 +33,8 @@ bash scripts/kvm/create_ubuntu_devops_vm.sh \
 Le script génère un hash SHA-512 du mot de passe saisi, construit le seed cloud-init, embarque les scripts de bootstrap/validation dans le seed et crée la VM avec `virt-install`.
 
 Le bootstrap invité installe Git/GitHub CLI, Docker Engine + Compose/Buildx, Ansible, Terraform, Azure CLI, AWS CLI v2, kubectl, Helm, kind, Python et les utilitaires d'exploitation.
+
+L'accès aux fichiers de l'invité depuis Fedora se fait par SSH/SFTP. Aucun partage de répertoire HOST↔VM n'est configuré par le projet.
 
 ## Windows 11 — `windows-11`
 
@@ -53,7 +51,6 @@ TPM                2.0 / swtpm
 bus disque         VirtIO
 réseau             VirtIO / devops-nat
 graphique          SPICE + virtio
-VirtioFS           non par défaut
 autostart          non
 ```
 
@@ -90,4 +87,4 @@ Les vCPU sont sur-allouables par KVM ; la configuration évite toutefois de mono
 - aucun VFIO/passthrough de l'Intel Arc B580 ;
 - aucune ISO ni image cloud téléchargée automatiquement ;
 - aucun mot de passe en clair dans Git ;
-- les partages VirtioFS restent limités à `/data/libvirt/shared`.
+- aucun partage de répertoire HOST↔VM ; accès invité via SSH/SFTP.

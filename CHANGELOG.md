@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1 — 2026-08-23
+
+- Suppression complète de VirtioFS et de `virtiofsd` du contrat de virtualisation.
+- Suppression du répertoire géré `/data/libvirt/shared` et de tout montage invité associé.
+- `ubuntu-devops` reste UEFI/VirtIO/cloud-init/SSH, sans partage de répertoire HOST↔VM.
+- L'accès aux fichiers de la VM depuis Fedora est désormais explicitement SSH/SFTP-first, y compris via Nautilus.
+- Diagnostics, tests, documentation et certification runtime alignés sur ce contrat simplifié.
+
 ## 0.6.0 — 2026-08-23
 
 - Contrat final limité à deux VM de référence : `ubuntu-devops` et `windows-11`; suppression du profil Fedora invité.

@@ -19,10 +19,13 @@ grep -Fq 'runtime-prompt' "$ROOT/config/vm-profiles.conf"
 grep -Fq 'openssl passwd -6' "$CREATE"
 grep -Fq 'encoding: b64' "$CREATE"
 grep -Fq '/usr/local/sbin/devops-bootstrap.sh' "$CREATE"
-grep -Fq 'driver.type=virtiofs' "$CREATE"
-grep -Fq 'memorybacking source.type=memfd,access.mode=shared' "$CREATE"
 grep -Fq 'cloud-localds' "$CREATE"
+grep -Fq 'SSH/SFTP' "$CREATE"
 
+if grep -RInEi --exclude='test_ubuntu_devops_bootstrap_contract.sh' 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' "$ROOT/guest/ubuntu-devops" "$ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" >/dev/null; then
+  echo 'obsolete VirtioFS/host-directory sharing found in Ubuntu provisioning' >&2
+  exit 1
+fi
 if grep -RInE --exclude='test_ubuntu_devops_bootstrap_contract.sh' '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' "$ROOT/guest/ubuntu-devops" "$ROOT/scripts/kvm" >/dev/null; then
   echo 'forbidden curl/wget pipe-to-shell pattern found in Ubuntu/KVM provisioning' >&2
   exit 1

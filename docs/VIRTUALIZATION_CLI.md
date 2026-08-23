@@ -76,16 +76,17 @@ ping
 
 Le réseau principal reste `devops-nat` sur `virbr50`, avec isolation du LAN physique gérée par le projet.
 
-## Catalogue, firmware et partage
+L'accès au filesystem Ubuntu depuis Fedora est volontairement SSH/SFTP-first. Aucun mécanisme de partage de répertoire HOST↔VM n'est installé ou configuré par le projet.
+
+## Catalogue et firmware
 
 ```text
 osinfo-query
 OVMF / UEFI
 swtpm / TPM 2.0
-virtiofsd
 ```
 
-Windows 11 conserve son profil UEFI Secure Boot + TPM 2.0 ; les profils Linux utilisent UEFI et peuvent utiliser VirtioFS.
+Windows 11 conserve son profil UEFI Secure Boot + TPM 2.0 ; Ubuntu Server utilise UEFI.
 
 ## GUI complémentaire
 

@@ -25,7 +25,7 @@ FEDORA LIBVIRT STACK:
 - prefer Fedora/libvirt modular socket activation (virtqemud, virtnetworkd, virtstoraged)
 - fall back to libvirtd.socket only when modular units are genuinely unavailable
 - install virt-manager and virt-viewer as explicit virtualization exceptions to GTK4 policy
-- install OVMF, swtpm tools + SELinux policy, VirtioFS, guestfs and libosinfo tooling
+- install OVMF, swtpm tools + SELinux policy, guestfs and libosinfo tooling
 - grant the operator libvirt,kvm groups idempotently
 EOF
 }
@@ -68,7 +68,7 @@ kvm_stack_postcheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   operator="$(kvm_stack_operator)" || return "$EXIT_POSTCHECK_FAILED"
 
-  for cmd in virsh qemu-img virt-install virt-clone virt-manager virt-viewer remote-viewer swtpm swtpm_setup virtiofsd osinfo-query; do
+  for cmd in virsh qemu-img virt-install virt-clone virt-manager virt-viewer remote-viewer swtpm swtpm_setup osinfo-query; do
     command_exists "$cmd" || { log_error KVM "missing virtualization command: $cmd"; return "$EXIT_POSTCHECK_FAILED"; }
   done
 

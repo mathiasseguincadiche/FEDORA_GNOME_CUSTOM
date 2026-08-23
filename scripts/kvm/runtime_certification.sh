@@ -58,12 +58,6 @@ if ((ko > 0)); then
   exit 1
 fi
 
-if domain_xml_has "$ubuntu" 'type=.virtiofs.|driver[^>]+type=.virtiofs.|<filesystem'; then
-  record OK 'Ubuntu VirtioFS XML' present
-else
-  record KO 'Ubuntu VirtioFS XML' missing
-fi
-
 if domain_xml_has "$windows" "feature[^>]+enabled=.yes.[^>]+name=.secure-boot.|name=.secure-boot.[^>]+enabled=.yes."; then
   record OK 'Windows UEFI/Secure Boot XML' present
 else
@@ -135,6 +129,7 @@ if [[ -n "$ubuntu_ip" && -n "$windows_ip" ]]; then
   record WARN 'Ubuntu ↔ Windows' "run guest-side test to ${windows_ip}; Windows firewall may block ICMP by policy"
 fi
 
+record WARN 'Ubuntu filesystem access' 'use SSH/SFTP from Fedora; no host-directory sharing layer is configured'
 record WARN 'Windows runtime checks' 'inside Windows confirm Internet/DNS, TPM 2.0, Secure Boot and VirtIO devices; Windows firewall makes host-only ping an unreliable proof'
 record WARN 'LAN → VM blocked' 'validate from another physical LAN device; NAT/no-forwarding design should prevent inbound access'
 

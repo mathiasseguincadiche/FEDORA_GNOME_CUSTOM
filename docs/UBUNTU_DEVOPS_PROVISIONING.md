@@ -28,7 +28,7 @@ Le dépôt ne contient aucun mot de passe invité.
 
 ## Logiciels installés
 
-Le bootstrap est idempotent et couvre :
+Le bootstrap couvre :
 
 - Git et GitHub CLI `gh` ;
 - Docker Engine, Docker CLI, containerd, Buildx et Compose plugin ;
@@ -60,15 +60,22 @@ Aucun `curl | bash` n'est utilisé.
 
 Ubuntu 26.04 étant récent, Docker/HashiCorp/Azure sont sondés sur le codename courant ; si un éditeur ne publie pas encore ce canal, le bootstrap utilise explicitement la suite de compatibilité `noble` et l'annonce dans le log.
 
-## VirtioFS
+## Accès depuis Fedora
 
-```text
-HOST : /data/libvirt/shared
-tag  : hostshare
-VM   : /mnt/hostshare
+Aucun partage de répertoire HOST↔VM n'est configuré. L'accès aux fichiers et l'administration utilisent SSH/SFTP :
+
+```bash
+ssh mathias@<ip-ou-nom-de-la-vm>
+sftp mathias@<ip-ou-nom-de-la-vm>
 ```
 
-Le bootstrap ajoute un montage `virtiofs` `nofail` dans `/etc/fstab`. La VM est créée avec un memory backing `memfd` partagé, requis par VirtioFS.
+Dans GNOME/Nautilus :
+
+```text
+sftp://mathias@<ip-ou-nom-de-la-vm>/
+```
+
+Cette méthode donne accès au vrai filesystem de la VM, notamment `/home/mathias`, sans maintenir de répertoire miroir côté HOST.
 
 ## Vérification
 
@@ -78,7 +85,7 @@ Dans la VM :
 sudo /usr/local/sbin/devops-verify.sh
 ```
 
-Le contrôle vérifie les CLIs, Docker, qemu-guest-agent, le groupe Docker, le montage VirtioFS et le marqueur de bootstrap.
+Le contrôle vérifie les CLIs, Docker, qemu-guest-agent, le groupe Docker et le marqueur de bootstrap.
 
 Logs :
 

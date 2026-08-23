@@ -14,6 +14,7 @@ Usage:
 
 The script never downloads an Ubuntu image and never stores a clear-text password in Git.
 It creates ubuntu-devops explicitly; workstation APPLY never creates guests automatically.
+Guest filesystem access from the Fedora host is intentionally handled through SSH/SFTP.
 EOF
 }
 
@@ -46,9 +47,6 @@ data_mount="${KVM_DATA_MOUNT:-/data}"
 disk="${KVM_POOL_PATH:-/data/libvirt/images}/${name}.qcow2"
 seed_dir="${data_mount}/libvirt/cloud-init/${name}"
 seed="${seed_dir}/seed.iso"
-share="${UBUNTU_SERVER_VIRTIOFS_SOURCE:-/data/libvirt/shared}"
-share_tag="${UBUNTU_SERVER_VIRTIOFS_TAG:-hostshare}"
-share_mount="${UBUNTU_SERVER_VIRTIOFS_MOUNT:-/mnt/hostshare}"
 username="${UBUNTU_SERVER_USERNAME:-mathias}"
 bootstrap="$REPO_ROOT/${UBUNTU_SERVER_BOOTSTRAP_SCRIPT:-guest/ubuntu-devops/bootstrap-devops.sh}"
 verify="$REPO_ROOT/${UBUNTU_SERVER_VERIFY_SCRIPT:-guest/ubuntu-devops/verify-devops.sh}"
@@ -60,7 +58,6 @@ sudo virsh --connect "$uri" net-info "$network" >/dev/null || fail "libvirt netw
 sudo virsh --connect "$uri" dominfo "$name" >/dev/null 2>&1 && fail "domain already exists: $name"
 [[ ! -e "$disk" ]] || fail "disk already exists: $disk"
 [[ -r "$bootstrap" && -r "$verify" ]] || fail 'guest bootstrap/verification scripts missing'
-[[ -d "$share" ]] || fail "VirtioFS source missing: $share"
 
 read -rsp "Password for ${username} (entered only now; not committed to Git): " guest_password
 printf '\n'
@@ -106,7 +103,7 @@ write_files:
     encoding: b64
     content: ${verify_b64}
 runcmd:
-  - [ bash, -lc, 'DEVOPS_USER=${username} VIRTIOFS_TAG=${share_tag} VIRTIOFS_MOUNT=${share_mount} /usr/local/sbin/devops-bootstrap.sh > /var/log/devops-bootstrap.log 2>&1' ]
+  - [ bash, -lc, 'DEVOPS_USER=${username} /usr/local/sbin/devops-bootstrap.sh > /var/log/devops-bootstrap.log 2>&1' ]
 final_message: 'ubuntu-devops cloud-init completed after \$UPTIME seconds'
 EOF
 
@@ -135,11 +132,9 @@ sudo virt-install \
   --machine "${UBUNTU_SERVER_MACHINE:-q35}" \
   --import \
   --boot uefi \
-  --memorybacking source.type=memfd,access.mode=shared \
   --disk "path=${disk},format=${UBUNTU_SERVER_DISK_FORMAT:-qcow2},bus=${UBUNTU_SERVER_DISK_BUS:-virtio},discard=unmap" \
   --disk "path=${seed},device=cdrom,readonly=on" \
   --network "network=${network},model=${UBUNTU_SERVER_NETWORK_MODEL:-virtio}" \
-  --filesystem "source=${share},target=${share_tag},driver.type=virtiofs,accessmode=passthrough" \
   --graphics none \
   --console pty,target.type=serial \
   --osinfo detect=on,require=off \

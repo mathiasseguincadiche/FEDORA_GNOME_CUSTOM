@@ -63,7 +63,6 @@ QEMU/KVM
 libvirt qemu:///system
 OVMF / UEFI
 swtpm / TPM 2.0
-VirtioFS
 libguestfs
 libosinfo
 virt-manager / virt-viewer
@@ -79,8 +78,7 @@ Le second T705 est monté **manuellement** à `/data` en EXT4. Le projet crée e
 ├── cloud-init/
 ├── nvram/
 ├── snapshots/
-├── exports/
-└── shared/
+└── exports/
 ```
 
 Réseau :
@@ -111,7 +109,6 @@ UEFI
 VirtIO
 cloud-init
 SSH
-VirtioFS /data/libvirt/shared → /mnt/hostshare
 ```
 
 Création :
@@ -124,6 +121,8 @@ bash scripts/kvm/create_ubuntu_devops_vm.sh \
 Le mot de passe de `mathias` est demandé au runtime, hashé et jamais commité.
 
 Le bootstrap invité installe Git/gh, Docker/Compose/Buildx, Ansible, Terraform, Azure CLI, AWS CLI v2, kubectl, Helm, kind, Python et les utilitaires d'exploitation.
+
+L'accès aux fichiers de la VM depuis Fedora se fait volontairement par **SSH/SFTP**. Nautilus peut ouvrir l'emplacement `sftp://mathias@<ip-ou-nom-de-la-vm>/` une fois la VM joignable.
 
 ### Windows 11 — `windows-11`
 
@@ -171,7 +170,7 @@ bash scripts/kvm/runtime_certification.sh
 
 ## Version
 
-`0.6.0` — profils VM définitifs, Ubuntu DevOps automatisé, Windows 11 finalisé et certification runtime.
+`0.6.1` — contrat VM simplifié sans partage de répertoire HOST↔VM ; accès invité via SSH/SFTP.
 
 Documentation principale :
 

@@ -1,4 +1,4 @@
-# Cahier des charges V1.5 — Fedora 44 GNOME Workstation
+# Cahier des charges V1.6 — Fedora 44 GNOME Workstation
 
 ## Finalité
 
@@ -33,9 +33,10 @@ Construire une workstation **Fedora 44 + GNOME 50** stable, reproductible et obs
 
 - QEMU/KVM/libvirt via `qemu:///system`.
 - daemons modulaires Fedora privilégiés.
-- OVMF, swtpm/TPM 2.0, VirtioFS, libguestfs, libosinfo.
+- OVMF, swtpm/TPM 2.0, libguestfs, libosinfo.
 - administration CLI complète ; virt-manager/virt-viewer restent complémentaires.
 - Arc B580 conservée au HOST, aucun VFIO.
+- aucun partage de répertoire HOST↔VM automatique ; accès invité par SSH/SFTP.
 
 ### Stockage
 
@@ -54,7 +55,7 @@ Pool `devops-data` :
 Arborescence gérée :
 
 ```text
-/data/libvirt/{images,iso,cloud-init,nvram,snapshots,exports,shared}
+/data/libvirt/{images,iso,cloud-init,nvram,snapshots,exports}
 ```
 
 ### Réseau
@@ -89,7 +90,6 @@ ubuntu-devops
   6 vCPU / 16 Gio / 160 Gio
   UEFI / VirtIO
   cloud-init / SSH
-  VirtioFS
   bootstrap DevOps complet
 
 windows-11
@@ -124,6 +124,8 @@ Python 3 / pip / venv / pipx
 outils réseau et diagnostic
 ```
 
+L'accès aux fichiers de la VM depuis Fedora se fait avec SSH/SFTP, y compris graphiquement via Nautilus.
+
 ### Windows 11
 
 Le profil exige deux médias opérateur :
@@ -147,7 +149,7 @@ Runtime invités :
 bash scripts/kvm/runtime_certification.sh
 ```
 
-Les contrôles doivent couvrir Ubuntu cloud-init/SSH/bootstrap/VirtioFS, Windows UEFI/Secure Boot/TPM/VirtIO et le contrat réseau réel.
+Les contrôles doivent couvrir Ubuntu cloud-init/SSH/bootstrap, Windows UEFI/Secure Boot/TPM/VirtIO et le contrat réseau réel.
 
 ## Ordre d'exécution
 

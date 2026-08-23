@@ -50,7 +50,7 @@ for cmd in \
   virsh virt-admin virt-host-validate virt-xml-validate \
   qemu-img qemu-io qemu-nbd qemu-storage-daemon \
   virt-install virt-clone virt-xml virt-manager virt-viewer remote-viewer \
-  swtpm swtpm_setup virtiofsd osinfo-query cloud-localds openssl \
+  swtpm swtpm_setup osinfo-query cloud-localds openssl \
   guestfish virt-filesystems virt-customize virt-sysprep virt-resize virt-sparsify virt-builder \
   virt-top virt-v2v virt-qemu-qmp-proxy ssh scp sftp rsync; do
   if command_exists "$cmd"; then record OK "$cmd" available; else record KO "$cmd" missing; fi
@@ -207,6 +207,7 @@ for helper in \
   if [[ -r "$REPO_ROOT/$helper" ]]; then record OK "$helper" present; else record KO "$helper" missing; fi
 done
 
+record OK 'Guest file access policy' 'SSH/SFTP only; no host-directory sharing layer configured'
 record WARN 'Runtime guest proof' 'run scripts/kvm/runtime_certification.sh after both real guests are created'
 
 if [[ "$quiet" != true ]]; then
