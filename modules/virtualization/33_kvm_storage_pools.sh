@@ -14,7 +14,7 @@ kvm_storage_validate_mount() {
 
 kvm_storage_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
-  command_exists findmnt && command_exists lsblk || return "$EXIT_PRECHECK_FAILED"
+  if ! command_exists findmnt || ! command_exists lsblk; then return "$EXIT_PRECHECK_FAILED"; fi
   if is_true "${KVM_REQUIRE_DEDICATED_STORAGE:-true}"; then
     kvm_storage_validate_mount || return "$EXIT_PRECHECK_FAILED"
   fi
