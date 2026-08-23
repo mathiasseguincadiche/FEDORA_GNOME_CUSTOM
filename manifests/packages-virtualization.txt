@@ -24,6 +24,10 @@ osinfo-db
 osinfo-db-tools
 libosinfo
 
+# Host-to-guest administration and runtime network proof
+openssh-clients
+iputils
+
 # Network/security integration and dedicated storage labels
 nftables
 dnsmasq
