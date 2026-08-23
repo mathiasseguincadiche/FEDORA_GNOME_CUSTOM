@@ -1,197 +1,186 @@
 # FEDORA_GNOME_CUSTOM
 
-Workstation-as-code pour **Fedora Linux 44 Workstation / GNOME 50**, conçue autour d'une workstation AMD Ryzen 7 7700 + Intel Arc B580 et d'un usage DevOps/Ops orienté infrastructure.
-
-## Objectif
-
-Construire une Fedora GNOME cohérente, stable, reproductible et observable tout en conservant les fondations Fedora : DNF5/RPM, SELinux, firewalld, Wayland, PipeWire, Flatpak et KVM/libvirt.
-
-La priorité absolue est la **stabilité** : graphique, veille/réveil, CPU/RAM, PCIe/NVMe, virtualisation et redémarrages. Aucun tweak kernel, C-State, ASPM, sysctl ou paramètre GPU expérimental n'est appliqué sans preuve diagnostique.
-
-## Machine de référence
-
-- MSI MAG B850M Mortar WiFi — BIOS 1.A63 (26/06/2026)
-- AMD Ryzen 7 7700 — 8C/16T
-- 48 Go DDR5-6000 — 2×24 Go G.Skill F5-6000J3036F24G
-- Intel Arc B580 12 Go — PCI 8086:e20b — pilote attendu `xe`
-- 2× Crucial T705 1 To + SSD externe XS1000 1 To
-- ASUS ROG Strix OLED XG27AQDMES — 2560×1440 / 240 Hz
-- Logitech Brio 100
+Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50**, conçue pour une workstation Ryzen 7 7700 / Intel Arc B580 et un usage DevOps/Ops orienté infrastructure.
 
 ## Principes
 
-1. **Hardware baseline d'abord** : aucune convergence réelle avant certification de la machine de référence.
-2. **Read-only d'abord** : diagnostic et inventaire avant mutation.
-3. **Dry-run obligatoire** avant `--apply`.
-4. **Fail-closed** : un contrôle P0 en échec bloque l'APPLY.
-5. **Fedora officiel d'abord** ; RPM Fusion pour le multimédia, Flathub et dépôts éditeurs signés uniquement lorsqu'ils répondent à un besoin applicatif documenté.
-6. **Aucun dépôt GPU tiers** : kernel, firmware, Mesa et pilote `xe` Fedora.
-7. **Aucun partitionnement/formatage automatique**.
-8. **SELinux reste Enforcing** et firewalld actif.
-9. **Wayland est la session de référence**.
-10. **Applications GNOME cohérentes** : GTK4/libadwaita pour le bureau général et Ptyxis comme terminal ; les applications professionnelles nécessaires disposent d'une exception explicite et contrôlée.
-11. **Multimédia complet mais contrôlé** : GStreamer Fedora, OpenH264, FFmpeg complet RPM Fusion, oneVPL/QSV et VA-API Arc B580 mesuré avant changement de fournisseur média.
-12. **Virtualisation complète, isolée et CLI-first** : QEMU/KVM/libvirt, OVMF, TPM 2.0, VirtioFS, libguestfs, libosinfo, stockage dédié, réseau privé et outils CLI complets ; virt-manager/virt-viewer restent disponibles.
-13. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
-14. **Intel Arc B580 au HOST** : aucun VFIO/passthrough automatique.
+- stabilité matérielle avant personnalisation ;
+- Wayland, SELinux Enforcing et firewalld conservés ;
+- Fedora officiel en priorité, RPM Fusion/Flathub/dépôts éditeurs uniquement lorsqu'ils sont explicitement justifiés ;
+- aucun tweak kernel/GPU expérimental sans diagnostic ;
+- aucun partitionnement/formatage automatique ;
+- dry-run et backup avant APPLY ;
+- virtualisation KVM/libvirt **CLI-first** ;
+- aucun mot de passe ou média propriétaire stocké dans Git.
 
-## Phase 0 — Hardware Baseline Certification
-
-Avant toute personnalisation réelle, la machine doit être certifiée sur la configuration matérielle/BIOS courante. La certification demande notamment :
-
-- un test mémoire validé en DDR5-5600 SPD ;
-- un test mémoire validé en DDR5-6000 XMP ;
-- un test I/O soutenu des T705 sans reboot ni erreur fatale ;
-- au moins 5 cycles suspend/resume propres ;
-- Ryzen 7 7700, Arc B580/`xe` et deux T705 présents ;
-- aucune signature kernel critique détectée pendant la certification.
-
-Le marqueur de certification est lié à une empreinte matériel + BIOS. Une modification significative du matériel ou du BIOS invalide automatiquement l'ancien certificat.
-
-```bash
-bash diagnostics/baseline-doctor status
-bash diagnostics/baseline-doctor snapshot
-bash diagnostics/baseline-doctor record-memory 5600 PASS
-bash diagnostics/baseline-doctor record-memory 6000 PASS
-bash diagnostics/baseline-doctor record-nvme-io PASS
-bash diagnostics/baseline-doctor record-suspend PASS   # à répéter au moins 5 fois
-bash diagnostics/baseline-doctor certify
-```
-
-Les commandes `record-*` enregistrent une preuve opérateur et un snapshot ; elles ne remplacent pas les tests matériels eux-mêmes.
-
-## Pré-requis stockage KVM
-
-Le second Crucial T705 est réservé à la virtualisation. Le projet **ne le partitionne et ne le formate jamais**. Avant un APPLY incluant KVM, il doit être monté manuellement à :
+## Machine de référence
 
 ```text
-/data
-filesystem attendu : EXT4
+CPU      AMD Ryzen 7 7700 — 8C/16T
+RAM      48 Gio DDR5 — SPD 5600 / XMP 6000
+GPU      Intel Arc B580 12 Gio — pilote HOST xe
+SSD      2× Crucial T705 1 To
+Écran    2560×1440 / 240 Hz
+Desktop  Fedora 44 + GNOME 50 / Wayland
 ```
 
-Le projet crée ensuite uniquement l'arborescence `/data/libvirt/`, les labels SELinux appropriés et le pool `devops-data`.
+## GNOME
 
-## Flux d'exécution
+Profil :
 
 ```text
-Fedora 44 fraîche
-        ↓
-Hardware Baseline Certification
-        ↓
-Montage manuel du T705 KVM sur /data
-        ↓
-Diagnostic read-only
-        ↓
-Dry-run complet
-        ↓
-Backup pré-APPLY vérifié
-        ↓
-APPLY protégé
-        ↓
-Postchecks
-        ↓
-workstation-doctor
+GNOME 50
+├── Dash to Dock
+├── Blur My Shell
+└── Extension Manager
 ```
 
-```bash
-./diagnostic.sh
-./install.sh --dry-run
-./install.sh --apply
-./menu.sh
-```
-
-## Domaines
-
-- `baseline` : certification matérielle/firmware, DDR5 5600/6000, NVMe I/O, Arc B580 et suspend/resume.
-- `system` : Fedora 44, DNF5, firmware, sécurité, sources de paquets.
-- `hardware` : CPU/RAM, Intel Arc, Wayland/display, NVMe, périphériques, suspend/resume.
-- `gnome` : GNOME, Nautilus, GVfs/SMB/MTP, portails, multimédia et extensions sélectionnées.
-- `applications` : catalogue GNOME GTK4/libadwaita + Ptyxis, puis profil professionnel contrôlé.
-- `virtualization` : KVM/QEMU/libvirt CLI-first, OVMF/TPM, VirtioFS, libguestfs, osinfo, pool T705, `devops-nat`, virt-manager/virt-viewer et profils VM.
-- `backup` : Restic, validation et préparation pré-APPLY.
-- `diagnostics` : baseline/workstation/graphics/suspend/storage/GNOME/applications/media/virtualization doctors.
+Just Perfection et Dash to Panel sont exclus.
 
 ## Applications professionnelles
 
-Le profil professionnel ajoute explicitement :
+Le projet gère notamment :
 
 ```text
-Visual Studio Code
+VS Code
 Brave
 VLC
 Bitwarden
 Slack
+GNOME Text Editor
 ONLYOFFICE Desktop Editors
-LibreOffice + langue française
+LibreOffice + français
 FileZilla
 MarkText
-GNOME Text Editor
-```
-
-VS Code et Brave utilisent leurs dépôts RPM éditeurs signés. VLC, LibreOffice et FileZilla utilisent les dépôts Fedora. Bitwarden, Slack, ONLYOFFICE et MarkText utilisent Flathub. GNOME Text Editor reste l'éditeur texte natif GTK4/libadwaita.
-
-Diagnostic :
-
-```bash
-bash diagnostics/applications-doctor
 ```
 
 ## Virtualisation
 
-La connexion libvirt de référence est `qemu:///system`. Le pipeline KVM est :
+Stack :
 
 ```text
-preflight
-  ↓
-stack libvirt Fedora
-  ↓
-UEFI / TPM
-  ↓
-stockage T705 / SELinux
-  ↓
-devops-nat / firewalld / isolation LAN
-  ↓
+QEMU/KVM
+libvirt qemu:///system
+OVMF / UEFI
+swtpm / TPM 2.0
+VirtioFS
+libguestfs
 libosinfo
-  ↓
-CLI complet
-  ↓
-SSH / transferts HOST↔VM
-  ↓
 virt-manager / virt-viewer
-  ↓
-profils Ubuntu Server / Fedora / Windows 11
-  ↓
-validation
+virsh / virt-install / virt-xml / qemu-img / virt-v2v / etc.
 ```
 
-Le réseau de référence est `192.168.50.0/24` sur `virbr50`. HOST↔VM, VM↔VM et VM→Internet sont prévus ; VM→LAN et LAN→VM sont bloqués par un guard nftables possédé uniquement par le projet, sans désactiver firewalld.
+Le second T705 est monté **manuellement** à `/data` en EXT4. Le projet crée ensuite :
 
-L'administration quotidienne est conçue pour être réalisée en ligne de commande : `virsh`, `virt-admin`, `virt-host-validate`, `virt-install`, `virt-clone`, `virt-xml`, `qemu-img`, `qemu-io`, `qemu-nbd`, `qemu-storage-daemon`, libguestfs, `cloud-localds`, `virt-top`, `virt-v2v`, QMP, SSH/SCP/SFTP/rsync. La GUI reste complémentaire.
+```text
+/data/libvirt/
+├── images/
+├── iso/
+├── cloud-init/
+├── nvram/
+├── snapshots/
+├── exports/
+└── shared/
+```
 
-Diagnostic :
+Réseau :
+
+```text
+devops-nat       192.168.50.0/24
+virbr50          192.168.50.254
+DHCP             .100-.200
+DNS              9.9.9.9 / 1.1.1.1
+
+HOST ↔ VM        autorisé
+VM ↔ VM          autorisé
+VM → Internet    autorisé
+VM ↔ LAN         bloqué
+```
+
+La connectivité physique du HOST peut être Ethernet ou Wi-Fi ; aucune interface n'est codée en dur.
+
+## Deux VM de référence
+
+### Ubuntu Server 26.04 — `ubuntu-devops`
+
+```text
+6 vCPU
+16 Gio RAM
+160 Gio qcow2
+UEFI
+VirtIO
+cloud-init
+SSH
+VirtioFS /data/libvirt/shared → /mnt/hostshare
+```
+
+Création :
+
+```bash
+bash scripts/kvm/create_ubuntu_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+```
+
+Le mot de passe de `mathias` est demandé au runtime, hashé et jamais commité.
+
+Le bootstrap invité installe Git/gh, Docker/Compose/Buildx, Ansible, Terraform, Azure CLI, AWS CLI v2, kubectl, Helm, kind, Python et les utilitaires d'exploitation.
+
+### Windows 11 — `windows-11`
+
+```text
+4 vCPU
+12 Gio RAM
+128 Gio qcow2
+UEFI Secure Boot
+TPM 2.0 / swtpm
+VirtIO disque/réseau
+SPICE
+```
+
+Création :
+
+```bash
+bash scripts/kvm/create_windows11_vm.sh \
+  --windows-iso /data/libvirt/iso/windows-11.iso \
+  --virtio-iso /data/libvirt/iso/virtio-win.iso
+```
+
+`virtio-win.iso` contient les pilotes VirtIO Windows et doit être fourni explicitement par l'opérateur.
+
+## Exécution HOST
+
+```bash
+./diagnostic.sh
+./install.sh --dry-run
+./prepare-preapply-backup.sh
+./install.sh --apply
+./menu.sh
+```
+
+Diagnostic KVM :
 
 ```bash
 bash diagnostics/virtualization-doctor
 ```
 
-Les preuves de trafic réseau bout-en-bout nécessitent des VM réellement démarrées et sont donc certifiées sur la vraie workstation après installation ; aucune VM n'est créée automatiquement pour un test.
-
-## Applications et multimédia
-
-La politique applicative est documentée dans `docs/GTK4_APPLICATIONS.md`. Les sources de vérité sont les manifestes `packages-applications-*` et `flatpaks-applications-professional.txt`.
-
-La politique codecs/FFmpeg/GStreamer/VA-API est documentée dans `docs/MULTIMEDIA_CODECS.md` :
+Certification après création des VM :
 
 ```bash
-bash diagnostics/media-doctor
+bash scripts/kvm/runtime_certification.sh
 ```
 
-## État du projet
+## Version
 
-- `0.1.0` : fondation Fedora 44 ;
-- `0.2.0` : Hardware Baseline Certification ;
-- `0.3.0` : applications GTK4/libadwaita + Ptyxis ;
-- `0.4.0` : pile multimédia complète ;
-- `0.5.0` : stack KVM/QEMU/libvirt complète et CLI-first + profil d'applications professionnelles.
+`0.6.0` — profils VM définitifs, Ubuntu DevOps automatisé, Windows 11 finalisé et certification runtime.
 
-Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GTK4_APPLICATIONS.md`, `docs/MULTIMEDIA_CODECS.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
+Documentation principale :
+
+- `docs/CAHIER_DES_CHARGES.md`
+- `docs/HARDWARE_BASELINE_CERTIFICATION.md`
+- `docs/GTK4_APPLICATIONS.md`
+- `docs/MULTIMEDIA_CODECS.md`
+- `docs/VIRTUALIZATION.md`
+- `docs/VIRTUALIZATION_CLI.md`
+- `docs/VM_PROFILES.md`
+- `docs/UBUNTU_DEVOPS_PROVISIONING.md`
+- `docs/EXECUTION_CONTRACT.md`

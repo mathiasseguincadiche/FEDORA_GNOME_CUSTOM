@@ -14,4 +14,5 @@ jobs:
       - run: bash tests/test_professional_apps_contract.sh
       - run: bash tests/test_multimedia_contract.sh
       - run: bash tests/test_virtualization_contract.sh
+      - run: bash tests/test_ubuntu_devops_bootstrap_contract.sh
       - run: bash tests/test_dash_to_dock_contract.sh

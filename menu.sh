@@ -15,9 +15,12 @@ FEDORA GNOME CUSTOM
 8) Suspend/resume doctor
 9) Storage doctor
 10) GNOME doctor
-11) Applications GTK4 doctor
+11) Applications doctor
 12) Multimedia / codecs doctor
 13) Virtualization / KVM doctor
+14) Créer Ubuntu Server 26.04 DevOps
+15) Créer Windows 11
+16) Certification runtime KVM
 0) Quitter
 EOF
   read -rp 'Choix: ' choice
@@ -35,6 +38,21 @@ EOF
     11) bash "$REPO_ROOT/diagnostics/applications-doctor" ;;
     12) bash "$REPO_ROOT/diagnostics/media-doctor" ;;
     13) bash "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
+    14)
+      read -rp 'Chemin image cloud Ubuntu Server 26.04: ' image
+      read -rp 'Clé SSH publique [~/.ssh/id_ed25519.pub]: ' key
+      if [[ -n "$key" ]]; then
+        bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" --cloud-image "$image" --ssh-key "$key"
+      else
+        bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" --cloud-image "$image"
+      fi
+      ;;
+    15)
+      read -rp 'Chemin ISO Windows 11: ' windows_iso
+      read -rp 'Chemin ISO virtio-win: ' virtio_iso
+      bash "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" --windows-iso "$windows_iso" --virtio-iso "$virtio_iso"
+      ;;
+    16) bash "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac
