@@ -3,10 +3,11 @@
 ## 0.4.0 — 2026-08-23
 
 - Complétion de la pile multimédia Fedora 44 avec GStreamer base/good/bad-free et OpenH264.
+- Ajout de `libvpl` et `intel-vpl-gpu-rt` pour les chemins oneVPL/QSV sur Intel Arc.
 - `ffmpeg-free` est remplacé explicitement par le `ffmpeg` complet de RPM Fusion via un swap contrôlé.
 - Conservation des plugins RPM Fusion `bad-freeworld`, `ugly`, `libav` et de `ffmpegthumbnailer`.
 - Politique Intel Arc B580 VA-API `auto` : le pilote Fedora libre est conservé s'il expose H.264/HEVC/AV1/VP9, sinon le projet bascule proprement vers `intel-media-driver` RPM Fusion.
-- Ajout de `media-doctor` pour contrôler paquets, décodage FFmpeg et profils VA-API.
+- Ajout de `media-doctor` pour contrôler paquets, décodage FFmpeg, chemins QSV/VA-API et profils VA-API.
 - CI Fedora 44 enrichie avec validation des deux swaps de fournisseurs multimédia.
 - Ajout d'un contrat de non-régression multimédia.
 
