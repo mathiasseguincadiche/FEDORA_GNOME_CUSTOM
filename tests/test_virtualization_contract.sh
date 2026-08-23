@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
+for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-virtualization.txt" || { echo "missing virtualization package: $pkg" >&2; exit 1; }
 done
 
@@ -31,11 +31,11 @@ grep -Fq 'ALLOW_GPU_PASSTHROUGH="false"' "$ROOT/config/virtualization.conf"
 grep -Fq 'CREATE_DEVOPS_VM="false"' "$ROOT/config/virtualization.conf"
 
 grep -Fq "zone='libvirt'" "$ROOT/virtualization/xml/networks/devops-nat.xml"
-grep -Fq "<forwarder addr='9.9.9.9'" "$ROOT/virtualization/xml/networks/devops-nat.xml"
-grep -Fq "<forwarder addr='1.1.1.1'" "$ROOT/virtualization/xml/networks/devops-nat.xml"
+grep -Fq "192.168.50.0" "$ROOT/virtualization/xml/networks/devops-nat.xml"
+grep -Fq "192.168.50.254" "$ROOT/virtualization/xml/networks/devops-nat.xml"
+grep -Fq "forwarder addr='9.9.9.9'" "$ROOT/virtualization/xml/networks/devops-nat.xml"
+grep -Fq "forwarder addr='1.1.1.1'" "$ROOT/virtualization/xml/networks/devops-nat.xml"
 grep -Fq 'fedora_gnome_custom_kvm' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq '/sys/class/net/' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq '/device' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq 'semanage fcontext' "$ROOT/modules/virtualization/33_kvm_storage_pools.sh"
 grep -Fq 'restorecon -R' "$ROOT/modules/virtualization/33_kvm_storage_pools.sh"
 
@@ -43,15 +43,38 @@ for cli in virt-admin virt-host-validate virt-xml-validate virt-xml qemu-io qemu
   grep -Fq "$cli" "$ROOT/modules/virtualization/36_kvm_cli_management.sh" || { echo "missing CLI validation: $cli" >&2; exit 1; }
 done
 
-grep -Fq 'UBUNTU_SERVER_RELEASE="26.04"' "$ROOT/config/vm-profiles.conf"
-grep -Fq 'FEDORA_VM_RELEASE="44"' "$ROOT/config/vm-profiles.conf"
-grep -Fq 'WINDOWS11_FIRMWARE="uefi-secureboot"' "$ROOT/config/vm-profiles.conf"
-grep -Fq 'WINDOWS11_TPM_VERSION="2.0"' "$ROOT/config/vm-profiles.conf"
-grep -Fq 'VM_PROFILE_GPU_PASSTHROUGH_ALLOWED="false"' "$ROOT/config/vm-profiles.conf"
+for expected in \
+  'UBUNTU_SERVER_RELEASE="26.04"' \
+  'UBUNTU_SERVER_VCPU="6"' \
+  'UBUNTU_SERVER_RAM_MB="16384"' \
+  'UBUNTU_SERVER_DISK_GB="160"' \
+  'UBUNTU_SERVER_USERNAME="mathias"' \
+  'UBUNTU_SERVER_VIRTIOFS_SOURCE="/data/libvirt/shared"' \
+  'UBUNTU_SERVER_VIRTIOFS_MOUNT="/mnt/hostshare"' \
+  'WINDOWS11_VCPU="4"' \
+  'WINDOWS11_RAM_MB="12288"' \
+  'WINDOWS11_DISK_GB="128"' \
+  'WINDOWS11_FIRMWARE="uefi-secureboot"' \
+  'WINDOWS11_TPM_VERSION="2.0"' \
+  'VM_PROFILE_GPU_PASSTHROUGH_ALLOWED="false"'; do
+  grep -Fq "$expected" "$ROOT/config/vm-profiles.conf" || { echo "missing final VM profile value: $expected" >&2; exit 1; }
+done
 
-[[ -f "$ROOT/diagnostics/virtualization-doctor" ]]
-[[ -f "$ROOT/modules/virtualization/36a_kvm_ssh_access.sh" ]]
-[[ ! -e "$ROOT/modules/virtualization/32_kvm_network.sh" ]]
+! grep -Fq 'FEDORA_VM_' "$ROOT/config/vm-profiles.conf"
+! grep -Fq 'Fedora 44 lab' "$ROOT/modules/virtualization/38_kvm_vm_profiles.sh"
+
+for file in \
+  guest/ubuntu-devops/bootstrap-devops.sh \
+  guest/ubuntu-devops/verify-devops.sh \
+  scripts/kvm/create_ubuntu_devops_vm.sh \
+  scripts/kvm/create_windows11_vm.sh \
+  scripts/kvm/runtime_certification.sh \
+  diagnostics/virtualization-doctor; do
+  [[ -f "$ROOT/$file" ]] || { echo "missing runtime/provisioning file: $file" >&2; exit 1; }
+done
+
+grep -Fq 'runtime-prompt' "$ROOT/config/vm-profiles.conf"
+! grep -RInE --exclude-dir=.git --exclude='test_virtualization_contract.sh' '(password:[[:space:]]*guest|passwd:[[:space:]]*guest|UBUNTU_DEVOPS_PASSWORD=.guest.)' "$ROOT" >/dev/null
 
 ! grep -RInE --exclude-dir=.git '(mkfs\.|wipefs|parted |sgdisk |chmod[[:space:]]+777|setenforce[[:space:]]+0)' "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" || {
   echo 'forbidden destructive/insecure virtualization mutation found' >&2

@@ -1,78 +1,93 @@
-# Profils VM KVM
+# Profils VM KVM — contrat final
 
-Les profils définis dans `config/vm-profiles.conf` sont des **templates déclaratifs**. Ils ne créent aucune VM pendant l'installation de la workstation.
+La workstation maintient **exactement deux profils invités de référence**. Ils sont déclaratifs et ne sont jamais créés pendant `install.sh --apply`.
 
 ## Ubuntu Server 26.04 LTS — `ubuntu-devops`
 
-Usage : laboratoire DevOps/Ops principal.
+VM principale pour les laboratoires DevOps/Ops.
 
 ```text
-vCPU          6
-RAM           12 Gio
-disque        120 Gio qcow2
-machine       q35
-CPU           host-passthrough
-firmware      UEFI
-disque bus    VirtIO
-réseau        VirtIO / devops-nat
-graphique     aucun requis
-cloud-init    oui
-VirtioFS      disponible
-autostart     non
+vCPU               6
+RAM                16 Gio
+disque             160 Gio qcow2
+machine            q35
+CPU                host-passthrough
+firmware           UEFI
+bus disque         VirtIO
+réseau             VirtIO / devops-nat
+graphique          aucun requis
+cloud-init         oui
+SSH                oui, clé publique prioritaire
+utilisateur        mathias
+mot de passe       demandé au runtime, jamais versionné
+VirtioFS source    /data/libvirt/shared
+memory backing     memfd / shared
+VirtioFS tag       hostshare
+montage invité     /mnt/hostshare
+autostart          non
 ```
 
-Ce profil est destiné à héberger la future couche `VM_DEVOPS` : Docker, Kubernetes, IaC, Ansible et outils cloud restent isolés du HOST lorsqu'ils n'ont pas de raison d'être installés directement sur Fedora.
+Création explicite :
 
-## Fedora 44 — `fedora-lab`
-
-Usage : tests Linux, validation de versions et laboratoires secondaires.
-
-```text
-vCPU          4
-RAM           8 Gio
-disque        80 Gio qcow2
-machine       q35
-CPU           host-passthrough
-firmware      UEFI
-disque bus    VirtIO
-réseau        VirtIO / devops-nat
-graphique     SPICE + virtio-gpu
-3D            désactivée par défaut
-VirtioFS      disponible
-autostart     non
+```bash
+bash scripts/kvm/create_ubuntu_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
 ```
 
-L'accélération 3D n'est pas forcée. Elle pourra être activée pour un invité précis après validation, sans passthrough de l'Intel Arc B580.
+Le script génère un hash SHA-512 du mot de passe saisi, construit le seed cloud-init, embarque les scripts de bootstrap/validation dans le seed et crée la VM avec `virt-install`.
+
+Le bootstrap invité installe Git/GitHub CLI, Docker Engine + Compose/Buildx, Ansible, Terraform, Azure CLI, AWS CLI v2, kubectl, Helm, kind, Python et les utilitaires d'exploitation.
 
 ## Windows 11 — `windows-11`
 
-Usage : VM Windows générale et tests multi-plateformes.
+VM secondaire pour les besoins Windows et les tests multi-plateformes.
 
 ```text
-vCPU          8
-RAM           16 Gio
-disque        160 Gio qcow2
-machine       q35
-CPU           host-passthrough
-firmware      UEFI Secure Boot
-TPM           2.0 / swtpm
-disque bus    VirtIO
-réseau        VirtIO / devops-nat
-graphique     SPICE + virtio-gpu
-VirtioFS      non par défaut
-autostart     non
+vCPU               4
+RAM                12 Gio
+disque             128 Gio qcow2
+machine            q35
+CPU                host-passthrough
+firmware           UEFI Secure Boot
+TPM                2.0 / swtpm
+bus disque         VirtIO
+réseau             VirtIO / devops-nat
+graphique          SPICE + virtio
+VirtioFS           non par défaut
+autostart          non
 ```
 
-Les pilotes Windows VirtIO ne sont pas téléchargés silencieusement par le projet. Le profil exige un média VirtIO Windows obtenu explicitement depuis une source approuvée par l'opérateur.
+Création explicite :
+
+```bash
+bash scripts/kvm/create_windows11_vm.sh \
+  --windows-iso /data/libvirt/iso/windows-11.iso \
+  --virtio-iso /data/libvirt/iso/virtio-win.iso
+```
+
+`virtio-win.iso` contient les pilotes Windows nécessaires au stockage/réseau VirtIO. Le projet ne télécharge jamais ce média silencieusement.
+
+## Ressources HOST
+
+Le HOST de référence dispose de 8 cœurs / 16 threads et 48 Gio de RAM. Avec les deux VM démarrées :
+
+```text
+Ubuntu    6 vCPU / 16 Gio
+Windows   4 vCPU / 12 Gio
+VM RAM totale      28 Gio
+HOST restant       ~20 Gio avant consommation dynamique
+```
+
+Les vCPU sont sur-allouables par KVM ; la configuration évite toutefois de monopoliser tous les threads du HOST.
 
 ## Règles communes
 
-- pool par défaut : `devops-data` ;
-- réseau par défaut : `devops-nat` ;
-- aucun autostart par défaut ;
-- création interactive uniquement ;
-- aucune VM créée pendant `install.sh --apply` ;
-- aucun VFIO/passthrough GPU ;
-- l'Intel Arc B580 reste au HOST ;
-- les images de disque résident sur le T705 dédié ;
-- les partages VirtioFS sont explicitement déclarés et ne pointent jamais automatiquement vers tout le `$HOME`.
+- pool : `devops-data` sur `/data/libvirt/images` ;
+- réseau : `devops-nat` / `192.168.50.0/24` ;
+- aucun autostart invité ;
+- création opérateur explicite ;
+- aucune VM Fedora de référence ;
+- aucun VFIO/passthrough de l'Intel Arc B580 ;
+- aucune ISO ni image cloud téléchargée automatiquement ;
+- aucun mot de passe en clair dans Git ;
+- les partages VirtioFS restent limités à `/data/libvirt/shared`.
