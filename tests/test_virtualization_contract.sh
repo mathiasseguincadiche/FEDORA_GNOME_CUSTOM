@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools osinfo-db osinfo-db-tools libosinfo nftables dnsmasq python3 policycoreutils-python-utils; do
+for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools osinfo-db osinfo-db-tools libosinfo openssh-clients iputils nftables dnsmasq python3 policycoreutils-python-utils; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-virtualization.txt" || { echo "missing virtualization package: $pkg" >&2; exit 1; }
 done
 
@@ -14,7 +14,8 @@ for entry in \
   'kvm.network|KVM|kvm.storage|modules/virtualization/34_kvm_network.sh' \
   'kvm.catalog|KVM|kvm.network|modules/virtualization/35_kvm_os_catalog.sh' \
   'kvm.cli|KVM|kvm.catalog|modules/virtualization/36_kvm_cli_management.sh' \
-  'kvm.virt_manager|KVM|kvm.cli|modules/virtualization/37_kvm_virt_manager.sh' \
+  'kvm.ssh|KVM|kvm.cli|modules/virtualization/36a_kvm_ssh_access.sh' \
+  'kvm.virt_manager|KVM|kvm.ssh|modules/virtualization/37_kvm_virt_manager.sh' \
   'kvm.vm_profiles|KVM|kvm.virt_manager|modules/virtualization/38_kvm_vm_profiles.sh' \
   'kvm.validation|KVM|kvm.vm_profiles|modules/virtualization/39_kvm_validation.sh'; do
   grep -Fxq "$entry" "$ROOT/manifests/module-plan.conf" || { echo "missing KVM module contract: $entry" >&2; exit 1; }
@@ -45,6 +46,7 @@ grep -Fq 'WINDOWS11_TPM_VERSION="2.0"' "$ROOT/config/vm-profiles.conf"
 grep -Fq 'VM_PROFILE_GPU_PASSTHROUGH_ALLOWED="false"' "$ROOT/config/vm-profiles.conf"
 
 [[ -f "$ROOT/diagnostics/virtualization-doctor" ]]
+[[ -f "$ROOT/modules/virtualization/36a_kvm_ssh_access.sh" ]]
 [[ ! -e "$ROOT/modules/virtualization/32_kvm_network.sh" ]]
 
 ! grep -RInE --exclude-dir=.git '(mkfs\.|wipefs|parted |sgdisk |chmod[[:space:]]+777|setenforce[[:space:]]+0)' "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" || {
