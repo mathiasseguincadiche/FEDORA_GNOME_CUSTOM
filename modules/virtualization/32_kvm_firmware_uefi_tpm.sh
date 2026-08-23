@@ -30,10 +30,10 @@ kvm_firmware_postcheck() {
   local firmware
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_KVM:-true}" || return 0
-  command_exists swtpm && command_exists swtpm_setup || return "$EXIT_POSTCHECK_FAILED"
+  if ! command_exists swtpm || ! command_exists swtpm_setup; then return "$EXIT_POSTCHECK_FAILED"; fi
   firmware="$(kvm_firmware_find_ovmf)"
   [[ -n "$firmware" ]] || { log_error KVM 'OVMF firmware/descriptor not found'; return "$EXIT_POSTCHECK_FAILED"; }
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" domcapabilities 2>/dev/null | grep -Eqi 'loader|firmware' || {
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" domcapabilities 2>/dev/null | grep -Eqi 'loader|firmware' || {
     log_error KVM 'libvirt domain capabilities do not expose firmware support'
     return "$EXIT_POSTCHECK_FAILED"
   }
