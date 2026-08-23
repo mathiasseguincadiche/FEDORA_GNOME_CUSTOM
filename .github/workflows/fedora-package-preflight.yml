@@ -11,11 +11,11 @@ jobs:
       - name: Enable RPM Fusion metadata
         run: |
           dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
-      - name: Resolve manifests
+      - name: Resolve Fedora manifests
         shell: bash
         run: |
           set -euo pipefail
-          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
+          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
             echo "== $manifest =="
             while IFS= read -r pkg; do
               [[ -z "$pkg" || "$pkg" == \#* ]] && continue
@@ -25,6 +25,26 @@ jobs:
           for pkg in ffmpeg intel-media-driver; do
             dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED PROVIDER: $pkg"; exit 1; }
           done
+      - name: Verify professional vendor RPM repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
+          install -m 0644 config/repos/brave-browser.repo /etc/yum.repos.d/brave-browser.repo
+          while IFS= read -r pkg; do
+            [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+            dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED VENDOR APP: $pkg"; exit 1; }
+          done < manifests/packages-applications-professional-vendor.txt
+      - name: Verify professional Flathub applications
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install flatpak
+          flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          while IFS= read -r app; do
+            [[ -z "$app" || "$app" == \#* ]] && continue
+            flatpak remote-info --system flathub "$app" >/dev/null || { echo "UNRESOLVED FLATPAK: $app"; exit 1; }
+          done < manifests/flatpaks-applications-professional.txt
       - name: Validate multimedia provider swaps
         shell: bash
         run: |
