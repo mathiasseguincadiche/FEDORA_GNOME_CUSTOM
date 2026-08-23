@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools osinfo-db osinfo-db-tools libosinfo openssh-clients iputils nftables dnsmasq python3 policycoreutils-python-utils; do
+for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-virtualization.txt" || { echo "missing virtualization package: $pkg" >&2; exit 1; }
 done
 
@@ -38,6 +38,10 @@ grep -Fq '/sys/class/net/' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq '/device' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq 'semanage fcontext' "$ROOT/modules/virtualization/33_kvm_storage_pools.sh"
 grep -Fq 'restorecon -R' "$ROOT/modules/virtualization/33_kvm_storage_pools.sh"
+
+for cli in virt-xml virt-customize virt-sysprep virt-resize virt-sparsify virt-builder virt-top virt-v2v virt-qemu-qmp-proxy rsync; do
+  grep -Fq "$cli" "$ROOT/modules/virtualization/36_kvm_cli_management.sh" || { echo "missing CLI validation: $cli" >&2; exit 1; }
+done
 
 grep -Fq 'UBUNTU_SERVER_RELEASE="26.04"' "$ROOT/config/vm-profiles.conf"
 grep -Fq 'FEDORA_VM_RELEASE="44"' "$ROOT/config/vm-profiles.conf"
