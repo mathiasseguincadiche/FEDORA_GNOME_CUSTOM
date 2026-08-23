@@ -15,7 +15,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
+          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
             echo "== $manifest =="
             while IFS= read -r pkg; do
               [[ -z "$pkg" || "$pkg" == \#* ]] && continue
@@ -45,3 +45,11 @@ jobs:
             grep -Eqi 'gtk4|libgtk-4\.so\.1' <<<"$requirements" || { echo "GTK4 REQUIREMENT MISSING: $pkg"; exit 1; }
             grep -Eqi 'libadwaita|libadwaita-1\.so\.0' <<<"$requirements" || { echo "LIBADWAITA REQUIREMENT MISSING: $pkg"; exit 1; }
           done < manifests/packages-applications-gtk4.txt
+      - name: Verify Dash to Dock Fedora 44 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install gnome-shell-extension-dash-to-dock
+          rpm -q gnome-shell-extension-dash-to-dock
+          test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
+          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
