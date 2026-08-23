@@ -14,7 +14,7 @@ kvm_stack_unit_exists() {
 
 kvm_stack_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
-  command_exists dnf && command_exists systemctl && command_exists sudo || return "$EXIT_PRECHECK_FAILED"
+  if ! command_exists dnf || ! command_exists systemctl || ! command_exists sudo; then return "$EXIT_PRECHECK_FAILED"; fi
   kvm_stack_operator >/dev/null || { log_error KVM 'real operator user cannot be resolved'; return "$EXIT_PRECHECK_FAILED"; }
 }
 
