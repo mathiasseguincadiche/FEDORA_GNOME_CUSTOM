@@ -9,7 +9,7 @@ baseline_platform_firmware_postcheck() {
     echo "bios=$(baseline_hw_value /sys/class/dmi/id/bios_version)"
     echo "bios_date=$(baseline_hw_value /sys/class/dmi/id/bios_date)"
     echo "kernel=$(uname -r)"
-    [[ -d /sys/kernel/iommu_groups ]] && echo 'iommu=present' || echo 'iommu=not-detected'
-    command_exists mokutil && mokutil --sb-state 2>&1 || true
+    if [[ -d /sys/kernel/iommu_groups ]]; then echo 'iommu=present'; else echo 'iommu=not-detected'; fi
+    if command_exists mokutil; then mokutil --sb-state 2>&1 || true; fi
   } >> "$MODULE_LOG"
 }
