@@ -37,7 +37,13 @@ done
 if [[ "$arc_driver" == xe ]]; then record OK 'Arc B580' 'HOST driver=xe'; else record KO 'Arc B580' "driver=${arc_driver:-missing}"; fi
 if is_true "${ALLOW_GPU_PASSTHROUGH:-false}"; then record KO VFIO 'passthrough enabled by config'; else record OK VFIO 'GPU passthrough disabled'; fi
 
-for cmd in virsh qemu-img virt-install virt-clone virt-manager virt-viewer remote-viewer swtpm swtpm_setup virtiofsd osinfo-query guestfish virt-filesystems; do
+for cmd in \
+  virsh qemu-img virt-install virt-clone virt-xml \
+  virt-manager virt-viewer remote-viewer \
+  swtpm swtpm_setup virtiofsd osinfo-query \
+  guestfish virt-filesystems virt-customize virt-sysprep virt-resize virt-sparsify virt-builder \
+  virt-top virt-v2v virt-qemu-qmp-proxy \
+  ssh scp sftp rsync; do
   if command_exists "$cmd"; then record OK "$cmd" available; else record KO "$cmd" missing; fi
 done
 
@@ -130,6 +136,9 @@ if is_true "${KVM_BLOCK_PHYSICAL_LAN:-true}"; then
 fi
 
 if osinfo-query os >/dev/null 2>&1; then record OK libosinfo catalog; else record KO libosinfo unavailable; fi
+
+if rpm -q libvirt-nss >/dev/null 2>&1; then record OK 'libvirt NSS' 'domain name resolution support installed'; else record KO 'libvirt NSS' missing; fi
+if rpm -q guestfs-tools-bash-completion >/dev/null 2>&1; then record OK 'guestfs completion' installed; else record KO 'guestfs completion' missing; fi
 
 if [[ "${VM_PROFILE_DEFAULT_NETWORK:-}" == "$network" && "${VM_PROFILE_DEFAULT_POOL:-}" == "${KVM_POOL_NAME:-devops-data}" ]]; then
   record OK 'VM profiles' 'Ubuntu Server / Fedora / Windows 11 contract loaded'
