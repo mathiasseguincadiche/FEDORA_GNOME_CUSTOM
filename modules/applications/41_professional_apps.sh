@@ -23,8 +23,8 @@ professional_apps_plan() {
 PROFESSIONAL APPLICATIONS:
 - keep GNOME Text Editor as the native GTK4/libadwaita text editor
 - install VLC, LibreOffice and FileZilla from Fedora repositories
-- install Visual Studio Code only from Microsoft's signed RPM repository
-- install Brave only from Brave Software's signed RPM repository
+- install Visual Studio Code from Microsoft's signed RPM repository
+- install Brave from Brave Software's signed RPM repository
 - install Bitwarden, Slack, ONLYOFFICE and MarkText from Flathub
 - professional applications are an explicit functional exception to the GTK4-only general desktop rule
 - never replace the GNOME-native application set with vendor applications when both serve different workflows
@@ -40,8 +40,8 @@ professional_apps_apply() {
   run_mutating APPLICATIONS sudo install -m 0644 "$REPO_ROOT/config/repos/vscode.repo" /etc/yum.repos.d/vscode.repo || return "$EXIT_APPLY_FAILED"
   run_mutating APPLICATIONS sudo install -m 0644 "$REPO_ROOT/config/repos/brave-browser.repo" /etc/yum.repos.d/brave-browser.repo || return "$EXIT_APPLY_FAILED"
   run_mutating APPLICATIONS sudo dnf -y makecache --refresh || return "$EXIT_APPLY_FAILED"
-  run_mutating APPLICATIONS sudo dnf -y --repo=code install "${VSCODE_PACKAGE:-code}" || return "$EXIT_APPLY_FAILED"
-  run_mutating APPLICATIONS sudo dnf -y --repo=brave-browser install "${BRAVE_PACKAGE:-brave-browser}" || return "$EXIT_APPLY_FAILED"
+  run_mutating APPLICATIONS sudo dnf -y install "${VSCODE_PACKAGE:-code}" || return "$EXIT_APPLY_FAILED"
+  run_mutating APPLICATIONS sudo dnf -y install "${BRAVE_PACKAGE:-brave-browser}" || return "$EXIT_APPLY_FAILED"
 
   if is_true "${ENABLE_PROFESSIONAL_FLATPAKS:-true}"; then
     while IFS= read -r app; do
