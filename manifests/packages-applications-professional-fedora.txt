@@ -1,0 +1,11 @@
+# Professional applications from Fedora repositories
+
+# Multimedia
+vlc
+
+# Office
+libreoffice
+libreoffice-langpack-fr
+
+# File transfer
+filezilla

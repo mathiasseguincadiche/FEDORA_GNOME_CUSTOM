@@ -17,6 +17,7 @@ FEDORA GNOME CUSTOM
 10) GNOME doctor
 11) Applications GTK4 doctor
 12) Multimedia / codecs doctor
+13) Virtualization / KVM doctor
 0) Quitter
 EOF
   read -rp 'Choix: ' choice
@@ -33,6 +34,7 @@ EOF
     10) "$REPO_ROOT/diagnostics/gnome-doctor" ;;
     11) bash "$REPO_ROOT/diagnostics/applications-doctor" ;;
     12) bash "$REPO_ROOT/diagnostics/media-doctor" ;;
+    13) bash "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac

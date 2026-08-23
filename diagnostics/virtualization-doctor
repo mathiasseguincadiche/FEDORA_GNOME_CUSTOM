@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+quiet=false
+if [[ "${1:-}" == "--quiet" ]]; then quiet=true; fi
+ok=0; warn=0; ko=0
+record() {
+  local level="$1" label="$2" detail="$3"
+  case "$level" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac
+  if [[ "$quiet" != true ]]; then ui_check "$level" "$label" "$detail"; fi
+}
+
+vsh() {
+  if virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null 2>&1; then
+    virsh --connect "${LIBVIRT_URI:-qemu:///system}" "$@"
+  elif sudo -n virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null 2>&1; then
+    sudo -n virsh --connect "${LIBVIRT_URI:-qemu:///system}" "$@"
+  else
+    return 1
+  fi
+}
+
+if grep -Eq 'svm|AMD-V' <(lscpu 2>/dev/null); then record OK AMD-V enabled; else record KO AMD-V missing; fi
+if [[ -c /dev/kvm ]]; then record OK /dev/kvm present; else record KO /dev/kvm missing; fi
+if [[ -d /sys/module/kvm_amd ]]; then record OK kvm_amd loaded; else record KO kvm_amd missing; fi
+
+arc_driver=""
+for dev in /sys/bus/pci/devices/*; do
+  [[ -r "$dev/vendor" && -r "$dev/device" ]] || continue
+  if [[ "$(normalize_hex "$(<"$dev/vendor")")" == 8086 && "$(normalize_hex "$(<"$dev/device")")" == e20b ]]; then
+    if [[ -L "$dev/driver" ]]; then arc_driver="$(basename "$(readlink -f "$dev/driver")")"; fi
+    break
+  fi
+done
+if [[ "$arc_driver" == xe ]]; then record OK 'Arc B580' 'HOST driver=xe'; else record KO 'Arc B580' "driver=${arc_driver:-missing}"; fi
+if is_true "${ALLOW_GPU_PASSTHROUGH:-false}"; then record KO VFIO 'passthrough enabled by config'; else record OK VFIO 'GPU passthrough disabled'; fi
+
+for cmd in \
+  virsh virt-admin virt-host-validate virt-xml-validate \
+  qemu-img qemu-io qemu-nbd qemu-storage-daemon \
+  virt-install virt-clone virt-xml \
+  virt-manager virt-viewer remote-viewer \
+  swtpm swtpm_setup virtiofsd osinfo-query cloud-localds \
+  guestfish virt-filesystems virt-customize virt-sysprep virt-resize virt-sparsify virt-builder \
+  virt-top virt-v2v virt-qemu-qmp-proxy \
+  ssh scp sftp rsync; do
+  if command_exists "$cmd"; then record OK "$cmd" available; else record KO "$cmd" missing; fi
+done
+
+if virt-host-validate qemu >/dev/null 2>&1; then
+  record OK 'Host validation' 'virt-host-validate qemu passed'
+else
+  record WARN 'Host validation' 'virt-host-validate reports recommendations; inspect before heavy VM use'
+fi
+
+if systemctl is-active --quiet virtqemud.socket 2>/dev/null; then
+  record OK libvirt 'virtqemud socket active'
+elif systemctl is-active --quiet libvirtd.socket 2>/dev/null || systemctl is-active --quiet libvirtd.service 2>/dev/null; then
+  record OK libvirt 'legacy compatibility socket/service active'
+else
+  record KO libvirt 'no QEMU libvirt activation endpoint active'
+fi
+
+if vsh list --all >/dev/null 2>&1; then
+  record OK qemu:///system reachable
+else
+  record KO qemu:///system 'connection unavailable; relogin may be required after group change'
+fi
+
+mount="${KVM_DATA_MOUNT:-/data}"
+target="$(findmnt -n -T "$mount" -o TARGET 2>/dev/null || true)"
+fstype="$(findmnt -n -T "$mount" -o FSTYPE 2>/dev/null || true)"
+if [[ "$target" == "$mount" && "$fstype" == "${KVM_DATA_FSTYPE:-ext4}" ]]; then
+  record OK 'KVM storage mount' "$mount $fstype"
+else
+  record KO 'KVM storage mount' "target=${target:-missing} fstype=${fstype:-unknown}"
+fi
+
+if vsh pool-info "${KVM_POOL_NAME:-devops-data}" >/dev/null 2>&1; then
+  pool_info="$(vsh pool-info "${KVM_POOL_NAME:-devops-data}" 2>/dev/null || true)"
+  if grep -Eq '^State:[[:space:]]+running' <<<"$pool_info"; then record OK 'Storage pool' running; else record KO 'Storage pool' inactive; fi
+  if grep -Eq '^Autostart:[[:space:]]+yes' <<<"$pool_info"; then record OK 'Pool autostart' enabled; else record KO 'Pool autostart' disabled; fi
+else
+  record KO 'Storage pool' missing
+fi
+
+storage_root="${KVM_DATA_MOUNT:-/data}/libvirt/images"
+if [[ "$(getenforce 2>/dev/null || true)" == Enforcing ]]; then
+  record OK SELinux Enforcing
+else
+  record KO SELinux 'not Enforcing'
+fi
+if [[ -e "$storage_root" ]]; then
+  label="$(ls -Zd "$storage_root" 2>/dev/null || true)"
+  if grep -Fq "${KVM_STORAGE_SELINUX_TYPE:-virt_image_t}" <<<"$label"; then
+    record OK 'Storage SELinux' "${KVM_STORAGE_SELINUX_TYPE:-virt_image_t}"
+  else
+    record KO 'Storage SELinux' 'unexpected label'
+  fi
+fi
+
+if find /usr/share -maxdepth 5 -type f \( -name 'OVMF_CODE*.fd' -o -path '*/qemu/firmware/*.json' \) -print -quit 2>/dev/null | grep -q .; then
+  record OK OVMF available
+else
+  record KO OVMF missing
+fi
+if swtpm --version >/dev/null 2>&1; then record OK 'TPM emulator' swtpm; else record KO 'TPM emulator' unavailable; fi
+
+network="${KVM_NETWORK_NAME:-devops-nat}"
+if vsh net-info "$network" >/dev/null 2>&1; then
+  net_info="$(vsh net-info "$network" 2>/dev/null || true)"
+  if grep -Eq '^Active:[[:space:]]+yes' <<<"$net_info"; then record OK "$network" active; else record KO "$network" inactive; fi
+  if grep -Eq '^Autostart:[[:space:]]+yes' <<<"$net_info"; then record OK 'Network autostart' enabled; else record KO 'Network autostart' disabled; fi
+  net_xml="$(vsh net-dumpxml "$network" 2>/dev/null || true)"
+  if grep -Fq "<bridge name='${KVM_BRIDGE_NAME:-virbr50}'" <<<"$net_xml"; then record OK 'Network bridge' "${KVM_BRIDGE_NAME:-virbr50}"; else record KO 'Network bridge' mismatch; fi
+  if grep -Fq "<forwarder addr='${KVM_DNS_1:-9.9.9.9}'" <<<"$net_xml" && grep -Fq "<forwarder addr='${KVM_DNS_2:-1.1.1.1}'" <<<"$net_xml"; then
+    record OK DNS 'explicit forwarders'
+  else
+    record KO DNS 'forwarder mismatch'
+  fi
+else
+  record KO "$network" missing
+fi
+
+if firewall-cmd --state >/dev/null 2>&1; then
+  record OK firewalld active
+  zone="$(firewall-cmd --get-zone-of-interface="${KVM_BRIDGE_NAME:-virbr50}" 2>/dev/null || true)"
+  if [[ "$zone" == "${KVM_FIREWALLD_ZONE:-libvirt}" ]]; then record OK 'firewalld zone' "$zone"; else record KO 'firewalld zone' "${zone:-unassigned}"; fi
+else
+  record KO firewalld inactive
+fi
+
+if is_true "${KVM_BLOCK_PHYSICAL_LAN:-true}"; then
+  if sudo -n nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" >/dev/null 2>&1; then
+    rules="$(sudo -n nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" 2>/dev/null || true)"
+    if grep -Fq 'block VM to physical LAN' <<<"$rules"; then record OK 'LAN isolation' enforced; else record KO 'LAN isolation' 'guard rule missing'; fi
+  elif systemctl is-active --quiet fedora-gnome-custom-kvm-guard.service 2>/dev/null; then
+    record WARN 'LAN isolation' 'guard service active; nft table requires privileged inspection'
+  else
+    record KO 'LAN isolation' 'guard inactive'
+  fi
+fi
+
+if osinfo-query os >/dev/null 2>&1; then record OK libosinfo catalog; else record KO libosinfo unavailable; fi
+
+if rpm -q libvirt-nss >/dev/null 2>&1; then record OK 'libvirt NSS' 'domain name resolution support installed'; else record KO 'libvirt NSS' missing; fi
+if rpm -q guestfs-tools-bash-completion >/dev/null 2>&1; then record OK 'guestfs completion' installed; else record KO 'guestfs completion' missing; fi
+if rpm -q cloud-utils-cloud-localds >/dev/null 2>&1; then record OK 'cloud-init seed tooling' cloud-localds; else record KO 'cloud-init seed tooling' missing; fi
+
+if [[ "${VM_PROFILE_DEFAULT_NETWORK:-}" == "$network" && "${VM_PROFILE_DEFAULT_POOL:-}" == "${KVM_POOL_NAME:-devops-data}" ]]; then
+  record OK 'VM profiles' 'Ubuntu Server / Fedora / Windows 11 contract loaded'
+else
+  record KO 'VM profiles' 'network/pool mismatch'
+fi
+
+record WARN 'Runtime traffic proof' 'HOST↔VM, VM↔VM and VM→Internet require running test guests; architecture is checked here without creating VMs'
+
+if [[ "$quiet" != true ]]; then
+  ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"
+  if ((ko == 0)); then ui_summary 'VIRTUALIZATION STACK HEALTHY' 'RUNTIME GUEST PROOF OPTIONAL' "$REPORT_ROOT" "$LOG_DIR"; else ui_summary 'VIRTUALIZATION NEEDS ATTENTION' 'FIX KO BEFORE KVM USE' "$REPORT_ROOT" "$LOG_DIR"; fi
+fi
+(( ko == 0 ))

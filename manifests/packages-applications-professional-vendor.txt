@@ -1,0 +1,3 @@
+# Professional applications from signed vendor RPM repositories
+code
+brave-browser

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+action="${2:-}"
+case "$action" in
+  up|dhcp4-change|connectivity-change|reapply)
+    systemctl --no-block reload-or-restart fedora-gnome-custom-kvm-guard.service >/dev/null 2>&1 || true
+    ;;
+esac

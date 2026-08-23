@@ -1,11 +1,45 @@
+# Hypervisor and libvirt system stack
 qemu-kvm
+qemu-img
 libvirt
 libvirt-client
+libvirt-client-qemu
+libvirt-nss
+libvirt-daemon-common
 libvirt-daemon-kvm
 libvirt-daemon-config-network
+
+# Provisioning and graphical administration
 virt-install
 virt-manager
 virt-viewer
+
+# CLI observability, migration and image lifecycle
+virt-top
+virt-v2v
+cloud-utils-cloud-localds
+
+# Firmware, TPM and guest filesystem tooling
 edk2-ovmf
 swtpm
+swtpm-tools
+swtpm-selinux
+virtiofsd
 guestfs-tools
+guestfs-tools-bash-completion
+
+# Guest OS metadata
+osinfo-db
+osinfo-db-tools
+libosinfo
+
+# Host-to-guest administration and runtime network proof
+openssh-clients
+iputils
+rsync
+
+# Network/security integration and dedicated storage labels
+nftables
+dnsmasq
+python3
+policycoreutils-python-utils

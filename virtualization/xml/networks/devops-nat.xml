@@ -1,0 +1,15 @@
+<network>
+  <name>devops-nat</name>
+  <forward mode='nat'/>
+  <bridge name='virbr50' zone='libvirt' stp='on' delay='0'/>
+  <domain name='devops.internal' localOnly='yes'/>
+  <dns enable='yes'>
+    <forwarder addr='9.9.9.9'/>
+    <forwarder addr='1.1.1.1'/>
+  </dns>
+  <ip address='192.168.50.254' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.50.100' end='192.168.50.200'/>
+    </dhcp>
+  </ip>
+</network>

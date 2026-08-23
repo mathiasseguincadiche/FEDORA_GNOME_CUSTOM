@@ -1,0 +1,5 @@
+# Professional desktop applications from Flathub
+com.bitwarden.desktop
+com.slack.Slack
+org.onlyoffice.desktopeditors
+com.github.marktext.marktext

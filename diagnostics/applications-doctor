@@ -31,10 +31,42 @@ while IFS= read -r pkg; do
   emit OK "$pkg" 'GTK4 + libadwaita'
 done < "$REPO_ROOT/manifests/packages-applications-gtk4.txt"
 
+if is_true "${ENABLE_PROFESSIONAL_APPLICATIONS:-true}"; then
+  for manifest in \
+    "$REPO_ROOT/manifests/packages-applications-professional-fedora.txt" \
+    "$REPO_ROOT/manifests/packages-applications-professional-vendor.txt"; do
+    while IFS= read -r pkg; do
+      [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+      if rpm -q "$pkg" >/dev/null 2>&1; then
+        emit OK "$pkg" 'professional RPM installed'
+      else
+        emit KO "$pkg" 'professional RPM missing'
+      fi
+    done < "$manifest"
+  done
+
+  if is_true "${ENABLE_PROFESSIONAL_FLATPAKS:-true}"; then
+    while IFS= read -r app; do
+      [[ -z "$app" || "$app" == \#* ]] && continue
+      if flatpak info "$app" >/dev/null 2>&1; then
+        emit OK "$app" 'professional Flatpak installed'
+      else
+        emit KO "$app" 'professional Flatpak missing'
+      fi
+    done < "$REPO_ROOT/manifests/flatpaks-applications-professional.txt"
+  fi
+fi
+
 if command_exists "${TERMINAL_PACKAGE:-ptyxis}"; then
   emit OK Terminal "${TERMINAL_PACKAGE:-ptyxis}"
 else
   emit KO Terminal "${TERMINAL_PACKAGE:-ptyxis} missing"
+fi
+
+if rpm -q "${TEXT_EDITOR_PACKAGE:-gnome-text-editor}" >/dev/null 2>&1; then
+  emit OK 'Text editor' "${TEXT_EDITOR_PACKAGE:-gnome-text-editor}"
+else
+  emit KO 'Text editor' "${TEXT_EDITOR_PACKAGE:-gnome-text-editor} missing"
 fi
 
 if ! $quiet; then

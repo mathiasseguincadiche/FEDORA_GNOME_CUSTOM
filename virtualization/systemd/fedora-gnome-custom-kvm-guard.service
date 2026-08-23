@@ -1,0 +1,17 @@
+[Unit]
+Description=FEDORA_GNOME_CUSTOM KVM physical-LAN isolation guard
+Wants=network-online.target
+After=network-online.target firewalld.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=KVM_BRIDGE_NAME=virbr50
+Environment=KVM_NETWORK_CIDR=192.168.50.0/24
+Environment=KVM_NFT_TABLE=fedora_gnome_custom_kvm
+ExecStart=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard apply
+ExecReload=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard reload
+ExecStop=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard remove
+
+[Install]
+WantedBy=multi-user.target
