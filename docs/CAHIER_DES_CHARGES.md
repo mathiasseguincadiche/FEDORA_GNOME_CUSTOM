@@ -41,19 +41,26 @@ Voir `HARDWARE_BASELINE_CERTIFICATION.md`.
 ## P1 — expérience et exploitation
 
 - GNOME/Nautilus : GVfs, SMB, MTP, portails et intégration desktop cohérente.
-- Applications graphiques gérées automatiquement : **GTK4 + libadwaita uniquement**.
+- Applications graphiques du bureau gérées automatiquement : **GTK4 + libadwaita uniquement**, hors exception virtualisation définie ci-dessous.
 - **Ptyxis** comme terminal de référence et intégration terminal Nautilus conforme au comportement Fedora.
 - Catalogue applicatif versionné dans `manifests/packages-applications-gtk4.txt` et documenté dans `GTK4_APPLICATIONS.md`.
 - Codecs/miniatures via RPM Fusion explicitement géré.
 - KVM/QEMU/libvirt + OVMF/TPM, NAT dédié et GPU principal conservé par le HOST.
+- Environnement de virtualisation complet avec **virt-manager** et **virt-viewer**, même s'ils ne suivent pas la politique GTK4/libadwaita du bureau.
 - Restic pour backup/restauration.
 - Diagnostics lisibles et rapports persistants.
 
 ## Politique applicative
 
-Les applications graphiques installées par le dépôt doivent être validées contre Fedora 44 et déclarer les composants GTK4/libadwaita attendus. Toute nouvelle application graphique doit passer le contrat CI avant intégration au manifeste.
+Les applications graphiques de bureau installées par le dépôt doivent être validées contre Fedora 44 et déclarer les composants GTK4/libadwaita attendus. Toute nouvelle application graphique ajoutée au catalogue desktop doit passer le contrat CI avant intégration au manifeste.
 
-Cette règle ne concerne pas les outils CLI, les services système, les composants de virtualisation ni les outils DevOps sans interface graphique.
+### Exception explicite : virtualisation
+
+La règle GTK4/libadwaita ne s'applique **pas** aux outils graphiques de virtualisation nécessaires à un environnement KVM/libvirt complet. `virt-manager` et `virt-viewer` sont donc conservés comme outils de référence, y compris s'ils reposent encore sur une pile GTK antérieure.
+
+Cette exception est strictement limitée au scope `KVM` / virtualisation. Elle ne permet pas d'introduire arbitrairement des applications GTK3 dans le bureau GNOME général.
+
+Les outils CLI, services système, composants de virtualisation et outils DevOps sans interface graphique sont également hors du contrat GTK4 desktop.
 
 ## P2 — options
 
@@ -83,4 +90,4 @@ Les futures phases VM_DEVOPS et FINAL compléteront cet ordre conformément au c
 
 ## Critère de réussite
 
-La machine ne doit pas seulement fonctionner : lorsqu'un incident graphique, une mauvaise reprise de veille ou un redémarrage survient, le dépôt doit conserver assez de preuves pour isoler la couche fautive avant toute correction. Aucune personnalisation ne doit masquer une baseline matérielle non certifiée, et aucune application graphique non conforme à la politique GTK4/libadwaita ne doit être auto-gérée.
+La machine ne doit pas seulement fonctionner : lorsqu'un incident graphique, une mauvaise reprise de veille ou un redémarrage survient, le dépôt doit conserver assez de preuves pour isoler la couche fautive avant toute correction. Aucune personnalisation ne doit masquer une baseline matérielle non certifiée. Le catalogue desktop doit rester GTK4/libadwaita, tandis que le scope de virtualisation peut conserver les outils graphiques nécessaires à une stack KVM/libvirt complète et maintenable.
