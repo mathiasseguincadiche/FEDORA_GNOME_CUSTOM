@@ -73,14 +73,15 @@ kvm_storage_apply() {
 }
 
 kvm_storage_postcheck() {
-  local root="${KVM_DATA_MOUNT:-/data}/libvirt" pool="${KVM_POOL_NAME:-devops-data}"
+  local root="${KVM_DATA_MOUNT:-/data}/libvirt" pool="${KVM_POOL_NAME:-devops-data}" context
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_KVM:-true}" || return 0
   kvm_storage_validate_mount || return "$EXIT_POSTCHECK_FAILED"
   sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-info "$pool" | grep -Eq '^State:[[:space:]]+running' || return "$EXIT_POSTCHECK_FAILED"
   sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-info "$pool" | grep -Eq '^Autostart:[[:space:]]+yes' || return "$EXIT_POSTCHECK_FAILED"
-  ls -Zd "$root/images" 2>/dev/null | grep -Fq "${KVM_STORAGE_SELINUX_TYPE:-virt_image_t}" || {
+  context="$(stat -c '%C' "$root/images" 2>/dev/null || true)"
+  if ! grep -Fq "${KVM_STORAGE_SELINUX_TYPE:-virt_image_t}" <<<"$context"; then
     log_error KVM 'libvirt storage SELinux label is not correct'
     return "$EXIT_POSTCHECK_FAILED"
-  }
+  fi
 }
