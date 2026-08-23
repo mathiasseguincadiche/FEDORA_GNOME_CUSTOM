@@ -1,4 +1,4 @@
-# Cahier des charges V1.2 — Fedora 44 GNOME Workstation
+# Cahier des charges V1.3 — Fedora 44 GNOME Workstation
 
 ## Finalité
 
@@ -44,7 +44,9 @@ Voir `HARDWARE_BASELINE_CERTIFICATION.md`.
 - Applications graphiques du bureau gérées automatiquement : **GTK4 + libadwaita uniquement**, hors exception virtualisation définie ci-dessous.
 - **Ptyxis** comme terminal de référence et intégration terminal Nautilus conforme au comportement Fedora.
 - Catalogue applicatif versionné dans `manifests/packages-applications-gtk4.txt` et documenté dans `GTK4_APPLICATIONS.md`.
-- Codecs/miniatures via RPM Fusion explicitement géré.
+- Pile multimédia complète et explicite : GStreamer Fedora + OpenH264 + FFmpeg complet et plugins freeworld RPM Fusion.
+- `ffmpeg-free` doit être remplacé proprement par le fournisseur `ffmpeg` RPM Fusion quand le profil multimédia complet est actif.
+- Arc B580 : VA-API H.264/HEVC/AV1/VP9 mesuré avec `vainfo`; aucun changement de pilote média sur simple supposition.
 - KVM/QEMU/libvirt + OVMF/TPM, NAT dédié et GPU principal conservé par le HOST.
 - Environnement de virtualisation complet avec **virt-manager** et **virt-viewer**, même s'ils ne suivent pas la politique GTK4/libadwaita du bureau.
 - Restic pour backup/restauration.
@@ -61,6 +63,16 @@ La règle GTK4/libadwaita ne s'applique **pas** aux outils graphiques de virtual
 Cette exception est strictement limitée au scope `KVM` / virtualisation. Elle ne permet pas d'introduire arbitrairement des applications GTK3 dans le bureau GNOME général.
 
 Les outils CLI, services système, composants de virtualisation et outils DevOps sans interface graphique sont également hors du contrat GTK4 desktop.
+
+## Politique multimédia
+
+La pile multimédia doit être reproductible et contrôlée par paquets explicites, sans dépendre d'un groupe de paquets opaque.
+
+La base Fedora fournit GStreamer `base`, `good`, `bad-free` et le plugin OpenH264. RPM Fusion complète cette base avec `ffmpeg`, `ffmpegthumbnailer`, `bad-freeworld`, `ugly` et `libav`.
+
+Le pilote média Intel Fedora `libva-intel-media-driver` est conservé par défaut. Avec `INTEL_MEDIA_DRIVER_POLICY=auto`, le projet ne bascule vers `intel-media-driver` RPM Fusion que si un probe VA-API valide sur l'Arc B580 montre qu'un ou plusieurs profils H.264/HEVC/AV1/VP9 requis sont absents. Si le probe est impossible, le projet conserve le fournisseur courant et remonte un avertissement au lieu de deviner.
+
+Voir `MULTIMEDIA_CODECS.md` et `diagnostics/media-doctor`.
 
 ## P2 — options
 
@@ -90,4 +102,4 @@ Les futures phases VM_DEVOPS et FINAL compléteront cet ordre conformément au c
 
 ## Critère de réussite
 
-La machine ne doit pas seulement fonctionner : lorsqu'un incident graphique, une mauvaise reprise de veille ou un redémarrage survient, le dépôt doit conserver assez de preuves pour isoler la couche fautive avant toute correction. Aucune personnalisation ne doit masquer une baseline matérielle non certifiée. Le catalogue desktop doit rester GTK4/libadwaita, tandis que le scope de virtualisation peut conserver les outils graphiques nécessaires à une stack KVM/libvirt complète et maintenable.
+La machine ne doit pas seulement fonctionner : lorsqu'un incident graphique, une mauvaise reprise de veille ou un redémarrage survient, le dépôt doit conserver assez de preuves pour isoler la couche fautive avant toute correction. Aucune personnalisation ne doit masquer une baseline matérielle non certifiée. Le catalogue desktop doit rester GTK4/libadwaita, le scope de virtualisation peut conserver les outils graphiques nécessaires à une stack KVM/libvirt complète et maintenable, et la pile multimédia doit être vérifiable avec un fournisseur FFmpeg complet et des capacités VA-API mesurées.
