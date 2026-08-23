@@ -6,6 +6,7 @@ ui_banner 'FEDORA WORKSTATION HEALTH' 'READ-ONLY'
 ok=0; warn=0; ko=0
 emit() { ui_check "$1" "$2" "$3"; case "$1" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
 if grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then emit OK Fedora '44'; else emit KO Fedora 'Fedora 44 required'; fi
+if baseline_certification_valid; then emit OK 'Hardware baseline' 'certified for current hardware/BIOS'; else emit KO 'Hardware baseline' 'run baseline-doctor; certification missing or invalid'; fi
 if lscpu | grep -Fq "$EXPECTED_CPU"; then emit OK CPU "$EXPECTED_CPU"; else emit KO CPU 'unexpected CPU'; fi
 mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
 if (( mem_kib >= 45*1024*1024 )); then emit OK Memory '48 GiB class detected'; else emit KO Memory 'less than expected'; fi
