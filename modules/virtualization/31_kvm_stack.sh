@@ -25,7 +25,7 @@ FEDORA LIBVIRT STACK:
 - prefer Fedora/libvirt modular socket activation (virtqemud, virtnetworkd, virtstoraged)
 - fall back to libvirtd.socket only when modular units are genuinely unavailable
 - install virt-manager and virt-viewer as explicit virtualization exceptions to GTK4 policy
-- install OVMF, swtpm tools, VirtioFS, guestfs and libosinfo tooling
+- install OVMF, swtpm tools + SELinux policy, VirtioFS, guestfs and libosinfo tooling
 - grant the operator libvirt,kvm groups idempotently
 EOF
 }
@@ -47,7 +47,9 @@ kvm_stack_apply() {
       fi
     done
     for unit in virtlogd.socket virtlockd.socket; do
-      kvm_stack_unit_exists "$unit" && run_mutating KVM sudo systemctl enable --now "$unit" || true
+      if kvm_stack_unit_exists "$unit"; then
+        run_mutating KVM sudo systemctl enable --now "$unit" || return "$EXIT_APPLY_FAILED"
+      fi
     done
     if [[ "$found_modular" != true ]]; then
       kvm_stack_unit_exists libvirtd.socket || { log_error KVM 'no supported libvirt socket activation model found'; return "$EXIT_APPLY_FAILED"; }
@@ -70,8 +72,8 @@ kvm_stack_postcheck() {
     command_exists "$cmd" || { log_error KVM "missing virtualization command: $cmd"; return "$EXIT_POSTCHECK_FAILED"; }
   done
 
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" capabilities >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" capabilities >/dev/null || return "$EXIT_POSTCHECK_FAILED"
   id -nG "$operator" | tr ' ' '\n' | grep -Fxq libvirt || return "$EXIT_POSTCHECK_FAILED"
   id -nG "$operator" | tr ' ' '\n' | grep -Fxq kvm || return "$EXIT_POSTCHECK_FAILED"
   log_warn KVM 'a logout/login may be required before the current desktop session inherits new libvirt/kvm groups'
