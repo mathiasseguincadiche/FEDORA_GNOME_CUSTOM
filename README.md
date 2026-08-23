@@ -29,8 +29,9 @@ La priorité absolue est la **stabilité** : graphique, veille/réveil, CPU/RAM,
 7. **Aucun partitionnement/formatage automatique**.
 8. **SELinux reste Enforcing** et firewalld actif.
 9. **Wayland est la session de référence**.
-10. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
-11. **KVM/libvirt** pour les laboratoires et VM DevOps ; pas de VFIO/passthrough du GPU principal.
+10. **Applications GNOME cohérentes** : les applications graphiques gérées par le projet doivent être GTK4/libadwaita ; Ptyxis est le terminal de référence.
+11. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
+12. **KVM/libvirt** pour les laboratoires et VM DevOps ; pas de VFIO/passthrough du GPU principal.
 
 ## Phase 0 — Hardware Baseline Certification
 
@@ -90,10 +91,15 @@ workstation-doctor
 - `system` : Fedora 44, DNF5, firmware, sécurité, sources de paquets.
 - `hardware` : CPU/RAM, Intel Arc, Wayland/display, NVMe, périphériques, suspend/resume.
 - `gnome` : GNOME, Nautilus, GVfs/SMB/MTP, portails, multimédia, réglages prudents.
+- `applications` : catalogue GTK4/libadwaita et Ptyxis comme terminal de référence.
 - `virtualization` : KVM/QEMU/libvirt, UEFI/TPM, réseau NAT.
 - `backup` : Restic, validation et préparation pré-APPLY.
 - `diagnostics` : baseline/workstation/graphics/suspend/storage/GNOME doctors.
 
+## Applications
+
+La sélection graphique est documentée dans `docs/GTK4_APPLICATIONS.md`. La source de vérité installable est `manifests/packages-applications-gtk4.txt`.
+
 ## État du projet
 
-Fondation initiale `0.1.0`, cahier des charges **V1.1** avec Phase 0 intégrée. Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
+Fondation initiale `0.1.0`, Phase 0 intégrée en `0.2.0`, politique applicative GTK4/libadwaita et Ptyxis en `0.3.0`. Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GTK4_APPLICATIONS.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
