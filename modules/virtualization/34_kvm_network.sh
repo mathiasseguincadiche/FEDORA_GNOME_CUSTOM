@@ -22,10 +22,10 @@ kvm_network_validate_existing() {
     return 0
   fi
   current="$(sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-dumpxml "${KVM_NETWORK_NAME:-devops-nat}")" || return 1
-  kvm_network_validate_xml "$current" || {
+  if ! kvm_network_validate_xml "$current"; then
     log_error KVM 'existing devops-nat conflicts with the versioned network contract; refusing overwrite'
     return 1
-  }
+  fi
 }
 
 kvm_network_precheck() {
@@ -33,20 +33,22 @@ kvm_network_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   command_exists ip && command_exists python3 && command_exists firewall-cmd || return "$EXIT_PRECHECK_FAILED"
   source_xml="$(cat "$(kvm_network_source_xml)" 2>/dev/null || true)"
-  [[ -n "$source_xml" ]] && kvm_network_validate_xml "$source_xml" || {
+  if [[ -z "$source_xml" ]] || ! kvm_network_validate_xml "$source_xml"; then
     log_error KVM 'versioned devops-nat XML does not match virtualization.conf'
     return "$EXIT_PRECHECK_FAILED"
-  }
+  fi
   [[ -r "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/virtualization/systemd/fedora-gnome-custom-kvm-guard.service" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/virtualization/networkmanager/90-fedora-gnome-custom-kvm-guard" ]] || return "$EXIT_PRECHECK_FAILED"
-  bash "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" check >/dev/null || {
+  if ! bash "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" check >/dev/null; then
     log_error KVM 'physical network isolation precheck failed'
     return "$EXIT_PRECHECK_FAILED"
-  }
+  fi
   if is_true "${KVM_FAIL_CLOSED:-true}"; then
     is_true "${KVM_BLOCK_PHYSICAL_LAN:-true}" || return "$EXIT_PRECHECK_FAILED"
-    is_true "${KVM_ALLOW_INBOUND_FORWARDING:-false}" && return "$EXIT_PRECHECK_FAILED"
+    if is_true "${KVM_ALLOW_INBOUND_FORWARDING:-false}"; then
+      return "$EXIT_PRECHECK_FAILED"
+    fi
   fi
   if ! is_true "${DRY_RUN:-true}"; then
     kvm_network_validate_existing || return "$EXIT_PRECHECK_FAILED"
@@ -90,9 +92,9 @@ kvm_network_apply() {
   run_mutating KVM sudo systemctl enable --now fedora-gnome-custom-kvm-guard.service || return "$EXIT_APPLY_FAILED"
 
   if is_true "${DRY_RUN:-true}"; then
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-define "$xml"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-start "$network"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-autostart "$network"
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-define "$xml" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-start "$network" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-autostart "$network" || return "$EXIT_APPLY_FAILED"
     return 0
   fi
 
@@ -102,7 +104,9 @@ kvm_network_apply() {
   if ! sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-info "$network" | grep -Eq '^Active:[[:space:]]+yes'; then
     run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-start "$network" || return "$EXIT_APPLY_FAILED"
   fi
-  is_true "${KVM_NETWORK_AUTOSTART:-true}" && run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-autostart "$network" || true
+  if is_true "${KVM_NETWORK_AUTOSTART:-true}"; then
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-autostart "$network" || return "$EXIT_APPLY_FAILED"
+  fi
 }
 
 kvm_network_postcheck() {
