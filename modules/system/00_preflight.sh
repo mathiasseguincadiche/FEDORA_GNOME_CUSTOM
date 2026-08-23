@@ -12,8 +12,9 @@ system_preflight_collect() {
     echo '[mounts]'; findmnt -rn -o TARGET,FSTYPE,OPTIONS
     echo '[memory]'; free -h
     echo '[selinux]'; getenforce 2>/dev/null || true
-    echo '[secure-boot]'; command -v mokutil >/dev/null && mokutil --sb-state 2>&1 || true
-    echo '[kvm]'; [[ -c /dev/kvm ]] && echo present || echo missing
+    echo '[secure-boot]'
+    if command -v mokutil >/dev/null 2>&1; then mokutil --sb-state 2>&1 || true; else echo 'mokutil unavailable'; fi
+    echo '[kvm]'; if [[ -c /dev/kvm ]]; then echo present; else echo missing; fi
     echo '[boot-errors]'; journalctl -k -b -p warning..alert --no-pager 2>/dev/null || true
   } > "$report"
   printf '%s\n' "$report"
