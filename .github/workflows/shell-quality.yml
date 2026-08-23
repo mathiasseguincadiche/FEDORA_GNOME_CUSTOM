@@ -1,0 +1,23 @@
+name: Shell quality
+on:
+  push:
+  pull_request:
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Bash syntax
+        shell: bash
+        run: |
+          git ls-files '*.sh' 'diagnostics/*' 'scripts/systemd/*' | while IFS= read -r file; do bash -n "$file"; done
+      - name: ShellCheck
+        shell: bash
+        run: |
+          # Modules are intentionally sourced by the orchestrator, so variables such as
+          # REPO_ROOT and configuration keys are defined by the calling context.
+          git ls-files '*.sh' 'diagnostics/*' 'scripts/systemd/*' | while IFS= read -r file; do
+            shellcheck -x -e SC1090,SC1091,SC2034,SC2153,SC2154 "$file"
+          done

@@ -1,0 +1,11 @@
+name: Tests
+on:
+  push:
+  pull_request:
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/test_structure.sh
+      - run: bash tests/test_policy.sh

@@ -1,0 +1,24 @@
+name: Fedora 44 package preflight
+on:
+  push:
+  pull_request:
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable RPM Fusion metadata
+        run: |
+          dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
+      - name: Resolve manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
+            echo "== $manifest =="
+            while IFS= read -r pkg; do
+              [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+              dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED: $pkg"; exit 1; }
+            done < "$manifest"
+          done

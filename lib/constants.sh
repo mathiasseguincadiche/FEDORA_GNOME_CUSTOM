@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+readonly EXIT_OK=0
+readonly EXIT_USAGE=2
+readonly EXIT_PRECHECK_FAILED=20
+readonly EXIT_APPLY_FAILED=30
+readonly EXIT_POSTCHECK_FAILED=40
+readonly EXIT_SECURITY_BLOCK=50
+readonly EXIT_CONFIG_FAILED=60
+
+readonly SCOPE_SYSTEM="SYSTEM"
+readonly SCOPE_HARDWARE="HARDWARE"
+readonly SCOPE_GNOME="GNOME"
+readonly SCOPE_KVM="KVM"
+readonly SCOPE_BACKUP="BACKUP"

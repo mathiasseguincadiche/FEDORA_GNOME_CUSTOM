@@ -1,0 +1,17 @@
+gnome-shell
+gnome-control-center
+gnome-tweaks
+nautilus
+file-roller
+gnome-disk-utility
+gvfs
+gvfs-smb
+gvfs-mtp
+gvfs-gphoto2
+gvfs-fuse
+sushi
+xdg-desktop-portal
+xdg-desktop-portal-gnome
+gnome-terminal
+gnome-terminal-nautilus
+flatpak
