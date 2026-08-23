@@ -38,14 +38,22 @@ if [[ "$arc_driver" == xe ]]; then record OK 'Arc B580' 'HOST driver=xe'; else r
 if is_true "${ALLOW_GPU_PASSTHROUGH:-false}"; then record KO VFIO 'passthrough enabled by config'; else record OK VFIO 'GPU passthrough disabled'; fi
 
 for cmd in \
-  virsh qemu-img virt-install virt-clone virt-xml \
+  virsh virt-admin virt-host-validate virt-xml-validate \
+  qemu-img qemu-io qemu-nbd qemu-storage-daemon \
+  virt-install virt-clone virt-xml \
   virt-manager virt-viewer remote-viewer \
-  swtpm swtpm_setup virtiofsd osinfo-query \
+  swtpm swtpm_setup virtiofsd osinfo-query cloud-localds \
   guestfish virt-filesystems virt-customize virt-sysprep virt-resize virt-sparsify virt-builder \
   virt-top virt-v2v virt-qemu-qmp-proxy \
   ssh scp sftp rsync; do
   if command_exists "$cmd"; then record OK "$cmd" available; else record KO "$cmd" missing; fi
 done
+
+if virt-host-validate qemu >/dev/null 2>&1; then
+  record OK 'Host validation' 'virt-host-validate qemu passed'
+else
+  record WARN 'Host validation' 'virt-host-validate reports recommendations; inspect before heavy VM use'
+fi
 
 if systemctl is-active --quiet virtqemud.socket 2>/dev/null; then
   record OK libvirt 'virtqemud socket active'
@@ -139,6 +147,7 @@ if osinfo-query os >/dev/null 2>&1; then record OK libosinfo catalog; else recor
 
 if rpm -q libvirt-nss >/dev/null 2>&1; then record OK 'libvirt NSS' 'domain name resolution support installed'; else record KO 'libvirt NSS' missing; fi
 if rpm -q guestfs-tools-bash-completion >/dev/null 2>&1; then record OK 'guestfs completion' installed; else record KO 'guestfs completion' missing; fi
+if rpm -q cloud-utils-cloud-localds >/dev/null 2>&1; then record OK 'cloud-init seed tooling' cloud-localds; else record KO 'cloud-init seed tooling' missing; fi
 
 if [[ "${VM_PROFILE_DEFAULT_NETWORK:-}" == "$network" && "${VM_PROFILE_DEFAULT_POOL:-}" == "${KVM_POOL_NAME:-devops-data}" ]]; then
   record OK 'VM profiles' 'Ubuntu Server / Fedora / Windows 11 contract loaded'
