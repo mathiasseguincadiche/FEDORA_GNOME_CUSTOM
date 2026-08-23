@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-08-22
+
+- Ajout d'un scope `APPLICATIONS` séparé du socle GNOME.
+- Politique stricte : seules les applications graphiques GTK4/libadwaita vérifiées sont gérées automatiquement.
+- Ptyxis devient le terminal de référence du projet.
+- Ajout d'un manifeste applicatif dédié et d'un catalogue documenté.
+- Nautilus reste centré sur GVfs/SMB/MTP/FUSE et utilise l'intégration Fedora prévue avec Ptyxis.
+- Ajout d'un contrat CI pour contrôler la politique GTK4/libadwaita et la résolution des paquets Fedora 44.
+
 ## 0.2.0 — 2026-08-22
 
 - Ajout de la Phase 0 `BASELINE` avant toute convergence réelle.
