@@ -3,6 +3,8 @@ qemu-kvm
 qemu-img
 libvirt
 libvirt-client
+libvirt-client-qemu
+libvirt-nss
 libvirt-daemon-kvm
 libvirt-daemon-config-network
 
@@ -11,6 +13,10 @@ virt-install
 virt-manager
 virt-viewer
 
+# CLI observability, migration and image lifecycle
+virt-top
+virt-v2v
+
 # Firmware, TPM and guest filesystem tooling
 edk2-ovmf
 swtpm
@@ -18,6 +24,7 @@ swtpm-tools
 swtpm-selinux
 virtiofsd
 guestfs-tools
+guestfs-tools-bash-completion
 
 # Guest OS metadata
 osinfo-db
@@ -27,6 +34,7 @@ libosinfo
 # Host-to-guest administration and runtime network proof
 openssh-clients
 iputils
+rsync
 
 # Network/security integration and dedicated storage labels
 nftables
