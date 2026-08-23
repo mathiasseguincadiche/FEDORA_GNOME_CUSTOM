@@ -12,6 +12,8 @@ baseline_display_postcheck() {
   local connector
   for connector in /sys/class/drm/card*-*/status; do
     [[ -r "$connector" ]] || continue
-    [[ "$(<"$connector")" == connected ]] && log_info BASELINE "connected=${connector%/status}" || true
+    if [[ "$(<"$connector")" == connected ]]; then
+      log_info BASELINE "connected=${connector%/status}"
+    fi
   done
 }
