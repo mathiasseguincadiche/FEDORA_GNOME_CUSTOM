@@ -4,16 +4,20 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 count="$(lsblk -dn -o MODEL 2>/dev/null | grep -c "$EXPECTED_NVME_MODEL" || true)"
-$quiet || ui_check "$([[ "$count" -ge "$EXPECTED_NVME_COUNT" ]] && echo OK || echo KO)" 'Crucial T705' "found=$count expected=$EXPECTED_NVME_COUNT"
+if ! $quiet; then
+  if (( count >= EXPECTED_NVME_COUNT )); then ui_check OK 'Crucial T705' "found=$count expected=$EXPECTED_NVME_COUNT"; else ui_check KO 'Crucial T705' "found=$count expected=$EXPECTED_NVME_COUNT"; fi
+fi
 if command_exists nvme; then
   if sudo -n true 2>/dev/null; then
     for d in /dev/nvme[0-9]; do
       [[ -e "$d" ]] || continue
       smart="$(sudo -n nvme smart-log "$d" 2>/dev/null || true)"
-      if grep -Eq 'critical_warning[[:space:]]*:[[:space:]]*(0|0x0)$' <<< "$smart"; then $quiet || ui_check OK "$d" 'critical_warning=0'; else $quiet || ui_check WARN "$d" 'SMART unavailable or requires review'; fi
+      if ! $quiet; then
+        if grep -Eq 'critical_warning[[:space:]]*:[[:space:]]*(0|0x0)$' <<< "$smart"; then ui_check OK "$d" 'critical_warning=0'; else ui_check WARN "$d" 'SMART unavailable or requires review'; fi
+      fi
     done
-  else
-    $quiet || ui_check WARN 'NVMe SMART' 'sudo credential not cached; model inventory remains read-only'
+  elif ! $quiet; then
+    ui_check WARN 'NVMe SMART' 'sudo credential not cached; model inventory remains read-only'
   fi
 fi
 (( count >= EXPECTED_NVME_COUNT ))

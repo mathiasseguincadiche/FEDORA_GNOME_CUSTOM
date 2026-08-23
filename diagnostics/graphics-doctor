@@ -4,12 +4,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
-check() { local s="$1" n="$2" d="$3"; $quiet || ui_check "$s" "$n" "$d"; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
+check() { local s="$1" n="$2" d="$3"; if ! $quiet; then ui_check "$s" "$n" "$d"; fi; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
 if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then check OK 'Intel Arc B580 / xe' 'PCI 8086:e20b'; else check KO 'Intel Arc B580 / xe' 'binding incorrect or device absent'; fi
 if command_exists vulkaninfo && vulkaninfo --summary 2>/dev/null | grep -Eqi 'Intel|B580|Battlemage'; then check OK Vulkan 'Intel Mesa device visible'; else check WARN Vulkan 'probe unavailable or no graphical session'; fi
 if command_exists vainfo && vainfo >/dev/null 2>&1; then check OK VA-API 'media acceleration visible'; else check WARN VA-API 'probe unavailable'; fi
-[[ "${XDG_SESSION_TYPE:-unknown}" == wayland ]] && check OK Wayland 'current session' || check WARN Wayland "session=${XDG_SESSION_TYPE:-unknown}"
+if [[ "${XDG_SESSION_TYPE:-unknown}" == wayland ]]; then check OK Wayland 'current session'; else check WARN Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
 errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)' | tail -n 20 || true)"
-[[ -z "$errors" ]] && check OK 'xe/DRM journal' 'no matching reset/hang/fault' || check WARN 'xe/DRM journal' 'matching events found'
-$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+if [[ -z "$errors" ]]; then check OK 'xe/DRM journal' 'no matching reset/hang/fault'; else check WARN 'xe/DRM journal' 'matching events found'; fi
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))
