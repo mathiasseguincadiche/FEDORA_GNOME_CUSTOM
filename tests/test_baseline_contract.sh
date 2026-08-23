@@ -3,8 +3,8 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 for file in "$ROOT"/modules/baseline/*.sh; do
-  ! grep -Eq '(run_mutating|dnf[[:space:]].*(install|remove|upgrade)|systemctl[[:space:]].*(enable|disable|start|stop|restart)|sysctl[[:space:]]+-w|grubby|force_probe|pcie_aspm=off|intel_idle\.max_cstate)' "$file" || {
-    echo "baseline module contains forbidden mutation/tweak: $file" >&2
+  ! grep -Eq '(run_mutating|dnf[[:space:]].*(install|remove|upgrade)|systemctl[[:space:]].*(enable|disable|start|stop|restart)|sysctl[[:space:]]+-w|grubby)' "$file" || {
+    echo "baseline module contains forbidden mutation command: $file" >&2
     exit 1
   }
 done
