@@ -9,7 +9,7 @@ grep -Fq 'TERMINAL_PACKAGE="ptyxis"' "$ROOT/config/applications.conf"
 grep -Fxq 'ptyxis' "$APP_MANIFEST"
 grep -Fq 'applications.gtk4|APPLICATIONS|gnome.validation' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'kvm.preflight|KVM|applications.validation' "$ROOT/manifests/module-plan.conf"
-grep -Fq 'backup.preflight|BACKUP|applications.validation' "$ROOT/manifests/module-plan.conf"
+grep -Fq 'backup.preflight|BACKUP|kvm.validation' "$ROOT/manifests/module-plan.conf"
 
 mapfile -t apps < <(grep -Ev '^[[:space:]]*(#|$)' "$APP_MANIFEST")
 ((${#apps[@]} > 0)) || { echo 'GTK4 application manifest is empty' >&2; exit 1; }
