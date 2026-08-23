@@ -44,11 +44,14 @@ PY
 
 kvm_preflight_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
-  command_exists lscpu && command_exists ip || return "$EXIT_PRECHECK_FAILED"
+  if ! command_exists lscpu || ! command_exists ip; then return "$EXIT_PRECHECK_FAILED"; fi
   grep -Eq 'svm|AMD-V' <(lscpu) || { log_error KVM 'AMD-V/SVM not detected'; return "$EXIT_PRECHECK_FAILED"; }
   [[ -c /dev/kvm ]] || { log_error KVM '/dev/kvm missing; verify SVM in UEFI'; return "$EXIT_PRECHECK_FAILED"; }
   [[ -d /sys/module/kvm_amd ]] || { log_error KVM 'kvm_amd is not loaded'; return "$EXIT_PRECHECK_FAILED"; }
-  is_true "${ALLOW_GPU_PASSTHROUGH:-false}" && { log_error KVM 'GPU passthrough is forbidden by workstation policy'; return "$EXIT_PRECHECK_FAILED"; }
+  if is_true "${ALLOW_GPU_PASSTHROUGH:-false}"; then
+    log_error KVM 'GPU passthrough is forbidden by workstation policy'
+    return "$EXIT_PRECHECK_FAILED"
+  fi
   kvm_preflight_arc_owned_by_host || { log_error KVM 'Intel Arc B580 must remain bound to xe on the HOST'; return "$EXIT_PRECHECK_FAILED"; }
   kvm_preflight_network_overlap || { log_error KVM 'devops-nat overlaps an existing host network'; return "$EXIT_PRECHECK_FAILED"; }
   if is_true "${KVM_FIREWALLD_REQUIRED:-true}"; then
