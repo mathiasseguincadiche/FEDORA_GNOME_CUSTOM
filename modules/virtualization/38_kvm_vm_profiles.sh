@@ -4,7 +4,7 @@ set -Eeuo pipefail
 kvm_vm_profiles_validate() {
   [[ "${VM_PROFILE_DEFAULT_NETWORK:-}" == "${KVM_NETWORK_NAME:-devops-nat}" ]] || return 1
   [[ "${VM_PROFILE_DEFAULT_POOL:-}" == "${KVM_POOL_NAME:-devops-data}" ]] || return 1
-  is_true "${VM_PROFILE_GPU_PASSTHROUGH_ALLOWED:-false}" && return 1
+  if is_true "${VM_PROFILE_GPU_PASSTHROUGH_ALLOWED:-false}"; then return 1; fi
   [[ "${UBUNTU_SERVER_NETWORK:-}" == "${KVM_NETWORK_NAME:-devops-nat}" ]] || return 1
   [[ "${FEDORA_VM_NETWORK:-}" == "${KVM_NETWORK_NAME:-devops-nat}" ]] || return 1
   [[ "${WINDOWS11_NETWORK:-}" == "${KVM_NETWORK_NAME:-devops-nat}" ]] || return 1
@@ -38,7 +38,6 @@ kvm_vm_profiles_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_KVM:-true}" || return 0
   kvm_vm_profiles_validate || return "$EXIT_POSTCHECK_FAILED"
-  is_true "${KVM_REQUIRE_VIRTIOFS:-true}" && command_exists virtiofsd || true
   if is_true "${KVM_REQUIRE_VIRTIOFS:-true}" && ! command_exists virtiofsd; then
     log_error KVM 'VirtioFS is required by Linux VM profiles but virtiofsd is unavailable'
     return "$EXIT_POSTCHECK_FAILED"
