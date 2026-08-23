@@ -31,7 +31,7 @@ kvm_network_validate_existing() {
 kvm_network_precheck() {
   local source_xml
   is_true "${ENABLE_KVM:-true}" || return 0
-  command_exists ip && command_exists python3 && command_exists firewall-cmd || return "$EXIT_PRECHECK_FAILED"
+  if ! command_exists ip || ! command_exists python3 || ! command_exists firewall-cmd; then return "$EXIT_PRECHECK_FAILED"; fi
   source_xml="$(cat "$(kvm_network_source_xml)" 2>/dev/null || true)"
   if [[ -z "$source_xml" ]] || ! kvm_network_validate_xml "$source_xml"; then
     log_error KVM 'versioned devops-nat XML does not match virtualization.conf'
