@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+usage() {
+  cat <<'TXT'
+Usage:
+  baseline-doctor status
+  baseline-doctor snapshot
+  baseline-doctor record-memory <5600|6000> PASS
+  baseline-doctor record-nvme-io PASS
+  baseline-doctor record-suspend PASS
+  baseline-doctor certify
+TXT
+}
+
+snapshot() {
+  local report="$REPORT_ROOT/$RUN_ID-hardware-baseline-snapshot.txt"
+  {
+    echo '[fingerprint]'; baseline_fingerprint_payload
+    echo '[os]'; cat /etc/os-release
+    echo '[cpu]'; lscpu 2>&1 || true
+    echo '[memory]'; cat /proc/meminfo
+    echo '[sleep]'; cat /sys/power/mem_sleep 2>/dev/null || true
+    echo '[nvme-sysfs]'
+    for f in /sys/class/nvme/nvme*/model; do [[ -r "$f" ]] && printf '%s: %s\n' "$f" "$(<"$f")"; done
+    echo '[gpu]'; baseline_find_expected_gpu 2>&1 || true
+    echo '[kernel-signatures]'
+    journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'MCE|EDAC|xe|drm|PCIe|AER|nvme|watchdog|panic|Oops|thermal' || true
+  } > "$report"
+  printf '%s\n' "$report"
+}
+
+require_pass_word() {
+  [[ "${1:-}" == PASS ]] || { ui_error 'The explicit result must be PASS'; exit "$EXIT_USAGE"; }
+}
+
+case "${1:-status}" in
+  status)
+    ui_banner 'HARDWARE BASELINE' 'CERTIFICATION STATUS'
+    ui_meta Fingerprint "$(baseline_fingerprint)"
+    if baseline_certification_valid; then
+      ui_check OK Certification 'valid for current hardware/BIOS fingerprint'
+    else
+      ui_check KO Certification 'missing, incomplete or invalidated by hardware/BIOS change'
+    fi
+    for item in memory-5600 memory-6000 nvme-io; do
+      if baseline_evidence_valid "$item"; then ui_check OK "$item" PASS; else ui_check WARN "$item" missing; fi
+    done
+    ui_meta 'Suspend PASS cycles' "$(baseline_suspend_pass_count) / ${BASELINE_MIN_SUSPEND_CYCLES:-5}"
+    ;;
+  snapshot)
+    ui_meta Report "$(snapshot)"
+    ;;
+  record-memory)
+    profile="${2:-}"; require_pass_word "${3:-}"
+    [[ "$profile" == 5600 || "$profile" == 6000 ]] || { usage; exit "$EXIT_USAGE"; }
+    baseline_write_evidence "memory-$profile" PASS "Operator confirms completed memory test at ${profile} MT/s; snapshot=$(snapshot)"
+    ui_check OK "memory-$profile" recorded
+    ;;
+  record-nvme-io)
+    require_pass_word "${2:-}"
+    baseline_write_evidence nvme-io PASS "Operator confirms controlled sustained-I/O test completed without reboot/I/O fatal error; snapshot=$(snapshot)"
+    ui_check OK nvme-io recorded
+    ;;
+  record-suspend)
+    require_pass_word "${2:-}"
+    n=$(( $(baseline_suspend_pass_count) + 1 ))
+    baseline_write_evidence "suspend-cycle-$(printf '%02d' "$n")" PASS "Operator confirms clean suspend/resume cycle; snapshot=$(snapshot)"
+    ui_check OK suspend-cycle "$n"
+    ;;
+  certify)
+    if baseline_certify; then
+      ui_check OK Certification "$(baseline_certification_path)"
+    else
+      ui_error 'Certification refused: required evidence or automatic hardware checks are incomplete.'
+      exit "$EXIT_PRECHECK_FAILED"
+    fi
+    ;;
+  *) usage; exit "$EXIT_USAGE" ;;
+esac

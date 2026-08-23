@@ -20,25 +20,55 @@ La priorité absolue est la **stabilité** : graphique, veille/réveil, CPU/RAM,
 
 ## Principes
 
-1. **Read-only d'abord** : diagnostic et inventaire avant mutation.
-2. **Dry-run obligatoire** avant `--apply`.
-3. **Fail-closed** : un contrôle P0 en échec bloque l'APPLY.
-4. **Fedora officiel d'abord** ; RPM Fusion uniquement pour les besoins multimédia explicitement activés.
-5. **Aucun dépôt GPU tiers** : kernel, firmware, Mesa et pilote `xe` Fedora.
-6. **Aucun partitionnement/formatage automatique**.
-7. **SELinux reste Enforcing** et firewalld actif.
-8. **Wayland est la session de référence**.
-9. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
-10. **KVM/libvirt** pour les laboratoires et VM DevOps ; pas de VFIO/passthrough du GPU principal.
+1. **Hardware baseline d'abord** : aucune convergence réelle avant certification de la machine de référence.
+2. **Read-only d'abord** : diagnostic et inventaire avant mutation.
+3. **Dry-run obligatoire** avant `--apply`.
+4. **Fail-closed** : un contrôle P0 en échec bloque l'APPLY.
+5. **Fedora officiel d'abord** ; RPM Fusion uniquement pour les besoins multimédia explicitement activés.
+6. **Aucun dépôt GPU tiers** : kernel, firmware, Mesa et pilote `xe` Fedora.
+7. **Aucun partitionnement/formatage automatique**.
+8. **SELinux reste Enforcing** et firewalld actif.
+9. **Wayland est la session de référence**.
+10. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
+11. **KVM/libvirt** pour les laboratoires et VM DevOps ; pas de VFIO/passthrough du GPU principal.
+
+## Phase 0 — Hardware Baseline Certification
+
+Avant toute personnalisation réelle, la machine doit être certifiée sur la configuration matérielle/BIOS courante. La certification demande notamment :
+
+- un test mémoire validé en DDR5-5600 SPD ;
+- un test mémoire validé en DDR5-6000 XMP ;
+- un test I/O soutenu des T705 sans reboot ni erreur fatale ;
+- au moins 5 cycles suspend/resume propres ;
+- Ryzen 7 7700, Arc B580/`xe` et deux T705 présents ;
+- aucune signature kernel critique détectée pendant la certification.
+
+Le marqueur de certification est lié à une empreinte matériel + BIOS. Une modification significative du matériel ou du BIOS invalide automatiquement l'ancien certificat.
+
+```bash
+bash diagnostics/baseline-doctor status
+bash diagnostics/baseline-doctor snapshot
+bash diagnostics/baseline-doctor record-memory 5600 PASS
+bash diagnostics/baseline-doctor record-memory 6000 PASS
+bash diagnostics/baseline-doctor record-nvme-io PASS
+bash diagnostics/baseline-doctor record-suspend PASS   # à répéter au moins 5 fois
+bash diagnostics/baseline-doctor certify
+```
+
+Les commandes `record-*` enregistrent une preuve opérateur et un snapshot ; elles ne remplacent pas les tests matériels eux-mêmes.
 
 ## Flux d'exécution
 
 ```text
+Fedora 44 fraîche
+        ↓
+Hardware Baseline Certification
+        ↓
 Diagnostic read-only
         ↓
 Dry-run complet
         ↓
-Backup pré-APPLY vérifié (si exigé)
+Backup pré-APPLY vérifié
         ↓
 APPLY protégé
         ↓
@@ -56,13 +86,14 @@ workstation-doctor
 
 ## Domaines
 
+- `baseline` : certification matérielle/firmware préalable, DDR5 5600/6000, NVMe I/O, Arc B580 et suspend/resume.
 - `system` : Fedora 44, DNF5, firmware, sécurité, sources de paquets.
 - `hardware` : CPU/RAM, Intel Arc, Wayland/display, NVMe, périphériques, suspend/resume.
 - `gnome` : GNOME, Nautilus, GVfs/SMB/MTP, portails, multimédia, réglages prudents.
 - `virtualization` : KVM/QEMU/libvirt, UEFI/TPM, réseau NAT.
 - `backup` : Restic, validation et préparation pré-APPLY.
-- `diagnostics` : workstation/graphics/suspend/storage/GNOME doctors.
+- `diagnostics` : baseline/workstation/graphics/suspend/storage/GNOME doctors.
 
 ## État du projet
 
-Version initiale : `0.1.0`. Lire `docs/CAHIER_DES_CHARGES.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
+Fondation initiale `0.1.0`, cahier des charges **V1.1** avec Phase 0 intégrée. Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.

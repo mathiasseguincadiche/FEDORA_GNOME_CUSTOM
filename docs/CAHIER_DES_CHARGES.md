@@ -1,18 +1,38 @@
-# Cahier des charges — Fedora 44 GNOME Workstation
+# Cahier des charges V1.1 — Fedora 44 GNOME Workstation
 
 ## Finalité
 
 Créer une workstation Fedora 44 GNOME 50 reproductible, stable et observable pour un usage DevOps/Ops, sans transformer Fedora en distribution FrankenLinux.
 
+## Phase 0 — Hardware Baseline Certification
+
+Avant toute convergence réelle, la machine de référence doit être certifiée sur son matériel et son BIOS courants. Cette certification est un gate P0 et comprend :
+
+- plateforme/UEFI/BIOS identifiés ;
+- Ryzen 7 7700 et AMD-V ;
+- 48 Go de RAM ;
+- test mémoire validé en DDR5-5600 SPD ;
+- test mémoire validé en DDR5-6000 XMP ;
+- Intel Arc B580 `8086:e20b` attachée à `xe` ;
+- deux Crucial T705 présents ;
+- test I/O soutenu validé sans reboot ni erreur fatale ;
+- au moins 5 cycles suspend/resume propres ;
+- absence de signatures critiques MCE/EDAC, kernel panic/oops, GPU wedged/reset failure, PCIe uncorrected et NVMe reset/I/O error pendant la certification.
+
+Le certificat est lié à une empreinte matériel + BIOS. Une modification de cette empreinte invalide automatiquement la certification et bloque `--apply` jusqu'à nouvelle validation.
+
+Voir `HARDWARE_BASELINE_CERTIFICATION.md`.
+
 ## P0 — bloquants
 
+- Phase 0 certifiée avant APPLY réel.
 - Fedora 44 et SELinux Enforcing.
 - Ryzen 7 7700 et 48 Go de RAM correctement détectés.
 - Intel Arc B580 `8086:e20b` attachée au pilote `xe`.
 - Aucun dépôt GPU tiers, `force_probe` ou paramètre kernel expérimental par défaut.
 - Wayland comme session GNOME de référence.
 - Collecte des resets/hangs `xe`, erreurs DRM, PCIe AER, ACPI et NVMe.
-- 2× Crucial T705 présents et contrôlables avec `nvme-cli`.
+- 2× Crucial T705 présents et contrôlables.
 - Instrumentation suspend/resume pré/post sans modifier automatiquement `s2idle`/`deep`.
 - Analyse du boot précédent, coredumps et pstore après redémarrage anormal.
 - Dry-run du même commit et backup pré-APPLY vérifié avant mutation réelle.
@@ -32,6 +52,24 @@ Créer une workstation Fedora 44 GNOME 50 reproductible, stable et observable po
 - HDR/VRR : observation d'abord, activation seulement après validation matérielle/régression.
 - VM DevOps automatisée : phase suivante, profil explicite et non créée pendant l'installation HOST par défaut.
 
+## Ordre d'exécution
+
+```text
+BASELINE
+  ↓
+SYSTEM
+  ↓
+HARDWARE
+  ↓
+GNOME
+  ↓
+KVM
+  ↓
+BACKUP
+```
+
+Les futures phases APPLICATIONS, VM_DEVOPS et FINAL compléteront cet ordre conformément au cahier des charges global.
+
 ## Critère de réussite
 
-La machine ne doit pas seulement fonctionner : lorsqu'un incident graphique, une mauvaise reprise de veille ou un redémarrage survient, le dépôt doit conserver assez de preuves pour isoler la couche fautive avant toute correction.
+La machine ne doit pas seulement fonctionner : lorsqu'un incident graphique, une mauvaise reprise de veille ou un redémarrage survient, le dépôt doit conserver assez de preuves pour isoler la couche fautive avant toute correction. Aucune personnalisation ne doit masquer une baseline matérielle non certifiée.
