@@ -19,6 +19,7 @@ virt-top
 virt-v2v
 cloud-utils-cloud-localds
 openssl
+xorriso
 
 # Firmware, TPM and guest image tooling
 edk2-ovmf

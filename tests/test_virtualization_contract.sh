@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl edk2-ovmf swtpm swtpm-tools swtpm-selinux guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
+for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl xorriso edk2-ovmf swtpm swtpm-tools swtpm-selinux guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-virtualization.txt" || { echo "missing virtualization package: $pkg" >&2; exit 1; }
 done
 
@@ -15,7 +15,8 @@ for entry in \
   'kvm.catalog|KVM|kvm.network|modules/virtualization/35_kvm_os_catalog.sh' \
   'kvm.cli|KVM|kvm.catalog|modules/virtualization/36_kvm_cli_management.sh' \
   'kvm.ssh|KVM|kvm.cli|modules/virtualization/36a_kvm_ssh_access.sh' \
-  'kvm.virt_manager|KVM|kvm.ssh|modules/virtualization/37_kvm_virt_manager.sh' \
+  'kvm.file_access|KVM|kvm.ssh|modules/virtualization/36b_kvm_file_access.sh' \
+  'kvm.virt_manager|KVM|kvm.file_access|modules/virtualization/37_kvm_virt_manager.sh' \
   'kvm.vm_profiles|KVM|kvm.virt_manager|modules/virtualization/38_kvm_vm_profiles.sh' \
   'kvm.validation|KVM|kvm.vm_profiles|modules/virtualization/39_kvm_validation.sh'; do
   grep -Fxq "$entry" "$ROOT/manifests/module-plan.conf" || { echo "missing KVM module contract: $entry" >&2; exit 1; }
@@ -54,6 +55,8 @@ for expected in \
   'WINDOWS11_DISK_GB="128"' \
   'WINDOWS11_FIRMWARE="uefi-secureboot"' \
   'WINDOWS11_TPM_VERSION="2.0"' \
+  'WINDOWS11_SMB_SHARE_NAME="VM-Share"' \
+  'VM_NAUTILUS_ACCESS_ENABLED="true"' \
   'VM_PROFILE_GPU_PASSTHROUGH_ALLOWED="false"'; do
   grep -Fq "$expected" "$ROOT/config/vm-profiles.conf" || { echo "missing final VM profile value: $expected" >&2; exit 1; }
 done
@@ -70,6 +73,8 @@ fi
 for file in \
   guest/ubuntu-devops/bootstrap-devops.sh \
   guest/ubuntu-devops/verify-devops.sh \
+  guest/windows-11/configure-smb-share.ps1 \
+  scripts/kvm/configure_nautilus_vm_access.sh \
   scripts/kvm/create_ubuntu_devops_vm.sh \
   scripts/kvm/create_windows11_vm.sh \
   scripts/kvm/runtime_certification.sh \
@@ -89,9 +94,9 @@ if grep -RInEi --exclude-dir=.git --exclude='CHANGELOG.md' --exclude='test_virtu
   exit 1
 fi
 
-! grep -RInE --exclude-dir=.git '(mkfs\.|wipefs|parted |sgdisk |chmod[[:space:]]+777|setenforce[[:space:]]+0)' "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" || {
+if grep -RInE --exclude-dir=.git '(mkfs\.|wipefs|parted |sgdisk |chmod[[:space:]]+777|setenforce[[:space:]]+0)' "$ROOT/modules/virtualization" "$ROOT/scripts/kvm"; then
   echo 'forbidden destructive/insecure virtualization mutation found' >&2
   exit 1
-}
+fi
 
 echo 'virtualization contract: PASS'

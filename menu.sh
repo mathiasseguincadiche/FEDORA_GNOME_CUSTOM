@@ -21,6 +21,9 @@ FEDORA GNOME CUSTOM
 14) Créer Ubuntu Server 26.04 DevOps
 15) Créer Windows 11
 16) Certification runtime KVM
+17) Configurer / rafraîchir accès Nautilus aux VM
+18) Ouvrir Ubuntu DevOps dans Nautilus
+19) Ouvrir Windows VM dans Nautilus
 0) Quitter
 EOF
   read -rp 'Choix: ' choice
@@ -53,6 +56,9 @@ EOF
       bash "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" --windows-iso "$windows_iso" --virtio-iso "$virtio_iso"
       ;;
     16) bash "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
+    17) bash "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
+    18) bash "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" open-ubuntu ;;
+    19) bash "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" open-windows ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac
