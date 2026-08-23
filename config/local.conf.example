@@ -1,0 +1,9 @@
+# Copiez ce fichier vers config/local.conf (ignoré par Git) pour les valeurs propres à la machine.
+# Ne placez jamais de mot de passe dans ce fichier : indiquez uniquement le chemin d'un fichier protégé.
+
+REAL_MACHINE_APPROVED="true"
+BACKUP_REPOSITORY="/chemin/vers/ssd-externe/restic/fedora-gnome-custom"
+BACKUP_PASSWORD_FILE="$HOME/.config/fedora-gnome-custom/restic-password"
+
+# Optionnel : si le second T705 est monté comme volume DATA.
+# DATA_MOUNT="/data"

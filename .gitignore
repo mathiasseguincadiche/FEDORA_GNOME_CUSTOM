@@ -4,6 +4,7 @@ state/*
 !logs/.gitkeep
 !reports/.gitkeep
 !state/.gitkeep
+config/local.conf
 *.swp
 *.tmp
 .env

@@ -12,27 +12,36 @@ cd FEDORA_GNOME_CUSTOM
 chmod +x *.sh diagnostics/* scripts/*.sh scripts/systemd/* modules/*/*.sh
 ```
 
-## 3. Diagnostic
+## 3. Configuration locale non versionnée
+
+```bash
+cp config/local.conf.example config/local.conf
+$EDITOR config/local.conf
+```
+
+`config/local.conf` est ignoré par Git. Il permet d'approuver explicitement la machine réelle et de définir le repository Restic sans rendre le working tree sale. Ne stockez jamais le mot de passe Restic dans Git ; configurez seulement `BACKUP_PASSWORD_FILE`.
+
+## 4. Diagnostic
 
 ```bash
 ./diagnostic.sh
 ```
 
-## 4. Dry-run
+## 5. Dry-run
 
 ```bash
 ./install.sh --dry-run
 ```
 
-## 5. Backup pré-APPLY
-
-Configurer `BACKUP_REPOSITORY` et `BACKUP_PASSWORD_FILE` dans `config/backup.conf`, puis :
+## 6. Backup pré-APPLY
 
 ```bash
 ./prepare-preapply-backup.sh
 ```
 
-## 6. APPLY
+Le script installe uniquement `restic`/`jq` si nécessaire, initialise exclusivement le repository explicitement configuré, réalise le snapshot et vérifie son intégrité avant d'écrire le marker de sécurité.
+
+## 7. APPLY
 
 ```bash
 ./install.sh --apply

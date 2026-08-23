@@ -8,4 +8,4 @@ virt-manager
 virt-viewer
 edk2-ovmf
 swtpm
-libguestfs-tools
+guestfs-tools
