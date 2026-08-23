@@ -28,7 +28,7 @@ kvm_cli_postcheck() {
   for cmd in virsh virt-install virt-clone qemu-img guestfish virt-filesystems osinfo-query; do
     command_exists "$cmd" || { log_error KVM "missing CLI tool: $cmd"; return "$EXIT_POSTCHECK_FAILED"; }
   done
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
 }
