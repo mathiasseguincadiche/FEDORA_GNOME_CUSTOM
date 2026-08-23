@@ -20,8 +20,8 @@ EOF
   read -rp 'Choix: ' choice
   case "$choice" in
     1) "$REPO_ROOT/diagnostic.sh" ;;
-    2) "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
-    3) "$REPO_ROOT/diagnostics/baseline-doctor" snapshot ;;
+    2) bash "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
+    3) bash "$REPO_ROOT/diagnostics/baseline-doctor" snapshot ;;
     4) "$REPO_ROOT/install.sh" --dry-run ;;
     5) "$REPO_ROOT/prepare-preapply-backup.sh" ;;
     6) "$REPO_ROOT/install.sh" --apply ;;
