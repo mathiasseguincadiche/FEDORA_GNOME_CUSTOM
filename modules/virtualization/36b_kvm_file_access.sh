@@ -16,7 +16,7 @@ GNOME / NAUTILUS VM FILE ACCESS:
 - discover current libvirt DHCP addresses dynamically and maintain two Nautilus bookmarks idempotently
 - create a small FGC_TOOLS ISO containing the Windows SMB setup PowerShell script
 - keep credentials out of Git and let GVfs/Nautilus request them interactively when required
-- do not reintroduce VirtioFS or any HOST directory sharing layer
+- do not add a HOST directory sharing layer; file browsing is network-protocol based
 EOF
 }
 
