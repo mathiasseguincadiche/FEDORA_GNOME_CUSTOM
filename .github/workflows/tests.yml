@@ -9,3 +9,4 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash tests/test_structure.sh
       - run: bash tests/test_policy.sh
+      - run: bash tests/test_baseline_contract.sh
