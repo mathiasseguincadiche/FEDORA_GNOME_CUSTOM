@@ -13,3 +13,4 @@ jobs:
       - run: bash tests/test_gtk4_apps_policy.sh
       - run: bash tests/test_multimedia_contract.sh
       - run: bash tests/test_virtualization_contract.sh
+      - run: bash tests/test_dash_to_dock_contract.sh
