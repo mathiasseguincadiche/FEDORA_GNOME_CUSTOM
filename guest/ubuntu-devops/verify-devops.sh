@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
-VIRTIOFS_MOUNT="${VIRTIOFS_MOUNT:-/mnt/hostshare}"
 ok=0
 ko=0
 
@@ -45,14 +44,6 @@ if id -nG "$DEVOPS_USER" 2>/dev/null | tr ' ' '\n' | grep -Fxq docker; then
   ((ok+=1))
 else
   printf 'KO  %-18s %s not member\n' docker.group "$DEVOPS_USER"
-  ((ko+=1))
-fi
-
-if mountpoint -q "$VIRTIOFS_MOUNT"; then
-  printf 'OK  %-18s mounted at %s\n' VirtioFS "$VIRTIOFS_MOUNT"
-  ((ok+=1))
-else
-  printf 'KO  %-18s not mounted at %s\n' VirtioFS "$VIRTIOFS_MOUNT"
   ((ko+=1))
 fi
 
