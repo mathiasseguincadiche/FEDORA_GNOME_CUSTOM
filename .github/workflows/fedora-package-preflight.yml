@@ -31,6 +31,7 @@ jobs:
           set -euo pipefail
           install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
           install -m 0644 config/repos/brave-browser.repo /etc/yum.repos.d/brave-browser.repo
+          dnf -y makecache --refresh
           while IFS= read -r pkg; do
             [[ -z "$pkg" || "$pkg" == \#* ]] && continue
             dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED VENDOR APP: $pkg"; exit 1; }
