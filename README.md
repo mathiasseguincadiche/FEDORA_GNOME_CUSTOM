@@ -24,14 +24,14 @@ La priorité absolue est la **stabilité** : graphique, veille/réveil, CPU/RAM,
 2. **Read-only d'abord** : diagnostic et inventaire avant mutation.
 3. **Dry-run obligatoire** avant `--apply`.
 4. **Fail-closed** : un contrôle P0 en échec bloque l'APPLY.
-5. **Fedora officiel d'abord** ; RPM Fusion uniquement pour les besoins multimédia explicitement activés.
+5. **Fedora officiel d'abord** ; RPM Fusion pour le multimédia, Flathub et dépôts éditeurs signés uniquement lorsqu'ils répondent à un besoin applicatif documenté.
 6. **Aucun dépôt GPU tiers** : kernel, firmware, Mesa et pilote `xe` Fedora.
 7. **Aucun partitionnement/formatage automatique**.
 8. **SELinux reste Enforcing** et firewalld actif.
 9. **Wayland est la session de référence**.
-10. **Applications GNOME cohérentes** : GTK4/libadwaita pour le bureau ; Ptyxis comme terminal. Les outils KVM essentiels disposent d'une exception documentée.
+10. **Applications GNOME cohérentes** : GTK4/libadwaita pour le bureau général et Ptyxis comme terminal ; les applications professionnelles nécessaires disposent d'une exception explicite et contrôlée.
 11. **Multimédia complet mais contrôlé** : GStreamer Fedora, OpenH264, FFmpeg complet RPM Fusion, oneVPL/QSV et VA-API Arc B580 mesuré avant changement de fournisseur média.
-12. **Virtualisation complète mais isolée** : QEMU/KVM/libvirt, OVMF, TPM 2.0, VirtioFS, libosinfo, virt-manager/virt-viewer, stockage dédié et réseau privé.
+12. **Virtualisation complète, isolée et CLI-first** : QEMU/KVM/libvirt, OVMF, TPM 2.0, VirtioFS, libguestfs, libosinfo, stockage dédié, réseau privé et outils CLI complets ; virt-manager/virt-viewer restent disponibles.
 13. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
 14. **Intel Arc B580 au HOST** : aucun VFIO/passthrough automatique.
 
@@ -105,11 +105,36 @@ workstation-doctor
 - `baseline` : certification matérielle/firmware, DDR5 5600/6000, NVMe I/O, Arc B580 et suspend/resume.
 - `system` : Fedora 44, DNF5, firmware, sécurité, sources de paquets.
 - `hardware` : CPU/RAM, Intel Arc, Wayland/display, NVMe, périphériques, suspend/resume.
-- `gnome` : GNOME, Nautilus, GVfs/SMB/MTP, portails, multimédia, réglages prudents.
-- `applications` : catalogue GTK4/libadwaita et Ptyxis.
-- `virtualization` : KVM/QEMU/libvirt, OVMF/TPM, VirtioFS, osinfo, pool T705, `devops-nat`, virt-manager/virt-viewer et profils VM.
+- `gnome` : GNOME, Nautilus, GVfs/SMB/MTP, portails, multimédia et extensions sélectionnées.
+- `applications` : catalogue GNOME GTK4/libadwaita + Ptyxis, puis profil professionnel contrôlé.
+- `virtualization` : KVM/QEMU/libvirt CLI-first, OVMF/TPM, VirtioFS, libguestfs, osinfo, pool T705, `devops-nat`, virt-manager/virt-viewer et profils VM.
 - `backup` : Restic, validation et préparation pré-APPLY.
 - `diagnostics` : baseline/workstation/graphics/suspend/storage/GNOME/applications/media/virtualization doctors.
+
+## Applications professionnelles
+
+Le profil professionnel ajoute explicitement :
+
+```text
+Visual Studio Code
+Brave
+VLC
+Bitwarden
+Slack
+ONLYOFFICE Desktop Editors
+LibreOffice + langue française
+FileZilla
+MarkText
+GNOME Text Editor
+```
+
+VS Code et Brave utilisent leurs dépôts RPM éditeurs signés. VLC, LibreOffice et FileZilla utilisent les dépôts Fedora. Bitwarden, Slack, ONLYOFFICE et MarkText utilisent Flathub. GNOME Text Editor reste l'éditeur texte natif GTK4/libadwaita.
+
+Diagnostic :
+
+```bash
+bash diagnostics/applications-doctor
+```
 
 ## Virtualisation
 
@@ -128,7 +153,9 @@ devops-nat / firewalld / isolation LAN
   ↓
 libosinfo
   ↓
-CLI
+CLI complet
+  ↓
+SSH / transferts HOST↔VM
   ↓
 virt-manager / virt-viewer
   ↓
@@ -138,6 +165,8 @@ validation
 ```
 
 Le réseau de référence est `192.168.50.0/24` sur `virbr50`. HOST↔VM, VM↔VM et VM→Internet sont prévus ; VM→LAN et LAN→VM sont bloqués par un guard nftables possédé uniquement par le projet, sans désactiver firewalld.
+
+L'administration quotidienne est conçue pour être réalisée en ligne de commande : `virsh`, `virt-admin`, `virt-host-validate`, `virt-install`, `virt-clone`, `virt-xml`, `qemu-img`, `qemu-io`, `qemu-nbd`, `qemu-storage-daemon`, libguestfs, `cloud-localds`, `virt-top`, `virt-v2v`, QMP, SSH/SCP/SFTP/rsync. La GUI reste complémentaire.
 
 Diagnostic :
 
@@ -149,7 +178,7 @@ Les preuves de trafic réseau bout-en-bout nécessitent des VM réellement déma
 
 ## Applications et multimédia
 
-La sélection graphique est documentée dans `docs/GTK4_APPLICATIONS.md`. La source de vérité installable est `manifests/packages-applications-gtk4.txt`.
+La politique applicative est documentée dans `docs/GTK4_APPLICATIONS.md`. Les sources de vérité sont les manifestes `packages-applications-*` et `flatpaks-applications-professional.txt`.
 
 La politique codecs/FFmpeg/GStreamer/VA-API est documentée dans `docs/MULTIMEDIA_CODECS.md` :
 
@@ -163,6 +192,6 @@ bash diagnostics/media-doctor
 - `0.2.0` : Hardware Baseline Certification ;
 - `0.3.0` : applications GTK4/libadwaita + Ptyxis ;
 - `0.4.0` : pile multimédia complète ;
-- `0.5.0` : stack KVM/QEMU/libvirt complète et Fedora-native.
+- `0.5.0` : stack KVM/QEMU/libvirt complète et CLI-first + profil d'applications professionnelles.
 
-Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GTK4_APPLICATIONS.md`, `docs/MULTIMEDIA_CODECS.md`, `docs/VIRTUALIZATION.md`, `docs/VM_PROFILES.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
+Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GTK4_APPLICATIONS.md`, `docs/MULTIMEDIA_CODECS.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
