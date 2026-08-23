@@ -29,7 +29,7 @@ kvm_storage_plan() {
 DEDICATED KVM STORAGE:
 - require the second virtualization SSD to be mounted manually at /data as EXT4
 - never partition or format any disk
-- create /data/libvirt/{images,iso,cloud-init,nvram,snapshots,exports,shared}
+- create /data/libvirt/{images,iso,cloud-init,nvram,snapshots,exports}
 - persist a SELinux virt_image_t file-context rule and restore labels
 - define/start/autostart the devops-data directory pool idempotently
 - keep VM system disks in qcow2 unless a profile explicitly documents another format
@@ -41,7 +41,7 @@ kvm_storage_apply() {
   local selinux_type="${KVM_STORAGE_SELINUX_TYPE:-virt_image_t}" pattern
   is_true "${ENABLE_KVM:-true}" || return 0
 
-  run_mutating KVM sudo install -d -m 0755 "$root" "$root/images" "$root/iso" "$root/cloud-init" "$root/nvram" "$root/snapshots" "$root/exports" "$root/shared" || return "$EXIT_APPLY_FAILED"
+  run_mutating KVM sudo install -d -m 0755 "$root" "$root/images" "$root/iso" "$root/cloud-init" "$root/nvram" "$root/snapshots" "$root/exports" || return "$EXIT_APPLY_FAILED"
 
   pattern="${root}(/.*)?"
   if is_true "${DRY_RUN:-true}"; then
