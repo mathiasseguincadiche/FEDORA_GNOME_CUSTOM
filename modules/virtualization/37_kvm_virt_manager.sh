@@ -22,7 +22,9 @@ kvm_virt_manager_apply() { :; }
 kvm_virt_manager_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_KVM:-true}" || return 0
-  command_exists virt-manager && command_exists virt-viewer && command_exists remote-viewer || return "$EXIT_POSTCHECK_FAILED"
+  if ! command_exists virt-manager || ! command_exists virt-viewer || ! command_exists remote-viewer; then
+    return "$EXIT_POSTCHECK_FAILED"
+  fi
   rpm -q virt-manager virt-viewer >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-  virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null || return "$EXIT_POSTCHECK_FAILED"
 }
