@@ -1,4 +1,4 @@
-# Cahier des charges V1.4 — Fedora 44 GNOME Workstation
+# Cahier des charges V1.5 — Fedora 44 GNOME Workstation
 
 ## Finalité
 
@@ -41,12 +41,13 @@ Voir `HARDWARE_BASELINE_CERTIFICATION.md`.
 ## P1 — expérience et exploitation
 
 - GNOME/Nautilus : GVfs, SMB, MTP, portails et intégration desktop cohérente.
-- Applications graphiques du bureau : GTK4 + libadwaita uniquement, hors exception virtualisation.
+- Applications graphiques du bureau général : GTK4 + libadwaita uniquement, hors exceptions professionnelles et virtualisation documentées.
 - Ptyxis comme terminal de référence.
-- Catalogue applicatif versionné dans `manifests/packages-applications-gtk4.txt`.
+- GNOME Text Editor comme éditeur texte natif.
+- Profil professionnel obligatoire : VS Code, Brave, VLC, Bitwarden, Slack, ONLYOFFICE, LibreOffice, FileZilla et MarkText.
 - Pile multimédia complète : GStreamer Fedora + OpenH264 + FFmpeg complet/freeworld RPM Fusion + oneVPL/QSV.
 - Arc B580 : VA-API H.264/HEVC/AV1/VP9 mesuré ; aucun changement de pilote média sur simple supposition.
-- KVM/QEMU/libvirt complet, OVMF, TPM 2.0, VirtioFS, libosinfo, virt-manager et virt-viewer.
+- KVM/QEMU/libvirt complet et **CLI-first**, OVMF, TPM 2.0, VirtioFS, libguestfs, libosinfo, virt-manager et virt-viewer.
 - Stockage KVM dédié sur le second T705 monté manuellement en EXT4.
 - Réseau `devops-nat` isolé du LAN physique, intégré à firewalld.
 - Profils Ubuntu Server LTS, Fedora et Windows 11 sans création automatique.
@@ -55,13 +56,31 @@ Voir `HARDWARE_BASELINE_CERTIFICATION.md`.
 
 ## Politique applicative
 
-Les applications graphiques de bureau installées par le dépôt doivent être validées contre Fedora 44 et déclarer GTK4/libadwaita. Toute nouvelle application graphique du catalogue desktop doit passer le contrat CI avant intégration.
+### Bureau GNOME natif
+
+Les applications graphiques du bureau général installées par le dépôt doivent être validées contre Fedora 44 et déclarer GTK4/libadwaita. Toute nouvelle application du catalogue GNOME natif doit passer le contrat CI avant intégration.
+
+### Exception explicite : applications professionnelles
+
+Les outils nécessaires au travail professionnel ne sont pas rejetés uniquement parce qu'ils n'utilisent pas GTK4/libadwaita. Ils doivent toutefois avoir une source explicite, reproductible et contrôlée :
+
+```text
+Visual Studio Code          dépôt RPM Microsoft signé
+Brave                       dépôt RPM Brave signé
+VLC                         Fedora
+LibreOffice + français      Fedora
+FileZilla                   Fedora
+Bitwarden                   Flathub
+Slack                       Flathub
+ONLYOFFICE Desktop Editors  Flathub
+MarkText                    Flathub
+```
+
+Le CI vérifie la disponibilité des paquets/App IDs et interdit les installateurs non maîtrisés de type `curl | bash`.
 
 ### Exception explicite : virtualisation
 
-La règle GTK4/libadwaita ne s'applique pas aux outils graphiques nécessaires à un environnement KVM/libvirt complet. `virt-manager` et `virt-viewer` restent les outils graphiques de référence même s'ils utilisent une pile GTK antérieure.
-
-Cette exception est strictement limitée au scope KVM/virtualisation.
+La règle GTK4/libadwaita ne s'applique pas aux outils nécessaires à un environnement KVM/libvirt complet. `virt-manager` et `virt-viewer` restent disponibles même s'ils utilisent une pile GTK antérieure.
 
 ## Politique multimédia
 
@@ -71,21 +90,42 @@ Le pilote média Intel Fedora reste le choix initial. Le projet ne bascule vers 
 
 ## Politique de virtualisation
 
-### Hyperviseur et administration
+### Hyperviseur et modèle d'administration
 
 La connexion de référence est `qemu:///system`. Le projet utilise les daemons modulaires libvirt Fedora (`virtqemud`, `virtnetworkd`, `virtstoraged`) lorsqu'ils sont disponibles et conserve un fallback `libvirtd.socket` uniquement pour compatibilité.
 
-La stack doit fournir :
+La virtualisation est **CLI-first** : les opérations de cycle de vie, création, clonage, XML, stockage, snapshots, inspection hors ligne, préparation de templates, cloud-init, monitoring et conversion doivent pouvoir être effectuées sans interface graphique.
 
-- QEMU/KVM + `qemu-img` ;
-- libvirt KVM/réseau/stockage ;
-- `virsh`, `virt-install`, `virt-clone` ;
-- `virt-manager`, `virt-viewer`, `remote-viewer` ;
-- OVMF ;
-- `swtpm` + outils + politique SELinux ;
-- `virtiofsd` ;
-- `guestfs-tools` ;
-- `osinfo-db` / libosinfo.
+La stack doit fournir au minimum :
+
+```text
+virsh
+virt-admin
+virt-host-validate
+virt-xml-validate
+virt-install
+virt-clone
+virt-xml
+qemu-img
+qemu-io
+qemu-nbd
+qemu-storage-daemon
+guestfish
+virt-filesystems
+virt-customize
+virt-sysprep
+virt-resize
+virt-sparsify
+virt-builder
+cloud-localds
+virt-top
+virt-v2v
+virt-qemu-qmp-proxy
+osinfo-query
+ssh / scp / sftp / rsync
+```
+
+`virt-manager`, `virt-viewer` et `remote-viewer` restent disponibles comme GUI complémentaire.
 
 ### Stockage
 
@@ -133,6 +173,10 @@ Le bridge appartient à la zone firewalld `libvirt`. Un guard nftables possédé
 
 Ubuntu/Fedora utilisent UEFI. Windows 11 utilise UEFI Secure Boot et TPM 2.0 swtpm. Les pilotes VirtIO Windows sont un média externe explicite : le projet ne télécharge ni n'ajoute automatiquement un dépôt tiers pour ces binaires.
 
+### Cloud-init et templates
+
+`cloud-localds`, `virt-install`, `virt-builder`, `virt-customize` et `virt-sysprep` doivent permettre la préparation reproductible des VM en CLI. Aucune VM ni ISO n'est créée/téléchargée automatiquement durant la convergence HOST.
+
 ### Profils
 
 - Ubuntu Server 26.04 LTS : VM DevOps principale ;
@@ -147,15 +191,14 @@ La B580 reste au HOST et au pilote `xe`. Aucun VFIO/passthrough automatique ou p
 
 ### Diagnostic et preuve runtime
 
-`diagnostics/virtualization-doctor` valide toute la configuration observable sans mutation.
+`diagnostics/virtualization-doctor` valide toute la configuration observable sans mutation, y compris la présence de la surface CLI complète et `virt-host-validate`.
 
 La preuve réseau bout-en-bout HOST↔VM, VM↔VM, VM→Internet et VM→LAN bloqué exige des VM réellement démarrées. Elle doit être effectuée sur la machine réelle après installation ; le dépôt ne crée pas des VM uniquement pour satisfaire un test.
 
-Voir `VIRTUALIZATION.md` et `VM_PROFILES.md`.
+Voir `VIRTUALIZATION.md`, `VIRTUALIZATION_CLI.md` et `VM_PROFILES.md`.
 
 ## P2 — options
 
-- Extensions GNOME tierces uniquement en opt-in.
 - HDR/VRR : observation d'abord, activation seulement après validation matérielle/régression.
 - Provisionnement automatisé de la VM DevOps : phase `VM_DEVOPS`, séparée de la convergence HOST/KVM.
 
@@ -177,12 +220,18 @@ KVM
 BACKUP
 ```
 
+Dans APPLICATIONS :
+
+```text
+GTK4 natif → applications professionnelles → validation
+```
+
 Dans KVM :
 
 ```text
-preflight → stack → firmware → storage → network → catalog → CLI → virt-manager → VM profiles → validation
+preflight → stack → firmware → storage → network → catalog → CLI → SSH → virt-manager → VM profiles → validation
 ```
 
 ## Critère de réussite
 
-La workstation doit être reproductible, observable et fail-closed. Une baseline matérielle invalide bloque l'APPLY. Le bureau reste GTK4/libadwaita hors virtualisation. La pile multimédia doit être mesurée. La stack KVM doit respecter SELinux/firewalld, utiliser le stockage dédié, isoler le LAN, conserver la B580 au HOST et fournir toutes les briques nécessaires à Ubuntu Server, Fedora et Windows 11 sans créer de VM implicitement.
+La workstation doit être reproductible, observable et fail-closed. Une baseline matérielle invalide bloque l'APPLY. Le bureau général reste GTK4/libadwaita ; seules les exceptions professionnelles et KVM documentées sont admises. La pile multimédia doit être mesurée. La stack KVM doit être administrable principalement en CLI, respecter SELinux/firewalld, utiliser le stockage dédié, isoler le LAN, conserver la B580 au HOST et fournir toutes les briques nécessaires à Ubuntu Server, Fedora et Windows 11 sans créer de VM implicitement.
