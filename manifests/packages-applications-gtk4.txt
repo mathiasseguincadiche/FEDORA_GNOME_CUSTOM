@@ -1,0 +1,29 @@
+# Terminal
+ptyxis
+
+# GNOME desktop utilities
+gnome-tweaks
+gnome-software
+gnome-system-monitor
+baobab
+gnome-calculator
+
+# Files, archives and documents
+file-roller
+gnome-text-editor
+loupe
+papers
+
+# Media and camera
+showtime
+snapshot
+
+# Personal information and daily tools
+gnome-calendar
+gnome-clocks
+gnome-weather
+gnome-maps
+gnome-contacts
+
+# Scanning
+simple-scan

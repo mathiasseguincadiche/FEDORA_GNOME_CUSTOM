@@ -17,6 +17,7 @@ if systemctl is-active --quiet firewalld; then emit OK firewalld active; else em
 if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
   if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then emit OK GNOME 'Wayland session'; else emit WARN GNOME "session=${XDG_SESSION_TYPE:-unknown}"; fi
 fi
+if bash "$REPO_ROOT/diagnostics/applications-doctor" --quiet; then emit OK Applications 'GTK4/libadwaita catalog + Ptyxis'; else emit KO Applications 'run applications-doctor'; fi
 previous="$(journalctl -k -b -1 --no-pager 2>/dev/null | grep -Eic 'kernel panic|Oops:|watchdog.*hard LOCKUP|xe.*(reset|hang|wedged)|PCIe Bus Error|nvme.*(I/O|reset)' || true)"
 if (( previous == 0 )); then emit OK 'Previous boot' 'no critical signature matched'; else emit WARN 'Previous boot' "$previous critical signatures — run collect-boot-failure.sh"; fi
 ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"

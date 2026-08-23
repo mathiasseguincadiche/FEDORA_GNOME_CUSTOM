@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; ko=0
+
+emit() {
+  local status="$1" name="$2" detail="$3"
+  if ! $quiet; then ui_check "$status" "$name" "$detail"; fi
+  case "$status" in OK) ((ok+=1));; KO) ((ko+=1));; esac
+}
+
+while IFS= read -r pkg; do
+  [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+  if ! rpm -q "$pkg" >/dev/null 2>&1; then
+    emit KO "$pkg" 'not installed'
+    continue
+  fi
+  requirements="$(rpm -q --requires "$pkg" 2>/dev/null || true)"
+  if ! grep -Eqi 'gtk4|libgtk-4\.so\.1' <<<"$requirements"; then
+    emit KO "$pkg" 'GTK4 requirement not visible in installed RPM metadata'
+    continue
+  fi
+  if ! grep -Eqi 'libadwaita|libadwaita-1\.so\.0' <<<"$requirements"; then
+    emit KO "$pkg" 'libadwaita requirement not visible in installed RPM metadata'
+    continue
+  fi
+  emit OK "$pkg" 'GTK4 + libadwaita'
+done < "$REPO_ROOT/manifests/packages-applications-gtk4.txt"
+
+if command_exists "${TERMINAL_PACKAGE:-ptyxis}"; then
+  emit OK Terminal "${TERMINAL_PACKAGE:-ptyxis}"
+else
+  emit KO Terminal "${TERMINAL_PACKAGE:-ptyxis} missing"
+fi
+
+if ! $quiet; then
+  ui_meta OK "$ok"
+  ui_meta KO "$ko"
+fi
+(( ko == 0 ))
