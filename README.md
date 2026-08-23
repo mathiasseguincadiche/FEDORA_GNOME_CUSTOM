@@ -29,9 +29,10 @@ La priorité absolue est la **stabilité** : graphique, veille/réveil, CPU/RAM,
 7. **Aucun partitionnement/formatage automatique**.
 8. **SELinux reste Enforcing** et firewalld actif.
 9. **Wayland est la session de référence**.
-10. **Applications GNOME cohérentes** : les applications graphiques gérées par le projet doivent être GTK4/libadwaita ; Ptyxis est le terminal de référence.
-11. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
-12. **KVM/libvirt** pour les laboratoires et VM DevOps ; pas de VFIO/passthrough du GPU principal.
+10. **Applications GNOME cohérentes** : les applications graphiques gérées par le projet doivent être GTK4/libadwaita ; Ptyxis est le terminal de référence. Les outils de virtualisation essentiels disposent d'une exception documentée.
+11. **Multimédia complet mais contrôlé** : GStreamer Fedora, OpenH264, FFmpeg complet RPM Fusion et VA-API Arc B580 mesuré avant tout changement de fournisseur média.
+12. **Diagnostic post-incident** : boot précédent, coredumps, pstore, xe/DRM, ACPI, PCIe AER, NVMe.
+13. **KVM/libvirt** pour les laboratoires et VM DevOps ; pas de VFIO/passthrough du GPU principal.
 
 ## Phase 0 — Hardware Baseline Certification
 
@@ -92,14 +93,20 @@ workstation-doctor
 - `hardware` : CPU/RAM, Intel Arc, Wayland/display, NVMe, périphériques, suspend/resume.
 - `gnome` : GNOME, Nautilus, GVfs/SMB/MTP, portails, multimédia, réglages prudents.
 - `applications` : catalogue GTK4/libadwaita et Ptyxis comme terminal de référence.
-- `virtualization` : KVM/QEMU/libvirt, UEFI/TPM, réseau NAT.
+- `virtualization` : KVM/QEMU/libvirt, UEFI/TPM, réseau NAT, virt-manager et virt-viewer.
 - `backup` : Restic, validation et préparation pré-APPLY.
-- `diagnostics` : baseline/workstation/graphics/suspend/storage/GNOME doctors.
+- `diagnostics` : baseline/workstation/graphics/suspend/storage/GNOME/applications/media doctors.
 
-## Applications
+## Applications et multimédia
 
 La sélection graphique est documentée dans `docs/GTK4_APPLICATIONS.md`. La source de vérité installable est `manifests/packages-applications-gtk4.txt`.
 
+La politique codecs/FFmpeg/GStreamer/VA-API est documentée dans `docs/MULTIMEDIA_CODECS.md`. Le contrôle opérationnel est disponible via :
+
+```bash
+bash diagnostics/media-doctor
+```
+
 ## État du projet
 
-Fondation initiale `0.1.0`, Phase 0 intégrée en `0.2.0`, politique applicative GTK4/libadwaita et Ptyxis en `0.3.0`. Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GTK4_APPLICATIONS.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
+Fondation initiale `0.1.0`, Phase 0 intégrée en `0.2.0`, politique applicative GTK4/libadwaita et Ptyxis en `0.3.0`, pile multimédia complète et contrôlée en `0.4.0`. Lire `docs/CAHIER_DES_CHARGES.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GTK4_APPLICATIONS.md`, `docs/MULTIMEDIA_CODECS.md` et `docs/EXECUTION_CONTRACT.md` avant le premier APPLY réel.
