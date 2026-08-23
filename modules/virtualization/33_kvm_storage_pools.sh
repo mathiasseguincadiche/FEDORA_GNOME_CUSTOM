@@ -45,11 +45,11 @@ kvm_storage_apply() {
 
   pattern="${root}(/.*)?"
   if is_true "${DRY_RUN:-true}"; then
-    run_mutating KVM sudo semanage fcontext -a -t "$selinux_type" "$pattern"
-    run_mutating KVM sudo restorecon -R "$root"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-define-as "$pool" dir --target "$path"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-start "$pool"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-autostart "$pool"
+    run_mutating KVM sudo semanage fcontext -a -t "$selinux_type" "$pattern" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo restorecon -R "$root" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-define-as "$pool" dir --target "$path" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-start "$pool" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-autostart "$pool" || return "$EXIT_APPLY_FAILED"
     return 0
   fi
 
@@ -66,7 +66,9 @@ kvm_storage_apply() {
   if ! sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-info "$pool" 2>/dev/null | grep -Eq '^State:[[:space:]]+running'; then
     run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-start "$pool" || return "$EXIT_APPLY_FAILED"
   fi
-  is_true "${KVM_POOL_AUTOSTART:-true}" && run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-autostart "$pool" || true
+  if is_true "${KVM_POOL_AUTOSTART:-true}"; then
+    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-autostart "$pool" || return "$EXIT_APPLY_FAILED"
+  fi
   run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" pool-refresh "$pool" || return "$EXIT_APPLY_FAILED"
 }
 
