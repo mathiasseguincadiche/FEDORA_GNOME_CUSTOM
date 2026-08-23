@@ -1,0 +1,14 @@
+bash
+coreutils
+curl
+ca-certificates
+git
+jq
+pciutils
+usbutils
+util-linux
+fwupd
+microcode_ctl
+linux-firmware
+policycoreutils
+firewalld

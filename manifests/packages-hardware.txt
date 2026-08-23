@@ -1,0 +1,15 @@
+mesa-dri-drivers
+mesa-vulkan-drivers
+mesa-libGL
+vulkan-tools
+libva-utils
+libva-intel-media-driver
+igt-gpu-tools
+nvme-cli
+smartmontools
+lm_sensors
+lshw
+ethtool
+v4l-utils
+powertop
+rasdaemon

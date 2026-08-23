@@ -1,0 +1,10 @@
+logs/*
+reports/*
+state/*
+!logs/.gitkeep
+!reports/.gitkeep
+!state/.gitkeep
+*.swp
+*.tmp
+.env
+.env.*
