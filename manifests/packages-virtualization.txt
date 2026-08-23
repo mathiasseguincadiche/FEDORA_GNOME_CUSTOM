@@ -26,4 +26,5 @@ libosinfo
 # Network/security integration and dedicated storage labels
 nftables
 dnsmasq
+python3
 policycoreutils-python-utils
