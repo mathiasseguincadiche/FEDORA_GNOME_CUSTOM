@@ -7,7 +7,7 @@ applications_gtk4_precheck() {
 }
 
 applications_gtk4_plan() {
-  echo 'Install the curated GNOME GTK4/libadwaita desktop application set. Ptyxis is the managed terminal. Applications not verified against this policy are not auto-managed.'
+  echo 'Install the curated GNOME GTK4/libadwaita desktop application set. Ptyxis is the managed terminal. Non-GTK4 applications are accepted only through the explicit professional or virtualization exception scopes.'
 }
 
 applications_gtk4_apply() {
