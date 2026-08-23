@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264; do
+for pkg in gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264 libvpl intel-vpl-gpu-rt; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-multimedia-fedora.txt" || { echo "missing Fedora multimedia package: $pkg" >&2; exit 1; }
 done
 for pkg in ffmpegthumbnailer gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-plugin-libav; do
