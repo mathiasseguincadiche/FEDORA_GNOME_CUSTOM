@@ -23,7 +23,13 @@ grep -Fq 'driver.type=virtiofs' "$CREATE"
 grep -Fq 'memorybacking source.type=memfd,access.mode=shared' "$CREATE"
 grep -Fq 'cloud-localds' "$CREATE"
 
-! grep -RInE --exclude='test_ubuntu_devops_bootstrap_contract.sh' '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' "$ROOT/guest/ubuntu-devops" "$ROOT/scripts/kvm" >/dev/null
-! grep -RInE --exclude='test_ubuntu_devops_bootstrap_contract.sh' 'guest_password=.*guest|password:[[:space:]]*guest|passwd:[[:space:]]*guest' "$ROOT/guest/ubuntu-devops" "$ROOT/scripts/kvm" >/dev/null
+if grep -RInE --exclude='test_ubuntu_devops_bootstrap_contract.sh' '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' "$ROOT/guest/ubuntu-devops" "$ROOT/scripts/kvm" >/dev/null; then
+  echo 'forbidden curl/wget pipe-to-shell pattern found in Ubuntu/KVM provisioning' >&2
+  exit 1
+fi
+if grep -RInE --exclude='test_ubuntu_devops_bootstrap_contract.sh' 'guest_password=.*guest|password:[[:space:]]*guest|passwd:[[:space:]]*guest' "$ROOT/guest/ubuntu-devops" "$ROOT/scripts/kvm" >/dev/null; then
+  echo 'forbidden clear-text guest password pattern found' >&2
+  exit 1
+fi
 
 echo 'ubuntu devops bootstrap contract: PASS'
