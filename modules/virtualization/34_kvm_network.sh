@@ -9,9 +9,11 @@ kvm_network_validate_xml() {
   local xml="$1"
   grep -Fq "<name>${KVM_NETWORK_NAME:-devops-nat}</name>" <<<"$xml" &&
     grep -Fq "<forward mode='nat'" <<<"$xml" &&
-    grep -Fq "<bridge name='${KVM_BRIDGE_NAME:-virbr50}' zone='${KVM_FIREWALLD_ZONE:-libvirt}'" <<<"$xml" &&
+    grep -Fq "<bridge name='${KVM_BRIDGE_NAME:-virbr50}'" <<<"$xml" &&
+    grep -Fq "zone='${KVM_FIREWALLD_ZONE:-libvirt}'" <<<"$xml" &&
     grep -Fq "address='${KVM_GATEWAY:-192.168.50.254}'" <<<"$xml" &&
-    grep -Fq "start='${KVM_DHCP_START:-192.168.50.100}' end='${KVM_DHCP_END:-192.168.50.200}'" <<<"$xml" &&
+    grep -Fq "start='${KVM_DHCP_START:-192.168.50.100}'" <<<"$xml" &&
+    grep -Fq "end='${KVM_DHCP_END:-192.168.50.200}'" <<<"$xml" &&
     grep -Fq "<forwarder addr='${KVM_DNS_1:-9.9.9.9}'" <<<"$xml" &&
     grep -Fq "<forwarder addr='${KVM_DNS_2:-1.1.1.1}'" <<<"$xml"
 }
