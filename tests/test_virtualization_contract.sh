@@ -60,8 +60,14 @@ for expected in \
   grep -Fq "$expected" "$ROOT/config/vm-profiles.conf" || { echo "missing final VM profile value: $expected" >&2; exit 1; }
 done
 
-! grep -Fq 'FEDORA_VM_' "$ROOT/config/vm-profiles.conf"
-! grep -Fq 'Fedora 44 lab' "$ROOT/modules/virtualization/38_kvm_vm_profiles.sh"
+if grep -Fq 'FEDORA_VM_' "$ROOT/config/vm-profiles.conf"; then
+  echo 'obsolete Fedora guest profile found' >&2
+  exit 1
+fi
+if grep -Fq 'Fedora 44 lab' "$ROOT/modules/virtualization/38_kvm_vm_profiles.sh"; then
+  echo 'obsolete Fedora lab profile text found' >&2
+  exit 1
+fi
 
 for file in \
   guest/ubuntu-devops/bootstrap-devops.sh \
@@ -74,7 +80,10 @@ for file in \
 done
 
 grep -Fq 'runtime-prompt' "$ROOT/config/vm-profiles.conf"
-! grep -RInE --exclude-dir=.git --exclude='test_virtualization_contract.sh' '(password:[[:space:]]*guest|passwd:[[:space:]]*guest|UBUNTU_DEVOPS_PASSWORD=.guest.)' "$ROOT" >/dev/null
+if grep -RInE --exclude-dir=.git --exclude='test_virtualization_contract.sh' '(password:[[:space:]]*guest|passwd:[[:space:]]*guest|UBUNTU_DEVOPS_PASSWORD=.guest.)' "$ROOT" >/dev/null; then
+  echo 'forbidden clear-text guest password pattern found' >&2
+  exit 1
+fi
 
 ! grep -RInE --exclude-dir=.git '(mkfs\.|wipefs|parted |sgdisk |chmod[[:space:]]+777|setenforce[[:space:]]+0)' "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" || {
   echo 'forbidden destructive/insecure virtualization mutation found' >&2
