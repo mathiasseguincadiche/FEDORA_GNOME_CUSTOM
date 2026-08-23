@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ko=0
+for pkg in gnome-shell nautilus gvfs-smb xdg-desktop-portal-gnome; do if rpm -q "$pkg" >/dev/null 2>&1; then $quiet || ui_check OK "$pkg" installed; else $quiet || ui_check KO "$pkg" missing; ((ko+=1)); fi; done
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  [[ "${XDG_SESSION_TYPE:-}" == wayland ]] && { $quiet || ui_check OK Wayland active; } || { $quiet || ui_check WARN Wayland "${XDG_SESSION_TYPE:-unknown}"; }
+  systemctl --user is-active --quiet xdg-desktop-portal.service && { $quiet || ui_check OK Portal active; } || { $quiet || ui_check WARN Portal inactive; }
+fi
+(( ko == 0 ))

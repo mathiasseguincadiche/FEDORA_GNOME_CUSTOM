@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+count="$(sudo nvme list 2>/dev/null | grep -c "$EXPECTED_NVME_MODEL" || true)"
+$quiet || ui_check "$([[ "$count" -ge "$EXPECTED_NVME_COUNT" ]] && echo OK || echo KO)" 'Crucial T705' "found=$count expected=$EXPECTED_NVME_COUNT"
+issues=0
+for d in /dev/nvme[0-9]; do
+  [[ -e "$d" ]] || continue
+  smart="$(sudo nvme smart-log "$d" 2>/dev/null || true)"
+  if grep -Eq 'critical_warning[[:space:]]*:[[:space:]]*(0|0x0)$' <<< "$smart"; then $quiet || ui_check OK "$d" 'critical_warning=0'; else $quiet || ui_check WARN "$d" 'review SMART log'; ((issues+=1)); fi
+done
+(( count >= EXPECTED_NVME_COUNT ))

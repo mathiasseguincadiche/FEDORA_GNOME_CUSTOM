@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+ui_banner 'FEDORA WORKSTATION HEALTH' 'READ-ONLY'
+ok=0; warn=0; ko=0
+emit() { ui_check "$1" "$2" "$3"; case "$1" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
+grep -Eq '^VERSION_ID="?44"?$' /etc/os-release && emit OK 'Fedora' '44' || emit KO 'Fedora' 'Fedora 44 required'
+lscpu | grep -Fq "$EXPECTED_CPU" && emit OK CPU "$EXPECTED_CPU" || emit KO CPU 'unexpected CPU'
+mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"; (( mem_kib >= 45*1024*1024 )) && emit OK Memory '48 GiB class detected' || emit KO Memory 'less than expected'
+"$REPO_ROOT/diagnostics/graphics-doctor" --quiet && emit OK Graphics 'Arc B580/xe baseline' || emit KO Graphics 'run graphics-doctor'
+"$REPO_ROOT/diagnostics/storage-doctor" --quiet && emit OK Storage 'T705 inventory baseline' || emit KO Storage 'run storage-doctor'
+[[ "$(getenforce 2>/dev/null || echo unknown)" == Enforcing ]] && emit OK SELinux Enforcing || emit KO SELinux 'not Enforcing'
+systemctl is-active --quiet firewalld && emit OK firewalld active || emit WARN firewalld inactive
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then [[ "${XDG_SESSION_TYPE:-}" == wayland ]] && emit OK GNOME 'Wayland session' || emit WARN GNOME "session=${XDG_SESSION_TYPE:-unknown}"; fi
+previous="$(journalctl -k -b -1 --no-pager 2>/dev/null | grep -Eic 'kernel panic|Oops:|watchdog.*hard LOCKUP|xe.*(reset|hang|wedged)|PCIe Bus Error|nvme.*(I/O|reset)' || true)"
+(( previous == 0 )) && emit OK 'Previous boot' 'no critical signature matched' || emit WARN 'Previous boot' "$previous critical signatures — run collect-boot-failure.sh"
+ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"
+(( ko == 0 )) && ui_summary 'WORKSTATION HEALTHY' 'DRY-RUN OR NORMAL USE' "$REPORT_ROOT" "$LOG_DIR" || { ui_summary 'WORKSTATION NEEDS ATTENTION' 'FIX KO BEFORE APPLY' "$REPORT_ROOT" "$LOG_DIR"; exit 20; }

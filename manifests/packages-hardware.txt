@@ -5,6 +5,7 @@ vulkan-tools
 libva-utils
 libva-intel-media-driver
 igt-gpu-tools
+wayland-utils
 nvme-cli
 smartmontools
 lm_sensors
@@ -13,3 +14,6 @@ ethtool
 v4l-utils
 powertop
 rasdaemon
+dmidecode
+kernel-tools
+pipewire-utils
