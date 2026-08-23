@@ -70,7 +70,8 @@ baseline_write_evidence() {
 }
 
 baseline_evidence_valid() {
-  local name="$1" file="$(baseline_evidence_dir)/$1.ok"
+  local name="$1" file
+  file="$(baseline_evidence_dir)/$name.ok"
   [[ -s "$file" ]] || return 1
   grep -Fxq 'status=PASS' "$file" || return 1
   grep -Fxq "fingerprint=$(baseline_fingerprint)" "$file"
@@ -123,7 +124,8 @@ baseline_certify() {
 }
 
 baseline_certification_valid() {
-  local marker="$(baseline_certification_path)"
+  local marker
+  marker="$(baseline_certification_path)"
   [[ -s "$marker" ]] || return 1
   grep -Fxq 'verdict=PASS' "$marker" || return 1
   grep -Fxq "fingerprint=$(baseline_fingerprint)" "$marker"
