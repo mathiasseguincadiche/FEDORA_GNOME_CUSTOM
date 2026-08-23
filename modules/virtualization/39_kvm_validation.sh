@@ -8,13 +8,13 @@ kvm_validation_plan() {
 FINAL KVM VALIDATION:
 - AMD KVM acceleration and Arc B580 HOST ownership
 - qemu:///system and Fedora libvirt activation
-- OVMF/UEFI, swtpm TPM 2.0 and VirtioFS
+- OVMF/UEFI and swtpm TPM 2.0
 - dedicated EXT4 storage pool + SELinux labels + autostart
 - devops-nat + DNS + firewalld libvirt zone + project LAN isolation guard
 - complete CLI-first toolchain plus virt-manager/virt-viewer
 - exactly two reference guest profiles: Ubuntu Server 26.04 DevOps and Windows 11
-- Ubuntu cloud-init/SSH/VirtioFS/bootstrap assets present
-- no VFIO/GPU passthrough and no automatic VM creation
+- Ubuntu cloud-init/SSH/bootstrap assets present
+- no host-directory sharing layer, no VFIO/GPU passthrough and no automatic VM creation
 EOF
 }
 
@@ -48,7 +48,7 @@ kvm_validation_postcheck() {
     virt-install virt-clone virt-xml \
     qemu-img qemu-io qemu-nbd qemu-storage-daemon \
     virt-manager virt-viewer remote-viewer \
-    swtpm swtpm_setup virtiofsd osinfo-query cloud-localds openssl \
+    swtpm swtpm_setup osinfo-query cloud-localds openssl \
     guestfish virt-filesystems virt-customize virt-sysprep virt-resize virt-sparsify virt-builder \
     virt-top virt-v2v virt-qemu-qmp-proxy ssh scp sftp rsync; do
     command_exists "$cmd" || return "$EXIT_POSTCHECK_FAILED"
