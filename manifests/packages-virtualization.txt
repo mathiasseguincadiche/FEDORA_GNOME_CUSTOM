@@ -5,6 +5,7 @@ libvirt
 libvirt-client
 libvirt-client-qemu
 libvirt-nss
+libvirt-daemon-common
 libvirt-daemon-kvm
 libvirt-daemon-config-network
 
@@ -16,6 +17,7 @@ virt-viewer
 # CLI observability, migration and image lifecycle
 virt-top
 virt-v2v
+cloud-utils-cloud-localds
 
 # Firmware, TPM and guest filesystem tooling
 edk2-ovmf
