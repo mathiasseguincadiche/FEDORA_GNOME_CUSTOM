@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl edk2-ovmf swtpm swtpm-tools swtpm-selinux virtiofsd guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
+for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl edk2-ovmf swtpm swtpm-tools swtpm-selinux guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-virtualization.txt" || { echo "missing virtualization package: $pkg" >&2; exit 1; }
 done
 
@@ -49,8 +49,6 @@ for expected in \
   'UBUNTU_SERVER_RAM_MB="16384"' \
   'UBUNTU_SERVER_DISK_GB="160"' \
   'UBUNTU_SERVER_USERNAME="mathias"' \
-  'UBUNTU_SERVER_VIRTIOFS_SOURCE="/data/libvirt/shared"' \
-  'UBUNTU_SERVER_VIRTIOFS_MOUNT="/mnt/hostshare"' \
   'WINDOWS11_VCPU="4"' \
   'WINDOWS11_RAM_MB="12288"' \
   'WINDOWS11_DISK_GB="128"' \
@@ -82,6 +80,12 @@ done
 grep -Fq 'runtime-prompt' "$ROOT/config/vm-profiles.conf"
 if grep -RInE --exclude-dir=.git --exclude='test_virtualization_contract.sh' '(password:[[:space:]]*guest|passwd:[[:space:]]*guest|UBUNTU_DEVOPS_PASSWORD=.guest.)' "$ROOT" >/dev/null; then
   echo 'forbidden clear-text guest password pattern found' >&2
+  exit 1
+fi
+
+if grep -RInEi --exclude-dir=.git --exclude='CHANGELOG.md' --exclude='test_virtualization_contract.sh' 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' \
+  "$ROOT/config" "$ROOT/manifests" "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" "$ROOT/guest/ubuntu-devops" "$ROOT/diagnostics"; then
+  echo 'obsolete host-directory sharing / VirtioFS contract found' >&2
   exit 1
 fi
 
