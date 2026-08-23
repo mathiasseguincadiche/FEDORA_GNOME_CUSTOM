@@ -16,6 +16,8 @@ jobs:
       - name: ShellCheck
         shell: bash
         run: |
+          # Modules are intentionally sourced by the orchestrator, so variables such as
+          # REPO_ROOT and configuration keys are defined by the calling context.
           git ls-files '*.sh' 'diagnostics/*' 'scripts/systemd/*' | while IFS= read -r file; do
-            shellcheck -x -e SC1090,SC1091,SC2034,SC2154 "$file"
+            shellcheck -x -e SC1090,SC1091,SC2034,SC2153,SC2154 "$file"
           done
