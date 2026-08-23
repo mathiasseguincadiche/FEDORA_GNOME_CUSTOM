@@ -15,6 +15,7 @@ virt-viewer
 edk2-ovmf
 swtpm
 swtpm-tools
+swtpm-selinux
 virtiofsd
 guestfs-tools
 
