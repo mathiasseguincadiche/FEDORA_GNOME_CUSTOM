@@ -78,7 +78,7 @@ gnome_multimedia_precheck() {
 }
 
 gnome_multimedia_plan() {
-  echo 'Install the Fedora GStreamer foundation, switch ffmpeg-free to full RPM Fusion ffmpeg, add freeworld codecs/thumbnails, and converge Intel Arc VA-API only when the measured profile set requires it.'
+  echo 'Install Fedora GStreamer + OpenH264 + Intel oneVPL, switch ffmpeg-free to full RPM Fusion ffmpeg, add freeworld codecs/thumbnails, and converge Intel Arc VA-API only when the measured profile set requires it.'
 }
 
 gnome_multimedia_apply() {
@@ -91,7 +91,7 @@ gnome_multimedia_apply() {
 
 gnome_multimedia_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
-  rpm -q gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264 >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  rpm -q gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264 libvpl intel-vpl-gpu-rt >/dev/null || return "$EXIT_POSTCHECK_FAILED"
 
   is_true "${ENABLE_RPMFUSION:-true}" || return 0
   rpm -q ffmpeg ffmpegthumbnailer gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-plugin-libav >/dev/null || return "$EXIT_POSTCHECK_FAILED"
