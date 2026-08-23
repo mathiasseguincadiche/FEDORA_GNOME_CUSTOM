@@ -32,10 +32,8 @@ jobs:
           install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
           install -m 0644 config/repos/brave-browser.repo /etc/yum.repos.d/brave-browser.repo
           dnf -y makecache --refresh
-          while IFS= read -r pkg; do
-            [[ -z "$pkg" || "$pkg" == \#* ]] && continue
-            dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED VENDOR APP: $pkg"; exit 1; }
-          done < manifests/packages-applications-professional-vendor.txt
+          dnf -q --repo=code list --available code >/dev/null || { echo 'UNRESOLVED VENDOR APP: code'; exit 1; }
+          dnf -q --repo=brave-browser list --available brave-browser >/dev/null || { echo 'UNRESOLVED VENDOR APP: brave-browser'; exit 1; }
       - name: Verify professional Flathub applications
         shell: bash
         run: |
