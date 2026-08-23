@@ -12,8 +12,9 @@ HOST-TO-GUEST SSH ACCESS:
 - install OpenSSH client tooling on the Fedora HOST
 - use operator-owned SSH keys; do not generate or overwrite identity files automatically
 - do not weaken host-key checking or guest sshd policy
-- Ubuntu Server/Fedora lab profiles are intended to be administered over devops-nat
-- runtime connectivity certification is explicit and requires real guest addresses
+- ubuntu-devops is administered primarily through SSH on devops-nat
+- SFTP/GVfs reuses the same SSH service for graphical Nautilus file access
+- runtime connectivity certification is explicit and requires the real guest address
 EOF
 }
 
@@ -23,6 +24,7 @@ kvm_ssh_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_KVM:-true}" || return 0
   command_exists ssh || return "$EXIT_POSTCHECK_FAILED"
+  command_exists sftp || return "$EXIT_POSTCHECK_FAILED"
   command_exists ssh-keygen || return "$EXIT_POSTCHECK_FAILED"
   rpm -q openssh-clients >/dev/null || return "$EXIT_POSTCHECK_FAILED"
 }

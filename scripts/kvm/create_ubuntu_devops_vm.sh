@@ -14,7 +14,7 @@ Usage:
 
 The script never downloads an Ubuntu image and never stores a clear-text password in Git.
 It creates ubuntu-devops explicitly; workstation APPLY never creates guests automatically.
-Guest filesystem access from the Fedora host is intentionally handled through SSH/SFTP.
+Guest filesystem access from Fedora uses SSH/SFTP and an optional Nautilus bookmark.
 EOF
 }
 
@@ -50,6 +50,7 @@ seed="${seed_dir}/seed.iso"
 username="${UBUNTU_SERVER_USERNAME:-mathias}"
 bootstrap="$REPO_ROOT/${UBUNTU_SERVER_BOOTSTRAP_SCRIPT:-guest/ubuntu-devops/bootstrap-devops.sh}"
 verify="$REPO_ROOT/${UBUNTU_SERVER_VERIFY_SCRIPT:-guest/ubuntu-devops/verify-devops.sh}"
+nautilus_helper="$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh"
 
 [[ "$(findmnt -n -T "$data_mount" -o TARGET 2>/dev/null || true)" == "$data_mount" ]] || fail "$data_mount is not a dedicated mounted target"
 [[ "$(findmnt -n -T "$data_mount" -o FSTYPE 2>/dev/null || true)" == "${KVM_DATA_FSTYPE:-ext4}" ]] || fail "$data_mount must be ${KVM_DATA_FSTYPE:-ext4}"
@@ -66,9 +67,7 @@ password_hash="$(openssl passwd -6 -stdin <<<"$guest_password")"
 unset guest_password
 
 tmpdir="$(mktemp -d)"
-cleanup() {
-  rm -rf "$tmpdir"
-}
+cleanup() { rm -rf "$tmpdir"; }
 trap cleanup EXIT
 
 ssh_public_key="$(awk 'NF >= 2 {print $1" "$2; exit}' "$ssh_key")"
@@ -141,7 +140,9 @@ sudo virt-install \
   --noautoconsole
 
 printf '\nCreated %s. It is NOT configured for autostart.\n' "$name"
-printf 'Wait for cloud-init/bootstrap, then discover its IP with:\n'
-printf '  sudo virsh -c %s domifaddr %s --source agent\n' "$uri" "$name"
-printf 'Then verify from the guest:\n'
+printf 'Wait for cloud-init/bootstrap, then verify from the guest:\n'
 printf '  sudo /usr/local/sbin/devops-verify.sh\n'
+if is_true "${VM_NAUTILUS_ACCESS_ENABLED:-true}" && [[ -r "$nautilus_helper" ]]; then
+  bash "$nautilus_helper" install || true
+  printf 'If the VM IP was not available yet, refresh later with:\n  bash %s refresh\n' "$nautilus_helper"
+fi
