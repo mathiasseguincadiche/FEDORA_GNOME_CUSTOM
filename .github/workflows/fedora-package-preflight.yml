@@ -45,11 +45,13 @@ jobs:
             grep -Eqi 'gtk4|libgtk-4\.so\.1' <<<"$requirements" || { echo "GTK4 REQUIREMENT MISSING: $pkg"; exit 1; }
             grep -Eqi 'libadwaita|libadwaita-1\.so\.0' <<<"$requirements" || { echo "LIBADWAITA REQUIREMENT MISSING: $pkg"; exit 1; }
           done < manifests/packages-applications-gtk4.txt
-      - name: Verify Dash to Dock Fedora 44 package
+      - name: Verify GNOME 50 extension packages
         shell: bash
         run: |
           set -euo pipefail
-          dnf -y install gnome-shell-extension-dash-to-dock
-          rpm -q gnome-shell-extension-dash-to-dock
+          dnf -y install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell
+          rpm -q gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell
           test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
+          test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
+          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
