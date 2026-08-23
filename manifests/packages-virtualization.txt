@@ -20,12 +20,11 @@ virt-v2v
 cloud-utils-cloud-localds
 openssl
 
-# Firmware, TPM and guest filesystem tooling
+# Firmware, TPM and guest image tooling
 edk2-ovmf
 swtpm
 swtpm-tools
 swtpm-selinux
-virtiofsd
 guestfs-tools
 guestfs-tools-bash-completion
 
