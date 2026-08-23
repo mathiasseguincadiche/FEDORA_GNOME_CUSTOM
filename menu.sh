@@ -30,7 +30,7 @@ EOF
     8) "$REPO_ROOT/diagnostics/suspend-doctor" ;;
     9) "$REPO_ROOT/diagnostics/storage-doctor" ;;
     10) "$REPO_ROOT/diagnostics/gnome-doctor" ;;
-    11) "$REPO_ROOT/diagnostics/applications-doctor" ;;
+    11) bash "$REPO_ROOT/diagnostics/applications-doctor" ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac
