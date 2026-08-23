@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit() { ui_check "$1" "$2" "$3"; case "$1" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
+show() { $quiet || emit "$@"; }
+
+required=(gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264)
+if is_true "${ENABLE_RPMFUSION:-true}"; then
+  required+=(ffmpeg ffmpegthumbnailer gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-plugin-libav)
+fi
+for pkg in "${required[@]}"; do
+  if rpm -q "$pkg" >/dev/null 2>&1; then show OK "$pkg" installed; else show KO "$pkg" missing; ((ko+=quiet?1:0)); fi
+done
+
+if is_true "${ENABLE_RPMFUSION:-true}"; then
+  if rpm -q ffmpeg-free >/dev/null 2>&1; then show KO FFmpeg 'ffmpeg-free still installed'; ((ko+=quiet?1:0)); else show OK FFmpeg 'full provider selected'; fi
+fi
+
+if command_exists ffmpeg; then
+  codecs="$(ffmpeg -hide_banner -decoders 2>/dev/null || true)"
+  for codec in h264 hevc av1 vp9 aac mp3 opus flac; do
+    if grep -Eqi "[[:space:]]${codec}([[:space:]]|$)" <<<"$codecs"; then show OK "ffmpeg:$codec" decoder; else show WARN "ffmpeg:$codec" 'decoder not matched'; ((warn+=quiet?1:0)); fi
+  done
+fi
+
+if lspci -Dn 2>/dev/null | grep -Eqi '030[02]:[[:space:]]+8086:e20b'; then
+  if command_exists vainfo; then
+    device="${VAAPI_DRM_DEVICE:-/dev/dri/renderD128}"
+    if [[ -e "$device" ]]; then report="$(vainfo --display drm --device "$device" 2>&1 || true)"; else report="$(vainfo 2>&1 || true)"; fi
+    if [[ -z "$report" ]]; then
+      show WARN VA-API 'probe unavailable'
+      ((warn+=quiet?1:0))
+    else
+      for profile in H264 HEVC AV1 VP9; do
+        if grep -q "VAProfile${profile}" <<<"$report"; then show OK "VA-API:$profile" exposed; else show WARN "VA-API:$profile" missing; ((warn+=quiet?1:0)); fi
+      done
+      if grep -qi 'Intel.*iHD\|iHD_drv_video' <<<"$report"; then show OK 'VA-API driver' Intel-iHD; else show WARN 'VA-API driver' 'Intel iHD not identified'; ((warn+=quiet?1:0)); fi
+    fi
+  else
+    show WARN VA-API 'vainfo unavailable'
+    ((warn+=quiet?1:0))
+  fi
+fi
+
+if ! $quiet; then
+  ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"
+fi
+(( ko == 0 ))
