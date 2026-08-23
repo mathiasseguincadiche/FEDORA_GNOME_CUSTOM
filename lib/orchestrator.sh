@@ -5,7 +5,9 @@ declare -ag ORCH_RESULTS=()
 module_prefix() { printf '%s' "${1//./_}"; }
 
 orchestrator_run_module() {
-  local id="$1" path="$REPO_ROOT/${CATALOG_PATH[$id]}" prefix rc=0
+  local id="$1"
+  local path="$REPO_ROOT/${CATALOG_PATH[$id]}"
+  local prefix rc=0
   prefix="$(module_prefix "$id")"
   # shellcheck disable=SC1090
   source "$path"
