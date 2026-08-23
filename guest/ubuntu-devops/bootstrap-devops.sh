@@ -3,8 +3,6 @@ set -Eeuo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
-VIRTIOFS_TAG="${VIRTIOFS_TAG:-hostshare}"
-VIRTIOFS_MOUNT="${VIRTIOFS_MOUNT:-/mnt/hostshare}"
 
 log() { printf '[ubuntu-devops] %s\n' "$*"; }
 fail() { printf '[ubuntu-devops] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -139,12 +137,6 @@ systemctl enable --now qemu-guest-agent
 systemctl enable --now docker
 getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
 usermod -aG docker "$DEVOPS_USER"
-
-log 'configure controlled VirtioFS mount'
-install -d -m 0755 "$VIRTIOFS_MOUNT"
-fstab_line="${VIRTIOFS_TAG} ${VIRTIOFS_MOUNT} virtiofs defaults,nofail 0 0"
-grep -Fqx "$fstab_line" /etc/fstab || printf '%s\n' "$fstab_line" >>/etc/fstab
-mountpoint -q "$VIRTIOFS_MOUNT" || mount "$VIRTIOFS_MOUNT" || log 'VirtioFS mount will be retried on next boot'
 
 log 'write completion marker'
 install -d -m 0755 /var/lib/fedora-gnome-custom
