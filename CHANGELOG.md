@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0 — 2026-08-23
+
+- Refonte complète du scope KVM/QEMU/libvirt pour Fedora 44.
+- Détection AMD-V, `/dev/kvm`, `kvm_amd`, conflits de sous-réseau et maintien de l'Intel Arc B580 sur le pilote HOST `xe`.
+- Adoption du modèle de daemons libvirt modulaires Fedora lorsque disponible, avec fallback compatible `libvirtd.socket`.
+- Complétion des paquets : QEMU/KVM, virt-manager/virt-viewer, OVMF, swtpm + politique SELinux, VirtioFS, guestfs et libosinfo.
+- Ajout d'un pool `devops-data` sur le second T705 monté manuellement à `/data` en EXT4 ; aucun partitionnement ou formatage automatique.
+- Gestion persistante des labels SELinux `virt_image_t` avec `semanage fcontext` + `restorecon`.
+- Refonte de `devops-nat` : `192.168.50.0/24`, bridge `virbr50`, DNS Quad9/Cloudflare, zone firewalld `libvirt`.
+- Ajout d'un guard nftables possédé par le projet pour bloquer VM↔LAN physique sans perturber HOST↔VM, VM↔VM ou le NAT Internet.
+- Ajout d'un hook NetworkManager pour recalculer l'isolation lors des changements de connectivité.
+- Ajout des profils Ubuntu Server 26.04 LTS, Fedora 44 et Windows 11 UEFI Secure Boot/TPM 2.0, sans création automatique.
+- Ajout de `diagnostics/virtualization-doctor` et intégration au diagnostic global/menu opérateur.
+- Extension du pipeline KVM à preflight → stack → firmware → storage → network → catalog → CLI → virt-manager → VM profiles → validation.
+- Ajout d'un contrat CI/non-régression virtualisation et documentation V1.4.
+
 ## 0.4.0 — 2026-08-23
 
 - Complétion de la pile multimédia Fedora 44 avec GStreamer base/good/bad-free et OpenH264.
