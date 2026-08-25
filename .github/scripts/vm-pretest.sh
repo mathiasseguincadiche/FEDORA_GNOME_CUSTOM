@@ -12,6 +12,7 @@ CONSOLE="$LAB/console.log"
 BOOTSTRAP_LOG="$LAB/bootstrap.log"
 VERIFY_LOG="$LAB/verify.log"
 PIDFILE="$LAB/qemu.pid"
+QGA_SOCKET="$LAB/qga.sock"
 SSH_KEY="$LAB/id_ed25519"
 SSH_OPTS=(-i "$SSH_KEY" -p "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10)
 SCP_OPTS=(-i "$SSH_KEY" -P "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10)
@@ -23,6 +24,7 @@ cleanup() {
   if [[ -s "$PIDFILE" ]]; then
     kill "$(cat "$PIDFILE")" 2>/dev/null || true
   fi
+  rm -f "$QGA_SOCKET"
 }
 trap cleanup EXIT
 report '=== FEDORA_GNOME_CUSTOM REAL UBUNTU 26.04 VM PRE-TEST ==='
@@ -81,9 +83,13 @@ if [[ -e /dev/kvm ]]; then
 fi
 report "selected_acceleration=$ACCEL"
 start_vm() {
+  rm -f "$QGA_SOCKET"
   qemu-system-x86_64 -name ubuntu-devops-ci -machine "accel=$1" -cpu "$2" -smp 2 -m 4096 \
     -drive file=disk.qcow2,format=qcow2,if=virtio -drive file=seed.img,format=raw,if=virtio,readonly=on \
     -device virtio-net-pci,netdev=net0 -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22" \
+    -device virtio-serial-pci \
+    -chardev "socket,id=qga0,path=$QGA_SOCKET,server=on,wait=off" \
+    -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 \
     -display none -serial "file:$CONSOLE" -daemonize -pidfile "$PIDFILE"
 }
 if ! start_vm "$ACCEL" "$QEMU_CPU"; then

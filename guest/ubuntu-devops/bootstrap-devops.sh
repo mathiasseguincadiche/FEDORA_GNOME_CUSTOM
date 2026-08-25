@@ -133,7 +133,11 @@ rm -rf "$kind_tmp"
 
 log 'enable guest services and operator access'
 systemctl enable --now ssh
-systemctl enable --now qemu-guest-agent
+if [[ -e /dev/virtio-ports/org.qemu.guest_agent.0 ]]; then
+  systemctl start qemu-guest-agent
+else
+  log 'qemu-guest-agent virtio channel is not exposed; leave the static service available for hypervisor activation'
+fi
 systemctl enable --now docker
 getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
 usermod -aG docker "$DEVOPS_USER"
