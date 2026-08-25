@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-ROOT=/var/lib/fedora-gnome-custom/suspend
+SUSPEND_ROOT=/var/lib/fedora-gnome-custom/suspend
+HEALTH_ROOT=/var/lib/fedora-gnome-custom/health
 printf 'mem_sleep: '; cat /sys/power/mem_sleep 2>/dev/null || echo unknown
-if [[ -r "$ROOT/latest-pre.log" ]]; then echo '--- latest pre-suspend ---'; tail -n 80 "$ROOT/latest-pre.log"; else echo 'No pre-suspend capture yet.'; fi
-if [[ -r "$ROOT/latest-post.log" ]]; then echo '--- latest post-resume ---'; tail -n 120 "$ROOT/latest-post.log"; else echo 'No post-resume capture yet.'; fi
-echo '--- current boot suspend/xe/drm/acpi/aer signals ---'
-journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'PM: suspend|PM: resume|xe|drm|ACPI|AER:|PCIe Bus Error' | tail -n 160 || true
+if [[ -r "$SUSPEND_ROOT/latest-pre.log" ]]; then echo '--- latest sleep pre marker ---'; cat "$SUSPEND_ROOT/latest-pre.log"; else echo 'No pre-suspend marker yet.'; fi
+if [[ -r "$SUSPEND_ROOT/latest-post.log" ]]; then echo '--- latest sleep post marker ---'; cat "$SUSPEND_ROOT/latest-post.log"; else echo 'No post-resume marker yet.'; fi
+if [[ -r "$HEALTH_ROOT/latest-resume.log" ]]; then echo '--- latest asynchronous post-resume health capture ---'; tail -n 240 "$HEALTH_ROOT/latest-resume.log"; else echo 'No post-resume health capture yet.'; fi
+echo '--- current boot suspend/xe/drm/acpi/aer/nvme signals ---'
+journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'PM: suspend|PM: resume|xe|drm|ACPI|AER:|PCIe Bus Error|nvme.*(reset|timeout)|watchdog|hardware error' | tail -n 220 || true

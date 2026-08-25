@@ -6,23 +6,27 @@ ui_banner 'FEDORA WORKSTATION HEALTH' 'READ-ONLY'
 ok=0; warn=0; ko=0
 emit() { ui_check "$1" "$2" "$3"; case "$1" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
 if grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then emit OK Fedora '44'; else emit KO Fedora 'Fedora 44 required'; fi
-if baseline_certification_valid; then emit OK 'Hardware baseline' 'certified for current hardware/BIOS'; else emit KO 'Hardware baseline' 'run baseline-doctor; certification missing or invalid'; fi
+if baseline_certification_valid; then emit OK 'Hardware baseline' 'certified for current hardware/BIOS fingerprint'; else emit KO 'Hardware baseline' 'run baseline-doctor; certification missing or invalid'; fi
 if lscpu | grep -Fq "$EXPECTED_CPU"; then emit OK CPU "$EXPECTED_CPU"; else emit KO CPU 'unexpected CPU'; fi
 mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
 if (( mem_kib >= 45*1024*1024 )); then emit OK Memory '48 GiB class detected'; else emit KO Memory 'less than expected'; fi
+if "$REPO_ROOT/diagnostics/kernel-doctor" >/dev/null 2>&1; then emit OK Kernel 'Fedora/microcode/power baseline'; else emit KO Kernel 'run kernel-doctor'; fi
+if "$REPO_ROOT/diagnostics/hardware-topology-doctor" >/dev/null 2>&1; then emit OK Topology 'MSI/UEFI/SecureBoot/IOMMU/Arc/T705'; else emit KO Topology 'run hardware-topology-doctor'; fi
+if "$REPO_ROOT/diagnostics/power-doctor" >/dev/null 2>&1; then emit OK Power 'AMD P-State/runtime-PM observable'; else emit KO Power 'run power-doctor'; fi
 if "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; then emit OK Graphics 'Arc B580/xe baseline'; else emit KO Graphics 'run graphics-doctor'; fi
 if "$REPO_ROOT/diagnostics/storage-doctor" --quiet; then emit OK Storage 'T705 inventory baseline'; else emit KO Storage 'run storage-doctor'; fi
 if [[ "$(getenforce 2>/dev/null || echo unknown)" == Enforcing ]]; then emit OK SELinux Enforcing; else emit KO SELinux 'not Enforcing'; fi
 if systemctl is-active --quiet firewalld; then emit OK firewalld active; else emit WARN firewalld inactive; fi
 if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
   if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then emit OK GNOME 'Wayland session'; else emit WARN GNOME "session=${XDG_SESSION_TYPE:-unknown}"; fi
+  if "$REPO_ROOT/diagnostics/display-pipeline-doctor" >/dev/null 2>&1; then emit OK Display 'Mutter/Wayland pipeline'; else emit WARN Display 'run display-pipeline-doctor inside GNOME'; fi
 fi
 if bash "$REPO_ROOT/diagnostics/applications-doctor" --quiet; then emit OK Applications 'GTK4/libadwaita catalog + Ptyxis'; else emit KO Applications 'run applications-doctor'; fi
 if bash "$REPO_ROOT/diagnostics/media-doctor" --quiet; then emit OK Multimedia 'FFmpeg/GStreamer providers installed'; else emit KO Multimedia 'run media-doctor'; fi
 if is_true "${ENABLE_KVM:-true}"; then
   if bash "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet; then emit OK Virtualization 'KVM/libvirt contract'; else emit KO Virtualization 'run virtualization-doctor'; fi
 fi
-previous="$(journalctl -k -b -1 --no-pager 2>/dev/null | grep -Eic 'kernel panic|Oops:|watchdog.*hard LOCKUP|xe.*(reset|hang|wedged)|PCIe Bus Error|nvme.*(I/O|reset)' || true)"
-if (( previous == 0 )); then emit OK 'Previous boot' 'no critical signature matched'; else emit WARN 'Previous boot' "$previous critical signatures — run collect-boot-failure.sh"; fi
+previous="$(journalctl -k -b -1 --no-pager 2>/dev/null | grep -Eic 'kernel panic|Oops:|watchdog.*hard LOCKUP|MCE:.*Hardware Error|EDAC.*(UE|uncorrected)|xe.*(reset|hang|wedged)|PCIe Bus Error|nvme.*(I/O|reset)' || true)"
+if (( previous == 0 )); then emit OK 'Previous boot' 'no critical signature matched'; else emit WARN 'Previous boot' "$previous critical signatures — run last-boot-doctor"; fi
 ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"
 if (( ko == 0 )); then ui_summary 'WORKSTATION HEALTHY' 'DRY-RUN OR NORMAL USE' "$REPORT_ROOT" "$LOG_DIR"; else ui_summary 'WORKSTATION NEEDS ATTENTION' 'FIX KO BEFORE APPLY' "$REPORT_ROOT" "$LOG_DIR"; exit 20; fi

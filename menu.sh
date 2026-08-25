@@ -31,6 +31,17 @@ FEDORA GNOME CUSTOM
 24) Vérifier profondément le repository Restic
 25) Générer le plan Disaster Recovery
 26) Restaurer un snapshot vers staging
+27) Kernel / microcode / AMD P-State doctor
+28) Topologie MSI B850M / PCIe / ReBAR doctor
+29) Power / runtime-PM doctor
+30) Pipeline affichage GNOME / Wayland doctor
+31) Réseau HOST doctor
+32) Audio / PipeWire / ALC4080 doctor
+33) Crash forensic doctor
+34) Analyse du boot précédent
+35) Stress stabilité CPU/RAM (30 min)
+36) Certification suspend/resume (10 cycles)
+37) Certification workstation finale
 0) Quitter
 EOF
   read -rp 'Choix: ' choice
@@ -74,6 +85,17 @@ EOF
       snap="${snap:-latest}"
       if [[ -n "$target" ]]; then bash "$REPO_ROOT/scripts/backup/restore.sh" restore "$snap" "$target"; else bash "$REPO_ROOT/scripts/backup/restore.sh" restore "$snap"; fi
       ;;
+    27) bash "$REPO_ROOT/diagnostics/kernel-doctor" ;;
+    28) bash "$REPO_ROOT/diagnostics/hardware-topology-doctor" ;;
+    29) bash "$REPO_ROOT/diagnostics/power-doctor" ;;
+    30) bash "$REPO_ROOT/diagnostics/display-pipeline-doctor" ;;
+    31) bash "$REPO_ROOT/diagnostics/network-doctor" ;;
+    32) bash "$REPO_ROOT/diagnostics/audio-doctor" ;;
+    33) bash "$REPO_ROOT/diagnostics/crash-doctor" ;;
+    34) bash "$REPO_ROOT/diagnostics/last-boot-doctor" ;;
+    35) bash "$REPO_ROOT/scripts/hardware/stability-stress.sh" --execute --minutes 30 ;;
+    36) bash "$REPO_ROOT/scripts/hardware/suspend-certify.sh" --execute --cycles 10 ;;
+    37) bash "$REPO_ROOT/scripts/hardware/workstation-certify.sh" ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac

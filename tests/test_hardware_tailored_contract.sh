@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-for file in config/kernel.conf config/power.conf config/platform-msi-b850m-mortar.conf config/systemd-stability.conf modules/hardware/16_platform_topology.sh modules/hardware/17_kernel_power.sh modules/hardware/18_stability_observability.sh diagnostics/kernel-doctor diagnostics/hardware-topology-doctor diagnostics/display-pipeline-doctor diagnostics/power-doctor diagnostics/crash-doctor diagnostics/last-boot-doctor scripts/hardware/suspend-certify.sh scripts/hardware/stability-stress.sh scripts/hardware/workstation-certify.sh systemd/fedora-gnome-custom-boot-health.service systemd/fedora-gnome-custom-resume-health.service; do [[ -f "$ROOT/$file" ]] || { echo "missing tailored hardware file: $file" >&2; exit 1; }; done
+for file in config/kernel.conf config/power.conf config/platform-msi-b850m-mortar.conf config/systemd-stability.conf modules/hardware/16_platform_topology.sh modules/hardware/17_kernel_power.sh modules/hardware/18_stability_observability.sh diagnostics/kernel-doctor diagnostics/hardware-topology-doctor diagnostics/display-pipeline-doctor diagnostics/power-doctor diagnostics/crash-doctor diagnostics/last-boot-doctor diagnostics/network-doctor diagnostics/audio-doctor scripts/hardware/suspend-certify.sh scripts/hardware/stability-stress.sh scripts/hardware/workstation-certify.sh systemd/fedora-gnome-custom-boot-health.service systemd/fedora-gnome-custom-resume-health.service; do [[ -f "$ROOT/$file" ]] || { echo "missing tailored hardware file: $file" >&2; exit 1; }; done
 grep -Fq 'KERNEL_AUTOMATIC_CUSTOM_BUILD="false"' "$ROOT/config/kernel.conf"
 grep -Fq 'PLATFORM_FIRMWARE_MUTATION_ALLOWED="false"' "$ROOT/config/platform-msi-b850m-mortar.conf"
 grep -Fq 'PLATFORM_REQUIRE_SECURE_BOOT="true"' "$ROOT/config/platform-msi-b850m-mortar.conf"
@@ -18,4 +18,7 @@ grep -Fq 'systemctl --no-block start fedora-gnome-custom-resume-health.service' 
 grep -Fq 'Storage=persistent' "$ROOT/systemd/journald-80-fedora-gnome-custom.conf"
 grep -Fq 'stress-ng' "$ROOT/scripts/hardware/stability-stress.sh"
 grep -Fq 'POWER_SUSPEND_CERTIFICATION_CYCLES="10"' "$ROOT/config/power.conf"
+grep -Fq '37) Certification workstation finale' "$ROOT/menu.sh"
+grep -Fq 'hardware-topology-doctor' "$ROOT/diagnostics/workstation-doctor"
+grep -Fq 'latest-resume.log' "$ROOT/diagnostics/suspend-doctor"
 echo 'hardware tailored stability contract: PASS'
