@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-backup_validation_precheck() { :; }
-backup_validation_plan() { echo 'Validate backup marker freshness when backup gating is enabled.'; }
+backup_validation_precheck() { [[ -r "$REPO_ROOT/diagnostics/backup-doctor" ]]; }
+backup_validation_plan() { echo 'Validate fail-closed backup/recovery policy, Restic tooling and protected recovery helpers. Repository runtime checks are performed by backup-doctor outside dry-run.'; }
 backup_validation_apply() { :; }
-backup_validation_postcheck() { is_true "${DRY_RUN:-true}" && return 0; is_true "${REQUIRE_PREAPPLY_BACKUP:-true}" || return 0; [[ -s "$STATE_ROOT/preapply-backup.ok" ]]; }
+backup_validation_postcheck() {
+  is_true "${DRY_RUN:-true}" && return 0
+  bash "$REPO_ROOT/diagnostics/backup-doctor" --policy-only
+}
