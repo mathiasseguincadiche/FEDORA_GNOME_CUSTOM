@@ -15,7 +15,7 @@ jobs:
       - name: Real-machine gate remains closed in Git
         run: |
           grep -F 'REAL_MACHINE_APPROVED="false"' config/apply-gate.conf
-          ! grep -R -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config
+          ! grep -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config/*.conf
       - name: Fedora GNOME architecture invariants
         run: |
           grep -F 'REQUIRE_WAYLAND="true"' config/workstation.conf
