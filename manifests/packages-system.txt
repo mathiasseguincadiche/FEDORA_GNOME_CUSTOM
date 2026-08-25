@@ -10,5 +10,7 @@ util-linux
 fwupd
 microcode_ctl
 linux-firmware
+mokutil
+efibootmgr
 policycoreutils
 firewalld
