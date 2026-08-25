@@ -47,7 +47,16 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          if grep -RInE --exclude-dir=.git --exclude='non-regression.yml' '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|password[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{4,}["'"']|token[[:space:]]*[:=][[:space:]]*["'"'][A-Za-z0-9_\-]{20,}["'"'])' .; then
-            echo 'Potential secret committed.' >&2
+          scan='grep -RInE --exclude-dir=.git --exclude=non-regression.yml'
+          if $scan 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' .; then
+            echo 'Private key material appears committed.' >&2
+            exit 1
+          fi
+          if $scan 'password[[:space:]]*[:=][[:space:]]*"[^" ]{4,}"' .; then
+            echo 'Potential literal password appears committed.' >&2
+            exit 1
+          fi
+          if $scan 'token[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_-]{20,}"' .; then
+            echo 'Potential literal token appears committed.' >&2
             exit 1
           fi
