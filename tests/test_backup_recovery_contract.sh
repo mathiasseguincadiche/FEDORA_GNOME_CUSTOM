@@ -24,11 +24,16 @@ for entry in \
   'backup.dr|BACKUP|backup.restore|modules/backup/58_disaster_recovery.sh'; do
   grep -Fq "$entry" "$ROOT/manifests/module-plan.conf" || { echo "missing backup module: $entry" >&2; exit 1; }
 done
-for file in lib/backup_runtime.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do [[ -f "$ROOT/$file" ]] || { echo "missing backup/recovery file: $file" >&2; exit 1; }; done
+for file in lib/backup_runtime.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do
+  [[ -f "$ROOT/$file" ]] || { echo "missing backup/recovery file: $file" >&2; exit 1; }
+done
 grep -Fq 'marker_commit' "$ROOT/lib/apply_gate.sh"
 grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'restic check' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'Refusing in-place/live restore target' "$ROOT/scripts/backup/restore.sh"
-! grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0)' "$ROOT/scripts/backup" "$ROOT/modules/backup"
+if grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0)' "$ROOT/scripts/backup" "$ROOT/modules/backup"; then
+  echo 'forbidden destructive backup/recovery command found' >&2
+  exit 1
+fi
 echo 'backup/recovery contract: PASS'
