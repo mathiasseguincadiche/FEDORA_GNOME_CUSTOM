@@ -14,14 +14,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Real-machine gate remains closed in Git
         run: |
-          grep -F 'REAL_MACHINE_APPROVED="false"' config/security.conf
-          ! grep -R -n -E '^REAL_MACHINE_APPROVED=("?)(true|1|yes)\1$' config
+          grep -F 'REAL_MACHINE_APPROVED="false"' config/apply-gate.conf
+          ! grep -R -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config
       - name: Fedora GNOME architecture invariants
         run: |
-          grep -F 'REQUIRE_WAYLAND="true"' config/hardware.conf
+          grep -F 'REQUIRE_WAYLAND="true"' config/workstation.conf
           grep -F 'ENABLE_JUST_PERFECTION="false"' config/gnome.conf
           grep -F 'ALLOW_GPU_PASSTHROUGH="false"' config/virtualization.conf
-          grep -F 'ALLOW_FORCE_PROBE="false"' config/hardware.conf
+          grep -F 'ALLOW_FORCE_PROBE="false"' config/graphics.conf
           ! grep -RInEi --exclude-dir=.git 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' config manifests modules scripts guest diagnostics
       - name: KVM network ownership boundary
         run: |
