@@ -31,7 +31,10 @@ jobs:
           grep -F 'POWER_ALLOW_POWERTOP_AUTOTUNE="false"' config/power.conf
           grep -F 'SYSTEMD_ENABLE_KDUMP_AUTOMATIC="false"' config/systemd-stability.conf
           grep -F 'SYSTEMD_ENABLE_HARDWARE_WATCHDOG_AUTOMATIC="false"' config/systemd-stability.conf
+          grep -F 'ALLOW_THIRD_PARTY_NIC_DRIVER="false"' config/hardware.conf
+          grep -F 'EXPECTED_LAN_KERNEL_DRIVER="r8169"' config/hardware.conf
           ! grep -RInE 'nomodeset|xe[.]force_probe|i915[.]force_probe|pcie_aspm=off|amd_pstate=disable|processor[.]max_cstate=|idle=nomwait|amd_iommu=off|iommu=off' modules scripts systemd
+          ! grep -RInE 'r8126[-_]?dkms|modprobe[.]blacklist=r8169|blacklist[[:space:]]+r8169' modules scripts systemd config
           for forbidden in lspci journalctl nvme wayland-info vulkaninfo vainfo; do ! grep -F "$forbidden" scripts/systemd/fedora-custom-sleep-hook; done
       - name: KVM network ownership boundary
         run: |

@@ -15,6 +15,8 @@ if "$REPO_ROOT/diagnostics/hardware-topology-doctor" >/dev/null 2>&1; then emit 
 if "$REPO_ROOT/diagnostics/power-doctor" >/dev/null 2>&1; then emit OK Power 'AMD P-State/runtime-PM observable'; else emit KO Power 'run power-doctor'; fi
 if "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; then emit OK Graphics 'Arc B580/xe baseline'; else emit KO Graphics 'run graphics-doctor'; fi
 if "$REPO_ROOT/diagnostics/storage-doctor" --quiet; then emit OK Storage 'T705 inventory baseline'; else emit KO Storage 'run storage-doctor'; fi
+if "$REPO_ROOT/diagnostics/network-doctor" >/dev/null 2>&1; then emit OK Network 'RTL8126-VB/upstream driver contract'; else emit KO Network 'run network-doctor'; fi
+if "$REPO_ROOT/diagnostics/audio-doctor" >/dev/null 2>&1; then emit OK Audio 'ALC4080/PipeWire probe'; else emit WARN Audio 'run audio-doctor'; fi
 if [[ "$(getenforce 2>/dev/null || echo unknown)" == Enforcing ]]; then emit OK SELinux Enforcing; else emit KO SELinux 'not Enforcing'; fi
 if systemctl is-active --quiet firewalld; then emit OK firewalld active; else emit WARN firewalld inactive; fi
 if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then

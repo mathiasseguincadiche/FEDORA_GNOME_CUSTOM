@@ -9,6 +9,8 @@ La version 0.8.0 traite la workstation comme une plateforme certifiée, pas comm
 - firmware/UEFI observé et documenté, jamais modifié automatiquement ;
 - Secure Boot, AMD-V/IOMMU et ReBAR font partie du contrat de plateforme ;
 - le kit XMP 3.0 est exploité via A-XMP à 6000 MT/s, mais cette fréquence est un profil overclock à certifier par stress/RAS, pas une preuve de stabilité par simple boot ;
+- le RTL8126-VB 5 GbE doit utiliser le pilote upstream `r8169`; aucun DKMS Realtek ni blacklist de `r8169` n'est autorisé par défaut ;
+- l'ALC4080 est traité comme périphérique USB Audio et revalidé après resume avec ALSA/PipeWire/WirePlumber ;
 - diagnostics lourds hors du chemin critique system-sleep ;
 - journald/coredump persistants et bornés ;
 - kdump et watchdog matériel disponibles au diagnostic mais non armés automatiquement ;
@@ -16,7 +18,7 @@ La version 0.8.0 traite la workstation comme une plateforme certifiée, pas comm
 
 ## Chaîne de preuve
 
-`topologie → UEFI/Secure Boot/IOMMU/ReBAR → kernel/microcode → AMD P-State → PCIe → xe/Mesa → Mutter/Wayland → NVMe/réseau/audio → DDR5-6000 stress → 10 cycles suspend/resume → crash forensics`.
+`topologie → UEFI/Secure Boot/IOMMU/ReBAR → kernel/microcode → AMD P-State → PCIe → xe/Mesa → Mutter/Wayland → T705/RTL8126/ALC4080 → DDR5-6000 stress → 10 cycles suspend/resume → crash forensics`.
 
 Commandes :
 
@@ -25,6 +27,8 @@ diagnostics/hardware-topology-doctor
 diagnostics/kernel-doctor
 diagnostics/power-doctor
 diagnostics/display-pipeline-doctor
+diagnostics/network-doctor
+diagnostics/audio-doctor
 diagnostics/crash-doctor
 diagnostics/last-boot-doctor
 scripts/hardware/stability-stress.sh --execute --minutes 30

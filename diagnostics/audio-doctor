@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-printf '%s\n' '=== USB audio / ALC4080 evidence ==='
-lsusb | grep -Ei 'audio|Realtek|ALC4080' || true
-printf '%s\n' '=== ALSA cards ==='
-aplay -l 2>/dev/null || true
-printf '%s\n' '=== PipeWire/WirePlumber ==='
-wpctl status 2>/dev/null || true
-printf '%s\n' '=== current boot audio errors ==='
-journalctl -b --no-pager 2>/dev/null | grep -Ei 'pipewire|wireplumber|snd_usb_audio|usb.*audio' | grep -Ei 'error|failed|timeout|reset|disconnect' | tail -n 100 || true
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+ok=0; warn=0; ko=0
+record() { local s="$1" n="$2" d="$3"; ui_check "$s" "$n" "$d"; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
+usb_audio="$(lsusb 2>/dev/null | grep -Ei 'Realtek|USB Audio|Micro Star.*Audio' || true)"
+if [[ -n "$usb_audio" ]]; then record OK "$EXPECTED_AUDIO_CODEC" 'USB-audio-class evidence present'; else record WARN "$EXPECTED_AUDIO_CODEC" 'exact USB codec identity not proven; inspect lsusb/ALSA'; fi
+if lsmod | grep -q '^snd_usb_audio'; then record OK snd_usb_audio loaded; else record WARN snd_usb_audio 'not loaded'; fi
+alsa="$(aplay -l 2>/dev/null || true)"
+if [[ -n "$alsa" ]]; then record OK ALSA 'playback devices enumerated'; else record WARN ALSA 'no playback device list'; fi
+if command -v wpctl >/dev/null 2>&1 && wpctl status >/dev/null 2>&1; then record OK 'PipeWire/WirePlumber' operational; else record WARN 'PipeWire/WirePlumber' 'session probe unavailable'; fi
+errors="$(journalctl -b --no-pager 2>/dev/null | grep -Ei 'pipewire|wireplumber|snd_usb_audio|usb.*audio' | grep -Ei 'error|failed|timeout|reset|disconnect' | tail -n 100 || true)"
+if [[ -z "$errors" ]]; then record OK 'audio journal' clean; else record WARN 'audio journal' 'matching events found'; fi
+ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; (( ko == 0 ))

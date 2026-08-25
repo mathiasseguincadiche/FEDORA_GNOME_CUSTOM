@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-printf '%s\n' '=== Network controllers ==='
-lspci -nnk | grep -A4 -Ei 'Ethernet controller|Network controller' || true
-printf '%s\n' '=== Links ==='
-ip -br link
-printf '%s\n' '=== Routes ==='
-ip -4 route
-printf '%s\n' '=== NIC statistics ==='
-while IFS= read -r ifname; do [[ "$ifname" == lo ]] && continue; echo "[$ifname]"; ethtool -i "$ifname" 2>/dev/null || true; ethtool -S "$ifname" 2>/dev/null | grep -Ei 'err|drop|timeout|reset' | head -n 50 || true; done < <(ls /sys/class/net)
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+ok=0; warn=0; ko=0
+record() { local s="$1" n="$2" d="$3"; ui_check "$s" "$n" "$d"; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
+lan="$(lspci -nnk -d "${EXPECTED_LAN_PCI_VENDOR}:${EXPECTED_LAN_PCI_DEVICE}" 2>/dev/null || true)"
+if [[ -n "$lan" ]]; then
+  record OK "$EXPECTED_LAN_FAMILY" "PCI ${EXPECTED_LAN_PCI_VENDOR}:${EXPECTED_LAN_PCI_DEVICE}"
+  if grep -Fq "Kernel driver in use: $EXPECTED_LAN_KERNEL_DRIVER" <<< "$lan"; then record OK 'LAN kernel driver' "$EXPECTED_LAN_KERNEL_DRIVER"; else record KO 'LAN kernel driver' 'expected upstream r8169'; fi
+else
+  record KO "$EXPECTED_LAN_FAMILY" 'controller not detected'
+fi
+wifi="$(lspci -nnk 2>/dev/null | grep -A4 -Ei 'Network controller' || true)"
+if [[ -n "$wifi" ]]; then record OK 'Wi-Fi controller' 'present; exact chipset inventoried at runtime'; else record WARN 'Wi-Fi controller' 'not detected or disabled'; fi
+active=0
+while IFS= read -r ifname; do
+  [[ "$ifname" == lo ]] && continue
+  oper="$(cat "/sys/class/net/$ifname/operstate" 2>/dev/null || true)"
+  if [[ "$oper" == up ]]; then ((active+=1)); fi
+  ethtool -i "$ifname" > "$REPORT_ROOT/$RUN_ID-net-$ifname-driver.txt" 2>/dev/null || true
+  ethtool -S "$ifname" 2>/dev/null | grep -Ei 'err|drop|timeout|reset' > "$REPORT_ROOT/$RUN_ID-net-$ifname-errors.txt" || true
+done < <(ls /sys/class/net)
+if (( active > 0 )); then record OK 'active uplink' "$active interface(s) up"; else record WARN 'active uplink' 'no non-loopback interface up'; fi
+ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; (( ko == 0 ))
