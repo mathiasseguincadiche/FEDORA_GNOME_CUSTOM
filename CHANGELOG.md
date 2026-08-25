@@ -1,47 +1,39 @@
 # Changelog
 
+## 0.8.0 — 2026-08-25
+
+- Ajout d'un contrat matériel sur mesure MSI B850M MORTAR WIFI / Ryzen 7 7700 / Arc B580 / 2× T705.
+- Politique kernel Fedora-only : build officiel, taint/cmdline/microcode/AMD P-State contrôlés, aucun kernel custom automatique ni contournement global ASPM/C-state/GPU.
+- Validation UEFI/Secure Boot/ReBAR, topologie PCIe et liens GPU/NVMe.
+- Instrumentation systemd revue : hook de veille minimal et diagnostics lourds déplacés vers un service post-resume oneshot.
+- Journald et coredump persistants/bornés, capture de santé au boot et au resume, crash forensics, pstore/kdump observables sans activation automatique dangereuse.
+- Nouveaux doctors kernel/topologie/power/display/network/audio/crash/previous-boot.
+- Ajout de stress-ng contrôlé pour certifier CPU/RAM et d'une procédure explicite de 10 cycles suspend/resume.
+- Ajout d'un agrégateur de certification workstation et de contrats CI de non-régression matériels.
+
 ## 0.7.0 — 2026-08-25
 
 - Passage au niveau « industrial readiness » inspiré du projet Ubuntu, sans copier son implémentation spécifique APT/Ubuntu.
 - Ajout d'un workflow Architecture non-regression verrouillant GNOME/Wayland, Arc B580, réseau KVM, sécurité destructive, backup fail-closed et secrets évidents.
 - Ajout d'un pretest HOST réel dans `fedora:44` installant la pile Fedora/GNOME/KVM/backup complète, avec RPM Fusion, vendor repos, Flathub et extensions GNOME 50.
 - Ajout d'un vrai pretest Ubuntu Server 26.04 sous QEMU : signature Canonical + SHA-256, cloud-init, SSH, bootstrap DevOps exact du dépôt, `verify-devops`, Docker hello-world et preuve après reboot.
-- Ajout d'artifacts CI : rapport, console, bootstrap et validation VM.
 - Refonte complète du scope BACKUP en inventaire, repository, HOST, métadonnées KVM, VM, intégrité/rétention, restore et disaster recovery.
-- Le backup pré-APPLY détecte/valide une cible externe ou distante, protège la passphrase, capture `/etc` + `/boot`, les inventaires et XML libvirt, exécute `restic check` puis un restore-canary réel.
-- Le gate APPLY exige désormais que le marker backup corresponde exactement au commit Git courant.
-- Ajout de `backup-now.sh`, `restore.sh`, `disaster-recovery.sh` et `backup-doctor`.
-- Les sauvegardes QCOW2 exigent les VM arrêtées et utilisent `qemu-img convert`; aucune copie live n'est autorisée.
-- Les restores sont staging-first et refusent les cibles système/VM actives.
-- Menu opérateur étendu et documentation CI/recovery/industrial readiness ajoutée.
 
 ## 0.6.2 — 2026-08-23
 
-- Ajout de l'intégration Nautilus des VM sans réintroduire VirtioFS.
-- Ubuntu : accès graphique au vrai `/home/mathias` via SFTP sur le SSH existant.
-- Windows : partage authentifié `C:\VM-Share` via SMB, limité par Windows Firewall au réseau `192.168.50.0/24`.
-- Ajout de `configure_nautilus_vm_access.sh` pour découvrir dynamiquement les leases libvirt et maintenir les favoris Nautilus.
-- Ajout de `guest/windows-11/configure-smb-share.ps1` sans compte invité ni secret versionné.
-- La création Windows génère et attache automatiquement un petit ISO local `FGC_TOOLS` grâce à `xorriso`.
-- Ajout du module KVM `kvm.file_access`, d'options de menu et d'un contrat CI dédié.
+- Intégration Nautilus des VM via SFTP Ubuntu et SMB Windows sans VirtioFS.
 
 ## 0.6.1 — 2026-08-23
 
-- Suppression complète de VirtioFS/virtiofsd et du partage HOST↔VM `/data/libvirt/shared`.
-- Ubuntu conserve cloud-init, SSH et son bootstrap DevOps ; accès au filesystem invité par SSH/SFTP.
+- Suppression complète de VirtioFS/virtiofsd.
 
 ## 0.6.0 — 2026-08-23
 
-- Contrat final limité à deux VM de référence : `ubuntu-devops` et `windows-11`; suppression du profil Fedora invité.
-- `ubuntu-devops` fixé à 6 vCPU, 16 Gio RAM et 160 Gio qcow2.
-- `windows-11` fixé à 4 vCPU, 12 Gio RAM et 128 Gio qcow2.
-- Ajout du provisioning cloud-init/SSH/bootstrap DevOps Ubuntu et du profil Windows 11 Secure Boot/TPM/VirtIO.
-- Ajout de la certification runtime on-machine.
+- Deux VM de référence : Ubuntu DevOps et Windows 11.
 
 ## 0.5.0 — 2026-08-23
 
-- Refonte complète du scope KVM/QEMU/libvirt pour Fedora 44.
-- Stack CLI-first, pool `devops-data`, réseau `devops-nat`, applications professionnelles et extensions GNOME sélectionnées.
+- Refonte KVM/QEMU/libvirt CLI-first.
 
 ## 0.4.0 — 2026-08-23
 

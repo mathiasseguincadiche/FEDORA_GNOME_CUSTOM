@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+printf '%s\n' '--- persistent journal ---'
+[[ -d /var/log/journal ]] && echo 'persistent journal: present' || echo 'persistent journal: absent'
+printf '%s\n' '--- previous boot high-priority events ---'
+journalctl -b -1 -p warning..emerg --no-pager 2>/dev/null | tail -n 200 || true
+printf '%s\n' '--- previous boot crash signatures ---'
+journalctl -k -b -1 --no-pager 2>/dev/null | grep -Ei 'panic|Oops|BUG:|MCE|hardware error|EDAC|watchdog|soft lockup|hard LOCKUP|GPU HANG|wedged|AER:|PCIe Bus Error|nvme.*(reset|timeout)|Out of memory|oom-kill' | tail -n 200 || true
+printf '%s\n' '--- pstore ---'
+if [[ -d /sys/fs/pstore ]]; then ls -la /sys/fs/pstore; else echo unavailable; fi
+printf '%s\n' '--- coredumps ---'
+coredumpctl --no-pager list 2>/dev/null | tail -n 30 || true
+printf '%s\n' '--- RAS ---'
+systemctl is-active rasdaemon.service 2>/dev/null || true
+printf '%s\n' '--- kdump ---'
+command -v kdumpctl >/dev/null 2>&1 && kdumpctl status 2>/dev/null || echo 'kdump not armed (automatic enablement intentionally disabled)'

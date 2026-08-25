@@ -1,0 +1,20 @@
+[Unit]
+Description=Fedora GNOME custom post-resume health evidence
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+ConditionPathExists=/usr/local/libexec/fedora-custom-resume-health
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/fedora-custom-resume-health
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=60s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/fedora-gnome-custom
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes

@@ -1,0 +1,23 @@
+[Unit]
+Description=Fedora GNOME custom boot health evidence
+After=multi-user.target
+ConditionPathExists=/usr/local/libexec/fedora-custom-boot-health
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/fedora-custom-boot-health
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=45s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/fedora-gnome-custom
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=multi-user.target

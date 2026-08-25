@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT=/var/lib/fedora-gnome-custom/health
+mkdir -p "$ROOT"
+OUT="$ROOT/boot-$(date -u +%Y%m%dT%H%M%SZ).log"
+{
+  echo "utc=$(date -u +%FT%TZ)"
+  echo '[kernel]'; uname -a; cat /proc/cmdline
+  echo '[dmi]'; for f in board_vendor board_name bios_vendor bios_version bios_date; do [[ -r "/sys/class/dmi/id/$f" ]] && printf '%s=%s\n' "$f" "$(< "/sys/class/dmi/id/$f")"; done
+  echo '[cpu]'; lscpu
+  echo '[amd-pstate]'; cat /sys/devices/system/cpu/amd_pstate/status 2>/dev/null || true
+  echo '[memory]'; grep -E 'MemTotal|SwapTotal' /proc/meminfo
+  echo '[gpu]'; lspci -nnk -d 8086:e20b 2>/dev/null || true
+  echo '[nvme]'; nvme list 2>/dev/null || true
+  echo '[ras]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'MCE|hardware error|EDAC|AER:|PCIe Bus Error|watchdog|GPU HANG|wedged|reset' | tail -n 200 || true
+} > "$OUT" 2>&1
+ln -sfn "$OUT" "$ROOT/latest-boot.log"

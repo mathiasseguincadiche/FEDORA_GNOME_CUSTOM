@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT=/var/lib/fedora-gnome-custom/health
+mkdir -p "$ROOT"
+OUT="$ROOT/resume-$(date -u +%Y%m%dT%H%M%SZ).log"
+{
+  echo "utc=$(date -u +%FT%TZ)"
+  echo '[mem-sleep]'; cat /sys/power/mem_sleep 2>/dev/null || true
+  echo '[gpu]'; lspci -nnk -d 8086:e20b 2>/dev/null || true
+  echo '[gpu-power]'; for f in /sys/bus/pci/devices/*/power/runtime_status; do [[ -r "$f" ]] || continue; dev="$(dirname "$(dirname "$f")")"; [[ -r "$dev/vendor" && -r "$dev/device" ]] || continue; if [[ "$(< "$dev/vendor")" == 0x8086 && "$(< "$dev/device")" == 0xe20b ]]; then printf '%s=%s\n' "$f" "$(< "$f")"; fi; done
+  echo '[drm-connectors]'; for f in /sys/class/drm/card*-*/status; do [[ -r "$f" ]] && printf '%s=%s\n' "$f" "$(< "$f")"; done
+  echo '[nvme]'; nvme list 2>/dev/null || true
+  echo '[network]'; ip -br link 2>/dev/null || true
+  echo '[audio]'; wpctl status 2>/dev/null || true
+  echo '[resume-signals]'; journalctl -k -b --since '-10 min' --no-pager 2>/dev/null | grep -Ei 'PM:|suspend|resume|xe|drm|AER:|PCIe Bus Error|nvme|watchdog|hardware error' | tail -n 300 || true
+} > "$OUT" 2>&1
+ln -sfn "$OUT" "$ROOT/latest-resume.log"

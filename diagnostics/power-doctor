@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+ok=0; warn=0; ko=0
+record() { local s="$1" n="$2" d="$3"; ui_check "$s" "$n" "$d"; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
+if [[ -r /sys/devices/system/cpu/amd_pstate/status ]]; then state="$(< /sys/devices/system/cpu/amd_pstate/status)"; [[ "$state" != disable* ]] && record OK amd-pstate "$state" || record KO amd-pstate "$state"; else record WARN amd-pstate unavailable; fi
+driver="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || true)"; [[ -n "$driver" ]] && record OK cpufreq-driver "$driver" || record WARN cpufreq-driver unavailable
+if command -v powerprofilesctl >/dev/null 2>&1; then profile="$(powerprofilesctl get 2>/dev/null || true)"; [[ "$profile" == "${POWER_NORMAL_PROFILE:-balanced}" ]] && record OK power-profile "$profile" || record WARN power-profile "${profile:-unavailable}"; fi
+[[ -r /sys/power/mem_sleep ]] && record OK mem-sleep "$(< /sys/power/mem_sleep)" || record WARN mem-sleep unavailable
+runtime="$(for f in /sys/bus/pci/devices/*/power/runtime_status; do [[ -r "$f" ]] || continue; dev="$(dirname "$(dirname "$f")")"; [[ -r "$dev/vendor" && -r "$dev/device" ]] || continue; [[ "$(< "$dev/vendor")" == 0x8086 && "$(< "$dev/device")" == 0xe20b ]] && cat "$f"; done | head -n1)" || true
+[[ -n "$runtime" ]] && record OK 'Arc runtime-PM' "$runtime" || record WARN 'Arc runtime-PM' unavailable
+ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; (( ko == 0 ))

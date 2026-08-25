@@ -4,17 +4,8 @@ PHASE="${1:-unknown}"
 ACTION="${2:-unknown}"
 ROOT=/var/lib/fedora-gnome-custom/suspend
 mkdir -p "$ROOT"
-TS="$(date -u +%Y%m%dT%H%M%SZ)"
-OUT="$ROOT/${TS}-${PHASE}-${ACTION}.log"
-{
-  echo "utc=$TS"; echo "phase=$PHASE"; echo "action=$ACTION"
-  echo '[kernel]'; uname -a
-  echo '[mem_sleep]'; cat /sys/power/mem_sleep 2>/dev/null || true
-  echo '[pci-gpu]'; lspci -nnk -d 8086:e20b 2>/dev/null || true
-  echo '[drm-connectors]'; for f in /sys/class/drm/card*-*/status; do [[ -r "$f" ]] && echo "$f=$(cat "$f")"; done
-  echo '[drm-errors]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(error|fault|reset|hang|wedged)' | tail -n 100 || true
-  echo '[pcie-aer]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'AER:|PCIe Bus Error' | tail -n 100 || true
-  echo '[nvme]'; nvme list 2>/dev/null || true
-} > "$OUT" 2>&1
-ln -sfn "$OUT" "$ROOT/latest-${PHASE}.log"
+printf 'utc=%s\nphase=%s\naction=%s\n' "$(date -u +%FT%TZ)" "$PHASE" "$ACTION" > "$ROOT/latest-${PHASE}.log"
+if [[ "$PHASE" == post ]]; then
+  systemctl --no-block start fedora-gnome-custom-resume-health.service >/dev/null 2>&1 || true
+fi
 exit 0

@@ -16,4 +16,8 @@ powertop
 rasdaemon
 dmidecode
 kernel-tools
+kexec-tools
+stress-ng
+sysstat
+alsa-utils
 pipewire-utils

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+printf '%s\n' '=== USB audio / ALC4080 evidence ==='
+lsusb | grep -Ei 'audio|Realtek|ALC4080' || true
+printf '%s\n' '=== ALSA cards ==='
+aplay -l 2>/dev/null || true
+printf '%s\n' '=== PipeWire/WirePlumber ==='
+wpctl status 2>/dev/null || true
+printf '%s\n' '=== current boot audio errors ==='
+journalctl -b --no-pager 2>/dev/null | grep -Ei 'pipewire|wireplumber|snd_usb_audio|usb.*audio' | grep -Ei 'error|failed|timeout|reset|disconnect' | tail -n 100 || true

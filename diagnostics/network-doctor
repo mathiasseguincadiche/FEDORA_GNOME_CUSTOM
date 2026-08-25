@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+printf '%s\n' '=== Network controllers ==='
+lspci -nnk | grep -A4 -Ei 'Ethernet controller|Network controller' || true
+printf '%s\n' '=== Links ==='
+ip -br link
+printf '%s\n' '=== Routes ==='
+ip -4 route
+printf '%s\n' '=== NIC statistics ==='
+while IFS= read -r ifname; do [[ "$ifname" == lo ]] && continue; echo "[$ifname]"; ethtool -i "$ifname" 2>/dev/null || true; ethtool -S "$ifname" 2>/dev/null | grep -Ei 'err|drop|timeout|reset' | head -n 50 || true; done < <(ls /sys/class/net)

@@ -23,6 +23,16 @@ jobs:
           grep -F 'ALLOW_GPU_PASSTHROUGH="false"' config/virtualization.conf
           grep -F 'ALLOW_FORCE_PROBE="false"' config/graphics.conf
           ! grep -RInEi --exclude-dir=.git 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' config manifests modules scripts guest diagnostics
+      - name: Hardware tailored stability invariants
+        run: |
+          grep -F 'KERNEL_AUTOMATIC_CUSTOM_BUILD="false"' config/kernel.conf
+          grep -F 'PLATFORM_FIRMWARE_MUTATION_ALLOWED="false"' config/platform-msi-b850m-mortar.conf
+          grep -F 'POWER_ALLOW_PERMANENT_PERFORMANCE="false"' config/power.conf
+          grep -F 'POWER_ALLOW_POWERTOP_AUTOTUNE="false"' config/power.conf
+          grep -F 'SYSTEMD_ENABLE_KDUMP_AUTOMATIC="false"' config/systemd-stability.conf
+          grep -F 'SYSTEMD_ENABLE_HARDWARE_WATCHDOG_AUTOMATIC="false"' config/systemd-stability.conf
+          ! grep -RInE 'nomodeset|xe[.]force_probe|i915[.]force_probe|pcie_aspm=off|amd_pstate=disable|processor[.]max_cstate=|idle=nomwait|amd_iommu=off|iommu=off' modules scripts systemd
+          for forbidden in lspci journalctl nvme wayland-info vulkaninfo vainfo; do ! grep -F "$forbidden" scripts/systemd/fedora-custom-sleep-hook; done
       - name: KVM network ownership boundary
         run: |
           grep -F 'KVM_NETWORK_CIDR="192.168.50.0/24"' config/virtualization.conf
@@ -48,15 +58,6 @@ jobs:
         run: |
           set -Eeuo pipefail
           scan='grep -RInE --exclude-dir=.git --exclude=non-regression.yml'
-          if $scan 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' .; then
-            echo 'Private key material appears committed.' >&2
-            exit 1
-          fi
-          if $scan 'password[[:space:]]*[:=][[:space:]]*"[^" ]{4,}"' .; then
-            echo 'Potential literal password appears committed.' >&2
-            exit 1
-          fi
-          if $scan 'token[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_-]{20,}"' .; then
-            echo 'Potential literal token appears committed.' >&2
-            exit 1
-          fi
+          if $scan 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' .; then echo 'Private key material appears committed.' >&2; exit 1; fi
+          if $scan 'password[[:space:]]*[:=][[:space:]]*"[^" ]{4,}"' .; then echo 'Potential literal password appears committed.' >&2; exit 1; fi
+          if $scan 'token[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_-]{20,}"' .; then echo 'Potential literal token appears committed.' >&2; exit 1; fi

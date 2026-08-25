@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+printf '%s\n' '=== Previous boot classification evidence ==='
+if ! journalctl -b -1 -n 1 --no-pager >/dev/null 2>&1; then echo 'No previous boot journal available.'; exit 0; fi
+journalctl -b -1 --no-pager -o short-monotonic 2>/dev/null | grep -Ei 'systemd-shutdown|reboot|poweroff|panic|Oops|BUG:|watchdog|lockup|MCE|hardware error|EDAC|GPU HANG|wedged|drm.*reset|xe.*reset|AER:|PCIe Bus Error|nvme.*(timeout|reset)|Out of memory|oom-kill' | tail -n 250 || true
+printf '%s\n' '=== Previous boot tail ==='
+journalctl -b -1 --no-pager -o short-monotonic 2>/dev/null | tail -n 100 || true

@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50 “Tokyo”**, conçue autour d'un Ryzen 7 7700, d'une Intel Arc B580 et d'un usage DevOps/Ops infrastructure.
+Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50 “Tokyo”**, conçue autour de la plateforme MSI MAG B850M MORTAR WIFI, du Ryzen 7 7700, de l'Intel Arc B580 et de deux Crucial T705.
 
 ## Architecture
 
@@ -8,47 +8,44 @@ Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50 “Tokyo”**,
 BASELINE → SYSTEM → HARDWARE → GNOME → APPLICATIONS → KVM → BACKUP/RECOVERY
 ```
 
-Le projet conserve Wayland, SELinux Enforcing, firewalld et les choix Fedora upstream. Il interdit les tweaks kernel/GPU expérimentaux sans diagnostic, le partitionnement/formatage automatique, le GPU passthrough de l'Arc B580 et les mutations globales de firewall.
+La couche HARDWARE est désormais sur mesure : UEFI/Secure Boot/ReBAR, topologie PCIe, kernel Fedora/microcode, AMD P-State, Arc B580/`xe`, T705, Mutter/Wayland, réseau/audio, observabilité systemd, crash forensics et certification suspend/resume.
+
+Le projet conserve Wayland, SELinux Enforcing, firewalld et les choix Fedora upstream. Il interdit les kernels custom automatiques, `force_probe`, les contournements globaux ASPM/C-states, le governor performance permanent, le partitionnement/formatage automatique et le GPU passthrough de l'Arc B580.
+
+## Hardware-Tailored Stability 0.8.0
+
+Le kernel reste celui de Fedora 44. Le projet personnalise le **contrat autour du kernel** : provenance Fedora, taint, cmdline, microcode, AMD P-State, rollback, PCIe/ReBAR, runtime PM et preuves de crash. Journald/coredump sont persistants et bornés. Le hook system-sleep est minimal ; les diagnostics lourds sont exécutés après le resume par une unité systemd dédiée.
+
+La DDR5-6000 n'est jamais considérée stable parce que la machine boote : un stress CPU/RAM et l'absence de RAS/MCE/EDAC sont requis. La veille est certifiée par 10 cycles réels avant verdict final.
+
+```bash
+diagnostics/hardware-topology-doctor
+diagnostics/kernel-doctor
+diagnostics/power-doctor
+diagnostics/display-pipeline-doctor
+diagnostics/crash-doctor
+scripts/hardware/stability-stress.sh --execute --minutes 30
+scripts/hardware/suspend-certify.sh --execute --cycles 10
+scripts/hardware/workstation-certify.sh
+```
 
 ## GNOME 50 réellement intégré
 
-Le scope GNOME gère GNOME Shell, Mutter/Wayland, Nautilus/GVfs, portals, Flatpak, PipeWire/WirePlumber, Dash to Dock, Blur My Shell et Extension Manager. Les applications natives sont GTK4/libadwaita lorsqu'une solution GNOME de qualité existe ; les applications métier constituent des exceptions documentées.
-
-Applications professionnelles gérées : VS Code, Brave, VLC, Bitwarden, Slack, GNOME Text Editor, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText.
+GNOME Shell, Mutter/Wayland, Nautilus/GVfs, portals, Flatpak, PipeWire/WirePlumber, Dash to Dock, Blur My Shell et Extension Manager sont gérés comme une couche desktop cohérente. Les applications natives privilégient GTK4/libadwaita ; les applications métier sont des exceptions documentées.
 
 ## KVM/libvirt CLI-first
 
-`qemu:///system`, OVMF/UEFI, swtpm/TPM 2.0, libguestfs/libosinfo, `virsh`, `virt-admin`, `virt-install`, `virt-xml`, `qemu-img`, `virt-v2v`, etc.
+`qemu:///system`, OVMF/UEFI, swtpm/TPM 2.0, libguestfs/libosinfo, `virsh`, `virt-admin`, `virt-install`, `virt-xml`, `qemu-img`, `virt-v2v`, etc. Le second T705 est monté **manuellement** en EXT4 sur `/data` et devient le pool `devops-data`.
 
-Stockage VM : second T705 monté **manuellement** en EXT4 sur `/data`, pool `devops-data` dans `/data/libvirt/images`.
-
-Réseau : `devops-nat` / `virbr50` / `192.168.50.0/24`, gateway `192.168.50.254`, DHCP `.100-.200`, DNS `9.9.9.9` + `1.1.1.1`. HOST↔VM, VM↔VM et VM→Internet sont autorisés ; VM↔LAN physique et forwarding entrant restent bloqués.
-
-## Deux VM de référence
-
-**Ubuntu Server 26.04 `ubuntu-devops`** : 6 vCPU, 16 Gio, 160 Gio qcow2, UEFI, VirtIO, cloud-init, SSH et bootstrap Git/gh, Docker, Ansible, Terraform, Azure CLI, AWS CLI, kubectl, Helm, kind et outils complémentaires.
-
-**Windows 11 `windows-11`** : 4 vCPU, 12 Gio, 128 Gio qcow2, UEFI Secure Boot, TPM 2.0/swtpm, VirtIO et SPICE.
-
-VirtioFS reste exclu. Nautilus accède au vrai `/home/mathias` Ubuntu via SFTP/SSH et à `C:\VM-Share` via SMB authentifié côté Windows.
+Deux VM : Ubuntu Server 26.04 `ubuntu-devops` (6 vCPU, 16 Gio, 160 Gio, cloud-init/SSH/bootstrap DevOps) et Windows 11 `windows-11` (4 vCPU, 12 Gio, 128 Gio, Secure Boot, TPM 2.0, VirtIO). VirtioFS reste exclu ; Nautilus accède à Ubuntu par SFTP et à Windows par SMB authentifié.
 
 ## Validation industrielle
 
-La CI comprend désormais cinq niveaux complémentaires :
-
-1. **Tests** — contrats statiques/structure/non-régression fonctionnelle ;
-2. **Shell quality** — syntaxe Bash + ShellCheck ;
-3. **Fedora 44 package preflight** — résolution des sources et contrats packages ;
-4. **Fedora 44 host integration pretest** — installation réelle de la pile Fedora/GNOME/KVM dans `fedora:44` ;
-5. **Ubuntu 26.04 real VM pretest** — image Canonical signée + SHA-256, vraie VM QEMU (KVM si disponible), cloud-init, bootstrap DevOps réel, Docker smoke test et reboot persistence.
-
-Un workflow **Architecture non-regression** verrouille en plus Wayland, GNOME, GPU, réseau KVM, sécurité destructive, backup fail-closed et absence de secrets évidents.
+CI : Tests, Shell quality, Fedora 44 package preflight, Fedora 44 host integration pretest, Ubuntu 26.04 real VM pretest et Architecture non-regression. La 0.8.0 ajoute un contrat spécifique empêchant les régressions kernel/power/sleep-hook et exige les nouveaux outils de certification.
 
 ## Backup / Restore / Disaster Recovery
 
-Restic chiffré est maintenant structuré en pipeline : inventaire → repository → HOST → métadonnées KVM → disques VM → intégrité/rétention → restore staging → disaster recovery.
-
-Le pré-APPLY exige un repository externe/off-machine, une passphrase hors Git, `restic check`, un restore-canary réel et un marker lié au **même commit Git** que l'APPLY. Les QCOW2 ne sont sauvegardés qu'avec VM arrêtée ; les restores sont staging-first et n'écrasent jamais automatiquement le système live.
+Restic chiffré : inventaire → repository externe/off-machine → HOST → métadonnées KVM → disques VM arrêtées → intégrité/rétention → restore staging → disaster recovery.
 
 ```bash
 ./diagnostic.sh
@@ -58,18 +55,8 @@ Le pré-APPLY exige un repository externe/off-machine, une passphrase hors Git, 
 ./menu.sh
 ```
 
-Outils recovery :
-
-```bash
-diagnostics/backup-doctor
-scripts/backup/backup-now.sh
-scripts/backup/backup-now.sh --include-vms
-scripts/backup/restore.sh list
-scripts/backup/disaster-recovery.sh
-```
-
 ## Version
 
-`0.7.0` — industrial readiness : CI non-régression, pretest HOST Fedora 44, vraie VM Ubuntu 26.04 avec bootstrap/reboot, et chaîne backup/restore/DR fail-closed.
+`0.8.0` — hardware-tailored stability et observabilité sur mesure pour la workstation cible.
 
-Documentation principale : `docs/INSTALLATION_GUIDE.md`, `docs/INDUSTRIAL_READINESS.md`, `docs/CI_VALIDATION.md`, `docs/BACKUP_RESTORE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md`, `docs/VM_FILE_ACCESS.md`, `docs/UBUNTU_DEVOPS_PROVISIONING.md` et `docs/EXECUTION_CONTRACT.md`.
+Documentation : `docs/HARDWARE_TAILORED_STABILITY.md`, `docs/BIOS_BASELINE.md`, `docs/KERNEL_POLICY.md`, `docs/SUSPEND_CERTIFICATION.md`, `docs/CRASH_FORENSICS.md`, ainsi que les guides GNOME, KVM, CI, backup et installation existants.
