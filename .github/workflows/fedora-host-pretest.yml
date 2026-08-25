@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Enable RPM Fusion
         run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
-      - name: Install complete Fedora-native contract
+      - name: Install Fedora-native base contract
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -53,16 +53,19 @@ jobs:
             manifests/packages-multimedia-fedora.txt \
             manifests/packages-applications-gtk4.txt \
             manifests/packages-applications-professional-fedora.txt \
-            manifests/packages-virtualization.txt \
-            manifests/packages-rpmfusion.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
+            manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install restic jq acl xorriso "${packages[@]}"
           rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install
       - name: Validate multimedia provider convergence
+        shell: bash
         run: |
+          set -Eeuo pipefail
           dnf -y install ffmpeg-free libva-intel-media-driver
           dnf -y swap ffmpeg-free ffmpeg --allowerasing
           dnf -y swap libva-intel-media-driver intel-media-driver --allowerasing
-          rpm -q ffmpeg intel-media-driver
+          mapfile -t rpmfusion_packages < <(sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' manifests/packages-rpmfusion.txt)
+          dnf -y install "${rpmfusion_packages[@]}"
+          rpm -q ffmpeg intel-media-driver "${rpmfusion_packages[@]}"
       - name: Validate signed vendor RPM metadata
         run: |
           install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
