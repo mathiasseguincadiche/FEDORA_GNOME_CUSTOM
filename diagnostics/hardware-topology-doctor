@@ -9,7 +9,13 @@ if [[ "$board" == *"$EXPECTED_MOTHERBOARD"* ]]; then record OK board "$board"; e
 if [[ -d /sys/firmware/efi ]]; then record OK UEFI native; else record KO UEFI absent; fi
 if command -v mokutil >/dev/null 2>&1 && mokutil --sb-state 2>/dev/null | grep -qi 'SecureBoot enabled'; then record OK 'Secure Boot' enabled; elif is_true "${PLATFORM_REQUIRE_SECURE_BOOT:-true}"; then record KO 'Secure Boot' 'not enabled or not observable'; else record WARN 'Secure Boot' 'not enabled or not observable'; fi
 if grep -qw svm /proc/cpuinfo; then record OK AMD-V svm; else record KO AMD-V absent; fi
-if find /sys/kernel/iommu_groups -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null | grep -q .; then record OK IOMMU groups-present; else record KO IOMMU groups-absent; fi
+if find /sys/kernel/iommu_groups -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null | grep -q .; then
+  record OK IOMMU groups-present
+elif is_true "${PLATFORM_REQUIRE_IOMMU_FOR_KVM:-false}"; then
+  record KO IOMMU 'groups absent while explicitly required'
+else
+  record WARN IOMMU 'groups absent; not required for qemu:///system NAT without passthrough'
+fi
 cpu="$(lscpu | awk -F: '/Model name/ {sub(/^[[:space:]]+/,"",$2); print $2; exit}')"
 if [[ "$cpu" == *"$EXPECTED_CPU"* ]]; then record OK CPU "$cpu"; else record KO CPU "$cpu"; fi
 gpu_bdf="$(lspci -Dnnd "${EXPECTED_GPU_PCI_VENDOR}:${EXPECTED_GPU_PCI_DEVICE}" 2>/dev/null | awk 'NR==1 {print $1}')" || true
