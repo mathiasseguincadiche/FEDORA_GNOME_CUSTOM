@@ -4,16 +4,20 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 ok=0; warn=0; ko=0
 record() { local s="$1" n="$2" d="$3"; ui_check "$s" "$n" "$d"; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
-board="$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)"; [[ "$board" == *"$EXPECTED_MOTHERBOARD"* ]] && record OK board "$board" || record KO board "${board:-unknown}"
-[[ -d /sys/firmware/efi ]] && record OK UEFI native || record KO UEFI absent
-cpu="$(lscpu | awk -F: '/Model name/ {sub(/^[[:space:]]+/,"",$2); print $2; exit}')"; [[ "$cpu" == *"$EXPECTED_CPU"* ]] && record OK CPU "$cpu" || record KO CPU "$cpu"
+board="$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)"
+if [[ "$board" == *"$EXPECTED_MOTHERBOARD"* ]]; then record OK board "$board"; else record KO board "${board:-unknown}"; fi
+if [[ -d /sys/firmware/efi ]]; then record OK UEFI native; else record KO UEFI absent; fi
+cpu="$(lscpu | awk -F: '/Model name/ {sub(/^[[:space:]]+/,"",$2); print $2; exit}')"
+if [[ "$cpu" == *"$EXPECTED_CPU"* ]]; then record OK CPU "$cpu"; else record KO CPU "$cpu"; fi
 gpu_bdf="$(lspci -Dnnd "${EXPECTED_GPU_PCI_VENDOR}:${EXPECTED_GPU_PCI_DEVICE}" 2>/dev/null | awk 'NR==1 {print $1}')" || true
 if [[ -n "$gpu_bdf" ]]; then
   gpu_vv="$(sudo lspci -vv -s "$gpu_bdf" 2>/dev/null || lspci -vv -s "$gpu_bdf" 2>/dev/null || true)"
-  grep -Fq 'Kernel driver in use: xe' <<< "$gpu_vv" && record OK 'Arc driver' xe || record KO 'Arc driver' incorrect
-  grep -Eq 'LnkSta:.*Width x8' <<< "$gpu_vv" && record OK 'Arc link width' x8 || record WARN 'Arc link width' 'x8 not observed in LnkSta'
+  if grep -Fq 'Kernel driver in use: xe' <<< "$gpu_vv"; then record OK 'Arc driver' xe; else record KO 'Arc driver' incorrect; fi
+  if grep -Eq 'LnkSta:.*Width x8' <<< "$gpu_vv"; then record OK 'Arc link width' x8; else record WARN 'Arc link width' 'x8 not observed in LnkSta'; fi
   if grep -q 'Resizable BAR' <<< "$gpu_vv" && grep -Eq '\[size=(8|12|16|24|32)G\]' <<< "$gpu_vv"; then record OK ReBAR 'large BAR visible'; else record KO ReBAR 'large BAR not proven'; fi
-else record KO 'Arc B580' absent; fi
+else
+  record KO 'Arc B580' absent
+fi
 nvme_count=0
 for model_file in /sys/class/nvme/nvme*/model; do
   [[ -r "$model_file" ]] || continue
@@ -24,5 +28,5 @@ for model_file in /sys/class/nvme/nvme*/model; do
   if grep -Eq 'LnkSta:.*Width x4' <<< "$detail"; then record OK "$ctrl width" x4; else record WARN "$ctrl width" 'x4 not observed'; fi
   if grep -Eq 'LnkSta:.*Speed 32GT/s' <<< "$detail"; then record OK "$ctrl speed" 'PCIe 5.0'; else record WARN "$ctrl speed" '32GT/s not observed'; fi
 done
-(( nvme_count == EXPECTED_NVME_COUNT )) && record OK T705-count "$nvme_count" || record KO T705-count "$nvme_count"
+if (( nvme_count == EXPECTED_NVME_COUNT )); then record OK T705-count "$nvme_count"; else record KO T705-count "$nvme_count"; fi
 ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; (( ko == 0 ))

@@ -3,7 +3,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 printf '%s\n' '--- persistent journal ---'
-[[ -d /var/log/journal ]] && echo 'persistent journal: present' || echo 'persistent journal: absent'
+if [[ -d /var/log/journal ]]; then echo 'persistent journal: present'; else echo 'persistent journal: absent'; fi
 printf '%s\n' '--- previous boot high-priority events ---'
 journalctl -b -1 -p warning..emerg --no-pager 2>/dev/null | tail -n 200 || true
 printf '%s\n' '--- previous boot crash signatures ---'
@@ -15,4 +15,4 @@ coredumpctl --no-pager list 2>/dev/null | tail -n 30 || true
 printf '%s\n' '--- RAS ---'
 systemctl is-active rasdaemon.service 2>/dev/null || true
 printf '%s\n' '--- kdump ---'
-command -v kdumpctl >/dev/null 2>&1 && kdumpctl status 2>/dev/null || echo 'kdump not armed (automatic enablement intentionally disabled)'
+if command -v kdumpctl >/dev/null 2>&1; then kdumpctl status 2>/dev/null || echo 'kdump installed but not armed'; else echo 'kdump not installed'; fi
