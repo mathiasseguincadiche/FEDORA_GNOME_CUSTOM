@@ -5,6 +5,7 @@ state/*
 !reports/.gitkeep
 !state/.gitkeep
 config/local.conf
+.vm-pretest/
 *.swp
 *.tmp
 .env

@@ -1,0 +1,86 @@
+name: Fedora 44 host integration pretest
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'manifests/**'
+      - 'config/repos/**'
+      - 'modules/system/**'
+      - 'modules/hardware/**'
+      - 'modules/gnome/**'
+      - 'modules/applications/**'
+      - 'modules/virtualization/**'
+      - 'modules/backup/**'
+      - '.github/workflows/fedora-host-pretest.yml'
+  pull_request:
+    paths:
+      - 'manifests/**'
+      - 'config/repos/**'
+      - 'modules/system/**'
+      - 'modules/hardware/**'
+      - 'modules/gnome/**'
+      - 'modules/applications/**'
+      - 'modules/virtualization/**'
+      - 'modules/backup/**'
+      - '.github/workflows/fedora-host-pretest.yml'
+
+permissions:
+  contents: read
+concurrency:
+  group: fedora-44-host-pretest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packages-and-integration:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable RPM Fusion
+        run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
+      - name: Install complete Fedora-native contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t packages < <(cat \
+            manifests/packages-system.txt \
+            manifests/packages-hardware.txt \
+            manifests/packages-gnome.txt \
+            manifests/packages-gnome-extensions.txt \
+            manifests/packages-multimedia-fedora.txt \
+            manifests/packages-applications-gtk4.txt \
+            manifests/packages-applications-professional-fedora.txt \
+            manifests/packages-virtualization.txt \
+            manifests/packages-rpmfusion.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
+          dnf -y install restic jq acl xorriso "${packages[@]}"
+          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install
+      - name: Validate multimedia provider convergence
+        run: |
+          dnf -y install ffmpeg-free libva-intel-media-driver
+          dnf -y swap ffmpeg-free ffmpeg --allowerasing
+          dnf -y swap libva-intel-media-driver intel-media-driver --allowerasing
+          rpm -q ffmpeg intel-media-driver
+      - name: Validate signed vendor RPM metadata
+        run: |
+          install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
+          install -m 0644 config/repos/brave-browser.repo /etc/yum.repos.d/brave-browser.repo
+          dnf -y makecache --refresh
+          dnf -q --repo=code list --available code >/dev/null
+          dnf -q --repo=brave-browser list --available brave-browser >/dev/null
+      - name: Validate Flathub application IDs
+        shell: bash
+        run: |
+          flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          while IFS= read -r app; do
+            [[ -z "$app" || "$app" == \#* ]] && continue
+            flatpak remote-info --system flathub "$app" >/dev/null
+          done < manifests/flatpaks-applications-professional.txt
+      - name: Validate GNOME 50 extension payloads
+        run: |
+          test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
+          test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx
+          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
+          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json

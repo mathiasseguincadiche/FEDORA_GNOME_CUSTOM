@@ -5,5 +5,5 @@ while IFS='|' read -r id scope deps path; do
   [[ -z "$id" || "$id" == \#* ]] && continue
   [[ -n "$scope" && -r "$ROOT/$path" ]] || { echo "invalid module entry: $id $path" >&2; exit 1; }
 done < "$ROOT/manifests/module-plan.conf"
-for f in "$ROOT"/*.sh "$ROOT"/diagnostics/* "$ROOT"/scripts/*.sh "$ROOT"/scripts/systemd/* "$ROOT"/modules/*/*.sh; do bash -n "$f"; done
+while IFS= read -r file; do bash -n "$ROOT/$file"; done < <(git -C "$ROOT" ls-files '*.sh')
 echo 'structure: PASS'

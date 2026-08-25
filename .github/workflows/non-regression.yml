@@ -1,0 +1,53 @@
+name: Architecture non-regression
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Real-machine gate remains closed in Git
+        run: |
+          grep -F 'REAL_MACHINE_APPROVED="false"' config/security.conf
+          ! grep -R -n -E '^REAL_MACHINE_APPROVED=("?)(true|1|yes)\1$' config
+      - name: Fedora GNOME architecture invariants
+        run: |
+          grep -F 'REQUIRE_WAYLAND="true"' config/hardware.conf
+          grep -F 'ENABLE_JUST_PERFECTION="false"' config/gnome.conf
+          grep -F 'ALLOW_GPU_PASSTHROUGH="false"' config/virtualization.conf
+          grep -F 'ALLOW_FORCE_PROBE="false"' config/hardware.conf
+          ! grep -RInEi --exclude-dir=.git 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' config manifests modules scripts guest diagnostics
+      - name: KVM network ownership boundary
+        run: |
+          grep -F 'KVM_NETWORK_CIDR="192.168.50.0/24"' config/virtualization.conf
+          grep -F 'KVM_BLOCK_PHYSICAL_LAN="true"' config/virtualization.conf
+          grep -F 'KVM_ALLOW_INBOUND_FORWARDING="false"' config/virtualization.conf
+          grep -F 'KVM_NFT_TABLE="fedora_gnome_custom_kvm"' config/virtualization.conf
+          ! grep -RInE 'nft[[:space:]]+flush[[:space:]]+ruleset|iptables[[:space:]]+-F' modules scripts
+      - name: Storage and security destructive guards
+        run: |
+          ! grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0|chmod[[:space:]]+777)' modules scripts install.sh
+      - name: Backup fail-closed invariants
+        run: |
+          grep -F 'BACKUP_FAIL_CLOSED="true"' config/backup.conf
+          grep -F 'BACKUP_REQUIRE_EXTERNAL_TARGET="true"' config/backup.conf
+          grep -F 'BACKUP_ENCRYPTION_REQUIRED="true"' config/backup.conf
+          grep -F 'BACKUP_RESTORE_TEST_REQUIRED="true"' config/backup.conf
+          grep -F 'BACKUP_VM_SHUTDOWN_REQUIRED="true"' config/backup.conf
+          grep -F 'BACKUP_ALLOW_LIVE_QCOW2_COPY="false"' config/backup.conf
+          grep -F 'marker_commit' lib/apply_gate.sh
+          grep -F '$(repo_commit)' lib/apply_gate.sh
+      - name: No obvious committed secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if grep -RInE --exclude-dir=.git --exclude='non-regression.yml' '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|password[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{4,}["'"']|token[[:space:]]*[:=][[:space:]]*["'"'][A-Za-z0-9_\-]{20,}["'"'])' .; then
+            echo 'Potential secret committed.' >&2
+            exit 1
+          fi
