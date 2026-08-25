@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_bootstrap
+# shellcheck source=lib/backup_runtime.sh
+source "$REPO_ROOT/lib/backup_runtime.sh"
+
+policy_only=false
+deep=false
+for arg in "$@"; do
+  case "$arg" in
+    --policy-only) policy_only=true ;;
+    --deep) deep=true ;;
+    *) echo "Unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+ok=0
+warn=0
+ko=0
+record() {
+  local level="$1" label="$2" detail="$3"
+  printf '%-4s %-30s %s\n' "$level" "$label" "$detail"
+  case "$level" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+if [[ "${BACKUP_ENGINE:-}" == restic ]]; then record OK engine restic; else record KO engine "${BACKUP_ENGINE:-unset}"; fi
+if is_true "${BACKUP_FAIL_CLOSED:-false}"; then record OK fail-closed enabled; else record KO fail-closed disabled; fi
+if is_true "${BACKUP_REQUIRE_EXTERNAL_TARGET:-false}"; then record OK external-target required; else record KO external-target not-required; fi
+if is_true "${BACKUP_ENCRYPTION_REQUIRED:-false}"; then record OK encryption required; else record KO encryption not-required; fi
+if is_true "${BACKUP_INTEGRITY_CHECK_REQUIRED:-false}"; then record OK integrity-check required; else record KO integrity-check not-required; fi
+if is_true "${BACKUP_RESTORE_TEST_REQUIRED:-false}"; then record OK restore-test required; else record KO restore-test not-required; fi
+if is_true "${BACKUP_ALLOW_LIVE_QCOW2_COPY:-false}"; then record KO live-qcow2 allowed; else record OK live-qcow2 forbidden; fi
+if is_true "${BACKUP_VM_SHUTDOWN_REQUIRED:-false}"; then record OK vm-shutdown required; else record KO vm-shutdown not-required; fi
+
+for file in scripts/backup/backup-now.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh prepare-preapply-backup.sh; do
+  if [[ -r "$REPO_ROOT/$file" ]]; then record OK "$file" present; else record KO "$file" missing; fi
+done
+if command -v restic >/dev/null 2>&1; then record OK restic installed; else record WARN restic 'not installed yet'; fi
+
+if ! $policy_only; then
+  marker="$STATE_ROOT/preapply-backup.ok"
+  if [[ -s "$marker" ]]; then
+    marker_commit="$(awk -F= '$1=="commit" {print $2; exit}' "$marker")"
+    marker_snapshot="$(awk -F= '$1=="snapshot" {print $2; exit}' "$marker")"
+    if [[ "$marker_commit" == "$(repo_commit)" ]]; then record OK preapply-commit "$marker_commit"; else record WARN preapply-commit "${marker_commit:-missing}"; fi
+    if [[ "$marker_snapshot" =~ ^[0-9a-fA-F]{64}$ ]]; then record OK preapply-snapshot valid; else record WARN preapply-snapshot missing-or-invalid; fi
+  else
+    record WARN preapply-marker 'not created yet'
+  fi
+
+  if command -v restic >/dev/null 2>&1; then
+    repo="$(backup_runtime_resolve_repository 2>/dev/null || true)"
+    password_file="$(backup_runtime_require_password 2>/dev/null || true)"
+    if [[ -n "$repo" && -n "$password_file" ]]; then
+      backup_runtime_export_env "$repo" "$password_file"
+      if restic snapshots --latest 1 >/dev/null 2>&1; then
+        record OK repository reachable
+        if $deep; then
+          if restic check --read-data-subset=1/20 >/dev/null; then record OK deep-integrity PASS; else record KO deep-integrity FAIL; fi
+        fi
+      else
+        record KO repository unreachable
+      fi
+    else
+      record WARN repository 'runtime repository/password not resolved'
+    fi
+  fi
+fi
+
+printf '\nBackup doctor: OK=%d WARN=%d KO=%d\n' "$ok" "$warn" "$ko"
+((ko == 0))

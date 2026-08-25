@@ -20,11 +20,15 @@ apply_gate_require_dryrun() {
 
 apply_gate_require_backup() {
   is_true "${REQUIRE_PREAPPLY_BACKUP:-true}" || return 0
-  local marker="$STATE_ROOT/preapply-backup.ok"
+  local marker="$STATE_ROOT/preapply-backup.ok" age now ts max marker_commit snapshot
   [[ -s "$marker" ]] || return 1
-  local age now ts max
+  marker_commit="$(awk -F= '$1=="commit" {print $2; exit}' "$marker")"
+  snapshot="$(awk -F= '$1=="snapshot" {print $2; exit}' "$marker")"
+  [[ -n "$marker_commit" && "$marker_commit" == "$(repo_commit)" ]] || return 1
+  [[ -n "$snapshot" ]] || return 1
   ts="$(stat -c %Y "$marker")"; now="$(date +%s)"; max=$(( ${BACKUP_MAX_AGE_HOURS:-24} * 3600 ))
-  (( now - ts <= max ))
+  age=$(( now - ts ))
+  (( age >= 0 && age <= max ))
 }
 
 apply_gate_require_baseline() {
@@ -39,7 +43,7 @@ apply_gate_open() {
   apply_gate_require_clean_git || { ui_error 'Git working tree must be clean'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_dryrun || { ui_error 'same-commit dry-run proof missing'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_baseline || { ui_error 'hardware baseline certification missing or invalid for the current hardware/BIOS fingerprint'; return "$EXIT_SECURITY_BLOCK"; }
-  apply_gate_require_backup || { ui_error 'verified pre-APPLY backup marker missing or stale'; return "$EXIT_SECURITY_BLOCK"; }
+  apply_gate_require_backup || { ui_error 'verified same-commit pre-APPLY backup marker missing, incomplete or stale'; return "$EXIT_SECURITY_BLOCK"; }
   local answer
   printf 'Type exactly "%s": ' "$APPLY_CONFIRMATION"
   read -r answer

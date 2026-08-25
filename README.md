@@ -1,95 +1,54 @@
 # FEDORA_GNOME_CUSTOM
 
-Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50**, conçue pour une workstation Ryzen 7 7700 / Intel Arc B580 et un usage DevOps/Ops orienté infrastructure.
+Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50 “Tokyo”**, conçue autour d'un Ryzen 7 7700, d'une Intel Arc B580 et d'un usage DevOps/Ops infrastructure.
 
-## Principes
-
-- stabilité matérielle avant personnalisation ;
-- Wayland, SELinux Enforcing et firewalld conservés ;
-- Fedora officiel en priorité, RPM Fusion/Flathub/dépôts éditeurs uniquement lorsqu'ils sont explicitement justifiés ;
-- aucun tweak kernel/GPU expérimental sans diagnostic ;
-- aucun partitionnement/formatage automatique ;
-- dry-run et backup avant APPLY ;
-- virtualisation KVM/libvirt **CLI-first** ;
-- aucun mot de passe ou média propriétaire stocké dans Git.
-
-## Machine de référence
+## Architecture
 
 ```text
-CPU      AMD Ryzen 7 7700 — 8C/16T
-RAM      48 Gio DDR5 — SPD 5600 / XMP 6000
-GPU      Intel Arc B580 12 Gio — pilote HOST xe
-SSD      2× Crucial T705 1 To
-Écran    2560×1440 / 240 Hz
-Desktop  Fedora 44 + GNOME 50 / Wayland
+BASELINE → SYSTEM → HARDWARE → GNOME → APPLICATIONS → KVM → BACKUP/RECOVERY
 ```
 
-## GNOME et applications
+Le projet conserve Wayland, SELinux Enforcing, firewalld et les choix Fedora upstream. Il interdit les tweaks kernel/GPU expérimentaux sans diagnostic, le partitionnement/formatage automatique, le GPU passthrough de l'Arc B580 et les mutations globales de firewall.
 
-GNOME 50 reste la base, avec Dash to Dock, Blur My Shell et Extension Manager. Just Perfection et Dash to Panel sont exclus.
+## GNOME 50 réellement intégré
 
-Applications professionnelles gérées : VS Code, Brave, VLC, Bitwarden, Slack, GNOME Text Editor, ONLYOFFICE Desktop Editors, LibreOffice FR, FileZilla et MarkText.
+Le scope GNOME gère GNOME Shell, Mutter/Wayland, Nautilus/GVfs, portals, Flatpak, PipeWire/WirePlumber, Dash to Dock, Blur My Shell et Extension Manager. Les applications natives sont GTK4/libadwaita lorsqu'une solution GNOME de qualité existe ; les applications métier constituent des exceptions documentées.
 
-## Virtualisation
+Applications professionnelles gérées : VS Code, Brave, VLC, Bitwarden, Slack, GNOME Text Editor, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText.
 
-Stack : QEMU/KVM, libvirt `qemu:///system`, OVMF/UEFI, swtpm/TPM 2.0, libguestfs/libosinfo, virt-manager/virt-viewer et une surface CLI complète (`virsh`, `virt-install`, `virt-xml`, `qemu-img`, `virt-v2v`, etc.).
+## KVM/libvirt CLI-first
 
-Le second T705 est monté **manuellement** à `/data` en EXT4. Les disques VM sont stockés dans `/data/libvirt/images`.
+`qemu:///system`, OVMF/UEFI, swtpm/TPM 2.0, libguestfs/libosinfo, `virsh`, `virt-admin`, `virt-install`, `virt-xml`, `qemu-img`, `virt-v2v`, etc.
 
-Réseau :
+Stockage VM : second T705 monté **manuellement** en EXT4 sur `/data`, pool `devops-data` dans `/data/libvirt/images`.
 
-```text
-devops-nat       192.168.50.0/24
-virbr50          192.168.50.254
-DHCP             .100-.200
-DNS              9.9.9.9 / 1.1.1.1
-HOST ↔ VM        autorisé
-VM ↔ VM          autorisé
-VM → Internet    autorisé
-VM ↔ LAN         bloqué
-```
+Réseau : `devops-nat` / `virbr50` / `192.168.50.0/24`, gateway `192.168.50.254`, DHCP `.100-.200`, DNS `9.9.9.9` + `1.1.1.1`. HOST↔VM, VM↔VM et VM→Internet sont autorisés ; VM↔LAN physique et forwarding entrant restent bloqués.
 
-## VM de référence
+## Deux VM de référence
 
-### Ubuntu Server 26.04 — `ubuntu-devops`
+**Ubuntu Server 26.04 `ubuntu-devops`** : 6 vCPU, 16 Gio, 160 Gio qcow2, UEFI, VirtIO, cloud-init, SSH et bootstrap Git/gh, Docker, Ansible, Terraform, Azure CLI, AWS CLI, kubectl, Helm, kind et outils complémentaires.
 
-6 vCPU, 16 Gio RAM, 160 Gio qcow2, UEFI, VirtIO, cloud-init, SSH et bootstrap DevOps complet.
+**Windows 11 `windows-11`** : 4 vCPU, 12 Gio, 128 Gio qcow2, UEFI Secure Boot, TPM 2.0/swtpm, VirtIO et SPICE.
 
-```bash
-bash scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
-```
+VirtioFS reste exclu. Nautilus accède au vrai `/home/mathias` Ubuntu via SFTP/SSH et à `C:\VM-Share` via SMB authentifié côté Windows.
 
-### Windows 11 — `windows-11`
+## Validation industrielle
 
-4 vCPU, 12 Gio RAM, 128 Gio qcow2, UEFI Secure Boot, TPM 2.0, VirtIO et SPICE.
+La CI comprend désormais cinq niveaux complémentaires :
 
-```bash
-bash scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso
-```
+1. **Tests** — contrats statiques/structure/non-régression fonctionnelle ;
+2. **Shell quality** — syntaxe Bash + ShellCheck ;
+3. **Fedora 44 package preflight** — résolution des sources et contrats packages ;
+4. **Fedora 44 host integration pretest** — installation réelle de la pile Fedora/GNOME/KVM dans `fedora:44` ;
+5. **Ubuntu 26.04 real VM pretest** — image Canonical signée + SHA-256, vraie VM QEMU (KVM si disponible), cloud-init, bootstrap DevOps réel, Docker smoke test et reboot persistence.
 
-Le script crée aussi localement un ISO `FGC_TOOLS` contenant `Configure-VMShare.ps1` pour préparer le partage Windows `C:\VM-Share` sans stocker de mot de passe.
+Un workflow **Architecture non-regression** verrouille en plus Wayland, GNOME, GPU, réseau KVM, sécurité destructive, backup fail-closed et absence de secrets évidents.
 
-## Accès aux fichiers des VM depuis Nautilus
+## Backup / Restore / Disaster Recovery
 
-Le projet ne réintroduit pas VirtioFS.
+Restic chiffré est maintenant structuré en pipeline : inventaire → repository → HOST → métadonnées KVM → disques VM → intégrité/rétention → restore staging → disaster recovery.
 
-- **Ubuntu** : Nautilus accède directement au vrai `/home/mathias` de la VM par **SFTP/SSH** ; glisser-déposer, copie et ouverture de fichiers fonctionnent via GVfs.
-- **Windows** : Nautilus accède à **`C:\VM-Share`** par **SMB authentifié** après exécution une fois du script PowerShell fourni sur l'ISO `FGC_TOOLS`.
-
-Le helper découvre dynamiquement les adresses DHCP libvirt et maintient les favoris Nautilus :
-
-```bash
-bash scripts/kvm/configure_nautilus_vm_access.sh refresh
-bash scripts/kvm/configure_nautilus_vm_access.sh open-ubuntu
-bash scripts/kvm/configure_nautilus_vm_access.sh open-windows
-```
-
-Les favoris sont stockés dans `$XDG_CONFIG_HOME/gtk-3.0/bookmarks` (ou `~/.config/gtk-3.0/bookmarks`). Aucun identifiant ou mot de passe n'est versionné.
-
-## Exécution HOST
+Le pré-APPLY exige un repository externe/off-machine, une passphrase hors Git, `restic check`, un restore-canary réel et un marker lié au **même commit Git** que l'APPLY. Les QCOW2 ne sont sauvegardés qu'avec VM arrêtée ; les restores sont staging-first et n'écrasent jamais automatiquement le système live.
 
 ```bash
 ./diagnostic.sh
@@ -99,22 +58,18 @@ Les favoris sont stockés dans `$XDG_CONFIG_HOME/gtk-3.0/bookmarks` (ou `~/.conf
 ./menu.sh
 ```
 
-Diagnostic KVM : `bash diagnostics/virtualization-doctor`.
-Certification après création des VM : `bash scripts/kvm/runtime_certification.sh`.
+Outils recovery :
+
+```bash
+diagnostics/backup-doctor
+scripts/backup/backup-now.sh
+scripts/backup/backup-now.sh --include-vms
+scripts/backup/restore.sh list
+scripts/backup/disaster-recovery.sh
+```
 
 ## Version
 
-`0.6.2` — intégration Nautilus des VM : SFTP/SSH pour Ubuntu et SMB authentifié pour Windows.
+`0.7.0` — industrial readiness : CI non-régression, pretest HOST Fedora 44, vraie VM Ubuntu 26.04 avec bootstrap/reboot, et chaîne backup/restore/DR fail-closed.
 
-Documentation principale :
-
-- `docs/CAHIER_DES_CHARGES.md`
-- `docs/HARDWARE_BASELINE_CERTIFICATION.md`
-- `docs/GTK4_APPLICATIONS.md`
-- `docs/MULTIMEDIA_CODECS.md`
-- `docs/VIRTUALIZATION.md`
-- `docs/VIRTUALIZATION_CLI.md`
-- `docs/VM_PROFILES.md`
-- `docs/VM_FILE_ACCESS.md`
-- `docs/UBUNTU_DEVOPS_PROVISIONING.md`
-- `docs/EXECUTION_CONTRACT.md`
+Documentation principale : `docs/INSTALLATION_GUIDE.md`, `docs/INDUSTRIAL_READINESS.md`, `docs/CI_VALIDATION.md`, `docs/BACKUP_RESTORE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md`, `docs/VM_FILE_ACCESS.md`, `docs/UBUNTU_DEVOPS_PROVISIONING.md` et `docs/EXECUTION_CONTRACT.md`.

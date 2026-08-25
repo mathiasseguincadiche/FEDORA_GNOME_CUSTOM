@@ -1,0 +1,46 @@
+name: Ubuntu 26.04 real VM pretest
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/vm-pretest.yml'
+      - '.github/scripts/vm-pretest.sh'
+      - 'guest/ubuntu-devops/**'
+      - 'scripts/kvm/create_ubuntu_devops_vm.sh'
+      - 'config/vm-profiles.conf'
+  pull_request:
+    paths:
+      - '.github/workflows/vm-pretest.yml'
+      - '.github/scripts/vm-pretest.sh'
+      - 'guest/ubuntu-devops/**'
+      - 'scripts/kvm/create_ubuntu_devops_vm.sh'
+      - 'config/vm-profiles.conf'
+
+permissions:
+  contents: read
+concurrency:
+  group: ubuntu-2604-vm-pretest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu-2604-real-vm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run real Ubuntu 26.04 VM + DevOps bootstrap
+        run: .github/scripts/vm-pretest.sh
+      - name: Upload VM evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-gnome-custom-ubuntu-vm-pretest-${{ github.run_id }}
+          path: |
+            .vm-pretest/report.txt
+            .vm-pretest/console.log
+            .vm-pretest/bootstrap.log
+            .vm-pretest/verify.log
+          if-no-files-found: warn
+          retention-days: 14
