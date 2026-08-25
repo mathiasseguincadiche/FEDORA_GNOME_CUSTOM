@@ -16,9 +16,14 @@ SSH_KEY="$LAB/id_ed25519"
 SSH_OPTS=(-i "$SSH_KEY" -p "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10)
 SCP_OPTS=(-i "$SSH_KEY" -P "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10)
 
-mkdir -p "$LAB"; : > "$REPORT"
+mkdir -p "$LAB"
+: > "$REPORT"
 report() { printf '%s\n' "$*" | tee -a "$REPORT"; }
-cleanup() { [[ -s "$PIDFILE" ]] && kill "$(cat "$PIDFILE")" 2>/dev/null || true; }
+cleanup() {
+  if [[ -s "$PIDFILE" ]]; then
+    kill "$(cat "$PIDFILE")" 2>/dev/null || true
+  fi
+}
 trap cleanup EXIT
 report '=== FEDORA_GNOME_CUSTOM REAL UBUNTU 26.04 VM PRE-TEST ==='
 report "commit=${GITHUB_SHA:-local}"
@@ -65,8 +70,15 @@ qemu-img resize disk.qcow2 40G >/dev/null
 qemu-img check disk.qcow2
 
 report '[4/10] KVM or TCG acceleration'
-ACCEL=tcg; QEMU_CPU=max
-if [[ -e /dev/kvm ]]; then sudo chmod 666 /dev/kvm || true; [[ -r /dev/kvm && -w /dev/kvm ]] && { ACCEL=kvm; QEMU_CPU=host; }; fi
+ACCEL=tcg
+QEMU_CPU=max
+if [[ -e /dev/kvm ]]; then
+  sudo chmod 666 /dev/kvm || true
+  if [[ -r /dev/kvm && -w /dev/kvm ]]; then
+    ACCEL=kvm
+    QEMU_CPU=host
+  fi
+fi
 report "selected_acceleration=$ACCEL"
 start_vm() {
   qemu-system-x86_64 -name ubuntu-devops-ci -machine "accel=$1" -cpu "$2" -smp 2 -m 4096 \
@@ -74,13 +86,27 @@ start_vm() {
     -device virtio-net-pci,netdev=net0 -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22" \
     -display none -serial "file:$CONSOLE" -daemonize -pidfile "$PIDFILE"
 }
-if ! start_vm "$ACCEL" "$QEMU_CPU"; then [[ "$ACCEL" == kvm ]] || exit 21; ACCEL=tcg; QEMU_CPU=max; start_vm "$ACCEL" "$QEMU_CPU"; fi
+if ! start_vm "$ACCEL" "$QEMU_CPU"; then
+  [[ "$ACCEL" == kvm ]] || exit 21
+  ACCEL=tcg
+  QEMU_CPU=max
+  start_vm "$ACCEL" "$QEMU_CPU"
+fi
 report "active_acceleration=$ACCEL"
 
 report '[5/10] SSH + cloud-init'
 ready=0
-for _ in $(seq 1 120); do ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" true >/dev/null 2>&1 && { ready=1; break; }; sleep 5; done
-((ready == 1)) || { tail -n 200 "$CONSOLE" | tee -a "$REPORT"; exit 22; }
+for _ in $(seq 1 120); do
+  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" true >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
+  sleep 5
+done
+if (( ready != 1 )); then
+  tail -n 200 "$CONSOLE" | tee -a "$REPORT"
+  exit 22
+fi
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo cloud-init status --wait --long'
 
 report '[6/10] Ubuntu 26.04 + network'
@@ -92,10 +118,12 @@ scp "${SCP_OPTS[@]}" "$ROOT/guest/ubuntu-devops/bootstrap-devops.sh" "$ROOT/gues
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'chmod +x /tmp/bootstrap-devops.sh /tmp/verify-devops.sh'
 
 report '[8/10] Execute real DevOps bootstrap'
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo DEVOPS_USER=$VM_USER /tmp/bootstrap-devops.sh" 2>&1 | tee "$BOOTSTRAP_LOG"
+# shellcheck disable=SC2029
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/bootstrap-devops.sh" 2>&1 | tee "$BOOTSTRAP_LOG"
 
 report '[9/10] Runtime verification + Docker smoke'
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" 2>&1 | tee "$VERIFY_LOG"
+# shellcheck disable=SC2029
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" 2>&1 | tee "$VERIFY_LOG"
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --rm hello-world >/dev/null'
 
 report '[10/10] Reboot persistence'
@@ -103,8 +131,14 @@ ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo reboot' || true
 sleep 10
 ready=0
 for _ in $(seq 1 90); do
-  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker --version >/dev/null && terraform version >/dev/null && kubectl version --client=true >/dev/null && systemctl is-active --quiet docker' >/dev/null 2>&1; then ready=1; break; fi
+  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker --version >/dev/null && terraform version >/dev/null && kubectl version --client=true >/dev/null && systemctl is-active --quiet docker' >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
   sleep 5
 done
-((ready == 1)) || { report 'FAIL: VM did not recover after reboot'; exit 23; }
+if (( ready != 1 )); then
+  report 'FAIL: VM did not recover after reboot'
+  exit 23
+fi
 report 'VERDICT: REAL UBUNTU 26.04 DEVOPS VM PRE-TEST PASS'
