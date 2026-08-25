@@ -24,6 +24,13 @@ FEDORA GNOME CUSTOM
 17) Configurer / rafraîchir accès Nautilus aux VM
 18) Ouvrir Ubuntu DevOps dans Nautilus
 19) Ouvrir Windows VM dans Nautilus
+20) Backup / recovery doctor
+21) Backup complet HOST + métadonnées KVM
+22) Backup complet + disques VM arrêtées
+23) Lister les snapshots Restic
+24) Vérifier profondément le repository Restic
+25) Générer le plan Disaster Recovery
+26) Restaurer un snapshot vers staging
 0) Quitter
 EOF
   read -rp 'Choix: ' choice
@@ -44,11 +51,7 @@ EOF
     14)
       read -rp 'Chemin image cloud Ubuntu Server 26.04: ' image
       read -rp 'Clé SSH publique [~/.ssh/id_ed25519.pub]: ' key
-      if [[ -n "$key" ]]; then
-        bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" --cloud-image "$image" --ssh-key "$key"
-      else
-        bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" --cloud-image "$image"
-      fi
+      if [[ -n "$key" ]]; then bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" --cloud-image "$image" --ssh-key "$key"; else bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" --cloud-image "$image"; fi
       ;;
     15)
       read -rp 'Chemin ISO Windows 11: ' windows_iso
@@ -59,6 +62,18 @@ EOF
     17) bash "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
     18) bash "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" open-ubuntu ;;
     19) bash "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" open-windows ;;
+    20) bash "$REPO_ROOT/diagnostics/backup-doctor" ;;
+    21) bash "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
+    22) bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms ;;
+    23) bash "$REPO_ROOT/scripts/backup/restore.sh" list ;;
+    24) bash "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
+    25) bash "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
+    26)
+      read -rp 'Snapshot [latest]: ' snap
+      read -rp 'Répertoire staging vide [défaut automatique]: ' target
+      snap="${snap:-latest}"
+      if [[ -n "$target" ]]; then bash "$REPO_ROOT/scripts/backup/restore.sh" restore "$snap" "$target"; else bash "$REPO_ROOT/scripts/backup/restore.sh" restore "$snap"; fi
+      ;;
     0) exit 0 ;;
     *) echo 'Choix invalide.' ;;
   esac

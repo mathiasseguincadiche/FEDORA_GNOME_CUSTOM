@@ -23,9 +23,7 @@ password_file="$(backup_runtime_prepare_password)" || fail 'Restic password file
 backup_runtime_require_free_space "$repo" || fail 'backup target does not satisfy minimum free-space policy'
 
 if ! backup_runtime_is_remote_repository "$repo"; then
-  mkdir -p "$repo" 2>/dev/null || {
-    sudo install -d -m 0700 -o "$(id -u)" -g "$(id -g)" "$repo"
-  }
+  mkdir -p "$repo" 2>/dev/null || sudo install -d -m 0700 -o "$(id -u)" -g "$(id -g)" "$repo"
   backup_runtime_validate_local_target "$repo" || fail 'local Restic repository is not proven external/read-write'
 fi
 backup_runtime_export_env "$repo" "$password_file"
@@ -66,7 +64,7 @@ restic check --read-data-subset=1/20
 printf 'Running restore-canary proof...\n'
 restore_test="$(mktemp -d)"
 trap 'rm -rf "$restore_test" "$staging"' EXIT
-restic restore "$snap" --target "$restore_test" --include '*/restore-canary.txt' >/dev/null
+restic restore "$snap" --target "$restore_test" --include "$staging/restore-canary.txt" >/dev/null
 restored_canary="$(find "$restore_test" -type f -name restore-canary.txt -print -quit)"
 [[ -n "$restored_canary" ]] || fail 'restore canary was not recovered'
 cmp -s "$staging/restore-canary.txt" "$restored_canary" || fail 'restore canary content mismatch'

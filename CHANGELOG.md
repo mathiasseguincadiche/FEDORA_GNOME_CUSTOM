@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 — 2026-08-25
+
+- Passage au niveau « industrial readiness » inspiré du projet Ubuntu, sans copier son implémentation spécifique APT/Ubuntu.
+- Ajout d'un workflow Architecture non-regression verrouillant GNOME/Wayland, Arc B580, réseau KVM, sécurité destructive, backup fail-closed et secrets évidents.
+- Ajout d'un pretest HOST réel dans `fedora:44` installant la pile Fedora/GNOME/KVM/backup complète, avec RPM Fusion, vendor repos, Flathub et extensions GNOME 50.
+- Ajout d'un vrai pretest Ubuntu Server 26.04 sous QEMU : signature Canonical + SHA-256, cloud-init, SSH, bootstrap DevOps exact du dépôt, `verify-devops`, Docker hello-world et preuve après reboot.
+- Ajout d'artifacts CI : rapport, console, bootstrap et validation VM.
+- Refonte complète du scope BACKUP en inventaire, repository, HOST, métadonnées KVM, VM, intégrité/rétention, restore et disaster recovery.
+- Le backup pré-APPLY détecte/valide une cible externe ou distante, protège la passphrase, capture `/etc` + `/boot`, les inventaires et XML libvirt, exécute `restic check` puis un restore-canary réel.
+- Le gate APPLY exige désormais que le marker backup corresponde exactement au commit Git courant.
+- Ajout de `backup-now.sh`, `restore.sh`, `disaster-recovery.sh` et `backup-doctor`.
+- Les sauvegardes QCOW2 exigent les VM arrêtées et utilisent `qemu-img convert`; aucune copie live n'est autorisée.
+- Les restores sont staging-first et refusent les cibles système/VM actives.
+- Menu opérateur étendu et documentation CI/recovery/industrial readiness ajoutée.
+
 ## 0.6.2 — 2026-08-23
 
 - Ajout de l'intégration Nautilus des VM sans réintroduire VirtioFS.

@@ -1,7 +1,103 @@
-# Backup / Restore
+# Backup, Restore et Disaster Recovery
 
-Restic est le mécanisme de backup. Les secrets et mots de passe ne sont jamais stockés dans Git.
+Le projet utilise **Restic chiffré** et applique un modèle fail-closed. Une sauvegarde n'est pas considérée valide parce qu'une commande `backup` a simplement terminé : le dépôt exige une preuve d'intégrité et, pour le pré-APPLY, un test réel de restauration d'un canary.
 
-`prepare-preapply-backup.sh` capture `/etc`, `/boot`, la configuration utilisateur GNOME et, si présent, le profil GNOME Shell. Il exécute ensuite un `restic check` partiel et écrit `state/preapply-backup.ok` uniquement si un snapshot vérifié existe.
+## Contrat
 
-Le dépôt n'invente pas le chemin du SSD externe : configurez explicitement `BACKUP_REPOSITORY` et un fichier mot de passe protégé.
+- cible locale pré-APPLY obligatoirement prouvée externe (USB/removable/hotplug), ou repository Restic distant ;
+- pas de secret dans Git ;
+- mot de passe Restic dans un fichier `0600` hors dépôt ;
+- marker pré-APPLY lié au **même commit Git** que le dry-run et l'APPLY ;
+- `restic check --read-data-subset` obligatoire ;
+- restauration du canary obligatoire avant création de `state/preapply-backup.ok` ;
+- aucune copie live d'un QCOW2 ;
+- pour sauvegarder les disques VM, les domaines doivent être `shut off` ;
+- aucune restauration automatique en place de `/`, `/etc`, `/boot`, `$HOME` ou `/data/libvirt/images` ;
+- pruning Restic explicite uniquement.
+
+## Pré-APPLY
+
+Après un dry-run réussi sur le commit courant :
+
+```bash
+./prepare-preapply-backup.sh
+```
+
+Si `BACKUP_REPOSITORY` est vide, le helper recherche exactement **une** cible externe montée et utilise `Backup-Fedora/restic` dessus. Si plusieurs cibles externes sont montées, il bloque : renseigner alors `BACKUP_REPOSITORY` dans `config/local.conf`.
+
+Le premier lancement peut créer le fichier de passphrase sous `~/.config/fedora-gnome-custom/secrets/restic-password`. La passphrase doit contenir au moins 16 caractères et le fichier est forcé en `0600`.
+
+La capture contient notamment : inventaire RPM/Flatpak, services activés, stockage/montages, PCI/routage, fichiers suivis du projet, configuration GNOME utilisateur, archive privilégiée `/etc` + `/boot`, ainsi que les XML/domaines/réseaux/pools libvirt présents.
+
+## Backup d'exploitation
+
+HOST + métadonnées KVM :
+
+```bash
+scripts/backup/backup-now.sh
+```
+
+HOST + métadonnées + disques QCOW2 :
+
+```bash
+scripts/backup/backup-now.sh --include-vms
+```
+
+Cette deuxième commande **refuse** toute VM qui n'est pas arrêtée. Les images sont d'abord recopiées par `qemu-img convert` vers un staging cohérent, vérifiées avec `qemu-img check`, puis seulement envoyées à Restic.
+
+Pour appliquer la rétention 7 daily / 4 weekly / 6 monthly en même temps :
+
+```bash
+scripts/backup/backup-now.sh --include-vms --prune
+```
+
+Le pruning n'est jamais lancé automatiquement par la convergence.
+
+## Diagnostic
+
+```bash
+diagnostics/backup-doctor
+diagnostics/backup-doctor --deep
+```
+
+`--deep` ajoute un contrôle Restic partiel plus coûteux.
+
+## Restauration staging-first
+
+Lister :
+
+```bash
+scripts/backup/restore.sh list
+```
+
+Vérifier :
+
+```bash
+scripts/backup/restore.sh verify
+```
+
+Restaurer sans toucher au système live :
+
+```bash
+scripts/backup/restore.sh restore latest
+```
+
+ou :
+
+```bash
+scripts/backup/restore.sh restore <snapshot> /chemin/staging/vide '<glob-optionnel>'
+```
+
+Le helper refuse les destinations sensibles/actives. On inspecte ensuite le staging avant toute restauration manuelle.
+
+## Disaster Recovery
+
+```bash
+scripts/backup/disaster-recovery.sh
+```
+
+Le script vérifie le repository et le dernier snapshot puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, `/data`, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
+
+## Règle QCOW2
+
+Ne jamais copier un disque QCOW2 actif avec `cp`, `rsync` ou Restic en espérant obtenir une sauvegarde cohérente. Ce projet choisit volontairement le contrat simple et robuste : **VM arrêtée → qemu-img check → qemu-img convert → Restic**.
