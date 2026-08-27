@@ -11,6 +11,7 @@
 - Les entrypoints publics `applications-doctor`, `media-doctor` et `baseline-doctor` sont exécutables et un contrat CI vérifie les permissions/syntaxes de tous les entrypoints publics.
 - Tous les workflows GitHub Actions déclarent `permissions: contents: read`.
 - `actions/checkout` et `actions/upload-artifact` sont épinglées sur des SHA immuables correspondant à leurs branches majeures v4.
+- Le bootstrap Ubuntu 26.04 valide désormais la disponibilité réelle du package `azure-cli` et bascule de façon contrôlée vers une suite Ubuntu Microsoft supportée lorsque la suite native publie des métadonnées sans package installable.
 - Ajout de `docs/WSL2_VALIDATION.md` et mise à jour du guide/README pour formaliser la chaîne CI → WSL2 → bare-metal.
 
 ## 0.7.0 — 2026-08-25
