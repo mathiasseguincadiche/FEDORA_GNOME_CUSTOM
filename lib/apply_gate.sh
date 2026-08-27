@@ -8,6 +8,10 @@ apply_gate_write_dryrun_proof() {
   printf 'commit=%s\nrun_id=%s\nutc=%s\n' "$(repo_commit)" "$RUN_ID" "$(date -u +%FT%TZ)" > "$proof"
 }
 
+apply_gate_require_runtime() {
+  runtime_is_baremetal
+}
+
 apply_gate_require_clean_git() {
   is_true "${REQUIRE_CLEAN_GIT:-true}" || return 0
   [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]
@@ -37,6 +41,10 @@ apply_gate_require_baseline() {
 }
 
 apply_gate_open() {
+  apply_gate_require_runtime || {
+    ui_error "REAL APPLY is forbidden outside bare-metal; detected runtime=$(runtime_environment)"
+    return "$EXIT_SECURITY_BLOCK"
+  }
   is_true "${REAL_APPLY_FEATURE_ENABLED:-false}" || { ui_error 'REAL APPLY feature disabled'; return "$EXIT_SECURITY_BLOCK"; }
   is_true "${REAL_MACHINE_APPROVED:-false}" || { ui_error 'REAL_MACHINE_APPROVED=false; use config/local.conf after reviewing the target machine'; return "$EXIT_SECURITY_BLOCK"; }
   [[ -t 0 && -t 1 ]] || { ui_error 'interactive TTY required'; return "$EXIT_SECURITY_BLOCK"; }

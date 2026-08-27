@@ -38,7 +38,7 @@ jobs:
     container: fedora:44
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install Fedora-native base contract
         shell: bash
         run: |

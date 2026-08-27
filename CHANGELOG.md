@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.1 — 2026-08-27
+
+- Ajout de la détection runtime `baremetal` / `wsl2` / `ci`, recalculée après la configuration locale pour empêcher un override de se faire passer pour du bare-metal.
+- Ajout de `diagnostics/wsl2-doctor` avec statuts `OK`, `EXPECTED` et `KO` pour valider Fedora 44, CPU, systemd, outils, catalogue et syntaxe sans transformer les limites WSL2 en faux défauts matériels.
+- `diagnostic.sh` route désormais automatiquement vers le diagnostic WSL2, CI ou workstation bare-metal.
+- Le REAL APPLY est refusé immédiatement hors bare-metal, avant les autres gates.
+- Les preuves et la certification de hardware baseline sont interdites hors bare-metal ; WSL2 ne peut produire aucune preuve de certification physique.
+- `config/local.conf.example` conserve désormais `REAL_MACHINE_APPROVED="false"` par défaut avec instruction d'approbation explicite uniquement sur la machine native.
+- Les entrypoints publics `applications-doctor`, `media-doctor` et `baseline-doctor` sont exécutables et un contrat CI vérifie les permissions/syntaxes de tous les entrypoints publics.
+- Tous les workflows GitHub Actions déclarent `permissions: contents: read`.
+- `actions/checkout` et `actions/upload-artifact` sont épinglées sur des SHA immuables correspondant à leurs branches majeures v4.
+- Le bootstrap Ubuntu 26.04 valide désormais la disponibilité réelle du package `azure-cli` et bascule de façon contrôlée vers une suite Ubuntu Microsoft supportée lorsque la suite native publie des métadonnées sans package installable.
+- Ajout de `docs/WSL2_VALIDATION.md` et mise à jour du guide/README pour formaliser la chaîne CI → WSL2 → bare-metal.
+
 ## 0.7.0 — 2026-08-25
 
 - Passage au niveau « industrial readiness » inspiré du projet Ubuntu, sans copier son implémentation spécifique APT/Ubuntu.

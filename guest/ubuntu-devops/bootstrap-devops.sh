@@ -61,21 +61,23 @@ deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/hashicorp-arc
 EOF
 
 log 'configure Azure CLI Microsoft repository'
-azure_suite="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
-if ! curl -fsSL -o /dev/null "https://packages.microsoft.com/repos/azure-cli/dists/${azure_suite}/Release"; then
-  log "Azure CLI repository has no ${azure_suite} suite yet; use noble compatibility suite"
-  azure_suite="noble"
-fi
 curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor --yes -o /etc/apt/keyrings/microsoft.gpg
 chmod go+r /etc/apt/keyrings/microsoft.gpg
-cat >/etc/apt/sources.list.d/azure-cli.sources <<EOF
+
+configure_azure_repository() {
+  local suite="$1"
+  cat >/etc/apt/sources.list.d/azure-cli.sources <<EOF
 Types: deb
 URIs: https://packages.microsoft.com/repos/azure-cli/
-Suites: ${azure_suite}
+Suites: ${suite}
 Components: main
 Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/microsoft.gpg
 EOF
+}
+
+azure_suite="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
+configure_azure_repository "$azure_suite"
 
 log 'configure Kubernetes official repository'
 kubernetes_release="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"
@@ -100,6 +102,30 @@ deb [signed-by=/etc/apt/keyrings/helm.gpg] https://packages.buildkite.com/helm-l
 EOF
 
 apt-get update
+
+# Microsoft can publish Release metadata for a new Ubuntu suite before the
+# azure-cli package itself is available. A Release-file probe is therefore not
+# sufficient. Prefer the native suite, then fall back only to Ubuntu releases
+# currently supported by Microsoft, and require APT to see the actual package.
+if ! apt-cache show azure-cli >/dev/null 2>&1; then
+  native_azure_suite="$azure_suite"
+  azure_suite=""
+  for candidate in noble jammy; do
+    [[ "$candidate" == "$native_azure_suite" ]] && continue
+    log "Azure CLI package unavailable for ${native_azure_suite}; test ${candidate} compatibility suite"
+    configure_azure_repository "$candidate"
+    apt-get update
+    if apt-cache show azure-cli >/dev/null 2>&1; then
+      azure_suite="$candidate"
+      log "Azure CLI package resolved from ${azure_suite} compatibility suite"
+      break
+    fi
+  done
+  [[ -n "$azure_suite" ]] || fail "Azure CLI package unavailable for ${native_azure_suite}, noble and jammy"
+else
+  log "Azure CLI package resolved from native ${azure_suite} suite"
+fi
+
 apt-get install -y \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
   gh terraform azure-cli kubectl helm
@@ -148,6 +174,7 @@ install -d -m 0755 /var/lib/fedora-gnome-custom
   printf 'completed_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf 'kubernetes_release=%s\n' "$kubernetes_release"
   printf 'kind_version=%s\n' "$kind_version"
+  printf 'azure_suite=%s\n' "$azure_suite"
 } >/var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
 chmod 0644 /var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
 

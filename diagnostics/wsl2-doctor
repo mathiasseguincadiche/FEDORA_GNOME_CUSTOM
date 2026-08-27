@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+ui_banner 'FEDORA WSL2 VALIDATION' 'READ-ONLY — NOT BARE-METAL CERTIFICATION'
+
+ok=0; expected=0; ko=0
+emit() {
+  ui_check "$1" "$2" "$3"
+  case "$1" in
+    OK) ((ok+=1)) ;;
+    EXPECTED) ((expected+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+if runtime_is_wsl2; then emit OK Runtime 'WSL2 detected'; else emit KO Runtime "expected wsl2, detected $RUNTIME_ENVIRONMENT"; fi
+if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then
+  emit OK Fedora '44'
+else
+  emit KO Fedora 'Fedora 44 required'
+fi
+
+if lscpu 2>/dev/null | grep -Fq "$EXPECTED_CPU"; then
+  emit OK CPU "$EXPECTED_CPU visible through WSL2"
+else
+  emit KO CPU "expected host CPU not visible: $EXPECTED_CPU"
+fi
+
+mem_visible="$(free -h 2>/dev/null | awk '/^Mem:/ {print $2; exit}')"
+if [[ -n "$mem_visible" ]]; then
+  emit OK Memory "WSL2-visible allocation=$mem_visible; physical capacity validation deferred"
+else
+  emit KO Memory 'free(1) did not report memory'
+fi
+
+if [[ -d /run/systemd/system ]] && systemctl show-environment >/dev/null 2>&1; then
+  emit OK systemd 'available in Fedora WSL2'
+else
+  emit KO systemd 'systemd is required for this validation profile'
+fi
+
+missing=()
+for cmd in bash dnf rpm git lscpu lsblk findmnt systemctl; do
+  command_exists "$cmd" || missing+=("$cmd")
+done
+if ((${#missing[@]} == 0)); then emit OK 'Core tools' 'bash/dnf/rpm/git/systemd toolchain available'; else emit KO 'Core tools' "missing: ${missing[*]}"; fi
+
+module_catalog_load "$REPO_ROOT/manifests/module-plan.conf"
+if module_catalog_validate; then emit OK 'Source catalog' 'module paths and dependency order valid'; else emit KO 'Source catalog' 'module catalog invalid'; fi
+
+syntax_ok=true
+while IFS= read -r file; do
+  bash -n "$REPO_ROOT/$file" || { syntax_ok=false; break; }
+done < <(git -C "$REPO_ROOT" ls-files '*.sh' 'diagnostics/*' 'scripts/systemd/*' 'virtualization/networkmanager/*')
+if [[ "$syntax_ok" == true ]]; then emit OK 'Bash syntax' 'tracked shell entrypoints parse'; else emit KO 'Bash syntax' 'at least one tracked shell file failed bash -n'; fi
+
+if [[ -e /dev/dxg ]]; then
+  emit OK 'GPU bridge' '/dev/dxg exposed by WSL; native Arc B580/xe certification deferred'
+else
+  emit EXPECTED 'GPU bridge' '/dev/dxg absent; native Arc B580/xe certification remains bare-metal only'
+fi
+
+emit EXPECTED 'PCI GPU / xe' 'direct PCI 8086:e20b and native xe driver are not certified through WSL2'
+emit EXPECTED NVMe 'physical T705 inventory/SMART/I/O remain bare-metal-only evidence'
+emit EXPECTED 'GNOME / Wayland' 'GNOME Shell, Mutter and display timing remain bare-metal-only evidence'
+emit EXPECTED 'Suspend / resume' 'firmware sleep/resume cycles remain bare-metal-only evidence'
+emit EXPECTED SELinux 'WSL2 is not accepted as proof of Fedora bare-metal SELinux state'
+emit EXPECTED 'KVM / libvirt' 'native qemu:///system and VM network certification remain bare-metal-only evidence'
+
+if apply_gate_require_runtime; then
+  emit KO 'APPLY guard' 'bare-metal gate unexpectedly accepted WSL2'
+else
+  emit OK 'APPLY guard' 'REAL APPLY is blocked outside bare-metal'
+fi
+
+if baseline_certification_valid; then
+  emit KO 'Baseline guard' 'bare-metal certification unexpectedly valid in WSL2'
+else
+  emit OK 'Baseline guard' 'bare-metal certification cannot be valid in WSL2'
+fi
+
+ui_meta OK "$ok"
+ui_meta EXPECTED "$expected"
+ui_meta KO "$ko"
+if (( ko == 0 )); then
+  ui_summary 'WSL2 VALIDATION PASS' 'SEND THIS OUTPUT; BARE-METAL EVIDENCE REMAINS DEFERRED' "$REPORT_ROOT" "$LOG_DIR"
+else
+  ui_summary 'WSL2 VALIDATION NEEDS ATTENTION' 'FIX KO; DO NOT CONVERT EXPECTED ITEMS TO BARE-METAL PASS' "$REPORT_ROOT" "$LOG_DIR"
+  exit "$EXIT_PRECHECK_FAILED"
+fi

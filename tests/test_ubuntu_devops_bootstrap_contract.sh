@@ -15,6 +15,10 @@ done
 
 grep -Fq 'sha256sum -c' "$BOOT"
 grep -Fq 'helm_expected_fpr=' "$BOOT"
+grep -Fq 'configure_azure_repository' "$BOOT"
+grep -Fq 'apt-cache show azure-cli' "$BOOT"
+grep -Fq 'for candidate in noble jammy' "$BOOT"
+grep -Fq 'azure_suite=%s' "$BOOT"
 grep -Fq 'runtime-prompt' "$ROOT/config/vm-profiles.conf"
 grep -Fq 'openssl passwd -6' "$CREATE"
 grep -Fq 'encoding: b64' "$CREATE"

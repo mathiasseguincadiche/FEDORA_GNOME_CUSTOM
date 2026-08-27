@@ -15,9 +15,21 @@ Usage:
 TXT
 }
 
+require_pass_word() {
+  [[ "${1:-}" == PASS ]] || { ui_error 'The explicit result must be PASS'; exit "$EXIT_USAGE"; }
+}
+
+require_baremetal_runtime() {
+  runtime_is_baremetal || {
+    ui_error "Hardware evidence/certification is forbidden outside bare-metal; detected runtime=$(runtime_environment)"
+    exit "$EXIT_SECURITY_BLOCK"
+  }
+}
+
 snapshot() {
   local report="$REPORT_ROOT/$RUN_ID-hardware-baseline-snapshot.txt"
   {
+    echo '[runtime]'; runtime_environment
     echo '[fingerprint]'; baseline_fingerprint_payload
     echo '[os]'; cat /etc/os-release
     echo '[cpu]'; lscpu 2>&1 || true
@@ -32,15 +44,14 @@ snapshot() {
   printf '%s\n' "$report"
 }
 
-require_pass_word() {
-  [[ "${1:-}" == PASS ]] || { ui_error 'The explicit result must be PASS'; exit "$EXIT_USAGE"; }
-}
-
 case "${1:-status}" in
   status)
     ui_banner 'HARDWARE BASELINE' 'CERTIFICATION STATUS'
+    ui_meta Runtime "$RUNTIME_ENVIRONMENT"
     ui_meta Fingerprint "$(baseline_fingerprint)"
-    if baseline_certification_valid; then
+    if ! runtime_is_baremetal; then
+      ui_check EXPECTED Certification "bare-metal-only; current runtime=$RUNTIME_ENVIRONMENT"
+    elif baseline_certification_valid; then
       ui_check OK Certification 'valid for current hardware/BIOS fingerprint'
     else
       ui_check KO Certification 'missing, incomplete or invalidated by hardware/BIOS change'
@@ -54,23 +65,27 @@ case "${1:-status}" in
     ui_meta Report "$(snapshot)"
     ;;
   record-memory)
+    require_baremetal_runtime
     profile="${2:-}"; require_pass_word "${3:-}"
     [[ "$profile" == 5600 || "$profile" == 6000 ]] || { usage; exit "$EXIT_USAGE"; }
     baseline_write_evidence "memory-$profile" PASS "Operator confirms completed memory test at ${profile} MT/s; snapshot=$(snapshot)"
     ui_check OK "memory-$profile" recorded
     ;;
   record-nvme-io)
+    require_baremetal_runtime
     require_pass_word "${2:-}"
     baseline_write_evidence nvme-io PASS "Operator confirms controlled sustained-I/O test completed without reboot/I/O fatal error; snapshot=$(snapshot)"
     ui_check OK nvme-io recorded
     ;;
   record-suspend)
+    require_baremetal_runtime
     require_pass_word "${2:-}"
     n=$(( $(baseline_suspend_pass_count) + 1 ))
     baseline_write_evidence "suspend-cycle-$(printf '%02d' "$n")" PASS "Operator confirms clean suspend/resume cycle; snapshot=$(snapshot)"
-    ui_check OK suspend-cycle "$n"
+    ui_check OK suspend-cycle "$n recorded"
     ;;
   certify)
+    require_baremetal_runtime
     if baseline_certify; then
       ui_check OK Certification "$(baseline_certification_path)"
     else
