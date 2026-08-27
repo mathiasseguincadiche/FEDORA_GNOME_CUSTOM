@@ -14,4 +14,9 @@ engine_bootstrap() {
   source "$REPO_ROOT/lib/apply_gate.sh"
   logging_init
   config_load
+
+  # Runtime identity is detected after local configuration is loaded so a
+  # machine-local file cannot spoof a privileged bare-metal environment.
+  RUNTIME_ENVIRONMENT="$(runtime_environment_detect)"
+  export RUNTIME_ENVIRONMENT
 }

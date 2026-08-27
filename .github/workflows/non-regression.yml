@@ -11,11 +11,20 @@ jobs:
   guards:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Real-machine gate remains closed in Git
         run: |
           grep -F 'REAL_MACHINE_APPROVED="false"' config/apply-gate.conf
+          grep -F 'REAL_MACHINE_APPROVED="false"' config/local.conf.example
           ! grep -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config/*.conf
+      - name: Runtime isolation invariants
+        run: |
+          grep -Fq 'runtime_environment_detect' lib/common.sh
+          grep -Fq 'apply_gate_require_runtime' lib/apply_gate.sh
+          grep -Fq 'runtime_is_baremetal' lib/apply_gate.sh
+          grep -Fq 'runtime_is_baremetal' lib/baseline.sh
+          grep -Fq 'wsl2)' diagnostic.sh
+          grep -Fq 'REAL APPLY is blocked outside bare-metal' diagnostics/wsl2-doctor
       - name: Fedora GNOME architecture invariants
         run: |
           grep -F 'REQUIRE_WAYLAND="true"' config/workstation.conf

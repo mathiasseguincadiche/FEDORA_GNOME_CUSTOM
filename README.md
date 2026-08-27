@@ -34,15 +34,32 @@ VirtioFS reste exclu. Nautilus accède au vrai `/home/mathias` Ubuntu via SFTP/S
 
 ## Validation industrielle
 
-La CI comprend désormais cinq niveaux complémentaires :
+La CI comprend cinq niveaux complémentaires :
 
-1. **Tests** — contrats statiques/structure/non-régression fonctionnelle ;
+1. **Tests** — contrats statiques/structure/non-régression fonctionnelle et entrypoints publics ;
 2. **Shell quality** — syntaxe Bash + ShellCheck ;
 3. **Fedora 44 package preflight** — résolution des sources et contrats packages ;
 4. **Fedora 44 host integration pretest** — installation réelle de la pile Fedora/GNOME/KVM dans `fedora:44` ;
 5. **Ubuntu 26.04 real VM pretest** — image Canonical signée + SHA-256, vraie VM QEMU (KVM si disponible), cloud-init, bootstrap DevOps réel, Docker smoke test et reboot persistence.
 
-Un workflow **Architecture non-regression** verrouille en plus Wayland, GNOME, GPU, réseau KVM, sécurité destructive, backup fail-closed et absence de secrets évidents.
+Un workflow **Architecture non-regression** verrouille en plus Wayland, GNOME, GPU, réseau KVM, sécurité destructive, backup fail-closed, isolation WSL2/bare-metal et absence de secrets évidents.
+
+Les GitHub Actions tierces sont épinglées par SHA immuable et tous les workflows utilisent des permissions `contents: read`.
+
+## Validation Fedora 44 sous WSL2
+
+WSL2 constitue une couche intermédiaire facultative entre la CI et le bare-metal :
+
+```bash
+./diagnostic.sh
+./diagnostics/wsl2-doctor
+```
+
+Le runtime est détecté automatiquement comme `baremetal`, `wsl2` ou `ci`. Sous WSL2, le diagnostic distingue `OK`, `EXPECTED` et `KO`. Les preuves GPU PCI/`xe`, NVMe, GNOME/Wayland, suspend/resume, SELinux physique et KVM natif restent explicitement différées.
+
+**Le REAL APPLY ainsi que l'enregistrement/certification de la hardware baseline sont interdits hors bare-metal.**
+
+Voir `docs/WSL2_VALIDATION.md`.
 
 ## Backup / Restore / Disaster Recovery
 
@@ -70,6 +87,6 @@ scripts/backup/disaster-recovery.sh
 
 ## Version
 
-`0.7.0` — industrial readiness : CI non-régression, pretest HOST Fedora 44, vraie VM Ubuntu 26.04 avec bootstrap/reboot, et chaîne backup/restore/DR fail-closed.
+`0.7.1` — hardening WSL2 et supply-chain : isolation runtime bare-metal/WSL2/CI, diagnostic WSL2, blocage APPLY/certification hors bare-metal, entrypoints contrôlés et GitHub Actions épinglées.
 
-Documentation principale : `docs/INSTALLATION_GUIDE.md`, `docs/INDUSTRIAL_READINESS.md`, `docs/CI_VALIDATION.md`, `docs/BACKUP_RESTORE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md`, `docs/VM_FILE_ACCESS.md`, `docs/UBUNTU_DEVOPS_PROVISIONING.md` et `docs/EXECUTION_CONTRACT.md`.
+Documentation principale : `docs/INSTALLATION_GUIDE.md`, `docs/WSL2_VALIDATION.md`, `docs/INDUSTRIAL_READINESS.md`, `docs/CI_VALIDATION.md`, `docs/BACKUP_RESTORE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md`, `docs/VM_FILE_ACCESS.md`, `docs/UBUNTU_DEVOPS_PROVISIONING.md` et `docs/EXECUTION_CONTRACT.md`.

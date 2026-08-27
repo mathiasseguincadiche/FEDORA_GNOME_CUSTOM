@@ -2,12 +2,16 @@ name: Fedora 44 package preflight
 on:
   push:
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   packages:
     runs-on: ubuntu-latest
     container: fedora:44
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Enable RPM Fusion metadata
         run: |
           dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"

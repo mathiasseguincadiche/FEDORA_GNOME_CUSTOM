@@ -25,23 +25,40 @@ cp config/local.conf.example config/local.conf
 $EDITOR config/local.conf
 ```
 
-`config/local.conf` est ignoré par Git. Il sert notamment à approuver explicitement la machine réelle. Les secrets n'y sont pas nécessaires : `BACKUP_PASSWORD_FILE` ne contient que le chemin du fichier secret.
+`config/local.conf` est ignoré par Git. Il sert notamment à approuver explicitement la machine réelle. L'exemple conserve volontairement `REAL_MACHINE_APPROVED=false` : le passage à `true` doit être une décision explicite réalisée uniquement sur Fedora 44 bare-metal après validation de la cible. Les secrets n'y sont pas nécessaires : `BACKUP_PASSWORD_FILE` ne contient que le chemin du fichier secret.
 
 Pour le backup, deux modes sont possibles :
 
 - laisser `BACKUP_REPOSITORY` vide : le helper sélectionne exactement une cible externe USB/hotplug montée ;
 - définir explicitement un repository local externe ou Restic distant.
 
-## 4. Diagnostic et baseline
+## 4. Validation intermédiaire WSL2 facultative
+
+Lorsque le dépôt est testé depuis Fedora 44 sous WSL2 avant migration bare-metal :
 
 ```bash
 ./diagnostic.sh
-bash diagnostics/baseline-doctor status
+./diagnostics/wsl2-doctor
+```
+
+Le diagnostic distingue `OK`, `EXPECTED` et `KO`. GPU PCI/`xe`, NVMe physiques, GNOME/Wayland, suspend/resume, SELinux physique et KVM natif restent `EXPECTED` jusqu'au bare-metal.
+
+Le REAL APPLY et la création de preuves/certification hardware sont interdits automatiquement hors bare-metal.
+
+Voir `docs/WSL2_VALIDATION.md`.
+
+## 5. Diagnostic et baseline bare-metal
+
+Sur Fedora 44 native :
+
+```bash
+./diagnostic.sh
+./diagnostics/baseline-doctor status
 ```
 
 La baseline doit être certifiée pour le fingerprint matériel/BIOS courant avant l'APPLY.
 
-## 5. Dry-run du commit courant
+## 6. Dry-run du commit courant
 
 ```bash
 ./install.sh --dry-run
@@ -49,7 +66,7 @@ La baseline doit être certifiée pour le fingerprint matériel/BIOS courant ava
 
 Le succès écrit une preuve liée au SHA Git courant.
 
-## 6. Backup pré-APPLY vérifié
+## 7. Backup pré-APPLY vérifié
 
 ```bash
 ./prepare-preapply-backup.sh
@@ -57,28 +74,28 @@ Le succès écrit une preuve liée au SHA Git courant.
 
 Le backup doit passer chiffrement, `restic check` et restauration du canary. Le marker est lui aussi lié au SHA Git courant : modifier le dépôt après le backup invalide volontairement l'APPLY.
 
-## 7. APPLY réel
+## 8. APPLY réel
 
 ```bash
 ./install.sh --apply
 ```
 
-Le gate exige : fonctionnalité APPLY activée, `REAL_MACHINE_APPROVED=true` uniquement dans `config/local.conf`, TTY interactif, Git propre, dry-run même commit, baseline valide, backup même commit et confirmation exacte.
+Le gate exige : environnement **bare-metal**, fonctionnalité APPLY activée, `REAL_MACHINE_APPROVED=true` uniquement dans `config/local.conf`, TTY interactif, Git propre, dry-run même commit, baseline valide, backup même commit et confirmation exacte.
 
-## 8. Postchecks HOST
+## 9. Postchecks HOST
 
 ```bash
 ./diagnostic.sh
-diagnostics/gnome-doctor
-diagnostics/applications-doctor
-diagnostics/media-doctor
-diagnostics/virtualization-doctor
-diagnostics/backup-doctor
+./diagnostics/gnome-doctor
+./diagnostics/applications-doctor
+./diagnostics/media-doctor
+./diagnostics/virtualization-doctor
+./diagnostics/backup-doctor
 ```
 
 Se déconnecter/reconnecter si l'appartenance aux groupes `libvirt`/`kvm` vient de changer.
 
-## 9. Créer les VM
+## 10. Créer les VM
 
 Ubuntu Server 26.04 :
 
@@ -92,7 +109,7 @@ Windows 11 :
 scripts/kvm/create_windows11_vm.sh --windows-iso /data/libvirt/iso/windows-11.iso --virtio-iso /data/libvirt/iso/virtio-win.iso
 ```
 
-## 10. Certification runtime
+## 11. Certification runtime
 
 ```bash
 scripts/kvm/runtime_certification.sh

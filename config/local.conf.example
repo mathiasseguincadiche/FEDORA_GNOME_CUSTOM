@@ -1,7 +1,11 @@
 # Copiez ce fichier vers config/local.conf (ignoré par Git) pour les valeurs propres à la machine.
 # Ne placez jamais de mot de passe dans ce fichier : indiquez uniquement le chemin d'un fichier protégé.
+#
+# IMPORTANT: la copie de cet exemple n'approuve jamais automatiquement la machine.
+# Passez explicitement REAL_MACHINE_APPROVED à "true" uniquement sur Fedora 44 bare-metal,
+# après revue de la cible, dry-run, baseline et backup pré-APPLY du même commit.
+REAL_MACHINE_APPROVED="false"
 
-REAL_MACHINE_APPROVED="true"
 BACKUP_REPOSITORY="/chemin/vers/ssd-externe/restic/fedora-gnome-custom"
 BACKUP_PASSWORD_FILE="$HOME/.config/fedora-gnome-custom/restic-password"
 

@@ -58,6 +58,7 @@ baseline_fingerprint() {
 }
 
 baseline_write_evidence() {
+  runtime_is_baremetal || return "$EXIT_SECURITY_BLOCK"
   local name="$1" status="$2" detail="${3:-}"
   baseline_ensure_dirs
   {
@@ -70,6 +71,7 @@ baseline_write_evidence() {
 }
 
 baseline_evidence_valid() {
+  runtime_is_baremetal || return 1
   local name="$1" file
   file="$(baseline_evidence_dir)/$name.ok"
   [[ -s "$file" ]] || return 1
@@ -78,6 +80,7 @@ baseline_evidence_valid() {
 }
 
 baseline_suspend_pass_count() {
+  runtime_is_baremetal || { printf '0\n'; return 0; }
   local file count=0
   shopt -s nullglob
   for file in "$(baseline_evidence_dir)"/suspend-cycle-*.ok; do
@@ -90,6 +93,7 @@ baseline_suspend_pass_count() {
 }
 
 baseline_automatic_health_check() {
+  runtime_is_baremetal || return 1
   grep -Eq '^VERSION_ID="?44"?$' /etc/os-release || return 1
   lscpu 2>/dev/null | grep -Fq "${EXPECTED_CPU:-AMD Ryzen 7 7700}" || return 1
   local gpu driver
@@ -106,6 +110,7 @@ baseline_automatic_health_check() {
 }
 
 baseline_certify() {
+  runtime_is_baremetal || return "$EXIT_SECURITY_BLOCK"
   baseline_evidence_valid memory-5600 || return 1
   baseline_evidence_valid memory-6000 || return 1
   baseline_evidence_valid nvme-io || return 1
@@ -124,6 +129,7 @@ baseline_certify() {
 }
 
 baseline_certification_valid() {
+  runtime_is_baremetal || return 1
   local marker
   marker="$(baseline_certification_path)"
   [[ -s "$marker" ]] || return 1
