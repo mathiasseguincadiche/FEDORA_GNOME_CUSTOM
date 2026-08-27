@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CHECKOUT_SHA="11d5960a326750d5838078e36cf38b85af677262"
+UPLOAD_ARTIFACT_SHA="ea165f8d65b6e75b540449e92b4886f43607fa02"
+
 for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/vm-pretest.yml .github/scripts/vm-pretest.sh; do
   [[ -f "$ROOT/$file" ]] || { echo "missing CI maturity file: $file" >&2; exit 1; }
 done
+
 grep -Fq 'fedora:44' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
@@ -12,6 +16,18 @@ grep -Fq 'gpgv --keyring /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg' "$RO
 grep -Fq 'guest/ubuntu-devops/bootstrap-devops.sh' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'docker run --rm hello-world' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'sudo reboot' "$ROOT/.github/scripts/vm-pretest.sh"
-grep -Fq 'actions/upload-artifact@v4' "$ROOT/.github/workflows/vm-pretest.yml"
+grep -Fq "actions/upload-artifact@$UPLOAD_ARTIFACT_SHA" "$ROOT/.github/workflows/vm-pretest.yml"
 grep -Fq 'Backup fail-closed invariants' "$ROOT/.github/workflows/non-regression.yml"
+
+while IFS= read -r workflow; do
+  grep -Fq 'permissions:' "$workflow" || { echo "missing workflow permissions: $workflow" >&2; exit 1; }
+  grep -Fq 'contents: read' "$workflow" || { echo "missing contents: read: $workflow" >&2; exit 1; }
+  grep -Fq "actions/checkout@$CHECKOUT_SHA" "$workflow" || { echo "checkout is not pinned to approved SHA: $workflow" >&2; exit 1; }
+done < <(find "$ROOT/.github/workflows" -maxdepth 1 -type f -name '*.yml' -print | sort)
+
+if grep -RInE 'uses:[[:space:]]+[^[:space:]#]+@v[0-9]+' "$ROOT/.github/workflows"; then
+  echo 'mutable major-version GitHub Action reference found' >&2
+  exit 1
+fi
+
 echo 'CI maturity contract: PASS'
