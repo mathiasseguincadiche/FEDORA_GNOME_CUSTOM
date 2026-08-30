@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Local-only navigation helpers. Nothing here performs network access.
 if [[ "${FGC_ENABLE_ZOXIDE:-true}" == "true" ]] && command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init bash)"

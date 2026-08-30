@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Fedora GNOME Custom — managed Bash entrypoint.
 [[ $- == *i* ]] || return 0
 

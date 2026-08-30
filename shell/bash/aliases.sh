@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Small, memorable aliases. No destructive command is hidden behind an alias.
 alias ll='ls -lah --group-directories-first --color=auto'
 alias la='ls -A --color=auto'

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Long, append-only, multi-terminal Bash history.
 HISTSIZE="${FGC_HISTSIZE:-50000}"
 HISTFILESIZE="${FGC_HISTFILESIZE:-100000}"

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Fast native Bash prompt. Git inspection is local-only and never contacts a remote.
 __fgc_prompt_update() {
   local rc=$?
