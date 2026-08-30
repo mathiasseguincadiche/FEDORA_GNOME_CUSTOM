@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ "$(<"$root/VERSION")" == "0.8.1" ]]
+version="$(<"$root/VERSION")"
+[[ "$(printf '%s\n' '0.8.1' "$version" | sort -V | head -n1)" == '0.8.1' ]]
 grep -Fxq amd-ucode-firmware "$root/manifests/packages-system.txt"
 grep -Fxq intel-gpu-firmware "$root/manifests/packages-system.txt"
 for p in iw bluez alsa-utils; do grep -Fxq "$p" "$root/manifests/packages-hardware.txt"; done
