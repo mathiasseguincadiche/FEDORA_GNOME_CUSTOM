@@ -40,6 +40,10 @@ domain_ip() {
 
 domain_xml_has() { vsh dumpxml "$1" 2>/dev/null | grep -Eq "$2"; }
 agent_ping() { vsh qemu-agent-command "$1" '{"execute":"guest-ping"}' >/dev/null 2>&1; }
+remote_ping() {
+  local target="$1"
+  printf '%s\n' "$target" | ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'read -r target; ping -c 1 -W 2 "$target" >/dev/null'
+}
 
 for dom in "$ubuntu" "$windows"; do
   if vsh dominfo "$dom" >/dev/null 2>&1; then record OK "domain $dom" present; else record KO "domain $dom" missing; fi
@@ -81,10 +85,10 @@ if [[ -n "$ubuntu_ip" ]] && ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" true
 
   if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'sudo /usr/local/sbin/devops-verify.sh' >/dev/null 2>&1; then record OK 'Ubuntu DevOps stack' verified; else record KO 'Ubuntu DevOps stack' failed; fi
   if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'getent ahostsv4 example.com >/dev/null && curl -fsS --max-time 10 https://example.com >/dev/null'; then record OK 'Ubuntu DNS/Internet' working; else record KO 'Ubuntu DNS/Internet' failed; fi
-  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'ping -c 1 -W 2 "$1" >/dev/null' sh "$kvm_gateway"; then record OK 'Ubuntu → KVM gateway' reachable; else record KO 'Ubuntu → KVM gateway' failed; fi
+  if remote_ping "$kvm_gateway"; then record OK 'Ubuntu → KVM gateway' reachable; else record KO 'Ubuntu → KVM gateway' failed; fi
 
   if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true && -n "$physical_gateway" ]]; then
-    if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'ping -c 1 -W 2 "$1" >/dev/null 2>&1' sh "$physical_gateway"; then
+    if remote_ping "$physical_gateway" >/dev/null 2>&1; then
       record KO 'Ubuntu → physical LAN' "physical gateway $physical_gateway unexpectedly reachable"
     else
       record OK 'Ubuntu → physical LAN' "physical gateway blocked ($physical_gateway)"
