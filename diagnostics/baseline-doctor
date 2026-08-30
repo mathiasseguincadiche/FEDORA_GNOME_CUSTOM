@@ -15,10 +15,26 @@ run_memory(){ require_baremetal; local speed="$1" actual log sha; [[ "$speed" ==
 mount_source_device(){ local src; src="$(findmnt -no SOURCE "$1" | sed -E 's/\[.*$//')"; lsblk -ndo NAME,TYPE -s "$src" 2>/dev/null | awk '$2=="disk" {print "/dev/"$1; exit}'; }
 run_nvme(){ require_baremetal; local target="$1" mount file log sha dev; case "$target" in root) mount=/;; data) mount="${EXPECTED_DATA_MOUNT:-/data}";; *) usage; exit "$EXIT_USAGE";; esac; [[ -d "$mount" && -w "$mount" ]] || { ui_error "$mount is not a writable mounted filesystem"; exit "$EXIT_PRECHECK_FAILED"; }; command_exists fio || sudo dnf -y install fio; dev="$(mount_source_device "$mount")"; [[ "$dev" == /dev/nvme* ]] || { ui_error "$mount is not backed by a physical NVMe device: $dev"; exit "$EXIT_PRECHECK_FAILED"; }; file="$mount/.fgc-nvme-certification.bin"; log="$REPORT_ROOT/$RUN_ID-nvme-$target.log"; trap 'rm -f "$file"' EXIT; fio --name="fgc-$target" --filename="$file" --size=4G --rw=write --bs=1M --direct=1 --iodepth=32 --verify=crc32c --verify_fatal=1 --do_verify=1 --group_reporting >"$log" 2>&1; rm -f "$file"; trap - EXIT; sha="$(sha256sum "$log" | awk '{print $1}')"; baseline_write_evidence "nvme-$target" PASS "automated=true tool=fio device=$dev sha256=$sha log=$log"; ui_check OK "nvme-$target" "automated fio PASS sha256=$sha"; }
 case "${1:-status}" in
- status) ui_banner 'HARDWARE BASELINE' 'PRE-APPLY CERTIFICATION'; ui_meta Fingerprint "$(baseline_fingerprint)"; if baseline_certification_valid; then ui_check OK Certification valid; else ui_check KO Certification missing; fi; for item in memory-5600 memory-6000 nvme-root nvme-data; do baseline_evidence_valid "$item" && ui_check OK "$item" PASS || ui_check WARN "$item" missing; done; ui_check INFO Suspend 'certified after APPLY/reboot by final-certification';;
- snapshot) ui_meta Report "$(snapshot)";;
- run-memory-test) run_memory "${2:-}";;
- run-nvme-test) run_nvme "${2:-}";;
- certify) require_baremetal; baseline_certify && ui_check OK Certification "$(baseline_certification_path)" || { ui_error 'Certification refused: automated RAM/NVMe evidence or hardware health is incomplete.'; exit "$EXIT_PRECHECK_FAILED"; };;
- *) usage; exit "$EXIT_USAGE";;
+ status)
+   ui_banner 'HARDWARE BASELINE' 'PRE-APPLY CERTIFICATION'
+   ui_meta Fingerprint "$(baseline_fingerprint)"
+   if baseline_certification_valid; then ui_check OK Certification valid; else ui_check KO Certification missing; fi
+   for item in memory-5600 memory-6000 nvme-root nvme-data; do
+     if baseline_evidence_valid "$item"; then ui_check OK "$item" PASS; else ui_check WARN "$item" missing; fi
+   done
+   ui_check INFO Suspend 'certified after APPLY/reboot by final-certification'
+   ;;
+ snapshot) ui_meta Report "$(snapshot)" ;;
+ run-memory-test) run_memory "${2:-}" ;;
+ run-nvme-test) run_nvme "${2:-}" ;;
+ certify)
+   require_baremetal
+   if baseline_certify; then
+     ui_check OK Certification "$(baseline_certification_path)"
+   else
+     ui_error 'Certification refused: automated RAM/NVMe evidence or hardware health is incomplete.'
+     exit "$EXIT_PRECHECK_FAILED"
+   fi
+   ;;
+ *) usage; exit "$EXIT_USAGE" ;;
 esac
