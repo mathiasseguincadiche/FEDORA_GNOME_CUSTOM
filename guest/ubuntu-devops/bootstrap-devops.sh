@@ -3,6 +3,10 @@ set -Eeuo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
+YQ_VERSION="${YQ_VERSION:-v4.53.3}"
+YQ_LINUX_AMD64_SHA256="${YQ_LINUX_AMD64_SHA256:-fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4}"
+K9S_VERSION="${K9S_VERSION:-v0.51.0}"
+K9S_LINUX_AMD64_SHA256="${K9S_LINUX_AMD64_SHA256:-c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7}"
 
 log() { printf '[ubuntu-devops] %s\n' "$*"; }
 fail() { printf '[ubuntu-devops] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -13,17 +17,24 @@ fail() { printf '[ubuntu-devops] ERROR: %s\n' "$*" >&2; exit 1; }
 source /etc/os-release
 [[ "${ID:-}" == "ubuntu" ]] || fail "expected Ubuntu, got ${ID:-unknown}"
 [[ "${VERSION_ID:-}" == 26.04* ]] || fail "expected Ubuntu 26.04, got ${VERSION_ID:-unknown}"
+[[ "$(dpkg --print-architecture)" == amd64 ]] || fail 'this VM profile currently requires Ubuntu amd64'
 
 install -d -m 0755 /etc/apt/keyrings
+apt-get update
+apt-get install -y software-properties-common
+add-apt-repository -y universe
 apt-get update
 apt-get install -y \
   apt-transport-https ca-certificates curl wget gnupg lsb-release \
   git git-lfs jq unzip zip rsync openssh-server qemu-guest-agent \
   python3 python3-pip python3-venv pipx \
   ansible ansible-core \
-  build-essential make shellcheck \
+  build-essential make shellcheck bash-completion \
   dnsutils traceroute iproute2 net-tools netcat-openbsd \
-  htop tree tmux ripgrep less groff
+  htop tree tmux ripgrep less groff \
+  glab nodejs npm node-corepack \
+  openjdk-21-jdk maven \
+  kubectx
 
 log 'configure Docker official repository'
 docker_suite="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
@@ -104,9 +115,8 @@ EOF
 apt-get update
 
 # Microsoft can publish Release metadata for a new Ubuntu suite before the
-# azure-cli package itself is available. A Release-file probe is therefore not
-# sufficient. Prefer the native suite, then fall back only to Ubuntu releases
-# currently supported by Microsoft, and require APT to see the actual package.
+# azure-cli package itself is available. Prefer the native suite, then fall
+# back only to supported Ubuntu releases, and require APT to see the package.
 if ! apt-cache show azure-cli >/dev/null 2>&1; then
   native_azure_suite="$azure_suite"
   azure_suite=""
@@ -135,7 +145,7 @@ aws_installer="$(mktemp)"
 curl -fsSL https://awscli.amazonaws.com/v2/install.sh -o "$aws_installer"
 chmod 0755 "$aws_installer"
 if command -v aws >/dev/null 2>&1; then
-  log "AWS CLI already installed; keep current v2 installation"
+  log 'AWS CLI already installed; keep current v2 installation'
 else
   "$aws_installer" --system
 fi
@@ -157,6 +167,41 @@ curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/${kind_ver
 install -m 0755 "$kind_tmp/kind-linux-amd64" /usr/local/bin/kind
 rm -rf "$kind_tmp"
 
+log 'install Minikube from official release with checksum verification'
+minikube_tmp="$(mktemp -d)"
+curl -fsSL https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64 -o "$minikube_tmp/minikube-linux-amd64"
+curl -fsSL https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64.sha256 -o "$minikube_tmp/minikube-linux-amd64.sha256"
+minikube_sha="$(tr -d '[:space:]' <"$minikube_tmp/minikube-linux-amd64.sha256")"
+[[ "$minikube_sha" =~ ^[0-9a-fA-F]{64}$ ]] || fail 'invalid Minikube checksum payload'
+printf '%s  %s\n' "$minikube_sha" "$minikube_tmp/minikube-linux-amd64" | sha256sum -c -
+install -m 0755 "$minikube_tmp/minikube-linux-amd64" /usr/local/bin/minikube
+rm -rf "$minikube_tmp"
+
+log "install yq ${YQ_VERSION} with pinned checksum"
+yq_tmp="$(mktemp -d)"
+curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o "$yq_tmp/yq"
+printf '%s  %s\n' "$YQ_LINUX_AMD64_SHA256" "$yq_tmp/yq" | sha256sum -c -
+install -m 0755 "$yq_tmp/yq" /usr/local/bin/yq
+rm -rf "$yq_tmp"
+
+log "install K9s ${K9S_VERSION} with pinned checksum"
+k9s_tmp="$(mktemp -d)"
+k9s_archive="$k9s_tmp/k9s_Linux_amd64.tar.gz"
+curl -fsSL "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" -o "$k9s_archive"
+printf '%s  %s\n' "$K9S_LINUX_AMD64_SHA256" "$k9s_archive" | sha256sum -c -
+tar -xzf "$k9s_archive" -C "$k9s_tmp" k9s
+install -m 0755 "$k9s_tmp/k9s" /usr/local/bin/k9s
+rm -rf "$k9s_tmp"
+
+log 'validate application toolchain majors'
+node_major="$(node -p 'process.versions.node.split(".")[0]')"
+[[ "$node_major" =~ ^[0-9]+$ ]] && (( node_major >= 22 )) || fail "Node.js 22+ required, got $(node --version)"
+javac_major="$(javac -version 2>&1 | awk '{split($2,v,"."); print v[1]}')"
+[[ "$javac_major" == 21 ]] || fail "OpenJDK 21 required, got $(javac -version 2>&1)"
+corepack --version >/dev/null
+npm --version >/dev/null
+mvn -version >/dev/null
+
 log 'enable guest services and operator access'
 systemctl enable --now ssh
 if [[ -e /dev/virtio-ports/org.qemu.guest_agent.0 ]]; then
@@ -168,14 +213,23 @@ systemctl enable --now docker
 getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
 usermod -aG docker "$DEVOPS_USER"
 
+devops_home="$(getent passwd "$DEVOPS_USER" | cut -d: -f6)"
+[[ -n "$devops_home" && -d "$devops_home" ]] || fail "home directory unavailable for $DEVOPS_USER"
+runuser -u "$DEVOPS_USER" -- env HOME="$devops_home" minikube config set driver docker >/dev/null
+
 log 'write completion marker'
 install -d -m 0755 /var/lib/fedora-gnome-custom
 {
   printf 'completed_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf 'kubernetes_release=%s\n' "$kubernetes_release"
   printf 'kind_version=%s\n' "$kind_version"
+  printf 'minikube_version=%s\n' "$(minikube version --short)"
+  printf 'node_version=%s\n' "$(node --version)"
+  printf 'java_version=%s\n' "$(javac -version 2>&1)"
+  printf 'yq_version=%s\n' "$YQ_VERSION"
+  printf 'k9s_version=%s\n' "$K9S_VERSION"
   printf 'azure_suite=%s\n' "$azure_suite"
 } >/var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
 chmod 0644 /var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
 
-log 'bootstrap completed'
+log 'bootstrap completed: clone -> build/test -> containerize -> deploy toolchain is ready'

@@ -127,24 +127,31 @@ report '[8/10] Execute real DevOps bootstrap'
 # shellcheck disable=SC2029
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/bootstrap-devops.sh" 2>&1 | tee "$BOOTSTRAP_LOG"
 
-report '[9/10] Runtime verification + Docker smoke'
+report '[9/10] Full runtime verification + application toolchain smoke'
 # shellcheck disable=SC2029
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" 2>&1 | tee "$VERIFY_LOG"
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --rm hello-world >/dev/null'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --rm hello-world >/dev/null && docker compose version >/dev/null'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'node -e '\''if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'\'' && npm --version >/dev/null && corepack --version >/dev/null'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'cat >/tmp/Hello.java <<'\''EOF'\''
+public class Hello { public static void main(String[] args) { System.out.print("java-smoke"); } }
+EOF
+cd /tmp && javac Hello.java && test "$(java Hello)" = java-smoke && mvn -version >/dev/null'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'glab version >/dev/null && minikube version --short >/dev/null && test "$(minikube config get driver)" = docker'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'yq -n '\''.ready = true'\'' | grep -q '\''ready: true'\'' && k9s version --short >/dev/null && kubectx --help >/dev/null && kubens --help >/dev/null'
 
 report '[10/10] Reboot persistence'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo reboot' || true
 sleep 10
 ready=0
 for _ in $(seq 1 90); do
-  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker --version >/dev/null && terraform version >/dev/null && kubectl version --client=true >/dev/null && systemctl is-active --quiet docker' >/dev/null 2>&1; then
+  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker --version >/dev/null && terraform version >/dev/null && kubectl version --client=true >/dev/null && node --version >/dev/null && javac -version >/dev/null 2>&1 && glab version >/dev/null && minikube version --short >/dev/null && yq --version >/dev/null && k9s version --short >/dev/null && systemctl is-active --quiet docker' >/dev/null 2>&1; then
     ready=1
     break
   fi
   sleep 5
 done
 if (( ready != 1 )); then
-  report 'FAIL: VM did not recover after reboot'
+  report 'FAIL: VM did not recover with full DevOps toolchain after reboot'
   exit 23
 fi
-report 'VERDICT: REAL UBUNTU 26.04 DEVOPS VM PRE-TEST PASS'
+report 'VERDICT: REAL UBUNTU 26.04 READY-TO-WORK DEVOPS VM PRE-TEST PASS'
