@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.8.1** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
+**Golden Workstation 0.8.2** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
 
 ## Contrat 0.8
 
@@ -18,6 +18,7 @@ APPLY
   dernier kernel stable upstream (>= 7.2.2)
   microcode AMD + firmware Arc explicites
   GNOME / Nautilus / codecs / apps / KVM
+  contrôles fenêtre Réduire / Agrandir / Fermer
   5G LAN / Wi-Fi 7 / BT / ALC4080 / xHCI
   réparation display 1440p/240 + Full RGB
         ↓
@@ -55,6 +56,16 @@ La pile installe explicitement `amd-ucode-firmware`, `intel-gpu-firmware` et cer
 ```
 
 La certification finale enregistre également une matrice BIOS/kernel/firmware/Mesa/Mutter/GNOME/Nautilus/QEMU/libvirt. Une évolution de cette matrice invalide le statut known-good jusqu'à nouvelle certification.
+
+## Contrôles des fenêtres GNOME
+
+Le profil 0.8.2 ne dépend plus du comportement par défaut de GNOME pour les boutons de fenêtre. Il impose explicitement à droite : **Réduire / Agrandir-Restaurer / Fermer** via :
+
+```text
+:minimize,maximize,close
+```
+
+Le module `gnome.settings` vérifie après APPLY que `org.gnome.desktop.wm.preferences button-layout` contient exactement cette disposition. Une valeur différente provoque un échec du post-check au lieu de laisser une configuration partielle.
 
 ## Nautilus : vrai démarrage à froid
 
@@ -153,6 +164,6 @@ Le projet conserve GNOME 50 + Wayland, SELinux Enforcing, firewalld, Nautilus/GV
 
 ## Version
 
-`0.8.1` — Hardware & KVM Completion : microcode/firmware explicites, certification complète des contrôleurs de la carte mère, USB post-resume, matrice known-good, guest agents VirtIO et profil I/O T705 mesuré.
+`0.8.2` — GNOME Window Controls : les boutons Réduire, Agrandir/Restaurer et Fermer sont explicitement appliqués et vérifiés, en complément de la pile Hardware & KVM Completion 0.8.1.
 
 Voir `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
