@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+current="$(uname -r)"; base="${current%%-*}"
+if printf '%s\n%s\n' "${KERNEL_MIN_VERSION:-7.2.2}" "$base" | sort -V -C; then emit OK Kernel "$current >= ${KERNEL_MIN_VERSION:-7.2.2}"; else emit KO Kernel "$current < ${KERNEL_MIN_VERSION:-7.2.2}; reboot into newest installed kernel"; fi
+if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then emit OK 'Arc B580' 'xe bound'; else emit KO 'Arc B580' 'xe not bound'; fi
+if mokutil --sb-state 2>/dev/null | grep -Eqi 'SecureBoot enabled|Secure Boot enabled'; then emit WARN 'Secure Boot' 'enabled; Kernel Vanilla normally requires an explicit trust/signing workflow'; else emit OK 'Secure Boot' 'not blocking vanilla kernel'; fi
+if rpm -qa 'kernel-core-*.fc44*' 2>/dev/null | grep -q .; then emit OK Fallback 'Fedora kernel remains installed'; else emit WARN Fallback 'no Fedora fc44 kernel-core package detected'; fi
+if journalctl -k -b --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(wedged|reset failed|gpu hang)|kernel panic|Oops:'; then emit KO Journal 'critical kernel/xe signature found'; else emit OK Journal 'no critical kernel/xe signature'; fi
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

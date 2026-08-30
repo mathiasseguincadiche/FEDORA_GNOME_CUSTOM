@@ -1,13 +1,28 @@
-# GNOME / Nautilus — intégration
+# GNOME / Nautilus — intégration Golden Workstation
 
-L'objectif n'est pas de copier un thème externe mais d'obtenir un bureau Fedora GNOME cohérent, moderne et maintenable.
+Le bureau reste Fedora GNOME 50/Wayland proche de l'upstream. L'objectif n'est pas de copier Ubuntu/Yaru mais d'obtenir une pile GNOME maintenable, mesurable et spécifique au matériel cible.
 
-Le socle GNOME gère Nautilus, GVfs pour SMB/MTP/caméra/FUSE, les portails GNOME, Flatpak et les composants nécessaires à l'intégration du bureau. Les applications utilisateur sont volontairement séparées dans le scope `APPLICATIONS`.
+## Nautilus
 
-## Politique applicative
+Le socle installe Nautilus + GVfs SMB/MTP/caméra/FUSE et les portals GNOME. La politique de previews est `local-only` afin que les volumes réseau/amovibles ne pénalisent pas le premier lancement.
 
-Les applications graphiques installées automatiquement par le projet doivent utiliser **GTK4** et **libadwaita** afin de conserver une interface GNOME cohérente. La liste versionnée est `manifests/packages-applications-gtk4.txt` et sa justification est documentée dans `GTK4_APPLICATIONS.md`.
+Un service user `fedora-gnome-nautilus-prewarm.service` préchauffe uniquement Portal/GIO. Il ne démarre jamais Nautilus : `diagnostics/nautilus-coldstart-doctor` mesure donc un vrai premier démarrage Files après login.
 
-**Ptyxis** est le terminal géré par le projet. L'intégration terminal de Nautilus repose sur le comportement Fedora/GNOME prévu pour Ptyxis, sans extension terminal additionnelle gérée par ce dépôt.
+Ptyxis reste le terminal natif géré. Les bookmarks SFTP/SMB des VM sont maintenus séparément par `scripts/kvm/configure_nautilus_vm_access.sh`.
 
-Les réglages de rendu de police, le scaling, VRR/HDR et les options expérimentales Mutter restent aux valeurs Fedora/GNOME par défaut tant qu'une correction n'est pas justifiée. Les extensions GNOME tierces sont désactivées par défaut afin de réduire les variables lors d'un crash Shell/Mutter.
+## Display / rendu
+
+Les réglages de rasterisation des polices restent upstream. Le projet ne masque pas une dégradation post-resume avec des tweaks Fontconfig : le display recovery rétablit le mode Mutter/KMS attendu, notamment 1440p/240 Hz, SDR/default et Full RGB.
+
+## Extensions
+
+- Dash to Dock : activé, paquet Fedora, defaults upstream conservés.
+- Blur My Shell : **désactivé par défaut** dans 0.8 pour réduire les variables du compositor à 240 Hz et pendant la certification suspend/resume.
+- Extension Manager : installé pour l'administration.
+- Just Perfection : exclu.
+
+Toute nouvelle extension doit être testée A/B et ne peut pas être utilisée pour masquer un problème Mutter/Wayland/GPU.
+
+## Applications
+
+Les applications graphiques natives sélectionnées utilisent GTK4/libadwaita quand une solution GNOME de qualité existe. Les applications professionnelles non-GTK4 restent des exceptions fonctionnelles explicitement documentées.

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+if pgrep -x nautilus >/dev/null 2>&1; then $quiet || ui_check WARN 'Nautilus cold-start' 'Nautilus already running; log out/in or reboot before measuring a true cold launch'; exit 2; fi
+start="$(date +%s%3N)"; nautilus --new-window "$HOME" >/dev/null 2>&1 &
+owner=false
+for _ in $(seq 1 100); do if gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus --method org.freedesktop.DBus.NameHasOwner org.gnome.Nautilus 2>/dev/null | grep -Fq true; then owner=true; break; fi; sleep 0.05; done
+end="$(date +%s%3N)"; elapsed=$((end-start)); report="$REPORT_ROOT/$RUN_ID-nautilus-coldstart.txt"
+printf 'elapsed_ms=%s\ntarget_ms=%s\nhard_limit_ms=%s\n' "$elapsed" "${NAUTILUS_COLDSTART_TARGET_MS:-1200}" "${NAUTILUS_COLDSTART_HARD_LIMIT_MS:-2000}" > "$report"
+$owner || { $quiet || ui_check KO 'Nautilus cold-start' 'D-Bus owner not acquired within 5 seconds'; exit "$EXIT_POSTCHECK_FAILED"; }
+if (( elapsed > ${NAUTILUS_COLDSTART_HARD_LIMIT_MS:-2000} )); then $quiet || ui_check KO 'Nautilus cold-start' "${elapsed} ms > hard limit ${NAUTILUS_COLDSTART_HARD_LIMIT_MS:-2000} ms"; exit "$EXIT_POSTCHECK_FAILED"; fi
+if runtime_is_baremetal; then
+  final_dir="$STATE_ROOT/final/evidence"; mkdir -p "$final_dir"
+  fp="$(printf '%s|kernel=%s' "$(baseline_fingerprint)" "$(uname -r)" | sha256sum | awk '{print $1}')"
+  { printf 'fingerprint=%s\nelapsed_ms=%s\nkernel=%s\nutc=%s\n' "$fp" "$elapsed" "$(uname -r)" "$(date -u +%FT%TZ)"; } > "$final_dir/nautilus-coldstart.ok"
+fi
+if (( elapsed <= ${NAUTILUS_COLDSTART_TARGET_MS:-1200} )); then $quiet || ui_check OK 'Nautilus cold-start' "${elapsed} ms"; else $quiet || ui_check WARN 'Nautilus cold-start' "${elapsed} ms > target ${NAUTILUS_COLDSTART_TARGET_MS:-1200} ms"; fi

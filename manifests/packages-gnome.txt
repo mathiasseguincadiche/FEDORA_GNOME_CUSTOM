@@ -1,4 +1,5 @@
 gnome-shell
+mutter
 gnome-control-center
 nautilus
 gvfs
