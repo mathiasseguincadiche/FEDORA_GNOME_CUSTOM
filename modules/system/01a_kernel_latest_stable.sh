@@ -3,20 +3,45 @@ set -Eeuo pipefail
 
 version_ge() { printf '%s\n%s\n' "$2" "$1" | sort -V -C; }
 
-kernel_secure_boot_enabled() {
-  command_exists mokutil || return 1
-  mokutil --sb-state 2>/dev/null | grep -Eqi 'SecureBoot enabled|Secure Boot enabled'
+kernel_secure_boot_state() {
+  local output file value
+  if command_exists mokutil; then
+    output="$(mokutil --sb-state 2>/dev/null || true)"
+    if grep -Eqi 'SecureBoot enabled|Secure Boot enabled' <<<"$output"; then
+      printf 'enabled\n'
+      return 0
+    fi
+    if grep -Eqi 'SecureBoot disabled|Secure Boot disabled' <<<"$output"; then
+      printf 'disabled\n'
+      return 0
+    fi
+  fi
+  for file in /sys/firmware/efi/efivars/SecureBoot-*; do
+    [[ -r "$file" ]] || continue
+    value="$(od -An -t u1 -j 4 -N 1 "$file" 2>/dev/null | tr -d '[:space:]')"
+    case "$value" in
+      1) printf 'enabled\n'; return 0 ;;
+      0) printf 'disabled\n'; return 0 ;;
+    esac
+  done
+  printf 'unknown\n'
 }
-
-kernel_current_base_version() { uname -r | sed -E 's/-.*$//'; }
 
 system_kernel_precheck() {
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"
   command_exists rpm || return "$EXIT_PRECHECK_FAILED"
   is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}" || return 0
-  if is_true "${KERNEL_BLOCK_SECURE_BOOT:-true}" && kernel_secure_boot_enabled; then
-    log_error SYSTEM 'Secure Boot is enabled; Fedora Kernel Vanilla COPR kernels are not expected to boot without an explicit trust/signing workflow. Disable Secure Boot before APPLY or override the kernel policy knowingly.'
-    return "$EXIT_SECURITY_BLOCK"
+  if is_true "${KERNEL_BLOCK_SECURE_BOOT:-true}"; then
+    case "$(kernel_secure_boot_state)" in
+      enabled)
+        log_error SYSTEM 'Secure Boot is enabled; Fedora Kernel Vanilla COPR kernels require an explicit trust/signing workflow. Disable Secure Boot before APPLY or implement that workflow explicitly.'
+        return "$EXIT_SECURITY_BLOCK"
+        ;;
+      unknown)
+        log_error SYSTEM 'Secure Boot state cannot be proven disabled. Kernel Vanilla APPLY is blocked fail-closed.'
+        return "$EXIT_SECURITY_BLOCK"
+        ;;
+    esac
   fi
 }
 
@@ -43,12 +68,14 @@ system_kernel_postcheck() {
   installed="$(rpm -q --qf '%{VERSION}-%{RELEASE}\n' kernel-core 2>/dev/null | sort -V | tail -n1)"
   [[ -n "$installed" ]] || return "$EXIT_POSTCHECK_FAILED"
   newest="${installed%%-*}"
-  version_ge "$newest" "${KERNEL_MIN_VERSION:-7.2.2}" || {
+  if ! version_ge "$newest" "${KERNEL_MIN_VERSION:-7.2.2}"; then
     log_error SYSTEM "newest installed kernel $newest is older than required ${KERNEL_MIN_VERSION:-7.2.2}"
     return "$EXIT_POSTCHECK_FAILED"
-  }
+  fi
   log_info SYSTEM "newest-installed-kernel=$installed current-running=$(uname -r); reboot required if they differ"
   if is_true "${KERNEL_KEEP_FEDORA_FALLBACK:-true}"; then
-    rpm -qa 'kernel-core-*.fc44*' 2>/dev/null | grep -q . || log_warn SYSTEM 'No Fedora kernel-core fallback package detected; review before reboot'
+    if ! rpm -qa 'kernel-core-*.fc44*' 2>/dev/null | grep -q .; then
+      log_warn SYSTEM 'No Fedora kernel-core fallback package detected; review before reboot'
+    fi
   fi
 }
