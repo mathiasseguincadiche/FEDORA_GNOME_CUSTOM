@@ -10,17 +10,19 @@ if baseline_certification_valid; then emit OK 'Hardware baseline' 'certified for
 if lscpu | grep -Fq "$EXPECTED_CPU"; then emit OK CPU "$EXPECTED_CPU"; else emit KO CPU 'unexpected CPU'; fi
 mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
 if (( mem_kib >= 45*1024*1024 )); then emit OK Memory '48 GiB class detected'; else emit KO Memory 'less than expected'; fi
+if "$REPO_ROOT/diagnostics/firmware-doctor" --quiet; then emit OK Firmware 'AMD microcode + Intel GPU firmware'; else emit KO Firmware 'run firmware-doctor'; fi
+if "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet; then emit OK 'Board components' '5G LAN/Wi-Fi/BT/audio/xHCI'; else emit KO 'Board components' 'run hardware-components-doctor'; fi
 if "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; then emit OK Graphics 'Arc B580/xe baseline'; else emit KO Graphics 'run graphics-doctor'; fi
 if "$REPO_ROOT/diagnostics/storage-doctor" --quiet; then emit OK Storage 'T705 inventory baseline'; else emit KO Storage 'run storage-doctor'; fi
 if [[ "$(getenforce 2>/dev/null || echo unknown)" == Enforcing ]]; then emit OK SELinux Enforcing; else emit KO SELinux 'not Enforcing'; fi
 if systemctl is-active --quiet firewalld; then emit OK firewalld active; else emit WARN firewalld inactive; fi
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
-  if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then emit OK GNOME 'Wayland session'; else emit WARN GNOME "session=${XDG_SESSION_TYPE:-unknown}"; fi
-fi
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then emit OK GNOME 'Wayland session'; else emit WARN GNOME "session=${XDG_SESSION_TYPE:-unknown}"; fi; fi
 if bash "$REPO_ROOT/diagnostics/applications-doctor" --quiet; then emit OK Applications 'GTK4/libadwaita catalog + Ptyxis'; else emit KO Applications 'run applications-doctor'; fi
 if bash "$REPO_ROOT/diagnostics/media-doctor" --quiet; then emit OK Multimedia 'FFmpeg/GStreamer providers installed'; else emit KO Multimedia 'run media-doctor'; fi
+if "$REPO_ROOT/diagnostics/software-matrix-doctor" --quiet; then emit OK 'Known-good matrix' certified; else emit WARN 'Known-good matrix' 'not certified or software versions changed'; fi
 if is_true "${ENABLE_KVM:-true}"; then
   if bash "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet; then emit OK Virtualization 'KVM/libvirt contract'; else emit KO Virtualization 'run virtualization-doctor'; fi
+  if "$REPO_ROOT/diagnostics/kvm-io-doctor" --quiet; then emit OK 'KVM I/O profile' benchmarked; else emit WARN 'KVM I/O profile' 'run kvm-io-doctor benchmark'; fi
 fi
 previous="$(journalctl -k -b -1 --no-pager 2>/dev/null | grep -Eic 'kernel panic|Oops:|watchdog.*hard LOCKUP|xe.*(reset|hang|wedged)|PCIe Bus Error|nvme.*(I/O|reset)' || true)"
 if (( previous == 0 )); then emit OK 'Previous boot' 'no critical signature matched'; else emit WARN 'Previous boot' "$previous critical signatures — run collect-boot-failure.sh"; fi

@@ -11,6 +11,10 @@ OUT="$ROOT/${TS}-${PHASE}-${ACTION}.log"
   echo '[kernel]'; uname -a
   echo '[mem_sleep]'; cat /sys/power/mem_sleep 2>/dev/null || true
   echo '[pci-gpu]'; lspci -nnk -d 8086:e20b 2>/dev/null || true
+  echo '[network]'; lspci -Dnnk 2>/dev/null | grep -A4 -Ei 'Ethernet controller|Network controller' || true
+  echo '[audio-usb]'; aplay -l 2>/dev/null || true
+  echo '[usb-xhci]'; lspci -Dnnk 2>/dev/null | grep -A4 -Ei 'USB controller' || true
+  echo '[usb-errors]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'xhci|usb' | grep -Ei 'error|failed|timeout|reset|HC died' | tail -n 100 || true
   echo '[drm-connectors]'; for f in /sys/class/drm/card*-*/status; do [[ -r "$f" ]] && echo "$f=$(cat "$f")"; done
   echo '[drm-errors]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(error|fault|reset|hang|wedged)' | tail -n 100 || true
   echo '[pcie-aer]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'AER:|PCIe Bus Error' | tail -n 100 || true
