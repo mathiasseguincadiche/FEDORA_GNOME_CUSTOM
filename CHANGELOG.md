@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.2 — 2026-08-30
+
+- Ajout de la couche **Fedora Host Bash UX** pour que Ptyxis ouvre directement un Bash professionnel et prêt à travailler sur l'OS hôte.
+- Ajout des paquets Fedora officiels `bash-completion`, `fzf`, `zoxide` et `direnv`.
+- Ajout d'un profil modulaire sous `~/.config/fedora-gnome-custom/bash/` avec historique, aliases, navigation, complétions et prompt séparés.
+- Le `.bashrc` utilisateur n'est jamais remplacé : sauvegarde initiale `bashrc.pre-fgc`, puis bloc géré unique et idempotent.
+- Historique étendu à 50 000/100 000 entrées, `histappend`, déduplication et synchronisation multi-terminal `history -a` / `history -n`.
+- Prompt Bash natif deux lignes avec utilisateur/hôte, chemin, branche Git, état tracked modifié et code retour en erreur ; aucune commande réseau et aucun framework Starship/Oh My Bash.
+- Ajout d'aliases DevOps courts pour Git, Docker Compose, Kubernetes et Terraform, sans alias destructif pour `rm`, `mv`, `cp` ou `sudo`.
+- Les complétions de `gh`, `glab`, `kubectl`, `helm` et `minikube` sont générées uniquement si les binaires existent puis mises en cache.
+- Ajout de `shell-doctor`, intégré à `workstation-doctor` et à la certification bare-metal finale.
+- Le prétest Fedora 44 crée un utilisateur réel dans le conteneur, installe le profil Bash et exécute un smoke test interactif.
+- Ajout de `docs/HOST_BASH_UX.md` et passage de la Golden Workstation en version 0.9.2.
+
 ## 0.9.1 — 2026-08-30
 
 - Passage de la VM Ubuntu Server 26.04 au profil **Ubuntu DevOps Ready** : objectif `clone → build/test → containerize → deploy` dès le premier login après bootstrap.
@@ -29,7 +43,7 @@
 
 ## 0.8.2 — 2026-08-30
 
-- Ajout d'une politique GNOME explicite imposant les trois contrôles de fenêtre **Réduire / Agrandir / Fermer** à droite via `org.gnome.desktop.wm.preferences button-layout`.
+- Ajout d'une politique GNOME explicite imposant les trois contrôles de fenêtre **Réduire / Agrandir / Fermer** à droite via `org.gnome.desktop.wm.preferences.button-layout`.
 - Le module GNOME applique `:minimize,maximize,close` de façon idempotente et refuse la validation post-APPLY si la valeur réellement enregistrée diffère.
 - Ajout d'un contrat CI empêchant une régression silencieuse vers le comportement GNOME par défaut sans boutons Réduire/Agrandir.
 

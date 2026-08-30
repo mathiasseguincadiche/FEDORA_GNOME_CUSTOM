@@ -1,0 +1,5 @@
+# Fedora host Bash UX
+bash-completion
+fzf
+zoxide
+direnv

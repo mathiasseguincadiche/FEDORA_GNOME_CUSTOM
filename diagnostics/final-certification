@@ -79,6 +79,7 @@ certify(){
   "$REPO_ROOT/diagnostics/portal-doctor" --quiet
   "$REPO_ROOT/diagnostics/arc-compute-doctor" --quiet
   "$REPO_ROOT/diagnostics/lifecycle-doctor" --quiet
+  "$REPO_ROOT/diagnostics/shell-doctor" --quiet
   "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet
   (( $(suspend_count) >= ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} )) || { ui_error 'Not enough unique physical post-APPLY suspend/resume cycles'; exit "$EXIT_PRECHECK_FAILED"; }
   valid_coldstart || { ui_error 'Current-kernel Nautilus cold-start evidence missing or above hard limit; run nautilus-coldstart-doctor immediately after login'; exit "$EXIT_PRECHECK_FAILED"; }

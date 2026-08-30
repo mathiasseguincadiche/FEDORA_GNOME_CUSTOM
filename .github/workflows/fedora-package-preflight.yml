@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-desktop-integration.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
+          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-desktop-integration.txt manifests/packages-shell.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
             echo "== $manifest =="
             while IFS= read -r pkg; do
               [[ -z "$pkg" || "$pkg" == \#* ]] && continue

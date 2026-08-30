@@ -8,6 +8,7 @@ on:
       - 'manifests/**'
       - 'config/repos/**'
       - 'config/desktop.conf'
+      - 'config/shell.conf'
       - 'modules/system/**'
       - 'modules/hardware/**'
       - 'modules/gnome/**'
@@ -18,6 +19,8 @@ on:
       - 'diagnostics/**'
       - 'scripts/backup/**'
       - 'scripts/kvm/**'
+      - 'scripts/shell/**'
+      - 'shell/**'
       - 'systemd/user/**'
       - '.github/workflows/fedora-host-pretest.yml'
   pull_request:
@@ -25,6 +28,7 @@ on:
       - 'manifests/**'
       - 'config/repos/**'
       - 'config/desktop.conf'
+      - 'config/shell.conf'
       - 'modules/system/**'
       - 'modules/hardware/**'
       - 'modules/gnome/**'
@@ -35,6 +39,8 @@ on:
       - 'diagnostics/**'
       - 'scripts/backup/**'
       - 'scripts/kvm/**'
+      - 'scripts/shell/**'
+      - 'shell/**'
       - 'systemd/user/**'
       - '.github/workflows/fedora-host-pretest.yml'
 
@@ -61,12 +67,34 @@ jobs:
             manifests/packages-gnome.txt \
             manifests/packages-gnome-extensions.txt \
             manifests/packages-desktop-integration.txt \
+            manifests/packages-shell.txt \
             manifests/packages-multimedia-fedora.txt \
             manifests/packages-applications-gtk4.txt \
             manifests/packages-applications-professional-fedora.txt \
             manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install restic jq acl xorriso "${packages[@]}"
-          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime
+          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv
+      - name: Validate Fedora host Bash UX
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          useradd -m shelltest
+          runuser -u shelltest -- env \
+            HOME=/home/shelltest \
+            XDG_CONFIG_HOME=/home/shelltest/.config \
+            XDG_STATE_HOME=/home/shelltest/.local/state \
+            FGC_SHELL_SOURCE_DIR="$GITHUB_WORKSPACE/shell/bash" \
+            FGC_HISTSIZE=50000 \
+            FGC_HISTFILESIZE=100000 \
+            FGC_ENABLE_FZF=true \
+            FGC_ENABLE_ZOXIDE=true \
+            FGC_ENABLE_DIRENV=true \
+            FGC_PROMPT_GIT=true \
+            "$GITHUB_WORKSPACE/scripts/shell/install-host-bash-ux.sh"
+          grep -Fxq '# >>> fedora-gnome-custom bash ux >>>' /home/shelltest/.bashrc
+          test -r /home/shelltest/.local/state/fedora-gnome-custom/bash/bashrc.pre-fgc
+          runuser -u shelltest -- env HOME=/home/shelltest XDG_CONFIG_HOME=/home/shelltest/.config bash --noprofile --rcfile /home/shelltest/.config/fedora-gnome-custom/bash/init.sh -ic \
+            'declare -F __fgc_prompt_update >/dev/null && alias gs >/dev/null && command -v fzf >/dev/null && command -v zoxide >/dev/null && command -v direnv >/dev/null && type z >/dev/null'
       - name: Enable RPM Fusion
         run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
       - name: Validate multimedia provider convergence
