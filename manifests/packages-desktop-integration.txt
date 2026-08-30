@@ -1,0 +1,59 @@
+# Secrets / credentials
+gnome-keyring
+gnome-keyring-pam
+libsecret
+seahorse
+
+# Wayland / Flatpak desktop portals
+xdg-desktop-portal-gtk
+pipewire
+wireplumber
+
+# Driverless printing and scanning
+cups
+cups-client
+ipp-usb
+avahi
+sane-airscan
+system-config-printer
+
+# VPN integration in NetworkManager / GNOME
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
+NetworkManager-openconnect
+NetworkManager-openconnect-gnome
+
+# Fedora power profile integration
+tuned
+tuned-ppd
+
+# French language, spellcheck and document-compatible fonts
+glibc-langpack-fr
+hunspell-fr
+hyphen-fr
+mythes-fr
+google-noto-sans-fonts
+google-noto-color-emoji-fonts
+liberation-fonts-all
+
+# Remote administration client
+remmina
+remmina-plugins-rdp
+remmina-plugins-vnc
+remmina-plugins-secret
+remmina-plugins-spice
+
+# Mobile / iPhone filesystem support
+libimobiledevice
+libimobiledevice-utils
+ifuse
+
+# Intel Arc compute: Level Zero / OpenCL
+intel-compute-runtime
+intel-level-zero
+intel-opencl
+clinfo
+
+# Safe lifecycle automation: download only, never unattended install/reboot
+dnf5-plugin-automatic
+dnf5-plugins

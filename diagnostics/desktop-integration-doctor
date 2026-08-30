@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+need_pkg(){ if rpm -q "$1" >/dev/null 2>&1; then emit OK "$2" "$1"; else emit KO "$2" "$1 missing"; fi; }
+
+need_pkg gnome-keyring 'Secret Service'
+need_pkg gnome-keyring-pam 'Login keyring PAM'
+need_pkg libsecret 'Secret API'
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  if busctl --user introspect org.freedesktop.secrets /org/freedesktop/secrets >/dev/null 2>&1; then
+    emit OK 'Secret Service runtime' 'org.freedesktop.secrets reachable'
+  else
+    emit KO 'Secret Service runtime' 'D-Bus Secret Service unavailable'
+  fi
+fi
+
+for pkg in cups ipp-usb avahi sane-airscan; do need_pkg "$pkg" 'Driverless print/scan'; done
+if systemctl is-enabled --quiet cups.socket && systemctl is-active --quiet cups.socket; then
+  emit OK CUPS 'socket enabled/active'
+else
+  emit KO CUPS 'cups.socket not enabled/active'
+fi
+if systemctl is-active --quiet avahi-daemon.service; then emit OK Avahi active; else emit KO Avahi inactive; fi
+
+for pkg in NetworkManager-openvpn NetworkManager-openvpn-gnome NetworkManager-openconnect NetworkManager-openconnect-gnome; do
+  need_pkg "$pkg" 'VPN integration'
+done
+
+need_pkg tuned-ppd 'GNOME power profiles'
+if systemctl is-active --quiet tuned.service; then emit OK TuneD active; else emit KO TuneD inactive; fi
+if systemctl is-active --quiet tuned-ppd.service; then emit OK 'TuneD PPD' active; else emit KO 'TuneD PPD' inactive; fi
+
+if locale -a 2>/dev/null | grep -Eqi '^fr_FR([.]utf8|[.]UTF-8)?$'; then
+  emit OK Locale 'fr_FR.UTF-8 available'
+else
+  emit KO Locale 'fr_FR.UTF-8 unavailable'
+fi
+for pkg in hunspell-fr hyphen-fr mythes-fr google-noto-sans-fonts google-noto-color-emoji-fonts liberation-fonts-all; do
+  need_pkg "$pkg" 'Language/fonts'
+done
+
+for pkg in remmina remmina-plugins-rdp remmina-plugins-vnc remmina-plugins-secret; do need_pkg "$pkg" 'Remote desktop'; done
+for pkg in libimobiledevice libimobiledevice-utils ifuse; do need_pkg "$pkg" 'Mobile integration'; done
+
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

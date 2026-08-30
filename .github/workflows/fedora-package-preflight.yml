@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
+          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-gnome-extensions.txt manifests/packages-desktop-integration.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
             echo "== $manifest =="
             while IFS= read -r pkg; do
               [[ -z "$pkg" || "$pkg" == \#* ]] && continue
@@ -72,9 +72,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dnf -y install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell
-          rpm -q gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell
+          dnf -y install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
+          rpm -q gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
           test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
           test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx
+          test -d /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
+          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json
