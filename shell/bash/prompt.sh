@@ -13,7 +13,7 @@ __fgc_prompt_update() {
   history -n 2>/dev/null || true
 
   if [[ "$PWD" == "$HOME" || "$PWD" == "$HOME/"* ]]; then
-    path="~${PWD#$HOME}"
+    path="~${PWD#"$HOME"}"
   else
     path="$PWD"
   fi
@@ -35,19 +35,23 @@ __fgc_prompt_update() {
 }
 
 __fgc_install_prompt_command() {
-  local item current
-  if declare -p PROMPT_COMMAND 2>/dev/null | grep -q 'declare -a'; then
+  local item current declaration
+  declaration="$(declare -p PROMPT_COMMAND 2>/dev/null || true)"
+  if [[ "$declaration" == 'declare -a '* ]]; then
     for item in "${PROMPT_COMMAND[@]}"; do
       [[ "$item" == '__fgc_prompt_update' ]] && return 0
     done
     PROMPT_COMMAND=(__fgc_prompt_update "${PROMPT_COMMAND[@]}")
-  else
-    current="${PROMPT_COMMAND:-}"
-    case ";$current;" in
-      *';__fgc_prompt_update;'*) return 0 ;;
-      *) PROMPT_COMMAND="__fgc_prompt_update${current:+;$current}" ;;
-    esac
+    return 0
   fi
+
+  current="${PROMPT_COMMAND:-}"
+  case ";$current;" in
+    *';__fgc_prompt_update;'*) return 0 ;;
+  esac
+  unset PROMPT_COMMAND
+  declare -ga PROMPT_COMMAND=(__fgc_prompt_update)
+  [[ -n "$current" ]] && PROMPT_COMMAND+=("$current")
 }
 
 __fgc_install_prompt_command
