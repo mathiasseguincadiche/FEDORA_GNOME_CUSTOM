@@ -17,7 +17,7 @@ grep -Fq '# >>> fedora-gnome-custom bash ux >>>' "$ROOT/scripts/shell/install-ho
 grep -Fq 'bashrc.pre-fgc' "$ROOT/scripts/shell/install-host-bash-ux.sh"
 grep -Fq 'fedora-gnome-custom/bash/init.sh' "$ROOT/scripts/shell/install-host-bash-ux.sh"
 
-grep -Fq 'HISTSIZE="${FGC_HISTSIZE:-50000}"' "$ROOT/shell/bash/history.sh"
+grep -Fq "HISTSIZE=\"\${FGC_HISTSIZE:-50000}\"" "$ROOT/shell/bash/history.sh"
 grep -Fq 'histappend' "$ROOT/shell/bash/history.sh"
 grep -Fq 'history -a' "$ROOT/shell/bash/prompt.sh"
 grep -Fq 'history -n' "$ROOT/shell/bash/prompt.sh"
