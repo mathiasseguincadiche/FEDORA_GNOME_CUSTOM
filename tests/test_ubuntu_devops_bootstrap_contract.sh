@@ -21,9 +21,9 @@ for token in glab minikube k9s kubectx kubens yq node npm corepack java javac mv
   grep -Fq "$token" "$VERIFY" || { echo "missing Ubuntu ready-to-work verification: $token" >&2; exit 1; }
 done
 
-grep -Fq 'YQ_VERSION="${YQ_VERSION:-v4.53.3}"' "$BOOT"
+grep -Fq "YQ_VERSION=\"\${YQ_VERSION:-v4.53.3}\"" "$BOOT"
 grep -Fq 'fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4' "$BOOT"
-grep -Fq 'K9S_VERSION="${K9S_VERSION:-v0.51.0}"' "$BOOT"
+grep -Fq "K9S_VERSION=\"\${K9S_VERSION:-v0.51.0}\"" "$BOOT"
 grep -Fq 'c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7' "$BOOT"
 grep -Fq 'minikube-linux-amd64.sha256' "$BOOT"
 grep -Fq 'sha256sum -c' "$BOOT"
