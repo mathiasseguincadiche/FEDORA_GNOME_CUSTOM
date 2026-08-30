@@ -1,119 +1,122 @@
-# Guide d'installation — Fedora 44 GNOME 50
+# Guide d'installation — Fedora 44 GNOME 50 Golden Workstation
 
-## 1. Installer Fedora 44 Workstation
+## A. Installation Fedora 44 reproductible
 
-Utiliser Fedora 44 Workstation natif avec GNOME 50/Wayland. Le projet ne partitionne, ne formate et ne monte aucun SSD automatiquement.
-
-Le SSD VM dédié doit être préparé manuellement en EXT4 et monté sur `/data` avant la convergence KVM.
-
-## 2. Cloner et identifier la révision
+Option recommandée sur disque vierge : générer un Kickstart depuis un environnement Linux de confiance.
 
 ```bash
-git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
-cd FEDORA_GNOME_CUSTOM
-git checkout main
-git pull --ff-only
-chmod +x menu.sh diagnostic.sh install.sh prepare-preapply-backup.sh
-cat VERSION
-git rev-parse HEAD
+installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
 ```
 
-## 3. Configuration locale
+Le générateur affiche modèle/serial/taille et exige `EFFACER /dev/nvme0n1`. Le fichier Kickstart efface uniquement le disque explicitement choisi. Le second T705 n'est jamais sélectionné automatiquement.
+
+Le Kickstart installe Fedora Workstation, SELinux/firewalld et clone le dépôt. Il ne lance pas l'APPLY : la qualification bare-metal reste obligatoire.
+
+Une installation Fedora 44 Workstation manuelle reste supportée.
+
+## B. Préparer `/data`
+
+Le second T705 destiné à KVM doit être préparé et monté manuellement en EXT4 sur `/data`. Cette opération reste hors automatisation destructive du dépôt.
+
+## C. Configuration locale
 
 ```bash
 cp config/local.conf.example config/local.conf
 $EDITOR config/local.conf
 ```
 
-`config/local.conf` est ignoré par Git. Il sert notamment à approuver explicitement la machine réelle. L'exemple conserve volontairement `REAL_MACHINE_APPROVED=false` : le passage à `true` doit être une décision explicite réalisée uniquement sur Fedora 44 bare-metal après validation de la cible. Les secrets n'y sont pas nécessaires : `BACKUP_PASSWORD_FILE` ne contient que le chemin du fichier secret.
+`REAL_MACHINE_APPROVED` reste `false` jusqu'à la fin des contrôles.
 
-Pour le backup, deux modes sont possibles :
+## D. Baseline pré-APPLY
 
-- laisser `BACKUP_REPOSITORY` vide : le helper sélectionne exactement une cible externe USB/hotplug montée ;
-- définir explicitement un repository local externe ou Restic distant.
-
-## 4. Validation intermédiaire WSL2 facultative
-
-Lorsque le dépôt est testé depuis Fedora 44 sous WSL2 avant migration bare-metal :
+La baseline ne demande plus cinq cycles suspend avant correction. Elle certifie seulement la santé nécessaire pour autoriser l'APPLY.
 
 ```bash
-./diagnostic.sh
-./diagnostics/wsl2-doctor
+./diagnostics/baseline-doctor snapshot
+./diagnostics/baseline-doctor run-memory-test 5600
 ```
 
-Le diagnostic distingue `OK`, `EXPECTED` et `KO`. GPU PCI/`xe`, NVMe physiques, GNOME/Wayland, suspend/resume, SELinux physique et KVM natif restent `EXPECTED` jusqu'au bare-metal.
-
-Le REAL APPLY et la création de preuves/certification hardware sont interdits automatiquement hors bare-metal.
-
-Voir `docs/WSL2_VALIDATION.md`.
-
-## 5. Diagnostic et baseline bare-metal
-
-Sur Fedora 44 native :
+Passer ensuite le profil mémoire BIOS à 6000 MT/s, redémarrer et lancer :
 
 ```bash
-./diagnostic.sh
-./diagnostics/baseline-doctor status
+./diagnostics/baseline-doctor run-memory-test 6000
+./diagnostics/baseline-doctor run-nvme-test root
+./diagnostics/baseline-doctor run-nvme-test data
+./diagnostics/baseline-doctor certify
 ```
 
-La baseline doit être certifiée pour le fingerprint matériel/BIOS courant avant l'APPLY.
+Les tests NVMe utilisent un fichier temporaire de 4 Gio avec fio/CRC32C et n'écrivent jamais sur le block device brut.
 
-## 6. Dry-run du commit courant
+## E. Dry-run et backup
 
 ```bash
 ./install.sh --dry-run
-```
-
-Le succès écrit une preuve liée au SHA Git courant.
-
-## 7. Backup pré-APPLY vérifié
-
-```bash
 ./prepare-preapply-backup.sh
 ```
 
-Le backup doit passer chiffrement, `restic check` et restauration du canary. Le marker est lui aussi lié au SHA Git courant : modifier le dépôt après le backup invalide volontairement l'APPLY.
+Le backup Restic doit être vérifié et correspondre au même SHA Git.
 
-## 8. APPLY réel
+## F. APPLY
+
+Après avoir revu la cible, passer `REAL_MACHINE_APPROVED=true` dans `config/local.conf`, puis :
 
 ```bash
 ./install.sh --apply
 ```
 
-Le gate exige : environnement **bare-metal**, fonctionnalité APPLY activée, `REAL_MACHINE_APPROVED=true` uniquement dans `config/local.conf`, TTY interactif, Git propre, dry-run même commit, baseline valide, backup même commit et confirmation exacte.
+Le kernel profile active `@kernel-vanilla/stable` et exige au minimum 7.2.2. Si Secure Boot est actif, l'APPLY kernel est bloqué par défaut afin d'éviter un kernel Vanilla non amorçable.
 
-## 9. Postchecks HOST
+Les anciens kernels Fedora sont conservés.
 
-```bash
-./diagnostic.sh
-./diagnostics/gnome-doctor
-./diagnostics/applications-doctor
-./diagnostics/media-doctor
-./diagnostics/virtualization-doctor
-./diagnostics/backup-doctor
-```
+## G. Reboot et premier login
 
-Se déconnecter/reconnecter si l'appartenance aux groupes `libvirt`/`kvm` vient de changer.
-
-## 10. Créer les VM
-
-Ubuntu Server 26.04 :
+Redémarrer sur le dernier kernel installé et vérifier :
 
 ```bash
-scripts/kvm/create_ubuntu_devops_vm.sh --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+./diagnostics/kernel-doctor
+./diagnostics/display-doctor
+./diagnostics/graphics-doctor
 ```
 
-Windows 11 :
+Immédiatement après le premier login, avant d'ouvrir Files :
 
 ```bash
-scripts/kvm/create_windows11_vm.sh --windows-iso /data/libvirt/iso/windows-11.iso --virtio-iso /data/libvirt/iso/virtio-win.iso
+./diagnostics/nautilus-coldstart-doctor
 ```
 
-## 11. Certification runtime
+## H. Suspend/resume final
+
+Effectuer cinq cycles veille/réveil. Après chaque reprise, attendre quelques secondes pour le repair puis :
 
 ```bash
-scripts/kvm/runtime_certification.sh
-scripts/kvm/configure_nautilus_vm_access.sh refresh
+./diagnostics/final-certification record-suspend
 ```
 
-Enfin, utiliser `menu.sh` pour les opérations courantes et `docs/BACKUP_RESTORE.md` pour le cycle backup/restore/DR.
+Le contrôle exige display repair récent, Arc B580/xe sain et absence de signatures critiques xe/PCIe/NVMe.
+
+Après cinq cycles :
+
+```bash
+./diagnostics/final-certification certify
+```
+
+## I. Recovery
+
+Affichage :
+
+```bash
+./repair.sh display
+```
+
+Kernel :
+
+```bash
+./diagnostics/kernel-doctor
+scripts/kernel/rollback-to-fedora.sh
+```
+
+Le rollback désactive le COPR Vanilla et distro-sync les packages vers Fedora ; il ne supprime pas aveuglément les kernels installés.
+
+## J. KVM / VM / Backup
+
+Une fois le HOST certifié, continuer avec les procédures KVM/Ubuntu/Windows et Restic décrites dans `docs/VIRTUALIZATION.md`, `docs/VM_PROFILES.md` et `docs/BACKUP_RESTORE.md`.

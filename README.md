@@ -1,92 +1,138 @@
 # FEDORA_GNOME_CUSTOM
 
-Workstation-as-code pour **Fedora Linux 44 Workstation + GNOME 50 “Tokyo”**, conçue autour d'un Ryzen 7 7700, d'une Intel Arc B580 et d'un usage DevOps/Ops infrastructure.
+**Golden Workstation 0.8.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
 
-## Architecture
+## Contrat 0.8
 
 ```text
-BASELINE → SYSTEM → HARDWARE → GNOME → APPLICATIONS → KVM → BACKUP/RECOVERY
+INSTALLATION FEDORA 44 (Kickstart protégé)
+        ↓
+BASELINE PRÉ-APPLY
+  RAM 5600 + 6000 automatisée
+  T705 système + /data automatisés
+  GPU / BIOS / NVMe / EDID fingerprint
+        ↓
+DRY-RUN + BACKUP RESTIC
+        ↓
+APPLY
+  dernier kernel stable upstream (>= 7.2.2)
+  GNOME / Nautilus / codecs / apps / KVM
+  réparation display 1440p/240 + Full RGB
+        ↓
+REBOOT
+        ↓
+CERTIFICATION FINALE
+  kernel + Arc B580/xe
+  cold-start Nautilus
+  affichage
+  5 cycles suspend/resume
 ```
 
-Le projet conserve Wayland, SELinux Enforcing, firewalld et les choix Fedora upstream. Il interdit les tweaks kernel/GPU expérimentaux sans diagnostic, le partitionnement/formatage automatique, le GPU passthrough de l'Arc B580 et les mutations globales de firewall.
+Le projet ne promet pas artificiellement « aucun bug » : il refuse de déclarer la workstation certifiée tant que les critères mesurés ne passent pas.
 
-## GNOME 50 réellement intégré
+## Kernel 7.2.2+
 
-Le scope GNOME gère GNOME Shell, Mutter/Wayland, Nautilus/GVfs, portals, Flatpak, PipeWire/WirePlumber, Dash to Dock, Blur My Shell et Extension Manager. Les applications natives sont GTK4/libadwaita lorsqu'une solution GNOME de qualité existe ; les applications métier constituent des exceptions documentées.
-
-Applications professionnelles gérées : VS Code, Brave, VLC, Bitwarden, Slack, GNOME Text Editor, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText.
-
-## KVM/libvirt CLI-first
-
-`qemu:///system`, OVMF/UEFI, swtpm/TPM 2.0, libguestfs/libosinfo, `virsh`, `virt-admin`, `virt-install`, `virt-xml`, `qemu-img`, `virt-v2v`, etc.
-
-Stockage VM : second T705 monté **manuellement** en EXT4 sur `/data`, pool `devops-data` dans `/data/libvirt/images`.
-
-Réseau : `devops-nat` / `virbr50` / `192.168.50.0/24`, gateway `192.168.50.254`, DHCP `.100-.200`, DNS `9.9.9.9` + `1.1.1.1`. HOST↔VM, VM↔VM et VM→Internet sont autorisés ; VM↔LAN physique et forwarding entrant restent bloqués.
-
-## Deux VM de référence
-
-**Ubuntu Server 26.04 `ubuntu-devops`** : 6 vCPU, 16 Gio, 160 Gio qcow2, UEFI, VirtIO, cloud-init, SSH et bootstrap Git/gh, Docker, Ansible, Terraform, Azure CLI, AWS CLI, kubectl, Helm, kind et outils complémentaires.
-
-**Windows 11 `windows-11`** : 4 vCPU, 12 Gio, 128 Gio qcow2, UEFI Secure Boot, TPM 2.0/swtpm, VirtIO et SPICE.
-
-VirtioFS reste exclu. Nautilus accède au vrai `/home/mathias` Ubuntu via SFTP/SSH et à `C:\VM-Share` via SMB authentifié côté Windows.
-
-## Validation industrielle
-
-La CI comprend cinq niveaux complémentaires :
-
-1. **Tests** — contrats statiques/structure/non-régression fonctionnelle et entrypoints publics ;
-2. **Shell quality** — syntaxe Bash + ShellCheck ;
-3. **Fedora 44 package preflight** — résolution des sources et contrats packages ;
-4. **Fedora 44 host integration pretest** — installation réelle de la pile Fedora/GNOME/KVM dans `fedora:44` ;
-5. **Ubuntu 26.04 real VM pretest** — image Canonical signée + SHA-256, vraie VM QEMU (KVM si disponible), cloud-init, bootstrap DevOps réel, Docker smoke test et reboot persistence.
-
-Un workflow **Architecture non-regression** verrouille en plus Wayland, GNOME, GPU, réseau KVM, sécurité destructive, backup fail-closed, isolation WSL2/bare-metal et absence de secrets évidents.
-
-Les GitHub Actions tierces sont épinglées par SHA immuable et tous les workflows utilisent des permissions `contents: read`.
-
-## Validation Fedora 44 sous WSL2
-
-WSL2 constitue une couche intermédiaire facultative entre la CI et le bare-metal :
+Le profil active Fedora Kernel Vanilla `@kernel-vanilla/stable`, exige au minimum Linux `7.2.2` et conserve les kernels Fedora déjà installés comme fallback. Secure Boot actif bloque cet APPLY par défaut, car les kernels Vanilla COPR nécessitent un workflow de confiance/signature explicite.
 
 ```bash
-./diagnostic.sh
-./diagnostics/wsl2-doctor
+./diagnostics/kernel-doctor
+scripts/kernel/rollback-to-fedora.sh
 ```
 
-Le runtime est détecté automatiquement comme `baremetal`, `wsl2` ou `ci`. Sous WSL2, le diagnostic distingue `OK`, `EXPECTED` et `KO`. Les preuves GPU PCI/`xe`, NVMe, GNOME/Wayland, suspend/resume, SELinux physique et KVM natif restent explicitement différées.
+Aucun `force_probe`, aucun argument `xe` expérimental, aucun tweak ASPM/APST/C-State n'est appliqué à l'aveugle.
 
-**Le REAL APPLY ainsi que l'enregistrement/certification de la hardware baseline sont interdits hors bare-metal.**
+## Nautilus : vrai démarrage à froid
 
-Voir `docs/WSL2_VALIDATION.md`.
-
-## Backup / Restore / Disaster Recovery
-
-Restic chiffré est maintenant structuré en pipeline : inventaire → repository → HOST → métadonnées KVM → disques VM → intégrité/rétention → restore staging → disaster recovery.
-
-Le pré-APPLY exige un repository externe/off-machine, une passphrase hors Git, `restic check`, un restore-canary réel et un marker lié au **même commit Git** que l'APPLY. Les QCOW2 ne sont sauvegardés qu'avec VM arrêtée ; les restores sont staging-first et n'écrasent jamais automatiquement le système live.
+Le service de prewarm charge uniquement les dépendances GNOME/Portal/GIO ; **Nautilus lui-même n'est jamais pré-démarré**. Ainsi le benchmark correspond réellement au premier clic Files après login.
 
 ```bash
-./diagnostic.sh
+./diagnostics/nautilus-coldstart-doctor
+```
+
+Objectif : ≤ 1200 ms. Limite de certification : 2000 ms. Les thumbnails restent `local-only` pour éviter qu'un backend réseau ou amovible ralentisse le premier lancement.
+
+## Affichage après veille / extinction écran
+
+Un watcher de session observe :
+
+- reprise après `PrepareForSleep` ;
+- `MonitorsChanged` de Mutter ;
+- hotplug/change DRM udev.
+
+Il réapplique via `gdctl` la configuration certifiée : 2560×1440, ~240 Hz, scale 1.0, color mode SDR/default, plage RGB **Full**. Il ne modifie pas les options expérimentales Mutter et ne désactive pas arbitrairement le VRR.
+
+```bash
+./diagnostics/display-doctor
+./repair.sh display
+```
+
+Blur My Shell est désactivé par défaut dans le profil Golden Workstation : l'effet est cosmétique et introduit une variable de compositor inutile pour une cible 240 Hz/stabilité maximale. Dash to Dock reste géré.
+
+## Baseline pré-APPLY
+
+Les anciennes preuves opérateur `PASS` ne suffisent plus. Les preuves RAM/NVMe doivent provenir des tests automatisés et contiennent un SHA-256 de leur log.
+
+```bash
+./diagnostics/baseline-doctor run-memory-test 5600
+# changer ensuite le profil mémoire BIOS vers 6000 et redémarrer
+./diagnostics/baseline-doctor run-memory-test 6000
+./diagnostics/baseline-doctor run-nvme-test root
+./diagnostics/baseline-doctor run-nvme-test data
+./diagnostics/baseline-doctor certify
+```
+
+Les tests NVMe travaillent sur un fichier temporaire du filesystem ; aucun benchmark destructif du block device brut n'est exécuté. `/` et `/data` doivent résoudre vers deux NVMe physiques distincts.
+
+## Installation Fedora 44 reproductible
+
+Le dépôt fournit un générateur Kickstart. Il ne sélectionne jamais un disque automatiquement et exige une confirmation destructive contenant le chemin exact du disque.
+
+```bash
+installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
+```
+
+Le Kickstart généré utilise uniquement le disque explicitement sélectionné, installe Fedora Workstation et clone le dépôt. L'APPLY n'est pas lancé automatiquement : baseline, dry-run et backup restent obligatoires.
+
+## APPLY protégé
+
+```bash
 ./install.sh --dry-run
 ./prepare-preapply-backup.sh
 ./install.sh --apply
-./menu.sh
 ```
 
-Outils recovery :
+Le gate conserve : bare-metal obligatoire, machine approuvée localement, Git propre, dry-run du même commit, baseline valide, backup Restic du même commit et confirmation exacte.
+
+## Certification finale après reboot
+
+Immédiatement après le premier login sur le nouveau kernel :
 
 ```bash
-diagnostics/backup-doctor
-scripts/backup/backup-now.sh
-scripts/backup/backup-now.sh --include-vms
-scripts/backup/restore.sh list
-scripts/backup/disaster-recovery.sh
+./diagnostics/nautilus-coldstart-doctor
 ```
+
+Puis effectuer cinq cycles veille/réveil. Après chaque reprise :
+
+```bash
+./diagnostics/final-certification record-suspend
+```
+
+Enfin :
+
+```bash
+./diagnostics/final-certification certify
+```
+
+Chaque cycle exige kernel/GPU/display sains et un marker récent prouvant que le repair d'affichage s'est exécuté après la reprise.
+
+## GNOME / applications / KVM / backup
+
+Le projet conserve GNOME 50 + Wayland, SELinux Enforcing, firewalld, Nautilus/GVfs SMB-MTP-FUSE, portals, GTK4/libadwaita, Ptyxis, RPM Fusion multimédia, VS Code, Brave, VLC, Bitwarden, Slack, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText.
+
+KVM reste CLI-first via `qemu:///system`, second T705 sur `/data`, OVMF/TPM, réseau privé `devops-nat`, Ubuntu Server 26.04 et Windows 11. Restic reste fail-closed, chiffré, avec restore-canary et restauration staging-first.
 
 ## Version
 
-`0.7.1` — hardening WSL2 et supply-chain : isolation runtime bare-metal/WSL2/CI, diagnostic WSL2, blocage APPLY/certification hors bare-metal, entrypoints contrôlés et GitHub Actions épinglées.
+`0.8.0` — Golden Workstation : kernel stable 7.2.2+, certification hardware automatisée, cold-start Nautilus mesuré, recovery affichage 1440p/240 Hz Full RGB, certification post-resume et installation Kickstart protégée.
 
-Documentation principale : `docs/INSTALLATION_GUIDE.md`, `docs/WSL2_VALIDATION.md`, `docs/INDUSTRIAL_READINESS.md`, `docs/CI_VALIDATION.md`, `docs/BACKUP_RESTORE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/VIRTUALIZATION.md`, `docs/VIRTUALIZATION_CLI.md`, `docs/VM_PROFILES.md`, `docs/VM_FILE_ACCESS.md`, `docs/UBUNTU_DEVOPS_PROVISIONING.md` et `docs/EXECUTION_CONTRACT.md`.
+Voir `docs/GOLDEN_WORKSTATION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.

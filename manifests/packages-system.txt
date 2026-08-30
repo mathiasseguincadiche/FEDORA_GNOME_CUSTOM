@@ -12,3 +12,9 @@ microcode_ctl
 linux-firmware
 policycoreutils
 firewalld
+dnf5-plugins
+mokutil
+grubby
+stress-ng
+fio
+drm_info

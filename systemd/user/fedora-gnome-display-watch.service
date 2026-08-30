@@ -1,0 +1,13 @@
+[Unit]
+Description=Repair GNOME display state after resume and DRM/monitor hotplug
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/libexec/fedora-gnome-display-watch
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

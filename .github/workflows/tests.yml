@@ -23,4 +23,5 @@ jobs:
       - run: bash tests/test_backup_recovery_contract.sh
       - run: bash tests/test_ci_maturity_contract.sh
       - run: bash tests/test_dash_to_dock_contract.sh
+      - run: bash tests/test_golden_workstation_contract.sh
       - run: bash tests/test_public_entrypoints_contract.sh

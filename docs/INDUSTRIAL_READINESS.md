@@ -1,50 +1,35 @@
-# Industrial Readiness — Fedora 44 + GNOME 50
+# Industrial Readiness — Golden Workstation 0.8
 
-Ce document décrit le niveau de maturité atteint par le dépôt après alignement avec les pratiques du projet Ubuntu de référence.
-
-## Pipeline de confiance
+## Chaîne de confiance
 
 ```text
-HARDWARE BASELINE
+FEDORA 44 INSTALL
       ↓
-SYSTEM
+PRE-APPLY HARDWARE BASELINE
       ↓
-HARDWARE INTEGRATION
+DRY-RUN + RESTIC BACKUP
       ↓
-GNOME 50 / WAYLAND
+SYSTEM + KERNEL 7.2.2+
       ↓
-APPLICATIONS
+HARDWARE + GNOME + DISPLAY RECOVERY
       ↓
-KVM / LIBVIRT
+APPLICATIONS + KVM + BACKUP
       ↓
-VM RUNTIME
+REBOOT
       ↓
-BACKUP / RESTORE / DR
+POST-APPLY GOLDEN CERTIFICATION
 ```
 
-Chaque couche dispose de prechecks, plan, convergence contrôlée et postchecks. L'APPLY réel reste derrière un gate interactif, un worktree propre, une baseline hardware certifiée, un dry-run du même commit et un backup Restic vérifié du même commit.
+## Code-ready
 
-## Preuves automatisées
+La CI vérifie structure/contrats, ShellCheck, résolution et installation Fedora 44, RPM Fusion/vendor/Flathub, GNOME 50, KVM, backup/recovery, VM Ubuntu 26.04 et invariants Golden Workstation.
 
-- tests de contrats ;
-- ShellCheck et syntaxe Bash ;
-- résolution Fedora 44 ;
-- installation réelle du contrat packages dans `fedora:44` ;
-- garde-fous d'architecture/non-régression ;
-- VM Ubuntu 26.04 réelle sous QEMU/KVM-or-TCG ;
-- bootstrap DevOps réel ;
-- smoke Docker ;
-- test après reboot ;
-- preuves GitHub Actions conservées en artifacts.
+## Runtime-certified
 
-## Preuves on-machine
+La machine réelle doit ensuite prouver : kernel courant >= 7.2.2, B580 liée à `xe`, display 1440p/~240 Hz sain, cold-start Nautilus courant, baseline RAM/NVMe et cinq cycles suspend/resume post-APPLY avec display repair récent.
 
-Sur la workstation réelle : hardware baseline, Arc B580/`xe`, Vulkan/VA-API, Mutter/Wayland, écran 1440p/240 Hz, GNOME extensions, suspend/resume, T705, KVM `qemu:///system`, `devops-nat`, Ubuntu/Windows, Secure Boot/TPM/VirtIO Windows, SSH/SFTP/SMB et isolation LAN.
+Le dépôt ne confond jamais succès CI et preuve physique.
 
 ## Recovery
 
-Le projet possède maintenant un pipeline backup/recovery séparé : inventaire, repository, HOST, métadonnées KVM, disques VM, intégrité/rétention, restore staging et disaster recovery. Aucune restauration destructrice n'est automatisée.
-
-## Définition de « prêt »
-
-Le dépôt est **code-ready** lorsque toutes les CI sont vertes. La machine n'est **runtime-certified** qu'après exécution des diagnostics et certifications sur le vrai matériel. Cette distinction évite de confondre qualité du dépôt et preuve physique impossible à obtenir dans GitHub Actions.
+Les kernels Fedora restent disponibles en fallback. Un rollback désactive Kernel Vanilla puis distro-sync vers Fedora. Restic reste staging-first pour les restaurations et aucun helper n'écrase automatiquement le système live.

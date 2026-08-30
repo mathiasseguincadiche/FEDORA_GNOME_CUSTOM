@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+grep -Fq 'KERNEL_VANILLA_COPR="@kernel-vanilla/stable"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_MIN_VERSION="7.2.2"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'system.kernel' "$ROOT/manifests/module-plan.conf"
+grep -Fq '@kernel-vanilla/stable' "$ROOT/modules/system/01a_kernel_latest_stable.sh"
+grep -Fq 'allow_vendor_change=1' "$ROOT/modules/system/01a_kernel_latest_stable.sh"
+grep -Fq 'ENABLE_BLUR_MY_SHELL="false"' "$ROOT/config/gnome.conf"
+grep -Fq 'NAUTILUS_COLDSTART_TARGET_MS="1200"' "$ROOT/config/performance.conf"
+grep -Fq 'org.gnome.Nautilus' "$ROOT/diagnostics/nautilus-coldstart-doctor"
+grep -Fq 'DISPLAY_TARGET_REFRESH_HZ="240"' "$ROOT/config/display.conf"
+grep -Fq 'DISPLAY_TARGET_RGB_RANGE="full"' "$ROOT/config/display.conf"
+grep -Fq -- '--rgb-range' "$ROOT/scripts/gnome/display-repair.sh"
+grep -Fq 'PrepareForSleep' "$ROOT/scripts/gnome/display-watch.sh"
+grep -Fq 'MonitorsChanged' "$ROOT/scripts/gnome/display-watch.sh"
+grep -Fq 'subsystem-match=drm' "$ROOT/scripts/gnome/display-watch.sh"
+grep -Fq 'FINAL_CERT_MIN_SUSPEND_CYCLES="5"' "$ROOT/config/performance.conf"
+grep -Fq 'record-suspend' "$ROOT/diagnostics/final-certification"
+grep -Fq 'EFFACER' "$ROOT/installer/generate-fedora44-kickstart.sh"
+grep -Fq 'ignoredisk --only-use=' "$ROOT/installer/generate-fedora44-kickstart.sh"
+! grep -RInE 'mem_sleep_default=|xe\.force_probe|i915\.force_probe|pcie_aspm=off|nvme_core\.default_ps_max_latency_us' "$ROOT/config" "$ROOT/modules" "$ROOT/scripts" || { echo 'blind kernel/power quirk found' >&2; exit 1; }
+echo 'golden workstation contract: PASS'

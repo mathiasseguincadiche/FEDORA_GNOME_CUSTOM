@@ -1,110 +1,66 @@
-# Hardware Baseline Certification — Phase 0
+# Hardware Baseline Certification — 0.8
 
 ## But
 
-Certifier la stabilité de la workstation **avant** les personnalisations Fedora/GNOME. La Phase 0 sépare les incidents matériels/firmware/kernel préexistants des changements introduits ensuite par le dépôt.
+La baseline pré-APPLY prouve uniquement que le matériel est suffisamment sain pour autoriser les mutations système. Elle ne certifie plus suspend/resume avant l'installation des corrections.
 
-## Ce que la certification n'automatise pas
+## Preuves automatisées obligatoires
 
-Le dépôt ne modifie jamais automatiquement :
+### RAM 5600
 
-- XMP/EXPO ou les timings mémoire ;
-- C-States, ASPM ou governor CPU ;
-- `s2idle` / `deep` ;
-- options DRM expérimentales ;
-- partitionnement/formatage ;
-- firmware/BIOS.
-
-Les tests longs ou nécessitant un changement BIOS restent opérateur-contrôlés. Le dépôt enregistre leurs résultats et les rattache à une empreinte matériel + BIOS.
-
-## Preuves obligatoires
-
-### 1. DDR5-5600 SPD
-
-Désactiver XMP dans le BIOS, effectuer un test mémoire sérieux (Memtest86+ ou équivalent, plusieurs passes), puis sous Fedora :
+Désactiver le profil 6000 dans le BIOS puis :
 
 ```bash
-bash diagnostics/baseline-doctor snapshot
-bash diagnostics/baseline-doctor record-memory 5600 PASS
+./diagnostics/baseline-doctor run-memory-test 5600
 ```
 
-### 2. DDR5-6000 XMP
+Le script vérifie la vitesse configurée et exécute `stress-ng --verify`. Le log est conservé et son SHA-256 est inclus dans la preuve.
 
-Réactiver le profil XMP DDR5-6000, refaire les mêmes tests, puis :
+### RAM 6000
+
+Réactiver 6000 MT/s, redémarrer puis :
 
 ```bash
-bash diagnostics/baseline-doctor snapshot
-bash diagnostics/baseline-doctor record-memory 6000 PASS
+./diagnostics/baseline-doctor run-memory-test 6000
 ```
 
-Une stabilité à 5600 mais pas à 6000 doit être traitée comme une piste BIOS/IMC/XMP. Le dépôt ne tente pas de corriger le BIOS.
+Le dépôt ne modifie jamais XMP/timings/voltage BIOS.
 
-### 3. I/O NVMe soutenu
-
-Tester les deux Crucial T705 avec des transferts contrôlés et non destructifs, tout en surveillant températures, erreurs I/O, NVMe reset et PCIe AER. Après un test réussi :
+### T705 système et DATA
 
 ```bash
-bash diagnostics/baseline-doctor record-nvme-io PASS
+./diagnostics/baseline-doctor run-nvme-test root
+./diagnostics/baseline-doctor run-nvme-test data
 ```
 
-Un reboot spontané, un reset contrôleur ou une erreur PCIe non corrigée invalide le test.
+`fio` travaille sur un fichier temporaire de 4 Gio du filesystem avec I/O direct et CRC32C. Aucun block device brut n'est écrit. La certification exige que `/` et `/data` résolvent vers deux NVMe physiques distincts.
 
-### 4. Suspend / Resume
+## Fingerprint
 
-Effectuer au moins 5 cycles de veille/réveil avec l'Intel Arc B580 et le moniteur 1440p/240 Hz. Après chaque cycle propre :
+Le fingerprint contient : carte mère, version/date BIOS, UUID plateforme, CPU, Arc B580 + driver, classe mémoire testée, inventaire NVMe avec modèle/serial/firmware et hashes EDID disponibles.
 
-```bash
-bash diagnostics/baseline-doctor record-suspend PASS
-```
+Un changement significatif invalide la certification.
 
-Ne pas enregistrer PASS si un cycle présente : écran noir durable, corruption graphique, fréquence incorrecte persistante, GPU reset, crash Mutter/GNOME, kernel oops ou reboot.
+## Suspend/resume
 
-## Vérification automatique au moment de certifier
-
-`baseline-doctor certify` vérifie aussi :
-
-- Fedora 44 ;
-- AMD Ryzen 7 7700 ;
-- Intel Arc B580 `8086:e20b` liée au pilote `xe` ;
-- présence d'au moins deux Crucial T705 ;
-- absence de signatures kernel critiques sélectionnées sur le boot courant ;
-- présence des preuves 5600, 6000, NVMe I/O et du nombre minimal de cycles suspend/resume.
-
-```bash
-bash diagnostics/baseline-doctor status
-bash diagnostics/baseline-doctor certify
-```
-
-Le certificat est écrit sous `state/baseline/certified.ok` et n'est pas versionné.
-
-## Invalidation automatique
-
-Le certificat contient une empreinte calculée à partir de :
-
-- carte mère ;
-- version/date BIOS ;
-- CPU ;
-- identité/binding GPU ;
-- nombre de T705 détectés.
-
-Si cette empreinte change, `--apply` refuse l'exécution jusqu'à une nouvelle certification.
+Suspend/resume appartient désormais à la **certification finale post-APPLY**, après installation du kernel 7.2.2+ et du display recovery. Ceci évite qu'un bug que l'APPLY doit corriger empêche l'installation de son correctif.
 
 ## Gate APPLY
 
-Le chemin réel exige :
-
 ```text
-Hardware baseline certifiée
+RAM 5600 automatisée PASS
+RAM 6000 automatisée PASS
+T705 root automatisé PASS
+T705 /data automatisé PASS
+hardware health PASS
         +
-Git propre
+dry-run même commit
         +
-Dry-run du même commit
+backup Restic même commit
         +
-Backup pré-APPLY récent
-        +
-Confirmation opérateur
+confirmation opérateur
         =
 APPLY autorisé
 ```
 
-Le dry-run reste possible sans certificat afin de valider les scripts avant la campagne matérielle.
+Après reboot, `diagnostics/final-certification` prend le relais pour kernel, affichage, cold-start Nautilus et cinq cycles suspend/resume.

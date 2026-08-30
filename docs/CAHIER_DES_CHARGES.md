@@ -1,176 +1,59 @@
-# Cahier des charges V1.6 — Fedora 44 GNOME Workstation
+# Cahier des charges V1.7 — Golden Workstation Fedora 44
 
 ## Finalité
 
-Construire une workstation **Fedora 44 + GNOME 50** stable, reproductible et observable pour un usage DevOps/Ops, avec applications professionnelles, multimédia complet et virtualisation KVM/libvirt CLI-first.
+Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée et récupérable pour usage DevOps/Ops sur le matériel cible.
 
-## P0 — stabilité et sécurité
+## P0 — installation et sécurité
 
-- Hardware Baseline Certification avant APPLY réel.
-- Ryzen 7 7700, 48 Gio RAM, Intel Arc B580 `8086:e20b` sur pilote `xe`.
-- Deux Crucial T705 détectés.
-- DDR5 validée en SPD 5600 et XMP 6000.
-- NVMe I/O soutenu et suspend/resume validés.
-- Fedora 44, Wayland, SELinux Enforcing, firewalld actif.
-- aucun dépôt GPU tiers ni tweak kernel expérimental par défaut.
-- dry-run + backup pré-APPLY obligatoires.
-- aucun partitionnement ou formatage automatique.
+- générateur Kickstart ciblant uniquement le NVMe explicitement choisi ;
+- aucun choix destructif automatique de disque ;
+- SELinux Enforcing et firewalld ;
+- dry-run + baseline + backup Restic avant APPLY ;
+- rollback kernel disponible.
 
-## P1 — bureau et applications
+## P0 — matériel
 
-- GNOME 50 / GTK4 / libadwaita comme référence.
-- Ptyxis comme terminal principal.
-- Nautilus + GVfs SMB/MTP/FUSE.
-- Dash to Dock + Blur My Shell.
-- Extension Manager.
-- Just Perfection et Dash to Panel exclus.
-- applications professionnelles : VS Code, Brave, VLC, Bitwarden, Slack, GNOME Text Editor, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText.
-- les applications métier non GTK4 constituent une exception fonctionnelle explicitement documentée.
+- Ryzen 7 7700 ;
+- 48 Gio RAM testés automatiquement à 5600 puis 6000 MT/s ;
+- Intel Arc B580 `8086:e20b` sur `xe` ;
+- deux Crucial T705, root et `/data` sur deux NVMe physiques distincts ;
+- fingerprint BIOS/plateforme/GPU/NVMe/EDID ;
+- aucun tweak kernel/power expérimental aveugle.
 
-## P1 — virtualisation
+## P0 — kernel
 
-### Architecture HOST
+- Fedora Kernel Vanilla stable ;
+- minimum 7.2.2 ;
+- kernels Fedora conservés comme fallback ;
+- Secure Boot actif bloque ce chemin par défaut sans workflow de confiance explicite.
 
-- QEMU/KVM/libvirt via `qemu:///system`.
-- daemons modulaires Fedora privilégiés.
-- OVMF, swtpm/TPM 2.0, libguestfs, libosinfo.
-- administration CLI complète ; virt-manager/virt-viewer restent complémentaires.
-- Arc B580 conservée au HOST, aucun VFIO.
-- aucun partage de répertoire HOST↔VM automatique ; accès invité par SSH/SFTP.
+## P1 — GNOME
 
-### Stockage
+- GNOME 50 / Wayland / GTK4 / libadwaita ;
+- Nautilus + GVfs SMB/MTP/FUSE ;
+- vrai cold-start Files mesuré, cible 1200 ms, hard limit 2000 ms ;
+- prewarm Portal/GIO sans pré-démarrer Nautilus ;
+- Dash to Dock activé ; Blur My Shell désactivé dans l'état Golden certifié ;
+- Ptyxis comme terminal.
 
-Le second T705 est dédié aux VM et monté manuellement :
+## P1 — affichage
 
-```text
-/data — EXT4
-```
+- 2560×1440 ~240 Hz ;
+- scale 1.0 ;
+- SDR/default ;
+- Full RGB ;
+- recovery après resume, Mutter MonitorsChanged et hotplug DRM ;
+- capture gdctl/drm_info/journal.
 
-Pool `devops-data` :
+## P1 — certification finale
 
-```text
-/data/libvirt/images
-```
+Après APPLY/reboot : kernel/xe/display/GNOME sains, cold-start Nautilus dans la limite, puis cinq cycles suspend/resume avec repair display récent et sans signature critique xe/PCIe/NVMe.
 
-Arborescence gérée :
+## P1 — virtualisation et backup
 
-```text
-/data/libvirt/{images,iso,cloud-init,nvram,snapshots,exports}
-```
-
-### Réseau
-
-```text
-devops-nat
-192.168.50.0/24
-virbr50 = 192.168.50.254
-DHCP = .100-.200
-DNS = 9.9.9.9 + 1.1.1.1
-```
-
-Contrat :
-
-```text
-HOST ↔ VM          autorisé
-VM ↔ VM            autorisé
-VM → Internet      autorisé
-VM → LAN physique  bloqué
-LAN → VM           bloqué
-```
-
-La détection du LAN est dynamique. Aucun `enp*` ou `wlp*` n'est codé en dur.
-
-### Profils invités définitifs
-
-Seulement deux profils sont maintenus :
-
-```text
-ubuntu-devops
-  Ubuntu Server 26.04
-  6 vCPU / 16 Gio / 160 Gio
-  UEFI / VirtIO
-  cloud-init / SSH
-  bootstrap DevOps complet
-
-windows-11
-  Windows 11
-  4 vCPU / 12 Gio / 128 Gio
-  UEFI Secure Boot
-  TPM 2.0 swtpm
-  VirtIO
-```
-
-Aucune VM Fedora de référence.
-
-### Ubuntu DevOps
-
-Utilisateur invité : `mathias`.
-
-Le mot de passe est demandé au runtime et n'est jamais commité. L'accès SSH par clé est prioritaire.
-
-Le bootstrap installe au minimum :
-
-```text
-Git + GitHub CLI
-Docker Engine + Buildx + Compose
-Ansible
-Terraform
-Azure CLI
-AWS CLI v2
-kubectl
-Helm
-kind
-Python 3 / pip / venv / pipx
-outils réseau et diagnostic
-```
-
-L'accès aux fichiers de la VM depuis Fedora se fait avec SSH/SFTP, y compris graphiquement via Nautilus.
-
-### Windows 11
-
-Le profil exige deux médias opérateur :
-
-- ISO Windows 11 ;
-- `virtio-win.iso` pour les pilotes VirtIO.
-
-Le projet ne télécharge pas ces médias automatiquement.
-
-## P1 — certification
-
-Host :
-
-```bash
-bash diagnostics/virtualization-doctor
-```
-
-Runtime invités :
-
-```bash
-bash scripts/kvm/runtime_certification.sh
-```
-
-Les contrôles doivent couvrir Ubuntu cloud-init/SSH/bootstrap, Windows UEFI/Secure Boot/TPM/VirtIO et le contrat réseau réel.
-
-## Ordre d'exécution
-
-```text
-BASELINE
-  ↓
-SYSTEM
-  ↓
-HARDWARE
-  ↓
-GNOME
-  ↓
-APPLICATIONS
-  ↓
-KVM
-  ↓
-BACKUP
-```
-
-Le provisioning des VM est une action opérateur **après** la convergence du HOST.
+Le contrat KVM/libvirt, Ubuntu Server 26.04, Windows 11, réseau privé, second T705 `/data` et Restic fail-closed reste celui de la version précédente.
 
 ## Critère de réussite
 
-Le dépôt est considéré prêt lorsque CI, ShellCheck, contrats de non-régression et préflight Fedora 44 sont verts. La certification hardware/runtime reste nécessaire sur la machine réelle car GitHub Actions ne possède ni le matériel ni les invités.
+Le dépôt peut être code-ready via CI. La workstation n'est **Golden runtime-certified** que lorsque `diagnostics/final-certification certify` produit un PASS sur le vrai matériel et le kernel courant.

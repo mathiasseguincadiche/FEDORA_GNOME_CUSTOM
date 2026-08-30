@@ -1,0 +1,11 @@
+[Unit]
+Description=Prewarm GNOME file-service dependencies without starting Nautilus
+After=graphical-session.target xdg-desktop-portal.service
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/libexec/fedora-gnome-nautilus-prewarm
+
+[Install]
+WantedBy=graphical-session.target
