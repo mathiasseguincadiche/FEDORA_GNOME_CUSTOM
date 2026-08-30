@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.9.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
+**Golden Workstation 0.9.1** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
 
 ## Contrat Golden Workstation
 
@@ -180,6 +180,29 @@ scripts/kvm/runtime_certification.sh
 
 La certification runtime exige QEMU Guest Agent, VirtIO RNG/balloon, les périphériques Windows, DNS/Internet Ubuntu, la joignabilité de la gateway KVM et, lorsque la politique l'impose, la preuve que le LAN physique reste bloqué depuis la VM.
 
+### Ubuntu DevOps Ready 0.9.1
+
+La VM `ubuntu-devops` est maintenant conçue comme un environnement **clone → build/test → containerize → deploy** disponible dès la fin du premier bootstrap cloud-init.
+
+Profil : 6 vCPU, 16 Gio, qcow2 160 Gio sur `/data`, Q35/UEFI, CPU host-passthrough, VirtIO, QEMU Guest Agent, RNG et balloon mémoire.
+
+Stack installée et vérifiée :
+
+- Git, Git LFS, GitHub CLI `gh` et GitLab CLI `glab` ;
+- Docker CE, Compose v2, Buildx et containerd ;
+- kubectl, Helm, kind, **Minikube avec driver Docker par défaut**, K9s, kubectx/kubens et yq Go v4 ;
+- Terraform et Ansible ;
+- AWS CLI v2 et Azure CLI ;
+- **Node.js 22 LTS, npm et Corepack** pour Angular/JavaScript ;
+- **OpenJDK 21 et Maven** pour Java/Spring ;
+- Python 3/pip/venv/pipx et les utilitaires Ops usuels.
+
+Les comptes/tokens GitHub, GitLab, AWS et Azure restent volontairement non configurés : aucune identité ni secret n'est embarqué dans la VM.
+
+Le workflow `Ubuntu 26.04 real VM pretest` démarre une vraie image Canonical authentifiée, exécute le bootstrap exact, lance les smoke tests Docker/Node/Java/outils Kubernetes et redémarre la VM pour vérifier la persistance de la stack.
+
+Voir `docs/UBUNTU_DEVOPS_READY.md` pour le contrat complet.
+
 ## Certification finale
 
 Après le premier login sur le kernel cible :
@@ -204,6 +227,6 @@ La certification exige hardware/firmware/GPU/display, GNOME, desktop integration
 
 ## Version
 
-`0.9.0` — **Desktop & Lifecycle Completion**.
+`0.9.1` — **Ubuntu DevOps Ready** : la VM Ubuntu 26.04 fournit désormais la chaîne complète Git/GitLab, containers/Kubernetes, Node/Angular, Java/Spring, IaC/cloud et ses preuves de fonctionnement réelles en CI.
 
-Voir `docs/DESKTOP_LIFECYCLE.md`, `docs/GNOME_INTEGRATION.md`, `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
+Voir `docs/UBUNTU_DEVOPS_READY.md`, `docs/DESKTOP_LIFECYCLE.md`, `docs/GNOME_INTEGRATION.md`, `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.

@@ -2,7 +2,8 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(<"$ROOT/VERSION")" == "0.9.0" ]]
+version="$(<"$ROOT/VERSION")"
+[[ "$(printf '%s\n%s\n' '0.9.0' "$version" | sort -V | head -n1)" == "0.9.0" ]]
 
 grep -Fq 'ENABLE_APPINDICATOR="true"' "$ROOT/config/gnome.conf"
 grep -Fq 'APPINDICATOR_UUID="appindicatorsupport@rgcjonas.gmail.com"' "$ROOT/config/gnome.conf"

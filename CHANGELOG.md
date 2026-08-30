@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.1 — 2026-08-30
+
+- Passage de la VM Ubuntu Server 26.04 au profil **Ubuntu DevOps Ready** : objectif `clone → build/test → containerize → deploy` dès le premier login après bootstrap.
+- Ajout de GitLab CLI `glab` en complément de Git/Git LFS et GitHub CLI.
+- Ajout de Node.js 22 LTS, npm et Corepack pour les projets Angular/JavaScript.
+- Ajout d'OpenJDK 21 et Maven pour les projets Java/Spring.
+- Ajout de Minikube avec Docker comme driver par défaut, en complément de kind, kubectl et Helm.
+- Ajout de K9s, kubectx/kubens et du binaire Go `yq` v4.
+- Minikube vérifie le checksum publié de sa release ; `yq` v4.53.3 et K9s v0.51.0 sont épinglés avec SHA-256 attendu. Aucun `curl | bash` n'est introduit.
+- `verify-devops.sh` certifie les nouveaux outils, les versions minimales Node/OpenJDK, le driver Minikube et conserve les contrôles Docker/QEMU Guest Agent.
+- Le vrai prétest Ubuntu 26.04 compile/exécute un programme Java, exécute Node, vérifie Docker Compose, GitLab CLI et les outils Kubernetes, puis exige leur persistance après reboot.
+- Ajout de `docs/UBUNTU_DEVOPS_READY.md` et passage de la Golden Workstation en version 0.9.1.
+
 ## 0.9.0 — 2026-08-30
 
 - Ajout de la couche **Desktop & Lifecycle Completion** pour transformer la Golden Workstation en poste principal quotidien/professionnel, sans copier Ubuntu/Yaru ni multiplier les extensions cosmétiques.
@@ -45,7 +58,7 @@
 - Ajout d'un prewarm GNOME login limité à Portal/GIO ; Nautilus lui-même n'est jamais pré-démarré.
 - Thumbnails Nautilus configurés `local-only` ; suppression optionnelle d'`ibus-typing-booster` pour réduire une dépendance de premier lancement non nécessaire à ce profil.
 - Ajout du display recovery GNOME 50 via `gdctl` : 2560×1440, ~240 Hz, scale 1.0, SDR/default et Full RGB.
-- Ajout d'un watcher user sur resume logind, `MonitorsChanged` Mutter et hotplug DRM afin de réappliquer le display state après veille ou power-cycle écran.
+- Ajout d'un watcher user sur resume logind, `MonitorsChanged` de Mutter et hotplug/change DRM afin de réappliquer le display state après veille ou power-cycle écran.
 - Ajout de `display-doctor`, capture `drm_info` et preuve de repair.
 - Blur My Shell désactivé par défaut dans le profil Golden Workstation afin de réduire les variables du compositor à 240 Hz ; Dash to Dock reste activé.
 - Ajout de `final-certification` exigeant kernel/GPU/display/GNOME sains, cold-start courant et cinq cycles suspend/resume post-APPLY avec repair récent.
