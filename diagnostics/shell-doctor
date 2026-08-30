@@ -34,8 +34,12 @@ check 'pre-FGC .bashrc backup' test -r "$state/bashrc.pre-fgc"
 
 marker_count="$(grep -Fxc '# >>> fedora-gnome-custom bash ux >>>' "$bashrc" 2>/dev/null || true)"
 end_count="$(grep -Fxc '# <<< fedora-gnome-custom bash ux <<<' "$bashrc" 2>/dev/null || true)"
-[[ "$marker_count" == 1 && "$end_count" == 1 ]] || failed=1
-$quiet || { [[ "$marker_count" == 1 && "$end_count" == 1 ]] && ui_check OK Bash '.bashrc managed block unique' || ui_check KO Bash '.bashrc managed block invalid'; }
+if [[ "$marker_count" == 1 && "$end_count" == 1 ]]; then
+  $quiet || ui_check OK Bash '.bashrc managed block unique'
+else
+  $quiet || ui_check KO Bash '.bashrc managed block invalid'
+  failed=1
+fi
 
 grep -Fq 'fedora-gnome-custom/bash/init.sh' "$bashrc" 2>/dev/null || failed=1
 
