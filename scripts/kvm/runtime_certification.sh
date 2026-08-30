@@ -73,6 +73,7 @@ if [[ -n "$ubuntu_ip" ]]; then record OK 'Ubuntu IP' "$ubuntu_ip"; else record K
 if [[ -n "$windows_ip" ]]; then record OK 'Windows IP' "$windows_ip"; else record WARN 'Windows IP' unavailable; fi
 
 physical_gateway="$(ip -4 route show default 2>/dev/null | awk 'NR==1 {for (i=1;i<=NF;i++) if ($i=="via") {print $(i+1); exit}}')"
+kvm_gateway="${KVM_GATEWAY:-192.168.50.254}"
 
 ssh_base=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new)
 if [[ -n "$ubuntu_ip" ]] && ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" true >/dev/null 2>&1; then
@@ -80,10 +81,10 @@ if [[ -n "$ubuntu_ip" ]] && ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" true
 
   if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'sudo /usr/local/sbin/devops-verify.sh' >/dev/null 2>&1; then record OK 'Ubuntu DevOps stack' verified; else record KO 'Ubuntu DevOps stack' failed; fi
   if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'getent ahostsv4 example.com >/dev/null && curl -fsS --max-time 10 https://example.com >/dev/null'; then record OK 'Ubuntu DNS/Internet' working; else record KO 'Ubuntu DNS/Internet' failed; fi
-  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" "ping -c 1 -W 2 '${KVM_GATEWAY:-192.168.50.254}' >/dev/null"; then record OK 'Ubuntu → KVM gateway' reachable; else record KO 'Ubuntu → KVM gateway' failed; fi
+  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'ping -c 1 -W 2 "$1" >/dev/null' sh "$kvm_gateway"; then record OK 'Ubuntu → KVM gateway' reachable; else record KO 'Ubuntu → KVM gateway' failed; fi
 
   if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true && -n "$physical_gateway" ]]; then
-    if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" "ping -c 1 -W 2 '$physical_gateway' >/dev/null 2>&1"; then
+    if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'ping -c 1 -W 2 "$1" >/dev/null 2>&1' sh "$physical_gateway"; then
       record KO 'Ubuntu → physical LAN' "physical gateway $physical_gateway unexpectedly reachable"
     else
       record OK 'Ubuntu → physical LAN' "physical gateway blocked ($physical_gateway)"
