@@ -26,6 +26,7 @@ if bash "$REPO_ROOT/diagnostics/gnome-doctor" --quiet; then emit OK 'GNOME integ
 if "$REPO_ROOT/diagnostics/desktop-integration-doctor" --quiet; then emit OK Desktop 'secrets/print/VPN/power/language/remote'; else emit KO Desktop 'run desktop-integration-doctor'; fi
 if "$REPO_ROOT/diagnostics/portal-doctor" --quiet; then emit OK Portals 'ScreenCast/FileChooser/OpenURI/Notification'; else emit KO Portals 'run portal-doctor'; fi
 if "$REPO_ROOT/diagnostics/lifecycle-doctor" --quiet; then emit OK Lifecycle 'safe update timers'; else emit KO Lifecycle 'run lifecycle-doctor'; fi
+if "$REPO_ROOT/diagnostics/shell-doctor" --quiet; then emit OK 'Bash UX' 'prompt/history/completion/navigation'; else emit KO 'Bash UX' 'run shell-doctor'; fi
 if "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet; then emit OK 'Daily backup' 'timer healthy'; else emit KO 'Daily backup' 'run daily-backup-doctor'; fi
 
 if bash "$REPO_ROOT/diagnostics/applications-doctor" --quiet; then emit OK Applications 'GTK4/libadwaita catalog + Ptyxis'; else emit KO Applications 'run applications-doctor'; fi

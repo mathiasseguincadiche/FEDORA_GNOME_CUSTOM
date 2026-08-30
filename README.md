@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.9.1** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
+**Golden Workstation 0.9.2** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
 
 ## Contrat Golden Workstation
 
@@ -17,6 +17,7 @@ APPLY
   GNOME 50 / Wayland / codecs / apps
   dock + AppIndicator + contrôles fenêtres
   secrets + portals + print/scan + VPN + power
+  Bash UX host : fzf / zoxide / direnv / completions
   Arc Level Zero/OpenCL
   KVM / deuxième T705
   lifecycle sécurisé + backup quotidien
@@ -25,7 +26,7 @@ REBOOT
         ↓
 CERTIFICATION BARE-METAL
   hardware + display actif 1440p/~240 Hz
-  compute Arc + desktop/portals/lifecycle
+  compute Arc + desktop/portals/lifecycle + Bash UX
   Nautilus cold-start
   5 cycles veille/réveil PHYSIQUES UNIQUES
   matrice software known-good
@@ -96,6 +97,25 @@ La couche desktop certifie :
 ```
 
 La politique DNF5 télécharge automatiquement les mises à jour mais **ne les installe jamais sans action de l'utilisateur** et **ne redémarre jamais automatiquement**. `fstrim.timer` reste activé ; le timer fwupd ne fait que rafraîchir les métadonnées.
+
+## Fedora Host Bash UX 0.9.2
+
+Ptyxis ouvre toujours Bash, mais le host dispose maintenant d'un environnement shell géré et certifié :
+
+- `bash-completion`, `fzf`, `zoxide` et `direnv` depuis Fedora 44 ;
+- historique 50 000/100 000, append, déduplication et synchronisation entre terminaux ;
+- prompt Bash natif deux lignes avec chemin, branche Git, état modifié et code retour en erreur ;
+- aliases Git/Docker Compose/Kubernetes/Terraform volontairement courts et non destructifs ;
+- complétions `gh`, `glab`, `kubectl`, `helm`, `minikube` générées uniquement si les binaires existent, puis mises en cache ;
+- aucune requête réseau depuis le prompt, aucun Starship/Oh My Bash.
+
+Le `.bashrc` existant est sauvegardé une fois dans `~/.local/state/fedora-gnome-custom/bash/bashrc.pre-fgc`, puis seul un bloc géré source les fichiers sous `~/.config/fedora-gnome-custom/bash/`.
+
+```bash
+./diagnostics/shell-doctor
+```
+
+Voir `docs/HOST_BASH_UX.md`.
 
 ## Arc B580 : rendu + compute
 
@@ -223,10 +243,10 @@ Puis :
 ./diagnostics/final-certification certify
 ```
 
-La certification exige hardware/firmware/GPU/display, GNOME, desktop integration, portals, Arc compute, lifecycle, timer de backup quotidien, cold-start et cinq cycles physiques uniques.
+La certification exige hardware/firmware/GPU/display, GNOME, desktop integration, portals, Arc compute, lifecycle, **Bash UX**, timer de backup quotidien, cold-start et cinq cycles physiques uniques.
 
 ## Version
 
-`0.9.1` — **Ubuntu DevOps Ready** : la VM Ubuntu 26.04 fournit désormais la chaîne complète Git/GitLab, containers/Kubernetes, Node/Angular, Java/Spring, IaC/cloud et ses preuves de fonctionnement réelles en CI.
+`0.9.2` — **Fedora Host Bash UX** : Ptyxis/Bash dispose désormais d'un profil professionnel, rapide, local-only, idempotent et certifié sur l'hôte Fedora.
 
-Voir `docs/UBUNTU_DEVOPS_READY.md`, `docs/DESKTOP_LIFECYCLE.md`, `docs/GNOME_INTEGRATION.md`, `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
+Voir `docs/HOST_BASH_UX.md`, `docs/UBUNTU_DEVOPS_READY.md`, `docs/DESKTOP_LIFECYCLE.md`, `docs/GNOME_INTEGRATION.md`, `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.

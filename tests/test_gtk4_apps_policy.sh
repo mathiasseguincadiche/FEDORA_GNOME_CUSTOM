@@ -7,7 +7,7 @@ CORE_MANIFEST="$ROOT/manifests/packages-gnome.txt"
 grep -Fq 'GTK4_NATIVE_APPS_ONLY="true"' "$ROOT/config/applications.conf"
 grep -Fq 'TERMINAL_PACKAGE="ptyxis"' "$ROOT/config/applications.conf"
 grep -Fxq 'ptyxis' "$APP_MANIFEST"
-grep -Fq 'applications.gtk4|APPLICATIONS|desktop.lifecycle' "$ROOT/manifests/module-plan.conf"
+grep -Fq 'applications.gtk4|APPLICATIONS|desktop.shell_ux' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'kvm.preflight|KVM|applications.validation' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'backup.preflight|BACKUP|kvm.validation' "$ROOT/manifests/module-plan.conf"
 

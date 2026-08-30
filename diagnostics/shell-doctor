@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+managed="${XDG_CONFIG_HOME:-$HOME/.config}/fedora-gnome-custom/bash"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom/bash"
+bashrc="$HOME/.bashrc"
+failed=0
+
+check() {
+  local label="$1"
+  shift
+  if "$@"; then
+    $quiet || ui_check OK Bash "$label"
+  else
+    $quiet || ui_check KO Bash "$label"
+    failed=1
+  fi
+}
+
+for pkg in bash-completion fzf zoxide direnv; do
+  check "package $pkg" rpm -q "$pkg"
+done
+for file in init.sh history.sh aliases.sh navigation.sh completion.sh prompt.sh; do
+  check "managed $file" test -r "$managed/$file"
+  if [[ -r "$managed/$file" && -r "$REPO_ROOT/shell/bash/$file" ]]; then
+    check "current $file" cmp -s "$REPO_ROOT/shell/bash/$file" "$managed/$file"
+  fi
+done
+check 'generated settings' test -r "$managed/settings.sh"
+check 'pre-FGC .bashrc backup' test -r "$state/bashrc.pre-fgc"
+
+marker_count="$(grep -Fxc '# >>> fedora-gnome-custom bash ux >>>' "$bashrc" 2>/dev/null || true)"
+end_count="$(grep -Fxc '# <<< fedora-gnome-custom bash ux <<<' "$bashrc" 2>/dev/null || true)"
+[[ "$marker_count" == 1 && "$end_count" == 1 ]] || failed=1
+$quiet || { [[ "$marker_count" == 1 && "$end_count" == 1 ]] && ui_check OK Bash '.bashrc managed block unique' || ui_check KO Bash '.bashrc managed block invalid'; }
+
+grep -Fq 'fedora-gnome-custom/bash/init.sh' "$bashrc" 2>/dev/null || failed=1
+
+for file in "$managed"/*.sh; do
+  [[ -e "$file" ]] || continue
+  bash -n "$file" || failed=1
+done
+
+if env HOME="$HOME" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}" bash --noprofile --rcfile "$managed/init.sh" -ic \
+  'declare -F __fgc_prompt_update >/dev/null && alias gs >/dev/null && command -v fzf >/dev/null && command -v zoxide >/dev/null && command -v direnv >/dev/null && type z >/dev/null' \
+  >/dev/null 2>&1; then
+  $quiet || ui_check OK Bash 'interactive managed profile smoke'
+else
+  $quiet || ui_check KO Bash 'interactive managed profile smoke'
+  failed=1
+fi
+
+(( failed == 0 )) || exit "$EXIT_POSTCHECK_FAILED"
+$quiet || ui_summary 'BASH UX HEALTHY' 'READY' "$managed" "$state"

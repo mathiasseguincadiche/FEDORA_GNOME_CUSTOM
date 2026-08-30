@@ -11,3 +11,11 @@ BACKUP_PASSWORD_FILE="$HOME/.config/fedora-gnome-custom/restic-password"
 
 # Optionnel : si le second T705 est monté comme volume DATA.
 # DATA_MOUNT="/data"
+
+# Optionnel : personnalisation Bash du host Fedora.
+# SHELL_UX_HISTORY_SIZE="50000"
+# SHELL_UX_HISTORY_FILE_SIZE="100000"
+# SHELL_UX_ENABLE_FZF="true"
+# SHELL_UX_ENABLE_ZOXIDE="true"
+# SHELL_UX_ENABLE_DIRENV="true"
+# SHELL_UX_PROMPT_GIT="true"
