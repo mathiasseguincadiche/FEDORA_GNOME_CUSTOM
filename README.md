@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.8.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
+**Golden Workstation 0.8.1** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
 
 ## Contrat 0.8
 
@@ -16,16 +16,20 @@ DRY-RUN + BACKUP RESTIC
         ↓
 APPLY
   dernier kernel stable upstream (>= 7.2.2)
+  microcode AMD + firmware Arc explicites
   GNOME / Nautilus / codecs / apps / KVM
+  5G LAN / Wi-Fi 7 / BT / ALC4080 / xHCI
   réparation display 1440p/240 + Full RGB
         ↓
 REBOOT
         ↓
 CERTIFICATION FINALE
-  kernel + Arc B580/xe
+  kernel + Arc B580/xe + firmware
+  carte mère / réseau / audio / USB
   cold-start Nautilus
   affichage
-  5 cycles suspend/resume
+  5 cycles suspend/resume + xHCI
+  matrice software known-good
 ```
 
 Le projet ne promet pas artificiellement « aucun bug » : il refuse de déclarer la workstation certifiée tant que les critères mesurés ne passent pas.
@@ -41,6 +45,17 @@ scripts/kernel/rollback-to-fedora.sh
 
 Aucun `force_probe`, aucun argument `xe` expérimental, aucun tweak ASPM/APST/C-State n'est appliqué à l'aveugle.
 
+## Hardware completion 0.8.1
+
+La pile installe explicitement `amd-ucode-firmware`, `intel-gpu-firmware` et certifie le Realtek 8126-VB via `r8169`, le Wi-Fi 7/6 GHz réel, Bluetooth, l'ALC4080 USB Audio/PipeWire et xHCI. Le modèle de chipset Wi-Fi n'est jamais deviné : son PCI ID/driver réels sont détectés sur la machine.
+
+```bash
+./diagnostics/firmware-doctor
+./diagnostics/hardware-components-doctor
+```
+
+La certification finale enregistre également une matrice BIOS/kernel/firmware/Mesa/Mutter/GNOME/Nautilus/QEMU/libvirt. Une évolution de cette matrice invalide le statut known-good jusqu'à nouvelle certification.
+
 ## Nautilus : vrai démarrage à froid
 
 Le service de prewarm charge uniquement les dépendances GNOME/Portal/GIO ; **Nautilus lui-même n'est jamais pré-démarré**. Ainsi le benchmark correspond réellement au premier clic Files après login.
@@ -53,24 +68,17 @@ Objectif : ≤ 1200 ms. Limite de certification : 2000 ms. Les thumbnails resten
 
 ## Affichage après veille / extinction écran
 
-Un watcher de session observe :
-
-- reprise après `PrepareForSleep` ;
-- `MonitorsChanged` de Mutter ;
-- hotplug/change DRM udev.
-
-Il réapplique via `gdctl` la configuration certifiée : 2560×1440, ~240 Hz, scale 1.0, color mode SDR/default, plage RGB **Full**. Il ne modifie pas les options expérimentales Mutter et ne désactive pas arbitrairement le VRR.
+Un watcher de session observe la reprise après `PrepareForSleep`, `MonitorsChanged` de Mutter et les hotplug/change DRM. Il réapplique via `gdctl` la configuration certifiée : 2560×1440, ~240 Hz, scale 1.0, SDR/default et RGB Full. Le hook sleep capture aussi réseau, audio USB et xHCI ; une erreur USB/xHCI récente invalide désormais le cycle de certification.
 
 ```bash
 ./diagnostics/display-doctor
+./diagnostics/usb-resume-doctor
 ./repair.sh display
 ```
 
-Blur My Shell est désactivé par défaut dans le profil Golden Workstation : l'effet est cosmétique et introduit une variable de compositor inutile pour une cible 240 Hz/stabilité maximale. Dash to Dock reste géré.
+Blur My Shell est désactivé par défaut dans le profil Golden Workstation ; Dash to Dock reste géré.
 
 ## Baseline pré-APPLY
-
-Les anciennes preuves opérateur `PASS` ne suffisent plus. Les preuves RAM/NVMe doivent provenir des tests automatisés et contiennent un SHA-256 de leur log.
 
 ```bash
 ./diagnostics/baseline-doctor run-memory-test 5600
@@ -85,13 +93,11 @@ Les tests NVMe travaillent sur un fichier temporaire du filesystem ; aucun bench
 
 ## Installation Fedora 44 reproductible
 
-Le dépôt fournit un générateur Kickstart. Il ne sélectionne jamais un disque automatiquement et exige une confirmation destructive contenant le chemin exact du disque.
-
 ```bash
 installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
 ```
 
-Le Kickstart généré utilise uniquement le disque explicitement sélectionné, installe Fedora Workstation et clone le dépôt. L'APPLY n'est pas lancé automatiquement : baseline, dry-run et backup restent obligatoires.
+Le Kickstart généré utilise uniquement le disque explicitement sélectionné. L'APPLY n'est pas lancé automatiquement : baseline, dry-run et backup restent obligatoires.
 
 ## APPLY protégé
 
@@ -123,16 +129,30 @@ Enfin :
 ./diagnostics/final-certification certify
 ```
 
-Chaque cycle exige kernel/GPU/display sains et un marker récent prouvant que le repair d'affichage s'est exécuté après la reprise.
+Chaque cycle exige kernel/GPU/display, carte mère et xHCI sains, plus un marker récent prouvant que le repair d'affichage s'est exécuté après la reprise.
 
-## GNOME / applications / KVM / backup
+## KVM : guest agents et profil T705 mesuré
 
-Le projet conserve GNOME 50 + Wayland, SELinux Enforcing, firewalld, Nautilus/GVfs SMB-MTP-FUSE, portals, GTK4/libadwaita, Ptyxis, RPM Fusion multimédia, VS Code, Brave, VLC, Bitwarden, Slack, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText.
+Avant de créer Ubuntu/Windows, il est recommandé de mesurer le deuxième T705 :
 
-KVM reste CLI-first via `qemu:///system`, second T705 sur `/data`, OVMF/TPM, réseau privé `devops-nat`, Ubuntu Server 26.04 et Windows 11. Restic reste fail-closed, chiffré, avec restore-canary et restauration staging-first.
+```bash
+./diagnostics/kvm-io-doctor benchmark
+```
+
+Le meilleur backend entre `io_uring` et AIO natif est conservé pour les nouvelles VMs. Ubuntu Server 26.04 et Windows 11 exposent QEMU Guest Agent, VirtIO RNG et balloon mémoire ; Windows expose également le channel SPICE. Le script Windows `Configure-GuestIntegration.ps1` installe les pilotes VirtIO/QEMU-GA depuis l'ISO fourni par l'opérateur.
+
+```bash
+scripts/kvm/runtime_certification.sh
+```
+
+Le runtime KVM exige notamment que les deux guest agents répondent à `guest-ping`.
+
+## GNOME / applications / backup
+
+Le projet conserve GNOME 50 + Wayland, SELinux Enforcing, firewalld, Nautilus/GVfs SMB-MTP-FUSE, portals, GTK4/libadwaita, Ptyxis, RPM Fusion multimédia, VS Code, Brave, VLC, Bitwarden, Slack, ONLYOFFICE, LibreOffice FR, FileZilla et MarkText. Restic reste fail-closed, chiffré, avec restore-canary et restauration staging-first.
 
 ## Version
 
-`0.8.0` — Golden Workstation : kernel stable 7.2.2+, certification hardware automatisée, cold-start Nautilus mesuré, recovery affichage 1440p/240 Hz Full RGB, certification post-resume et installation Kickstart protégée.
+`0.8.1` — Hardware & KVM Completion : microcode/firmware explicites, certification complète des contrôleurs de la carte mère, USB post-resume, matrice known-good, guest agents VirtIO et profil I/O T705 mesuré.
 
-Voir `docs/GOLDEN_WORKSTATION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
+Voir `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/GNOME_INTEGRATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
