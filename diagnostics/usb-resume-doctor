@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == "--quiet" ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+window="${HARDWARE_USB_RESUME_ERROR_WINDOW_MIN:-15}"
+if lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /USB controller/ && /Kernel driver in use:[[:space:]]*xhci_hcd/ {found=1} END{exit !found}'; then emit OK xHCI 'controller bound'; else emit KO xHCI 'controller not bound to xhci_hcd'; fi
+errors="$(journalctl -k -b --since "-${window} min" --no-pager 2>/dev/null | grep -Ei 'xhci|usb' | grep -Ei 'error|failed|timeout|reset SuperSpeed|device descriptor read|Cannot enable|HC died' | tail -n 40 || true)"
+if [[ -z "$errors" ]]; then emit OK 'USB resume journal' "clean over ${window} min"; else emit KO 'USB resume journal' 'xHCI/USB error signature detected'; fi
+latest="/var/lib/fedora-gnome-custom/suspend/latest-post.log"
+if [[ -r "$latest" ]]; then
+  if grep -q '\[usb-xhci\]' "$latest"; then emit OK 'Sleep-hook USB evidence' present; else emit WARN 'Sleep-hook USB evidence' 'old hook log format'; fi
+else
+  emit WARN 'Sleep-hook USB evidence' 'no post-resume log yet'
+fi
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

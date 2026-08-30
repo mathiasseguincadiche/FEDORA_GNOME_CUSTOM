@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+state_dir="$STATE_ROOT/software-matrix"
+current="$state_dir/current.env"
+approved="$state_dir/approved.env"
+mkdir -p "$state_dir"
+
+matrix_payload(){
+  printf 'bios=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_version)"
+  printf 'bios_date=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_date)"
+  printf 'kernel=%s\n' "$(uname -r)"
+  local p v
+  for p in ${SOFTWARE_MATRIX_REQUIRED_PACKAGES:-linux-firmware amd-ucode-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell nautilus qemu-kvm libvirt}; do
+    v="$(rpm -q --qf '%{VERSION}-%{RELEASE}' "$p" 2>/dev/null || true)"
+    [[ -n "$v" ]] || return 1
+    printf '%s=%s\n' "$p" "$v"
+  done
+}
+
+case "${1:-status}" in
+  snapshot)
+    matrix_payload | tee "$current"
+    ;;
+  certify)
+    runtime_is_baremetal || { ui_error 'software matrix certification is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }
+    "$REPO_ROOT/diagnostics/firmware-doctor" --quiet
+    "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
+    "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
+    "$REPO_ROOT/diagnostics/storage-doctor" --quiet
+    matrix_payload > "$current"
+    {
+      printf 'matrix_hash=%s\n' "$(sha256sum "$current" | awk '{print $1}')"
+      printf 'certified_utc=%s\n' "$(date -u +%FT%TZ)"
+      cat "$current"
+    } > "$approved"
+    ui_check OK 'Software matrix' "$approved"
+    ;;
+  --quiet|status)
+    if ! matrix_payload > "$current"; then
+      [[ "${1:-}" == "--quiet" ]] || ui_check KO 'Software matrix' 'required package missing'
+      exit 1
+    fi
+    if [[ -s "$approved" ]]; then
+      current_hash="$(sha256sum "$current" | awk '{print $1}')"
+      approved_hash="$(awk -F= '$1=="matrix_hash" {print $2; exit}' "$approved")"
+      if [[ "$current_hash" == "$approved_hash" ]]; then
+        [[ "${1:-}" == "--quiet" ]] || ui_check OK 'Software matrix' 'matches certified known-good set'
+        exit 0
+      fi
+      [[ "${1:-}" == "--quiet" ]] || ui_check WARN 'Software matrix' 'versions changed since certification; recertify after validation'
+      is_true "${SOFTWARE_MATRIX_INVALIDATE_ON_CHANGE:-true}" && exit 1
+      exit 0
+    fi
+    [[ "${1:-}" == "--quiet" ]] || ui_check WARN 'Software matrix' 'not certified yet'
+    exit 1
+    ;;
+  *) echo 'Usage: software-matrix-doctor [status|--quiet|snapshot|certify]' >&2; exit "$EXIT_USAGE" ;;
+esac

@@ -8,8 +8,9 @@ pciutils
 usbutils
 util-linux
 fwupd
-microcode_ctl
 linux-firmware
+amd-ucode-firmware
+intel-gpu-firmware
 policycoreutils
 firewalld
 dnf5-plugins

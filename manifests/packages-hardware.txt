@@ -17,3 +17,6 @@ rasdaemon
 dmidecode
 kernel-tools
 pipewire-utils
+iw
+bluez
+alsa-utils
