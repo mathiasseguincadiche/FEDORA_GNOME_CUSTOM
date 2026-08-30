@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0 — 2026-08-30
+
+- Ajout de la couche **Desktop & Lifecycle Completion** pour transformer la Golden Workstation en poste principal quotidien/professionnel, sans copier Ubuntu/Yaru ni multiplier les extensions cosmétiques.
+- AppIndicator officiel Fedora activé et certifié en complément de Dash to Dock ; Blur My Shell reste désactivé par défaut.
+- Intégration GNOME Keyring/Secret Service, CUPS/IPP-over-USB/Avahi/AirScan, VPN OpenVPN/OpenConnect, TuneD PPD, français/dictionnaires/polices, Remmina et support mobile/iPhone.
+- Ajout du runtime Intel Arc Level Zero/OpenCL et d'`arc-compute-doctor`, qui exige l'énumération réelle de l'Arc B580.
+- Ajout de `portal-doctor` pour certifier ScreenCast, FileChooser, OpenURI et Notification via xdg-desktop-portal/PipeWire/Wayland.
+- Politique lifecycle DNF5 : téléchargement automatique autorisé, **installation automatique interdite**, **reboot automatique interdit**, avec `fstrim.timer` et refresh metadata fwupd.
+- Ajout d'une sauvegarde utilisateur Restic quotidienne par timer systemd, chiffrée, sans prune silencieux et sans inclure la passphrase Restic ; absence du disque externe = skip propre, pas corruption du statut.
+- Durcissement de la certification suspend/resume : un cycle physique ne peut être compté qu'une fois et le repair display doit être postérieur au hook de reprise correspondant.
+- `display-doctor` vérifie désormais le `Current mode` réellement actif à 2560×1440 ~240 Hz.
+- Restauration des preuves runtime KVM du garde réseau : table nft présente, gateway KVM joignable et LAN physique bloqué depuis Ubuntu lorsque la politique l'exige.
+- Extension de la matrice known-good aux composants desktop/portal/power/compute et ajout du contrat CI `test_desktop_lifecycle_contract.sh`.
+
 ## 0.8.2 — 2026-08-30
 
 - Ajout d'une politique GNOME explicite imposant les trois contrôles de fenêtre **Réduire / Agrandir / Fermer** à droite via `org.gnome.desktop.wm.preferences button-layout`.
@@ -33,7 +47,7 @@
 - Ajout du display recovery GNOME 50 via `gdctl` : 2560×1440, ~240 Hz, scale 1.0, SDR/default et Full RGB.
 - Ajout d'un watcher user sur resume logind, `MonitorsChanged` Mutter et hotplug DRM afin de réappliquer le display state après veille ou power-cycle écran.
 - Ajout de `display-doctor`, capture `drm_info` et preuve de repair.
-- Blur My Shell désactivé par défaut dans le profil Golden Workstation afin de réduire les variables de compositor à 240 Hz ; Dash to Dock reste activé.
+- Blur My Shell désactivé par défaut dans le profil Golden Workstation afin de réduire les variables du compositor à 240 Hz ; Dash to Dock reste activé.
 - Ajout de `final-certification` exigeant kernel/GPU/display/GNOME sains, cold-start courant et cinq cycles suspend/resume post-APPLY avec repair récent.
 - Ajout d'un générateur Kickstart Fedora 44 protégé ciblant uniquement le NVMe explicitement choisi ; aucune sélection destructive automatique de disque.
 - Ajout des contrats CI Golden Workstation et mise à jour de la documentation GNOME/installation.

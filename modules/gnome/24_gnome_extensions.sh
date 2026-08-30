@@ -15,6 +15,11 @@ gnome_extensions_precheck() {
     [[ "${BLUR_MY_SHELL_UUID:-}" == "blur-my-shell@aunetx" ]] || return "$EXIT_PRECHECK_FAILED"
   fi
 
+  if is_true "${ENABLE_APPINDICATOR:-false}"; then
+    [[ "${APPINDICATOR_PACKAGE:-}" == "gnome-shell-extension-appindicator" ]] || return "$EXIT_PRECHECK_FAILED"
+    [[ "${APPINDICATOR_UUID:-}" == "appindicatorsupport@rgcjonas.gmail.com" ]] || return "$EXIT_PRECHECK_FAILED"
+  fi
+
   if is_true "${ENABLE_JUST_PERFECTION:-false}"; then
     log_error GNOME 'Just Perfection is explicitly excluded by the workstation desktop policy'
     return "$EXIT_PRECHECK_FAILED"
@@ -24,13 +29,13 @@ gnome_extensions_precheck() {
 gnome_extensions_plan() {
   cat <<'EOF'
 GNOME EXTENSIONS PLAN:
-- Fedora 44 / GNOME 50 Tokyo remains the desktop reference
-- Dash to Dock is enabled by default from the official Fedora RPM
-- Blur My Shell is enabled by default from the official Fedora RPM after the hardware/graphics baseline gate
+- Fedora 44 / GNOME 50 remains the desktop reference
+- Dash to Dock is enabled from the official Fedora RPM
+- AppIndicator is enabled from the official Fedora RPM for functional tray compatibility
+- Blur My Shell stays disabled by default for 240 Hz/resume stability
 - Extension Manager is installed from Flathub as the administration UI
-- preserve Dash to Dock and Blur My Shell upstream/Fedora defaults; no aggressive cosmetic preset is forced
-- Just Perfection is explicitly excluded
-- no other third-party GNOME Shell extension is enabled automatically
+- upstream/Fedora defaults are preserved; no aggressive cosmetic preset is forced
+- Just Perfection and desktop-icon extensions are not enabled automatically
 EOF
 }
 
@@ -49,9 +54,10 @@ gnome_extension_enable_checked() {
 gnome_extensions_apply() {
   local dash_uuid="${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"
   local blur_uuid="${BLUR_MY_SHELL_UUID:-blur-my-shell@aunetx}"
+  local indicator_uuid="${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
   is_true "${ENABLE_GNOME_EXTENSIONS:-false}" || return 0
 
-  if is_true "${ENABLE_DASH_TO_DOCK:-false}" || is_true "${ENABLE_BLUR_MY_SHELL:-false}"; then
+  if is_true "${ENABLE_DASH_TO_DOCK:-false}" || is_true "${ENABLE_BLUR_MY_SHELL:-false}" || is_true "${ENABLE_APPINDICATOR:-false}"; then
     install_manifest_packages GNOME "$REPO_ROOT/manifests/packages-gnome-extensions.txt" || return "$EXIT_APPLY_FAILED"
   fi
 
@@ -61,6 +67,9 @@ gnome_extensions_apply() {
     fi
     if is_true "${ENABLE_BLUR_MY_SHELL:-false}"; then
       gnome_extension_enable_checked 'Blur My Shell' "$blur_uuid" || return "$EXIT_APPLY_FAILED"
+    fi
+    if is_true "${ENABLE_APPINDICATOR:-false}"; then
+      gnome_extension_enable_checked AppIndicator "$indicator_uuid" || return "$EXIT_APPLY_FAILED"
     fi
   fi
 
@@ -73,6 +82,7 @@ gnome_extensions_apply() {
 gnome_extensions_postcheck() {
   local dash_uuid="${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"
   local blur_uuid="${BLUR_MY_SHELL_UUID:-blur-my-shell@aunetx}"
+  local indicator_uuid="${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_GNOME_EXTENSIONS:-false}" || return 0
 
@@ -84,6 +94,11 @@ gnome_extensions_postcheck() {
   if is_true "${ENABLE_BLUR_MY_SHELL:-false}"; then
     rpm -q "${BLUR_MY_SHELL_PACKAGE:-gnome-shell-extension-blur-my-shell}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
     gnome-extensions info "$blur_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+  fi
+
+  if is_true "${ENABLE_APPINDICATOR:-false}"; then
+    rpm -q "${APPINDICATOR_PACKAGE:-gnome-shell-extension-appindicator}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+    gnome-extensions info "$indicator_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if is_true "${INSTALL_EXTENSION_MANAGER:-false}"; then

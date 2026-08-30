@@ -5,21 +5,29 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
 if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then emit OK Wayland active; else emit KO Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
+
 if command_exists gdctl; then
   report="$(gdctl show --verbose 2>&1 || true)"
   mkdir -p "$REPORT_ROOT"
   printf '%s\n' "$report" > "$REPORT_ROOT/$RUN_ID-display-gdctl.txt"
-  if grep -Fq "${DISPLAY_TARGET_WIDTH:-2560}x${DISPLAY_TARGET_HEIGHT:-1440}" <<<"$report"; then
-    emit OK Resolution "${DISPLAY_TARGET_WIDTH:-2560}x${DISPLAY_TARGET_HEIGHT:-1440}"
+
+  current_mode="$(grep -A1 -m1 'Current mode' <<<"$report" | grep -oE '[0-9]+x[0-9]+@[0-9.]+' | head -n1 || true)"
+  target_prefix="${DISPLAY_TARGET_WIDTH:-2560}x${DISPLAY_TARGET_HEIGHT:-1440}@"
+  if [[ "$current_mode" == "$target_prefix"* ]]; then
+    emit OK Resolution "$current_mode active"
   else
-    emit KO Resolution 'target resolution not active/visible'
+    emit KO Resolution "active mode=${current_mode:-unavailable}; expected ${target_prefix}~240"
   fi
-  if grep -Eq '239([.][0-9]+)?|240([.][0-9]+)?' <<<"$report"; then
-    emit OK Refresh '~240 Hz visible'
+
+  refresh="${current_mode##*@}"
+  if [[ "$refresh" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v r="$refresh" 'BEGIN { exit !(r >= 239 && r <= 241) }'; then
+    emit OK Refresh "${refresh} Hz active"
   else
-    emit KO Refresh '240 Hz not visible in current configuration'
+    emit KO Refresh "active refresh=${refresh:-unavailable}"
   fi
+
   if grep -Eqi 'rgb.*full|full.*rgb' <<<"$report"; then
     emit OK 'RGB range' full
   else
@@ -28,23 +36,19 @@ if command_exists gdctl; then
 else
   emit KO gdctl missing
 fi
+
 if command_exists drm_info; then
   drm_info > "$REPORT_ROOT/$RUN_ID-drm-info.txt" 2>&1 || true
   emit OK DRM 'drm_info captured'
 else
   emit WARN DRM 'drm_info missing'
 fi
+
 errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|link.*(fail|bad)|AER:|PCIe Bus Error' | tail -n 30 || true)"
-if [[ -z "$errors" ]]; then
-  emit OK 'DRM/xe journal' clean
-else
-  emit WARN 'DRM/xe journal' 'matching display/GPU/PCIe signals found'
-fi
+if [[ -z "$errors" ]]; then emit OK 'DRM/xe journal' clean; else emit WARN 'DRM/xe journal' 'matching display/GPU/PCIe signals found'; fi
+
 marker="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom/display-repair-last.txt"
-if [[ -s "$marker" ]]; then
-  emit OK Repair 'display repair marker present'
-else
-  emit WARN Repair 'no display repair marker yet'
-fi
+if [[ -s "$marker" ]]; then emit OK Repair 'display repair marker present'; else emit WARN Repair 'no display repair marker yet'; fi
+
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

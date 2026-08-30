@@ -7,23 +7,35 @@ on:
     paths:
       - 'manifests/**'
       - 'config/repos/**'
+      - 'config/desktop.conf'
       - 'modules/system/**'
       - 'modules/hardware/**'
       - 'modules/gnome/**'
+      - 'modules/desktop/**'
       - 'modules/applications/**'
       - 'modules/virtualization/**'
       - 'modules/backup/**'
+      - 'diagnostics/**'
+      - 'scripts/backup/**'
+      - 'scripts/kvm/**'
+      - 'systemd/user/**'
       - '.github/workflows/fedora-host-pretest.yml'
   pull_request:
     paths:
       - 'manifests/**'
       - 'config/repos/**'
+      - 'config/desktop.conf'
       - 'modules/system/**'
       - 'modules/hardware/**'
       - 'modules/gnome/**'
+      - 'modules/desktop/**'
       - 'modules/applications/**'
       - 'modules/virtualization/**'
       - 'modules/backup/**'
+      - 'diagnostics/**'
+      - 'scripts/backup/**'
+      - 'scripts/kvm/**'
+      - 'systemd/user/**'
       - '.github/workflows/fedora-host-pretest.yml'
 
 permissions:
@@ -48,12 +60,13 @@ jobs:
             manifests/packages-hardware.txt \
             manifests/packages-gnome.txt \
             manifests/packages-gnome-extensions.txt \
+            manifests/packages-desktop-integration.txt \
             manifests/packages-multimedia-fedora.txt \
             manifests/packages-applications-gtk4.txt \
             manifests/packages-applications-professional-fedora.txt \
             manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install restic jq acl xorriso "${packages[@]}"
-          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install
+          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime
       - name: Enable RPM Fusion
         run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
       - name: Validate multimedia provider convergence
@@ -85,5 +98,7 @@ jobs:
         run: |
           test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
           test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx
+          test -d /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
+          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+if systemctl --user is-enabled --quiet fedora-gnome-daily-backup.timer; then
+  emit OK 'Daily backup timer' enabled
+else
+  emit KO 'Daily backup timer' disabled
+fi
+
+state="$STATE_ROOT/last-daily-backup.ok"
+if [[ -s "$state" ]]; then
+  ts="$(stat -c %Y "$state")"
+  age_h=$(( ( $(date +%s) - ts ) / 3600 ))
+  if (( age_h <= ${DAILY_BACKUP_MAX_AGE_HOURS:-36} )); then
+    emit OK 'Last daily backup' "${age_h}h old"
+  else
+    emit WARN 'Last daily backup' "${age_h}h old"
+  fi
+elif [[ -s "$STATE_ROOT/last-daily-backup-skipped" ]]; then
+  emit WARN 'Last daily backup' 'target/password unavailable; timer remains healthy'
+else
+  emit WARN 'Last daily backup' 'timer installed; no run recorded yet'
+fi
+
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

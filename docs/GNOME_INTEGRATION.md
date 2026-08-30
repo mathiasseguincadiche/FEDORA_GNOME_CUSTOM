@@ -1,28 +1,48 @@
-# GNOME / Nautilus — intégration Golden Workstation
+# GNOME / Nautilus — intégration Golden Workstation 0.9
 
-Le bureau reste Fedora GNOME 50/Wayland proche de l'upstream. L'objectif n'est pas de copier Ubuntu/Yaru mais d'obtenir une pile GNOME maintenable, mesurable et spécifique au matériel cible.
+Le bureau reste Fedora GNOME 50/Wayland proche de l'upstream. L'objectif n'est pas de copier Ubuntu/Yaru mais d'obtenir une pile GNOME maintenable, mesurable et complète pour une workstation principale.
 
 ## Nautilus
 
-Le socle installe Nautilus + GVfs SMB/MTP/caméra/FUSE et les portals GNOME. La politique de previews est `local-only` afin que les volumes réseau/amovibles ne pénalisent pas le premier lancement.
+Nautilus + GVfs SMB/MTP/caméra/FUSE et les portals GNOME sont installés. La politique de previews est `local-only` afin que les volumes réseau/amovibles ne pénalisent pas le premier lancement.
 
-Un service user `fedora-gnome-nautilus-prewarm.service` préchauffe uniquement Portal/GIO. Il ne démarre jamais Nautilus : `diagnostics/nautilus-coldstart-doctor` mesure donc un vrai premier démarrage Files après login.
+`fedora-gnome-nautilus-prewarm.service` préchauffe uniquement Portal/GIO et ne démarre jamais Nautilus. `diagnostics/nautilus-coldstart-doctor` mesure donc un vrai premier démarrage Files après login.
 
-Ptyxis reste le terminal natif géré. Les bookmarks SFTP/SMB des VM sont maintenus séparément par `scripts/kvm/configure_nautilus_vm_access.sh`.
+## Ergonomie fonctionnelle
+
+La Golden Workstation impose les trois contrôles de fenêtre à droite :
+
+```text
+:minimize,maximize,close
+```
+
+Extensions gérées :
+- **Dash to Dock** : activé depuis le RPM Fedora.
+- **AppIndicator** : activé depuis le RPM Fedora pour les logiciels utilisant AppIndicator/KStatusNotifierItem.
+- **Blur My Shell** : désactivé par défaut afin de réduire les variables compositor à 240 Hz.
+- **Extension Manager** : installé.
+- **Just Perfection / Desktop Icons** : non imposés.
+
+Une extension ne peut pas servir à masquer un problème Mutter/Wayland/GPU.
+
+## Portals et applications sandboxées
+
+La 0.9.0 installe `xdg-desktop-portal`, `xdg-desktop-portal-gnome`, le fallback GTK, PipeWire et WirePlumber. `diagnostics/portal-doctor` exige les surfaces D-Bus :
+- ScreenCast ;
+- FileChooser ;
+- OpenURI ;
+- Notification.
+
+Cela couvre les fondations utilisées par les applications Wayland/Flatpak pour le partage d'écran, les sélecteurs de fichiers, l'ouverture d'URI et les notifications.
+
+## Secrets
+
+GNOME Keyring, son module PAM, libsecret et Seahorse sont installés. Sur une session GNOME, `desktop-integration-doctor` exige que `org.freedesktop.secrets` soit joignable via le bus utilisateur.
 
 ## Display / rendu
 
-Les réglages de rasterisation des polices restent upstream. Le projet ne masque pas une dégradation post-resume avec des tweaks Fontconfig : le display recovery rétablit le mode Mutter/KMS attendu, notamment 1440p/240 Hz, SDR/default et Full RGB.
-
-## Extensions
-
-- Dash to Dock : activé, paquet Fedora, defaults upstream conservés.
-- Blur My Shell : **désactivé par défaut** dans 0.8 pour réduire les variables du compositor à 240 Hz et pendant la certification suspend/resume.
-- Extension Manager : installé pour l'administration.
-- Just Perfection : exclu.
-
-Toute nouvelle extension doit être testée A/B et ne peut pas être utilisée pour masquer un problème Mutter/Wayland/GPU.
+Les réglages de rasterisation des polices restent upstream. `display-doctor` lit le `Current mode` de `gdctl show --verbose` et exige 2560×1440 à environ 240 Hz. Le display recovery conserve SDR/default et demande Full RGB.
 
 ## Applications
 
-Les applications graphiques natives sélectionnées utilisent GTK4/libadwaita quand une solution GNOME de qualité existe. Les applications professionnelles non-GTK4 restent des exceptions fonctionnelles explicitement documentées.
+Les applications graphiques natives sélectionnées utilisent GTK4/libadwaita lorsqu'une solution GNOME de qualité existe. Les applications professionnelles non-GTK4 restent des exceptions fonctionnelles explicites.

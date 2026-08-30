@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ko=0
@@ -40,9 +40,11 @@ done
 if is_true "${ENABLE_DASH_TO_DOCK:-false}"; then
   report_extension 'Dash to Dock' "${DASH_TO_DOCK_PACKAGE:-gnome-shell-extension-dash-to-dock}" "${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"
 fi
-
 if is_true "${ENABLE_BLUR_MY_SHELL:-false}"; then
   report_extension 'Blur My Shell' "${BLUR_MY_SHELL_PACKAGE:-gnome-shell-extension-blur-my-shell}" "${BLUR_MY_SHELL_UUID:-blur-my-shell@aunetx}"
+fi
+if is_true "${ENABLE_APPINDICATOR:-false}"; then
+  report_extension AppIndicator "${APPINDICATOR_PACKAGE:-gnome-shell-extension-appindicator}" "${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
 fi
 
 if is_true "${INSTALL_EXTENSION_MANAGER:-false}"; then

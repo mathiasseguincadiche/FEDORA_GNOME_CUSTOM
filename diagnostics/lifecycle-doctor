@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+if rpm -q dnf5-plugin-automatic >/dev/null 2>&1; then emit OK DNF5 'automatic plugin installed'; else emit KO DNF5 'dnf5-plugin-automatic missing'; fi
+conf=/etc/dnf/automatic.conf
+if [[ -r "$conf" ]]; then
+  grep -Eq '^[[:space:]]*download_updates[[:space:]]*=[[:space:]]*true[[:space:]]*$' "$conf" &&
+    emit OK Updates 'automatic download enabled' || emit KO Updates 'download_updates must be true'
+  grep -Eq '^[[:space:]]*apply_updates[[:space:]]*=[[:space:]]*false[[:space:]]*$' "$conf" &&
+    emit OK Updates 'unattended install disabled' || emit KO Updates 'apply_updates must be false'
+  grep -Eq '^[[:space:]]*reboot[[:space:]]*=[[:space:]]*never[[:space:]]*$' "$conf" &&
+    emit OK Reboot 'automatic reboot disabled' || emit KO Reboot 'reboot must be never'
+else
+  emit KO Updates '/etc/dnf/automatic.conf missing'
+fi
+
+if systemctl is-enabled --quiet dnf5-automatic.timer; then emit OK 'DNF timer' enabled; else emit KO 'DNF timer' disabled; fi
+if is_true "${LIFECYCLE_ENABLE_FSTRIM:-true}"; then
+  if systemctl is-enabled --quiet fstrim.timer; then emit OK fstrim enabled; else emit KO fstrim disabled; fi
+fi
+if is_true "${LIFECYCLE_ENABLE_FWUPD_REFRESH:-true}" && systemctl list-unit-files fwupd-refresh.timer --no-legend 2>/dev/null | grep -q '^fwupd-refresh.timer'; then
+  if systemctl is-enabled --quiet fwupd-refresh.timer; then emit OK fwupd 'metadata refresh enabled'; else emit KO fwupd 'refresh timer disabled'; fi
+fi
+
+if dnf5 needs-restarting -r >/dev/null 2>&1; then
+  emit OK Reboot 'no reboot requirement reported'
+else
+  emit WARN Reboot 'dnf5 reports a reboot may be required'
+fi
+
+if dnf5 system-upgrade --help >/dev/null 2>&1; then emit OK 'Major upgrade' 'dnf5 system-upgrade available'; else emit WARN 'Major upgrade' 'system-upgrade command not exposed'; fi
+
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

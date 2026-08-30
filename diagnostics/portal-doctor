@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+for pkg in xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk pipewire wireplumber; do
+  if rpm -q "$pkg" >/dev/null 2>&1; then emit OK Package "$pkg"; else emit KO Package "$pkg missing"; fi
+done
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  for unit in xdg-desktop-portal.service pipewire.service wireplumber.service; do
+    if systemctl --user is-active --quiet "$unit"; then emit OK "$unit" active; else emit KO "$unit" inactive; fi
+  done
+
+  interfaces="$(busctl --user introspect org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop 2>/dev/null || true)"
+  [[ -n "$interfaces" ]] || { emit KO Portal 'org.freedesktop.portal.Desktop unavailable'; interfaces=''; }
+
+  declare -a required=()
+  is_true "${PORTAL_REQUIRE_SCREENCAST:-true}" && required+=(ScreenCast)
+  is_true "${PORTAL_REQUIRE_FILE_CHOOSER:-true}" && required+=(FileChooser)
+  is_true "${PORTAL_REQUIRE_OPEN_URI:-true}" && required+=(OpenURI)
+  is_true "${PORTAL_REQUIRE_NOTIFICATION:-true}" && required+=(Notification)
+  for iface in "${required[@]}"; do
+    if grep -Fq "org.freedesktop.portal.${iface}" <<<"$interfaces"; then
+      emit OK "Portal $iface" exposed
+    else
+      emit KO "Portal $iface" missing
+    fi
+  done
+fi
+
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

@@ -1,3 +1,4 @@
 # Selected GNOME Shell extensions for Fedora 44 / GNOME 50
 gnome-shell-extension-dash-to-dock
 gnome-shell-extension-blur-my-shell
+gnome-shell-extension-appindicator
