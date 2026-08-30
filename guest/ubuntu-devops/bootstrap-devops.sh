@@ -195,7 +195,11 @@ rm -rf "$k9s_tmp"
 
 log 'validate application toolchain majors'
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
-[[ "$node_major" =~ ^[0-9]+$ ]] && (( node_major >= 22 )) || fail "Node.js 22+ required, got $(node --version)"
+if [[ "$node_major" =~ ^[0-9]+$ ]] && (( node_major >= 22 )); then
+  log "Node.js accepted: $(node --version)"
+else
+  fail "Node.js 22+ required, got $(node --version)"
+fi
 javac_major="$(javac -version 2>&1 | awk '{split($2,v,"."); print v[1]}')"
 [[ "$javac_major" == 21 ]] || fail "OpenJDK 21 required, got $(javac -version 2>&1)"
 corepack --version >/dev/null
