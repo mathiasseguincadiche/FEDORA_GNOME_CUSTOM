@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+state="${KVM_IO_PROFILE_STATE:-$HOME/.local/state/fedora-gnome-custom/kvm-io-profile.env}"
+
+require_target(){
+  runtime_is_baremetal || { ui_error 'KVM I/O benchmark is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }
+  [[ "$(findmnt -n -T "${KVM_DATA_MOUNT:-/data}" -o TARGET 2>/dev/null || true)" == "${KVM_DATA_MOUNT:-/data}" ]] || { ui_error '/data is not a dedicated mount'; exit "$EXIT_PRECHECK_FAILED"; }
+  [[ "$(findmnt -n -T "${KVM_DATA_MOUNT:-/data}" -o FSTYPE 2>/dev/null || true)" == "${KVM_DATA_FSTYPE:-ext4}" ]] || { ui_error '/data must be EXT4'; exit "$EXIT_PRECHECK_FAILED"; }
+  if command_exists virsh && sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --state-running --name 2>/dev/null | grep -q .; then ui_error 'Stop running VMs before KVM storage benchmark'; exit "$EXIT_PRECHECK_FAILED"; fi
+}
+
+run_profile(){
+  local engine="$1" out="$2" path="${KVM_DATA_MOUNT:-/data}/libvirt/benchmarks"
+  sudo install -d -m 0755 "$path"
+  sudo chown "$USER":"$(id -gn)" "$path"
+  fio --name="kvm-${engine}" --filename="$path/kvm-io-test.bin" --size="${KVM_IO_BENCHMARK_SIZE:-2G}" \
+    --runtime="${KVM_IO_BENCHMARK_RUNTIME_S:-20}" --time_based=1 --rw=randrw --rwmixread=70 \
+    --bs="${KVM_IO_BENCHMARK_BS:-4k}" --iodepth="${KVM_IO_BENCHMARK_IODEPTH:-32}" --direct=1 \
+    --ioengine="$engine" --group_reporting=1 --output-format=json --output="$out"
+  rm -f "$path/kvm-io-test.bin"
+}
+
+case "${1:-status}" in
+  benchmark)
+    require_target
+    command_exists fio || { ui_error 'fio missing'; exit "$EXIT_PRECHECK_FAILED"; }
+    command_exists jq || { ui_error 'jq missing'; exit "$EXIT_PRECHECK_FAILED"; }
+    outdir="$REPORT_ROOT/kvm-io-$RUN_ID"; mkdir -p "$outdir"
+    run_profile io_uring "$outdir/io_uring.json"
+    run_profile libaio "$outdir/native.json"
+    uring="$(jq -r '.jobs[0].read.iops + .jobs[0].write.iops' "$outdir/io_uring.json")"
+    native="$(jq -r '.jobs[0].read.iops + .jobs[0].write.iops' "$outdir/native.json")"
+    winner="$(awk -v u="$uring" -v n="$native" 'BEGIN{if(u>=n)print "io_uring"; else print "native"}')"
+    mkdir -p "$(dirname "$state")"
+    { printf 'KVM_IO_SELECTED_PROFILE=%s\n' "$winner"; printf 'KVM_IO_IO_URING_IOPS=%s\n' "$uring"; printf 'KVM_IO_NATIVE_IOPS=%s\n' "$native"; printf 'KVM_IO_BENCHMARK_UTC=%s\n' "$(date -u +%FT%TZ)"; } > "$state"
+    ui_check OK 'KVM I/O profile' "$winner (io_uring=$uring IOPS, native=$native IOPS)"
+    ;;
+  --quiet|status)
+    if [[ -s "$state" ]] && grep -Eq '^KVM_IO_SELECTED_PROFILE=(io_uring|native)$' "$state"; then
+      [[ "${1:-}" == "--quiet" ]] || ui_check OK 'KVM I/O profile' "$(awk -F= '$1=="KVM_IO_SELECTED_PROFILE"{print $2}' "$state")"
+      exit 0
+    fi
+    [[ "${1:-}" == "--quiet" ]] || ui_check WARN 'KVM I/O profile' "not benchmarked; default=${KVM_IO_PROFILE_DEFAULT:-io_uring}"
+    exit 1
+    ;;
+  *) echo 'Usage: kvm-io-doctor [status|--quiet|benchmark]' >&2; exit "$EXIT_USAGE" ;;
+esac
