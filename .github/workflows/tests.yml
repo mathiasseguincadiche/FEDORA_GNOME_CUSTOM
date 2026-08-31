@@ -27,4 +27,5 @@ jobs:
       - run: bash tests/test_hardware_kvm_completion_contract.sh
       - run: bash tests/test_desktop_lifecycle_contract.sh
       - run: bash tests/test_shell_ux_contract.sh
+      - run: bash tests/test_dock_favorites_contract.sh
       - run: bash tests/test_public_entrypoints_contract.sh

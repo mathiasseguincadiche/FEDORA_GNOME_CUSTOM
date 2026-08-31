@@ -2,6 +2,8 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+# shellcheck disable=SC1090
+source "$REPO_ROOT/modules/applications/42_dock_favorites.sh"
 
 quiet=false
 [[ "${1:-}" == '--quiet' ]] && quiet=true
@@ -67,6 +69,24 @@ if rpm -q "${TEXT_EDITOR_PACKAGE:-gnome-text-editor}" >/dev/null 2>&1; then
   emit OK 'Text editor' "${TEXT_EDITOR_PACKAGE:-gnome-text-editor}"
 else
   emit KO 'Text editor' "${TEXT_EDITOR_PACKAGE:-gnome-text-editor} missing"
+fi
+
+if is_true "${GNOME_DOCK_FAVORITES_ENABLED:-true}"; then
+  expected="$(dock_favorites_variant)"
+  actual="$(gsettings get org.gnome.shell favorite-apps 2>/dev/null || true)"
+  if [[ "$actual" == "$expected" ]]; then
+    emit OK 'GNOME dock' 'curated favorites exact order'
+  else
+    emit KO 'GNOME dock' "favorites mismatch: ${actual:-unavailable}"
+  fi
+  read -r -a dock_apps <<< "${GNOME_DOCK_FAVORITES:-}"
+  for app in "${dock_apps[@]}"; do
+    if dock_launcher_exists "$app"; then
+      emit OK "Dock launcher $app" exported
+    else
+      emit KO "Dock launcher $app" missing
+    fi
+  done
 fi
 
 if ! $quiet; then

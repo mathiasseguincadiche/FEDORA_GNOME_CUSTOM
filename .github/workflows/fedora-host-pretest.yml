@@ -8,6 +8,7 @@ on:
       - 'manifests/**'
       - 'config/repos/**'
       - 'config/desktop.conf'
+      - 'config/gnome.conf'
       - 'config/shell.conf'
       - 'modules/system/**'
       - 'modules/hardware/**'
@@ -18,6 +19,7 @@ on:
       - 'modules/backup/**'
       - 'diagnostics/**'
       - 'scripts/backup/**'
+      - 'scripts/gnome/**'
       - 'scripts/kvm/**'
       - 'scripts/shell/**'
       - 'shell/**'
@@ -28,6 +30,7 @@ on:
       - 'manifests/**'
       - 'config/repos/**'
       - 'config/desktop.conf'
+      - 'config/gnome.conf'
       - 'config/shell.conf'
       - 'modules/system/**'
       - 'modules/hardware/**'
@@ -38,6 +41,7 @@ on:
       - 'modules/backup/**'
       - 'diagnostics/**'
       - 'scripts/backup/**'
+      - 'scripts/gnome/**'
       - 'scripts/kvm/**'
       - 'scripts/shell/**'
       - 'shell/**'
@@ -72,7 +76,7 @@ jobs:
             manifests/packages-applications-gtk4.txt \
             manifests/packages-applications-professional-fedora.txt \
             manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
-          dnf -y install restic jq acl xorriso "${packages[@]}"
+          dnf -y install restic jq acl xorriso dbus-daemon "${packages[@]}"
           rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv
       - name: Validate Fedora host Bash UX
         shell: bash
@@ -95,6 +99,19 @@ jobs:
           test -r /home/shelltest/.local/state/fedora-gnome-custom/bash/bashrc.pre-fgc
           runuser -u shelltest -- env HOME=/home/shelltest XDG_CONFIG_HOME=/home/shelltest/.config bash --noprofile --rcfile /home/shelltest/.config/fedora-gnome-custom/bash/init.sh -ic \
             'declare -F __fgc_prompt_update >/dev/null && alias gs >/dev/null && command -v fzf >/dev/null && command -v zoxide >/dev/null && command -v direnv >/dev/null && type z >/dev/null'
+      - name: Validate curated GNOME dock policy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          favorites='org.gnome.Nautilus.desktop brave-browser.desktop org.gnome.Ptyxis.desktop code.desktop com.bitwarden.desktop.desktop com.slack.Slack.desktop libreoffice-startcenter.desktop org.gnome.Software.desktop'
+          expected="['org.gnome.Nautilus.desktop', 'brave-browser.desktop', 'org.gnome.Ptyxis.desktop', 'code.desktop', 'com.bitwarden.desktop.desktop', 'com.slack.Slack.desktop', 'libreoffice-startcenter.desktop', 'org.gnome.Software.desktop']"
+          useradd -m docktest
+          runuser -u docktest -- env HOME=/home/docktest dbus-run-session -- "$GITHUB_WORKSPACE/scripts/gnome/configure-dock-favorites.sh" "$favorites"
+          actual="$(runuser -u docktest -- env HOME=/home/docktest dbus-run-session -- gsettings get org.gnome.shell favorite-apps)"
+          test "$actual" = "$expected"
+          for desktop in org.gnome.Nautilus.desktop org.gnome.Ptyxis.desktop libreoffice-startcenter.desktop org.gnome.Software.desktop; do
+            test -f "/usr/share/applications/$desktop"
+          done
       - name: Enable RPM Fusion
         run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
       - name: Validate multimedia provider convergence
