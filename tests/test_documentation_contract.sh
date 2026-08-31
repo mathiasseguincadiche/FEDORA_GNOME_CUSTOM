@@ -59,7 +59,7 @@ grep -Fq 'KVM_BRIDGE_NAME="virbr50"' "$ROOT/config/virtualization.conf"
 grep -Fq 'KVM_NETWORK_CIDR="192.168.50.0/24"' "$ROOT/config/virtualization.conf"
 grep -Fq 'KVM_GATEWAY="192.168.50.254"' "$ROOT/config/virtualization.conf"
 
-grep -Fq 'mode d’urgence' "$ROOT/docs/KVM_NETWORK.md"
+grep -Fq "mode d'urgence" "$ROOT/docs/KVM_NETWORK.md"
 grep -Fq 'guard_mode=normal' "$ROOT/docs/KVM_NETWORK.md"
 grep -Fq 'SHA256SUMS.gpg' "$ROOT/docs/VIRTUALIZATION.md"
 grep -Fq 'verify_ubuntu_cloud_image.sh' "$ROOT/docs/TROUBLESHOOTING.md"
