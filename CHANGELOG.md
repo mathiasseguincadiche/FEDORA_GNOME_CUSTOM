@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.10.0 — 2026-08-30
+
+- Consolidation **pré-1.0** : priorité au durcissement, à la reproductibilité, aux preuves et à la cohérence de release.
+- Intégration officielle de draw.io (`com.jgraph.drawio.desktop`) au catalogue professionnel, corrigeant l'ajout précédent non reflété dans `VERSION`/CHANGELOG.
+- Détection runtime renforcée avec `systemd-detect-virt` : VM et conteneurs ne sont plus classés bare-metal par défaut.
+- Le `--dry-run` est désormais décrit explicitement comme un **preflight non-mutant / plan de convergence**, sans prétendre simuler les transactions.
+- La politique Kernel Vanilla exige réellement le `kernel-core` le plus récent disponible dans les dépôts activés, respecte `KERNEL_VENDOR_CHANGE_ALLOWED`, garde le plancher 7.2.2 et les kernels Fedora fallback.
+- Nettoyage des clés de configuration mortes identifiées lors de l'audit pré-1.0 ; `DISPLAY_CERT_TOLERANCE_HZ` est maintenant réellement consommé.
+- Les preuves Nautilus/suspend utilisent un fingerprint runtime incluant hardware, kernel, linux-firmware, firmware Intel GPU, Mesa, Mutter et GNOME Shell.
+- `final-certification` exige désormais le socle KVM host lorsque KVM est activé.
+- Réseau KVM explicitement IPv4-only : `KVM_IPV6_ENABLED=false` et activation IPv6 fail-closed tant qu'une isolation dual-stack équivalente n'est pas implémentée.
+- Kickstart rendu déterministe : le SHA Git courant est incorporé et le `%post` fetch/checkout exactement ce commit ; aucun `git clone ... || true` permissif.
+- VM Ubuntu : SSH key-only (`ssh_pwauth: false`), mot de passe runtime conservé pour console/sudo, suppression de `NOPASSWD:ALL`.
+- Supply-chain Ubuntu : Kubernetes figé sur la génération v1.37.x, kind v0.33.0, Minikube v1.38.1 ; AWS CLI v2 installé depuis ZIP + signature détachée vérifiée avec la clé AWS officielle.
+- Politique Flatpak explicite : mises à jour manuelles/utilisateur, aucun updater Flatpak silencieux créé par le projet.
+- Ajout de `manifests/application-provenance.tsv` pour distinguer Fedora/vendor signé/Flathub vérifié/Flathub communautaire.
+- Réduction des exemptions globales ShellCheck : SC2034 et SC2153 ne sont plus masqués globalement.
+- Les prétests Fedora package, Fedora host et Ubuntu VM sont programmés chaque semaine en plus des déclenchements PR/push.
+- Ajout de `docs/PRE1_HARDENING.md`, `docs/SUPPLY_CHAIN.md`, `docs/GITHUB_GOVERNANCE.md` et du contrôle manuel `scripts/development/check-main-protection.sh`.
+
 ## 0.9.3 — 2026-08-30
 
 - Ajout d'une politique **Curated GNOME Dock** déterministe après installation des applications professionnelles.

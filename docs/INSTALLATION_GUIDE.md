@@ -2,17 +2,15 @@
 
 ## A. Installation Fedora 44 reproductible
 
-Option recommandée sur disque vierge : générer un Kickstart depuis un environnement Linux de confiance.
+Option recommandée sur disque vierge : générer un Kickstart **depuis le checkout Git exact que l'on veut installer**.
 
 ```bash
 installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
 ```
 
-Le générateur affiche modèle/serial/taille et exige `EFFACER /dev/nvme0n1`. Le fichier Kickstart efface uniquement le disque explicitement choisi. Le second T705 n'est jamais sélectionné automatiquement.
+Le générateur affiche modèle/serial/taille, imprime le SHA Git incorporé et exige `EFFACER /dev/nvme0n1`. Le Kickstart efface uniquement le disque explicitement choisi, puis fetch/checkout exactement ce SHA. Une panne réseau ou un SHA non récupérable fait échouer le `%post` au lieu de continuer avec un checkout inconnu. Le second T705 n'est jamais sélectionné automatiquement.
 
-Le Kickstart installe Fedora Workstation, SELinux/firewalld et clone le dépôt. Il ne lance pas l'APPLY : la qualification bare-metal reste obligatoire.
-
-Une installation Fedora 44 Workstation manuelle reste supportée.
+Le Kickstart installe Fedora Workstation, SELinux/firewalld et le checkout versionné. Il ne lance pas l'APPLY : la qualification bare-metal reste obligatoire. Une installation Fedora 44 Workstation manuelle reste supportée.
 
 ## B. Préparer `/data`
 
@@ -28,8 +26,6 @@ $EDITOR config/local.conf
 `REAL_MACHINE_APPROVED` reste `false` jusqu'à la fin des contrôles.
 
 ## D. Baseline pré-APPLY
-
-La baseline ne demande plus cinq cycles suspend avant correction. Elle certifie seulement la santé nécessaire pour autoriser l'APPLY.
 
 ```bash
 ./diagnostics/baseline-doctor snapshot
@@ -47,14 +43,14 @@ Passer ensuite le profil mémoire BIOS à 6000 MT/s, redémarrer et lancer :
 
 Les tests NVMe utilisent un fichier temporaire de 4 Gio avec fio/CRC32C et n'écrivent jamais sur le block device brut.
 
-## E. Dry-run et backup
+## E. Preflight et backup
 
 ```bash
 ./install.sh --dry-run
 ./prepare-preapply-backup.sh
 ```
 
-Le backup Restic doit être vérifié et correspondre au même SHA Git.
+`--dry-run` est un **preflight non-mutant** : il valide catalogue, préconditions et plans, puis journalise les mutations qui seraient exécutées sans les lancer. La réussite transactionnelle des dépôts/outils est couverte en complément par les prétests Fedora/Ubuntu. Le backup Restic doit être vérifié et correspondre au même SHA Git.
 
 ## F. APPLY
 
@@ -64,9 +60,7 @@ Après avoir revu la cible, passer `REAL_MACHINE_APPROVED=true` dans `config/loc
 ./install.sh --apply
 ```
 
-Le kernel profile active `@kernel-vanilla/stable` et exige au minimum 7.2.2. Si Secure Boot est actif, l'APPLY kernel est bloqué par défaut afin d'éviter un kernel Vanilla non amorçable.
-
-Les anciens kernels Fedora sont conservés.
+Le kernel profile active `@kernel-vanilla/stable`, exige au minimum 7.2.2 et vérifie que le `kernel-core` le plus récent disponible est installé. Si Secure Boot est actif, l'APPLY kernel est bloqué par défaut. Les anciens kernels Fedora sont conservés.
 
 ## G. Reboot et premier login
 
@@ -86,19 +80,21 @@ Immédiatement après le premier login, avant d'ouvrir Files :
 
 ## H. Suspend/resume final
 
-Effectuer cinq cycles veille/réveil. Après chaque reprise, attendre quelques secondes pour le repair puis :
+Effectuer cinq cycles veille/réveil. Après chaque reprise :
 
 ```bash
 ./diagnostics/final-certification record-suspend
 ```
 
-Le contrôle exige display repair récent, Arc B580/xe sain et absence de signatures critiques xe/PCIe/NVMe.
+Les preuves sont liées au matériel, kernel, firmware GPU, Mesa, Mutter et GNOME Shell : une évolution de cette stack exige de nouvelles preuves.
 
 Après cinq cycles :
 
 ```bash
 ./diagnostics/final-certification certify
 ```
+
+La certification inclut aussi le socle KVM host lorsqu'il est activé.
 
 ## I. Recovery
 
@@ -119,4 +115,4 @@ Le rollback désactive le COPR Vanilla et distro-sync les packages vers Fedora ;
 
 ## J. KVM / VM / Backup
 
-Une fois le HOST certifié, continuer avec les procédures KVM/Ubuntu/Windows et Restic décrites dans `docs/VIRTUALIZATION.md`, `docs/VM_PROFILES.md` et `docs/BACKUP_RESTORE.md`.
+Une fois le HOST certifié, continuer avec `docs/VIRTUALIZATION.md`, `docs/VM_PROFILES.md` et `docs/BACKUP_RESTORE.md`. Le réseau `devops-nat` reste volontairement IPv4 ; l'activation IPv6 est fail-closed tant qu'une isolation dual-stack n'est pas implémentée et certifiée.

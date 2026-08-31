@@ -5,8 +5,15 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+latest_available(){ dnf -q repoquery --available --latest-limit 1 --qf '%{VERSION}-%{RELEASE}' kernel-core 2>/dev/null | sort -V | tail -n1; }
 current="$(uname -r)"; base="${current%%-*}"
 if printf '%s\n%s\n' "${KERNEL_MIN_VERSION:-7.2.2}" "$base" | sort -V -C; then emit OK Kernel "$current >= ${KERNEL_MIN_VERSION:-7.2.2}"; else emit KO Kernel "$current < ${KERNEL_MIN_VERSION:-7.2.2}; reboot into newest installed kernel"; fi
+if is_true "${KERNEL_REQUIRE_LATEST_STABLE:-true}"; then
+  installed="$(rpm -q --qf '%{VERSION}-%{RELEASE}\n' kernel-core 2>/dev/null | sort -V | tail -n1)"
+  available="$(latest_available)"
+  if [[ -n "$available" && "$installed" == "$available" ]]; then emit OK 'Kernel package' "latest available $available installed"; else emit KO 'Kernel package' "installed=${installed:-missing} available=${available:-unresolved}"; fi
+  if [[ -n "$installed" && ( "$current" == "$installed" || "$current" == "$installed".* ) ]]; then emit OK 'Running kernel' "$current"; else emit KO 'Running kernel' "running=$current newest-installed=${installed:-missing}"; fi
+fi
 if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then emit OK 'Arc B580' 'xe bound'; else emit KO 'Arc B580' 'xe not bound'; fi
 if mokutil --sb-state 2>/dev/null | grep -Eqi 'SecureBoot enabled|Secure Boot enabled'; then emit WARN 'Secure Boot' 'enabled; Kernel Vanilla normally requires an explicit trust/signing workflow'; else emit OK 'Secure Boot' 'not blocking vanilla kernel'; fi
 if rpm -qa 'kernel-core-*.fc44*' 2>/dev/null | grep -q .; then emit OK Fallback 'Fedora kernel remains installed'; else emit WARN Fallback 'no Fedora fc44 kernel-core package detected'; fi

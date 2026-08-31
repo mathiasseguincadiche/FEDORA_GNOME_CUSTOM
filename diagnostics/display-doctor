@@ -15,40 +15,26 @@ if command_exists gdctl; then
 
   current_mode="$(grep -A1 -m1 'Current mode' <<<"$report" | grep -oE '[0-9]+x[0-9]+@[0-9.]+' | head -n1 || true)"
   target_prefix="${DISPLAY_TARGET_WIDTH:-2560}x${DISPLAY_TARGET_HEIGHT:-1440}@"
-  if [[ "$current_mode" == "$target_prefix"* ]]; then
-    emit OK Resolution "$current_mode active"
-  else
-    emit KO Resolution "active mode=${current_mode:-unavailable}; expected ${target_prefix}~240"
-  fi
+  if [[ "$current_mode" == "$target_prefix"* ]]; then emit OK Resolution "$current_mode active"; else emit KO Resolution "active mode=${current_mode:-unavailable}; expected ${target_prefix}~${DISPLAY_TARGET_REFRESH_HZ:-240}"; fi
 
   refresh="${current_mode##*@}"
-  if [[ "$refresh" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v r="$refresh" 'BEGIN { exit !(r >= 239 && r <= 241) }'; then
-    emit OK Refresh "${refresh} Hz active"
+  target_refresh="${DISPLAY_TARGET_REFRESH_HZ:-240}"
+  tolerance="${DISPLAY_CERT_TOLERANCE_HZ:-1.0}"
+  if [[ "$refresh" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v r="$refresh" -v t="$target_refresh" -v d="$tolerance" 'BEGIN { x=r-t; if(x<0)x=-x; exit !(x<=d) }'; then
+    emit OK Refresh "${refresh} Hz active (target ${target_refresh} ± ${tolerance})"
   else
-    emit KO Refresh "active refresh=${refresh:-unavailable}"
+    emit KO Refresh "active refresh=${refresh:-unavailable}; target=${target_refresh} tolerance=${tolerance}"
   fi
 
-  if grep -Eqi 'rgb.*full|full.*rgb' <<<"$report"; then
-    emit OK 'RGB range' full
-  else
-    emit WARN 'RGB range' 'gdctl did not expose Full RGB in parsed output; repair explicitly requests it'
-  fi
+  if grep -Eqi 'rgb.*full|full.*rgb' <<<"$report"; then emit OK 'RGB range' full; else emit WARN 'RGB range' 'gdctl did not expose Full RGB in parsed output; repair explicitly requests it'; fi
 else
   emit KO gdctl missing
 fi
 
-if command_exists drm_info; then
-  drm_info > "$REPORT_ROOT/$RUN_ID-drm-info.txt" 2>&1 || true
-  emit OK DRM 'drm_info captured'
-else
-  emit WARN DRM 'drm_info missing'
-fi
-
+if command_exists drm_info; then drm_info > "$REPORT_ROOT/$RUN_ID-drm-info.txt" 2>&1 || true; emit OK DRM 'drm_info captured'; else emit WARN DRM 'drm_info missing'; fi
 errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|link.*(fail|bad)|AER:|PCIe Bus Error' | tail -n 30 || true)"
 if [[ -z "$errors" ]]; then emit OK 'DRM/xe journal' clean; else emit WARN 'DRM/xe journal' 'matching display/GPU/PCIe signals found'; fi
-
 marker="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom/display-repair-last.txt"
 if [[ -s "$marker" ]]; then emit OK Repair 'display repair marker present'; else emit WARN Repair 'no display repair marker yet'; fi
-
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

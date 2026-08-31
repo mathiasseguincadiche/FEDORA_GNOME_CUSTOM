@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# REPO_ROOT is intentionally injected by the repository entrypoints before this library is sourced.
+# CATALOG_SCOPE is populated here and consumed by orchestrator.sh after sourcing.
+# shellcheck disable=SC2153,SC2034
 
 declare -ag CATALOG_IDS=()
 declare -Ag CATALOG_SCOPE=() CATALOG_DEPS=() CATALOG_PATH=()

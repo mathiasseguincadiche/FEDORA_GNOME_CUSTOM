@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# REPO_ROOT is intentionally injected by the repository entrypoints before this library is sourced.
+# shellcheck disable=SC2153
 
 logging_init() {
   RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"

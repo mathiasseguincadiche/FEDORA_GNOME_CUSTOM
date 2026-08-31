@@ -25,6 +25,7 @@ done
 grep -Fq 'LIFECYCLE_AUTOMATIC_DOWNLOADS="true"' "$ROOT/config/desktop.conf"
 grep -Fq 'LIFECYCLE_AUTOMATIC_INSTALLS="false"' "$ROOT/config/desktop.conf"
 grep -Fq 'LIFECYCLE_AUTOMATIC_REBOOT="never"' "$ROOT/config/desktop.conf"
+grep -Fq 'LIFECYCLE_FLATPAK_UPDATE_POLICY="manual"' "$ROOT/config/desktop.conf"
 grep -Fq "download_updates = \${LIFECYCLE_AUTOMATIC_DOWNLOADS:-true}" "$ROOT/modules/desktop/27_lifecycle.sh"
 grep -Fq "apply_updates = \${LIFECYCLE_AUTOMATIC_INSTALLS:-false}" "$ROOT/modules/desktop/27_lifecycle.sh"
 grep -Fq "reboot = \${LIFECYCLE_AUTOMATIC_REBOOT:-never}" "$ROOT/modules/desktop/27_lifecycle.sh"
@@ -34,6 +35,7 @@ if grep -Fq 'apply_updates = true' "$ROOT/modules/desktop/27_lifecycle.sh"; then
 fi
 grep -Fq 'dnf5-automatic.timer' "$ROOT/modules/desktop/27_lifecycle.sh"
 grep -Fq 'fstrim.timer' "$ROOT/modules/desktop/27_lifecycle.sh"
+grep -Fq 'unexpected project-owned unattended Flatpak updater exists' "$ROOT/diagnostics/lifecycle-doctor"
 
 grep -Fq 'DAILY_BACKUP_ENABLED="true"' "$ROOT/config/backup.conf"
 grep -Fq 'fedora-gnome-daily-backup.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
@@ -51,7 +53,7 @@ grep -Fq 'latest-post.log' "$ROOT/diagnostics/final-certification"
 
 grep -Fq 'Current mode' "$ROOT/diagnostics/display-doctor"
 grep -Fq 'current_mode=' "$ROOT/diagnostics/display-doctor"
-grep -Fq 'r >= 239 && r <= 241' "$ROOT/diagnostics/display-doctor"
+grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
 
 grep -Fq 'blocked_physical_ipv4' "$ROOT/scripts/kvm/runtime_certification.sh"
 grep -Fq 'Ubuntu → physical LAN' "$ROOT/scripts/kvm/runtime_certification.sh"

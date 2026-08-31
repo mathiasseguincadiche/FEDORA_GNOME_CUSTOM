@@ -1,72 +1,43 @@
-# Desktop & Lifecycle Completion — 0.9.0
+# Desktop & Lifecycle — politique 0.10.0
 
-## But
+## Capacités quotidiennes
 
-Compléter Fedora 44 Workstation/GNOME 50 pour une utilisation quotidienne et professionnelle sans transformer le système en clone d'Ubuntu ni multiplier les tweaks.
+La workstation certifie GNOME Keyring/Secret Service, portals Wayland, impression/scan driverless, VPN NetworkManager, TuneD PPD, français/polices, Remmina, support mobile et Intel Arc compute.
 
-## Capacités certifiées
+## RPM Fedora
 
-`diagnostics/desktop-integration-doctor` vérifie la présence et l'intégration de :
-- GNOME Keyring / PAM / Secret Service ;
-- CUPS, IPP-over-USB, Avahi et AirScan ;
-- OpenVPN/OpenConnect pour NetworkManager ;
-- TuneD + tuned-ppd ;
-- français, Hunspell/Hyphen/Mythes, Noto et Liberation ;
-- Remmina et ses plugins RDP/VNC/secret/SPICE ;
-- libimobiledevice/ifuse.
+`/etc/dnf/automatic.conf` est convergé avec :
 
-Aucune imprimante, aucun scanner et aucun VPN actif n'est requis : la certification porte sur la capacité du système, pas sur la présence d'un périphérique externe.
+- téléchargement automatique : **oui** ;
+- installation automatique : **non** ;
+- reboot automatique : **jamais**.
 
-## Portals Wayland
+`dnf5-automatic.timer`, `fstrim.timer` et, lorsqu'il existe, `fwupd-refresh.timer` sont activés. Le timer fwupd rafraîchit les métadonnées, il ne flashe aucun firmware de façon autonome.
 
-`diagnostics/portal-doctor` vérifie les paquets et services xdg-desktop-portal/PipeWire/WirePlumber et introspecte `org.freedesktop.portal.Desktop`.
+## Flatpak
 
-Les interfaces ScreenCast, FileChooser, OpenURI et Notification doivent être exposées dans la session GNOME.
+Politique explicite : `LIFECYCLE_FLATPAK_UPDATE_POLICY="manual"`.
 
-## Intel Arc compute
+Les applications Flatpak sont mises à jour volontairement via GNOME Software ou :
 
-`diagnostics/arc-compute-doctor` exige :
-- PCI `8086:e20b` ;
-- Intel Compute Runtime ;
-- Level Zero ;
-- OpenCL ;
-- une plateforme et un périphérique Intel réellement visibles dans `clinfo`.
+```bash
+flatpak update
+```
 
-Le GPU reste host-owned et aucun passthrough n'est activé.
-
-## Lifecycle
-
-Le fichier `/etc/dnf/automatic.conf` est convergé avec la politique suivante :
-- téléchargement automatique : oui ;
-- installation automatique : non ;
-- reboot automatique : jamais.
-
-`dnf5-automatic.timer`, `fstrim.timer` et, lorsqu'il existe, `fwupd-refresh.timer` sont activés. Le timer fwupd ne flashe aucun firmware : il rafraîchit les métadonnées.
+Le projet ne crée aucun timer/service d'installation Flatpak silencieuse. `lifecycle-doctor` refuse un updater Flatpak portant le namespace du projet s'il apparaît.
 
 ## Sauvegarde quotidienne
 
-`fedora-gnome-daily-backup.timer` lance une sauvegarde Restic des données utilisateur lorsque le repository et sa passphrase sécurisée sont accessibles.
-
-Principes :
-- chiffrement Restic obligatoire ;
-- passphrase Restic exclue des sources ;
-- pas de prune automatique ;
-- absence du disque externe = skip propre ;
-- le backup pré-APPLY reste indépendant et fail-closed.
+Le timer Restic sauvegarde les données utilisateur uniquement lorsque le repository et la passphrase sécurisée sont accessibles. Chiffrement obligatoire, passphrase exclue, pas de prune automatique ; absence du disque externe = skip propre. Le backup pré-APPLY reste indépendant et fail-closed.
 
 ## Veille / affichage
 
-Chaque preuve suspend contient un `cycle_id` dérivé du log physique post-resume. Un même log ne peut être enregistré qu'une fois. Le marker de réparation display doit avoir une date supérieure ou égale au log de reprise.
-
-`display-doctor` valide uniquement le mode marqué `Current mode`.
+Chaque preuve suspend possède un `cycle_id` unique et un fingerprint runtime incluant la stack graphique critique. Un changement de kernel/firmware GPU/Mesa/Mutter/GNOME Shell impose de nouvelles preuves.
 
 ## KVM
 
-La certification runtime conserve QGA/RNG/balloon et rétablit la preuve du garde réseau :
-- table nft de protection présente ;
-- gateway privée KVM joignable depuis Ubuntu ;
-- gateway du LAN physique non joignable depuis Ubuntu lorsque `KVM_BLOCK_PHYSICAL_LAN=true`.
+Le host KVM fait désormais partie de `final-certification` lorsque `ENABLE_KVM=true`. La certification des invités reste une étape runtime distincte via `scripts/kvm/runtime_certification.sh`.
 
-## Limites honnêtes
+## Limite physique
 
-Une CI ne peut pas simuler l'intégralité du matériel physique. La 0.9.0 est donc fusionnable uniquement après CI verte, puis doit encore passer la certification bare-metal sur la workstation réelle.
+La CI ne simule pas Arc B580/Wayland/240 Hz/suspend, les deux NVMe ni le LAN physique. La certification finale reste bare-metal.
