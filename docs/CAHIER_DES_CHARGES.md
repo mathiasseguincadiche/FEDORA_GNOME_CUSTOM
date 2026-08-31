@@ -1,16 +1,22 @@
-# Cahier des charges V1.7 — Golden Workstation Fedora 44
+# Cahier des charges — Golden Workstation Fedora 44
+
+**Révision documentaire : 1.7**  
+**Version du projet : voir [`../VERSION`](../VERSION)**
+
+La révision du cahier des charges n'est pas le numéro de release du logiciel.
 
 ## Finalité
 
-Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée et récupérable pour usage DevOps/Ops sur le matériel cible.
+Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée, récupérable et exploitable au quotidien pour un usage DevOps/Ops sur le matériel cible.
 
 ## P0 — installation et sécurité
 
 - générateur Kickstart ciblant uniquement le NVMe explicitement choisi ;
 - aucun choix destructif automatique de disque ;
-- SELinux Enforcing et firewalld ;
-- dry-run + baseline + backup Restic avant APPLY ;
-- rollback kernel disponible.
+- SELinux Enforcing et firewalld actifs ;
+- dry-run non-mutant + baseline + backup Restic avant APPLY ;
+- rollback kernel disponible ;
+- aucune confiance implicite dans une image Ubuntu fournie uniquement par son nom : checksum signé Canonical requis avant création de `ubuntu-devops`.
 
 ## P0 — matériel
 
@@ -26,7 +32,7 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée 
 - Fedora Kernel Vanilla stable ;
 - minimum 7.2.2 ;
 - kernels Fedora conservés comme fallback ;
-- Secure Boot actif bloque ce chemin par défaut sans workflow de confiance explicite.
+- Secure Boot actif bloque ce chemin tant qu'un workflow de confiance/signature explicite n'est pas mis en œuvre.
 
 ## P1 — GNOME
 
@@ -34,7 +40,8 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée 
 - Nautilus + GVfs SMB/MTP/FUSE ;
 - vrai cold-start Files mesuré, cible 1200 ms, hard limit 2000 ms ;
 - prewarm Portal/GIO sans pré-démarrer Nautilus ;
-- Dash to Dock activé ; Blur My Shell désactivé dans l'état Golden certifié ;
+- Dash to Dock **et AppIndicator** activés comme extensions fonctionnelles ;
+- Blur My Shell désactivé dans l'état Golden certifié ;
 - Ptyxis comme terminal.
 
 ## P1 — affichage
@@ -43,17 +50,52 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée 
 - scale 1.0 ;
 - SDR/default ;
 - Full RGB ;
-- recovery après resume, Mutter MonitorsChanged et hotplug DRM ;
-- capture gdctl/drm_info/journal.
+- recovery après resume, Mutter `MonitorsChanged` et hotplug DRM ;
+- capture `gdctl` / `drm_info` / journal.
+
+## P1 — virtualisation
+
+- KVM/libvirt sur `qemu:///system` ;
+- `/data` EXT4 dédié sur le second T705 ;
+- pool `devops-data` ;
+- profils `ubuntu-devops` et `windows-11` créés uniquement sur demande ;
+- réseau `devops-nat` / `virbr50` / `192.168.50.0/24` ;
+- VM → Internet autorisé ;
+- forwarding VM ↔ LAN uplink bloqué ;
+- changement de réseau traité en **fail-closed** : mode d'urgence avant recalcul, conservé si la reconstruction normale échoue ;
+- IPv6 KVM refusé tant qu'une isolation dual-stack équivalente n'est pas certifiée ;
+- aucun GPU passthrough de l'Arc B580.
+
+## P1 — backup et recovery
+
+- Restic chiffré ;
+- backup pré-APPLY lié au commit ;
+- `restic check` et restore-canary ;
+- sauvegarde QCOW2 uniquement VM arrêtée ;
+- restauration staging-first ;
+- disaster-recovery non destructif.
 
 ## P1 — certification finale
 
-Après APPLY/reboot : kernel/xe/display/GNOME sains, cold-start Nautilus dans la limite, puis cinq cycles suspend/resume avec repair display récent et sans signature critique xe/PCIe/NVMe.
+Après APPLY/reboot :
 
-## P1 — virtualisation et backup
-
-Le contrat KVM/libvirt, Ubuntu Server 26.04, Windows 11, réseau privé, second T705 `/data` et Restic fail-closed reste celui de la version précédente.
+- kernel/firmware/hardware sains ;
+- Arc B580/`xe` saine ;
+- display 1440p/~240 Hz ;
+- desktop/portals/applications/lifecycle/Bash conformes ;
+- socle KVM host sain ;
+- cold-start Nautilus dans la limite ;
+- cinq cycles suspend/resume physiques uniques ;
+- matrice software known-good enregistrée.
 
 ## Critère de réussite
 
-Le dépôt peut être code-ready via CI. La workstation n'est **Golden runtime-certified** que lorsque `diagnostics/final-certification certify` produit un PASS sur le vrai matériel et le kernel courant.
+Le dépôt peut être **code-ready** via CI. La workstation n'est **Golden runtime-certified** que lorsque :
+
+```bash
+./diagnostics/final-certification certify
+```
+
+produit un PASS sur le vrai matériel et la pile logicielle courante.
+
+La 1.0 doit être justifiée par une installation bare-metal complète et une période d'usage réel stable, pas par l'ajout artificiel de fonctionnalités.
