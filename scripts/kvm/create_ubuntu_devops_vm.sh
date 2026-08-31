@@ -19,14 +19,14 @@ bootstrap="$REPO_ROOT/${UBUNTU_SERVER_BOOTSTRAP_SCRIPT:-guest/ubuntu-devops/boot
 [[ "$(findmnt -n -T "$data_mount" -o FSTYPE 2>/dev/null || true)" == "${KVM_DATA_FSTYPE:-ext4}" ]] || fail "$data_mount must be ${KVM_DATA_FSTYPE:-ext4}"
 sudo virsh --connect "$uri" pool-info "$pool" >/dev/null || fail "libvirt pool missing: $pool"; sudo virsh --connect "$uri" net-info "$network" >/dev/null || fail "libvirt network missing: $network"
 sudo virsh --connect "$uri" dominfo "$name" >/dev/null 2>&1 && fail "domain already exists: $name"; [[ ! -e "$disk" ]] || fail "disk already exists: $disk"
-read -rsp "Password for ${username} (runtime only): " guest_password; printf '\n'; [[ -n "$guest_password" ]] || fail 'empty password refused'; password_hash="$(openssl passwd -6 -stdin <<<"$guest_password")"; unset guest_password
+read -rsp "Password for ${username} (console/sudo only; SSH password auth stays disabled): " guest_password; printf '\n'; [[ -n "$guest_password" ]] || fail 'empty password refused'; password_hash="$(openssl passwd -6 -stdin <<<"$guest_password")"; unset guest_password
 tmpdir="$(mktemp -d)"; cleanup(){ rm -rf "$tmpdir"; }; trap cleanup EXIT
 ssh_public_key="$(awk 'NF >= 2 {print $1" "$2; exit}' "$ssh_key")"; bootstrap_b64="$(base64 -w0 "$bootstrap")"; verify_b64="$(base64 -w0 "$verify")"
 cat >"$tmpdir/user-data" <<EOF
 #cloud-config
 hostname: ${name}
 manage_etc_hosts: true
-ssh_pwauth: true
+ssh_pwauth: false
 disable_root: true
 users:
   - default
@@ -35,7 +35,6 @@ users:
     shell: /bin/bash
     lock_passwd: false
     passwd: '${password_hash}'
-    sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys: ['${ssh_public_key}']
 write_files:
   - path: /usr/local/sbin/devops-bootstrap.sh
@@ -59,5 +58,5 @@ grep -Fq 'driver.detect_zeroes' <<<"$disk_help" && disk_opts+=",driver.detect_ze
 extra_iothread=(); if virt-install --help 2>&1 | grep -q -- '--iothreads' && grep -Fq 'driver.iothread' <<<"$disk_help"; then extra_iothread=(--iothreads "${VM_IOTHREADS:-1}"); disk_opts+=",driver.iothread=1"; fi
 sudo virt-install --connect "$uri" --name "$name" --memory "${UBUNTU_SERVER_RAM_MB:-16384}" --vcpus "${UBUNTU_SERVER_VCPU:-6}" --cpu "${UBUNTU_SERVER_CPU_MODE:-host-passthrough}" --machine "${UBUNTU_SERVER_MACHINE:-q35}" "${extra_iothread[@]}" --import --boot uefi --disk "$disk_opts" --disk "path=${seed},device=cdrom,readonly=on" --network "network=${network},model=${UBUNTU_SERVER_NETWORK_MODEL:-virtio}" --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 --rng /dev/urandom --memballoon virtio --graphics none --console pty,target.type=serial --osinfo detect=on,require=off --noautoconsole
 printf '\nCreated %s with disk I/O profile %s. No autostart.\n' "$name" "$disk_io"
-printf 'Guest filesystem access from Fedora remains SSH/SFTP through Nautilus/GIO.\n'
+printf 'Guest filesystem access from Fedora remains SSH/SFTP through Nautilus/GIO; SSH authentication is key-only.\n'
 if [[ "${VM_NAUTILUS_ACCESS_ENABLED:-true}" == true && -r "$nautilus_helper" ]]; then bash "$nautilus_helper" install || true; fi

@@ -13,7 +13,7 @@ $owner || { $quiet || ui_check KO 'Nautilus cold-start' 'D-Bus owner not acquire
 if (( elapsed > ${NAUTILUS_COLDSTART_HARD_LIMIT_MS:-2000} )); then $quiet || ui_check KO 'Nautilus cold-start' "${elapsed} ms > hard limit ${NAUTILUS_COLDSTART_HARD_LIMIT_MS:-2000} ms"; exit "$EXIT_POSTCHECK_FAILED"; fi
 if runtime_is_baremetal; then
   final_dir="$STATE_ROOT/final/evidence"; mkdir -p "$final_dir"
-  fp="$(printf '%s|kernel=%s' "$(baseline_fingerprint)" "$(uname -r)" | sha256sum | awk '{print $1}')"
+  fp="$(workstation_runtime_fingerprint)"
   { printf 'fingerprint=%s\nelapsed_ms=%s\nkernel=%s\nutc=%s\n' "$fp" "$elapsed" "$(uname -r)" "$(date -u +%FT%TZ)"; } > "$final_dir/nautilus-coldstart.ok"
 fi
 if (( elapsed <= ${NAUTILUS_COLDSTART_TARGET_MS:-1200} )); then $quiet || ui_check OK 'Nautilus cold-start' "${elapsed} ms"; else $quiet || ui_check WARN 'Nautilus cold-start' "${elapsed} ms > target ${NAUTILUS_COLDSTART_TARGET_MS:-1200} ms"; fi

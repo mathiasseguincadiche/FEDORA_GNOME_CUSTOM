@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-kvm_network_source_xml() {
-  printf '%s\n' "$REPO_ROOT/virtualization/xml/networks/devops-nat.xml"
-}
-
+kvm_network_source_xml() { printf '%s\n' "$REPO_ROOT/virtualization/xml/networks/devops-nat.xml"; }
 kvm_network_validate_xml() {
   local xml="$1"
   grep -Fq "<name>${KVM_NETWORK_NAME:-devops-nat}</name>" <<<"$xml" &&
@@ -33,7 +30,13 @@ kvm_network_validate_existing() {
 kvm_network_precheck() {
   local source_xml
   is_true "${ENABLE_KVM:-true}" || return 0
-  if ! command_exists ip || ! command_exists python3 || ! command_exists firewall-cmd; then return "$EXIT_PRECHECK_FAILED"; fi
+  if is_true "${KVM_IPV6_ENABLED:-false}"; then
+    log_error KVM 'KVM IPv6 is fail-closed until a dual-stack physical-LAN isolation guard is implemented and certified'
+    return "$EXIT_PRECHECK_FAILED"
+  fi
+  if ! command_exists ip || ! command_exists python3 || ! command_exists firewall-cmd; then
+    return "$EXIT_PRECHECK_FAILED"
+  fi
   source_xml="$(cat "$(kvm_network_source_xml)" 2>/dev/null || true)"
   if [[ -z "$source_xml" ]] || ! kvm_network_validate_xml "$source_xml"; then
     log_error KVM 'versioned devops-nat XML does not match virtualization.conf'
@@ -61,6 +64,7 @@ kvm_network_plan() {
   cat <<'EOF'
 FEDORA KVM NETWORK CONTRACT:
 - devops-nat = 192.168.50.0/24, bridge virbr50, DHCP .100-.200
+- IPv4 only; enabling IPv6 is fail-closed until equivalent dual-stack isolation is implemented
 - libvirt NAT supplies VM->Internet and DNS through Quad9/Cloudflare forwarders
 - bridge is explicitly attached to firewalld zone libvirt
 - project-owned nftables guard blocks VM<->physical-LAN forwarding only
@@ -73,6 +77,7 @@ EOF
 
 kvm_network_apply() {
   local network="${KVM_NETWORK_NAME:-devops-nat}" xml helper_src helper_dst unit_src unit_dst dispatcher_src dispatcher_dst
+  local uri="${LIBVIRT_URI:-qemu:///system}"
   is_true "${ENABLE_KVM:-true}" || return 0
   xml="$(kvm_network_source_xml)"
   helper_src="$REPO_ROOT/scripts/kvm/kvm_network_guard.sh"
@@ -94,20 +99,20 @@ kvm_network_apply() {
   run_mutating KVM sudo systemctl enable --now fedora-gnome-custom-kvm-guard.service || return "$EXIT_APPLY_FAILED"
 
   if is_true "${DRY_RUN:-true}"; then
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-define "$xml" || return "$EXIT_APPLY_FAILED"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-start "$network" || return "$EXIT_APPLY_FAILED"
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-autostart "$network" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "$uri" net-define "$xml" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "$uri" net-start "$network" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "$uri" net-autostart "$network" || return "$EXIT_APPLY_FAILED"
     return 0
   fi
 
-  if ! sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-info "$network" >/dev/null 2>&1; then
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-define "$xml" || return "$EXIT_APPLY_FAILED"
+  if ! sudo virsh --connect "$uri" net-info "$network" >/dev/null 2>&1; then
+    run_mutating KVM sudo virsh --connect "$uri" net-define "$xml" || return "$EXIT_APPLY_FAILED"
   fi
-  if ! sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-info "$network" | grep -Eq '^Active:[[:space:]]+yes'; then
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-start "$network" || return "$EXIT_APPLY_FAILED"
+  if ! sudo virsh --connect "$uri" net-info "$network" | grep -Eq '^Active:[[:space:]]+yes'; then
+    run_mutating KVM sudo virsh --connect "$uri" net-start "$network" || return "$EXIT_APPLY_FAILED"
   fi
   if is_true "${KVM_NETWORK_AUTOSTART:-true}"; then
-    run_mutating KVM sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-autostart "$network" || return "$EXIT_APPLY_FAILED"
+    run_mutating KVM sudo virsh --connect "$uri" net-autostart "$network" || return "$EXIT_APPLY_FAILED"
   fi
 }
 

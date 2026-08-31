@@ -5,15 +5,10 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 final_dir="$STATE_ROOT/final"; evidence_dir="$final_dir/evidence"; cert="$final_dir/certified.ok"; mkdir -p "$evidence_dir"
 
 require_baremetal(){ runtime_is_baremetal || { ui_error 'Final certification is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }; }
-final_fingerprint(){ printf '%s|kernel=%s' "$(baseline_fingerprint)" "$(uname -r)" | sha256sum | awk '{print $1}'; }
+final_fingerprint(){ workstation_runtime_fingerprint; }
 suspend_count(){ local f c=0; shopt -s nullglob; for f in "$evidence_dir"/suspend-*.ok; do if grep -Fxq "fingerprint=$(final_fingerprint)" "$f"; then ((c+=1)); fi; done; shopt -u nullglob; printf '%d\n' "$c"; }
 
-latest_post_resume_log() {
-  local link=/var/lib/fedora-gnome-custom/suspend/latest-post.log target
-  target="$(readlink -f "$link" 2>/dev/null || true)"
-  [[ -n "$target" && -s "$target" ]] || return 1
-  printf '%s\n' "$target"
-}
+latest_post_resume_log() { local link=/var/lib/fedora-gnome-custom/suspend/latest-post.log target; target="$(readlink -f "$link" 2>/dev/null || true)"; [[ -n "$target" && -s "$target" ]] || return 1; printf '%s\n' "$target"; }
 
 record_suspend(){
   require_baremetal
@@ -22,45 +17,20 @@ record_suspend(){
   "$REPO_ROOT/diagnostics/display-doctor" --quiet
   "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
   "$REPO_ROOT/diagnostics/usb-resume-doctor" --quiet
-
-  local marker="$HOME/.local/state/fedora-gnome-custom/display-repair-last.txt"
-  local post_log cycle_id now marker_ts post_ts marker_age post_age n f
+  local marker="$HOME/.local/state/fedora-gnome-custom/display-repair-last.txt" post_log cycle_id now marker_ts post_ts marker_age post_age n f
   post_log="$(latest_post_resume_log)" || { ui_error 'No physical post-resume sleep-hook evidence'; exit "$EXIT_POSTCHECK_FAILED"; }
   cycle_id="$(basename "$post_log" | sha256sum | awk '{print $1}')"
-
   shopt -s nullglob
-  for f in "$evidence_dir"/suspend-*.ok; do
-    if grep -Fxq "cycle_id=$cycle_id" "$f"; then
-      shopt -u nullglob
-      ui_error 'This physical suspend/resume cycle is already recorded'
-      exit "$EXIT_POSTCHECK_FAILED"
-    fi
-  done
+  for f in "$evidence_dir"/suspend-*.ok; do if grep -Fxq "cycle_id=$cycle_id" "$f"; then shopt -u nullglob; ui_error 'This physical suspend/resume cycle is already recorded'; exit "$EXIT_POSTCHECK_FAILED"; fi; done
   shopt -u nullglob
-
   [[ -s "$marker" ]] || { ui_error 'No display repair marker after resume'; exit "$EXIT_POSTCHECK_FAILED"; }
-  now="$(date +%s)"
-  marker_ts="$(stat -c %Y "$marker")"
-  post_ts="$(stat -c %Y "$post_log")"
-  marker_age=$((now-marker_ts))
-  post_age=$((now-post_ts))
+  now="$(date +%s)"; marker_ts="$(stat -c %Y "$marker")"; post_ts="$(stat -c %Y "$post_log")"; marker_age=$((now-marker_ts)); post_age=$((now-post_ts))
   (( post_age >= 0 && post_age <= 600 )) || { ui_error "Post-resume evidence is stale (${post_age}s)"; exit "$EXIT_POSTCHECK_FAILED"; }
   (( marker_age >= 0 && marker_age <= 300 )) || { ui_error "Display repair marker is stale (${marker_age}s)"; exit "$EXIT_POSTCHECK_FAILED"; }
   (( marker_ts >= post_ts )) || { ui_error 'Display repair marker predates this physical resume cycle'; exit "$EXIT_POSTCHECK_FAILED"; }
-
-  if journalctl -k -b --since '-10 min' --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(wedged|reset failed|gpu hang)|PCIe Bus Error: severity=Uncorrected|nvme.*(I/O error|reset controller)|xhci.*(HC died|error|timeout)'; then
-    ui_error 'Critical kernel/xe/PCIe/NVMe/xHCI signal after recent suspend'
-    exit "$EXIT_POSTCHECK_FAILED"
-  fi
-
+  if journalctl -k -b --since '-10 min' --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(wedged|reset failed|gpu hang)|PCIe Bus Error: severity=Uncorrected|nvme.*(I/O error|reset controller)|xhci.*(HC died|error|timeout)'; then ui_error 'Critical kernel/xe/PCIe/NVMe/xHCI signal after recent suspend'; exit "$EXIT_POSTCHECK_FAILED"; fi
   n=$(( $(suspend_count)+1 ))
-  {
-    printf 'fingerprint=%s\n' "$(final_fingerprint)"
-    printf 'cycle_id=%s\n' "$cycle_id"
-    printf 'post_resume_log=%s\n' "$post_log"
-    printf 'utc=%s\n' "$(date -u +%FT%TZ)"
-    printf 'repair_marker_age_s=%s\n' "$marker_age"
-  } > "$evidence_dir/suspend-$(printf '%02d' "$n").ok"
+  { printf 'fingerprint=%s\n' "$(final_fingerprint)"; printf 'cycle_id=%s\n' "$cycle_id"; printf 'post_resume_log=%s\n' "$post_log"; printf 'utc=%s\n' "$(date -u +%FT%TZ)"; printf 'repair_marker_age_s=%s\n' "$marker_age"; } > "$evidence_dir/suspend-$(printf '%02d' "$n").ok"
   ui_check OK suspend-cycle "$n / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"
 }
 
@@ -82,12 +52,13 @@ certify(){
   "$REPO_ROOT/diagnostics/shell-doctor" --quiet
   "$REPO_ROOT/diagnostics/applications-doctor" --quiet
   "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet
-  (( $(suspend_count) >= ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} )) || { ui_error 'Not enough unique physical post-APPLY suspend/resume cycles'; exit "$EXIT_PRECHECK_FAILED"; }
-  valid_coldstart || { ui_error 'Current-kernel Nautilus cold-start evidence missing or above hard limit; run nautilus-coldstart-doctor immediately after login'; exit "$EXIT_PRECHECK_FAILED"; }
+  if is_true "${ENABLE_KVM:-true}"; then "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet; fi
+  (( $(suspend_count) >= ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} )) || { ui_error 'Not enough unique physical post-APPLY suspend/resume cycles for the current graphics/runtime stack'; exit "$EXIT_PRECHECK_FAILED"; }
+  valid_coldstart || { ui_error 'Current runtime-stack Nautilus cold-start evidence missing or above hard limit; run nautilus-coldstart-doctor immediately after login'; exit "$EXIT_PRECHECK_FAILED"; }
   "$REPO_ROOT/diagnostics/software-matrix-doctor" certify
   { printf 'verdict=PASS\n'; printf 'fingerprint=%s\n' "$(final_fingerprint)"; printf 'kernel=%s\n' "$(uname -r)"; printf 'certified_utc=%s\n' "$(date -u +%FT%TZ)"; printf 'suspend_cycles=%s\n' "$(suspend_count)"; } > "$cert"
   ui_check OK 'Golden workstation' "$cert"
 }
 
-status(){ ui_banner 'GOLDEN WORKSTATION' 'POST-APPLY CERTIFICATION'; ui_meta Kernel "$(uname -r)"; ui_meta Fingerprint "$(final_fingerprint)"; ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"; if valid_coldstart; then ui_check OK 'Nautilus cold-start' PASS; else ui_check WARN 'Nautilus cold-start' missing; fi; if [[ -s "$cert" ]] && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert"; then ui_check OK Certification valid; else ui_check WARN Certification 'not yet certified for current kernel/hardware'; fi; }
+status(){ ui_banner 'GOLDEN WORKSTATION' 'POST-APPLY CERTIFICATION'; ui_meta Kernel "$(uname -r)"; ui_meta Fingerprint "$(final_fingerprint)"; ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"; if valid_coldstart; then ui_check OK 'Nautilus cold-start' PASS; else ui_check WARN 'Nautilus cold-start' missing; fi; if [[ -s "$cert" ]] && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert"; then ui_check OK Certification valid; else ui_check WARN Certification 'not yet certified for current runtime stack/hardware'; fi; }
 case "${1:-status}" in status) status;; record-suspend) record_suspend;; certify) certify;; *) echo 'Usage: final-certification [status|record-suspend|certify]' >&2; exit "$EXIT_USAGE";; esac

@@ -26,3 +26,22 @@ baseline_certification_valid() {
   grep -Fxq 'verdict=PASS' "$marker" || return 1
   grep -Fxq "fingerprint=$(baseline_fingerprint)" "$marker"
 }
+
+runtime_component_version() {
+  local pkg="$1" version
+  version="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' "$pkg" 2>/dev/null || true)"
+  printf '%s\n' "${version:-missing}"
+}
+
+workstation_runtime_fingerprint_payload() {
+  local pkg
+  printf 'hardware=%s\n' "$(baseline_fingerprint)"
+  printf 'kernel=%s\n' "$(uname -r)"
+  for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell}; do
+    printf '%s=%s\n' "$pkg" "$(runtime_component_version "$pkg")"
+  done
+}
+
+workstation_runtime_fingerprint() {
+  workstation_runtime_fingerprint_payload | sha256sum | awk '{print $1}'
+}

@@ -16,6 +16,12 @@ case "$RUNTIME_ENVIRONMENT" in
     ui_check EXPECTED 'Bare-metal runtime' 'not certifiable inside CI; use repository workflows for automated evidence'
     ui_summary 'CI ENVIRONMENT DETECTED' 'USE GITHUB ACTIONS EVIDENCE' "$REPORT_ROOT" "$LOG_DIR"
     ;;
+  vm|container)
+    ui_banner 'FEDORA WORKSTATION CONTROL' 'VIRTUALIZED RUNTIME DETECTED'
+    ui_meta Runtime "$RUNTIME_ENVIRONMENT"
+    ui_check KO 'Bare-metal runtime' 'REAL APPLY and hardware certification are blocked inside VMs/containers'
+    ui_summary 'VIRTUALIZED ENVIRONMENT' 'USE DRY-RUN/CI ONLY; RUN CERTIFICATION ON PHYSICAL HOST' "$REPORT_ROOT" "$LOG_DIR"
+    ;;
   baremetal)
     ui_banner 'FEDORA WORKSTATION CONTROL' 'DIAGNOSTIC GLOBAL — READ ONLY'
     exec "$REPO_ROOT/diagnostics/workstation-doctor" --summary
