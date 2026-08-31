@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# REPO_ROOT is intentionally assigned by each public entrypoint before this library is sourced.
+# shellcheck disable=SC2153
 
 engine_bootstrap() {
   # shellcheck source=lib/constants.sh
