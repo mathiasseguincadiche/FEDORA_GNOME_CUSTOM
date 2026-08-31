@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.3 — 2026-08-30
+
+- Ajout d'une politique **Curated GNOME Dock** déterministe après installation des applications professionnelles.
+- Ordre épinglé : Nautilus → Brave → Ptyxis → VS Code → Bitwarden → Slack → LibreOffice → GNOME Software.
+- Remmina reste installé mais volontairement non épinglé.
+- Ajout du script idempotent `configure-dock-favorites.sh` qui écrit et relit `org.gnome.shell favorite-apps`.
+- Le module `applications.dock_favorites` valide les IDs, interdit les doublons, applique l'ordre et exige que les huit lanceurs `.desktop` soient réellement exportés.
+- `applications-doctor` contrôle désormais l'ordre du dock et la présence des lanceurs ; il est ajouté à la certification bare-metal finale.
+- Le Fedora 44 host integration pretest exécute la configuration réelle sous un utilisateur de test dans une session D-Bus et relit le GSettings persistant.
+- Ajout du contrat CI `test_dock_favorites_contract.sh` et de `docs/DOCK_FAVORITES.md`.
+
 ## 0.9.2 — 2026-08-30
 
 - Ajout de la couche **Fedora Host Bash UX** pour que Ptyxis ouvre directement un Bash professionnel et prêt à travailler sur l'OS hôte.
@@ -33,7 +44,7 @@
 - AppIndicator officiel Fedora activé et certifié en complément de Dash to Dock ; Blur My Shell reste désactivé par défaut.
 - Intégration GNOME Keyring/Secret Service, CUPS/IPP-over-USB/Avahi/AirScan, VPN OpenVPN/OpenConnect, TuneD PPD, français/dictionnaires/polices, Remmina et support mobile/iPhone.
 - Ajout du runtime Intel Arc Level Zero/OpenCL et d'`arc-compute-doctor`, qui exige l'énumération réelle de l'Arc B580.
-- Ajout de `portal-doctor` pour certifier ScreenCast, FileChooser, OpenURI et Notification via xdg-desktop-portal/PipeWire/Wayland.
+- Ajout de `portal-doctor` pour certifier ScreenCast/FileChooser/OpenURI et Notification via xdg-desktop-portal/PipeWire/Wayland.
 - Politique lifecycle DNF5 : téléchargement automatique autorisé, **installation automatique interdite**, **reboot automatique interdit**, avec `fstrim.timer` et refresh metadata fwupd.
 - Ajout d'une sauvegarde utilisateur Restic quotidienne par timer systemd, chiffrée, sans prune silencieux et sans inclure la passphrase Restic ; absence du disque externe = skip propre, pas corruption du statut.
 - Durcissement de la certification suspend/resume : un cycle physique ne peut être compté qu'une fois et le repair display doit être postérieur au hook de reprise correspondant.
@@ -43,7 +54,7 @@
 
 ## 0.8.2 — 2026-08-30
 
-- Ajout d'une politique GNOME explicite imposant les trois contrôles de fenêtre **Réduire / Agrandir / Fermer** à droite via `org.gnome.desktop.wm.preferences.button-layout`.
+- Ajout d'une politique GNOME explicite imposant les trois contrôles de fenêtre **Réduire / Agrandir / Fermer** à droite via `org.gnome.desktop.wm.preferences button-layout`.
 - Le module GNOME applique `:minimize,maximize,close` de façon idempotente et refuse la validation post-APPLY si la valeur réellement enregistrée diffère.
 - Ajout d'un contrat CI empêchant une régression silencieuse vers le comportement GNOME par défaut sans boutons Réduire/Agrandir.
 
