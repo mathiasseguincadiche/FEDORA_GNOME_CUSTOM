@@ -15,7 +15,7 @@ for pkg in code brave-browser; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-applications-professional-vendor.txt" || { echo "missing vendor professional app: $pkg" >&2; exit 1; }
 done
 
-for app in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors com.github.marktext.marktext; do
+for app in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors com.github.marktext.marktext com.jgraph.drawio.desktop; do
   grep -Fxq "$app" "$ROOT/manifests/flatpaks-applications-professional.txt" || { echo "missing professional Flatpak: $app" >&2; exit 1; }
 done
 
