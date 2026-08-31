@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.11.0 — 2026-08-31
+
+- Refonte de la documentation opérateur : ajout de `docs/README.md` comme portail, `docs/GLOSSARY.md`, `docs/KVM_QUICKSTART.md` et `docs/KVM_NETWORK.md`.
+- Transformation de `docs/TROUBLESHOOTING.md` en vrai runbook par symptôme couvrant APPLY, DNF/repos, Flatpak, codecs, GNOME/portals, Arc B580, veille/affichage, KVM/libvirt, `/data`, `devops-nat`, Ubuntu/Windows et Restic.
+- Documents normatifs rendus version-neutral et reliés à `VERSION` afin d'éviter les références actives 0.8/0.9 devenues ambiguës ; les numéros historiques restent dans les release notes/changelog.
+- Correction de la documentation GNOME : Dash to Dock **et AppIndicator** sont les deux extensions fonctionnelles gérées ; Blur My Shell reste hors de l'état Golden certifié.
+- Suppression des anciennes commandes `baseline-doctor record-*` de la documentation WSL2.
+- Ajout de draw.io au catalogue documentaire professionnel et clarification de la révision 1.7 du cahier des charges par rapport au numéro de release.
+- Nettoyage de `GITHUB_GOVERNANCE.md` : suppression des limitations propres à un connector/outillage particulier et ajout d'un contrat documentaire public.
+- Réseau KVM rendu réellement **fail-closed lors d'un changement de connectivité** : le dispatcher NetworkManager installe désormais un guard d'urgence synchronement avant tout reconcile ; si la redécouverte/validation du nouvel uplink échoue, le forwarding via `virbr50` reste bloqué.
+- `fedora-gnome-custom-kvm-guard.service` utilise `reconcile` au start/reload avec retry `Restart=on-failure`; suppression du reload asynchrone `--no-block` et du `|| true` qui pouvait masquer un échec.
+- `runtime_certification.sh` exige le service KVM guard actif, un reconcile réussi, `guard_mode=normal`, les règles nftables bidirectionnelles et la couverture de tous les CIDR uplink détectés.
+- La preuve Ubuntu→LAN est renforcée : le gateway physique doit d'abord être prouvé joignable depuis le HOST avant que son injoignabilité depuis la VM soit considérée comme une preuve de blocage.
+- La portée de sécurité du guard est documentée précisément : réseaux IPv4 directement connectés/uplink par défaut ; les routes/VPN additionnels devront être ajoutés explicitement s'ils doivent entrer dans le contrat futur.
+- Ajout de `scripts/kvm/verify_ubuntu_cloud_image.sh` : empreinte Canonical cloud-image épinglée, vérification GPG de `SHA256SUMS`, puis SHA-256 de l'image avant création du disque Ubuntu.
+- `create_ubuntu_devops_vm.sh` exige désormais l'authentification de l'image Canonical ; `gnupg2` est ajouté au socle KVM Fedora.
+- `create_windows11_vm.sh` accepte `--windows-sha256` et `--virtio-sha256` afin de vérifier les médias lorsqu'un hash obtenu depuis une source de confiance indépendante est disponible ; sans hash, le script avertit explicitement que la provenance reste une responsabilité opérateur.
+- Ajout des contrats CI `test_kvm_network_fail_closed.sh`, `test_vm_image_auth_contract.sh` et `test_documentation_contract.sh` ; le workflow `Tests` les exécute sur chaque push/PR.
+- Le contrat documentaire vérifie notamment les commandes obsolètes, AppIndicator, draw.io, les invariants `devops-nat`, les liens Markdown locaux et la couverture minimale du troubleshooting.
+
 ## 0.10.0 — 2026-08-30
 
 - Consolidation **pré-1.0** : priorité au durcissement, à la reproductibilité, aux preuves et à la cohérence de release.

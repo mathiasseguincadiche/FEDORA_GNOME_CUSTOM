@@ -1,68 +1,152 @@
-# Golden Workstation 0.8.0
+# Golden Workstation — architecture de référence
 
 ## Objectif
 
-La version 0.8 sépare volontairement deux notions qui étaient mélangées :
+Le projet sépare deux notions :
 
-1. **baseline pré-APPLY** : prouver que le matériel est suffisamment sain pour autoriser les mutations ;
-2. **certification runtime post-APPLY** : prouver que la pile réellement installée corrige les problèmes ciblés et reste stable sur le vrai matériel.
+1. **baseline pré-APPLY** — prouver que le matériel est suffisamment sain pour autoriser les mutations ;
+2. **certification runtime post-APPLY** — prouver que la pile réellement installée est saine sur le vrai matériel.
 
-Cette séparation est essentielle pour suspend/resume : un défaut que le nouvel APPLY doit corriger ne doit jamais empêcher l'installation du correctif.
+Cette séparation est essentielle : un défaut que l'APPLY doit corriger ne doit pas empêcher l'installation de son correctif.
+
+La version applicable du projet est celle de [`../VERSION`](../VERSION).
+
+## Chaîne de confiance
+
+```text
+Fedora 44 fraîche
+      ↓
+baseline RAM / NVMe / hardware
+      ↓
+dry-run non-mutant
+      ↓
+backup Restic + restore canary
+      ↓
+APPLY protégé
+      ↓
+reboot
+      ↓
+certification hardware / desktop / KVM
+      ↓
+5 cycles suspend/resume
+      ↓
+matrice known-good
+```
 
 ## Kernel
 
-Le profil installe le dernier kernel stable upstream via Fedora Kernel Vanilla `@kernel-vanilla/stable`, avec un plancher `7.2.2`. Les packages Fedora kernel existants ne sont pas supprimés et servent de fallback.
+Le profil installe le dernier kernel stable disponible via Fedora Kernel Vanilla `@kernel-vanilla/stable`, avec plancher 7.2.2. Les kernels Fedora existants ne sont pas supprimés et restent disponibles comme fallback.
 
-Secure Boot actif provoque un blocage avant mutation par défaut. Le projet ne désactive jamais Secure Boot automatiquement et ne génère/importera jamais une clé MOK sans décision opérateur explicite.
+Secure Boot actif bloque ce chemin par défaut. Le projet ne désactive pas Secure Boot automatiquement et ne génère/importera pas une clé MOK sans décision opérateur explicite.
+
+## Hardware
+
+La baseline certifie notamment :
+
+- RAM à 5600 puis 6000 MT/s avec `stress-ng --verify` ;
+- T705 système et `/data` avec `fio` filesystem-safe et vérification CRC32C ;
+- root et `/data` sur deux NVMe physiques distincts ;
+- fingerprint BIOS/plateforme/CPU/GPU/NVMe/EDID.
+
+Aucun test n'écrit volontairement sur un block device brut.
+
+## Arc B580
+
+Le GPU attendu est :
+
+```text
+8086:e20b
+pilote xe
+```
+
+Le projet valide kernel/firmware/Mesa/Vulkan/VA-API/compute au lieu d'ajouter des `force_probe` ou dépôts GPU expérimentaux.
 
 ## Cold-start Nautilus
 
 La métrique est volontairement stricte : Nautilus doit être absent avant le test. Le chronomètre démarre juste avant `nautilus --new-window` et s'arrête lorsque `org.gnome.Nautilus` possède son nom D-Bus.
 
-Le prewarm de login ne démarre donc jamais Nautilus. Il touche uniquement Portal/GIO et lit les préférences nécessaires afin de sortir ces coûts de la première interaction Files sans fausser la mesure.
+Le prewarm de login touche Portal/GIO mais ne démarre jamais Nautilus.
 
 Seuils par défaut :
 
 - cible : `1200 ms` ;
-- hard limit de certification : `2000 ms`.
+- hard limit : `2000 ms`.
 
 ## Display recovery
 
-Le symptôme « caractères/polices dégradés après veille ou power-cycle écran » est traité comme un problème potentiel de chaîne DRM/KMS/Mutter/link plutôt que comme un problème Fontconfig présumé.
+Un texte/polices dégradé après veille ou power-cycle écran est traité d'abord comme un problème potentiel de chaîne DRM/KMS/Mutter/link, pas comme un défaut Fontconfig présumé.
 
-Le repair via `gdctl` réapplique :
+Le repair réapplique via `gdctl` :
 
 - 2560×1440 ;
-- mode le plus proche de 240 Hz ;
+- mode proche de 240 Hz ;
 - scale 1.0 ;
-- color mode `default` (SDR) ;
-- RGB range `full`.
+- color mode SDR/default ;
+- Full RGB.
 
-Le watcher de session déclenche le repair après reprise logind, changement Mutter et hotplug DRM. Chaque application conserve un rapport dans `~/.local/state/fedora-gnome-custom/`.
+Le watcher de session réagit à la reprise logind, aux changements Mutter et aux événements DRM prévus. Chaque application conserve un rapport dans l'état utilisateur du projet.
 
-## Extensions
+## GNOME
 
-Dash to Dock reste autorisé. Blur My Shell est désactivé par défaut : il ajoute un coût/chemin de rendu cosmétique sans bénéfice fonctionnel et complique la recherche de régressions à 240 Hz ou après resume.
+Le bureau reste proche de Fedora/GNOME upstream.
 
-## Baseline automatisée
+Extensions fonctionnelles gérées :
 
-RAM : `stress-ng --verify` à 5600 puis 6000 MT/s ; la vitesse configurée est vérifiée par SMBIOS avant le test.
+- Dash to Dock ;
+- AppIndicator.
 
-NVMe : `fio` travaille sur un fichier temporaire de 4 Gio dans le filesystem root puis `/data`, avec I/O direct et vérification CRC32C. Aucun test n'écrit sur le block device brut. Les deux mountpoints doivent résoudre vers deux disques NVMe physiques différents.
+Blur My Shell reste désactivé dans l'état Golden afin de réduire les variables de rendu/compositor.
 
-Les preuves contiennent le SHA-256 du log. Le fingerprint matériel incorpore BIOS/UUID plateforme, CPU, GPU/driver, classe mémoire, modèle/serial/firmware NVMe et EDID disponible.
+## KVM
+
+Le socle KVM fait partie de la certification finale lorsqu'il est activé :
+
+```text
+qemu:///system
+/data EXT4
+pool devops-data
+network devops-nat
+Ubuntu Server 26.04
+Windows 11
+```
+
+Le réseau KVM est IPv4-only tant qu'une isolation dual-stack équivalente n'est pas implémentée.
+
+Le guard `fedora_gnome_custom_kvm` est fail-closed lors d'un changement d'uplink : il installe d'abord un blocage d'urgence du forwarding via `virbr50`, puis repasse en mode normal uniquement après redécouverte/validation du LAN.
+
+L'image Ubuntu doit être authentifiée à partir de `SHA256SUMS` signé par Canonical avant création du disque.
+
+Voir [`KVM_NETWORK.md`](KVM_NETWORK.md) et [`VIRTUALIZATION.md`](VIRTUALIZATION.md).
+
+## Backup / recovery
+
+Le pré-APPLY Restic exige :
+
+- dépôt chiffré ;
+- cible externe/remote ;
+- backup lié au commit ;
+- `restic check` ;
+- restauration réelle d'un canary.
+
+Les disques QCOW2 ne sont sauvegardés que VM arrêtée, via staging cohérent et validation `qemu-img`.
 
 ## Certification finale
 
-Après APPLY et reboot :
+Après APPLY/reboot :
 
 1. lancer `diagnostics/nautilus-coldstart-doctor` immédiatement après login ;
 2. effectuer cinq cycles suspend/resume ;
 3. après chaque cycle lancer `diagnostics/final-certification record-suspend` ;
 4. terminer avec `diagnostics/final-certification certify`.
 
-Le cycle suspend est refusé si kernel, Arc/xe ou display doctor échouent, si des signatures xe/PCIe/NVMe critiques sont apparues, ou si le marker du repair display n'est pas récent.
+Un cycle est refusé si kernel, Arc/xe, display ou USB resume échouent, ou si des signatures critiques xe/PCIe/NVMe apparaissent.
 
 ## Politique de remédiation
 
-Le projet n'ajoute aucun `xe.force_probe`, `i915.force_probe`, `pcie_aspm=off`, `nvme_core.default_ps_max_latency_us` ou forçage `mem_sleep_default` global sans preuve matérielle spécifique. Les versions modernes Fedora/kernel/Mutter sont essayées et mesurées avant toute exception permanente.
+Le projet applique :
+
+```text
+mesurer → reproduire → corriger → recertifier
+```
+
+Il n'ajoute pas globalement `xe.force_probe`, `i915.force_probe`, `pcie_aspm=off`, des changements APST/C-State ou `mem_sleep_default` sans preuve matérielle spécifique.

@@ -1,14 +1,16 @@
-# Hardware Baseline Certification — 0.8
+# Hardware Baseline Certification
 
 ## But
 
-La baseline pré-APPLY prouve uniquement que le matériel est suffisamment sain pour autoriser les mutations système. Elle ne certifie plus suspend/resume avant l'installation des corrections.
+La baseline pré-APPLY prouve uniquement que le matériel est suffisamment sain pour autoriser les mutations système. Elle ne certifie pas suspend/resume avant l'installation des corrections.
+
+La version du projet applicable est celle de [`../VERSION`](../VERSION).
 
 ## Preuves automatisées obligatoires
 
 ### RAM 5600
 
-Désactiver le profil 6000 dans le BIOS puis :
+Désactiver le profil mémoire 6000 dans le BIOS puis :
 
 ```bash
 ./diagnostics/baseline-doctor run-memory-test 5600
@@ -24,7 +26,7 @@ Réactiver 6000 MT/s, redémarrer puis :
 ./diagnostics/baseline-doctor run-memory-test 6000
 ```
 
-Le dépôt ne modifie jamais XMP/timings/voltage BIOS.
+Le dépôt ne modifie jamais timings/voltage/profil mémoire BIOS.
 
 ### T705 système et DATA
 
@@ -33,17 +35,28 @@ Le dépôt ne modifie jamais XMP/timings/voltage BIOS.
 ./diagnostics/baseline-doctor run-nvme-test data
 ```
 
-`fio` travaille sur un fichier temporaire de 4 Gio du filesystem avec I/O direct et CRC32C. Aucun block device brut n'est écrit. La certification exige que `/` et `/data` résolvent vers deux NVMe physiques distincts.
+`fio` travaille sur un fichier temporaire de 4 Gio du filesystem avec I/O direct et CRC32C. Aucun block device brut n'est écrit.
+
+La certification exige que `/` et `/data` résolvent vers deux NVMe physiques distincts.
 
 ## Fingerprint
 
-Le fingerprint contient : carte mère, version/date BIOS, UUID plateforme, CPU, Arc B580 + driver, classe mémoire testée, inventaire NVMe avec modèle/serial/firmware et hashes EDID disponibles.
+Le fingerprint contient notamment :
 
-Un changement significatif invalide la certification.
+- carte mère ;
+- version/date BIOS ;
+- UUID plateforme ;
+- CPU ;
+- Arc B580 + driver ;
+- classe mémoire testée ;
+- inventaire NVMe avec modèle/serial/firmware ;
+- hashes EDID disponibles.
+
+Un changement significatif invalide la certification concernée.
 
 ## Suspend/resume
 
-Suspend/resume appartient désormais à la **certification finale post-APPLY**, après installation du kernel 7.2.2+ et du display recovery. Ceci évite qu'un bug que l'APPLY doit corriger empêche l'installation de son correctif.
+Suspend/resume appartient à la **certification finale post-APPLY**, après installation du kernel et du display recovery. Ceci évite qu'un bug que l'APPLY doit corriger empêche l'installation de son correctif.
 
 ## Gate APPLY
 
@@ -63,4 +76,16 @@ confirmation opérateur
 APPLY autorisé
 ```
 
-Après reboot, `diagnostics/final-certification` prend le relais pour kernel, affichage, cold-start Nautilus et cinq cycles suspend/resume.
+Statut :
+
+```bash
+./diagnostics/baseline-doctor status
+```
+
+Certification :
+
+```bash
+./diagnostics/baseline-doctor certify
+```
+
+Après reboot, `diagnostics/final-certification` prend le relais pour kernel, GPU, affichage, desktop, KVM, cold-start Nautilus et cinq cycles suspend/resume.
