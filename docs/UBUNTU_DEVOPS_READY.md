@@ -1,82 +1,42 @@
-# Ubuntu DevOps Ready — 0.9.1
+# Ubuntu DevOps Ready — 0.10.0
 
-La VM `ubuntu-devops` est un environnement Ubuntu Server 26.04 dédié aux labs et projets DevOps. Elle est créée à la demande sur `qemu:///system`, stockée sur le pool `/data`, et bootstrapée automatiquement par cloud-init.
+La VM `ubuntu-devops` est un Ubuntu Server 26.04 dédié aux labs/projets DevOps, créé à la demande sur `qemu:///system` et stocké sur `/data`.
 
-## Profil matériel virtuel
+## Profil
 
-- 6 vCPU, CPU `host-passthrough` ;
-- 16 Gio de RAM ;
-- disque qcow2 160 Gio, VirtIO, `cache=none`, discard/unmap et backend I/O mesuré lorsque le benchmark T705 a été exécuté ;
-- machine Q35 + UEFI ;
-- réseau VirtIO sur `devops-nat` ;
-- QEMU Guest Agent, VirtIO RNG et balloon mémoire ;
-- aucun passthrough GPU ;
-- aucun autostart par défaut.
+- 6 vCPU `host-passthrough` ; 16 Gio RAM ; qcow2 160 Gio ; Q35 + UEFI ; VirtIO ;
+- `devops-nat`, QEMU Guest Agent, VirtIO RNG, balloon ;
+- aucun GPU passthrough et aucun autostart.
 
-## Stack prête au premier login
+## Stack prête après le premier bootstrap
 
-### Git et forges
+- Git/Git LFS, `gh`, `glab` ;
+- Docker CE, Compose v2, Buildx, containerd ;
+- kubectl **v1.37.x**, Helm, kind **v0.33.0**, Minikube **v1.38.1** avec driver Docker, K9s, kubectx/kubens, yq v4 ;
+- Terraform, Ansible ;
+- AWS CLI v2, Azure CLI ;
+- Node.js 22 LTS, npm, Corepack ;
+- OpenJDK 21, Maven ;
+- Python 3/pip/venv/pipx, ShellCheck, jq, ripgrep, rsync, SSH, tmux et outils réseau.
 
-- Git + Git LFS ;
-- GitHub CLI `gh` ;
-- GitLab CLI `glab`.
+Les identifiants GitHub/GitLab/AWS/Azure restent manuels : aucun token n'est embarqué.
 
-L'authentification aux comptes reste volontairement manuelle (`gh auth login`, `glab auth login`) : aucun token n'est embarqué dans l'image ou le dépôt.
+## Authentification
 
-### Containers et Kubernetes
+Le script de création demande un mot de passe runtime afin de conserver un accès **console/sudo**. SSH est différent : `ssh_pwauth: false`, root désactivé et clé publique injectée par cloud-init. `verify-devops.sh` exige `PasswordAuthentication no` dans la configuration effective de `sshd`.
 
-- Docker CE ;
-- Docker Compose v2 ;
-- Buildx ;
-- containerd ;
-- kubectl ;
-- Helm ;
-- kind ;
-- Minikube, avec `docker` configuré comme driver par défaut ;
-- K9s ;
-- kubectx + kubens ;
-- `yq` Go v4.
+## Supply-chain
 
-`kind` et Minikube sont conservés ensemble : kind est adapté aux clusters rapides/CI, tandis que Minikube reste disponible pour les labs ou procédures qui l'exigent explicitement.
+Aucun `curl | bash`.
 
-## Toolchains applicatives
+- APT + dépôts signés pour Ubuntu/Docker/GitHub/HashiCorp/Azure/Kubernetes/Helm ;
+- Kubernetes est figé sur la génération `v1.37` pour éviter un saut de minor silencieux ;
+- kind v0.33.0 et Minikube v1.38.1 sont téléchargés depuis leur release précise et vérifiés avec les checksums publiés ;
+- yq v4.53.3 et K9s v0.51.0 utilisent des SHA-256 attendus versionnés ;
+- Helm vérifie l'empreinte de clé du dépôt ;
+- AWS CLI v2 utilise `awscli-exe-linux-x86_64.zip` + `.sig`, vérifiée par `gpgv` avec la clé publique AWS et l'empreinte attendue `FB5D B77F D5C1 18B8 0511 ADA8 A631 0ACC 4672 475C`.
 
-### Angular / JavaScript
-
-- Node.js 22 LTS fourni par Ubuntu 26.04 ;
-- npm ;
-- Corepack.
-
-Les dépendances de projet restent locales au dépôt (`npm ci`, Corepack/pnpm/yarn selon le projet). Aucun framework JavaScript n'est installé globalement à l'aveugle.
-
-### Java / Spring
-
-- OpenJDK 21 JDK ;
-- Maven.
-
-Le bootstrap refuse de se déclarer terminé si Node.js est inférieur à 22 ou si `javac` n'est pas en version 21.
-
-## Infrastructure / cloud / automatisation
-
-- Terraform ;
-- Ansible + ansible-playbook ;
-- AWS CLI v2 ;
-- Azure CLI ;
-- Python 3, pip, venv et pipx ;
-- ShellCheck, jq, ripgrep, rsync, SSH, tmux et outils réseau.
-
-Les identifiants AWS/Azure/GitHub/GitLab ne sont jamais préchargés. Ils doivent être configurés par l'opérateur après création de la VM.
-
-## Supply chain
-
-Le bootstrap interdit les installations `curl | bash`.
-
-- les toolchains Ubuntu sont installées via APT ;
-- Docker, GitHub CLI, HashiCorp, Azure, Kubernetes et Helm utilisent leurs dépôts gérés ;
-- Helm vérifie l'empreinte de clé attendue ;
-- kind et Minikube vérifient leurs checksums de release ;
-- `yq` et K9s sont épinglés sur une version et un SHA-256 attendus ;
-- AWS CLI est téléchargé depuis l'installateur AWS sans exécution par pipe.
+Voir aussi `docs/SUPPLY_CHAIN.md`.
 
 ## Création
 
@@ -85,9 +45,7 @@ scripts/kvm/create_ubuntu_devops_vm.sh \
   --cloud-image /chemin/ubuntu-26.04-server-cloudimg-amd64.img
 ```
 
-Le script demande le mot de passe de la VM uniquement au runtime, injecte la clé SSH publique et les scripts bootstrap/verify via cloud-init, puis crée la VM sans autostart.
-
-Le premier démarrage exécute automatiquement `/usr/local/sbin/devops-bootstrap.sh`.
+Le bootstrap et le verify exacts du checkout host sont encodés dans cloud-init. Le premier démarrage exécute automatiquement `/usr/local/sbin/devops-bootstrap.sh`.
 
 ## Validation
 
@@ -97,14 +55,14 @@ Dans la VM :
 sudo /usr/local/sbin/devops-verify.sh
 ```
 
-Depuis Fedora, la certification globale :
+Depuis Fedora :
 
 ```bash
 scripts/kvm/runtime_certification.sh
 ```
 
-Le prétest CI `Ubuntu 26.04 real VM pretest` démarre une vraie image Canonical authentifiée, exécute le bootstrap exact du dépôt, vérifie toute la stack, lance un smoke Docker, exécute Node, compile/exécute Java, vérifie Minikube/K9s/yq/glab, redémarre la VM et exige que les outils restent disponibles après reboot.
+Le workflow `Ubuntu 26.04 real VM pretest` authentifie une image Canonical, exécute le bootstrap exact, smoke-test Docker/Node/Java/Kubernetes/cloud/IaC, redémarre la VM et vérifie la persistance. Il tourne aussi chaque semaine afin de détecter une rupture de dépôt, clé, signature ou release externe.
 
 ## Accès aux fichiers
 
-L'accès Fedora → Ubuntu reste SSH/SFTP via Nautilus/GIO. Aucun partage de répertoire hôte VirtioFS n'est ajouté au profil.
+Fedora → Ubuntu reste en SSH/SFTP via Nautilus/GIO. Aucun partage host VirtioFS n'est introduit.

@@ -10,14 +10,14 @@ module_catalog_validate
 
 if [[ "$MODE" == '--dry-run' ]]; then
   DRY_RUN=true; export DRY_RUN
-  ui_banner 'FEDORA WORKSTATION CONTROL' 'FULL DRY-RUN'
+  ui_banner 'FEDORA WORKSTATION CONTROL' 'NON-MUTATING PREFLIGHT / CONVERGENCE PLAN'
   if orchestrator_run_all; then
     apply_gate_write_dryrun_proof
     report="$(orchestrator_report)"
-    ui_summary 'FULL DRY-RUN PASS' 'PREPARE VERIFIED BACKUP, THEN APPLY' "$report" "$LOG_DIR"
+    ui_summary 'PREFLIGHT PASS' 'NO MUTATIONS EXECUTED — PREPARE VERIFIED BACKUP, THEN APPLY' "$report" "$LOG_DIR"
     exit 0
   fi
-  rc=$?; report="$(orchestrator_report)"; ui_summary "FULL DRY-RUN FAIL rc=$rc" 'FIX BEFORE APPLY' "$report" "$LOG_DIR"; exit "$rc"
+  rc=$?; report="$(orchestrator_report)"; ui_summary "PREFLIGHT FAIL rc=$rc" 'FIX BEFORE APPLY' "$report" "$LOG_DIR"; exit "$rc"
 fi
 
 DRY_RUN=false; export DRY_RUN

@@ -20,10 +20,13 @@ jobs:
       - name: Runtime isolation invariants
         run: |
           grep -Fq 'runtime_environment_detect' lib/common.sh
+          grep -Fq 'systemd-detect-virt --container' lib/common.sh
+          grep -Fq 'systemd-detect-virt --vm' lib/common.sh
           grep -Fq 'apply_gate_require_runtime' lib/apply_gate.sh
           grep -Fq 'runtime_is_baremetal' lib/apply_gate.sh
           grep -Fq 'runtime_is_baremetal' lib/baseline.sh
           grep -Fq 'wsl2)' diagnostic.sh
+          grep -Fq 'vm|container)' diagnostic.sh
           grep -Fq 'REAL APPLY is blocked outside bare-metal' diagnostics/wsl2-doctor
       - name: Fedora GNOME architecture invariants
         run: |
@@ -35,6 +38,7 @@ jobs:
       - name: KVM network ownership boundary
         run: |
           grep -F 'KVM_NETWORK_CIDR="192.168.50.0/24"' config/virtualization.conf
+          grep -F 'KVM_IPV6_ENABLED="false"' config/virtualization.conf
           grep -F 'KVM_BLOCK_PHYSICAL_LAN="true"' config/virtualization.conf
           grep -F 'KVM_ALLOW_INBOUND_FORWARDING="false"' config/virtualization.conf
           grep -F 'KVM_NFT_TABLE="fedora_gnome_custom_kvm"' config/virtualization.conf
@@ -42,6 +46,18 @@ jobs:
       - name: Storage and security destructive guards
         run: |
           ! grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0|chmod[[:space:]]+777)' modules scripts install.sh
+      - name: Ubuntu guest authentication and supply chain
+        run: |
+          grep -Fq 'ssh_pwauth: false' scripts/kvm/create_ubuntu_devops_vm.sh
+          ! grep -Fq 'NOPASSWD:ALL' scripts/kvm/create_ubuntu_devops_vm.sh
+          grep -Fq 'awscli-exe-linux-x86_64.zip.sig' guest/ubuntu-devops/bootstrap-devops.sh
+          grep -Fq 'gpgv --keyring' guest/ubuntu-devops/bootstrap-devops.sh
+          grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' guest/ubuntu-devops/bootstrap-devops.sh
+      - name: Immutable installer source
+        run: |
+          grep -Fq 'repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD' installer/generate-fedora44-kickstart.sh
+          grep -Fq 'checkout --detach FETCH_HEAD' installer/generate-fedora44-kickstart.sh
+          ! grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' installer/generate-fedora44-kickstart.sh
       - name: Backup fail-closed invariants
         run: |
           grep -F 'BACKUP_FAIL_CLOSED="true"' config/backup.conf
@@ -57,15 +73,6 @@ jobs:
         run: |
           set -Eeuo pipefail
           scan='grep -RInE --exclude-dir=.git --exclude=non-regression.yml'
-          if $scan 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' .; then
-            echo 'Private key material appears committed.' >&2
-            exit 1
-          fi
-          if $scan 'password[[:space:]]*[:=][[:space:]]*"[^" ]{4,}"' .; then
-            echo 'Potential literal password appears committed.' >&2
-            exit 1
-          fi
-          if $scan 'token[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_-]{20,}"' .; then
-            echo 'Potential literal token appears committed.' >&2
-            exit 1
-          fi
+          if $scan 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' .; then echo 'Private key material appears committed.' >&2; exit 1; fi
+          if $scan 'password[[:space:]]*[:=][[:space:]]*"[^" ]{4,}"' .; then echo 'Potential literal password appears committed.' >&2; exit 1; fi
+          if $scan 'token[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_-]{20,}"' .; then echo 'Potential literal token appears committed.' >&2; exit 1; fi

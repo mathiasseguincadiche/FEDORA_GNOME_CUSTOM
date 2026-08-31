@@ -1,51 +1,33 @@
 # CI et validation bout-en-bout
 
-La CI du projet ne se limite plus à ShellCheck.
+La CI combine contrats statiques, intégration Fedora 44 et vraie VM Ubuntu 26.04. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
 
 ## Tests de contrats
 
-`.github/workflows/tests.yml` valide la structure, les politiques hardware/GNOME, les applications, le multimédia, KVM, le bootstrap Ubuntu, l'accès Nautilus SFTP/SMB, le backup/recovery et le contrat de maturité CI.
+`.github/workflows/tests.yml` valide structure, politiques hardware/GNOME, applications, multimédia, KVM, bootstrap Ubuntu, accès VM, backup/recovery, gouvernance CI, Bash UX, dock et durcissement pré-1.0.
 
 ## Shell quality
 
-Tous les fichiers Bash suivis par Git sont vérifiés par `bash -n` et ShellCheck.
+Tous les scripts suivis sont vérifiés par `bash -n` et ShellCheck. Les exemptions globales ont été réduites : les variables locales inutilisées et les fautes de noms ne sont plus masquées globalement.
 
 ## Fedora 44 package preflight
 
-Le preflight historique vérifie la résolution des manifests, RPM Fusion, les dépôts VS Code/Brave, Flathub, les swaps multimédia et la compatibilité GNOME 50 des extensions.
+Résolution des manifests, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia et extensions GNOME 50. Ce workflow tourne sur push/PR et **chaque dimanche** pour détecter une rupture externe sans commit.
 
 ## Fedora 44 host integration pretest
 
-`.github/workflows/fedora-host-pretest.yml` va plus loin : dans un conteneur **Fedora 44**, il installe réellement l'ensemble des packages Fedora natifs du contrat HOST/GNOME/KVM, les outils backup, réalise les swaps multimédia et valide les dépôts/Flatpaks/extensions.
+Dans un conteneur Fedora 44, installe réellement le contrat HOST/GNOME/KVM/backup, teste Bash UX et le dock via un utilisateur normal, valide RPM Fusion, vendor RPM, Flathub et extensions. Il tourne aussi chaque semaine.
 
 ## Architecture non-regression
 
-`.github/workflows/non-regression.yml` bloque notamment :
-
-- ouverture accidentelle du gate machine réelle ;
-- changement vers X11 comme contrat ;
-- activation de Just Perfection, `force_probe`, VFIO/GPU passthrough ;
-- retour de VirtioFS ;
-- suppression de l'isolation réseau KVM ;
-- flush global nftables/iptables ;
-- commandes de formatage/partitionnement dans les modules ;
-- assouplissement du contrat backup fail-closed ;
-- patterns évidents de secrets versionnés.
+Bloque notamment : ouverture du gate machine réelle, confusion VM/conteneur avec bare-metal, X11 comme contrat, `force_probe`, GPU passthrough, VirtioFS host-share, affaiblissement KVM, flush firewall, formatage dans les modules, SSH guest par mot de passe, installateur AWS non signé, Kickstart non piné et affaiblissement du backup fail-closed.
 
 ## Ubuntu 26.04 real VM pretest
 
-`.github/workflows/vm-pretest.yml` télécharge l'image cloud officielle Ubuntu Server 26.04, vérifie la signature Canonical des `SHA256SUMS`, vérifie le SHA-256 de l'image puis démarre une **vraie VM QEMU** (KVM si disponible, TCG sinon).
+Télécharge l'image Canonical authentifiée, démarre une vraie VM QEMU (KVM si disponible, TCG sinon), exécute le bootstrap exact, vérifie Docker/Node/Java/Kubernetes/cloud/IaC puis redémarre pour tester la persistance. Il tourne aussi chaque semaine afin de surveiller les dépôts externes et signatures.
 
-Dans cette VM, le workflow :
+## Ce qui reste bare-metal
 
-1. crée `mathias` par cloud-init et valide SSH ;
-2. vérifie Ubuntu 26.04, DNS et Internet ;
-3. copie **exactement** `guest/ubuntu-devops/bootstrap-devops.sh` du dépôt ;
-4. exécute le bootstrap réel ;
-5. exécute `verify-devops.sh` ;
-6. lance `docker run --rm hello-world` ;
-7. redémarre la VM ;
-8. vérifie la persistance de Docker, Terraform, kubectl et du service Docker ;
-9. publie report, console, bootstrap et verify logs comme artifacts GitHub Actions.
+Arc B580/`xe`, Level Zero/OpenCL réel, GNOME/Wayland/display 240 Hz, suspend/resume, les deux T705, le firmware/BIOS, Secure Boot et l'isolation LAN KVM nécessitent le matériel final.
 
-Cette CI complète les certifications sur la machine réelle ; elle ne remplace pas les tests Intel Arc, GNOME/Wayland, suspend/resume, `/data`, Secure Boot/TPM Windows ou l'isolation du LAN qui nécessitent le matériel final.
+Voir aussi `docs/GITHUB_GOVERNANCE.md` et `docs/SUPPLY_CHAIN.md`.

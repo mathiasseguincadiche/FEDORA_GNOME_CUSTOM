@@ -9,7 +9,7 @@ run_readonly() {
 run_mutating() {
   local scope="$1"; shift
   if is_true "${DRY_RUN:-true}"; then
-    log_info "$scope" "DRY-RUN MUTATION: $*"
+    log_info "$scope" "PREFLIGHT SKIP MUTATION: $*"
     return 0
   fi
   log_info "$scope" "APPLY: $*"

@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHECKOUT_SHA="11d5960a326750d5838078e36cf38b85af677262"
 UPLOAD_ARTIFACT_SHA="ea165f8d65b6e75b540449e92b4886f43607fa02"
 
-for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/vm-pretest.yml .github/scripts/vm-pretest.sh; do
+for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/fedora-package-preflight.yml .github/workflows/vm-pretest.yml .github/scripts/vm-pretest.sh docs/GITHUB_GOVERNANCE.md; do
   [[ -f "$ROOT/$file" ]] || { echo "missing CI maturity file: $file" >&2; exit 1; }
 done
 
@@ -19,15 +19,16 @@ grep -Fq 'sudo reboot' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq "actions/upload-artifact@$UPLOAD_ARTIFACT_SHA" "$ROOT/.github/workflows/vm-pretest.yml"
 grep -Fq 'Backup fail-closed invariants' "$ROOT/.github/workflows/non-regression.yml"
 
+for workflow in fedora-package-preflight.yml fedora-host-pretest.yml vm-pretest.yml; do
+  grep -Fq 'schedule:' "$ROOT/.github/workflows/$workflow" || { echo "weekly external dependency schedule missing: $workflow" >&2; exit 1; }
+done
+
 while IFS= read -r workflow; do
   grep -Fq 'permissions:' "$workflow" || { echo "missing workflow permissions: $workflow" >&2; exit 1; }
   grep -Fq 'contents: read' "$workflow" || { echo "missing contents: read: $workflow" >&2; exit 1; }
   grep -Fq "actions/checkout@$CHECKOUT_SHA" "$workflow" || { echo "checkout is not pinned to approved SHA: $workflow" >&2; exit 1; }
 done < <(find "$ROOT/.github/workflows" -maxdepth 1 -type f -name '*.yml' -print | sort)
 
-if grep -RInE 'uses:[[:space:]]+[^[:space:]#]+@v[0-9]+' "$ROOT/.github/workflows"; then
-  echo 'mutable major-version GitHub Action reference found' >&2
-  exit 1
-fi
+if grep -RInE 'uses:[[:space:]]+[^[:space:]#]+@v[0-9]+' "$ROOT/.github/workflows"; then echo 'mutable major-version GitHub Action reference found' >&2; exit 1; fi
 
 echo 'CI maturity contract: PASS'

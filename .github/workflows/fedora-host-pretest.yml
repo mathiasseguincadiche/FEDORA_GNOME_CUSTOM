@@ -2,6 +2,8 @@ name: Fedora 44 host integration pretest
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '47 5 * * 0'
   push:
     branches: [main]
     paths:
@@ -109,9 +111,7 @@ jobs:
           runuser -u docktest -- env HOME=/home/docktest dbus-run-session -- "$GITHUB_WORKSPACE/scripts/gnome/configure-dock-favorites.sh" "$favorites"
           actual="$(runuser -u docktest -- env HOME=/home/docktest dbus-run-session -- gsettings get org.gnome.shell favorite-apps)"
           test "$actual" = "$expected"
-          for desktop in org.gnome.Nautilus.desktop org.gnome.Ptyxis.desktop libreoffice-startcenter.desktop org.gnome.Software.desktop; do
-            test -f "/usr/share/applications/$desktop"
-          done
+          for desktop in org.gnome.Nautilus.desktop org.gnome.Ptyxis.desktop libreoffice-startcenter.desktop org.gnome.Software.desktop; do test -f "/usr/share/applications/$desktop"; done
       - name: Enable RPM Fusion
         run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
       - name: Validate multimedia provider convergence
