@@ -163,13 +163,29 @@ Windows 11 ISO officiel Microsoft
 virtio-win.iso provenant de la source Fedora/Red Hat de confiance
 ```
 
-Puis :
+Création minimale :
 
 ```bash
 bash scripts/kvm/create_windows11_vm.sh \
   --windows-iso /data/libvirt/iso/windows-11.iso \
   --virtio-iso /data/libvirt/iso/virtio-win.iso
 ```
+
+Dans ce mode, le script affiche un avertissement : la provenance des deux médias reste la responsabilité explicite de l'opérateur.
+
+Lorsque vous disposez de SHA-256 **obtenus depuis une source de confiance indépendante**, les vérifier avant création du disque :
+
+```bash
+bash scripts/kvm/create_windows11_vm.sh \
+  --windows-iso /data/libvirt/iso/windows-11.iso \
+  --virtio-iso /data/libvirt/iso/virtio-win.iso \
+  --windows-sha256 '<sha256-windows-de-confiance>' \
+  --virtio-sha256 '<sha256-virtio-de-confiance>'
+```
+
+Les deux hashes doivent être fournis ensemble. Le script vérifie les médias avant `qemu-img create`.
+
+Calculer soi-même le SHA-256 d'un fichier déjà téléchargé puis réutiliser ce même hash vérifie seulement la stabilité locale du fichier ; cela **ne prouve pas sa provenance**.
 
 Après l'installation de Windows :
 
