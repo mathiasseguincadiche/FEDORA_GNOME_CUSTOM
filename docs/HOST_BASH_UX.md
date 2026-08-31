@@ -1,6 +1,8 @@
-# Fedora Host Bash UX — 0.9.2
+# Fedora Host Bash UX
 
-La machine hôte Fedora 44 conserve Bash comme shell de travail et Ptyxis comme terminal GNOME. La couche 0.9.2 ajoute une expérience terminal professionnelle sans remplacer Bash par Zsh et sans framework de prompt.
+La machine hôte Fedora 44 conserve Bash comme shell de travail et Ptyxis comme terminal GNOME. La couche gérée fournit une expérience terminal professionnelle sans remplacer Bash par Zsh et sans framework de prompt.
+
+La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Paquets Fedora
 
@@ -26,17 +28,21 @@ L'APPLY installe :
 └── prompt.sh
 ```
 
-Le `.bashrc` existant n'est pas remplacé. Avant la première modification il est sauvegardé dans :
+Le `.bashrc` existant n'est pas remplacé.
+
+Avant la première modification il est sauvegardé dans :
 
 ```text
 ~/.local/state/fedora-gnome-custom/bash/bashrc.pre-fgc
 ```
 
-Puis un unique bloc géré source `init.sh`. Les ré-APPLY remplacent uniquement ce bloc et les fichiers gérés.
+Puis un unique bloc géré source `init.sh`. Les ré-APPLY remplacent uniquement le bloc et les fichiers appartenant au projet.
 
 ## Prompt
 
-Le prompt natif Bash affiche utilisateur/hôte, répertoire courant, branche Git et état tracked modifié, puis le code retour uniquement en cas d'échec. Il n'exécute aucune commande réseau et n'utilise ni Starship ni Oh My Bash.
+Le prompt natif Bash affiche utilisateur/hôte, répertoire courant, branche Git et état tracked modifié, puis le code retour uniquement en cas d'échec.
+
+Il n'exécute aucune commande réseau et n'utilise ni Starship ni Oh My Bash.
 
 Exemple :
 
@@ -59,11 +65,26 @@ mathias@fedora ~/Projets/FEDORA_GNOME_CUSTOM main*
 
 ## Complétions
 
-Le profil charge `bash-completion`. Lorsque `gh`, `glab`, `kubectl`, `helm` ou `minikube` sont présents, leurs complétions générées sont mises en cache sous `~/.cache/fedora-gnome-custom/bash-completions` et ne sont régénérées que lorsque le binaire correspondant change.
+Le profil charge `bash-completion`.
+
+Lorsque `gh`, `glab`, `kubectl`, `helm` ou `minikube` sont présents, leurs complétions générées sont mises en cache sous :
+
+```text
+~/.cache/fedora-gnome-custom/bash-completions
+```
+
+et ne sont régénérées que lorsque le binaire correspondant change.
 
 ## Aliases
 
-Les aliases restent courts et lisibles : Git (`gs`, `ga`, `gc`, `gp`, `gpl`, `gl`), Docker Compose (`dc`), Kubernetes (`k`, `kgp`, `kgs`, `kgn`, `kd`, `kl`) et Terraform (`tf`, `tfi`, `tfp`, `tff`, `tfv`). Aucun alias ne remplace `rm`, `mv`, `cp` ou `sudo`.
+Les aliases restent courts et lisibles :
+
+- Git : `gs`, `ga`, `gc`, `gp`, `gpl`, `gl` ;
+- Docker Compose : `dc` ;
+- Kubernetes : `k`, `kgp`, `kgs`, `kgn`, `kd`, `kl` ;
+- Terraform : `tf`, `tfi`, `tfp`, `tff`, `tfv`.
+
+Aucun alias ne remplace `rm`, `mv`, `cp` ou `sudo`.
 
 ## Certification
 
@@ -71,4 +92,4 @@ Les aliases restent courts et lisibles : Git (`gs`, `ga`, `gc`, `gp`, `gpl`, `gl
 ./diagnostics/shell-doctor
 ```
 
-Le doctor vérifie paquets, fichiers gérés, unicité du bloc `.bashrc`, sauvegarde initiale, syntaxe Bash et smoke test interactif. Il fait aussi partie de `workstation-doctor` et de la certification finale bare-metal.
+Le doctor vérifie paquets, fichiers gérés, unicité du bloc `.bashrc`, sauvegarde initiale, syntaxe Bash et smoke test interactif. Il fait aussi partie de la certification finale bare-metal.
