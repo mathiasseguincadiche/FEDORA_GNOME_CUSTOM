@@ -8,10 +8,12 @@ emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1))
 if rpm -q dnf5-plugin-automatic >/dev/null 2>&1; then emit OK DNF5 'automatic plugin installed'; else emit KO DNF5 'dnf5-plugin-automatic missing'; fi
 conf=/etc/dnf/automatic.conf
 if [[ -r "$conf" ]]; then
-  grep -Eq '^[[:space:]]*download_updates[[:space:]]*=[[:space:]]*true[[:space:]]*$' "$conf" && emit OK Updates 'automatic download enabled' || emit KO Updates 'download_updates must be true'
-  grep -Eq '^[[:space:]]*apply_updates[[:space:]]*=[[:space:]]*false[[:space:]]*$' "$conf" && emit OK Updates 'unattended install disabled' || emit KO Updates 'apply_updates must be false'
-  grep -Eq '^[[:space:]]*reboot[[:space:]]*=[[:space:]]*never[[:space:]]*$' "$conf" && emit OK Reboot 'automatic reboot disabled' || emit KO Reboot 'reboot must be never'
-else emit KO Updates '/etc/dnf/automatic.conf missing'; fi
+  if grep -Eq '^[[:space:]]*download_updates[[:space:]]*=[[:space:]]*true[[:space:]]*$' "$conf"; then emit OK Updates 'automatic download enabled'; else emit KO Updates 'download_updates must be true'; fi
+  if grep -Eq '^[[:space:]]*apply_updates[[:space:]]*=[[:space:]]*false[[:space:]]*$' "$conf"; then emit OK Updates 'unattended install disabled'; else emit KO Updates 'apply_updates must be false'; fi
+  if grep -Eq '^[[:space:]]*reboot[[:space:]]*=[[:space:]]*never[[:space:]]*$' "$conf"; then emit OK Reboot 'automatic reboot disabled'; else emit KO Reboot 'reboot must be never'; fi
+else
+  emit KO Updates '/etc/dnf/automatic.conf missing'
+fi
 if systemctl is-enabled --quiet dnf5-automatic.timer; then emit OK 'DNF timer' enabled; else emit KO 'DNF timer' disabled; fi
 if [[ "${LIFECYCLE_FLATPAK_UPDATE_POLICY:-manual}" == manual ]]; then emit OK Flatpak 'application updates are explicit/manual; project owns no unattended updater'; else emit KO Flatpak "unsupported policy=${LIFECYCLE_FLATPAK_UPDATE_POLICY:-unset}"; fi
 if systemctl list-unit-files 'fedora-gnome-custom-flatpak-update.*' --no-legend 2>/dev/null | grep -q .; then emit KO Flatpak 'unexpected project-owned unattended Flatpak updater exists'; fi
