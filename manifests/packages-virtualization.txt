@@ -20,6 +20,7 @@ virt-v2v
 cloud-utils-cloud-localds
 openssl
 xorriso
+gnupg2
 
 # Firmware, TPM and guest image tooling
 edk2-ovmf
