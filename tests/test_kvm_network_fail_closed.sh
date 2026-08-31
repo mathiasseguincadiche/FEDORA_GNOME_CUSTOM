@@ -29,8 +29,8 @@ grep -Fq 'ExecReload=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard re
 grep -Fq 'Restart=on-failure' "$unit"
 
 # NetworkManager must synchronously install emergency mode before reload.
-grep -Fq '"$helper" emergency' "$dispatcher"
-grep -Fq 'systemctl reload-or-restart "$unit"' "$dispatcher"
+grep -Fq "\"\$helper\" emergency" "$dispatcher"
+grep -Fq "systemctl reload-or-restart \"\$unit\"" "$dispatcher"
 if grep -Fq -- '--no-block' "$dispatcher"; then
   echo 'dispatcher must not reload KVM guard asynchronously' >&2
   exit 1
@@ -41,7 +41,7 @@ if grep -Eq 'reload-or-restart.*\|\|[[:space:]]*true' "$dispatcher"; then
 fi
 
 # Runtime certification must prove normal state and rule coverage after reload.
-grep -Fq 'systemctl reload "$guard_unit"' "$runtime"
+grep -Fq "systemctl reload \"\$guard_unit\"" "$runtime"
 grep -Fq 'guard_mode=normal' "$runtime"
 grep -Fq 'KVM LAN CIDR coverage' "$runtime"
 grep -Fq 'normal block VM to physical LAN' "$runtime"
