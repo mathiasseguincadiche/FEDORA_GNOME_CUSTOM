@@ -1,6 +1,8 @@
-# Curated GNOME Dock — 0.9.3
+# Curated GNOME Dock — contrat de référence
 
-La Golden Workstation impose désormais une liste de favoris GNOME Shell déterministe afin qu'une installation fraîche présente immédiatement le même environnement de travail.
+La Golden Workstation impose une liste de favoris GNOME Shell déterministe afin qu'une installation fraîche présente immédiatement le même environnement de travail.
+
+La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Ordre certifié
 
@@ -25,11 +27,11 @@ Après l'installation des applications professionnelles, le module `applications
 scripts/gnome/configure-dock-favorites.sh
 ```
 
-Le script écrit `org.gnome.shell favorite-apps`, refuse les IDs invalides ou dupliqués et relit immédiatement la valeur pour confirmer l'ordre exact.
+Le script écrit `org.gnome.shell favorite-apps`, refuse les IDs invalides ou dupliqués et relit immédiatement la valeur afin de confirmer l'ordre exact.
 
 ## Validation runtime
 
-Le postcheck du module refuse la validation si :
+Le postcheck refuse la validation si :
 
 - l'ordre `favorite-apps` diffère de la politique ;
 - un lanceur `.desktop` attendu n'est pas exporté ;
@@ -46,7 +48,8 @@ Le host integration pretest :
 - installe le socle Fedora contenant Nautilus, Ptyxis, LibreOffice et GNOME Software ;
 - crée un utilisateur de test ;
 - exécute le script réel dans une session D-Bus ;
-- relit `org.gnome.shell favorite-apps` et exige l'ordre exact ;
-- vérifie les lanceurs Fedora natifs disponibles dans `/usr/share/applications`.
+- relit `org.gnome.shell favorite-apps` ;
+- exige l'ordre exact ;
+- vérifie les lanceurs natifs disponibles.
 
-Les applications vendor/Flatpak restent par ailleurs validées par leurs contrôles de dépôts et IDs existants. Le postcheck bare-metal donne la preuve finale que leurs lanceurs sont réellement exportés après APPLY.
+Les applications vendor/Flatpak sont par ailleurs validées par leurs contrôles de dépôts et IDs. Le postcheck bare-metal donne la preuve finale que leurs lanceurs sont réellement exportés après APPLY.
