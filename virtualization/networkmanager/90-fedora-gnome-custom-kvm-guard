@@ -1,9 +1,30 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+helper="/usr/local/libexec/fedora-gnome-custom/kvm-network-guard"
+unit="fedora-gnome-custom-kvm-guard.service"
 action="${2:-}"
+
+log_failure() {
+  logger -t fedora-gnome-custom-kvm-guard -- "$*" 2>/dev/null || printf 'ERROR: %s\n' "$*" >&2
+}
+
 case "$action" in
   up|dhcp4-change|connectivity-change|reapply)
-    systemctl --no-block reload-or-restart fedora-gnome-custom-kvm-guard.service >/dev/null 2>&1 || true
+    # Install the restrictive forwarding state synchronously before asking
+    # systemd to rediscover the current uplink. If the reconciliation fails,
+    # the emergency table intentionally remains active.
+    if [[ ! -x "$helper" ]]; then
+      log_failure "NetworkManager event $action: KVM guard helper is missing"
+      exit 1
+    fi
+    if ! "$helper" emergency; then
+      log_failure "NetworkManager event $action: unable to install emergency KVM isolation"
+      exit 1
+    fi
+    if ! systemctl reload-or-restart "$unit"; then
+      log_failure "NetworkManager event $action: KVM guard reconciliation failed; emergency isolation remains active"
+      exit 1
+    fi
     ;;
 esac
