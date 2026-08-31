@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.9.2** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
+**Golden Workstation 0.9.3** pour Fedora Linux 44 Workstation + GNOME 50, conçue spécifiquement pour la MSI MAG B850M Mortar WiFi, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580 `xe`, deux Crucial T705 et l'écran ASUS 2560×1440/240 Hz.
 
 ## Contrat Golden Workstation
 
@@ -15,7 +15,7 @@ DRY-RUN + BACKUP RESTIC
 APPLY
   kernel stable + firmware/microcode
   GNOME 50 / Wayland / codecs / apps
-  dock + AppIndicator + contrôles fenêtres
+  curated dock + AppIndicator + contrôles fenêtres
   secrets + portals + print/scan + VPN + power
   Bash UX host : fzf / zoxide / direnv / completions
   Arc Level Zero/OpenCL
@@ -27,6 +27,7 @@ REBOOT
 CERTIFICATION BARE-METAL
   hardware + display actif 1440p/~240 Hz
   compute Arc + desktop/portals/lifecycle + Bash UX
+  applications + curated dock exact
   Nautilus cold-start
   5 cycles veille/réveil PHYSIQUES UNIQUES
   matrice software known-good
@@ -60,7 +61,7 @@ La matrice known-good enregistre BIOS/kernel/firmware/Mesa/Mutter/GNOME/Nautilus
 
 ## GNOME : ergonomie fonctionnelle, pas un clone d'Ubuntu
 
-Fedora GNOME reste proche de l'upstream Adwaita/libadwaita. La 0.9.0 ajoute uniquement les fonctions quotidiennes utiles :
+Fedora GNOME reste proche de l'upstream Adwaita/libadwaita. La configuration ajoute uniquement les fonctions quotidiennes utiles :
 
 - Dash to Dock ;
 - AppIndicator/KStatusNotifier pour les applications professionnelles ;
@@ -74,6 +75,23 @@ La disposition des boutons est vérifiée via `org.gnome.desktop.wm.preferences 
 ```text
 :minimize,maximize,close
 ```
+
+## Curated GNOME Dock 0.9.3
+
+Une installation fraîche applique désormais une liste de favoris GNOME Shell déterministe, dans cet ordre exact :
+
+1. Nautilus ;
+2. Brave ;
+3. Ptyxis ;
+4. Visual Studio Code ;
+5. Bitwarden ;
+6. Slack ;
+7. LibreOffice ;
+8. GNOME Software.
+
+La politique écrit `org.gnome.shell favorite-apps` après l'installation des applications professionnelles. `applications-doctor` et la certification bare-metal exigent ensuite l'ordre exact ainsi que la présence réelle de chacun des huit lanceurs `.desktop`. Remmina reste installé mais n'est pas épinglé.
+
+Voir `docs/DOCK_FAVORITES.md`.
 
 ## Desktop & Lifecycle Completion 0.9.0
 
@@ -243,10 +261,10 @@ Puis :
 ./diagnostics/final-certification certify
 ```
 
-La certification exige hardware/firmware/GPU/display, GNOME, desktop integration, portals, Arc compute, lifecycle, **Bash UX**, timer de backup quotidien, cold-start et cinq cycles physiques uniques.
+La certification exige hardware/firmware/GPU/display, GNOME, desktop integration, portals, Arc compute, lifecycle, **Bash UX**, **applications + dock épinglé**, timer de backup quotidien, cold-start et cinq cycles physiques uniques.
 
 ## Version
 
-`0.9.2` — **Fedora Host Bash UX** : Ptyxis/Bash dispose désormais d'un profil professionnel, rapide, local-only, idempotent et certifié sur l'hôte Fedora.
+`0.9.3` — **Curated GNOME Dock** : les huit applications de travail principales sont maintenant épinglées dans un ordre déterministe, appliqué et certifié.
 
-Voir `docs/HOST_BASH_UX.md`, `docs/UBUNTU_DEVOPS_READY.md`, `docs/DESKTOP_LIFECYCLE.md`, `docs/GNOME_INTEGRATION.md`, `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
+Voir `docs/DOCK_FAVORITES.md`, `docs/HOST_BASH_UX.md`, `docs/UBUNTU_DEVOPS_READY.md`, `docs/DESKTOP_LIFECYCLE.md`, `docs/GNOME_INTEGRATION.md`, `docs/GOLDEN_WORKSTATION.md`, `docs/HARDWARE_KVM_COMPLETION.md`, `docs/INSTALLATION_GUIDE.md`, `docs/HARDWARE_BASELINE_CERTIFICATION.md`, `docs/CI_VALIDATION.md` et `docs/BACKUP_RESTORE.md`.
