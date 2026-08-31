@@ -124,11 +124,10 @@ check_guard() {
 }
 
 emergency_guard() {
-  local tmp
+  local tmp rc=0
   command -v nft >/dev/null 2>&1 || return 1
 
   tmp="$(mktemp)" || return 1
-  trap 'rm -f "$tmp"' RETURN
   append_delete_if_present "$tmp"
   {
     printf 'table inet %s {\n' "$TABLE_NAME"
@@ -140,11 +139,13 @@ emergency_guard() {
     printf '}\n'
   } >>"$tmp"
 
-  apply_table_file "$tmp"
+  apply_table_file "$tmp" || rc=$?
+  rm -f "$tmp"
+  return "$rc"
 }
 
 apply_normal_guard() {
-  local routes default_dev tmp first cidr
+  local routes default_dev tmp first cidr rc=0
   local -a local_cidrs=()
 
   command -v nft >/dev/null 2>&1 || return 1
@@ -164,7 +165,6 @@ apply_normal_guard() {
   fi
 
   tmp="$(mktemp)" || return 1
-  trap 'rm -f "$tmp"' RETURN
   append_delete_if_present "$tmp"
   {
     printf 'table inet %s {\n' "$TABLE_NAME"
@@ -189,7 +189,9 @@ apply_normal_guard() {
     printf '}\n'
   } >>"$tmp"
 
-  apply_table_file "$tmp"
+  apply_table_file "$tmp" || rc=$?
+  rm -f "$tmp"
+  return "$rc"
 }
 
 reconcile_guard() {
