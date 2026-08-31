@@ -11,12 +11,14 @@ ubuntu="${UBUNTU_SERVER_NAME:-ubuntu-devops}"
 windows="${WINDOWS11_NAME:-windows-11}"
 network="${KVM_NETWORK_NAME:-devops-nat}"
 username="${UBUNTU_SERVER_USERNAME:-mathias}"
+guard_unit="fedora-gnome-custom-kvm-guard.service"
+guard_helper="/usr/local/libexec/fedora-gnome-custom/kvm-network-guard"
 ok=0
 warn=0
 ko=0
 
 record() {
-  printf '%-4s %-30s %s\n' "$1" "$2" "$3"
+  printf '%-4s %-32s %s\n' "$1" "$2" "$3"
   case "$1" in
     OK) ((ok+=1)) ;;
     WARN) ((warn+=1)) ;;
@@ -63,11 +65,54 @@ if domain_xml_has "$windows" "network=.${network}.|source network=.${network}." 
 if domain_xml_has "$windows" "target[^>]+bus=.virtio."; then record OK 'Windows VirtIO disk' configured; else record KO 'Windows VirtIO disk' mismatch; fi
 
 if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
-  nft_guard="$(sudo nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" 2>/dev/null || true)"
-  if grep -Fq 'blocked_physical_ipv4' <<<"$nft_guard" && grep -Fq "${KVM_BRIDGE_NAME:-virbr50}" <<<"$nft_guard"; then
-    record OK 'KVM LAN guard' 'nft forward guard loaded'
+  if sudo systemctl is-active --quiet "$guard_unit"; then
+    record OK 'KVM guard service' active
   else
-    record KO 'KVM LAN guard' 'nft guard missing'
+    record KO 'KVM guard service' inactive
+  fi
+
+  if [[ -x "$guard_helper" ]]; then
+    if sudo systemctl reload "$guard_unit" >/dev/null 2>&1; then
+      record OK 'KVM guard reconcile' 'reload completed through emergency state'
+    else
+      record KO 'KVM guard reconcile' 'reload failed; inspect systemctl/journalctl before continuing'
+    fi
+
+    guard_check="$(sudo "$guard_helper" check 2>/dev/null || true)"
+    if grep -Fq 'guard_mode=normal' <<<"$guard_check"; then
+      record OK 'KVM guard mode' normal
+    else
+      record KO 'KVM guard mode' "$(grep '^guard_mode=' <<<"$guard_check" | cut -d= -f2- || printf unknown)"
+    fi
+  else
+    guard_check=""
+    record KO 'KVM guard helper' missing
+  fi
+
+  nft_guard="$(sudo nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" 2>/dev/null || true)"
+  if grep -Fq 'blocked_physical_ipv4' <<<"$nft_guard" \
+    && grep -Fq 'normal block VM to physical LAN' <<<"$nft_guard" \
+    && grep -Fq 'normal block physical LAN to VM' <<<"$nft_guard" \
+    && grep -Fq "${KVM_BRIDGE_NAME:-virbr50}" <<<"$nft_guard"; then
+    record OK 'KVM LAN guard rules' 'bidirectional forwarding isolation loaded'
+  else
+    record KO 'KVM LAN guard rules' 'normal nft isolation rules missing'
+  fi
+
+  physical_networks="$(awk -F= '$1=="physical_networks" {print $2}' <<<"$guard_check")"
+  if [[ -n "$physical_networks" && "$physical_networks" != none-connected ]]; then
+    coverage_ok=true
+    IFS=',' read -r -a physical_cidrs <<<"$physical_networks"
+    for cidr in "${physical_cidrs[@]}"; do
+      grep -Fq "$cidr" <<<"$nft_guard" || coverage_ok=false
+    done
+    if [[ "$coverage_ok" == true ]]; then
+      record OK 'KVM LAN CIDR coverage' "$physical_networks"
+    else
+      record KO 'KVM LAN CIDR coverage' "guard does not contain every discovered uplink CIDR: $physical_networks"
+    fi
+  else
+    record WARN 'KVM LAN CIDR coverage' 'no connected physical uplink CIDR to prove'
   fi
 fi
 
@@ -88,10 +133,14 @@ if [[ -n "$ubuntu_ip" ]] && ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" true
   if remote_ping "$kvm_gateway"; then record OK 'Ubuntu → KVM gateway' reachable; else record KO 'Ubuntu → KVM gateway' failed; fi
 
   if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true && -n "$physical_gateway" ]]; then
-    if remote_ping "$physical_gateway" >/dev/null 2>&1; then
-      record KO 'Ubuntu → physical LAN' "physical gateway $physical_gateway unexpectedly reachable"
+    if ping -c 1 -W 2 "$physical_gateway" >/dev/null 2>&1; then
+      if remote_ping "$physical_gateway" >/dev/null 2>&1; then
+        record KO 'Ubuntu → physical LAN' "live gateway $physical_gateway unexpectedly reachable"
+      else
+        record OK 'Ubuntu → physical LAN' "live host-reachable gateway blocked ($physical_gateway)"
+      fi
     else
-      record OK 'Ubuntu → physical LAN' "physical gateway blocked ($physical_gateway)"
+      record WARN 'Ubuntu → physical LAN' "host cannot prove gateway $physical_gateway is ping-responsive; nft rules were validated statically"
     fi
   elif [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
     record WARN 'Ubuntu → physical LAN' 'no physical default gateway available for live proof'
@@ -102,6 +151,7 @@ fi
 
 if "$REPO_ROOT/diagnostics/kvm-io-doctor" --quiet; then record OK 'T705 KVM I/O profile' benchmarked; else record WARN 'T705 KVM I/O profile' 'default profile in use'; fi
 record WARN 'Windows guest integration' 'inside Windows, Configure-GuestIntegration.ps1 must report healthy VirtIO devices and QEMU-GA'
+record WARN 'LAN → VM live proof' 'run the documented second-host test when certifying a new physical LAN; host-side rules are already checked here'
 
 printf '\nRuntime certification summary: OK=%d WARN=%d KO=%d\n' "$ok" "$warn" "$ko"
 ((ko == 0))
