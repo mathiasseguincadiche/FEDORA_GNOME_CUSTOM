@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# REPO_ROOT is intentionally injected by the repository entrypoints before this library is sourced.
+# shellcheck disable=SC2153
 
 config_load() {
   local file local_override="$REPO_ROOT/config/local.conf"
