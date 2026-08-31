@@ -13,15 +13,15 @@ for token in glab minikube k9s kubectx kubens yq node npm corepack java javac mv
   grep -Fq "$token" "$VERIFY" || { echo "missing Ubuntu ready-to-work verification: $token" >&2; exit 1; }
 done
 
-grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' "$BOOT"
-grep -Fq 'KIND_VERSION="${KIND_VERSION:-v0.33.0}"' "$BOOT"
-grep -Fq 'MINIKUBE_VERSION="${MINIKUBE_VERSION:-v1.38.1}"' "$BOOT"
-grep -Fq 'AWS_CLI_PGP_FINGERPRINT="${AWS_CLI_PGP_FINGERPRINT:-FB5DB77FD5C118B80511ADA8A6310ACC4672475C}"' "$BOOT"
+grep -Fq "KUBERNETES_MINOR=\"\${KUBERNETES_MINOR:-v1.37}\"" "$BOOT"
+grep -Fq "KIND_VERSION=\"\${KIND_VERSION:-v0.33.0}\"" "$BOOT"
+grep -Fq "MINIKUBE_VERSION=\"\${MINIKUBE_VERSION:-v1.38.1}\"" "$BOOT"
+grep -Fq "AWS_CLI_PGP_FINGERPRINT=\"\${AWS_CLI_PGP_FINGERPRINT:-FB5DB77FD5C118B80511ADA8A6310ACC4672475C}\"" "$BOOT"
 grep -Fq 'awscli-exe-linux-x86_64.zip.sig' "$BOOT"
-grep -Fq 'gpgv --keyring "$aws_keyring" "$aws_sig" "$aws_zip"' "$BOOT"
-grep -Fq 'YQ_VERSION="${YQ_VERSION:-v4.53.3}"' "$BOOT"
+grep -Fq "gpgv --keyring \"\$aws_keyring\" \"\$aws_sig\" \"\$aws_zip\"" "$BOOT"
+grep -Fq "YQ_VERSION=\"\${YQ_VERSION:-v4.53.3}\"" "$BOOT"
 grep -Fq 'fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4' "$BOOT"
-grep -Fq 'K9S_VERSION="${K9S_VERSION:-v0.51.0}"' "$BOOT"
+grep -Fq "K9S_VERSION=\"\${K9S_VERSION:-v0.51.0}\"" "$BOOT"
 grep -Fq 'c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7' "$BOOT"
 grep -Fq 'minikube-linux-amd64.sha256' "$BOOT"
 grep -Fq 'sha256sum -c' "$BOOT"
@@ -32,14 +32,26 @@ grep -Fq 'for candidate in noble jammy' "$BOOT"
 grep -Fq 'minikube config set driver docker' "$BOOT"
 grep -Fq 'Node.js 22+ required' "$BOOT"
 grep -Fq 'OpenJDK 21 required' "$BOOT"
-! grep -Fq 'releases/latest/download/minikube' "$BOOT"
-! grep -Fq 'api.github.com/repos/kubernetes-sigs/kind/releases/latest' "$BOOT"
+if grep -Fq 'releases/latest/download/minikube' "$BOOT"; then
+  echo 'Minikube must remain pinned; latest download URL found' >&2
+  exit 1
+fi
+if grep -Fq 'api.github.com/repos/kubernetes-sigs/kind/releases/latest' "$BOOT"; then
+  echo 'kind must remain pinned; latest release API found' >&2
+  exit 1
+fi
 
 grep -Fq 'runtime-prompt' "$ROOT/config/vm-profiles.conf"
 grep -Fq 'openssl passwd -6' "$CREATE"
 grep -Fq 'ssh_pwauth: false' "$CREATE"
-! grep -Fq 'ssh_pwauth: true' "$CREATE"
-! grep -Fq 'NOPASSWD:ALL' "$CREATE"
+if grep -Fq 'ssh_pwauth: true' "$CREATE"; then
+  echo 'SSH password authentication must remain disabled' >&2
+  exit 1
+fi
+if grep -Fq 'NOPASSWD:ALL' "$CREATE"; then
+  echo 'Unrestricted passwordless sudo must not be provisioned' >&2
+  exit 1
+fi
 grep -Fq 'encoding: b64' "$CREATE"
 grep -Fq '/usr/local/sbin/devops-bootstrap.sh' "$CREATE"
 grep -Fq 'cloud-localds' "$CREATE"
