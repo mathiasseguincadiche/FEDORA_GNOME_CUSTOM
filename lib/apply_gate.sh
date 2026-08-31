@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# REPO_ROOT is intentionally injected by the repository entrypoints before this library is sourced.
+# shellcheck disable=SC2153
 
 apply_gate_dryrun_proof_path() { printf '%s/dryrun-%s.ok' "$STATE_ROOT" "$(repo_commit)"; }
 
