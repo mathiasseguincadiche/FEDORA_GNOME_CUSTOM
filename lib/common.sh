@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# REPO_ROOT is intentionally injected by the repository entrypoints before this library is sourced.
+# shellcheck disable=SC2153
 
 is_true() {
   case "${1,,}" in true|1|yes|on) return 0 ;; *) return 1 ;; esac
