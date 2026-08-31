@@ -2,26 +2,24 @@
 
 ## Objectif
 
-Le bureau doit rester visuellement et fonctionnellement cohérent avec GNOME 50. Les applications graphiques **du bureau général** gérées automatiquement par le projet sont donc limitées à une sélection dont la pile Fedora 44 repose sur **GTK4** et **libadwaita**.
+Le bureau doit rester visuellement et fonctionnellement cohérent avec GNOME 50. Les applications graphiques **du bureau général** gérées automatiquement par le projet sont donc limitées à une sélection dont la pile Fedora 44 repose sur GTK4/libadwaita lorsqu'une solution GNOME de qualité existe.
 
 Les outils CLI, services système et outils DevOps sans interface graphique ne sont pas concernés par cette règle.
 
 ## Exception virtualisation
 
-La virtualisation constitue une exception explicite et volontaire à la politique GTK4/libadwaita. L'objectif prioritaire de ce scope est de disposer d'un environnement KVM/QEMU/libvirt **complet, fiable et administrable graphiquement et en ligne de commande**.
-
-Les outils suivants restent donc autorisés et gérés par le projet :
+La virtualisation constitue une exception volontaire à la politique GTK4/libadwaita. L'objectif prioritaire est de disposer d'un environnement KVM/QEMU/libvirt complet, fiable et administrable graphiquement et en ligne de commande.
 
 | Usage | Application | Paquet Fedora |
 |---|---|---|
 | Gestion complète des VM | Virtual Machine Manager | `virt-manager` |
 | Console/affichage des VM | Virtual Machine Viewer | `virt-viewer` |
 
-Leur présence ne constitue pas une violation du contrat GTK4 desktop. Cette exception est limitée au scope `KVM` / virtualisation.
+Cette exception est limitée au scope KVM/virtualisation.
 
-## Exception applications professionnelles
+## Applications professionnelles
 
-Les applications professionnelles indispensables constituent une seconde exception explicite. Elles ne remplacent pas les applications GNOME natives : elles complètent la workstation pour les usages DevOps/Ops, bureautique, communication, sécurité et transfert de fichiers.
+Les applications professionnelles indispensables constituent une seconde exception explicite. Elles complètent les applications GNOME natives pour les usages DevOps/Ops, bureautique, communication, sécurité, transfert de fichiers et documentation technique.
 
 | Usage | Application | Source gérée |
 |---|---|---|
@@ -34,9 +32,10 @@ Les applications professionnelles indispensables constituent une seconde excepti
 | Suite bureautique générale | LibreOffice + langue française | Fedora (`libreoffice`, `libreoffice-langpack-fr`) |
 | FTP / FTPS / SFTP | FileZilla | Fedora (`filezilla`) |
 | Markdown | MarkText | Flathub (`com.github.marktext.marktext`) |
+| Diagrammes / architecture | draw.io Desktop | Flathub (`com.jgraph.drawio.desktop`) |
 | Éditeur texte natif | GNOME Text Editor | Fedora (`gnome-text-editor`) |
 
-La présence de ces outils ne doit jamais servir de prétexte pour ajouter arbitrairement d'autres applications non-GTK4. Toute nouvelle exception professionnelle doit être explicite, documentée et testée.
+La présence de ces outils ne doit pas servir de prétexte pour ajouter arbitrairement d'autres applications non-GTK4. Toute nouvelle exception professionnelle doit être explicite, documentée, avoir une provenance connue et être testée.
 
 ## Terminal
 
@@ -44,7 +43,7 @@ La présence de ces outils ne doit jamais servir de prétexte pour ajouter arbit
 |---|---|---|
 | Terminal principal | Ptyxis | `ptyxis` |
 
-Ptyxis est le terminal de référence du projet. Il reste distinct de VS Code : l'administration système et la virtualisation doivent pouvoir être réalisées entièrement depuis le shell sans dépendre d'un IDE.
+Ptyxis est le terminal de référence. L'administration système et la virtualisation doivent rester possibles depuis le shell sans dépendre de VS Code.
 
 ## Sélection desktop GNOME
 
@@ -70,14 +69,15 @@ Ptyxis est le terminal de référence du projet. Il reste distinct de VS Code : 
 
 ## Sources de vérité
 
-- `manifests/packages-applications-gtk4.txt` : applications GNOME GTK4/libadwaita.
-- `manifests/packages-applications-professional-fedora.txt` : applications professionnelles Fedora.
-- `manifests/packages-applications-professional-vendor.txt` : RPM professionnels provenant de dépôts éditeurs signés.
-- `manifests/flatpaks-applications-professional.txt` : applications professionnelles Flathub.
-- `config/repos/vscode.repo` et `config/repos/brave-browser.repo` : dépôts éditeurs versionnés par le projet.
+- `manifests/packages-applications-gtk4.txt` — applications GNOME GTK4/libadwaita ;
+- `manifests/packages-applications-professional-fedora.txt` — applications professionnelles Fedora ;
+- `manifests/packages-applications-professional-vendor.txt` — RPM provenant de dépôts éditeurs signés ;
+- `manifests/flatpaks-applications-professional.txt` — applications professionnelles Flatpak ;
+- `manifests/application-provenance.tsv` — classe de confiance/provenance ;
+- `config/repos/vscode.repo` et `config/repos/brave-browser.repo` — dépôts éditeurs versionnés.
 
 ## Contrat de conformité
 
-Le CI refuse une application ajoutée au manifeste desktop GNOME si son paquet Fedora 44 ne déclare pas GTK4/libadwaita. Les applications professionnelles suivent un contrat distinct : source explicite, paquet ou App ID exact, vérification de disponibilité et absence d'installateur non maîtrisé de type `curl | bash`.
+La CI refuse une application ajoutée au manifeste desktop GNOME si son paquet Fedora 44 ne respecte pas le contrat GTK4/libadwaita attendu. Les applications professionnelles suivent un contrat distinct : source explicite, paquet/App ID exact, disponibilité vérifiée et absence d'installateur non maîtrisé de type `curl | bash`.
 
-La virtualisation suit en parallèle son propre contrat de complétude et de stabilité défini dans `VIRTUALIZATION.md`.
+La virtualisation suit son propre contrat de complétude et de stabilité dans [`VIRTUALIZATION.md`](VIRTUALIZATION.md).
