@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# This file intentionally exports constants to scripts that source the bootstrap.
+# shellcheck disable=SC2034
 
 readonly EXIT_OK=0
 readonly EXIT_USAGE=2
