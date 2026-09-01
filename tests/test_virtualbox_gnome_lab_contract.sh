@@ -11,7 +11,7 @@ bash -n "$DOCTOR"
 
 grep -Fq 'runtime_is_virtualbox()' "$ROOT/lib/common.sh"
 grep -Fq '== oracle' "$ROOT/lib/common.sh"
-grep -Eq 'VirtualBox\|Oracle\|innotek' "$ROOT/lib/common.sh"
+grep -Fq "grep -Eqi 'VirtualBox|Oracle|innotek'" "$ROOT/lib/common.sh"
 grep -Fq 'runtime_is_virtualbox' "$LAB"
 grep -Fq 'Fedora Linux 44' "$LAB"
 grep -Fq 'GNOME Shell 50' "$LAB"
@@ -45,7 +45,7 @@ grep -Fq 'Arc B580 / xe' "$DOCTOR"
 grep -Fq 'Physical T705' "$DOCTOR"
 grep -Fq 'KVM host certification' "$DOCTOR"
 
-for doc in docs/VIRTUALBOX_GNOME_LAB.md docs/GNOME_INTEGRATION.md docs/GNOME_EXTENSIONS.md docs/GNOME_PROFILE.md docs/CI_VALIDATION.md; do
+for doc in README.md CHANGELOG.md docs/VIRTUALBOX_GNOME_LAB.md docs/GNOME_INTEGRATION.md docs/GNOME_EXTENSIONS.md docs/GNOME_PROFILE.md docs/CI_VALIDATION.md; do
   [[ -f "$ROOT/$doc" ]] || { echo "missing LAB documentation: $doc" >&2; exit 1; }
 done
 
@@ -54,8 +54,8 @@ grep -Fq 'review `70326`' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 
-for doc in docs/GNOME_INTEGRATION.md docs/GNOME_EXTENSIONS.md docs/GNOME_PROFILE.md docs/CI_VALIDATION.md; do
-  if grep -Eqi 'DING[^\n]*(RPM Fedora|paquet Fedora|gnome-shell-extension-desktop-icons-ng)|RPM DING|paquet Fedora DING' "$ROOT/$doc"; then
+for doc in README.md CHANGELOG.md docs/GNOME_INTEGRATION.md docs/GNOME_EXTENSIONS.md docs/GNOME_PROFILE.md docs/CI_VALIDATION.md; do
+  if grep -Eqi 'DING.*(RPM Fedora|paquet Fedora|gnome-shell-extension-desktop-icons-ng)|RPM DING|paquet Fedora DING' "$ROOT/$doc"; then
     echo "stale Fedora RPM DING claim remains in $doc" >&2
     exit 1
   fi
