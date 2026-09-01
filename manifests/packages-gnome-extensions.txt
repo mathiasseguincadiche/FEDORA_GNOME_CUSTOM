@@ -1,5 +1,5 @@
-# Selected GNOME Shell extensions for Fedora 44 / GNOME 50
+# Selected GNOME Shell extensions available from Fedora 44 repositories.
+# DING and Show Desktop Plus are installed from exact GNOME-reviewed artifacts.
 gnome-shell-extension-dash-to-dock
 gnome-shell-extension-blur-my-shell
 gnome-shell-extension-appindicator
-gnome-shell-extension-desktop-icons-ng
