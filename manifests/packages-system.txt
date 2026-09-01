@@ -4,6 +4,7 @@ curl
 ca-certificates
 git
 jq
+unzip
 pciutils
 usbutils
 util-linux

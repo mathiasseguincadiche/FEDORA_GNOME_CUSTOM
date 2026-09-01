@@ -20,13 +20,20 @@ La Golden Workstation impose les trois contrôles de fenêtre à droite :
 :minimize,maximize,close
 ```
 
-Extensions gérées :
+Extensions fonctionnelles gérées :
 
 - **Dash to Dock** — activé depuis le RPM Fedora ;
 - **AppIndicator** — activé depuis le RPM Fedora pour les logiciels utilisant AppIndicator/KStatusNotifierItem ;
+- **Desktop Icons NG (DING)** — activé depuis le RPM Fedora ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
+- **Show Desktop Plus** — installé depuis l'artefact GNOME Extensions review `70326`/version `8`, avec bouton `left-end`, clic gauche `toggle-desktop` et raccourci `Super+D`.
+
+Extensions/outils complémentaires :
+
 - **Blur My Shell** — désactivé dans l'état Golden afin de réduire les variables compositor à 240 Hz ;
 - **Extension Manager** — installé comme outil d'administration ;
-- **Just Perfection / Desktop Icons** — non imposés.
+- **Just Perfection / Dash to Panel** — non imposés.
+
+DING conserve Home, volumes externes et volumes réseau masqués par défaut. Le couple DING + Show Desktop Plus fournit une action cohérente : masquer les fenêtres révèle immédiatement le contenu réel de `~/Bureau` et la Corbeille ; le second toggle restaure les fenêtres suivies par l'extension.
 
 Une extension ne doit jamais servir à masquer un problème Mutter/Wayland/GPU.
 
@@ -96,5 +103,7 @@ Les outils professionnels non-GTK4 restent des exceptions fonctionnelles explici
 ./diagnostics/applications-doctor
 ./diagnostics/display-doctor
 ```
+
+`gnome-doctor` certifie également le dossier XDG Desktop, les réglages DING et la configuration Show Desktop Plus. La preuve visuelle/comportementale complète est réalisée au GATE 2 VirtualBox puis confirmée bare-metal.
 
 Ces contrôles sont repris dans la certification bare-metal finale selon leur scope.

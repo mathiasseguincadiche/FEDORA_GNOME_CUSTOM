@@ -12,6 +12,10 @@ grep -Fq 'ENABLE_JUST_PERFECTION="false"' "$ROOT/config/gnome.conf"
 grep -Fxq 'gnome-shell-extension-dash-to-dock' "$ROOT/manifests/packages-gnome-extensions.txt"
 grep -Fq 'gnome_extension_enable_checked' "$ROOT/modules/gnome/24_gnome_extensions.sh"
 grep -Fq 'Just Perfection is explicitly excluded' "$ROOT/modules/gnome/24_gnome_extensions.sh"
-! grep -RInE --exclude-dir=.git '(extensions\.gnome\.org.*curl|curl.*extensions\.gnome\.org|wget.*extensions\.gnome\.org|unzip.*gnome-shell/extensions)' "$ROOT/modules/gnome" "$ROOT/scripts" || { echo 'GNOME extensions must come from managed sources' >&2; exit 1; }
+
+# External GNOME extension downloads remain forbidden everywhere except the two
+# dedicated installers whose exact GNOME review artifacts are covered by the
+# desktop ergonomics contract.
+! grep -RInE --exclude-dir=.git --exclude='install-ding.sh' --exclude='install-show-desktop-plus.sh' '(extensions\.gnome\.org.*curl|curl.*extensions\.gnome\.org|wget.*extensions\.gnome\.org|unzip.*gnome-shell/extensions)' "$ROOT/modules/gnome" "$ROOT/scripts" || { echo 'Unmanaged GNOME extension download detected' >&2; exit 1; }
 ! grep -RInE --exclude-dir=.git 'just-perfection@|gnome-shell-extension-just-perfection' "$ROOT/config" "$ROOT/manifests" "$ROOT/modules" || { echo 'Just Perfection must remain excluded' >&2; exit 1; }
 echo 'GNOME Golden extension contract: PASS'

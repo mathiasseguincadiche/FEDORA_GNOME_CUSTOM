@@ -14,6 +14,7 @@ La CI combine contrats statiques, intégration Fedora 44 et vraie VM Ubuntu 26.0
 - backup/recovery ;
 - gouvernance CI ;
 - Bash UX et dock ;
+- **ergonomie desktop DING + Show Desktop Plus** ;
 - durcissement pré-1.0 ;
 - **fail-closed du guard KVM** ;
 - **authentification de l'image Ubuntu** ;
@@ -26,7 +27,9 @@ La documentation est testée comme une partie du produit.
 La CI bloque notamment :
 
 - retour d'anciennes commandes `baseline-doctor record-*` ;
-- profil GNOME qui oublierait AppIndicator ;
+- profil GNOME qui oublierait l'une des quatre extensions fonctionnelles : Dash to Dock, AppIndicator, Desktop Icons NG ou Show Desktop Plus ;
+- documentation qui exclurait encore Desktop Icons alors que DING est désormais Golden ;
+- disparition de `~/Bureau`, de la Corbeille ou de `Super+D` du contrat ergonomique documenté ;
 - disparition de draw.io du catalogue documentaire alors qu'il reste géré ;
 - valeurs `devops-nat`/`virbr50`/CIDR incohérentes avec la configuration ;
 - suppression du portail débutant/glossaire/runbook ;
@@ -34,6 +37,20 @@ La CI bloque notamment :
 - réintroduction de notes publiques spécifiques à un connector/outillage de maintenance.
 
 Ce test ne remplace pas la relecture éditoriale humaine, mais empêche les divergences factuelles déjà identifiées de revenir silencieusement.
+
+## Desktop ergonomics
+
+`tests/test_desktop_ergonomics_contract.sh` exige :
+
+- DING activé depuis le RPM Fedora `gnome-shell-extension-desktop-icons-ng` ;
+- `~/Bureau` comme dossier XDG Desktop ;
+- Corbeille visible, Home/volumes externes/volumes réseau masqués ;
+- Show Desktop Plus lié à l'artefact GNOME Extensions review `70326`, version de site `8`, GNOME Shell `50` ;
+- UUID `show-desktop-plus@attentivecoder` ;
+- bouton `left-end`, clic gauche `toggle-desktop`, `Super+D`, badge désactivé ;
+- diagnostic GNOME et workflows Fedora couvrant ces invariants.
+
+Cette CI valide configuration, provenance et schémas. Elle ne prétend pas prouver visuellement que les icônes sont rendues sur le framebuffer ou que plusieurs vraies fenêtres GNOME se masquent/restaurent : cette preuve appartient au GATE 2 VirtualBox puis au bare-metal.
 
 ## Shell quality
 
@@ -45,11 +62,15 @@ Les exemptions globales sont limitées afin que les variables inutilisées et fa
 
 Résolution des manifests, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 50 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Ubuntu.
 
+Pour l'ergonomie desktop, il exige que le RPM DING soit résolvable, que son payload annonce GNOME 50 et que l'artefact GNOME-reviewed Show Desktop Plus puisse être téléchargé, contrôlé (UUID + GNOME 50) et que son schéma GSettings compile.
+
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit.
 
 ## Fedora 44 host integration pretest
 
 Dans un conteneur Fedora 44, installe réellement le contrat HOST/GNOME/KVM/backup, teste Bash UX et dock via un utilisateur normal, valide RPM Fusion, vendor RPM, Flathub et extensions.
+
+Un utilisateur de test converge aussi `~/Bureau`, les réglages DING et les préférences Show Desktop Plus, puis relit les GSettings et le marqueur de provenance.
 
 Il tourne aussi périodiquement.
 
@@ -112,11 +133,12 @@ Le workflow :
 
 Il tourne périodiquement afin de surveiller les dépôts externes et signatures.
 
-## Ce qui reste bare-metal
+## Ce qui reste runtime/physique
 
+- rendu visuel réel DING et action Show Desktop dans une session GNOME complète (GATE 2 puis bare-metal) ;
 - Arc B580/`xe` ;
 - Level Zero/OpenCL réel ;
-- GNOME/Wayland/display 240 Hz ;
+- GNOME/Wayland/display 240 Hz physique ;
 - suspend/resume ;
 - les deux T705 ;
 - firmware/BIOS ;

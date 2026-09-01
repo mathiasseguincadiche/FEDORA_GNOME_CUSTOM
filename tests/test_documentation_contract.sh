@@ -15,6 +15,7 @@ for file in \
   docs/TROUBLESHOOTING.md \
   docs/VIRTUALIZATION.md \
   docs/GNOME_PROFILE.md \
+  docs/GNOME_EXTENSIONS.md \
   docs/GTK4_APPLICATIONS.md \
   docs/SUPPLY_CHAIN.md; do
   require_file "$file"
@@ -26,12 +27,23 @@ if grep -RInE --include='*.md' 'baseline-doctor[[:space:]]+(record-memory|record
   exit 1
 fi
 
-# GNOME docs must match the current functional extension contract.
-grep -Fq 'Dash to Dock' "$ROOT/docs/GNOME_PROFILE.md"
-grep -Fq 'AppIndicator' "$ROOT/docs/GNOME_PROFILE.md"
-grep -Fq 'AppIndicator' "$ROOT/docs/GNOME_EXTENSIONS.md"
+# GNOME docs must match the current four-extension functional contract.
+for expected in 'Dash to Dock' 'AppIndicator' 'Desktop Icons NG' 'Show Desktop Plus'; do
+  grep -Fq "$expected" "$ROOT/docs/GNOME_PROFILE.md" || { echo "GNOME_PROFILE missing functional extension: $expected" >&2; exit 1; }
+  grep -Fq "$expected" "$ROOT/docs/GNOME_EXTENSIONS.md" || { echo "GNOME_EXTENSIONS missing functional extension: $expected" >&2; exit 1; }
+done
+grep -Fq 'exactement **quatre extensions fonctionnelles**' "$ROOT/docs/GNOME_PROFILE.md"
+grep -Fq 'Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq 'XDG Desktop' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq 'Super+D' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq '70326' "$ROOT/docs/GNOME_EXTENSIONS.md"
 if grep -Fqi 'unique extension' "$ROOT/docs/GNOME_PROFILE.md"; then
-  echo 'GNOME profile still claims a single extension despite AppIndicator' >&2
+  echo 'GNOME profile still claims a single functional extension' >&2
+  exit 1
+fi
+if grep -Fqi 'Desktop Icons ne sont pas imposés' "$ROOT/docs/GNOME_EXTENSIONS.md"; then
+  echo 'GNOME extensions documentation still excludes Desktop Icons despite DING being Golden' >&2
   exit 1
 fi
 

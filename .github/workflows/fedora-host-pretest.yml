@@ -79,7 +79,7 @@ jobs:
             manifests/packages-applications-professional-fedora.txt \
             manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install restic jq acl xorriso dbus-daemon "${packages[@]}"
-          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv
+          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome xdg-user-dirs ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv unzip
       - name: Validate Fedora host Bash UX
         shell: bash
         run: |
@@ -112,6 +112,54 @@ jobs:
           actual="$(runuser -u docktest -- env HOME=/home/docktest dbus-run-session -- gsettings get org.gnome.shell favorite-apps)"
           test "$actual" = "$expected"
           for desktop in org.gnome.Nautilus.desktop org.gnome.Ptyxis.desktop libreoffice-startcenter.desktop org.gnome.Software.desktop; do test -f "/usr/share/applications/$desktop"; done
+      - name: Validate GNOME desktop ergonomics settings
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          useradd -m ergotest
+          runuser -u ergotest -- env HOME=/home/ergotest XDG_DATA_HOME=/home/ergotest/.local/share dbus-run-session -- bash -Eeuo pipefail -c '
+            mkdir -p "$HOME/Bureau"
+            xdg-user-dirs-update --set DESKTOP "$HOME/Bureau"
+
+            bash "$GITHUB_WORKSPACE/scripts/gnome/install-ding.sh" \
+              https://extensions.gnome.org/review/download/74408.shell-extension.zip \
+              ding@rastersoft.com 50
+            ding_schema_dir="$HOME/.local/share/gnome-shell/extensions/ding@rastersoft.com/schemas"
+            ding_schema=org.gnome.shell.extensions.ding
+            gsettings --schemadir "$ding_schema_dir" set "$ding_schema" show-trash true
+            gsettings --schemadir "$ding_schema_dir" set "$ding_schema" show-home false
+            gsettings --schemadir "$ding_schema_dir" set "$ding_schema" show-volumes false
+            gsettings --schemadir "$ding_schema_dir" set "$ding_schema" show-network-volumes false
+
+            bash "$GITHUB_WORKSPACE/scripts/gnome/install-show-desktop-plus.sh" \
+              https://extensions.gnome.org/review/download/70326.shell-extension.zip \
+              show-desktop-plus@attentivecoder 50
+            schema_dir="$HOME/.local/share/gnome-shell/extensions/show-desktop-plus@attentivecoder/schemas"
+            schema=org.gnome.shell.extensions.show-desktop-plus
+            gsettings --schemadir "$schema_dir" set "$schema" button-position "'"'left-end'"'"
+            gsettings --schemadir "$schema_dir" set "$schema" left-click-action "'"'toggle-desktop'"'"
+            gsettings --schemadir "$schema_dir" set "$schema" middle-click-action "'"'hide-focused'"'"
+            gsettings --schemadir "$schema_dir" set "$schema" current-monitor-only false
+            gsettings --schemadir "$schema_dir" set "$schema" enable-hotkey true
+            gsettings --schemadir "$schema_dir" set "$schema" show-desktop-hotkey "['"'<Super>d>'"']"
+            gsettings --schemadir "$schema_dir" set "$schema" icon-style "'"'desktop'"'"
+            gsettings --schemadir "$schema_dir" set "$schema" show-hidden-count false
+
+            test "$(xdg-user-dir DESKTOP)" = "$HOME/Bureau"
+            test "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash)" = true
+            test "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home)" = false
+            test "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes)" = false
+            test "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-network-volumes)" = false
+            grep -Fxq source_url=https://extensions.gnome.org/review/download/74408.shell-extension.zip "$HOME/.local/share/gnome-shell/extensions/ding@rastersoft.com/.fedora-gnome-custom-source"
+            grep -Fxq review_id=74408 "$HOME/.local/share/gnome-shell/extensions/ding@rastersoft.com/.fedora-gnome-custom-source"
+            grep -Fxq site_version=95 "$HOME/.local/share/gnome-shell/extensions/ding@rastersoft.com/.fedora-gnome-custom-source"
+
+            test "$(gsettings --schemadir "$schema_dir" get "$schema" button-position)" = "'"'left-end'"'"
+            test "$(gsettings --schemadir "$schema_dir" get "$schema" left-click-action)" = "'"'toggle-desktop'"'"
+            test "$(gsettings --schemadir "$schema_dir" get "$schema" show-desktop-hotkey)" = "['"'<Super>d>'"']"
+            test "$(gsettings --schemadir "$schema_dir" get "$schema" show-hidden-count)" = false
+            grep -Fxq source_url=https://extensions.gnome.org/review/download/70326.shell-extension.zip "$HOME/.local/share/gnome-shell/extensions/show-desktop-plus@attentivecoder/.fedora-gnome-custom-source"
+          '
       - name: Enable RPM Fusion
         run: dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm"
       - name: Validate multimedia provider convergence
@@ -139,7 +187,7 @@ jobs:
             [[ -z "$app" || "$app" == \#* ]] && continue
             flatpak remote-info --system flathub "$app" >/dev/null
           done < manifests/flatpaks-applications-professional.txt
-      - name: Validate GNOME 50 extension payloads
+      - name: Validate GNOME 50 Fedora RPM extension payloads
         run: |
           test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
           test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx

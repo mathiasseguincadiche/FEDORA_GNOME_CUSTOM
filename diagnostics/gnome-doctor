@@ -28,6 +28,47 @@ report_extension() {
   fi
 }
 
+report_local_extension() {
+  local label="$1" uuid="$2" expected_source="$3"
+  local extension_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$uuid"
+  if [[ -r "$extension_dir/metadata.json" ]]; then
+    if ! $quiet; then ui_check OK "$label" 'reviewed user extension installed'; fi
+  else
+    if ! $quiet; then ui_check KO "$label" 'extension payload missing'; fi
+    ((ko+=1))
+    return
+  fi
+
+  if [[ -r "$extension_dir/.fedora-gnome-custom-source" ]] && grep -Fxq "source_url=$expected_source" "$extension_dir/.fedora-gnome-custom-source"; then
+    if ! $quiet; then ui_check OK "$label provenance" 'GNOME review source recorded'; fi
+  else
+    if ! $quiet; then ui_check KO "$label provenance" 'source marker missing or unexpected'; fi
+    ((ko+=1))
+  fi
+
+  if command_exists gnome-extensions && gnome-extensions list 2>/dev/null | grep -Fxq "$uuid"; then
+    if gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+      if ! $quiet; then ui_check OK "$label state" 'enabled in GNOME Shell'; fi
+    else
+      if ! $quiet; then ui_check KO "$label state" 'installed but not enabled'; fi
+      ((ko+=1))
+    fi
+  elif [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+    if ! $quiet; then ui_check KO "$label state" 'extension not visible to current GNOME session'; fi
+    ((ko+=1))
+  fi
+}
+
+check_value() {
+  local label="$1" actual="$2" expected="$3"
+  if [[ "$actual" == "$expected" ]]; then
+    if ! $quiet; then ui_check OK "$label" "$expected"; fi
+  else
+    if ! $quiet; then ui_check KO "$label" "expected=$expected actual=$actual"; fi
+    ((ko+=1))
+  fi
+}
+
 for pkg in gnome-shell nautilus gvfs-smb xdg-desktop-portal-gnome; do
   if rpm -q "$pkg" >/dev/null 2>&1; then
     if ! $quiet; then ui_check OK "$pkg" installed; fi
@@ -45,6 +86,12 @@ if is_true "${ENABLE_BLUR_MY_SHELL:-false}"; then
 fi
 if is_true "${ENABLE_APPINDICATOR:-false}"; then
   report_extension AppIndicator "${APPINDICATOR_PACKAGE:-gnome-shell-extension-appindicator}" "${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
+fi
+if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
+  report_local_extension 'Desktop Icons NG' "${DING_UUID:-ding@rastersoft.com}" "${DING_SOURCE_URL:-}"
+fi
+if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
+  report_local_extension 'Show Desktop Plus' "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}"
 fi
 
 if is_true "${INSTALL_EXTENSION_MANAGER:-false}"; then
@@ -71,6 +118,30 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
     if ! $quiet; then ui_check OK Portal active; fi
   else
     if ! $quiet; then ui_check WARN Portal inactive; fi
+  fi
+
+  if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
+    ding_uuid="${DING_UUID:-ding@rastersoft.com}"
+    ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+    ding_schema_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$ding_uuid/schemas"
+    desktop_expected="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
+    check_value 'Desktop directory' "$(xdg-user-dir DESKTOP)" "$desktop_expected"
+    [[ -d "$desktop_expected" ]] || { if ! $quiet; then ui_check KO 'Desktop directory' 'directory missing'; fi; ((ko+=1)); }
+    check_value 'DING Trash' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash)" "true"
+    check_value 'DING Home' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home)" "false"
+    check_value 'DING external volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes)" "false"
+    check_value 'DING network volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-network-volumes)" "false"
+  fi
+
+  if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
+    show_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
+    show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
+    show_schema_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$show_uuid/schemas"
+    check_value 'Show Desktop position' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position)" "'left-end'"
+    check_value 'Show Desktop left click' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action)" "'toggle-desktop'"
+    check_value 'Show Desktop Super+D' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey)" "['<Super>d']"
+    check_value 'Show Desktop hotkey enabled' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey)" "true"
+    check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count)" "false"
   fi
 fi
 (( ko == 0 ))

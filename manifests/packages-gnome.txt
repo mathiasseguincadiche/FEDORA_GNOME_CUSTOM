@@ -9,4 +9,5 @@ gvfs-gphoto2
 gvfs-fuse
 xdg-desktop-portal
 xdg-desktop-portal-gnome
+xdg-user-dirs
 flatpak
