@@ -33,7 +33,8 @@ for expected in 'Dash to Dock' 'AppIndicator' 'Desktop Icons NG' 'Show Desktop P
   grep -Fq "$expected" "$ROOT/docs/GNOME_EXTENSIONS.md" || { echo "GNOME_EXTENSIONS missing functional extension: $expected" >&2; exit 1; }
 done
 grep -Fq 'exactement **quatre extensions fonctionnelles**' "$ROOT/docs/GNOME_PROFILE.md"
-grep -Fq '~/Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq 'Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq 'XDG Desktop' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Super+D' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq '70326' "$ROOT/docs/GNOME_EXTENSIONS.md"
