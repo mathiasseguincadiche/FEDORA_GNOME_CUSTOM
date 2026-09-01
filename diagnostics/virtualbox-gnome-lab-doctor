@@ -113,7 +113,11 @@ check_extension_state 'Desktop Icons NG' "$ding_uuid"
 
 desktop_expected="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
 check_value 'Desktop directory' "$(xdg-user-dir DESKTOP 2>/dev/null || true)" "$desktop_expected"
-[[ -d "$desktop_expected" ]] && emit OK 'Desktop directory exists' "$desktop_expected" || emit KO 'Desktop directory exists' missing
+if [[ -d "$desktop_expected" ]]; then
+  emit OK 'Desktop directory exists' "$desktop_expected"
+else
+  emit KO 'Desktop directory exists' missing
+fi
 check_value 'DING Trash' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash 2>/dev/null || true)" true
 check_value 'DING Home' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home 2>/dev/null || true)" false
 check_value 'DING external volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes 2>/dev/null || true)" false
