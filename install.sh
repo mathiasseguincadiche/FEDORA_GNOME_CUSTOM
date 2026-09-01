@@ -16,8 +16,12 @@ if [[ "$MODE" == '--dry-run' ]]; then
     report="$(orchestrator_report)"
     ui_summary 'PREFLIGHT PASS' 'NO MUTATIONS EXECUTED — PREPARE VERIFIED BACKUP, THEN APPLY' "$report" "$LOG_DIR"
     exit 0
+  else
+    rc=$?
+    report="$(orchestrator_report)"
+    ui_summary "PREFLIGHT FAIL rc=$rc" 'FIX BEFORE APPLY' "$report" "$LOG_DIR"
+    exit "$rc"
   fi
-  rc=$?; report="$(orchestrator_report)"; ui_summary "PREFLIGHT FAIL rc=$rc" 'FIX BEFORE APPLY' "$report" "$LOG_DIR"; exit "$rc"
 fi
 
 DRY_RUN=false; export DRY_RUN

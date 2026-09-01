@@ -21,6 +21,7 @@ jobs:
       - run: bash tests/test_kvm_network_fail_closed.sh
       - run: bash tests/test_vm_image_auth_contract.sh
       - run: bash tests/test_wsl2_toolchain_contract.sh
+      - run: bash tests/test_install_exit_status_contract.sh
       - run: bash tests/test_ubuntu_devops_bootstrap_contract.sh
       - run: bash tests/test_vm_file_access_contract.sh
       - run: bash tests/test_backup_recovery_contract.sh
