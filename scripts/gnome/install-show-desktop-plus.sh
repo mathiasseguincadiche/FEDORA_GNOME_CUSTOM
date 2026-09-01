@@ -28,4 +28,5 @@ schema_dir="$extension_dir/schemas"
 [[ -r "$extension_dir/metadata.json" ]] || { echo 'Installed Show Desktop Plus metadata missing' >&2; exit 1; }
 [[ -d "$schema_dir" ]] || { echo 'Installed Show Desktop Plus schema directory missing' >&2; exit 1; }
 glib-compile-schemas "$schema_dir"
+printf 'source_url=%s\nreview_id=70326\nsite_version=8\nshell_version=%s\n' "$url" "$shell_version" > "$extension_dir/.fedora-gnome-custom-source"
 printf 'Show Desktop Plus installed from GNOME-reviewed artifact: %s\n' "$uuid"
