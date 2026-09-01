@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0 — 2026-09-01
+
+- Ajout de **Desktop Icons NG (DING)** au profil fonctionnel Golden via le paquet Fedora `gnome-shell-extension-desktop-icons-ng`.
+- Le dossier XDG Desktop est convergé vers `~/Bureau` ; son contenu devient visible sur le fond d'écran GNOME.
+- La **Corbeille** est affichée sur le bureau ; Home, volumes externes et volumes réseau sont masqués par défaut afin de garder une surface de travail propre.
+- Ajout de **Show Desktop Plus** depuis l'artefact GNOME Extensions review `70326` / version de site `8`, déclaré compatible GNOME Shell 50 ; l'installateur valide l'UUID et la compatibilité avant installation et enregistre la provenance.
+- Show Desktop Plus est configuré en `left-end` dans la barre supérieure, clic gauche `toggle-desktop`, `Super+D` activé, badge de fenêtres désactivé et comportement par workspace conservé.
+- `gnome-doctor` certifie désormais DING, `~/Bureau`, la Corbeille, la provenance Show Desktop Plus et les réglages du bouton/raccourci.
+- Ajout de `xdg-user-dirs` et `unzip` aux dépendances gérées requises par cette ergonomie.
+- Le Fedora package preflight vérifie le RPM DING et l'artefact GNOME-reviewed Show Desktop Plus ; le Fedora host pretest converge les GSettings dans un utilisateur de test.
+- Ajout du contrat CI `test_desktop_ergonomics_contract.sh` et maintien d'une exception externe très étroite : aucun téléchargement d'extension GNOME n'est autorisé hors de l'installateur Show Desktop Plus piné.
+- La validation graphique finale DING + Show Desktop est explicitement reportée au GATE 2 GNOME/VirtualBox puis au bare-metal ; aucune preuve graphique n'est simulée en CI.
+
 ## 0.11.0 — 2026-08-31
 
 - Refonte de la documentation opérateur : ajout de `docs/README.md` comme portail, `docs/GLOSSARY.md`, `docs/KVM_QUICKSTART.md` et `docs/KVM_NETWORK.md`.
