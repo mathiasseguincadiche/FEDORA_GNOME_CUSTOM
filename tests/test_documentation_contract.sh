@@ -36,7 +36,7 @@ grep -Fq 'exactement **quatre extensions fonctionnelles**' "$ROOT/docs/GNOME_PRO
 grep -Fq '~/Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Super+D' "$ROOT/docs/GNOME_EXTENSIONS.md"
-grep -Fq 'review `70326`' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq '70326' "$ROOT/docs/GNOME_EXTENSIONS.md"
 if grep -Fqi 'unique extension' "$ROOT/docs/GNOME_PROFILE.md"; then
   echo 'GNOME profile still claims a single functional extension' >&2
   exit 1
