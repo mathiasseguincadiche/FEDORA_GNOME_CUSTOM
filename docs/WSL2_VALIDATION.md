@@ -101,6 +101,42 @@ Le diagnostic WSL2 utilise :
 
 Un statut `EXPECTED` n'est jamais une preuve physique.
 
+### Production dry-run depuis WSL2
+
+Le protocole de prévalidation peut aussi lancer :
+
+```bash
+./install.sh --dry-run
+```
+
+Ce test utilise volontairement le **même preflight production** que le futur hôte bare-metal. Il n'est donc pas censé convertir WSL2 en pseudo-workstation.
+
+La première baseline production exige notamment :
+
+```text
+/sys/firmware/efi
+```
+
+WSL2 n'expose pas cette preuve UEFI bare-metal. Un arrêt sur `baseline.preflight` est donc **EXPECTED sous WSL2**.
+
+Le contrat attendu est :
+
+```text
+PREFLIGHT FAIL rc=<non-zero>
+process exit code=<same non-zero>
+```
+
+Un blocage UEFI/bare-metal propre est une preuve que le preflight refuse correctement l'environnement. En revanche :
+
+```text
+PREFLIGHT FAIL rc=0
+process exit code=0
+```
+
+est un **KO logiciel**, car un preflight échoué ne doit jamais être signalé comme succès au shell ou à la CI.
+
+Le dry-run WSL2 sert donc à vérifier le fail-closed et à observer le premier blocage production ; il ne remplace pas le dry-run complet qui sera obligatoirement rejoué sur Fedora bare-metal avant APPLY.
+
 Pour exécuter les contrats statiques locaux :
 
 ```bash
