@@ -9,7 +9,7 @@ shell_version="${3:-50}"
 [[ "$uuid" == 'show-desktop-plus@attentivecoder' ]] || { echo 'Unexpected Show Desktop Plus UUID' >&2; exit 1; }
 [[ "$shell_version" == '50' ]] || { echo 'Unexpected GNOME Shell target' >&2; exit 1; }
 
-for cmd in curl unzip grep gnome-extensions; do
+for cmd in curl unzip grep gnome-extensions glib-compile-schemas; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "Missing required command: $cmd" >&2; exit 1; }
 done
 
@@ -23,4 +23,9 @@ grep -Fq "\"uuid\": \"$uuid\"" "$metadata" || { echo 'Downloaded extension UUID 
 grep -Eq "\"${shell_version}\"" "$metadata" || { echo "Downloaded extension is not declared compatible with GNOME Shell $shell_version" >&2; exit 1; }
 
 gnome-extensions install --force "$zip"
+extension_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$uuid"
+schema_dir="$extension_dir/schemas"
+[[ -r "$extension_dir/metadata.json" ]] || { echo 'Installed Show Desktop Plus metadata missing' >&2; exit 1; }
+[[ -d "$schema_dir" ]] || { echo 'Installed Show Desktop Plus schema directory missing' >&2; exit 1; }
+glib-compile-schemas "$schema_dir"
 printf 'Show Desktop Plus installed from GNOME-reviewed artifact: %s\n' "$uuid"
