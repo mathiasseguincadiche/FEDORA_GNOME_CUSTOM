@@ -9,7 +9,7 @@ Ce profil peut valider :
 - l'identité Fedora 44 ;
 - la visibilité du CPU hôte ;
 - systemd sous WSL2 ;
-- les outils de base (`bash`, `dnf`, `rpm`, `git`, `systemctl`) ;
+- les outils de base (`bash`, `dnf`, `rpm`, `git`, `grep`, `awk`, `free`, `lscpu`, `lsblk`, `findmnt`, `systemctl`) ;
 - la cohérence du catalogue de modules ;
 - la syntaxe et une partie des contrats statiques ;
 - la détection explicite de WSL2 ;
@@ -42,6 +42,38 @@ uname -a
 systemd-detect-virt || true
 systemctl is-system-running || true
 ```
+
+### Installer le socle CLI requis
+
+L'image Fedora WSL peut être plus minimale qu'une Fedora Workstation. Installer explicitement les outils utilisés par le protocole avant de lancer les diagnostics :
+
+```bash
+sudo dnf upgrade --refresh -y
+sudo dnf install -y \
+  git \
+  gawk \
+  procps-ng \
+  util-linux \
+  grep \
+  curl \
+  jq \
+  tar \
+  gzip
+```
+
+Le paquet Fedora `gawk` fournit la commande `awk`. `procps-ng` fournit notamment `free`, et `util-linux` fournit notamment `lscpu`, `lsblk` et `findmnt`.
+
+Vérification rapide :
+
+```bash
+for cmd in git awk free lscpu lsblk findmnt grep; do
+  command -v "$cmd" || echo "MANQUANT: $cmd"
+done
+```
+
+Aucune ligne `MANQUANT` ne doit apparaître.
+
+Le `wsl2-doctor` actuel vérifie ce socle **avant** sa première utilisation et transforme une dépendance absente en `KO Core tools` lisible au lieu de terminer brutalement avec un code 127.
 
 ## Cloner le dépôt
 
