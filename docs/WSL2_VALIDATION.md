@@ -73,7 +73,7 @@ done
 
 Aucune ligne `MANQUANT` ne doit apparaître.
 
-Depuis la 0.11.1, `wsl2-doctor` vérifie ce socle **avant** sa première utilisation et transforme une dépendance absente en `KO Core tools` lisible au lieu de terminer brutalement avec un code 127.
+Le `wsl2-doctor` actuel vérifie ce socle **avant** sa première utilisation et transforme une dépendance absente en `KO Core tools` lisible au lieu de terminer brutalement avec un code 127.
 
 ## Cloner le dépôt
 
