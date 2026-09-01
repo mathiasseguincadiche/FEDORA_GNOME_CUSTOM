@@ -14,6 +14,23 @@ emit() {
   esac
 }
 
+# Validate every external command used directly by this doctor before the
+# first invocation. Fedora's WSL image can be intentionally minimal; a missing
+# package must therefore become a readable KO instead of an unhandled 127.
+missing=()
+for cmd in bash dnf rpm git grep awk free lscpu lsblk findmnt systemctl; do
+  command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+done
+if ((${#missing[@]} != 0)); then
+  emit KO 'Core tools' "missing: ${missing[*]}"
+  ui_meta OK "$ok"
+  ui_meta EXPECTED "$expected"
+  ui_meta KO "$ko"
+  ui_summary 'WSL2 VALIDATION NEEDS ATTENTION' 'INSTALL MISSING CORE TOOLS, THEN RE-RUN; DO NOT CONTINUE WITH PARTIAL EVIDENCE' "$REPORT_ROOT" "$LOG_DIR"
+  exit "$EXIT_PRECHECK_FAILED"
+fi
+emit OK 'Core tools' 'bash/dnf/rpm/git/grep/awk/free/lscpu/lsblk/findmnt/systemctl available'
+
 if runtime_is_wsl2; then emit OK Runtime 'WSL2 detected'; else emit KO Runtime "expected wsl2, detected $RUNTIME_ENVIRONMENT"; fi
 if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then
   emit OK Fedora '44'
@@ -39,12 +56,6 @@ if [[ -d /run/systemd/system ]] && systemctl show-environment >/dev/null 2>&1; t
 else
   emit KO systemd 'systemd is required for this validation profile'
 fi
-
-missing=()
-for cmd in bash dnf rpm git lscpu lsblk findmnt systemctl; do
-  command_exists "$cmd" || missing+=("$cmd")
-done
-if ((${#missing[@]} == 0)); then emit OK 'Core tools' 'bash/dnf/rpm/git/systemd toolchain available'; else emit KO 'Core tools' "missing: ${missing[*]}"; fi
 
 module_catalog_load "$REPO_ROOT/manifests/module-plan.conf"
 if module_catalog_validate; then emit OK 'Source catalog' 'module paths and dependency order valid'; else emit KO 'Source catalog' 'module catalog invalid'; fi
