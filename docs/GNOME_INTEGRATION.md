@@ -24,8 +24,10 @@ Extensions fonctionnelles gérées :
 
 - **Dash to Dock** — activé depuis le RPM Fedora ;
 - **AppIndicator** — activé depuis le RPM Fedora pour les logiciels utilisant AppIndicator/KStatusNotifierItem ;
-- **Desktop Icons NG (DING)** — activé depuis le RPM Fedora ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
+- **Desktop Icons NG (DING)** — installé depuis l'artefact GNOME Extensions review `74408`/version `95`, compatible GNOME Shell 50 ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
 - **Show Desktop Plus** — installé depuis l'artefact GNOME Extensions review `70326`/version `8`, avec bouton `left-end`, clic gauche `toggle-desktop` et raccourci `Super+D`.
+
+Fedora 44 ne fournit pas DING dans le manifest RPM du projet. DING et Show Desktop Plus utilisent donc deux installateurs étroits qui valident les artefacts GNOME-reviewed pinés, leurs UUID, leur compatibilité GNOME 50 et leur provenance.
 
 Extensions/outils complémentaires :
 
@@ -37,7 +39,7 @@ DING conserve Home, volumes externes et volumes réseau masqués par défaut. Le
 
 Une extension ne doit jamais servir à masquer un problème Mutter/Wayland/GPU.
 
-Voir [`GNOME_PROFILE.md`](GNOME_PROFILE.md) et [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md).
+Voir [`GNOME_PROFILE.md`](GNOME_PROFILE.md), [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md) et [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md).
 
 ## Portals et applications sandboxées
 
@@ -96,6 +98,8 @@ Les outils professionnels non-GTK4 restent des exceptions fonctionnelles explici
 
 ## Validation
 
+Production/bare-metal :
+
 ```bash
 ./diagnostics/gnome-doctor
 ./diagnostics/portal-doctor
@@ -104,6 +108,13 @@ Les outils professionnels non-GTK4 restent des exceptions fonctionnelles explici
 ./diagnostics/display-doctor
 ```
 
-`gnome-doctor` certifie également le dossier XDG Desktop, les réglages DING et la configuration Show Desktop Plus. La preuve visuelle/comportementale complète est réalisée au GATE 2 VirtualBox puis confirmée bare-metal.
+GATE 2 VirtualBox :
+
+```bash
+./scripts/lab/apply-gnome-virtualbox.sh --apply
+./diagnostics/virtualbox-gnome-lab-doctor
+```
+
+Le LAB VirtualBox ne remplace jamais `install.sh --apply` et n'ouvre aucun gate production. Il permet uniquement de converger et observer la surface GNOME nécessaire à la preuve visuelle DING + Show Desktop. La même ergonomie est ensuite confirmée bare-metal.
 
 Ces contrôles sont repris dans la certification bare-metal finale selon leur scope.
