@@ -21,10 +21,13 @@ for expected in \
   'DING_SHOW_NETWORK_VOLUMES="false"'; do
   grep -Fq "$expected" "$ROOT/config/gnome.conf"
 done
-! grep -Fxq 'gnome-shell-extension-desktop-icons-ng' "$ROOT/manifests/packages-gnome-extensions.txt"
+if grep -Fxq 'gnome-shell-extension-desktop-icons-ng' "$ROOT/manifests/packages-gnome-extensions.txt"; then
+  echo 'DING must not be declared as a Fedora RPM on Fedora 44' >&2
+  exit 1
+fi
 grep -Fxq 'xdg-user-dirs' "$ROOT/manifests/packages-gnome.txt"
 grep -Fq 'xdg-user-dirs-update --set DESKTOP' "$ROOT/modules/gnome/24_gnome_extensions.sh"
-grep -Fq 'gsettings --schemadir "$schema_dir"' "$ROOT/modules/gnome/24_gnome_extensions.sh"
+grep -Fq "gsettings --schemadir \"\$schema_dir\"" "$ROOT/modules/gnome/24_gnome_extensions.sh"
 grep -Fq 'show-trash' "$ROOT/modules/gnome/24_gnome_extensions.sh"
 grep -Fq 'show-network-volumes' "$ROOT/modules/gnome/24_gnome_extensions.sh"
 
