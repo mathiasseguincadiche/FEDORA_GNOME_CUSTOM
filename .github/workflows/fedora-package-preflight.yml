@@ -71,20 +71,35 @@ jobs:
             grep -Eqi 'gtk4|libgtk-4\.so\.1' <<<"$requirements" || { echo "GTK4 REQUIREMENT MISSING: $pkg"; exit 1; }
             grep -Eqi 'libadwaita|libadwaita-1\.so\.0' <<<"$requirements" || { echo "LIBADWAITA REQUIREMENT MISSING: $pkg"; exit 1; }
           done < manifests/packages-applications-gtk4.txt
-      - name: Verify GNOME 50 extension packages
+      - name: Verify Fedora GNOME 50 extension packages
         shell: bash
         run: |
           set -euo pipefail
-          dnf -y install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator gnome-shell-extension-desktop-icons-ng
-          rpm -q gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator gnome-shell-extension-desktop-icons-ng
+          dnf -y install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
+          rpm -q gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
           test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
           test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx
           test -d /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com
-          test -d /usr/share/gnome-shell/extensions/ding@rastersoft.com
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json
-          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/ding@rastersoft.com/metadata.json
+      - name: Verify GNOME-reviewed DING artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install curl unzip glib2
+          zip=/tmp/ding-v95.zip
+          dir=/tmp/ding-v95
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            https://extensions.gnome.org/review/download/74408.shell-extension.zip \
+            --output "$zip"
+          unzip -p "$zip" metadata.json > /tmp/ding-metadata.json
+          grep -Fq '"uuid": "ding@rastersoft.com"' /tmp/ding-metadata.json
+          grep -Eq '"50"|50' /tmp/ding-metadata.json
+          mkdir -p "$dir"
+          unzip -q "$zip" -d "$dir"
+          test -r "$dir/schemas/org.gnome.shell.extensions.ding.gschema.xml"
+          glib-compile-schemas "$dir/schemas"
       - name: Verify GNOME-reviewed Show Desktop Plus artifact
         shell: bash
         run: |
