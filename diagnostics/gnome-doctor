@@ -88,7 +88,7 @@ if is_true "${ENABLE_APPINDICATOR:-false}"; then
   report_extension AppIndicator "${APPINDICATOR_PACKAGE:-gnome-shell-extension-appindicator}" "${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
 fi
 if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
-  report_extension 'Desktop Icons NG' "${DING_PACKAGE:-gnome-shell-extension-desktop-icons-ng}" "${DING_UUID:-ding@rastersoft.com}"
+  report_local_extension 'Desktop Icons NG' "${DING_UUID:-ding@rastersoft.com}" "${DING_SOURCE_URL:-}"
 fi
 if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
   report_local_extension 'Show Desktop Plus' "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}"
@@ -121,14 +121,16 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
+    ding_uuid="${DING_UUID:-ding@rastersoft.com}"
     ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+    ding_schema_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$ding_uuid/schemas"
     desktop_expected="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
     check_value 'Desktop directory' "$(xdg-user-dir DESKTOP)" "$desktop_expected"
     [[ -d "$desktop_expected" ]] || { if ! $quiet; then ui_check KO 'Desktop directory' 'directory missing'; fi; ((ko+=1)); }
-    check_value 'DING Trash' "$(gsettings get "$ding_schema" show-trash)" "true"
-    check_value 'DING Home' "$(gsettings get "$ding_schema" show-home)" "false"
-    check_value 'DING external volumes' "$(gsettings get "$ding_schema" show-volumes)" "false"
-    check_value 'DING network volumes' "$(gsettings get "$ding_schema" show-network-volumes)" "false"
+    check_value 'DING Trash' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash)" "true"
+    check_value 'DING Home' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home)" "false"
+    check_value 'DING external volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes)" "false"
+    check_value 'DING network volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-network-volumes)" "false"
   fi
 
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
