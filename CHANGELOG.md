@@ -2,16 +2,19 @@
 
 ## 0.12.0 — 2026-09-01
 
-- Ajout de **Desktop Icons NG (DING)** au profil fonctionnel Golden via le paquet Fedora `gnome-shell-extension-desktop-icons-ng`.
+- Ajout de **Desktop Icons NG (DING)** au profil fonctionnel Golden depuis l'artefact GNOME Extensions review `74408` / version de site `95`, UUID `ding@rastersoft.com`, déclaré compatible GNOME Shell 50.
+- Fedora 44 ne fournit pas DING dans le manifest RPM du projet ; l'installateur dédié valide l'URL pinée, l'UUID, la compatibilité GNOME 50, compile le schéma GSettings et enregistre la provenance.
 - Le dossier XDG Desktop est convergé vers `~/Bureau` ; son contenu devient visible sur le fond d'écran GNOME.
 - La **Corbeille** est affichée sur le bureau ; Home, volumes externes et volumes réseau sont masqués par défaut afin de garder une surface de travail propre.
 - Ajout de **Show Desktop Plus** depuis l'artefact GNOME Extensions review `70326` / version de site `8`, déclaré compatible GNOME Shell 50 ; l'installateur valide l'UUID et la compatibilité avant installation et enregistre la provenance.
 - Show Desktop Plus est configuré en `left-end` dans la barre supérieure, clic gauche `toggle-desktop`, `Super+D` activé, badge de fenêtres désactivé et comportement par workspace conservé.
-- `gnome-doctor` certifie désormais DING, `~/Bureau`, la Corbeille, la provenance Show Desktop Plus et les réglages du bouton/raccourci.
+- `gnome-doctor` certifie désormais DING, `~/Bureau`, la Corbeille, la provenance des deux extensions utilisateur et les réglages du bouton/raccourci.
 - Ajout de `xdg-user-dirs` et `unzip` aux dépendances gérées requises par cette ergonomie.
-- Le Fedora package preflight vérifie le RPM DING et l'artefact GNOME-reviewed Show Desktop Plus ; le Fedora host pretest converge les GSettings dans un utilisateur de test.
-- Ajout du contrat CI `test_desktop_ergonomics_contract.sh` et maintien d'une exception externe très étroite : aucun téléchargement d'extension GNOME n'est autorisé hors de l'installateur Show Desktop Plus piné.
-- La validation graphique finale DING + Show Desktop est explicitement reportée au GATE 2 GNOME/VirtualBox puis au bare-metal ; aucune preuve graphique n'est simulée en CI.
+- Le Fedora package preflight valide les deux artefacts GNOME-reviewed DING/Show Desktop Plus ; le Fedora host pretest les installe dans un utilisateur de test, compile leurs schémas et converge les GSettings.
+- Ajout du contrat CI `test_desktop_ergonomics_contract.sh` et maintien d'exceptions externes étroites limitées aux deux installateurs GNOME-reviewed pinés.
+- Ajout du **LAB GNOME VirtualBox fail-closed** : `scripts/lab/apply-gnome-virtualbox.sh` exige Fedora 44, GNOME Shell 50/Wayland et une identité VirtualBox concordante (`systemd-detect-virt=oracle` + DMI), puis ne converge que les boutons de fenêtres, DING et Show Desktop Plus.
+- Ajout de `diagnostics/virtualbox-gnome-lab-doctor` et `tests/test_virtualbox_gnome_lab_contract.sh`; le doctor confirme aussi que `install.sh --apply` et la baseline hardware restent interdits/invalides en VirtualBox.
+- La validation graphique finale DING + Show Desktop est explicitement réalisée au GATE 2 GNOME/VirtualBox puis confirmée bare-metal ; aucune preuve graphique n'est simulée en CI.
 
 ## 0.11.0 — 2026-08-31
 
