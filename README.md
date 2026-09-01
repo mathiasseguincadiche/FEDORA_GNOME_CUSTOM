@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.11.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
+**Golden Workstation 0.12.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
 
 Le projet traite le poste de travail comme une infrastructure versionnée :
 
@@ -31,6 +31,7 @@ PREFLIGHT NON-MUTANT + BACKUP RESTIC
 APPLY PROTÉGÉ
   kernel stable + firmware/microcode
   GNOME 50 / Wayland / codecs / applications
+  Bureau XDG + Corbeille + Show Desktop
   Bash UX / portals / secrets / print-scan / VPN / power
   Arc Level Zero/OpenCL
   KVM sur /data + réseau privé fail-closed
@@ -43,6 +44,7 @@ CERTIFICATION BARE-METAL
   hardware + firmware + Arc B580/xe
   display actif 1440p/~240 Hz
   desktop/portals/lifecycle/Bash/apps/dock
+  DING + Show Desktop Plus runtime
   socle KVM host
   Nautilus cold-start
   5 cycles veille/réveil physiques uniques
@@ -51,22 +53,25 @@ CERTIFICATION BARE-METAL
 
 La CI complète cette certification ; elle ne prétend pas remplacer les preuves physiques.
 
+## 0.12.0 — Desktop Ergonomics
+
+Cette release ajoute deux fonctions utilisateur au contrat Golden sans transformer GNOME en bureau lourdement thémé :
+
+- **Desktop Icons NG (DING)** devient une extension fonctionnelle gérée depuis le RPM Fedora ;
+- `~/Bureau` devient explicitement le dossier XDG Desktop et son contenu est rendu sur le fond d'écran ;
+- la **Corbeille est visible**, tandis que Home, volumes externes et volumes réseau restent masqués ;
+- **Show Desktop Plus** est ajouté depuis l'artefact GNOME Extensions version 8 / review 70326, déclaré compatible GNOME 50 ;
+- son bouton est positionné à gauche de la barre supérieure ; clic gauche = afficher/restaurer le bureau ;
+- `Super+D` fournit le même toggle au clavier ;
+- le badge de nombre de fenêtres est désactivé pour conserver une barre supérieure sobre ;
+- `gnome-doctor` certifie désormais le dossier XDG Desktop, les réglages DING, la provenance Show Desktop Plus et ses paramètres ;
+- la CI Fedora vérifie le RPM DING, l'artefact GNOME-reviewed, la compilation du schéma GSettings et la convergence des préférences dans un utilisateur de test.
+
+La validation visuelle et comportementale réelle de ces deux fonctions est réalisée au GATE 2 GNOME/VirtualBox, puis confirmée bare-metal.
+
 ## 0.11.0 — documentation opérateur et durcissement KVM
 
-Cette release transforme la documentation en véritable interface opérateur et ferme plusieurs écarts identifiés lors de l'audit pré-1.0 :
-
-- portail `docs/README.md`, glossaire et Quickstart KVM pour les nouveaux lecteurs ;
-- `TROUBLESHOOTING.md` transformé en runbook opérationnel couvrant APPLY, DNF, GNOME, Arc, KVM, VM et Restic ;
-- documents normatifs rendus version-neutral et reliés à `VERSION`, afin d'éviter les titres 0.8/0.9 obsolètes ;
-- correction de la politique GNOME : Dash to Dock **et AppIndicator** sont bien les deux extensions fonctionnelles gérées ;
-- suppression des anciennes commandes `baseline-doctor record-*` dans la documentation WSL2 ;
-- draw.io réintégré dans le catalogue documentaire professionnel ;
-- contrat documentaire CI pour empêcher les divergences code/config/docs de revenir ;
-- réseau KVM réellement **fail-closed** lors d'un changement Ethernet/Wi-Fi/DHCP : mode d'urgence avant recalcul, conservé si la reconstruction normale échoue ;
-- certification KVM renforcée : état du guard, mode normal après reconcile, couverture des CIDR uplink et preuve VM→LAN plus robuste ;
-- création Ubuntu : authentification de `SHA256SUMS` signé Canonical et vérification SHA-256 de l'image **avant** création du disque ;
-- création Windows : vérification optionnelle de SHA-256 de confiance pour l'ISO Windows et `virtio-win.iso` ;
-- GnuPG ajouté au socle KVM pour rendre l'authentification Ubuntu reproductible sur une installation fraîche.
+La 0.11.0 a transformé la documentation en interface opérateur et renforcé notamment le réseau KVM fail-closed, la certification runtime et la provenance des images VM. Le détail historique reste dans [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Matériel ciblé
 
@@ -100,9 +105,22 @@ GNOME reste proche de l'upstream Adwaita/libadwaita.
 Extensions fonctionnelles gérées :
 
 - Dash to Dock ;
-- AppIndicator.
+- AppIndicator ;
+- Desktop Icons NG (DING) ;
+- Show Desktop Plus.
 
 Blur My Shell et Just Perfection restent hors de l'état Golden certifié par défaut.
+
+Ergonomie desktop certifiée :
+
+```text
+~/Bureau             contenu visible sur le fond d'écran
+Corbeille            visible
+Home/volumes         masqués
+Show Desktop         bouton en haut/gauche
+Clic gauche          toggle bureau/fenêtres
+Super+D              toggle bureau/fenêtres
+```
 
 Dock certifié :
 
@@ -281,7 +299,7 @@ Le gate exige bare-metal réel, Git propre, preflight du même commit, baseline 
 
 ## CI et gouvernance
 
-Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM et cohérence documentaire.
+Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire et ergonomie desktop.
 
 La politique cible pour `main` exige PR + checks verts et interdit force-push/suppression.
 
@@ -289,6 +307,6 @@ Voir [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) et [`docs/GITHUB_GOVERNANC
 
 ## Version
 
-`0.11.0` — **Operator Documentation & KVM Network Hardening**.
+`0.12.0` — **Desktop Ergonomics**.
 
 La 1.0 sera justifiée par une installation bare-metal complète, une certification finale réussie et une période d'usage réel stable — pas par l'ajout artificiel de fonctionnalités.
