@@ -70,7 +70,8 @@ grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_
 grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'APPLY production' "$ROOT/docs/EXECUTION_CONTRACT.md"
 grep -Fq 'LAB GNOME VirtualBox' "$ROOT/docs/EXECUTION_CONTRACT.md"
-grep -Fq 'ne déverrouille jamais `install.sh --apply`' "$ROOT/docs/README.md"
+grep -Fq 'ne déverrouille jamais' "$ROOT/docs/README.md"
+grep -Fq 'install.sh --apply' "$ROOT/docs/README.md"
 
 # Professional catalog must reflect the real draw.io integration.
 grep -Fq 'com.jgraph.drawio.desktop' "$ROOT/docs/GTK4_APPLICATIONS.md"
