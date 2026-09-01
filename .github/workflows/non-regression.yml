@@ -28,6 +28,30 @@ jobs:
           grep -Fq 'wsl2)' diagnostic.sh
           grep -Fq 'vm|container)' diagnostic.sh
           grep -Fq 'REAL APPLY is blocked outside bare-metal' diagnostics/wsl2-doctor
+      - name: VirtualBox GNOME LAB isolation invariants
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          lab=scripts/lab/apply-gnome-virtualbox.sh
+          doctor=diagnostics/virtualbox-gnome-lab-doctor
+          test -x "$lab"
+          test -x "$doctor"
+          grep -Fq 'runtime_is_virtualbox' lib/common.sh
+          grep -Fq '== oracle' lib/common.sh
+          grep -Fq "grep -Eqi 'VirtualBox|Oracle|innotek'" lib/common.sh
+          grep -Fq 'runtime_is_virtualbox' "$lab"
+          grep -Fq 'Fedora Linux 44' "$lab"
+          grep -Fq 'GNOME Shell 50' "$lab"
+          grep -Fq 'Wayland is required for GATE 2' "$lab"
+          ! grep -Fq 'orchestrator_run_all' "$lab"
+          ! grep -Fq 'apply_gate_open' "$lab"
+          ! grep -Fq 'modules/system/' "$lab"
+          ! grep -Fq 'modules/hardware/' "$lab"
+          ! grep -Fq 'modules/virtualization/' "$lab"
+          ! grep -Fq 'modules/backup/' "$lab"
+          ! grep -Fq 'run_mutating' "$doctor"
+          grep -Fq 'Production APPLY guard' "$doctor"
+          grep -Fq 'Bare-metal baseline guard' "$doctor"
       - name: Fedora GNOME architecture invariants
         run: |
           grep -F 'REQUIRE_WAYLAND="true"' config/workstation.conf
