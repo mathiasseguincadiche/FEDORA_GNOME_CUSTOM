@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Fedora 44 sous WSL2 sert de banc de validation **intermédiaire** entre GitHub Actions et la workstation Fedora 44 bare-metal.
+Fedora 44 sous WSL2 sert de banc de validation **intermédiaire** entre GitHub Actions et le GATE 2 Fedora 44 GNOME/VirtualBox, puis la workstation Fedora 44 bare-metal.
 
 Ce profil peut valider :
 
@@ -13,17 +13,19 @@ Ce profil peut valider :
 - la cohérence du catalogue de modules ;
 - la syntaxe et une partie des contrats statiques ;
 - la détection explicite de WSL2 ;
-- le blocage du REAL APPLY et de la certification hardware bare-metal.
+- le blocage du REAL APPLY et de la certification hardware bare-metal ;
+- le contrat statique du LAB GNOME VirtualBox sans prétendre exécuter sa preuve graphique.
 
-Il ne remplace jamais la certification physique.
+Il ne remplace jamais la certification VirtualBox graphique ni la certification physique.
 
-## Ce qui reste bare-metal uniquement
+## Ce qui reste hors de portée WSL2
 
 Sous WSL2, les éléments suivants sont volontairement différés :
 
-- Intel Arc B580 PCI `8086:e20b` et pilote Linux natif `xe` ;
-- inventaire/SMART/I/O des deux Crucial T705 ;
-- GNOME Shell 50, Mutter, Wayland et timing 2560×1440/240 Hz ;
+- DING réellement rendu sur le bureau GNOME et action Show Desktop avec de vraies fenêtres — **GATE 2 VirtualBox puis bare-metal** ;
+- Intel Arc B580 PCI `8086:e20b` et pilote Linux natif `xe` — bare-metal ;
+- inventaire/SMART/I/O des deux Crucial T705 — bare-metal ;
+- GNOME Shell 50, Mutter, Wayland et timing 2560×1440/240 Hz physique ;
 - suspend/resume et interactions BIOS/UEFI ;
 - SELinux Enforcing comme état réel de la workstation ;
 - KVM/libvirt `qemu:///system`, `devops-nat`, firewalld/nftables et isolation LAN réelle ;
@@ -96,10 +98,10 @@ git rev-parse HEAD
 Le diagnostic WSL2 utilise :
 
 - `OK` : contrôle réellement validable sous WSL2 ;
-- `EXPECTED` : contrôle volontairement différé au bare-metal ;
+- `EXPECTED` : contrôle volontairement différé à un gate ultérieur ;
 - `KO` : problème réel dans ce qui devrait fonctionner sous WSL2.
 
-Un statut `EXPECTED` n'est jamais une preuve physique.
+Un statut `EXPECTED` n'est jamais une preuve VirtualBox ou physique.
 
 ### Production dry-run depuis WSL2
 
@@ -145,7 +147,7 @@ for test in tests/test_*.sh; do
 done
 ```
 
-Certains tests d'intégration Fedora/VM restent mieux couverts par GitHub Actions que par WSL2.
+Le contrat `tests/test_virtualbox_gnome_lab_contract.sh` est statique sous WSL2 : il vérifie la séparation architecture/sécurité mais **ne constitue pas un PASS graphique GATE 2**. Les tests d'intégration Fedora/VM restent mieux couverts par GitHub Actions que par WSL2.
 
 ## Interdictions sous WSL2
 
@@ -161,6 +163,14 @@ Le moteur détecte automatiquement WSL2 et refuse :
 ./install.sh --apply
 ```
 
+Le LAB VirtualBox doit également refuser WSL2 :
+
+```bash
+./scripts/lab/apply-gnome-virtualbox.sh --check
+```
+
+Cette commande doit terminer avec le code de sécurité du LAB hors VirtualBox ; il ne faut pas chercher à contourner ce refus.
+
 Les commandes qui produisent de vraies preuves RAM/NVMe ou une certification bare-metal doivent être exécutées uniquement sur Fedora native. Sous WSL2, utiliser seulement les modes non destructifs/read-only prévus, par exemple :
 
 ```bash
@@ -175,13 +185,16 @@ Ne créer jamais manuellement des fichiers de preuve ou markers pour transformer
 ```text
 GitHub Actions
       ↓
-Fedora 44 WSL2
+GATE 1 — Fedora 44 WSL2
 scripts / Fedora / systemd / contrats / détection runtime
       ↓
-Fedora 44 bare-metal
-GPU / NVMe / GNOME / Wayland / KVM / suspend / APPLY
+GATE 2 — Fedora 44 GNOME 50 / VirtualBox
+DING / ~/Bureau / Corbeille / Show Desktop / Super+D / persistance
+      ↓
+GATE 3 — Fedora 44 bare-metal
+GPU / NVMe / GNOME physique / KVM / suspend / APPLY
       ↓
 runtime certification
 ```
 
-Un `WSL2 VALIDATION PASS` signifie uniquement que la couche intermédiaire est saine. La workstation devient Golden runtime-certified uniquement après les preuves physiques sur Fedora 44 native.
+Un `WSL2 VALIDATION PASS` signifie uniquement que la couche GATE 1 est saine. La workstation devient Golden runtime-certified uniquement après GATE 2 puis les preuves physiques sur Fedora 44 native.
