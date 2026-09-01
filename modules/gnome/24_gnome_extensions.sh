@@ -21,8 +21,11 @@ gnome_extensions_precheck() {
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
-    [[ "${DING_PACKAGE:-}" == "gnome-shell-extension-desktop-icons-ng" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_UUID:-}" == "ding@rastersoft.com" ]] || return "$EXIT_PRECHECK_FAILED"
+    [[ "${DING_SOURCE_URL:-}" == "https://extensions.gnome.org/review/download/74408.shell-extension.zip" ]] || return "$EXIT_PRECHECK_FAILED"
+    [[ "${DING_REVIEW_ID:-}" == "74408" ]] || return "$EXIT_PRECHECK_FAILED"
+    [[ "${DING_VERSION:-}" == "95" ]] || return "$EXIT_PRECHECK_FAILED"
+    [[ "${DING_SHELL_VERSION:-}" == "50" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_SCHEMA:-}" == "org.gnome.shell.extensions.ding" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_DESKTOP_DIR_NAME:-}" == "Bureau" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_SHOW_TRASH:-}" == "true" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -56,7 +59,7 @@ GNOME EXTENSIONS PLAN:
 - Fedora 44 / GNOME 50 remains the desktop reference
 - Dash to Dock is enabled from the official Fedora RPM
 - AppIndicator is enabled from the official Fedora RPM for functional tray compatibility
-- Desktop Icons NG (DING) is enabled from the Fedora RPM; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
+- Desktop Icons NG (DING) v95 is installed from the exact GNOME-reviewed artifact 74408; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
 - Show Desktop Plus v8 is installed from the exact GNOME-reviewed artifact 70326 and configured as a top-left desktop toggle with Super+D
 - Blur My Shell stays disabled by default for 240 Hz/resume stability
 - Extension Manager is installed from Flathub as the administration UI
@@ -76,15 +79,21 @@ gnome_extension_enable_checked() {
   fi
 }
 
+gnome_ding_schema_dir() {
+  printf '%s/%s/schemas' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${DING_UUID:-ding@rastersoft.com}"
+}
+
 gnome_ding_settings_apply() {
   local schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
-  local desktop_dir="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
+  local schema_dir desktop_dir
+  schema_dir="$(gnome_ding_schema_dir)"
+  desktop_dir="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
   run_mutating GNOME mkdir -p "$desktop_dir" || return "$EXIT_APPLY_FAILED"
   run_mutating GNOME xdg-user-dirs-update --set DESKTOP "$desktop_dir" || return "$EXIT_APPLY_FAILED"
-  run_mutating GNOME gsettings set "$schema" show-trash "${DING_SHOW_TRASH:-true}" || return "$EXIT_APPLY_FAILED"
-  run_mutating GNOME gsettings set "$schema" show-home "${DING_SHOW_HOME:-false}" || return "$EXIT_APPLY_FAILED"
-  run_mutating GNOME gsettings set "$schema" show-volumes "${DING_SHOW_VOLUMES:-false}" || return "$EXIT_APPLY_FAILED"
-  run_mutating GNOME gsettings set "$schema" show-network-volumes "${DING_SHOW_NETWORK_VOLUMES:-false}" || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-trash "${DING_SHOW_TRASH:-true}" || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-home "${DING_SHOW_HOME:-false}" || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-volumes "${DING_SHOW_VOLUMES:-false}" || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-network-volumes "${DING_SHOW_NETWORK_VOLUMES:-false}" || return "$EXIT_APPLY_FAILED"
 }
 
 gnome_show_desktop_plus_schema_dir() {
@@ -118,10 +127,14 @@ gnome_extensions_apply() {
   local show_desktop_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
   is_true "${ENABLE_GNOME_EXTENSIONS:-false}" || return 0
 
-  if is_true "${ENABLE_DASH_TO_DOCK:-false}" || is_true "${ENABLE_BLUR_MY_SHELL:-false}" || is_true "${ENABLE_APPINDICATOR:-false}" || is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
+  if is_true "${ENABLE_DASH_TO_DOCK:-false}" || is_true "${ENABLE_BLUR_MY_SHELL:-false}" || is_true "${ENABLE_APPINDICATOR:-false}"; then
     install_manifest_packages GNOME "$REPO_ROOT/manifests/packages-gnome-extensions.txt" || return "$EXIT_APPLY_FAILED"
   fi
 
+  if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
+    run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-ding.sh" \
+      "${DING_SOURCE_URL:-}" "$ding_uuid" "${DING_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+  fi
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
     run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-show-desktop-plus.sh" \
       "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "$show_desktop_uuid" "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
@@ -163,9 +176,12 @@ gnome_extensions_postcheck() {
   local blur_uuid="${BLUR_MY_SHELL_UUID:-blur-my-shell@aunetx}"
   local indicator_uuid="${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
   local ding_uuid="${DING_UUID:-ding@rastersoft.com}"
+  local ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+  local ding_schema_dir
   local show_desktop_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
   local show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
   local show_schema_dir
+  ding_schema_dir="$(gnome_ding_schema_dir)"
   show_schema_dir="$(gnome_show_desktop_plus_schema_dir)"
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_GNOME_EXTENSIONS:-false}" || return 0
@@ -186,14 +202,15 @@ gnome_extensions_postcheck() {
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
-    local ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
-    rpm -q "${DING_PACKAGE:-gnome-shell-extension-desktop-icons-ng}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+    local ding_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$ding_uuid"
+    [[ -r "$ding_dir/metadata.json" ]] || return "$EXIT_POSTCHECK_FAILED"
+    grep -Fxq "source_url=${DING_SOURCE_URL:-}" "$ding_dir/.fedora-gnome-custom-source" || return "$EXIT_POSTCHECK_FAILED"
     gnome-extensions info "$ding_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(xdg-user-dir DESKTOP)" == "$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings get "$ding_schema" show-trash)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings get "$ding_schema" show-home)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings get "$ding_schema" show-volumes)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings get "$ding_schema" show-network-volumes)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-network-volumes)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
