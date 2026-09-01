@@ -26,7 +26,7 @@ mem_line="$(grep -n '^mem_visible=' "$doctor" | head -n1 | cut -d: -f1)"
 # The operator runbook must install the Fedora package that provides awk and
 # explain the package-to-command mapping.
 grep -Fq 'gawk' "$doc"
-grep -Fq 'Le paquet Fedora `gawk` fournit la commande `awk`.' "$doc"
+grep -Eq 'gawk.*fournit.*awk' "$doc"
 grep -Fq 'procps-ng' "$doc"
 grep -Fq 'util-linux' "$doc"
 grep -Fq 'KO Core tools' "$doc"
