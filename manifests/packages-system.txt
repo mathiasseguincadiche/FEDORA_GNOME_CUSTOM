@@ -20,3 +20,9 @@ grubby
 stress-ng
 fio
 drm_info
+
+# Python workstation toolchain
+python3
+python3-pip
+python3-devel
+pipx
