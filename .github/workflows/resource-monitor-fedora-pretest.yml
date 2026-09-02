@@ -1,0 +1,78 @@
+name: Fedora 44 Resource Monitor pretest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/gnome.conf'
+      - 'modules/gnome/24b_resource_monitor.sh'
+      - 'scripts/gnome/install-resource-monitor.sh'
+      - 'diagnostics/resource-monitor-doctor'
+      - 'tests/test_resource_monitor_contract.sh'
+      - '.github/workflows/resource-monitor-fedora-pretest.yml'
+  pull_request:
+    paths:
+      - 'config/gnome.conf'
+      - 'modules/gnome/24b_resource_monitor.sh'
+      - 'scripts/gnome/install-resource-monitor.sh'
+      - 'diagnostics/resource-monitor-doctor'
+      - 'tests/test_resource_monitor_contract.sh'
+      - '.github/workflows/resource-monitor-fedora-pretest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  telemetry-profile:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install GNOME telemetry test dependencies
+        run: dnf -y install gnome-shell curl unzip glib2 python3 dbus-daemon
+      - name: Install and configure Resource Monitor v28
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          useradd -m telemetrytest
+          runuser -u telemetrytest -- env \
+            HOME=/home/telemetrytest \
+            XDG_DATA_HOME=/home/telemetrytest/.local/share \
+            dbus-run-session -- bash -Eeuo pipefail -c '
+              bash "$GITHUB_WORKSPACE/scripts/gnome/install-resource-monitor.sh" \
+                https://extensions.gnome.org/review/download/70909.shell-extension.zip \
+                Resource_Monitor@Ory0n 50
+              schema_dir="$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/schemas"
+              schema=org.gnome.shell.extensions.resource-monitor
+              gsettings --schemadir "$schema_dir" set "$schema" refreshtime 2
+              gsettings --schemadir "$schema_dir" set "$schema" extensionposition "'"'right'"'"
+              gsettings --schemadir "$schema_dir" set "$schema" displaymode "'"'primary'"'"
+              gsettings --schemadir "$schema_dir" set "$schema" itemsposition "['"'cpu'"', '"'ram'"', '"'eth'"', '"'wlan'"', '"'gpu'"']"
+              gsettings --schemadir "$schema_dir" set "$schema" cpustatus true
+              gsettings --schemadir "$schema_dir" set "$schema" thermalcputemperaturestatus true
+              gsettings --schemadir "$schema_dir" set "$schema" ramstatus true
+              gsettings --schemadir "$schema_dir" set "$schema" ramunit "'"'perc'"'"
+              gsettings --schemadir "$schema_dir" set "$schema" netautohidestatus true
+              gsettings --schemadir "$schema_dir" set "$schema" netethstatus true
+              gsettings --schemadir "$schema_dir" set "$schema" netwlanstatus true
+              gsettings --schemadir "$schema_dir" set "$schema" gpustatus true
+              gsettings --schemadir "$schema_dir" set "$schema" thermalgputemperaturestatus true
+              gsettings --schemadir "$schema_dir" set "$schema" diskstatsstatus false
+              gsettings --schemadir "$schema_dir" set "$schema" diskspacestatus false
+              gsettings --schemadir "$schema_dir" set "$schema" swapstatus false
+
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" refreshtime)" = 2
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" = true
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" = true
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" ramunit)" = "'"'perc'"'"
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" = true
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" = true
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" = true
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" diskstatsstatus)" = false
+              test "$(gsettings --schemadir "$schema_dir" get "$schema" swapstatus)" = false
+              grep -Fxq source_url=https://extensions.gnome.org/review/download/70909.shell-extension.zip "$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/.fedora-gnome-custom-source"
+              grep -Fxq review_id=70909 "$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/.fedora-gnome-custom-source"
+              grep -Fxq site_version=28 "$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/.fedora-gnome-custom-source"
+            '
