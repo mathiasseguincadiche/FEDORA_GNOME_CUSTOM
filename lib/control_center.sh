@@ -54,9 +54,8 @@ cc_clear() {
 }
 
 cc_pause() {
-  local pause_value=''
   if [[ -t 0 ]]; then
-    read -r -p 'Appuyez sur Entrée pour continuer… ' pause_value
+    read -r -p 'Appuyez sur Entrée pour continuer… ' _
   fi
 }
 
@@ -334,7 +333,7 @@ cc_show_logs() {
   find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '  %f\n' 2>/dev/null | sort -r | head -n 10 || true
   printf '\nRapports :\n'
   find "$REPORT_ROOT" -maxdepth 1 -type f -printf '  %f\n' 2>/dev/null | sort | tail -n 15 || true
-  printf '\nPreuves d’état :\n'
+  printf "\nPreuves d'état :\n"
   find "$STATE_ROOT" -maxdepth 2 -type f \( -name '*.ok' -o -name '*.json' \) -printf '  %P\n' 2>/dev/null | sort | head -n 30 || true
 }
 
@@ -347,6 +346,11 @@ cc_tail_latest_log() {
   fi
   printf '=== %s ===\n' "$LOG_ROOT/$latest/main.log"
   tail -n 80 "$LOG_ROOT/$latest/main.log"
+}
+
+cc_show_git_source() {
+  git -C "$REPO_ROOT" status --short --branch
+  git -C "$REPO_ROOT" rev-parse HEAD
 }
 
 cc_system_snapshot() {
@@ -629,7 +633,7 @@ cc_logs_menu() {
       1) cc_interactive_exec 'LOGS & PREUVES' cc_show_logs ;;
       2) cc_interactive_exec 'DERNIER MAIN.LOG' cc_tail_latest_log ;;
       3) cc_interactive_exec 'COLLECTE PANNE DE BOOT' "$REPO_ROOT/scripts/collect-boot-failure.sh" ;;
-      4) cc_interactive_exec 'SOURCE DE VÉRITÉ GIT' bash -c 'git -C "$1" status --short --branch; git -C "$1" rev-parse HEAD' _ "$REPO_ROOT" ;;
+      4) cc_interactive_exec 'SOURCE DE VÉRITÉ GIT' cc_show_git_source ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
