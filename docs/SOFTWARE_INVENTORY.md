@@ -331,7 +331,10 @@ La VM est une workstation CLI DevOps prête à cloner, construire, tester, conte
 - python3
 - python3-pip
 - python3-venv
+- python3-dev
 - pipx
+
+`python3-dev` fournit les en-têtes nécessaires pour compiler proprement les extensions Python natives dans la VM de build/DevOps.
 
 Le doctor Ubuntu vérifie :
 
