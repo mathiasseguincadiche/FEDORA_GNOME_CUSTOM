@@ -34,10 +34,10 @@ done
 
 # Dashboard truth must be based on real runtime data, not marker presence alone.
 grep -Fq 'os_id' "$ROOT/lib/control_center.sh"
-grep -Fq '[[ "$os_id" != fedora ]]' "$ROOT/lib/control_center.sh"
+grep -Fq "if [[ \"\$os_id\" != fedora ]]; then" "$ROOT/lib/control_center.sh"
 grep -Fq 'workstation_runtime_fingerprint' "$ROOT/lib/control_center.sh"
-grep -Fq 'fingerprint=$expected' "$ROOT/lib/control_center.sh"
-grep -Fq 'printf '\''STALE'\''' "$ROOT/lib/control_center.sh"
+grep -Fq "fingerprint=\$expected" "$ROOT/lib/control_center.sh"
+grep -Fq 'STALE' "$ROOT/lib/control_center.sh"
 
 # Thin facade: dangerous business logic must stay in the dedicated engines.
 if grep -Eq 'apply_gate_open|dnf[[:space:]]+upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh"; then
