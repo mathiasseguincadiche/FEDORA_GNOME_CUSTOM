@@ -20,7 +20,9 @@ AppIndicator fait partie du contrat fonctionnel courant au même titre que Dash 
 
 ### Desktop Icons NG (DING)
 
-**Activé par défaut** depuis le paquet Fedora `gnome-shell-extension-desktop-icons-ng`.
+**Activé par défaut** depuis l'artefact GNOME Extensions **review `74408` / version de site `95`**, UUID `ding@rastersoft.com`, déclaré compatible GNOME Shell 50.
+
+Fedora 44 ne fournit pas DING dans le manifest RPM du projet. Le téléchargement est donc volontairement limité à l'URL GNOME-reviewed exacte inscrite dans `config/gnome.conf`. L'installateur contrôle l'UUID, la compatibilité GNOME 50, compile le schéma GSettings et écrit un marqueur de provenance.
 
 DING répond au besoin fonctionnel de disposer d'un vrai bureau de travail visible sur le fond d'écran. L'état Golden impose :
 
@@ -48,7 +50,7 @@ org.gnome.shell.extensions.ding show-network-volumes false
 
 **Activé par défaut** comme contrôle fonctionnel « Afficher le bureau ».
 
-Source gérée : artefact **version 8 / review GNOME Extensions 70326**, déclaré compatible GNOME Shell 50. Le projet n'utilise pas une URL `latest` flottante : l'URL versionnée est inscrite dans `config/gnome.conf` et l'installateur vérifie l'UUID et la déclaration GNOME 50 avant installation.
+Source gérée : artefact **version 8 / review GNOME Extensions `70326`**, déclaré compatible GNOME Shell 50. Le projet n'utilise pas une URL `latest` flottante : l'URL versionnée est inscrite dans `config/gnome.conf` et l'installateur vérifie l'UUID et la déclaration GNOME 50 avant installation.
 
 État Golden :
 
@@ -82,19 +84,24 @@ Just Perfection et Dash to Panel ne sont pas imposés par le projet. Les ancienn
 
 ## Convergence et première session
 
-Les RPM d'extensions peuvent être installés alors que GNOME Shell tourne déjà. De même, Show Desktop Plus est ajouté dans le répertoire d'extensions utilisateur. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
+Les RPM Dash to Dock/AppIndicator peuvent être installés alors que GNOME Shell tourne déjà. DING et Show Desktop Plus sont, eux, ajoutés dans le répertoire d'extensions utilisateur depuis leurs artefacts GNOME-reviewed pinés. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
 
 Le projet ne désactive jamais les contrôles simplement pour contourner cette frontière de session Wayland.
+
+## Validation VirtualBox avant bare-metal
+
+Le GATE 2 utilise [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md). Son entrypoint séparé peut converger uniquement DING, Show Desktop Plus et les boutons de fenêtres dans une vraie session Fedora 44 GNOME 50/Wayland sous VirtualBox. `install.sh --apply` reste bloqué en VM.
 
 ## Diagnostic
 
 ```bash
 ./diagnostics/gnome-doctor
+./diagnostics/virtualbox-gnome-lab-doctor   # uniquement dans le LAB VirtualBox
 ```
 
-Le doctor vérifie notamment :
+Le doctor GNOME vérifie notamment :
 
-- installation et activation de DING ;
+- installation, provenance et activation de DING ;
 - `~/Bureau` comme XDG Desktop ;
 - Corbeille visible et volumes masqués ;
 - présence/provenance/activation de Show Desktop Plus ;

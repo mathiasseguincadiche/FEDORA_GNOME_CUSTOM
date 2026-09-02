@@ -14,8 +14,12 @@ for file in \
   docs/KVM_NETWORK.md \
   docs/TROUBLESHOOTING.md \
   docs/VIRTUALIZATION.md \
+  docs/VIRTUALBOX_GNOME_LAB.md \
+  docs/EXECUTION_CONTRACT.md \
+  docs/GNOME_INTEGRATION.md \
   docs/GNOME_PROFILE.md \
   docs/GNOME_EXTENSIONS.md \
+  docs/CI_VALIDATION.md \
   docs/GTK4_APPLICATIONS.md \
   docs/SUPPLY_CHAIN.md; do
   require_file "$file"
@@ -37,6 +41,7 @@ grep -Fq 'Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'XDG Desktop' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Super+D' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq '74408' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq '70326' "$ROOT/docs/GNOME_EXTENSIONS.md"
 if grep -Fqi 'unique extension' "$ROOT/docs/GNOME_PROFILE.md"; then
   echo 'GNOME profile still claims a single functional extension' >&2
@@ -46,6 +51,27 @@ if grep -Fqi 'Desktop Icons ne sont pas imposés' "$ROOT/docs/GNOME_EXTENSIONS.m
   echo 'GNOME extensions documentation still excludes Desktop Icons despite DING being Golden' >&2
   exit 1
 fi
+
+# Fedora 44 does not expose DING through the project RPM manifest. Stale active
+# claims would make the operator procedure factually wrong.
+for file in README.md CHANGELOG.md docs/CI_VALIDATION.md docs/GNOME_INTEGRATION.md docs/GNOME_PROFILE.md docs/GNOME_EXTENSIONS.md; do
+  if grep -Eqi 'DING.*(RPM Fedora|paquet Fedora|gnome-shell-extension-desktop-icons-ng)|RPM DING|paquet Fedora DING' "$ROOT/$file"; then
+    echo "stale Fedora RPM DING claim found in documentation: $file" >&2
+    exit 1
+  fi
+done
+grep -Fq 'DING_SOURCE_URL="https://extensions.gnome.org/review/download/74408.shell-extension.zip"' "$ROOT/config/gnome.conf"
+grep -Fq 'DING_VERSION="95"' "$ROOT/config/gnome.conf"
+
+# GATE 2 must have a documented, isolated VirtualBox path while production
+# APPLY remains bare-metal only.
+grep -Fq 'VIRTUALBOX_GNOME_LAB.md' "$ROOT/docs/README.md"
+grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
+grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
+grep -Fq 'APPLY production' "$ROOT/docs/EXECUTION_CONTRACT.md"
+grep -Fq 'LAB GNOME VirtualBox' "$ROOT/docs/EXECUTION_CONTRACT.md"
+grep -Fq 'ne déverrouille jamais' "$ROOT/docs/README.md"
+grep -Fq 'install.sh --apply' "$ROOT/docs/README.md"
 
 # Professional catalog must reflect the real draw.io integration.
 grep -Fq 'com.jgraph.drawio.desktop' "$ROOT/docs/GTK4_APPLICATIONS.md"
@@ -101,6 +127,7 @@ for file in \
   docs/GNOME_INTEGRATION.md \
   docs/GNOME_PROFILE.md \
   docs/GNOME_EXTENSIONS.md \
+  docs/VIRTUALBOX_GNOME_LAB.md \
   docs/DOCK_FAVORITES.md \
   docs/DESKTOP_LIFECYCLE.md \
   docs/UBUNTU_DEVOPS_READY.md; do

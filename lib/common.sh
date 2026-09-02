@@ -72,3 +72,24 @@ runtime_is_wsl2() { [[ "$(runtime_environment)" == wsl2 ]]; }
 runtime_is_ci() { [[ "$(runtime_environment)" == ci ]]; }
 runtime_is_vm() { [[ "$(runtime_environment)" == vm ]]; }
 runtime_is_container() { [[ "$(runtime_environment)" == container ]]; }
+
+runtime_vm_vendor_detect() {
+  command_exists systemd-detect-virt || return 1
+  local vendor
+  vendor="$(systemd-detect-virt --vm 2>/dev/null || true)"
+  [[ -n "$vendor" && "$vendor" != none ]] || return 1
+  printf '%s\n' "$vendor"
+}
+
+runtime_virtualbox_dmi_payload() {
+  local path
+  for path in /sys/class/dmi/id/product_name /sys/class/dmi/id/sys_vendor /sys/class/dmi/id/board_vendor; do
+    [[ -r "$path" ]] && cat "$path"
+  done
+}
+
+runtime_is_virtualbox() {
+  runtime_is_vm || return 1
+  [[ "$(runtime_vm_vendor_detect || true)" == oracle ]] || return 1
+  runtime_virtualbox_dmi_payload 2>/dev/null | grep -Eqi 'VirtualBox|Oracle|innotek'
+}

@@ -15,6 +15,7 @@ Pour découvrir le projet sans devoir lire le code source en premier :
 - [`docs/README.md`](docs/README.md) — portail documentaire et parcours de lecture ;
 - [`docs/GLOSSARY.md`](docs/GLOSSARY.md) — vocabulaire Fedora/KVM/libvirt ;
 - [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
+- [`docs/VIRTUALBOX_GNOME_LAB.md`](docs/VIRTUALBOX_GNOME_LAB.md) — GATE 2 GNOME/VirtualBox fail-closed ;
 - [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) — utilisation quotidienne des VM ;
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — runbook par symptôme.
 
@@ -57,17 +58,19 @@ La CI complète cette certification ; elle ne prétend pas remplacer les preuves
 
 Cette release ajoute deux fonctions utilisateur au contrat Golden sans transformer GNOME en bureau lourdement thémé :
 
-- **Desktop Icons NG (DING)** devient une extension fonctionnelle gérée depuis le RPM Fedora ;
+- **Desktop Icons NG (DING)** devient une extension fonctionnelle gérée depuis l'artefact GNOME Extensions review `74408` / version de site `95`, compatible GNOME Shell 50 ;
+- Fedora 44 ne fournit pas DING dans le manifest RPM du projet ; l'installateur valide l'UUID, la compatibilité GNOME 50, le schéma et la provenance ;
 - `~/Bureau` devient explicitement le dossier XDG Desktop et son contenu est rendu sur le fond d'écran ;
 - la **Corbeille est visible**, tandis que Home, volumes externes et volumes réseau restent masqués ;
-- **Show Desktop Plus** est ajouté depuis l'artefact GNOME Extensions version 8 / review 70326, déclaré compatible GNOME 50 ;
+- **Show Desktop Plus** est ajouté depuis l'artefact GNOME Extensions version `8` / review `70326`, déclaré compatible GNOME 50 ;
 - son bouton est positionné à gauche de la barre supérieure ; clic gauche = afficher/restaurer le bureau ;
 - `Super+D` fournit le même toggle au clavier ;
 - le badge de nombre de fenêtres est désactivé pour conserver une barre supérieure sobre ;
-- `gnome-doctor` certifie désormais le dossier XDG Desktop, les réglages DING, la provenance Show Desktop Plus et ses paramètres ;
-- la CI Fedora vérifie le RPM DING, l'artefact GNOME-reviewed, la compilation du schéma GSettings et la convergence des préférences dans un utilisateur de test.
+- `gnome-doctor` certifie désormais le dossier XDG Desktop, les réglages DING et la provenance/configuration des deux extensions utilisateur ;
+- la CI Fedora vérifie les deux artefacts GNOME-reviewed, leurs schémas GSettings et la convergence des préférences dans un utilisateur de test ;
+- un **LAB GNOME VirtualBox fail-closed** permet de converger cette seule surface graphique au GATE 2 sans jamais ouvrir `install.sh --apply` en VM.
 
-La validation visuelle et comportementale réelle de ces deux fonctions est réalisée au GATE 2 GNOME/VirtualBox, puis confirmée bare-metal.
+La validation visuelle et comportementale réelle de ces deux fonctions est réalisée au GATE 2 GNOME/VirtualBox via [`docs/VIRTUALBOX_GNOME_LAB.md`](docs/VIRTUALBOX_GNOME_LAB.md), puis confirmée bare-metal.
 
 ## 0.11.0 — documentation opérateur et durcissement KVM
 
@@ -299,7 +302,7 @@ Le gate exige bare-metal réel, Git propre, preflight du même commit, baseline 
 
 ## CI et gouvernance
 
-Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire et ergonomie desktop.
+Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop et cloisonnement du LAB VirtualBox.
 
 La politique cible pour `main` exige PR + checks verts et interdit force-push/suppression.
 

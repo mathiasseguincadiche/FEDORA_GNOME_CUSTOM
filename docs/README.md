@@ -15,6 +15,16 @@ Commencer dans cet ordre :
 
 Un débutant n'a pas besoin de comprendre `virt-qemu-qmp-proxy`, `guestfish` ou les détails nftables avant d'installer la workstation. Ces sujets appartiennent aux documents de référence avancée.
 
+## Je veux valider avant le bare-metal
+
+Le parcours de qualification est volontairement progressif :
+
+1. [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) — GATE 1 CLI/read-only : scripts, runtime guards et contrats sans fabriquer de preuve hardware ;
+2. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — GATE 2 Fedora 44 GNOME 50/Wayland : vraie convergence graphique DING + Show Desktop dans une VM strictement identifiée VirtualBox ;
+3. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — GATE 3 bare-metal et APPLY production.
+
+Le LAB VirtualBox possède son propre entrypoint limité et **ne déverrouille jamais `install.sh --apply`**.
+
 ## Je veux installer la workstation
 
 Lire :
@@ -24,7 +34,7 @@ Lire :
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — backup Restic obligatoire avant APPLY ;
 - [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) — différence diagnostic / dry-run / APPLY et protections.
 
-Le parcours de confiance est :
+Le parcours de confiance bare-metal est :
 
 ```text
 Fedora 44 fraîche
@@ -87,6 +97,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 
 ## Documents de référence
 
+- [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — contrat et checklist du GATE 2 ;
 - [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — outils KVM/libvirt avancés ;
 - [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md) — catalogue graphique et exceptions ;
 - [`GNOME_PROFILE.md`](GNOME_PROFILE.md) — profil GNOME de référence ;

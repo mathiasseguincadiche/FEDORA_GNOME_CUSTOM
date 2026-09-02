@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_bootstrap
+export LC_ALL=C
+
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0
+expected=0
+ko=0
+
+emit() {
+  if ! $quiet; then ui_check "$1" "$2" "$3"; fi
+  case "$1" in
+    OK) ((ok+=1)) ;;
+    EXPECTED) ((expected+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+check_value() {
+  local label="$1" actual="$2" wanted="$3"
+  if [[ "$actual" == "$wanted" ]]; then
+    emit OK "$label" "$wanted"
+  else
+    emit KO "$label" "expected=$wanted actual=${actual:-unavailable}"
+  fi
+}
+
+check_source_marker() {
+  local label="$1" dir="$2" source_url="$3" review_id="$4" site_version="$5"
+  local marker="$dir/.fedora-gnome-custom-source"
+  if [[ -r "$marker" ]] \
+    && grep -Fxq "source_url=$source_url" "$marker" \
+    && grep -Fxq "review_id=$review_id" "$marker" \
+    && grep -Fxq "site_version=$site_version" "$marker"; then
+    emit OK "$label provenance" "review=$review_id version=$site_version"
+  else
+    emit KO "$label provenance" 'source marker missing or unexpected'
+  fi
+}
+
+check_extension_state() {
+  local label="$1" uuid="$2"
+  if gnome-extensions list 2>/dev/null | grep -Fxq "$uuid" \
+    && gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+    emit OK "$label state" enabled
+  else
+    emit KO "$label state" 'not visible/enabled in current GNOME Shell session'
+  fi
+}
+
+if ! $quiet; then ui_banner 'FEDORA VIRTUALBOX GNOME LAB' 'READ-ONLY GATE 2 RUNTIME CHECK'; fi
+
+missing=()
+for cmd in bash grep rpm systemd-detect-virt gnome-shell gnome-extensions gsettings xdg-user-dir; do
+  command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+done
+if ((${#missing[@]} != 0)); then
+  emit KO 'Core tools' "missing: ${missing[*]}"
+  if ! $quiet; then
+    ui_meta OK "$ok"; ui_meta EXPECTED "$expected"; ui_meta KO "$ko"
+    ui_summary 'VIRTUALBOX GNOME LAB NEEDS ATTENTION' 'INSTALL/FIX CORE TOOLS BEFORE GATE 2' "$REPORT_ROOT" "$LOG_DIR"
+  fi
+  exit "$EXIT_PRECHECK_FAILED"
+fi
+emit OK 'Core tools' 'runtime/GNOME/GSettings tools available'
+
+if runtime_is_virtualbox; then
+  emit OK Runtime 'Oracle VirtualBox VM identity accepted'
+else
+  emit KO Runtime "VirtualBox required; runtime=$(runtime_environment) vm_vendor=$(runtime_vm_vendor_detect || true)"
+fi
+
+check_value 'VM vendor' "$(runtime_vm_vendor_detect || true)" oracle
+dmi="$(runtime_virtualbox_dmi_payload 2>/dev/null | tr '\n' ' ' || true)"
+if grep -Eqi 'VirtualBox|Oracle|innotek' <<<"$dmi"; then emit OK 'VirtualBox DMI' "$dmi"; else emit KO 'VirtualBox DMI' "unexpected: ${dmi:-empty}"; fi
+
+if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then
+  emit OK Fedora '44'
+else
+  emit KO Fedora 'Fedora 44 required'
+fi
+
+shell_version="$(gnome-shell --version 2>/dev/null || true)"
+if [[ "$shell_version" =~ GNOME[[:space:]]Shell[[:space:]]50([.]|$) ]]; then emit OK 'GNOME Shell' "$shell_version"; else emit KO 'GNOME Shell' "50 required; got ${shell_version:-unknown}"; fi
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then emit OK 'GNOME session' "${XDG_CURRENT_DESKTOP}"; else emit KO 'GNOME session' "${XDG_CURRENT_DESKTOP:-unknown}"; fi
+check_value Wayland "${XDG_SESSION_TYPE:-unknown}" wayland
+
+if apply_gate_require_runtime; then
+  emit KO 'Production APPLY guard' 'bare-metal runtime gate unexpectedly accepted VirtualBox'
+else
+  emit OK 'Production APPLY guard' 'install.sh --apply remains blocked in VirtualBox'
+fi
+
+if baseline_certification_valid; then
+  emit KO 'Bare-metal baseline guard' 'hardware certification unexpectedly valid in VirtualBox'
+else
+  emit OK 'Bare-metal baseline guard' 'hardware certification remains unavailable in VirtualBox'
+fi
+
+ding_uuid="${DING_UUID:-ding@rastersoft.com}"
+ding_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$ding_uuid"
+ding_schema_dir="$ding_dir/schemas"
+ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+if [[ -r "$ding_dir/metadata.json" ]]; then emit OK 'Desktop Icons NG payload' installed; else emit KO 'Desktop Icons NG payload' missing; fi
+check_source_marker 'Desktop Icons NG' "$ding_dir" "${DING_SOURCE_URL:-}" "${DING_REVIEW_ID:-}" "${DING_VERSION:-}"
+check_extension_state 'Desktop Icons NG' "$ding_uuid"
+
+desktop_expected="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
+check_value 'Desktop directory' "$(xdg-user-dir DESKTOP 2>/dev/null || true)" "$desktop_expected"
+if [[ -d "$desktop_expected" ]]; then
+  emit OK 'Desktop directory exists' "$desktop_expected"
+else
+  emit KO 'Desktop directory exists' missing
+fi
+check_value 'DING Trash' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash 2>/dev/null || true)" true
+check_value 'DING Home' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home 2>/dev/null || true)" false
+check_value 'DING external volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes 2>/dev/null || true)" false
+check_value 'DING network volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-network-volumes 2>/dev/null || true)" false
+
+show_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
+show_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$show_uuid"
+show_schema_dir="$show_dir/schemas"
+show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
+if [[ -r "$show_dir/metadata.json" ]]; then emit OK 'Show Desktop Plus payload' installed; else emit KO 'Show Desktop Plus payload' missing; fi
+check_source_marker 'Show Desktop Plus' "$show_dir" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "${SHOW_DESKTOP_PLUS_REVIEW_ID:-}" "${SHOW_DESKTOP_PLUS_VERSION:-}"
+check_extension_state 'Show Desktop Plus' "$show_uuid"
+check_value 'Show Desktop position' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position 2>/dev/null || true)" "'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'"
+check_value 'Show Desktop left click' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action 2>/dev/null || true)" "'${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-toggle-desktop}'"
+check_value 'Show Desktop hotkey enabled' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey 2>/dev/null || true)" true
+check_value 'Show Desktop Super+D' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey 2>/dev/null || true)" "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']"
+check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count 2>/dev/null || true)" false
+check_value 'Window buttons' "$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || true)" "'${GNOME_WINDOW_BUTTON_LAYOUT:-:minimize,maximize,close}'"
+
+emit EXPECTED 'Arc B580 / xe' 'native PCI/driver proof remains bare-metal only'
+emit EXPECTED 'Physical T705' 'NVMe/SMART/I/O proof remains bare-metal only'
+emit EXPECTED 'KVM host certification' 'qemu:///system and devops-nat remain bare-metal only'
+
+if ! $quiet; then
+  ui_meta OK "$ok"
+  ui_meta EXPECTED "$expected"
+  ui_meta KO "$ko"
+fi
+if (( ko == 0 )); then
+  if ! $quiet; then ui_summary 'VIRTUALBOX GNOME LAB PASS' 'PROCEED TO MANUAL VISUAL GATE 2 CHECKS' "$REPORT_ROOT" "$LOG_DIR"; fi
+else
+  if ! $quiet; then ui_summary 'VIRTUALBOX GNOME LAB NEEDS ATTENTION' 'FIX KO BEFORE SIGNING GATE 2' "$REPORT_ROOT" "$LOG_DIR"; fi
+  exit "$EXIT_PRECHECK_FAILED"
+fi
