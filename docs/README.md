@@ -22,9 +22,10 @@ Commencer dans cet ordre :
 
 1. [`../README.md`](../README.md) — objectif global et contrat Golden Workstation ;
 2. [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — interface opérateur quotidienne ;
-3. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire Fedora, KVM, libvirt, stockage et réseau ;
-4. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et chaîne de confiance ;
-5. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal complète.
+3. [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md) — inventaire explicite HOST Fedora + VM Ubuntu DevOps, dont le socle Python ;
+4. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire Fedora, KVM, libvirt, stockage et réseau ;
+5. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et chaîne de confiance ;
+6. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal complète.
 
 Un débutant n'a pas besoin de comprendre `virt-qemu-qmp-proxy`, `guestfish` ou les détails nftables avant d'installer la workstation. Ces sujets appartiennent aux documents de référence avancée.
 
@@ -104,8 +105,9 @@ Lire dans cet ordre :
 3. [`KVM_NETWORK.md`](KVM_NETWORK.md) — fonctionnement précis de `devops-nat` et de l'isolation LAN ;
 4. [`VM_PROFILES.md`](VM_PROFILES.md) — profils Ubuntu et Windows ;
 5. [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md) — contenu de la VM Ubuntu DevOps ;
-6. [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) — SFTP Ubuntu et SMB Windows depuis Nautilus ;
-7. [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — référence CLI avancée.
+6. [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md) — inventaire commun HOST/VM et dépendances directes ;
+7. [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) — SFTP Ubuntu et SMB Windows depuis Nautilus ;
+8. [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — référence CLI avancée.
 
 ## Je veux dépanner
 
@@ -141,6 +143,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 ## Documents de référence
 
 - [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — cockpit terminal et mode CLI ;
+- [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md) — paquets et outils explicitement gérés sur le HOST et la VM Ubuntu ;
 - [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — contrat et checklist du GATE 2 ;
 - [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — outils KVM/libvirt avancés ;
 - [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md) — catalogue graphique et exceptions ;

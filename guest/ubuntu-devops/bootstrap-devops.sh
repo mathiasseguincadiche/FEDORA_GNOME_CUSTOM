@@ -68,7 +68,7 @@ apt-get update
 apt-get install -y \
   apt-transport-https ca-certificates curl wget gnupg lsb-release \
   git git-lfs jq unzip zip rsync openssh-server qemu-guest-agent \
-  python3 python3-pip python3-venv pipx \
+  python3 python3-pip python3-venv python3-dev pipx \
   ansible ansible-core \
   build-essential make shellcheck bash-completion \
   dnsutils traceroute iproute2 net-tools netcat-openbsd \

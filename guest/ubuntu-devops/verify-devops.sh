@@ -12,7 +12,27 @@ pass() { printf 'OK  %-18s %s\n' "$1" "$2"; ((ok+=1)); }
 fail_check() { printf 'KO  %-18s %s\n' "$1" "$2"; ((ko+=1)); }
 check_cmd() { local cmd="$1"; if command -v "$cmd" >/dev/null 2>&1; then pass "$cmd" "$(command -v "$cmd")"; else fail_check "$cmd" missing; fi; }
 
-for cmd in git gh glab docker terraform ansible ansible-playbook az aws kubectl helm kind minikube k9s kubectx kubens yq node npm corepack java javac mvn python3 pip3 jq shellcheck ssh rsync curl wget; do check_cmd "$cmd"; done
+for cmd in git gh glab docker terraform ansible ansible-playbook az aws kubectl helm kind minikube k9s kubectx kubens yq node npm corepack java javac mvn python3 pip3 pipx jq shellcheck ssh rsync curl wget; do check_cmd "$cmd"; done
+
+if command -v python3 >/dev/null 2>&1; then
+  python_version="$(python3 --version 2>&1 || true)"
+  if grep -Eq '^Python 3[.]' <<<"$python_version"; then pass python.version "$python_version"; else fail_check python.version "Python 3 required; got $python_version"; fi
+fi
+if command -v pip3 >/dev/null 2>&1; then
+  pip_version="$(python3 -m pip --version 2>&1 || true)"
+  if [[ "$pip_version" == pip\ * ]]; then pass pip.version "$pip_version"; else fail_check pip.version "python3 -m pip failed: $pip_version"; fi
+fi
+if command -v pipx >/dev/null 2>&1; then
+  pipx_version="$(pipx --version 2>&1 || true)"
+  if [[ -n "$pipx_version" ]]; then pass pipx.version "$pipx_version"; else fail_check pipx.version unavailable; fi
+fi
+venv_root="$(mktemp -d)"
+if python3 -m venv "$venv_root/venv" >/dev/null 2>&1 && "$venv_root/venv/bin/python" -c 'import sys; assert sys.version_info.major == 3' >/dev/null 2>&1; then
+  pass python.venv 'python3 -m venv functional'
+else
+  fail_check python.venv 'python3 -m venv failed'
+fi
+rm -rf "$venv_root"
 
 if command -v node >/dev/null 2>&1; then node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || true)"; if [[ "$node_major" =~ ^[0-9]+$ ]] && (( node_major >= 22 )); then pass node.version "$(node --version)"; else fail_check node.version "Node.js 22+ required; got $(node --version 2>/dev/null || echo unknown)"; fi; fi
 if command -v javac >/dev/null 2>&1; then javac_version="$(javac -version 2>&1 || true)"; if grep -Eq '^javac 21([.]|$)' <<<"$javac_version"; then pass java.version "$javac_version"; else fail_check java.version "OpenJDK 21 required; got $javac_version"; fi; fi
