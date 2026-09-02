@@ -21,5 +21,5 @@ grep -Fq 'runtime_is_baremetal' "$ROOT/lib/apply_gate.sh"
 grep -Fq 'runtime_is_virtualbox' "$ROOT/lib/common.sh"
 grep -Fq 'wsl2)' "$ROOT/diagnostic.sh"
 grep -Fq 'control_center_main' "$ROOT/control.sh"
-grep -Fq 'exec "$REPO_ROOT/control.sh" "$@"' "$ROOT/menu.sh"
+grep -Fq "exec \"\$REPO_ROOT/control.sh\" \"\$@\"" "$ROOT/menu.sh"
 echo 'public entrypoints: PASS'
