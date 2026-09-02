@@ -14,7 +14,7 @@ for token in 'rpm -q python3 python3-pip python3-devel pipx' 'python3 -m pip --v
   grep -Fq "$token" "$SYSTEM_VALIDATION" || { echo "host Python postcheck missing: $token" >&2; exit 1; }
 done
 
-for pkg in python3 python3-pip python3-venv pipx; do
+for pkg in python3 python3-pip python3-venv python3-dev pipx; do
   grep -Fq "$pkg" "$UBUNTU_BOOT" || { echo "Ubuntu Python package missing from bootstrap: $pkg" >&2; exit 1; }
 done
 for token in python3 pip3 pipx python.venv 'python3 -m pip --version' 'python3 -m venv'; do
@@ -22,7 +22,7 @@ for token in python3 pip3 pipx python.venv 'python3 -m pip --version' 'python3 -
 done
 
 [[ -f "$INVENTORY" ]] || { echo 'software inventory documentation missing' >&2; exit 1; }
-for token in 'Python HOST' 'Python VM' python3-pip python3-devel python3-venv pipx 'Dépendances transitives'; do
+for token in 'Python HOST' 'Python VM' python3-pip python3-devel python3-venv python3-dev pipx 'Dépendances transitives'; do
   grep -Fq "$token" "$INVENTORY" || { echo "software inventory missing Python contract: $token" >&2; exit 1; }
 done
 grep -Fq 'SOFTWARE_INVENTORY.md' "$ROOT/docs/README.md"
