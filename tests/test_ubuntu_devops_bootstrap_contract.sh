@@ -6,7 +6,7 @@ VERIFY="$ROOT/guest/ubuntu-devops/verify-devops.sh"
 CREATE="$ROOT/scripts/kvm/create_ubuntu_devops_vm.sh"
 VM_PRETEST="$ROOT/.github/scripts/vm-pretest.sh"
 
-for token in docker-ce docker-compose-plugin gh glab terraform azure-cli kubectl helm ansible aws kind minikube qemu-guest-agent openssh-server nodejs npm node-corepack openjdk-21-jdk maven kubectx yq k9s python3 python3-pip python3-venv pipx packages.buildkite.com/helm-linux/helm-debian pkgs.k8s.io apt.releases.hashicorp.com cli.github.com/packages download.docker.com packages.microsoft.com; do
+for token in docker-ce docker-compose-plugin gh glab terraform azure-cli kubectl helm ansible aws kind minikube qemu-guest-agent openssh-server nodejs npm node-corepack openjdk-21-jdk maven kubectx yq k9s python3 python3-pip python3-venv python3-dev pipx packages.buildkite.com/helm-linux/helm-debian pkgs.k8s.io apt.releases.hashicorp.com cli.github.com/packages download.docker.com packages.microsoft.com; do
   grep -Fq "$token" "$BOOT" || { echo "missing Ubuntu DevOps bootstrap contract: $token" >&2; exit 1; }
 done
 for token in glab minikube k9s kubectx kubens yq node npm corepack java javac mvn python3 pip3 pipx python.venv; do
