@@ -9,6 +9,7 @@ require_file() {
 
 for file in \
   docs/README.md \
+  docs/CONTROL_CENTER.md \
   docs/GLOSSARY.md \
   docs/KVM_QUICKSTART.md \
   docs/KVM_NETWORK.md \
@@ -24,6 +25,15 @@ for file in \
   docs/SUPPLY_CHAIN.md; do
   require_file "$file"
 done
+
+# Control Center is the operator facade but must document the protected engines.
+grep -Fq './control.sh' "$ROOT/README.md"
+grep -Fq 'CONTROL_CENTER.md' "$ROOT/README.md"
+grep -Fq './control.sh' "$ROOT/docs/README.md"
+grep -Fq 'install.sh --apply' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'backup Restic' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'kernel-vanilla/stable' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
 
 # Obsolete baseline commands must not return to user-facing documentation.
 if grep -RInE --include='*.md' 'baseline-doctor[[:space:]]+(record-memory|record-nvme-io|record-suspend)' "$ROOT/docs" "$ROOT/README.md"; then

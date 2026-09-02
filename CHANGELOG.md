@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.0 — 2026-09-01
+
+- Ajout du **Workstation Control Center** avec `control.sh` comme point d'entrée opérateur recommandé et `menu.sh` conservé comme alias de compatibilité.
+- Remplacement du menu plat historique par neuf socles lisibles : Installation & convergence, Mises à jour, Sauvegarde & restauration, Diagnostics & santé, Kernel & boot, KVM / machines virtuelles, Maintenance, Certification, Logs & preuves.
+- Ajout d'un tableau de bord terminal affichant version, Fedora, runtime, kernel actif, politique `kernel-vanilla/stable latest-stable`, Arc B580/driver, état Git, backup, certification, KVM et besoin de reboot.
+- Ajout d'une présentation ANSI limitée aux vrais TTY avec support `NO_COLOR=1`; aucune dépendance TUI externe n'est introduite.
+- Ajout d'un mode CLI scriptable (`control.sh install|update|backup|doctor|kernel|kvm|cert|logs`) conservant les codes de retour des moteurs appelés.
+- La couche UI reste volontairement mince : aucune logique `apply_gate_open`, Restic, DNF, Flatpak ou nftables n'est dupliquée dans `control.sh`/`lib/control_center.sh`.
+- Ajout de `scripts/maintenance/update-system.sh` pour les mises à jour quotidiennes structurées.
+- La mise à jour complète sécurisée exige un runtime bare-metal, réalise un backup Restic complet et son contrôle d'intégrité avant `dnf upgrade --refresh`, met ensuite à jour les Flatpaks, consulte fwupd en lecture seule puis exécute le diagnostic global et indique le besoin de reboot.
+- Le firmware n'est **jamais flashé automatiquement** par le nouvel updater ; seule `fwupdmgr get-updates` est utilisée dans le parcours automatisé.
+- La politique kernel reste inchangée : `kernel-vanilla/stable` suit la dernière stable upstream, plancher actuel `7.2.2`, kernel Fedora conservé comme fallback ; aucune branche `mainline`, `-rc` ou `linux-next` n'entre dans le Golden.
+- Ajout de `docs/CONTROL_CENTER.md`, mise à jour du portail documentaire et du README pour faire du cockpit l'interface opérateur principale.
+- Ajout de `tests/test_workstation_control_center_contract.sh` et extension des contrats entrypoints/documentation afin d'empêcher toute régression vers un cockpit monolithique ou un contournement des moteurs protégés.
+
 ## 0.12.0 — 2026-09-01
 
 - Ajout de **Desktop Icons NG (DING)** au profil fonctionnel Golden depuis l'artefact GNOME Extensions review `74408` / version de site `95`, UUID `ding@rastersoft.com`, déclaré compatible GNOME Shell 50.
