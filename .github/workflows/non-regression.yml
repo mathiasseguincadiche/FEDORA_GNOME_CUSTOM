@@ -43,6 +43,8 @@ jobs:
           grep -Fq 'Fedora Linux 44' "$lab"
           grep -Fq 'GNOME Shell 50' "$lab"
           grep -Fq 'Wayland is required for GATE 2' "$lab"
+          grep -Fq 'modules/gnome/24b_resource_monitor.sh' "$lab"
+          grep -Fq 'gnome_telemetry_apply' "$lab"
           ! grep -Fq 'orchestrator_run_all' "$lab"
           ! grep -Fq 'apply_gate_open' "$lab"
           ! grep -Fq 'modules/system/' "$lab"
@@ -59,6 +61,18 @@ jobs:
           grep -F 'ALLOW_GPU_PASSTHROUGH="false"' config/virtualization.conf
           grep -F 'ALLOW_FORCE_PROBE="false"' config/graphics.conf
           ! grep -RInEi --exclude-dir=.git 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' config manifests modules scripts guest diagnostics
+      - name: Resource Monitor telemetry invariants
+        run: |
+          grep -Fq 'ENABLE_RESOURCE_MONITOR="true"' config/gnome.conf
+          grep -Fq 'RESOURCE_MONITOR_REVIEW_ID="70909"' config/gnome.conf
+          grep -Fq 'RESOURCE_MONITOR_VERSION="28"' config/gnome.conf
+          grep -Fq 'Resource_Monitor@Ory0n' config/gnome.conf
+          grep -Fq 'gnome.telemetry|GNOME|gnome.extensions|modules/gnome/24b_resource_monitor.sh' manifests/module-plan.conf
+          grep -Fq '0xe20b' modules/gnome/24b_resource_monitor.sh
+          grep -Fq 'gpu_busy_percent' modules/gnome/24b_resource_monitor.sh
+          grep -Fq 'gt_busy_percent' modules/gnome/24b_resource_monitor.sh
+          grep -Fq 'runtime_is_baremetal' modules/gnome/24b_resource_monitor.sh
+          ! grep -RFiq 'Astra Monitor' config manifests modules/gnome scripts/gnome
       - name: KVM network ownership boundary
         run: |
           grep -F 'KVM_NETWORK_CIDR="192.168.50.0/24"' config/virtualization.conf
