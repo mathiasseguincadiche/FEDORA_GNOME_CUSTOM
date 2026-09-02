@@ -13,7 +13,7 @@ bash -n "$ROOT/lib/control_center.sh"
 bash -n "$ROOT/scripts/maintenance/update-system.sh"
 
 # The historical menu entrypoint must remain a compatibility alias, not a second implementation.
-grep -Fq 'exec "$REPO_ROOT/control.sh" "$@"' "$ROOT/menu.sh"
+grep -Fq "exec \"\$REPO_ROOT/control.sh\" \"\$@\"" "$ROOT/menu.sh"
 [[ "$(wc -l < "$ROOT/menu.sh")" -le 10 ]] || { echo 'menu.sh should remain a thin alias' >&2; exit 1; }
 
 # Operator surface: nine clear functional pillars plus non-interactive CLI.
@@ -50,20 +50,20 @@ if grep -Eq 'apply_gate_open|dnf[[:space:]]+upgrade|restic[[:space:]]+backup' "$
 fi
 
 # Existing protected engines must be called, not bypassed.
-grep -Fq '"$REPO_ROOT/install.sh" --dry-run' "$ROOT/lib/control_center.sh"
-grep -Fq '"$REPO_ROOT/install.sh" --apply' "$ROOT/lib/control_center.sh"
-grep -Fq '"$REPO_ROOT/prepare-preapply-backup.sh"' "$ROOT/lib/control_center.sh"
-grep -Fq '"$REPO_ROOT/scripts/backup/restore.sh" restore' "$ROOT/lib/control_center.sh"
-grep -Fq '"$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh"' "$ROOT/lib/control_center.sh"
-grep -Fq '"$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" reconcile' "$ROOT/lib/control_center.sh"
+grep -Fq "\"\$REPO_ROOT/install.sh\" --dry-run" "$ROOT/lib/control_center.sh"
+grep -Fq "\"\$REPO_ROOT/install.sh\" --apply" "$ROOT/lib/control_center.sh"
+grep -Fq "\"\$REPO_ROOT/prepare-preapply-backup.sh\"" "$ROOT/lib/control_center.sh"
+grep -Fq "\"\$REPO_ROOT/scripts/backup/restore.sh\" restore" "$ROOT/lib/control_center.sh"
+grep -Fq "\"\$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh\"" "$ROOT/lib/control_center.sh"
+grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib/control_center.sh"
 
 # Full update is fail-closed around a real Restic system backup and remains bare-metal only.
 grep -Fq 'runtime_is_baremetal' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'mandatory_preupdate_backup' "$ROOT/scripts/maintenance/update-system.sh"
-grep -Fq '"$REPO_ROOT/scripts/backup/backup-now.sh"' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq "\"\$REPO_ROOT/scripts/backup/backup-now.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'sudo dnf upgrade --refresh -y' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'flatpak update -y' "$ROOT/scripts/maintenance/update-system.sh"
-grep -Fq '"$REPO_ROOT/diagnostic.sh"' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq "\"\$REPO_ROOT/diagnostic.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
 
 # Firmware is query-only from the automated update path.
 grep -Fq 'fwupdmgr get-updates' "$ROOT/scripts/maintenance/update-system.sh"
