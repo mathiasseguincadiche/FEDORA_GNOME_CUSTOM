@@ -29,6 +29,14 @@ Le premier lancement peut créer le fichier de passphrase sous `~/.config/fedora
 
 La capture contient notamment : inventaire RPM/Flatpak, services activés, stockage/montages, PCI/routage, fichiers suivis du projet, configuration GNOME utilisateur, archive privilégiée `/etc` + `/boot`, ainsi que les XML/domaines/réseaux/pools libvirt présents.
 
+## Sauvegarde quotidienne utilisateur
+
+Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment de l'exécution. Les clés `DESKTOP`, `DOCUMENTS`, `PICTURES`, `VIDEOS` et `MUSIC` suivent donc la configuration XDG réelle de l'utilisateur : sur le profil français, `Bureau`, `Images`, `Vidéos` et `Musique` sont protégés sans dépendre de noms anglais codés en dur.
+
+Les chemins supplémentaires restent `Projects`, `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
+
+Le script refuse une source XDG ambiguë qui résoudrait directement vers `$HOME`, refuse les chemins supplémentaires absolus ou contenant `..`, et enregistre dans `state/last-daily-backup.ok` le nombre ainsi que la liste exacte des sources incluses dans le snapshot.
+
 ## Backup d'exploitation
 
 HOST + métadonnées KVM :
