@@ -1,17 +1,30 @@
 # Documentation — commencer ici
 
-Cette documentation explique comment **comprendre, installer, utiliser, valider et dépanner** FEDORA_GNOME_CUSTOM sans devoir lire les scripts internes en premier.
+Cette documentation explique comment **comprendre, administrer, installer, utiliser, valider et dépanner** FEDORA_GNOME_CUSTOM sans devoir lire les scripts internes en premier.
 
 La version du projet est toujours celle du fichier [`../VERSION`](../VERSION). Les documents normatifs évitent volontairement de recopier un numéro de version dans leur titre afin de ne pas devenir obsolètes à chaque release.
+
+## Je veux administrer la workstation au quotidien
+
+Le point d'entrée recommandé est :
+
+```bash
+./control.sh
+```
+
+Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif, son tableau de bord, les neuf socles opérateur et le mode CLI scriptable.
+
+`./menu.sh` reste un alias de compatibilité. Les scripts spécialisés restent directement utilisables pour CI, dépannage et automatisation.
 
 ## Je découvre le projet
 
 Commencer dans cet ordre :
 
 1. [`../README.md`](../README.md) — objectif global et contrat Golden Workstation ;
-2. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire Fedora, KVM, libvirt, stockage et réseau ;
-3. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et chaîne de confiance ;
-4. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal complète.
+2. [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — interface opérateur quotidienne ;
+3. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire Fedora, KVM, libvirt, stockage et réseau ;
+4. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et chaîne de confiance ;
+5. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal complète.
 
 Un débutant n'a pas besoin de comprendre `virt-qemu-qmp-proxy`, `guestfish` ou les détails nftables avant d'installer la workstation. Ces sujets appartiennent aux documents de référence avancée.
 
@@ -32,9 +45,10 @@ Lire :
 - [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — parcours principal ;
 - [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — tests RAM/NVMe avant APPLY ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — backup Restic obligatoire avant APPLY ;
-- [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) — différence diagnostic / dry-run / APPLY et protections.
+- [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) — différence diagnostic / dry-run / APPLY et protections ;
+- [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — accès au même parcours depuis le cockpit.
 
-Le parcours de confiance bare-metal est :
+Le parcours de confiance bare-metal reste :
 
 ```text
 Fedora 44 fraîche
@@ -51,6 +65,35 @@ reboot
       ↓
 certification bare-metal
 ```
+
+Le Control Center appelle ces mêmes moteurs ; il ne crée aucun chemin parallèle moins sécurisé.
+
+## Je veux mettre à jour le poste
+
+Le cockpit fournit un socle **Mises à jour** :
+
+```bash
+./control.sh update check
+./control.sh update all
+```
+
+La mise à jour complète suit :
+
+```text
+backup Restic obligatoire
+      ↓
+DNF --refresh
+      ↓
+Flatpak
+      ↓
+firmware check read-only
+      ↓
+diagnostic global
+      ↓
+reboot status
+```
+
+Aucun firmware n'est flashé automatiquement. Le kernel Golden reste `kernel-vanilla/stable` en politique `latest-stable`, avec le kernel Fedora conservé comme fallback.
 
 ## Je veux utiliser KVM et les VM
 
@@ -97,6 +140,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 
 ## Documents de référence
 
+- [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — cockpit terminal et mode CLI ;
 - [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — contrat et checklist du GATE 2 ;
 - [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — outils KVM/libvirt avancés ;
 - [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md) — catalogue graphique et exceptions ;

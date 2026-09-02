@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.12.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
+**Golden Workstation 0.13.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe Crucial T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
 
 Le projet traite le poste de travail comme une infrastructure versionnée :
 
@@ -8,11 +8,37 @@ Le projet traite le poste de travail comme une infrastructure versionnée :
 mesurer → préflight → sauvegarder → converger → redémarrer → certifier
 ```
 
+## Point d'entrée opérateur
+
+Le point d'entrée recommandé au quotidien est désormais le **Workstation Control Center** :
+
+```bash
+./control.sh
+```
+
+Il fournit une interface terminal structurée autour de neuf socles : installation, mises à jour, backup/restauration, diagnostics, kernel/boot, KVM, maintenance, certification et logs/preuves.
+
+Le mode CLI reste disponible pour l'automatisation :
+
+```bash
+./control.sh status
+./control.sh install dry-run
+./control.sh update check
+./control.sh update all
+./control.sh backup now
+./control.sh doctor all
+./control.sh kernel status
+./control.sh cert status
+```
+
+`./menu.sh` reste un alias de compatibilité vers le même cockpit. Les moteurs historiques (`install.sh`, `diagnostic.sh`, scripts backup/kernel/KVM) restent directement appelables et conservent leurs propres garde-fous.
+
+Voir [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
+
 ## Commencer ici
 
-Pour découvrir le projet sans devoir lire le code source en premier :
-
 - [`docs/README.md`](docs/README.md) — portail documentaire et parcours de lecture ;
+- [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) — centre de contrôle interactif et CLI ;
 - [`docs/GLOSSARY.md`](docs/GLOSSARY.md) — vocabulaire Fedora/KVM/libvirt ;
 - [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
 - [`docs/VIRTUALBOX_GNOME_LAB.md`](docs/VIRTUALBOX_GNOME_LAB.md) — GATE 2 GNOME/VirtualBox fail-closed ;
@@ -30,7 +56,8 @@ BASELINE MATÉRIELLE
 PREFLIGHT NON-MUTANT + BACKUP RESTIC
         ↓
 APPLY PROTÉGÉ
-  kernel stable + firmware/microcode
+  kernel-vanilla/stable latest-stable
+  firmware / microcode
   GNOME 50 / Wayland / codecs / applications
   Bureau XDG + Corbeille + Show Desktop
   Bash UX / portals / secrets / print-scan / VPN / power
@@ -54,27 +81,34 @@ CERTIFICATION BARE-METAL
 
 La CI complète cette certification ; elle ne prétend pas remplacer les preuves physiques.
 
+## 0.13.0 — Workstation Control Center
+
+Cette release ajoute la couche opérateur qui manquait au projet sans déplacer la logique métier hors de ses moteurs spécialisés :
+
+- `control.sh` devient le cockpit principal ;
+- `menu.sh` reste un alias compatible ;
+- interface terminal structurée et lisible avec couleurs ANSI uniquement en TTY et support `NO_COLOR=1` ;
+- tableau de bord immédiat : version, Fedora, runtime, kernel, politique Golden, B580/xe, Git, backup, certification, KVM et reboot ;
+- neuf sous-menus fonctionnels au lieu d'une liste plate d'actions ;
+- mode CLI scriptable avec conservation des codes de retour ;
+- nouveau moteur `scripts/maintenance/update-system.sh` ;
+- mise à jour complète sécurisée : **backup Restic obligatoire → DNF `--refresh` → Flatpak → firmware check read-only → diagnostic → reboot status** ;
+- aucun flash firmware automatique ;
+- aucune logique `apply_gate_open`, Restic, nftables ou DNF dupliquée dans la couche UI ;
+- le kernel Golden reste `kernel-vanilla/stable`, politique `latest-stable`, avec kernel Fedora conservé comme fallback ;
+- ajout d'un contrat CI dédié empêchant le cockpit de contourner les moteurs protégés.
+
 ## 0.12.0 — Desktop Ergonomics
 
-Cette release ajoute deux fonctions utilisateur au contrat Golden sans transformer GNOME en bureau lourdement thémé :
+La 0.12.0 a ajouté deux fonctions utilisateur au contrat Golden sans transformer GNOME en bureau lourdement thémé :
 
-- **Desktop Icons NG (DING)** devient une extension fonctionnelle gérée depuis l'artefact GNOME Extensions review `74408` / version de site `95`, compatible GNOME Shell 50 ;
-- Fedora 44 ne fournit pas DING dans le manifest RPM du projet ; l'installateur valide l'UUID, la compatibilité GNOME 50, le schéma et la provenance ;
-- `~/Bureau` devient explicitement le dossier XDG Desktop et son contenu est rendu sur le fond d'écran ;
-- la **Corbeille est visible**, tandis que Home, volumes externes et volumes réseau restent masqués ;
-- **Show Desktop Plus** est ajouté depuis l'artefact GNOME Extensions version `8` / review `70326`, déclaré compatible GNOME 50 ;
-- son bouton est positionné à gauche de la barre supérieure ; clic gauche = afficher/restaurer le bureau ;
-- `Super+D` fournit le même toggle au clavier ;
-- le badge de nombre de fenêtres est désactivé pour conserver une barre supérieure sobre ;
-- `gnome-doctor` certifie désormais le dossier XDG Desktop, les réglages DING et la provenance/configuration des deux extensions utilisateur ;
-- la CI Fedora vérifie les deux artefacts GNOME-reviewed, leurs schémas GSettings et la convergence des préférences dans un utilisateur de test ;
-- un **LAB GNOME VirtualBox fail-closed** permet de converger cette seule surface graphique au GATE 2 sans jamais ouvrir `install.sh --apply` en VM.
-
-La validation visuelle et comportementale réelle de ces deux fonctions est réalisée au GATE 2 GNOME/VirtualBox via [`docs/VIRTUALBOX_GNOME_LAB.md`](docs/VIRTUALBOX_GNOME_LAB.md), puis confirmée bare-metal.
-
-## 0.11.0 — documentation opérateur et durcissement KVM
-
-La 0.11.0 a transformé la documentation en interface opérateur et renforcé notamment le réseau KVM fail-closed, la certification runtime et la provenance des images VM. Le détail historique reste dans [`CHANGELOG.md`](CHANGELOG.md).
+- **Desktop Icons NG (DING)** depuis l'artefact GNOME Extensions review `74408` / version de site `95`, compatible GNOME Shell 50 ;
+- `~/Bureau` comme dossier XDG Desktop, avec contenu visible sur le fond d'écran ;
+- **Corbeille visible**, Home/volumes externes/réseau masqués ;
+- **Show Desktop Plus** depuis review `70326` / version `8` ;
+- bouton Show Desktop à gauche de la barre supérieure, clic gauche toggle bureau/fenêtres ;
+- `Super+D` pour le même comportement ;
+- LAB GNOME VirtualBox fail-closed pour la validation graphique GATE 2.
 
 ## Matériel ciblé
 
@@ -82,7 +116,7 @@ Le profil versionné attend notamment :
 
 - AMD Ryzen 7 7700 ;
 - MSI MAG B850M Mortar WiFi ;
-- 48 Gio DDR5 ;
+- 48 Gio DDR5 dans la baseline actuelle ;
 - Intel Arc B580 PCI `8086:e20b` sur pilote `xe` ;
 - deux Crucial T705 ;
 - écran ASUS 2560×1440/240 Hz.
@@ -90,6 +124,18 @@ Le profil versionné attend notamment :
 Cette précision est volontaire : un changement de composant majeur est traité comme une évolution de plateforme et doit être recertifié.
 
 ## Kernel, Arc et stabilité
+
+Politique Golden :
+
+```text
+Golden default     kernel-vanilla/stable
+Cible              latest stable upstream
+Minimum actuel     7.2.2
+Fallback           kernel Fedora officiel conservé
+Exclus du Golden   mainline / -rc / linux-next
+```
+
+Contrôles :
 
 ```bash
 ./diagnostics/kernel-doctor
@@ -184,7 +230,7 @@ bridge         virbr50
 CIDR           192.168.50.0/24
 ```
 
-Les profils invités sont :
+Profils invités :
 
 - `ubuntu-devops` — Ubuntu Server 26.04, 6 vCPU, 16 Gio, 160 Gio ;
 - `windows-11` — Windows 11, 4 vCPU, 12 Gio, 128 Gio, UEFI Secure Boot + TPM 2.0.
@@ -231,8 +277,6 @@ scripts/kvm/create_ubuntu_devops_vm.sh \
 
 La VM est ensuite provisionnée pour `clone → build/test → containerize → deploy` : Git/GitHub/GitLab, Docker, Terraform, Ansible, AWS/Azure, kubectl/Helm/kind/Minikube/K9s, Node 22, Java 21/Maven, Python et outils Ops.
 
-Le mot de passe runtime reste pour console/sudo ; SSH n'accepte que la clé publique injectée.
-
 ### Windows 11
 
 ```bash
@@ -241,21 +285,15 @@ scripts/kvm/create_windows11_vm.sh \
   --virtio-iso /data/libvirt/iso/virtio-win.iso
 ```
 
-Lorsque des SHA-256 obtenus depuis les sources de confiance sont disponibles :
-
-```bash
-scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso \
-  --windows-sha256 '<sha256-de-confiance>' \
-  --virtio-sha256 '<sha256-de-confiance>'
-```
+Lorsque des SHA-256 obtenus depuis les sources de confiance sont disponibles, les deux ISO peuvent être vérifiées avant création.
 
 Voir [`docs/VM_PROFILES.md`](docs/VM_PROFILES.md) et [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md).
 
 ## Backup / recovery
 
 Le pré-APPLY Restic est fail-closed : cible externe/remote, chiffrement, intégrité, restore test, snapshot lié au même commit et arrêt des VM pour les disques.
+
+La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.).
 
 Les restores sont staging-first.
 
@@ -289,7 +327,17 @@ Le générateur affiche la cible, exige `EFFACER /dev/...` et inscrit le SHA Git
 ./diagnostics/baseline-doctor certify
 ```
 
+La qualification mémoire automatisée utilise **60 minutes** par profil mémoire conformément à `config/performance.conf`.
+
 ### 3. Preflight, backup, APPLY
+
+Depuis le cockpit :
+
+```bash
+./control.sh
+```
+
+Ou directement :
 
 ```bash
 ./install.sh --dry-run
@@ -300,9 +348,25 @@ Le générateur affiche la cible, exige `EFFACER /dev/...` et inscrit le SHA Git
 
 Le gate exige bare-metal réel, Git propre, preflight du même commit, baseline valide, backup Restic du même commit et confirmation exacte.
 
+## Mises à jour quotidiennes
+
+Vérification read-only :
+
+```bash
+./control.sh update check
+```
+
+Mise à jour complète sécurisée :
+
+```bash
+./control.sh update all
+```
+
+La transaction complète exige bare-metal, réalise un backup Restic complet avant DNF, met ensuite à jour Fedora et les Flatpaks, consulte fwupd sans flasher, exécute le diagnostic global et indique si un reboot est requis.
+
 ## CI et gouvernance
 
-Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop et cloisonnement du LAB VirtualBox.
+Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop, Control Center et cloisonnement du LAB VirtualBox.
 
 La politique cible pour `main` exige PR + checks verts et interdit force-push/suppression.
 
@@ -310,6 +374,6 @@ Voir [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) et [`docs/GITHUB_GOVERNANC
 
 ## Version
 
-`0.12.0` — **Desktop Ergonomics**.
+`0.13.0` — **Workstation Control Center**.
 
 La 1.0 sera justifiée par une installation bare-metal complète, une certification finale réussie et une période d'usage réel stable — pas par l'ajout artificiel de fonctionnalités.

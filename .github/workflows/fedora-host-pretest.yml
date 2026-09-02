@@ -7,6 +7,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'control.sh'
+      - 'menu.sh'
+      - 'lib/control_center.sh'
       - 'manifests/**'
       - 'config/repos/**'
       - 'config/desktop.conf'
@@ -23,12 +26,16 @@ on:
       - 'scripts/backup/**'
       - 'scripts/gnome/**'
       - 'scripts/kvm/**'
+      - 'scripts/maintenance/**'
       - 'scripts/shell/**'
       - 'shell/**'
       - 'systemd/user/**'
       - '.github/workflows/fedora-host-pretest.yml'
   pull_request:
     paths:
+      - 'control.sh'
+      - 'menu.sh'
+      - 'lib/control_center.sh'
       - 'manifests/**'
       - 'config/repos/**'
       - 'config/desktop.conf'
@@ -45,6 +52,7 @@ on:
       - 'scripts/backup/**'
       - 'scripts/gnome/**'
       - 'scripts/kvm/**'
+      - 'scripts/maintenance/**'
       - 'scripts/shell/**'
       - 'shell/**'
       - 'systemd/user/**'
@@ -80,6 +88,25 @@ jobs:
             manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install restic jq acl xorriso dbus-daemon "${packages[@]}"
           rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome xdg-user-dirs ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv unzip
+      - name: Validate Workstation Control Center on Fedora 44
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          status="$(NO_COLOR=1 ./control.sh status)"
+          printf '%s\n' "$status"
+          grep -Fq 'FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE' <<<"$status"
+          grep -Eq 'Projet[[:space:]]+0\.13\.0' <<<"$status"
+          grep -Eq 'Fedora[[:space:]]+44' <<<"$status"
+          grep -Eq 'Runtime[[:space:]]+CI' <<<"$status"
+          grep -Fq 'vanilla/stable latest-stable' <<<"$status"
+          ./control.sh --help >/dev/null
+          ./scripts/maintenance/update-system.sh --help >/dev/null
+          set +e
+          NO_COLOR=1 ./control.sh update all > /tmp/control-update-blocked.log 2>&1
+          rc=$?
+          set -e
+          test "$rc" -eq 50
+          grep -Fq 'Mutating updates are bare-metal only' /tmp/control-update-blocked.log
       - name: Validate Fedora host Bash UX
         shell: bash
         run: |
