@@ -16,7 +16,7 @@ Désactiver le profil mémoire 6000 dans le BIOS puis :
 ./diagnostics/baseline-doctor run-memory-test 5600
 ```
 
-Le script vérifie la vitesse configurée et exécute `stress-ng --verify`. Le log est conservé et son SHA-256 est inclus dans la preuve.
+Le script vérifie la vitesse configurée et exécute `stress-ng --verify` pendant **3600 secondes (60 minutes)** avec 70 % de la mémoire ciblée par le test. Le log est conservé et son SHA-256 est inclus dans la preuve.
 
 ### RAM 6000
 
@@ -26,7 +26,9 @@ Réactiver 6000 MT/s, redémarrer puis :
 ./diagnostics/baseline-doctor run-memory-test 6000
 ```
 
-Le dépôt ne modifie jamais timings/voltage/profil mémoire BIOS.
+Le burn-in automatisé dure également **60 minutes**. Le dépôt ne modifie jamais timings/voltage/profil mémoire BIOS.
+
+Pour une première qualification d'une configuration DDR5-6000, une passe mémoire longue hors OS (par exemple Memtest86+) est recommandée en complément. Elle reste une preuve manuelle supplémentaire et ne remplace pas les deux preuves automatisées 5600/6000 exigées par le gate.
 
 ### T705 système et DATA
 
@@ -61,8 +63,8 @@ Suspend/resume appartient à la **certification finale post-APPLY**, après inst
 ## Gate APPLY
 
 ```text
-RAM 5600 automatisée PASS
-RAM 6000 automatisée PASS
+RAM 5600 automatisée PASS — burn-in 60 min
+RAM 6000 automatisée PASS — burn-in 60 min
 T705 root automatisé PASS
 T705 /data automatisé PASS
 hardware health PASS
