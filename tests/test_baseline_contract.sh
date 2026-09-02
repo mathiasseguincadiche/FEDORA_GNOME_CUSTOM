@@ -8,6 +8,8 @@ grep -Fq 'baseline_certification_valid' "$ROOT/lib/apply_gate.sh"
 for evidence in memory-5600 memory-6000 nvme-root nvme-data; do grep -Fq "baseline_evidence_valid $evidence" "$ROOT/lib/baseline.sh" || { echo "missing baseline evidence contract: $evidence" >&2; exit 1; }; done
 grep -Fq 'automated=true' "$ROOT/diagnostics/baseline-doctor"
 grep -Fq 'stress-ng' "$ROOT/diagnostics/baseline-doctor"
+grep -Fq 'BASELINE_MEMORY_TEST_SECONDS="3600"' "$ROOT/config/performance.conf"
+grep -Fq 'BASELINE_MEMORY_TEST_SECONDS:-3600' "$ROOT/diagnostics/baseline-doctor"
 grep -Fq 'fio --name=' "$ROOT/diagnostics/baseline-doctor"
 grep -Fq 'root and /data must be backed by two distinct physical NVMe devices' "$ROOT/lib/baseline.sh"
 grep -Fq 'BASELINE_MIN_SUSPEND_CYCLES="0"' "$ROOT/config/baseline.conf"
