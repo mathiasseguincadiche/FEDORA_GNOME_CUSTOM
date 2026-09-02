@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_bootstrap
+source "$REPO_ROOT/modules/gnome/24b_resource_monitor.sh"
+export LC_ALL=C
+
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0
+warn=0
+expected=0
+ko=0
+
+emit() {
+  if ! $quiet; then ui_check "$1" "$2" "$3"; fi
+  case "$1" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    EXPECTED) ((expected+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+check_value() {
+  local label="$1" actual="$2" wanted="$3"
+  if [[ "$actual" == "$wanted" ]]; then emit OK "$label" "$wanted"; else emit KO "$label" "expected=$wanted actual=${actual:-unavailable}"; fi
+}
+
+if ! $quiet; then ui_banner 'GNOME RESOURCE MONITOR' 'CPU / RAM / GPU / NETWORK TELEMETRY'; fi
+
+uuid="${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
+extension_dir="$(resource_monitor_extension_dir)"
+schema_dir="$(resource_monitor_schema_dir)"
+schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}"
+marker="$extension_dir/.fedora-gnome-custom-source"
+
+if [[ -r "$extension_dir/metadata.json" ]]; then emit OK 'Resource Monitor payload' installed; else emit KO 'Resource Monitor payload' missing; fi
+if [[ -r "$marker" ]] \
+  && grep -Fxq "source_url=${RESOURCE_MONITOR_SOURCE_URL:-}" "$marker" \
+  && grep -Fxq "review_id=${RESOURCE_MONITOR_REVIEW_ID:-}" "$marker" \
+  && grep -Fxq "site_version=${RESOURCE_MONITOR_VERSION:-}" "$marker"; then
+  emit OK 'Resource Monitor provenance' "review=${RESOURCE_MONITOR_REVIEW_ID:-} version=${RESOURCE_MONITOR_VERSION:-}"
+else
+  emit KO 'Resource Monitor provenance' 'review marker missing or unexpected'
+fi
+
+if command_exists gnome-extensions && gnome-extensions list 2>/dev/null | grep -Fxq "$uuid" \
+  && gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+  emit OK 'Resource Monitor state' enabled
+elif [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  emit KO 'Resource Monitor state' 'not visible/enabled in current GNOME session'
+else
+  emit EXPECTED 'Resource Monitor state' 'requires active GNOME session'
+fi
+
+if [[ -r "$schema_dir/gschemas.compiled" ]]; then
+  check_value 'Refresh interval' "$(gsettings --schemadir "$schema_dir" get "$schema" refreshtime 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
+  check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus 2>/dev/null || true)" true
+  check_value 'CPU temperature' "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus 2>/dev/null || true)" true
+  check_value 'RAM usage' "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus 2>/dev/null || true)" true
+  check_value 'RAM percent' "$(gsettings --schemadir "$schema_dir" get "$schema" ramunit 2>/dev/null || true)" "'perc'"
+  check_value 'Ethernet throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus 2>/dev/null || true)" true
+  check_value 'Wi-Fi throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus 2>/dev/null || true)" true
+  check_value 'GPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus 2>/dev/null || true)" true
+  check_value 'Disk top-bar stats' "$(gsettings --schemadir "$schema_dir" get "$schema" diskstatsstatus 2>/dev/null || true)" false
+  check_value 'Swap top-bar stats' "$(gsettings --schemadir "$schema_dir" get "$schema" swapstatus 2>/dev/null || true)" false
+else
+  emit KO 'Resource Monitor schema' 'compiled GSettings schema missing'
+fi
+
+if runtime_is_baremetal; then
+  if cpu_sensor="$(resource_monitor_find_cpu_sensor 2>/dev/null)"; then
+    emit OK 'Ryzen CPU temperature source' "$cpu_sensor"
+  else
+    emit KO 'Ryzen CPU temperature source' 'k10temp/zenpower sensor unavailable'
+  fi
+
+  if gpu_card="$(resource_monitor_find_b580_card 2>/dev/null)"; then
+    emit OK 'Intel Arc B580' "$gpu_card / 8086:e20b"
+    if usage_path="$(resource_monitor_gpu_usage_path "$gpu_card" 2>/dev/null)"; then
+      usage_value="$(cat "$usage_path" 2>/dev/null || true)"
+      if [[ "$usage_value" =~ ^[0-9]+$ ]]; then emit OK 'B580 GPU load source' "$usage_path value=${usage_value}%"; else emit KO 'B580 GPU load source' "$usage_path unreadable value"; fi
+    else
+      emit KO 'B580 GPU load source' 'xe exposes neither gpu_busy_percent nor gt_busy_percent'
+    fi
+    if temp_path="$(resource_monitor_gpu_temperature_path "$gpu_card" 2>/dev/null)"; then
+      emit OK 'B580 temperature source' "$temp_path"
+    else
+      emit WARN 'B580 temperature source' 'DRM hwmon temperature unavailable'
+    fi
+  else
+    emit KO 'Intel Arc B580' 'PCI 8086:e20b not found in DRM sysfs'
+  fi
+else
+  emit EXPECTED 'Ryzen CPU temperature source' 'physical k10temp/zenpower proof is bare-metal only'
+  emit EXPECTED 'Intel Arc B580 telemetry' 'GPU load/temperature proof is bare-metal only'
+fi
+
+if ! $quiet; then
+  ui_meta OK "$ok"
+  ui_meta WARN "$warn"
+  ui_meta EXPECTED "$expected"
+  ui_meta KO "$ko"
+fi
+
+if (( ko == 0 )); then
+  if ! $quiet; then ui_summary 'RESOURCE MONITOR PASS' 'TELEMETRY CONTRACT SATISFIED FOR THIS RUNTIME' "$REPORT_ROOT" "$LOG_DIR"; fi
+else
+  if ! $quiet; then ui_summary 'RESOURCE MONITOR NEEDS ATTENTION' 'FIX KO BEFORE GOLDEN CERTIFICATION' "$REPORT_ROOT" "$LOG_DIR"; fi
+  exit "$EXIT_POSTCHECK_FAILED"
+fi

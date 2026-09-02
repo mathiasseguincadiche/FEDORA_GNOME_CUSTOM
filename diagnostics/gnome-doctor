@@ -93,6 +93,9 @@ fi
 if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
   report_local_extension 'Show Desktop Plus' "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}"
 fi
+if is_true "${ENABLE_RESOURCE_MONITOR:-false}"; then
+  report_local_extension 'Resource Monitor' "${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}" "${RESOURCE_MONITOR_SOURCE_URL:-}"
+fi
 
 if is_true "${INSTALL_EXTENSION_MANAGER:-false}"; then
   if flatpak info "${EXTENSION_MANAGER_FLATPAK_ID:-com.mattjakeman.ExtensionManager}" >/dev/null 2>&1; then
@@ -144,4 +147,14 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
     check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count)" "false"
   fi
 fi
+
+if is_true "${ENABLE_RESOURCE_MONITOR:-false}"; then
+  if bash "$REPO_ROOT/diagnostics/resource-monitor-doctor" --quiet; then
+    if ! $quiet; then ui_check OK 'Resource Monitor telemetry' 'doctor passed for current runtime'; fi
+  else
+    if ! $quiet; then ui_check KO 'Resource Monitor telemetry' 'doctor reported a contract failure'; fi
+    ((ko+=1))
+  fi
+fi
+
 (( ko == 0 ))

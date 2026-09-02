@@ -4,6 +4,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
+source "$REPO_ROOT/modules/gnome/24b_resource_monitor.sh"
 export LC_ALL=C
 
 quiet=false
@@ -56,7 +57,7 @@ check_extension_state() {
 if ! $quiet; then ui_banner 'FEDORA VIRTUALBOX GNOME LAB' 'READ-ONLY GATE 2 RUNTIME CHECK'; fi
 
 missing=()
-for cmd in bash grep rpm systemd-detect-virt gnome-shell gnome-extensions gsettings xdg-user-dir; do
+for cmd in bash grep rpm systemd-detect-virt gnome-shell gnome-extensions gsettings xdg-user-dir python3; do
   command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
 done
 if ((${#missing[@]} != 0)); then
@@ -135,9 +136,27 @@ check_value 'Show Desktop left click' "$(gsettings --schemadir "$show_schema_dir
 check_value 'Show Desktop hotkey enabled' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey 2>/dev/null || true)" true
 check_value 'Show Desktop Super+D' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey 2>/dev/null || true)" "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']"
 check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count 2>/dev/null || true)" false
+
+resource_uuid="${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
+resource_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$resource_uuid"
+resource_schema_dir="$resource_dir/schemas"
+resource_schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}"
+if [[ -r "$resource_dir/metadata.json" ]]; then emit OK 'Resource Monitor payload' installed; else emit KO 'Resource Monitor payload' missing; fi
+check_source_marker 'Resource Monitor' "$resource_dir" "${RESOURCE_MONITOR_SOURCE_URL:-}" "${RESOURCE_MONITOR_REVIEW_ID:-}" "${RESOURCE_MONITOR_VERSION:-}"
+check_extension_state 'Resource Monitor' "$resource_uuid"
+check_value 'Resource Monitor refresh' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" refreshtime 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
+check_value 'Resource Monitor CPU' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" cpustatus 2>/dev/null || true)" true
+check_value 'Resource Monitor RAM' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" ramstatus 2>/dev/null || true)" true
+check_value 'Resource Monitor Ethernet' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" netethstatus 2>/dev/null || true)" true
+check_value 'Resource Monitor Wi-Fi' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" netwlanstatus 2>/dev/null || true)" true
+check_value 'Resource Monitor GPU setting' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" gpustatus 2>/dev/null || true)" true
+check_value 'Resource Monitor disk hidden' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" diskstatsstatus 2>/dev/null || true)" false
+check_value 'Resource Monitor swap hidden' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" swapstatus 2>/dev/null || true)" false
+
 check_value 'Window buttons' "$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || true)" "'${GNOME_WINDOW_BUTTON_LAYOUT:-:minimize,maximize,close}'"
 
-emit EXPECTED 'Arc B580 / xe' 'native PCI/driver proof remains bare-metal only'
+emit EXPECTED 'Ryzen CPU physical temperature' 'k10temp/Tctl proof remains bare-metal only'
+emit EXPECTED 'Arc B580 / xe telemetry' 'native PCI/load/temperature proof remains bare-metal only'
 emit EXPECTED 'Physical T705' 'NVMe/SMART/I/O proof remains bare-metal only'
 emit EXPECTED 'KVM host certification' 'qemu:///system and devops-nat remain bare-metal only'
 

@@ -68,6 +68,32 @@ Badge fenêtres         false
 
 Un clic gauche masque les fenêtres du workspace courant pour dégager immédiatement le bureau DING ; un second clic restaure les fenêtres suivies par l'extension. `Super+D` fournit le même accès au clavier.
 
+### Resource Monitor
+
+**Activé par défaut** pour la télémétrie lisible en permanence dans la barre supérieure.
+
+Source gérée : artefact GNOME Extensions **review `70909` / version de site `28`**, UUID `Resource_Monitor@Ory0n`, déclaré compatible GNOME Shell 50. Comme DING et Show Desktop Plus, le projet utilise l'artefact GNOME-reviewed exact et conserve un marqueur de provenance.
+
+Profil Golden volontairement compact :
+
+```text
+CPU                  utilisation % + température Ryzen Tctl
+RAM                  pourcentage utilisé
+Ethernet             débit descendant | montant, auto-hide si inactif
+Wi-Fi                débit descendant | montant, auto-hide si inactif
+GPU Intel Arc B580   charge % + température si exposée par xe/hwmon
+Rafraîchissement     2 secondes
+Position             zone droite du panneau
+Disque               masqué dans le panneau
+Swap                  masquée dans le panneau
+```
+
+Le code de Resource Monitor v28 détecte les GPU Intel via DRM/sysfs. Pour la B580, le projet exige le PCI `8086:e20b` et tente les compteurs `gpu_busy_percent` puis `gt_busy_percent`. La température GPU est lue via le `hwmon` DRM lorsqu'il est exposé.
+
+Le choix est **fail-closed** sur le bare-metal : si la B580 est présente mais qu'aucune vraie source de charge GPU n'est lisible, `gnome.telemetry`/`resource-monitor-doctor` passent en KO. Le projet n'affiche jamais un faux `0 %` pour contourner une limitation de télémétrie `xe`. L'absence de température GPU peut rester WARN si le compteur de charge est valide.
+
+Le Ryzen 7 7700 utilise en priorité le capteur `k10temp`/`Tctl` (ou `zenpower` lorsqu'il est exposé). Aucun daemon de monitoring supplémentaire n'est requis : les données CPU/RAM/réseau viennent des interfaces kernel et les données GPU de DRM/sysfs.
+
 ## Blur My Shell
 
 Installable, mais **désactivé dans l'état Golden certifié**. Il ajoute un chemin de rendu cosmétique sans bénéfice fonctionnel nécessaire et complique l'analyse des régressions à 240 Hz ou après reprise de veille.
@@ -80,22 +106,23 @@ Il peut être testé manuellement A/B après certification, mais son activation 
 
 ## Exclusions
 
-Just Perfection et Dash to Panel ne sont pas imposés par le projet. Les anciennes extensions Desktop Icons autres que DING ne font pas partie du profil.
+Just Perfection et Dash to Panel ne sont pas imposés par le projet. Les anciennes extensions Desktop Icons autres que DING ne font pas partie du profil. Astra Monitor n'est pas retenu pour le Golden : son monitoring GPU documenté ne couvre pas la cible Intel Arc du projet aussi directement que Resource Monitor.
 
 ## Convergence et première session
 
-Les RPM Dash to Dock/AppIndicator peuvent être installés alors que GNOME Shell tourne déjà. DING et Show Desktop Plus sont, eux, ajoutés dans le répertoire d'extensions utilisateur depuis leurs artefacts GNOME-reviewed pinés. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
+Les RPM Dash to Dock/AppIndicator peuvent être installés alors que GNOME Shell tourne déjà. DING, Show Desktop Plus et Resource Monitor sont ajoutés dans le répertoire d'extensions utilisateur depuis leurs artefacts GNOME-reviewed pinés. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
 
 Le projet ne désactive jamais les contrôles simplement pour contourner cette frontière de session Wayland.
 
 ## Validation VirtualBox avant bare-metal
 
-Le GATE 2 utilise [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md). Son entrypoint séparé peut converger uniquement DING, Show Desktop Plus et les boutons de fenêtres dans une vraie session Fedora 44 GNOME 50/Wayland sous VirtualBox. `install.sh --apply` reste bloqué en VM.
+Le GATE 2 utilise [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md). Son entrypoint séparé peut converger DING, Show Desktop Plus, Resource Monitor et les boutons de fenêtres dans une vraie session Fedora 44 GNOME 50/Wayland sous VirtualBox. `install.sh --apply` reste bloqué en VM. Les métriques CPU/RAM/réseau peuvent être observées dans le LAB ; la télémétrie physique Ryzen/B580 reste `EXPECTED` jusqu'au bare-metal.
 
 ## Diagnostic
 
 ```bash
 ./diagnostics/gnome-doctor
+bash ./diagnostics/resource-monitor-doctor
 ./diagnostics/virtualbox-gnome-lab-doctor   # uniquement dans le LAB VirtualBox
 ```
 
@@ -107,6 +134,8 @@ Le doctor GNOME vérifie notamment :
 - présence/provenance/activation de Show Desktop Plus ;
 - position gauche, action toggle et `Super+D` ;
 - absence de badge de fenêtres ;
+- présence/provenance/réglages de Resource Monitor ;
+- sur bare-metal, capteur Ryzen et vraie télémétrie de charge de l'Arc B580 ;
 - les autres extensions fonctionnelles du profil.
 
 ## Ajouter une extension

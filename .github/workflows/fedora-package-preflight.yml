@@ -117,3 +117,23 @@ jobs:
           unzip -q "$zip" -d "$dir"
           test -r "$dir/schemas/org.gnome.shell.extensions.show-desktop-plus.gschema.xml"
           glib-compile-schemas "$dir/schemas"
+      - name: Verify GNOME-reviewed Resource Monitor artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install curl unzip glib2
+          zip=/tmp/resource-monitor-v28.zip
+          dir=/tmp/resource-monitor-v28
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            https://extensions.gnome.org/review/download/70909.shell-extension.zip \
+            --output "$zip"
+          unzip -p "$zip" metadata.json > /tmp/resource-monitor-metadata.json
+          grep -Fq '"uuid": "Resource_Monitor@Ory0n"' /tmp/resource-monitor-metadata.json
+          grep -Eq '"50"|50' /tmp/resource-monitor-metadata.json
+          mkdir -p "$dir"
+          unzip -q "$zip" -d "$dir"
+          test -r "$dir/schemas/org.gnome.shell.extensions.resource-monitor.gschema.xml"
+          grep -Fq 'gpu_busy_percent' "$dir/services/runtime.js"
+          grep -Fq 'gt_busy_percent' "$dir/services/runtime.js"
+          grep -Fq '0x8086' "$dir/services/runtime.js"
+          glib-compile-schemas "$dir/schemas"

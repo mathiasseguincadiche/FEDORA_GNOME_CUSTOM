@@ -27,6 +27,7 @@ source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 source "$REPO_ROOT/modules/gnome/23_gnome_settings.sh"
 source "$REPO_ROOT/modules/gnome/24_gnome_extensions.sh"
+source "$REPO_ROOT/modules/gnome/24b_resource_monitor.sh"
 export LC_ALL=C
 
 lab_require_virtualbox() {
@@ -69,12 +70,14 @@ VIRTUALBOX GNOME LAB SCOPE
 - Set XDG Desktop to ~/Bureau; show Trash; hide Home/external/network volumes.
 - Install pinned GNOME-reviewed Show Desktop Plus v8.
 - Configure top-left toggle-desktop button and Super+D.
-- Enable DING and Show Desktop Plus in the current GNOME user session.
+- Install pinned GNOME-reviewed Resource Monitor v28.
+- Configure compact top-bar CPU/RAM/network/GPU telemetry; physical Ryzen/B580 sensors remain deferred in VirtualBox.
+- Enable DING, Show Desktop Plus and Resource Monitor in the current GNOME user session.
 - Run a read-only LAB doctor and write a commit-bound LAB proof marker.
 
 OUT OF SCOPE
 - Production install.sh --apply and its bare-metal gate.
-- Kernel, firmware, microcode, GPU/xe, storage/NVMe, KVM/libvirt, firewalld.
+- Kernel, firmware, microcode, physical GPU/xe telemetry, storage/NVMe, KVM/libvirt, firewalld.
 - Restic production backup/restore and bare-metal certification.
 PLAN
 }
@@ -87,7 +90,7 @@ lab_apply() {
   command_exists sudo || { ui_error 'sudo is required to install the minimal LAB helper packages'; return "$EXIT_PRECHECK_FAILED"; }
   sudo dnf -y install curl unzip xdg-user-dirs glib2
 
-  for cmd in curl unzip glib-compile-schemas gsettings gnome-extensions xdg-user-dirs-update; do
+  for cmd in curl unzip glib-compile-schemas gsettings gnome-extensions xdg-user-dirs-update python3; do
     command_exists "$cmd" || { ui_error "LAB dependency missing after package convergence: $cmd"; return "$EXIT_PRECHECK_FAILED"; }
   done
 
@@ -96,6 +99,7 @@ lab_apply() {
 
   gnome_settings_precheck || return "$?"
   gnome_extensions_precheck || return "$?"
+  gnome_telemetry_precheck || return "$?"
 
   gnome_settings_apply || return "$EXIT_APPLY_FAILED"
 
@@ -106,6 +110,7 @@ lab_apply() {
 
   gnome_ding_settings_apply || return "$EXIT_APPLY_FAILED"
   gnome_show_desktop_plus_settings_apply || return "$EXIT_APPLY_FAILED"
+  gnome_telemetry_apply || return "$EXIT_APPLY_FAILED"
 
   if ! gnome_extension_enable_checked 'Desktop Icons NG' "$ding_uuid"; then
     ui_error 'DING payload is installed but GNOME Shell did not expose it yet; log out/in and rerun --apply'
@@ -117,6 +122,7 @@ lab_apply() {
   fi
 
   gnome_settings_postcheck || return "$EXIT_POSTCHECK_FAILED"
+  gnome_telemetry_postcheck || return "$EXIT_POSTCHECK_FAILED"
   "$REPO_ROOT/diagnostics/virtualbox-gnome-lab-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
 
   proof="$STATE_ROOT/virtualbox-gnome-lab-$(repo_commit).ok"
