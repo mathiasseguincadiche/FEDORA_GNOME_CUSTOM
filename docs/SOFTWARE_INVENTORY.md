@@ -1,8 +1,10 @@
 # Inventaire logiciel — HOST Fedora 44 et VM Ubuntu DevOps
 
-Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora ou par le bootstrap Ubuntu.
+Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora, par les modules de convergence ou par le bootstrap Ubuntu.
 
 Les dépendances transitives (`glibc`, bibliothèques GTK/Qt, bibliothèques Python, dépendances RPM/DEB, etc.) ne sont volontairement pas figées ici : DNF et APT les résolvent au moment de l'installation et leur liste peut évoluer sans changement du projet.
+
+Le socle déjà fourni par l'image Fedora Workstation elle-même n'est pas recopié paquet par paquet : l'inventaire ci-dessous décrit principalement ce que **FEDORA_GNOME_CUSTOM exige, ajoute, remplace ou vérifie explicitement**.
 
 ## 1. HOST — Fedora 44 Golden Workstation
 
@@ -241,7 +243,42 @@ Complément RPM Fusion :
 
 Le driver `intel-media-driver` RPM Fusion n'est installé que si la mesure VA-API de l'Arc B580 montre qu'il est réellement nécessaire ; sinon le driver Fedora est conservé.
 
-### 1.12 KVM / libvirt / virtualisation
+### 1.12 Prérequis installés directement par les modules
+
+Certains paquets ne passent volontairement pas par un manifest générique parce qu'ils appartiennent à un gate ou à une convergence conditionnelle précise.
+
+Backup Restic / pré-APPLY :
+
+- restic
+- acl
+- tar
+- gzip
+- findutils
+- iproute
+- jq (déjà présent dans le socle, redemandé par sécurité)
+- pciutils (déjà présent dans le socle, redemandé par sécurité)
+
+Sources logicielles :
+
+- rpmfusion-free-release
+- rpmfusion-nonfree-release
+- remote Flathub configuré lorsque le profil l'autorise
+
+Kernel Golden :
+
+- `dnf5-plugins`, `mokutil` et `grubby` sont garantis avant l'activation du COPR ;
+- le dépôt `@kernel-vanilla/stable` est activé ;
+- la famille de paquets kernel déjà présente (`kernel*`, `perf`, `python3-perf` et outils kernel associés lorsqu'ils sont installés) est convergée vers la dernière stable disponible, tout en conservant un noyau Fedora comme fallback ;
+- la liste exacte des sous-paquets kernel dépend de la composition Fedora installée et n'est donc pas figée artificiellement.
+
+Convergence multimédia conditionnelle :
+
+- `ffmpeg` peut être installé directement ou remplacer `ffmpeg-free` ;
+- `intel-media-driver` n'est utilisé qu'en cas de déficit VA-API réellement mesuré sur l'Arc B580.
+
+Les paquets spécifiques au **LAB VirtualBox** ne font pas partie de l'installation HOST production et ne sont donc pas comptés ici comme additions de la Golden Workstation.
+
+### 1.13 KVM / libvirt / virtualisation
 
 Hyperviseur :
 
