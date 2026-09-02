@@ -1,33 +1,71 @@
 #!/usr/bin/env bash
-# Workstation Control Center UI/dispatcher. Business logic stays in public scripts.
-# REPO_ROOT, STATE_ROOT, RUNTIME_ENVIRONMENT and versioned config are loaded by bootstrap.
+# Workstation Control Center — operator UI and dispatcher only.
+# Business logic remains in install.sh, diagnostics/* and scripts/*.
+# REPO_ROOT, STATE_ROOT, LOG_ROOT, REPORT_ROOT and versioned config are loaded by bootstrap.
 
 CONTROL_WIDTH=86
-CC_RESET=''; CC_BOLD=''; CC_DIM=''; CC_BLUE=''; CC_CYAN=''; CC_GREEN=''; CC_YELLOW=''; CC_RED=''; CC_MAGENTA=''
+CC_RESET=''
+CC_BOLD=''
+CC_DIM=''
+CC_BLUE=''
+CC_CYAN=''
+CC_GREEN=''
+CC_YELLOW=''
+CC_RED=''
+CC_MAGENTA=''
 
 cc_init_colors() {
   if [[ -t 1 && -z "${NO_COLOR:-}" && "${TERM:-dumb}" != dumb ]]; then
-    CC_RESET=$'\033[0m'; CC_BOLD=$'\033[1m'; CC_DIM=$'\033[2m'
-    CC_BLUE=$'\033[34m'; CC_CYAN=$'\033[36m'; CC_GREEN=$'\033[32m'
-    CC_YELLOW=$'\033[33m'; CC_RED=$'\033[31m'; CC_MAGENTA=$'\033[35m'
+    CC_RESET=$'\033[0m'
+    CC_BOLD=$'\033[1m'
+    CC_DIM=$'\033[2m'
+    CC_BLUE=$'\033[34m'
+    CC_CYAN=$'\033[36m'
+    CC_GREEN=$'\033[32m'
+    CC_YELLOW=$'\033[33m'
+    CC_RED=$'\033[31m'
+    CC_MAGENTA=$'\033[35m'
   fi
 }
 
 cc_repeat() {
-  local char="$1" count="${2:-$CONTROL_WIDTH}" i
-  for ((i=0; i<count; i++)); do printf '%s' "$char"; done
+  local char="$1"
+  local count="${2:-$CONTROL_WIDTH}"
+  local i
+  for ((i = 0; i < count; i++)); do
+    printf '%s' "$char"
+  done
 }
 
-cc_rule() { cc_repeat '─'; printf '\n'; }
-cc_double_rule() { cc_repeat '═'; printf '\n'; }
-cc_clear() { [[ -t 1 ]] && command -v clear >/dev/null 2>&1 && clear || true; }
-cc_pause() { [[ -t 0 ]] && read -r -p 'Appuyez sur Entrée pour continuer… ' _ || true; }
+cc_rule() {
+  cc_repeat '─'
+  printf '\n'
+}
+
+cc_double_rule() {
+  cc_repeat '═'
+  printf '\n'
+}
+
+cc_clear() {
+  if [[ -t 1 ]] && command_exists clear; then
+    clear
+  fi
+}
+
+cc_pause() {
+  local pause_value=''
+  if [[ -t 0 ]]; then
+    read -r -p 'Appuyez sur Entrée pour continuer… ' pause_value
+  fi
+}
 
 cc_badge() {
-  local state="${1^^}" color="$CC_DIM"
+  local state="${1^^}"
+  local color="$CC_DIM"
   case "$state" in
     PASS|OK|CLEAN|VALID|NORMAL) color="$CC_GREEN" ;;
-    WARN|DIRTY|PENDING|REBOOT) color="$CC_YELLOW" ;;
+    WARN|DIRTY|PENDING|REBOOT|STALE) color="$CC_YELLOW" ;;
     KO|FAIL|FAILED|BLOCKED) color="$CC_RED" ;;
     EXPECTED|DEFERRED|N/A|UNKNOWN) color="$CC_CYAN" ;;
   esac
@@ -35,20 +73,48 @@ cc_badge() {
 }
 
 cc_version() {
-  [[ -r "$REPO_ROOT/VERSION" ]] && tr -d '[:space:]' < "$REPO_ROOT/VERSION" || printf 'unknown'
+  if [[ -r "$REPO_ROOT/VERSION" ]]; then
+    tr -d '[:space:]' < "$REPO_ROOT/VERSION"
+  else
+    printf 'unknown'
+  fi
+}
+
+cc_project_sha() {
+  local sha=''
+  sha="$(repo_commit)"
+  if [[ "$sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    printf '%.10s' "$sha"
+  else
+    printf '%s' "$sha"
+  fi
 }
 
 cc_fedora_version() {
-  local value=''
-  if [[ -r /etc/os-release ]]; then
-    value="$(awk -F= '$1=="VERSION_ID" {gsub(/"/,"",$2); print $2; exit}' /etc/os-release)"
+  local os_id=''
+  local version=''
+  if [[ ! -r /etc/os-release ]]; then
+    printf 'N/A'
+    return 0
   fi
-  printf '%s' "${value:-N/A}"
+  os_id="$(awk -F= '$1=="ID" {gsub(/"/,"",$2); print $2; exit}' /etc/os-release)"
+  if [[ "$os_id" != fedora ]]; then
+    printf 'N/A'
+    return 0
+  fi
+  version="$(awk -F= '$1=="VERSION_ID" {gsub(/"/,"",$2); print $2; exit}' /etc/os-release)"
+  printf '%s' "${version:-unknown}"
 }
 
 cc_git_state() {
-  command -v git >/dev/null 2>&1 || { printf 'UNKNOWN'; return; }
-  git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || { printf 'UNKNOWN'; return; }
+  if ! command_exists git; then
+    printf 'UNKNOWN'
+    return 0
+  fi
+  if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf 'UNKNOWN'
+    return 0
+  fi
   if [[ -z "$(git -C "$REPO_ROOT" status --porcelain --untracked-files=normal 2>/dev/null)" ]]; then
     printf 'CLEAN'
   else
@@ -56,67 +122,148 @@ cc_git_state() {
   fi
 }
 
+cc_marker_value() {
+  local file="$1"
+  local key="$2"
+  [[ -r "$file" ]] || return 1
+  awk -F= -v wanted="$key" '$1==wanted {sub(/^[^=]*=/, ""); print; exit}' "$file"
+}
+
 cc_backup_state() {
-  local marker="$STATE_ROOT/last-full-backup.ok" marker_commit=''
-  [[ -r "$marker" ]] || { printf 'PENDING'; return; }
-  marker_commit="$(awk -F= '$1=="commit" {print $2; exit}' "$marker")"
-  if [[ -n "$marker_commit" && "$marker_commit" == "$(repo_commit)" ]]; then printf 'PASS'; else printf 'WARN'; fi
+  local marker="$STATE_ROOT/last-full-backup.ok"
+  local marker_commit=''
+  if [[ ! -r "$marker" ]]; then
+    printf 'PENDING'
+    return 0
+  fi
+  marker_commit="$(cc_marker_value "$marker" commit || true)"
+  if [[ -n "$marker_commit" && "$marker_commit" == "$(repo_commit)" ]]; then
+    printf 'PASS'
+  else
+    printf 'WARN'
+  fi
 }
 
 cc_backup_detail() {
-  local marker="$STATE_ROOT/last-full-backup.ok" utc=''
-  [[ -r "$marker" ]] || { printf 'aucune preuve'; return; }
-  utc="$(awk -F= '$1=="utc" {print $2; exit}' "$marker")"
+  local marker="$STATE_ROOT/last-full-backup.ok"
+  local utc=''
+  if [[ ! -r "$marker" ]]; then
+    printf 'aucune preuve'
+    return 0
+  fi
+  utc="$(cc_marker_value "$marker" utc || true)"
   printf '%s' "${utc:-preuve présente}"
 }
 
 cc_cert_state() {
-  [[ -s "$STATE_ROOT/final/certified.ok" ]] && printf 'VALID' || printf 'PENDING'
+  local marker="$STATE_ROOT/final/certified.ok"
+  local expected=''
+  if [[ ! -s "$marker" ]]; then
+    printf 'PENDING'
+    return 0
+  fi
+  expected="$(workstation_runtime_fingerprint 2>/dev/null || true)"
+  if [[ -n "$expected" ]] && grep -Fxq "fingerprint=$expected" "$marker"; then
+    printf 'VALID'
+  else
+    printf 'STALE'
+  fi
 }
 
 cc_gpu_detail() {
-  local dev vendor device driver
-  if ! runtime_is_baremetal; then printf 'preuve physique différée'; return; fi
+  local dev
+  local vendor=''
+  local device=''
+  local driver=''
+  if ! runtime_is_baremetal; then
+    printf 'preuve physique différée'
+    return 0
+  fi
   for dev in /sys/bus/pci/devices/*; do
     [[ -r "$dev/vendor" && -r "$dev/device" ]] || continue
-    read -r vendor < "$dev/vendor"; read -r device < "$dev/device"
+    read -r vendor < "$dev/vendor"
+    read -r device < "$dev/device"
     if [[ "${vendor,,}" == 0x8086 && "${device,,}" == 0xe20b ]]; then
       driver='sans pilote'
-      [[ -L "$dev/driver" ]] && driver="$(basename "$(readlink -f "$dev/driver")")"
+      if [[ -L "$dev/driver" ]]; then
+        driver="$(basename "$(readlink -f "$dev/driver")")"
+      fi
       printf 'Arc B580 / %s' "$driver"
-      return
+      return 0
     fi
   done
   printf 'Arc B580 non détectée'
 }
 
 cc_kvm_state() {
-  if ! runtime_is_baremetal; then printf 'EXPECTED'; return; fi
-  command -v virsh >/dev/null 2>&1 || { printf 'WARN'; return; }
-  if virsh -c "${LIBVIRT_URI:-qemu:///system}" net-info "${KVM_NETWORK_NAME:-devops-nat}" >/dev/null 2>&1; then printf 'PASS'; else printf 'WARN'; fi
+  if ! runtime_is_baremetal; then
+    printf 'EXPECTED'
+    return 0
+  fi
+  if ! command_exists virsh; then
+    printf 'WARN'
+    return 0
+  fi
+  if virsh -c "${LIBVIRT_URI:-qemu:///system}" net-info "${KVM_NETWORK_NAME:-devops-nat}" >/dev/null 2>&1; then
+    printf 'PASS'
+  else
+    printf 'WARN'
+  fi
 }
 
 cc_reboot_state() {
-  if command -v needs-restarting >/dev/null 2>&1; then
-    if needs-restarting -r >/dev/null 2>&1; then printf 'OK'; else printf 'REBOOT'; fi
-  else
+  if ! command_exists needs-restarting; then
     printf 'N/A'
+    return 0
+  fi
+  if needs-restarting -r >/dev/null 2>&1; then
+    printf 'OK'
+  else
+    printf 'REBOOT'
   fi
 }
 
 cc_header() {
-  local git_state backup_state cert_state kvm_state reboot_state
-  git_state="$(cc_git_state)"; backup_state="$(cc_backup_state)"; cert_state="$(cc_cert_state)"
-  kvm_state="$(cc_kvm_state)"; reboot_state="$(cc_reboot_state)"
-  printf '%s%s' "$CC_BLUE" "$CC_BOLD"; cc_double_rule; printf '%s' "$CC_RESET"
+  local version fedora runtime kernel sha gpu
+  local git_state backup_state backup_detail cert_state kvm_state reboot_state
+  version="$(cc_version)"
+  fedora="$(cc_fedora_version)"
+  runtime="${RUNTIME_ENVIRONMENT^^}"
+  kernel="$(uname -r 2>/dev/null || printf unknown)"
+  sha="$(cc_project_sha)"
+  gpu="$(cc_gpu_detail)"
+  git_state="$(cc_git_state)"
+  backup_state="$(cc_backup_state)"
+  backup_detail="$(cc_backup_detail)"
+  cert_state="$(cc_cert_state)"
+  kvm_state="$(cc_kvm_state)"
+  reboot_state="$(cc_reboot_state)"
+
+  printf '%s%s' "$CC_BLUE" "$CC_BOLD"
+  cc_double_rule
+  printf '%s' "$CC_RESET"
   printf '%s%s  FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE%s\n' "$CC_BOLD" "$CC_CYAN" "$CC_RESET"
-  printf '%s' "$CC_BLUE"; cc_double_rule; printf '%s' "$CC_RESET"
-  printf '  Projet      %-14s Fedora      %-10s Runtime   %s\n' "$(cc_version)" "$(cc_fedora_version)" "${RUNTIME_ENVIRONMENT^^}"
-  printf '  Kernel      %-30s Politique  vanilla/stable latest-stable\n' "$(uname -r 2>/dev/null || printf unknown)"
-  printf '  GPU         %-30s Git       ' "$(cc_gpu_detail)"; cc_badge "$git_state"; printf ' %s\n' "$git_state"
-  printf '  Backup      '; cc_badge "$backup_state"; printf ' %-22s Certification ' "$(cc_backup_detail)"; cc_badge "$cert_state"; printf '\n'
-  printf '  KVM         '; cc_badge "$kvm_state"; printf ' %-22s Reboot        ' "${KVM_NETWORK_NAME:-devops-nat}"; cc_badge "$reboot_state"; printf '\n'
-  printf '%s' "$CC_BLUE"; cc_double_rule; printf '%s' "$CC_RESET"
+  printf '%s' "$CC_BLUE"
+  cc_double_rule
+  printf '%s' "$CC_RESET"
+  printf '  Projet      %-10s  SHA %-10s  Fedora %-6s  Runtime %-10s\n' "$version" "$sha" "$fedora" "$runtime"
+  printf '  Kernel      %-32s Politique vanilla/stable latest-stable\n' "$kernel"
+  printf '  GPU         %-32s Git      ' "$gpu"
+  cc_badge "$git_state"
+  printf '\n'
+  printf '  Backup      '
+  cc_badge "$backup_state"
+  printf ' %-24s Certification ' "$backup_detail"
+  cc_badge "$cert_state"
+  printf '\n'
+  printf '  KVM         '
+  cc_badge "$kvm_state"
+  printf ' %-24s Reboot        ' "${KVM_NETWORK_NAME:-devops-nat}"
+  cc_badge "$reboot_state"
+  printf '\n'
+  printf '%s' "$CC_BLUE"
+  cc_double_rule
+  printf '%s' "$CC_RESET"
 }
 
 cc_section() {
@@ -130,22 +277,38 @@ cc_option() {
 
 cc_result() {
   local rc="$1"
-  if ((rc == 0)); then printf '\n%s✓ Opération terminée avec succès.%s\n' "$CC_GREEN" "$CC_RESET"
-  else printf '\n%s✗ Opération terminée avec rc=%s.%s\n' "$CC_RED" "$rc" "$CC_RESET"; fi
+  if ((rc == 0)); then
+    printf '\n%s✓ Opération terminée avec succès.%s\n' "$CC_GREEN" "$CC_RESET"
+  else
+    printf '\n%s✗ Opération terminée avec rc=%s.%s\n' "$CC_RED" "$rc" "$CC_RESET"
+  fi
 }
 
 cc_interactive_exec() {
-  local title="$1" rc=0; shift
-  cc_clear; cc_header; cc_section "$title"
-  if "$@"; then rc=0; else rc=$?; fi
-  cc_result "$rc"; cc_pause
+  local title="$1"
+  local rc=0
+  shift
+  cc_clear
+  cc_header
+  cc_section "$title"
+  if "$@"; then
+    rc=0
+  else
+    rc=$?
+  fi
+  cc_result "$rc"
+  cc_pause
   return 0
 }
 
 cc_confirm() {
-  local prompt="$1" answer=''
+  local prompt="$1"
+  local answer=''
   read -r -p "$prompt [o/N] : " answer
-  [[ "${answer,,}" == o || "${answer,,}" == oui || "${answer,,}" == y || "${answer,,}" == yes ]]
+  case "${answer,,}" in
+    o|oui|y|yes) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 cc_show_module_plan() {
@@ -154,7 +317,7 @@ cc_show_module_plan() {
 
 cc_show_kernel_inventory() {
   printf 'Kernel actif : %s\n\n' "$(uname -r)"
-  if command -v rpm >/dev/null 2>&1; then
+  if command_exists rpm; then
     rpm -qa 'kernel*' 2>/dev/null | sort -V || true
   else
     printf 'rpm indisponible dans cet environnement.\n'
@@ -177,23 +340,35 @@ cc_show_logs() {
 
 cc_tail_latest_log() {
   local latest=''
-  latest="$(find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -r | head -n1)"
-  [[ -n "$latest" && -r "$LOG_ROOT/$latest/main.log" ]] || { printf 'Aucun main.log disponible.\n'; return 0; }
+  latest="$(find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -r | head -n 1)"
+  if [[ -z "$latest" || ! -r "$LOG_ROOT/$latest/main.log" ]]; then
+    printf 'Aucun main.log disponible.\n'
+    return 0
+  fi
   printf '=== %s ===\n' "$LOG_ROOT/$latest/main.log"
   tail -n 80 "$LOG_ROOT/$latest/main.log"
 }
 
 cc_system_snapshot() {
-  printf 'Charge / mémoire :\n'; uptime || true; free -h 2>/dev/null || true
-  printf '\nVolumes :\n'; df -hT / "${KVM_DATA_MOUNT:-/data}" 2>/dev/null || df -hT / 2>/dev/null || true
+  printf 'Charge / mémoire :\n'
+  uptime || true
+  free -h 2>/dev/null || true
+  printf '\nVolumes :\n'
+  if ! df -hT / "${KVM_DATA_MOUNT:-/data}" 2>/dev/null; then
+    df -hT / 2>/dev/null || true
+  fi
   printf '\nServices systemd en échec :\n'
-  systemctl --failed --no-pager 2>/dev/null || printf 'systemd non disponible dans cet environnement.\n'
+  if ! systemctl --failed --no-pager 2>/dev/null; then
+    printf 'systemd non disponible dans cet environnement.\n'
+  fi
 }
 
 cc_install_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '1 — INSTALLATION & CONVERGENCE'
+    cc_clear
+    cc_header
+    cc_section '1 — INSTALLATION & CONVERGENCE'
     cc_option 1 'Préflight complet' 'non mutant'
     cc_option 2 'Préparer backup pré-APPLY' 'fail-closed'
     cc_option 3 'Installation complète' 'APPLY réel protégé'
@@ -204,7 +379,11 @@ cc_install_menu() {
     case "$choice" in
       1) cc_interactive_exec 'PRÉFLIGHT COMPLET' "$REPO_ROOT/install.sh" --dry-run ;;
       2) cc_interactive_exec 'BACKUP PRÉ-APPLY' "$REPO_ROOT/prepare-preapply-backup.sh" ;;
-      3) if cc_confirm 'Lancer le chemin APPLY protégé ?'; then cc_interactive_exec 'INSTALLATION COMPLÈTE — APPLY PROTÉGÉ' "$REPO_ROOT/install.sh" --apply; fi ;;
+      3)
+        if cc_confirm 'Lancer le chemin APPLY protégé ?'; then
+          cc_interactive_exec 'INSTALLATION COMPLÈTE — APPLY PROTÉGÉ' "$REPO_ROOT/install.sh" --apply
+        fi
+        ;;
       4) cc_interactive_exec 'BASELINE MATÉRIELLE' "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
       5) cc_interactive_exec 'PLAN DE CONVERGENCE' cc_show_module_plan ;;
       0) return 0 ;;
@@ -214,9 +393,11 @@ cc_install_menu() {
 }
 
 cc_update_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '2 — MISES À JOUR'
+    cc_clear
+    cc_header
+    cc_section '2 — MISES À JOUR'
     cc_option 1 'Vérifier les mises à jour' 'Fedora + Flatpak + firmware'
     cc_option 2 'Mise à jour complète sécurisée' 'backup → DNF → Flatpak → diagnostic'
     cc_option 3 'Mise à jour Fedora seulement' 'DNF, backup obligatoire'
@@ -226,8 +407,16 @@ cc_update_menu() {
     read -r -p 'Choix : ' choice
     case "$choice" in
       1) cc_interactive_exec 'VÉRIFICATION DES MISES À JOUR' "$REPO_ROOT/scripts/maintenance/update-system.sh" --check ;;
-      2) if cc_confirm 'Créer un backup puis mettre à jour tout le système ?'; then cc_interactive_exec 'MISE À JOUR COMPLÈTE SÉCURISÉE' "$REPO_ROOT/scripts/maintenance/update-system.sh" --apply; fi ;;
-      3) if cc_confirm 'Créer un backup puis appliquer les mises à jour Fedora ?'; then cc_interactive_exec 'MISE À JOUR FEDORA' "$REPO_ROOT/scripts/maintenance/update-system.sh" --dnf-only; fi ;;
+      2)
+        if cc_confirm 'Créer un backup puis mettre à jour tout le système ?'; then
+          cc_interactive_exec 'MISE À JOUR COMPLÈTE SÉCURISÉE' "$REPO_ROOT/scripts/maintenance/update-system.sh" --apply
+        fi
+        ;;
+      3)
+        if cc_confirm 'Créer un backup puis appliquer les mises à jour Fedora ?'; then
+          cc_interactive_exec 'MISE À JOUR FEDORA' "$REPO_ROOT/scripts/maintenance/update-system.sh" --dnf-only
+        fi
+        ;;
       4) cc_interactive_exec 'MISE À JOUR FLATPAK' "$REPO_ROOT/scripts/maintenance/update-system.sh" --flatpak-only ;;
       5) cc_interactive_exec 'FIRMWARE DISPONIBLE — AUCUN FLASH' "$REPO_ROOT/scripts/maintenance/update-system.sh" --firmware-check ;;
       0) return 0 ;;
@@ -237,9 +426,12 @@ cc_update_menu() {
 }
 
 cc_backup_menu() {
-  local choice snap
+  local choice=''
+  local snap=''
   while true; do
-    cc_clear; cc_header; cc_section '3 — SAUVEGARDE & RESTAURATION'
+    cc_clear
+    cc_header
+    cc_section '3 — SAUVEGARDE & RESTAURATION'
     cc_option 1 'Backup complet HOST' 'Restic + intégrité'
     cc_option 2 'Backup complet + VM arrêtées'
     cc_option 3 'Backup utilisateur XDG' 'Bureau/Documents/Images/Vidéos/Musique'
@@ -257,7 +449,10 @@ cc_backup_menu() {
       4) cc_interactive_exec 'SNAPSHOTS RESTIC' "$REPO_ROOT/scripts/backup/restore.sh" list ;;
       5) cc_interactive_exec 'BACKUP / RECOVERY DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
       6) cc_interactive_exec 'VÉRIFICATION PROFONDE RESTIC' "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
-      7) read -r -p 'Snapshot [latest] : ' snap; cc_interactive_exec 'RESTAURATION VERS STAGING' "$REPO_ROOT/scripts/backup/restore.sh" restore "${snap:-latest}" ;;
+      7)
+        read -r -p 'Snapshot [latest] : ' snap
+        cc_interactive_exec 'RESTAURATION VERS STAGING' "$REPO_ROOT/scripts/backup/restore.sh" restore "${snap:-latest}"
+        ;;
       8) cc_interactive_exec 'PLAN DISASTER RECOVERY' "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
@@ -266,9 +461,11 @@ cc_backup_menu() {
 }
 
 cc_doctor_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '4 — DIAGNOSTICS & SANTÉ'
+    cc_clear
+    cc_header
+    cc_section '4 — DIAGNOSTICS & SANTÉ'
     cc_option 1 'Diagnostic global'
     cc_option 2 'Baseline matérielle'
     cc_option 3 'Kernel / B580 / xe'
@@ -301,9 +498,11 @@ cc_doctor_menu() {
 }
 
 cc_kernel_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '5 — KERNEL & BOOT'
+    cc_clear
+    cc_header
+    cc_section '5 — KERNEL & BOOT'
     cc_option 1 'Inventaire kernels' 'actif + paquets installés'
     cc_option 2 'Kernel doctor' 'Golden vanilla/stable'
     cc_option 3 'Vérifier mises à jour kernel' 'via DNF check'
@@ -315,7 +514,11 @@ cc_kernel_menu() {
       1) cc_interactive_exec 'INVENTAIRE KERNEL' cc_show_kernel_inventory ;;
       2) cc_interactive_exec 'KERNEL DOCTOR' "$REPO_ROOT/diagnostics/kernel-doctor" ;;
       3) cc_interactive_exec 'RECHERCHE MISES À JOUR KERNEL' "$REPO_ROOT/scripts/maintenance/update-system.sh" --check ;;
-      4) if cc_confirm 'Basculer les paquets vers le noyau Fedora fallback ?'; then cc_interactive_exec 'ROLLBACK KERNEL FEDORA' "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh"; fi ;;
+      4)
+        if cc_confirm 'Basculer les paquets vers le noyau Fedora fallback ?'; then
+          cc_interactive_exec 'ROLLBACK KERNEL FEDORA' "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh"
+        fi
+        ;;
       5) cc_interactive_exec 'COLLECTE PANNE DE BOOT' "$REPO_ROOT/scripts/collect-boot-failure.sh" ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
@@ -324,9 +527,11 @@ cc_kernel_menu() {
 }
 
 cc_kvm_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '6 — KVM / MACHINES VIRTUELLES'
+    cc_clear
+    cc_header
+    cc_section '6 — KVM / MACHINES VIRTUELLES'
     cc_option 1 'Virtualization doctor'
     cc_option 2 'Contrôler guard réseau' 'fail-closed'
     cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
@@ -339,7 +544,11 @@ cc_kvm_menu() {
     case "$choice" in
       1) cc_interactive_exec 'VIRTUALIZATION DOCTOR' "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
       2) cc_interactive_exec 'KVM NETWORK GUARD — CHECK' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" check ;;
-      3) if cc_confirm 'Réconcilier les règles KVM fail-closed ?'; then cc_interactive_exec 'KVM NETWORK GUARD — RECONCILE' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" reconcile; fi ;;
+      3)
+        if cc_confirm 'Réconcilier les règles KVM fail-closed ?'; then
+          cc_interactive_exec 'KVM NETWORK GUARD — RECONCILE' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" reconcile
+        fi
+        ;;
       4) cc_interactive_exec 'KVM RUNTIME CERTIFICATION' "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
       5) cc_interactive_exec 'NAUTILUS VM ACCESS' "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
       6) cc_interactive_exec 'CRÉATION UBUNTU DEVOPS' "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" ;;
@@ -351,9 +560,11 @@ cc_kvm_menu() {
 }
 
 cc_maintenance_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '7 — MAINTENANCE'
+    cc_clear
+    cc_header
+    cc_section '7 — MAINTENANCE'
     cc_option 1 'État système rapide' 'charge / RAM / disques / services KO'
     cc_option 2 'Réparer affichage certifié'
     cc_option 3 'Mesurer cold-start Nautilus'
@@ -374,9 +585,11 @@ cc_maintenance_menu() {
 }
 
 cc_cert_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '8 — CERTIFICATION'
+    cc_clear
+    cc_header
+    cc_section '8 — CERTIFICATION'
     cc_option 1 'Statut certification finale'
     cc_option 2 'Enregistrer cycle suspend'
     cc_option 3 'Certifier Golden Workstation'
@@ -387,7 +600,11 @@ cc_cert_menu() {
     case "$choice" in
       1) cc_interactive_exec 'STATUT CERTIFICATION' "$REPO_ROOT/diagnostics/final-certification" status ;;
       2) cc_interactive_exec 'ENREGISTRER CYCLE SUSPEND' "$REPO_ROOT/diagnostics/final-certification" record-suspend ;;
-      3) if cc_confirm 'Lancer la certification finale complète ?'; then cc_interactive_exec 'CERTIFICATION GOLDEN WORKSTATION' "$REPO_ROOT/diagnostics/final-certification" certify; fi ;;
+      3)
+        if cc_confirm 'Lancer la certification finale complète ?'; then
+          cc_interactive_exec 'CERTIFICATION GOLDEN WORKSTATION' "$REPO_ROOT/diagnostics/final-certification" certify
+        fi
+        ;;
       4) cc_interactive_exec 'BASELINE STATUS' "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
       5) cc_interactive_exec 'CERTIFICATION BASELINE' "$REPO_ROOT/diagnostics/baseline-doctor" certify ;;
       0) return 0 ;;
@@ -397,9 +614,11 @@ cc_cert_menu() {
 }
 
 cc_logs_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header; cc_section '9 — LOGS & PREUVES'
+    cc_clear
+    cc_header
+    cc_section '9 — LOGS & PREUVES'
     cc_option 1 'Lister logs / rapports / markers'
     cc_option 2 'Afficher dernier main.log'
     cc_option 3 'Collecter panne de boot'
@@ -418,9 +637,10 @@ cc_logs_menu() {
 }
 
 cc_main_menu() {
-  local choice
+  local choice=''
   while true; do
-    cc_clear; cc_header
+    cc_clear
+    cc_header
     cc_section 'SOCLES OPÉRATEUR'
     cc_option 1 'Installation & convergence' 'préflight / backup / APPLY'
     cc_option 2 'Mises à jour' 'Fedora / Flatpak / kernel / firmware check'
@@ -435,9 +655,17 @@ cc_main_menu() {
     printf '\n%sLes opérations critiques conservent leurs garde-fous natifs.%s\n' "$CC_DIM" "$CC_RESET"
     read -r -p 'Choix : ' choice
     case "$choice" in
-      1) cc_install_menu ;; 2) cc_update_menu ;; 3) cc_backup_menu ;; 4) cc_doctor_menu ;;
-      5) cc_kernel_menu ;; 6) cc_kvm_menu ;; 7) cc_maintenance_menu ;; 8) cc_cert_menu ;;
-      9) cc_logs_menu ;; 0) return 0 ;; *) printf 'Choix invalide.\n'; sleep 1 ;;
+      1) cc_install_menu ;;
+      2) cc_update_menu ;;
+      3) cc_backup_menu ;;
+      4) cc_doctor_menu ;;
+      5) cc_kernel_menu ;;
+      6) cc_kvm_menu ;;
+      7) cc_maintenance_menu ;;
+      8) cc_cert_menu ;;
+      9) cc_logs_menu ;;
+      0) return 0 ;;
+      *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
   done
 }
@@ -464,7 +692,9 @@ EOF
 }
 
 cc_cli_dispatch() {
-  local domain="${1:-help}" action="${2:-}" extra="${3:-}"
+  local domain="${1:-help}"
+  local action="${2:-}"
+  local extra="${3:-}"
   case "$domain" in
     status) cc_header ;;
     install)
@@ -472,8 +702,9 @@ cc_cli_dispatch() {
         dry-run) "$REPO_ROOT/install.sh" --dry-run ;;
         backup) "$REPO_ROOT/prepare-preapply-backup.sh" ;;
         apply) "$REPO_ROOT/install.sh" --apply ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     update)
       case "$action" in
         check) "$REPO_ROOT/scripts/maintenance/update-system.sh" --check ;;
@@ -481,8 +712,9 @@ cc_cli_dispatch() {
         dnf) "$REPO_ROOT/scripts/maintenance/update-system.sh" --dnf-only ;;
         flatpak) "$REPO_ROOT/scripts/maintenance/update-system.sh" --flatpak-only ;;
         firmware) "$REPO_ROOT/scripts/maintenance/update-system.sh" --firmware-check ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     backup)
       case "$action" in
         now) "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
@@ -493,8 +725,9 @@ cc_cli_dispatch() {
         deep) "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
         restore) "$REPO_ROOT/scripts/backup/restore.sh" restore "${extra:-latest}" ;;
         dr-plan) "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     doctor)
       case "$action" in
         all) "$REPO_ROOT/diagnostic.sh" ;;
@@ -508,15 +741,17 @@ cc_cli_dispatch() {
         media) "$REPO_ROOT/diagnostics/media-doctor" ;;
         kvm) "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
         backup) "$REPO_ROOT/diagnostics/backup-doctor" ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     kernel)
       case "$action" in
         status) cc_show_kernel_inventory ;;
         doctor) "$REPO_ROOT/diagnostics/kernel-doctor" ;;
         rollback) "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh" ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     kvm)
       case "$action" in
         status) "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
@@ -526,8 +761,9 @@ cc_cli_dispatch() {
         nautilus-refresh) "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
         create-ubuntu) "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" ;;
         create-windows) "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     cert)
       case "$action" in
         status) "$REPO_ROOT/diagnostics/final-certification" status ;;
@@ -535,17 +771,19 @@ cc_cli_dispatch() {
         certify) "$REPO_ROOT/diagnostics/final-certification" certify ;;
         baseline-status) "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
         baseline-certify) "$REPO_ROOT/diagnostics/baseline-doctor" certify ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     logs)
       case "$action" in
         list) cc_show_logs ;;
         tail) cc_tail_latest_log ;;
         boot-failure) "$REPO_ROOT/scripts/collect-boot-failure.sh" ;;
-        *) cc_help; return 2 ;;
-      esac ;;
+        *) cc_help; return "$EXIT_USAGE" ;;
+      esac
+      ;;
     help|-h|--help) cc_help ;;
-    *) cc_help; return 2 ;;
+    *) cc_help; return "$EXIT_USAGE" ;;
   esac
 }
 
@@ -554,7 +792,7 @@ control_center_main() {
   if (($# == 0)); then
     if [[ ! -t 0 ]]; then
       cc_help
-      return 2
+      return "$EXIT_USAGE"
     fi
     cc_main_menu
   else

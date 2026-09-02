@@ -2,9 +2,9 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(<"$ROOT/VERSION")" == '0.12.0' ]]
-grep -Fq '**Golden Workstation 0.12.0**' "$ROOT/README.md"
-grep -Fq '## 0.12.0 — 2026-09-01' "$ROOT/CHANGELOG.md"
+[[ "$(<"$ROOT/VERSION")" == '0.13.0' ]]
+grep -Fq '**Golden Workstation 0.13.0**' "$ROOT/README.md"
+grep -Fq '## 0.13.0 — 2026-09-01' "$ROOT/CHANGELOG.md"
 
 # Runtime identity must fail closed for virtualized environments.
 grep -Fq 'systemd-detect-virt --container' "$ROOT/lib/common.sh"

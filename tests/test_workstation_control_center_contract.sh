@@ -32,6 +32,13 @@ for expected in \
   grep -Fq "$expected" "$ROOT/lib/control_center.sh" || { echo "control center missing contract: $expected" >&2; exit 1; }
 done
 
+# Dashboard truth must be based on real runtime data, not marker presence alone.
+grep -Fq 'os_id' "$ROOT/lib/control_center.sh"
+grep -Fq '[[ "$os_id" != fedora ]]' "$ROOT/lib/control_center.sh"
+grep -Fq 'workstation_runtime_fingerprint' "$ROOT/lib/control_center.sh"
+grep -Fq 'fingerprint=$expected' "$ROOT/lib/control_center.sh"
+grep -Fq 'printf '\''STALE'\''' "$ROOT/lib/control_center.sh"
+
 # Thin facade: dangerous business logic must stay in the dedicated engines.
 if grep -Eq 'apply_gate_open|dnf[[:space:]]+upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh"; then
   echo 'business logic leaked into control_center.sh' >&2
@@ -78,6 +85,15 @@ text = Path(sys.argv[1]).read_text(encoding='utf-8')
 branch = text.split('  --apply)', 1)[1].split('    ;;', 1)[0]
 assert branch.index('mandatory_preupdate_backup') < branch.index('apply_dnf'), 'backup must precede DNF'
 PY
+
+# Real non-interactive smoke test of the dashboard. It must not require Fedora or bare-metal.
+status_file="$(mktemp)"
+trap 'rm -f "$status_file"' EXIT
+NO_COLOR=1 "$ROOT/control.sh" status > "$status_file"
+grep -Fq 'FEDORA GOLDEN WORKSTATION' "$status_file"
+grep -Fq 'Projet' "$status_file"
+grep -Fq 'Runtime' "$status_file"
+grep -Fq 'vanilla/stable latest-stable' "$status_file"
 
 # Documentation must explain both interactive and CLI use and the no-auto-flash rule.
 grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"
