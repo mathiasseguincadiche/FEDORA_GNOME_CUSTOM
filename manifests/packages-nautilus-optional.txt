@@ -1,0 +1,3 @@
+# Optional Nautilus/GVfs backends controlled by config/gnome.conf
+gvfs-smb
+gvfs-mtp
