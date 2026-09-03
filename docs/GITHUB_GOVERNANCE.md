@@ -13,6 +13,8 @@ Configurer dans GitHub un ruleset ciblant `refs/heads/main` avec :
 - checks obligatoires : **Tests**, **Shell quality**, **Architecture non-regression**, **Fedora 44 package preflight**, **Fedora 44 host integration pretest**, **Fedora 44 desktop integration pretest** ;
 - le workflow Ubuntu 26.04 doit être vert lorsqu'il est déclenché par une modification de la VM, de son bootstrap ou de sa supply-chain.
 
+Tout check configuré comme obligatoire dans le ruleset doit produire un contexte sur **chaque pull request**. En particulier, le job `nautilus-ptyxis` du workflow Fedora 44 desktop integration pretest est volontairement déclenché sans filtre `paths:` sur les pull requests afin qu'une modification non Desktop ne reste jamais bloquée dans l'état `Expected — Waiting for status to be reported`.
+
 Le dépôt contient `scripts/development/check-main-protection.sh` pour vérifier l'état public attendu de la protection. Ce script ne modifie aucun réglage GitHub.
 
 ## Discipline de branche et de merge

@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHECKOUT_SHA="11d5960a326750d5838078e36cf38b85af677262"
 UPLOAD_ARTIFACT_SHA="ea165f8d65b6e75b540449e92b4886f43607fa02"
 
-for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/fedora-package-preflight.yml .github/workflows/vm-pretest.yml .github/scripts/vm-pretest.sh docs/GITHUB_GOVERNANCE.md; do
+for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/fedora-package-preflight.yml .github/workflows/desktop-integration-pretest.yml .github/workflows/vm-pretest.yml .github/scripts/vm-pretest.sh docs/GITHUB_GOVERNANCE.md; do
   [[ -f "$ROOT/$file" ]] || { echo "missing CI maturity file: $file" >&2; exit 1; }
 done
 
@@ -18,6 +18,24 @@ grep -Fq 'docker run --rm hello-world' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'sudo reboot' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq "actions/upload-artifact@$UPLOAD_ARTIFACT_SHA" "$ROOT/.github/workflows/vm-pretest.yml"
 grep -Fq 'Backup fail-closed invariants' "$ROOT/.github/workflows/non-regression.yml"
+
+# A status check required by the main ruleset must exist on every pull request.
+# Keep nautilus-ptyxis unfiltered at trigger level; otherwise unrelated PRs can
+# become permanently pending once the check is made mandatory.
+python3 - "$ROOT/.github/workflows/desktop-integration-pretest.yml" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+pr = re.search(r"(?ms)^  pull_request:\s*\n(?P<body>(?:^    .*\n)*)", text)
+if pr is None:
+    raise SystemExit("desktop integration workflow must run on pull_request")
+if "paths:" in pr.group("body") or "paths-ignore:" in pr.group("body"):
+    raise SystemExit("nautilus-ptyxis required check must not be path-filtered on pull_request")
+if not re.search(r"(?ms)^  push:\s*\n(?:^    .*\n)*?^    branches:\s*\n^      - main\s*$", text):
+    raise SystemExit("desktop integration workflow must validate every push to main")
+PY
 
 for workflow in fedora-package-preflight.yml fedora-host-pretest.yml vm-pretest.yml; do
   grep -Fq 'schedule:' "$ROOT/.github/workflows/$workflow" || { echo "weekly external dependency schedule missing: $workflow" >&2; exit 1; }
