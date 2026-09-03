@@ -69,6 +69,12 @@ certification bare-metal
 
 Le Control Center appelle ces mêmes moteurs ; il ne crée aucun chemin parallèle moins sécurisé.
 
+## Je veux activer le profil Gaming
+
+Le Gaming est un socle **optionnel**, désactivé par défaut et indépendant de KVM. Lire [`GAMING.md`](GAMING.md) pour Steam natif RPM Fusion, Proton géré par Steam, Vulkan x86_64/i686, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et la certification Arc B580/Wayland/1440p 240 Hz.
+
+Le profil canonique reste `GAMING_ENABLE="false"`. Une machine qui ne l'active pas ne reçoit pas les paquets gaming.
+
 ## Je veux mettre à jour le poste
 
 Le cockpit fournit un socle **Mises à jour** :
@@ -120,6 +126,7 @@ Le runbook est organisé par symptôme :
 - GNOME/Wayland/portals ;
 - Nautilus/GVfs/previews ;
 - Ptyxis/Bash ;
+- Gaming/Steam/Proton/Vulkan ;
 - GPU Arc B580 ;
 - `/data` ou pool libvirt ;
 - VM sans IP ;
@@ -139,6 +146,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 - [`NAUTILUS.md`](NAUTILUS.md) — profil Files/GVfs/previews/archives complet ;
 - [`PTYXIS.md`](PTYXIS.md) — politique terminal natif et frontière HOST/KVM ;
 - [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md) — FFmpeg/GStreamer/VA-API/oneVPL ;
+- [`GAMING.md`](GAMING.md) — Steam/Proton/Vulkan et politique Gaming optionnelle ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — services quotidiens et mises à jour ;
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — hyperviseur, stockage et réseau ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — backup/recovery ;
@@ -157,6 +165,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 - [`HOST_BASH_UX.md`](HOST_BASH_UX.md) — Bash/Ptyxis ;
 - [`NAUTILUS.md`](NAUTILUS.md) — intégration Nautilus certifiée ;
 - [`PTYXIS.md`](PTYXIS.md) — terminal Golden ;
+- [`GAMING.md`](GAMING.md) — profil Steam/Proton/Vulkan optionnel ;
 - [`CI_VALIDATION.md`](CI_VALIDATION.md) — ce que la CI prouve et ce qui reste bare-metal ;
 - [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md) — politique de branche/release.
 
