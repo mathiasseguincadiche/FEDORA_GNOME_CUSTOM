@@ -60,6 +60,8 @@ Pour appliquer **manuellement** la rétention 7 daily / 4 weekly / 6 monthly aux
 ```bash
 scripts/backup/backup-now.sh --prune
 # ou, pour inclure aussi les disques VM arrêtés :
+scripts/backup/backup-now.sh --prune
+# ou, pour inclure aussi les disques VM arrêtés :
 scripts/backup/backup-now.sh --include-vms --prune
 ```
 

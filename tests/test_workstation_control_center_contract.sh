@@ -55,6 +55,7 @@ grep -Fq "\"\$REPO_ROOT/install.sh\" --apply" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/prepare-preapply-backup.sh\"" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/backup/restore.sh\" restore" "$ROOT/lib/control_center.sh"
 grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
+grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh\"" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib/control_center.sh"
 

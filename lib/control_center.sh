@@ -689,7 +689,7 @@ Usage:
   ./control.sh status                  Tableau de bord read-only
   ./control.sh install dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
-  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
+  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh kernel status|doctor|rollback
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-ubuntu|create-windows
