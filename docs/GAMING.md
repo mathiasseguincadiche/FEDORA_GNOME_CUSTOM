@@ -22,7 +22,9 @@ The canonical project default remains `GAMING_ENABLE="false"` in `config/gaming.
 
 ### Steam
 
-Steam is installed as the native RPM from RPM Fusion's dedicated `rpmfusion-nonfree-steam` repository. The repository is enabled only for the Steam installation transaction; the project does not add a third-party GPU repository.
+Steam is installed as the native RPM from RPM Fusion's dedicated `rpmfusion-nonfree-steam` repository. On Fedora Workstation, the repository definition itself is supplied by Fedora's official `fedora-workstation-repositories` package; the RPM Fusion release packages supply the RPM Fusion repository/signing integration. The project provisions both pieces explicitly, verifies `/etc/yum.repos.d/rpmfusion-nonfree-steam.repo`, and enables the Steam repository only for the Steam installation transaction with `--enablerepo=rpmfusion-nonfree-steam`.
+
+This keeps Steam on its dedicated RPM Fusion channel without enabling a third-party GPU repository or globally enabling unrelated optional repositories.
 
 ### Proton policy
 
@@ -79,6 +81,7 @@ Gamescope options are title/display specific and must not become a universal lau
 The Fedora 44 gaming pretest validates in a headless Fedora container:
 
 - Fedora/RPM Fusion package availability;
+- Fedora's `fedora-workstation-repositories` package and the dedicated `rpmfusion-nonfree-steam` repository definition;
 - Steam RPM installation and binary ownership without launching the Steam GUI;
 - Vulkan x86_64/i686 userspace payload;
 - GameMode, MangoHud, GOverlay, Gamescope and Steam Input packages/commands;
@@ -110,7 +113,7 @@ Then run the normal Golden certification path. When `GAMING_ENABLE=true`, `diagn
 
 The final Gaming proof therefore has two levels:
 
-1. GitHub Actions proves package resolution, native RPM ownership, multilib Vulkan payload and project contracts on Fedora 44;
+1. GitHub Actions proves repository provisioning, package resolution, native RPM ownership, multilib Vulkan payload and project contracts on Fedora 44;
 2. the physical workstation proves Arc B580/`xe`, Vulkan renderer, GNOME/Wayland, 2560×1440/~240 Hz and the enabled Gaming payload.
 
 A first real game launch remains an operator acceptance test rather than a CI assertion, because game binaries, Steam authentication, anti-cheat support and title-specific Proton compatibility are external runtime variables.
