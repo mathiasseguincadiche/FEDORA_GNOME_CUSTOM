@@ -6,6 +6,13 @@
 - Runtime fail-closed : un environnement dont le bare-metal n'est pas positivement prouvé devient `unknown` et ne peut pas ouvrir l'APPLY.
 - Orchestrateur durci : chaque module doit fournir `precheck`, `plan`, `apply` et `postcheck`; un APPLY en échec conserve son code retour et produit un rapport durable de convergence partielle.
 - Correction Arc B580/VA-API : le render node est résolu par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` sur un HOST multi-GPU.
+- Nautilus est séparé du GNOME core et complété par un manifeste dédié : GVfs archive/AFC/GOA/NFS, SMB/MTP déclaratifs, Sushi et `file-roller-nautilus`.
+- Ajout de `nautilus-integration-doctor`, distinct du benchmark cold-start, intégré au postcheck, au workstation doctor et à la certification finale.
+- Les flags `NAUTILUS_ENABLE_SMB`, `NAUTILUS_ENABLE_MTP` et `NAUTILUS_ENABLE_PREVIEWS` pilotent désormais réellement la convergence attendue.
+- Le workaround historique `ibus-typing-booster` est déplacé hors de Nautilus et désactivé par défaut ; il reste un escape hatch explicite dans l'intégration desktop.
+- Ajout de `ptyxis-doctor` afin de certifier séparément le terminal Fedora natif et la couche Bash ; Toolbx reste hors du HOST Golden par défaut.
+- Ajout du workflow **Fedora 44 desktop integration pretest** pour installer et valider réellement Nautilus/GVfs/Sushi/File Roller/Ptyxis dans Fedora 44.
+- Le contrôle `check-main-protection.sh` valide désormais le ruleset effectif, le ciblage de `main`, les required checks et la politique merge-only au lieu de se fier au seul booléen legacy `branch.protected`.
 - DING review `74408`, Show Desktop Plus review `70326` et Resource Monitor review `70909` sont vérifiés par SHA-256 exact avant installation.
 - Backup quotidien et rétention Restic exécutés depuis un bundle autonome versionné par SHA et vérifié par manifeste; timer hebdomadaire 7 daily / 4 weekly / 6 monthly sur les snapshots `full` et `daily`.
 - Kickstart : serveur `sshd` HOST désactivé, `openssh-clients` conservé pour les connexions HOST → VM.
@@ -16,7 +23,7 @@
 - Ajout de `SECURITY.md`, `CODEOWNERS`, d'un template de PR et de contrats comportementaux supplémentaires pour le hardening.
 - Ajout d'un schéma de configuration strict, validé avant sourcing, avec refus des clés inconnues, types invalides, doublons et syntaxe exécutable.
 - Préparation de la prerelease GitHub `v0.14.0-rc.1` via manifeste et workflow idempotent; politique de dépôt cible: merge commit unique et suppression automatique des branches fusionnées.
-- Documentation synchronisée avec Resource Monitor, la supply-chain GNOME, la rétention Restic et la portée LAN/VPN du guard KVM.
+- Documentation synchronisée avec Nautilus/Ptyxis, Resource Monitor, la supply-chain GNOME, la rétention Restic et la portée LAN/VPN du guard KVM.
 
 ## 0.13.0 — 2026-09-01
 
