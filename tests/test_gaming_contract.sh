@@ -26,6 +26,7 @@ grep -Fq 'kvm.preflight|KVM|applications.validation|modules/virtualization/30_kv
 
 grep -Fxq 'GAMING_ENABLE="false"' config/gaming.conf || fail 'gaming canonical default must be disabled'
 grep -Fq 'GAMING_ENABLE:-false' "$stack" || fail 'gaming runtime fallback must default disabled'
+grep -Fq 'fedora-workstation-repositories' "$stack" || fail 'Steam repo definition must be provisioned from Fedora workstation repositories'
 grep -Fq -- '--enablerepo=rpmfusion-nonfree-steam' "$stack" || fail 'Steam install must use the dedicated RPM Fusion repo transactionally'
 grep -Fq 'Proton remains Steam-managed' "$stack" || fail 'Steam-managed Proton policy missing'
 
@@ -44,6 +45,8 @@ grep -Fq 'Steam-managed Proton' "$doctor" || fail 'Proton diagnostic policy miss
 
 grep -Fq 'manifests/packages-gaming.txt' "$workflow" || fail 'gaming CI must consume Fedora gaming manifest'
 grep -Fq 'manifests/packages-gaming-rpmfusion.txt' "$workflow" || fail 'gaming CI must consume Steam manifest'
+grep -Fq 'fedora-workstation-repositories' "$workflow" || fail 'gaming CI must provision Fedora Steam repository definition'
+grep -Fq '/etc/yum.repos.d/rpmfusion-nonfree-steam.repo' "$workflow" || fail 'gaming CI must verify the Steam repository definition file'
 grep -Fq 'fedora:44' "$workflow" || fail 'gaming CI must run against Fedora 44'
 if grep -Eq '^[[:space:]]*steam([[:space:]]|$)' "$workflow"; then
   fail 'CI must not launch Steam in a headless container'
