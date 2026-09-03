@@ -114,9 +114,10 @@ runtime_is_virtualbox() {
 
 drm_render_node_for_pci_id() {
   local wanted_vendor wanted_device node vendor device
+  local drm_root="${DRM_SYSFS_ROOT:-/sys/class/drm}"
   wanted_vendor="$(normalize_hex "$1")"
   wanted_device="$(normalize_hex "$2")"
-  for node in /sys/class/drm/renderD*; do
+  for node in "$drm_root"/renderD*; do
     [[ -r "$node/device/vendor" && -r "$node/device/device" ]] || continue
     read -r vendor < "$node/device/vendor"
     read -r device < "$node/device/device"
