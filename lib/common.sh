@@ -45,6 +45,19 @@ runtime_virtualization_detect() {
   return 1
 }
 
+runtime_baremetal_proven() {
+  local rc=0
+  command_exists systemd-detect-virt || return 1
+  if systemd-detect-virt --quiet >/dev/null 2>&1; then
+    return 1
+  else
+    rc=$?
+  fi
+  # systemd-detect-virt returns 1 when no virtualization is detected. Any
+  # other status is ambiguous and must not be promoted to bare metal.
+  ((rc == 1))
+}
+
 runtime_environment_detect() {
   local virtualized=''
   if is_true "${GITHUB_ACTIONS:-false}" || is_true "${GITLAB_CI:-false}" || is_true "${CI:-false}"; then
@@ -60,7 +73,11 @@ runtime_environment_detect() {
     printf '%s\n' "$virtualized"
     return 0
   fi
-  printf 'baremetal\n'
+  if runtime_baremetal_proven; then
+    printf 'baremetal\n'
+  else
+    printf 'unknown\n'
+  fi
 }
 
 runtime_environment() {
@@ -72,6 +89,7 @@ runtime_is_wsl2() { [[ "$(runtime_environment)" == wsl2 ]]; }
 runtime_is_ci() { [[ "$(runtime_environment)" == ci ]]; }
 runtime_is_vm() { [[ "$(runtime_environment)" == vm ]]; }
 runtime_is_container() { [[ "$(runtime_environment)" == container ]]; }
+runtime_is_unknown() { [[ "$(runtime_environment)" == unknown ]]; }
 
 runtime_vm_vendor_detect() {
   command_exists systemd-detect-virt || return 1
@@ -92,4 +110,20 @@ runtime_is_virtualbox() {
   runtime_is_vm || return 1
   [[ "$(runtime_vm_vendor_detect || true)" == oracle ]] || return 1
   runtime_virtualbox_dmi_payload 2>/dev/null | grep -Eqi 'VirtualBox|Oracle|innotek'
+}
+
+drm_render_node_for_pci_id() {
+  local wanted_vendor wanted_device node vendor device
+  wanted_vendor="$(normalize_hex "$1")"
+  wanted_device="$(normalize_hex "$2")"
+  for node in /sys/class/drm/renderD*; do
+    [[ -r "$node/device/vendor" && -r "$node/device/device" ]] || continue
+    read -r vendor < "$node/device/vendor"
+    read -r device < "$node/device/device"
+    if [[ "$(normalize_hex "$vendor")" == "$wanted_vendor" && "$(normalize_hex "$device")" == "$wanted_device" ]]; then
+      printf '/dev/dri/%s\n' "$(basename "$node")"
+      return 0
+    fi
+  done
+  return 1
 }
