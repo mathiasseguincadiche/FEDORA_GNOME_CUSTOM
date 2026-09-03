@@ -14,7 +14,11 @@ previous="$(kernel_lifecycle_previous_release)"
 if [[ -n "$candidate" && "$current" == "$candidate" ]]; then
   emit OK 'Kernel lifecycle' "running candidate $candidate in qualification mode"
 elif [[ -n "$certified" && "$current" == "$certified" ]]; then
-  emit OK 'Kernel lifecycle' "running certified Golden $certified"
+  if kernel_lifecycle_current_certification_valid; then
+    emit OK 'Kernel lifecycle' "running certified Golden $certified with valid runtime fingerprint"
+  else
+    emit KO 'Kernel lifecycle' "certified marker is stale for running=$current; runtime fingerprint changed"
+  fi
 elif [[ -n "$certified" ]]; then
   emit WARN 'Kernel lifecycle' "running=$current certified=$certified candidate=${candidate:-none}"
 else
