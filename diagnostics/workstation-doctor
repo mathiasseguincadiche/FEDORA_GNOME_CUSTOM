@@ -33,6 +33,11 @@ if "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet; then emit OK 'Daily bac
 
 if bash "$REPO_ROOT/diagnostics/applications-doctor" --quiet; then emit OK Applications 'GTK4/libadwaita catalog + Ptyxis'; else emit KO Applications 'run applications-doctor'; fi
 if bash "$REPO_ROOT/diagnostics/media-doctor" --quiet; then emit OK Multimedia 'FFmpeg/GStreamer providers installed'; else emit KO Multimedia 'run media-doctor'; fi
+if is_true "${GAMING_ENABLE:-false}"; then
+  if "$REPO_ROOT/diagnostics/gaming-doctor" --quiet; then emit OK Gaming 'Steam/Proton/Vulkan multilib + gaming tools'; else emit KO Gaming 'run gaming-doctor'; fi
+else
+  emit OK Gaming 'optional profile disabled'
+fi
 if "$REPO_ROOT/diagnostics/software-matrix-doctor" --quiet; then emit OK 'Known-good matrix' certified; else emit WARN 'Known-good matrix' 'not certified or software versions changed'; fi
 
 if is_true "${ENABLE_KVM:-true}"; then
