@@ -53,10 +53,10 @@ for pkg in mesa-vulkan-drivers.x86_64 mesa-vulkan-drivers.i686 mesa-dri-drivers.
 done
 
 repo_payload="$(dnf repolist --all 2>/dev/null || true)"
-if grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload"; then
-  emit OK 'Steam repository' 'rpmfusion-nonfree-steam available'
+if rpm -q fedora-workstation-repositories >/dev/null 2>&1 && [[ -r /etc/yum.repos.d/rpmfusion-nonfree-steam.repo ]] && grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload"; then
+  emit OK 'Steam repository' 'Fedora workstation repository definition exposes rpmfusion-nonfree-steam'
 else
-  emit KO 'Steam repository' 'rpmfusion-nonfree-steam unavailable'
+  emit KO 'Steam repository' 'fedora-workstation-repositories or rpmfusion-nonfree-steam definition unavailable'
 fi
 if grep -Eqi 'mesa-git|copr.*mesa|intel.*gpu.*repo|graphics.*driver.*repo' <<<"$repo_payload"; then
   emit KO 'GPU repositories' 'unexpected third-party GPU repository detected'
