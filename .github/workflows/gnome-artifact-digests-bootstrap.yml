@@ -1,0 +1,27 @@
+name: GNOME artifact digest bootstrap
+
+on:
+  push:
+    branches: [hardening/0.14.0-final-rc]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  digests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Calculate reviewed GNOME artifact SHA-256
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for id in 74408 70326 70909; do
+            file="${id}.shell-extension.zip"
+            curl --fail --location --proto '=https' --tlsv1.2 \
+              "https://extensions.gnome.org/review/download/${file}" \
+              --output "$file"
+            printf 'GNOME_REVIEW_SHA256 id=%s ' "$id"
+            sha256sum "$file" | awk '{print $1}'
+          done
