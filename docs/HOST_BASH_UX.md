@@ -4,6 +4,15 @@ La machine hôte Fedora 44 conserve Bash comme shell de travail et Ptyxis comme 
 
 La version applicable est celle de [`../VERSION`](../VERSION).
 
+## Séparation terminal / shell
+
+Le contrat distingue deux couches :
+
+- [`PTYXIS.md`](PTYXIS.md) décrit le terminal GNOME natif, son paquet Fedora et son doctor ;
+- ce document décrit le shell Bash chargé dans Ptyxis et utilisable également depuis une console/TTY.
+
+Toolbx/Podman ne sont pas ajoutés implicitement au HOST. KVM reste l'environnement DevOps principal ; un éventuel profil Toolbx devra faire l'objet d'une option explicite future.
+
 ## Paquets Fedora
 
 - `bash-completion` ;
@@ -90,6 +99,9 @@ Aucun alias ne remplace `rm`, `mv`, `cp` ou `sudo`.
 
 ```bash
 ./diagnostics/shell-doctor
+./diagnostics/ptyxis-doctor
 ```
 
-Le doctor vérifie paquets, fichiers gérés, unicité du bloc `.bashrc`, sauvegarde initiale, syntaxe Bash et smoke test interactif. Il fait aussi partie de la certification finale bare-metal.
+`shell-doctor` vérifie paquets, fichiers gérés, unicité du bloc `.bashrc`, sauvegarde initiale, syntaxe Bash et smoke test interactif. `ptyxis-doctor` vérifie séparément le terminal Fedora natif, son desktop entry, son schéma GSettings lorsque disponible et Bash comme login shell.
+
+Les deux font partie de la certification finale bare-metal.
