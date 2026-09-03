@@ -81,6 +81,8 @@ jobs:
             manifests/packages-system.txt \
             manifests/packages-hardware.txt \
             manifests/packages-gnome.txt \
+            manifests/packages-nautilus.txt \
+            manifests/packages-nautilus-optional.txt \
             manifests/packages-gnome-extensions.txt \
             manifests/packages-desktop-integration.txt \
             manifests/packages-shell.txt \
@@ -89,7 +91,7 @@ jobs:
             manifests/packages-applications-professional-fedora.txt \
             manifests/packages-virtualization.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install restic jq acl xorriso dbus-daemon "${packages[@]}"
-          rpm -q restic jq acl xorriso gnome-shell nautilus xdg-desktop-portal-gnome xdg-user-dirs ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv unzip
+          rpm -q restic jq acl xorriso gnome-shell nautilus gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus xdg-desktop-portal-gnome xdg-user-dirs ptyxis qemu-kvm libvirt virt-install gnome-keyring cups tuned-ppd intel-compute-runtime bash-completion fzf zoxide direnv unzip
       - name: Validate Workstation Control Center on Fedora 44
         shell: bash
         run: |
