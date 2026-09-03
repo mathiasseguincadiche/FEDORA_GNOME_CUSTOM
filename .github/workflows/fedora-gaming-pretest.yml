@@ -48,6 +48,15 @@ jobs:
             https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm \
             https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm
 
+      - name: Install Fedora Steam repository definition
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          dnf -y install fedora-workstation-repositories
+          test -r /etc/yum.repos.d/rpmfusion-nonfree-steam.repo
+          repos="$(dnf repolist --all)"
+          grep -Fq 'rpmfusion-nonfree-steam' <<<"$repos"
+
       - name: Resolve Fedora gaming manifest
         shell: bash
         run: |
@@ -69,8 +78,6 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          repos="$(dnf repolist --all)"
-          grep -Fq 'rpmfusion-nonfree-steam' <<<"$repos" || { echo 'rpmfusion-nonfree-steam repo missing'; exit 1; }
           while IFS= read -r pkg; do
             [[ -z "$pkg" || "$pkg" == \#* ]] && continue
             matches="$(dnf -q --enablerepo=rpmfusion-nonfree-steam repoquery --available "$pkg")"
@@ -82,7 +89,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          rpm -q steam
+          rpm -q fedora-workstation-repositories steam
           steam_bin="$(command -v steam)"
           [[ -n "$steam_bin" ]]
           rpm -qf "$steam_bin"
