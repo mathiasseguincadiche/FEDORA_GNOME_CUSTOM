@@ -8,12 +8,17 @@ kernel_lifecycle_certified_path() { printf '%s/certified.env' "$(kernel_lifecycl
 kernel_lifecycle_previous_path() { printf '%s/previous-certified.env' "$(kernel_lifecycle_state_dir)"; }
 kernel_lifecycle_last_promoted_path() { printf '%s/last-promoted.env' "$(kernel_lifecycle_state_dir)"; }
 kernel_lifecycle_rollback_path() { printf '%s/rollback.env' "$(kernel_lifecycle_state_dir)"; }
+kernel_lifecycle_policy_path() { printf '%s/config/kernel-lifecycle.policy' "$REPO_ROOT"; }
 kernel_lifecycle_ensure_dir() { mkdir -p "$(kernel_lifecycle_state_dir)"; }
 
 kernel_lifecycle_value() {
   local file="$1" key="$2"
   [[ -r "$file" ]] || return 1
   awk -F= -v wanted="$key" '$1==wanted {sub(/^[^=]*=/, ""); print; exit}' "$file"
+}
+
+kernel_lifecycle_policy_value() {
+  kernel_lifecycle_value "$(kernel_lifecycle_policy_path)" "$1"
 }
 
 kernel_lifecycle_candidate_release() { kernel_lifecycle_value "$(kernel_lifecycle_candidate_path)" release 2>/dev/null || true; }
@@ -24,6 +29,17 @@ kernel_lifecycle_release_is_stable() {
   local release="${1,,}"
   [[ -n "$release" ]] || return 1
   [[ "$release" != *linux-next* && "$release" != *mainline* && ! "$release" =~ (^|[-._])rc[0-9]*($|[-._]) ]]
+}
+
+kernel_lifecycle_current_certification_valid() {
+  local file release fingerprint
+  file="$(kernel_lifecycle_certified_path)"
+  [[ -s "$file" ]] || return 1
+  [[ "$(kernel_lifecycle_value "$file" status 2>/dev/null || true)" == certified ]] || return 1
+  release="$(kernel_lifecycle_value "$file" release 2>/dev/null || true)"
+  [[ -n "$release" && "$release" == "$(uname -r)" ]] || return 1
+  fingerprint="$(kernel_lifecycle_value "$file" fingerprint 2>/dev/null || true)"
+  [[ -n "$fingerprint" && "$fingerprint" == "$(workstation_runtime_fingerprint)" ]]
 }
 
 kernel_lifecycle_latest_available() {
@@ -82,7 +98,6 @@ kernel_lifecycle_stage_candidate() {
   kernel_lifecycle_require_mutation_gate
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"
   command_exists rpm || return "$EXIT_PRECHECK_FAILED"
-  command_exists grubby || true
 
   local old_default='' available='' installed='' certified=''
   old_default="$(grubby --default-kernel 2>/dev/null || true)"
@@ -147,6 +162,7 @@ kernel_lifecycle_certify_candidate() {
     cp -f "$(kernel_lifecycle_certified_path)" "$(kernel_lifecycle_previous_path)"
   fi
   kernel_lifecycle_write_marker "$(kernel_lifecycle_certified_path)" "$candidate" certified "fingerprint=$fp"
+  kernel_lifecycle_current_certification_valid || { ui_error 'Certified kernel marker does not match the current runtime fingerprint'; return "$EXIT_POSTCHECK_FAILED"; }
   cp -f "$(kernel_lifecycle_candidate_path)" "$(kernel_lifecycle_last_promoted_path)"
   rm -f "$(kernel_lifecycle_candidate_path)" "$(kernel_lifecycle_state_dir)/qualification-boot.env"
   sudo grubby --set-default "/boot/vmlinuz-$candidate"
@@ -171,15 +187,21 @@ kernel_lifecycle_rollback() {
 }
 
 kernel_lifecycle_status() {
-  local candidate certified previous running available
+  local candidate certified previous running available mode certified_state
   candidate="$(kernel_lifecycle_candidate_release)"
   certified="$(kernel_lifecycle_certified_release)"
   previous="$(kernel_lifecycle_previous_release)"
   running="$(uname -r)"
   available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
-  printf 'mode=%s\n' "${KERNEL_LIFECYCLE_MODE:-candidate-certified}"
+  mode="$(kernel_lifecycle_policy_value mode 2>/dev/null || printf 'candidate-certified')"
+  certified_state='not-running'
+  if [[ -n "$certified" && "$running" == "$certified" ]]; then
+    if kernel_lifecycle_current_certification_valid; then certified_state='valid'; else certified_state='stale'; fi
+  fi
+  printf 'mode=%s\n' "$mode"
   printf 'running=%s\n' "$running"
   printf 'certified=%s\n' "${certified:-none}"
+  printf 'certified_state=%s\n' "$certified_state"
   printf 'candidate=%s\n' "${candidate:-none}"
   printf 'previous_certified=%s\n' "${previous:-none}"
   printf 'latest_available=%s\n' "${available:-unresolved}"
