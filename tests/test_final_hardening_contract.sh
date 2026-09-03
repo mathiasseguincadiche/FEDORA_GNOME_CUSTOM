@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Test harnesses below intentionally isolate mock environment mutations in
+# subshells and define functions invoked indirectly by sourced orchestrator code.
+# shellcheck disable=SC2030,SC2031,SC2317
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -9,7 +12,10 @@ grep -Fq '## 0.14.0 — 2026-09-03' "$ROOT/CHANGELOG.md"
 # User-decided HOST policy.
 grep -Fq 'services --enabled=NetworkManager,firewalld --disabled=sshd' "$ROOT/installer/generate-fedora44-kickstart.sh"
 grep -Fq 'openssh-clients' "$ROOT/installer/generate-fedora44-kickstart.sh"
-! grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/generate-fedora44-kickstart.sh"
+if grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/generate-fedora44-kickstart.sh"; then
+  echo 'Kickstart must not silently introduce LUKS into the chosen Golden policy' >&2
+  exit 1
+fi
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
@@ -153,7 +159,7 @@ grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/bac
 grep -Fq 'FEDORA_GNOME_CUSTOM_APPLIED_SHA' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'FEDORA_GNOME_CUSTOM_APPLIED_SHA=' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq "cc_option 9 'Appliquer rétention Restic'" "$ROOT/lib/control_center.sh"
-grep -Fq 'prune) "$REPO_ROOT/scripts/backup/backup-now.sh" --prune' "$ROOT/lib/control_center.sh"
+grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq 'copie de récupération hors machine' "$ROOT/docs/BACKUP_RESTORE.md"
 grep -Fq 'SHA appliqué' "$ROOT/docs/BACKUP_RESTORE.md"
 
@@ -162,7 +168,7 @@ grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.co
 grep -Fq 'blocked_host_ipv4' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq 'protected_networks=' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq 'route show table main' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq '"$prefix" != default' "$ROOT/scripts/kvm/kvm_network_guard.sh"
+grep -Fq "\"\$prefix\" != default" "$ROOT/scripts/kvm/kvm_network_guard.sh"
 cat > "$tmp/ip" <<'SH'
 #!/usr/bin/env sh
 case "$*" in
