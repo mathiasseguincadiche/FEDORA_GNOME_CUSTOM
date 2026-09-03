@@ -78,10 +78,10 @@ if grep -Eq 'fwupdmgr[[:space:]]+(update|install)' "$ROOT/scripts/maintenance/up
   exit 1
 fi
 
-# Golden kernel policy is candidate -> certified, with Fedora fallback retained.
+# Golden kernel policy keeps latest stable as candidate source, not as auto-certification.
 grep -Fq 'ENABLE_KERNEL_VANILLA_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_LIFECYCLE_MODE="candidate-certified"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
+grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 
 # Update order: backup must appear before DNF in the protected full-update branch.
