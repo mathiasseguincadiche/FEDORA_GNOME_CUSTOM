@@ -8,6 +8,7 @@ La CI combine contrats statiques, intégration Fedora 44 et vraie VM Ubuntu 26.0
 
 - structure et politiques hardware/GNOME ;
 - applications et multimédia ;
+- **Gaming optionnel Steam/Proton/Vulkan sans couplage KVM** ;
 - KVM/libvirt ;
 - bootstrap Ubuntu ;
 - accès VM ;
@@ -61,6 +62,19 @@ Ce test ne remplace pas la relecture éditoriale humaine, mais empêche les dive
 - la certification finale de Ptyxis ;
 - l'absence de Toolbx implicite dans le HOST Golden.
 
+## Gaming
+
+`tests/test_gaming_contract.sh` protège le caractère optionnel et borné du socle Gaming :
+
+- `GAMING_ENABLE="false"` comme défaut canonique ;
+- Steam isolé dans le manifeste RPM Fusion dédié ;
+- Vulkan/Mesa x86_64 **et i686** ;
+- GameMode, MangoHud, GOverlay, Gamescope et `steam-devices` ;
+- Proton géré par Steam, sans Proton-GE/Wine imposé globalement ;
+- absence de Mesa git/COPR, `force_probe`, kernel gaming et tuning `sysctl` global ;
+- `gaming-doctor` raccordé aux doctors Arc/display sur bare-metal ;
+- KVM restant indépendant de `gaming.stack`.
+
 ## Desktop ergonomics
 
 `tests/test_desktop_ergonomics_contract.sh` exige :
@@ -105,6 +119,22 @@ Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion
 Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed : DING review `74408`/version `95`, Show Desktop Plus review `70326`/version `8` et Resource Monitor review `70909`/version `28`. Le workflow contrôle les UUID, la compatibilité GNOME Shell 50 et les payloads attendus.
 
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit.
+
+## Fedora 44 Gaming pretest
+
+`.github/workflows/fedora-gaming-pretest.yml` est le gate dédié au profil Gaming. Dans un conteneur Fedora 44, il :
+
+1. active les métadonnées RPM Fusion Fedora 44 ;
+2. résout et installe le manifeste Gaming Fedora natif ;
+3. vérifie la présence du dépôt `rpmfusion-nonfree-steam` ;
+4. résout et installe le RPM Steam depuis ce dépôt dédié ;
+5. vérifie le RPM, la propriété du binaire et le desktop entry **sans lancer l'interface Steam** ;
+6. vérifie les payloads Vulkan/Mesa x86_64 et i686 ;
+7. vérifie GameMode, MangoHud, GOverlay, Gamescope et `steam-devices` ;
+8. refuse les dépôts GPU tiers inattendus ;
+9. exécute `tests/test_gaming_contract.sh`.
+
+Ce gate prouve la disponibilité et la cohérence du userspace Gaming Fedora 44. Il ne simule pas une Arc B580, un rendu Vulkan physique, le VRR, 240 Hz, l'authentification Steam ou le lancement d'un jeu.
 
 ## Fedora 44 desktop integration pretest
 
@@ -196,6 +226,7 @@ Il tourne périodiquement afin de surveiller les dépôts externes et signatures
 - intégration périphériques réels MTP/AFC/GPhoto ;
 - Arc B580/`xe` ;
 - Level Zero/OpenCL réel ;
+- **rendu Vulkan Arc B580, VRR/adaptive-sync et lancement réel d'un jeu Steam/Proton** ;
 - GNOME/Wayland/display 240 Hz physique ;
 - suspend/resume ;
 - les deux T705 ;
@@ -205,4 +236,4 @@ Il tourne périodiquement afin de surveiller les dépôts externes et signatures
 - changement Ethernet/Wi-Fi réel ;
 - second-host LAN → VM.
 
-Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
+Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`GAMING.md`](GAMING.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
