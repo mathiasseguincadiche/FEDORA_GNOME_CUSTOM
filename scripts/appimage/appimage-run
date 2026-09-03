@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  appimage-run --identify FILE.AppImage
+  appimage-run FILE.AppImage [arguments...]
+
+Compatibility policy:
+  Type 2 (current): run normally with FUSE; if /dev/fuse is unavailable, use the
+  runtime's APPIMAGE_EXTRACT_AND_RUN fallback.
+  Type 1 (legacy): run normally with FUSE; if /dev/fuse is unavailable, extract
+  the ISO9660 payload with bsdtar into a private temporary directory and run AppRun.
+EOF
+}
+
+identify() {
+  local image="$1" magic
+  [[ -f "$image" && -r "$image" ]] || { printf 'invalid\n'; return 2; }
+  magic="$(od -An -t x1 -j8 -N3 -- "$image" 2>/dev/null | tr -d '[:space:]')"
+  case "$magic" in
+    414901) printf 'type1\n' ;;
+    414902) printf 'type2\n' ;;
+    *) printf 'not-appimage\n'; return 1 ;;
+  esac
+}
+
+run_legacy_without_fuse() {
+  local image="$1"; shift
+  local tmp rc
+  command -v bsdtar >/dev/null 2>&1 || { echo 'bsdtar is required for Type 1 fallback extraction' >&2; return 20; }
+  tmp="$(mktemp -d -t fedora-appimage-type1.XXXXXX)"
+  trap 'rm -rf -- "$tmp"' RETURN
+  bsdtar -xf "$image" -C "$tmp"
+  [[ -x "$tmp/AppRun" ]] || { echo 'Type 1 AppImage does not contain an executable AppRun entrypoint' >&2; return 20; }
+  "$tmp/AppRun" "$@"
+  rc=$?
+  rm -rf -- "$tmp"
+  trap - RETURN
+  return "$rc"
+}
+
+main() {
+  [[ $# -ge 1 ]] || { usage >&2; return 64; }
+  if [[ "$1" == '--identify' ]]; then
+    [[ $# -eq 2 ]] || { usage >&2; return 64; }
+    identify "$2"
+    return
+  fi
+
+  local image="$1" type
+  shift
+  [[ -f "$image" && -r "$image" ]] || { echo "AppImage not readable: $image" >&2; return 66; }
+  type="$(identify "$image")" || { echo "Not a recognized Type 1/Type 2 AppImage: $image" >&2; return 65; }
+
+  if [[ ! -x "$image" ]]; then
+    chmod u+x -- "$image"
+  fi
+
+  if [[ -e /dev/fuse ]]; then
+    exec "$image" "$@"
+  fi
+
+  case "$type" in
+    type2)
+      APPIMAGE_EXTRACT_AND_RUN=1 exec "$image" "$@"
+      ;;
+    type1)
+      run_legacy_without_fuse "$image" "$@"
+      ;;
+  esac
+}
+
+main "$@"
