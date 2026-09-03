@@ -1,12 +1,6 @@
 gnome-shell
 mutter
 gnome-control-center
-nautilus
-gvfs
-gvfs-smb
-gvfs-mtp
-gvfs-gphoto2
-gvfs-fuse
 xdg-desktop-portal
 xdg-desktop-portal-gnome
 xdg-user-dirs

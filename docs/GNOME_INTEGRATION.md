@@ -6,11 +6,26 @@ La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Nautilus
 
-Nautilus + GVfs SMB/MTP/caméra/FUSE et les portals GNOME sont installés.
+Nautilus possède désormais un socle dédié distinct du GNOME core. Le manifeste `manifests/packages-nautilus.txt` fournit :
 
-La politique de previews est `local-only` afin que les volumes réseau/amovibles ne pénalisent pas inutilement le premier lancement.
+- Nautilus + GVfs ;
+- caméra/GPhoto2 et FUSE ;
+- archives via `gvfs-archive` ;
+- appareils Apple/AFC via `gvfs-afc` ;
+- fichiers GNOME Online Accounts via `gvfs-goa` ;
+- NFS via `gvfs-nfs` ;
+- aperçu rapide Sushi ;
+- intégration File Roller via `file-roller-nautilus`.
+
+SMB et MTP sont des backends optionnels déclarés séparément et activés par défaut par `NAUTILUS_ENABLE_SMB=true` et `NAUTILUS_ENABLE_MTP=true`.
+
+La politique de previews est `local-only` afin que les volumes réseau/amovibles ne pénalisent pas inutilement le premier lancement. `NAUTILUS_ENABLE_PREVIEWS=false` converge explicitement la politique vers `never`.
 
 `fedora-gnome-nautilus-prewarm.service` préchauffe uniquement Portal/GIO et ne démarre jamais Nautilus. `diagnostics/nautilus-coldstart-doctor` mesure donc un vrai premier démarrage Files après login.
+
+Le contrôle fonctionnel séparé `diagnostics/nautilus-integration-doctor` certifie les backends, Sushi, File Roller, GIO, la politique de miniatures et le service prewarm. Il fait partie de la certification finale.
+
+Voir [`NAUTILUS.md`](NAUTILUS.md) pour le contrat complet.
 
 ## Ergonomie fonctionnelle
 
@@ -25,7 +40,8 @@ Extensions fonctionnelles gérées :
 - **Dash to Dock** — activé depuis le RPM Fedora ;
 - **AppIndicator** — activé depuis le RPM Fedora pour les logiciels utilisant AppIndicator/KStatusNotifierItem ;
 - **Desktop Icons NG (DING)** — installé depuis l'artefact GNOME Extensions review `74408`/version `95`, compatible GNOME Shell 50 ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
-- **Show Desktop Plus** — installé depuis l'artefact GNOME Extensions review `70326`/version `8`, avec bouton `left-end`, clic gauche `toggle-desktop` et raccourci `Super+D`.
+- **Show Desktop Plus** — installé depuis l'artefact GNOME Extensions review `70326`/version `8`, avec bouton `left-end`, clic gauche `toggle-desktop` et raccourci `Super+D` ;
+- **Resource Monitor** — télémétrie CPU/RAM/réseau/B580 depuis l'artefact GNOME Extensions review piné.
 
 Fedora 44 ne fournit pas DING dans le manifest RPM du projet. DING et Show Desktop Plus utilisent donc deux installateurs étroits qui valident les artefacts GNOME-reviewed pinés, leurs UUID, leur compatibilité GNOME 50 et leur provenance.
 
@@ -90,9 +106,13 @@ Full RGB
 
 Un problème de texte dégradé après veille est analysé d'abord comme une possible régression DRM/KMS/Mutter/link avant toute modification Fontconfig.
 
-## Applications
+## Applications et terminal
 
 Les applications graphiques natives sélectionnées utilisent GTK4/libadwaita lorsqu'une solution GNOME de qualité existe.
+
+Ptyxis reste le terminal GNOME natif. Son intégration est contrôlée par `diagnostics/ptyxis-doctor`, tandis que `diagnostics/shell-doctor` certifie séparément la couche Bash. Toolbx/Podman ne sont pas imposés au HOST Golden : KVM reste la frontière DevOps principale.
+
+Voir [`PTYXIS.md`](PTYXIS.md) et [`HOST_BASH_UX.md`](HOST_BASH_UX.md).
 
 Les outils professionnels non-GTK4 restent des exceptions fonctionnelles explicites, documentées dans [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md).
 
@@ -102,8 +122,11 @@ Production/bare-metal :
 
 ```bash
 ./diagnostics/gnome-doctor
+./diagnostics/nautilus-integration-doctor
+./diagnostics/nautilus-coldstart-doctor
 ./diagnostics/portal-doctor
 ./diagnostics/desktop-integration-doctor
+./diagnostics/ptyxis-doctor
 ./diagnostics/applications-doctor
 ./diagnostics/display-doctor
 ```

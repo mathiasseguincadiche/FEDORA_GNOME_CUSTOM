@@ -32,6 +32,8 @@ jobs:
       - run: bash tests/test_release_workflow_contract.sh
       - run: bash tests/test_dash_to_dock_contract.sh
       - run: bash tests/test_desktop_ergonomics_contract.sh
+      - run: bash tests/test_nautilus_integration_contract.sh
+      - run: bash tests/test_ptyxis_contract.sh
       - run: bash tests/test_resource_monitor_contract.sh
       - run: bash tests/test_virtualbox_gnome_lab_contract.sh
       - run: bash tests/test_workstation_control_center_contract.sh

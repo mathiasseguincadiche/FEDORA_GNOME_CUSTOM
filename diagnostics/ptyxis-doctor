@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+
+emit() {
+  local state="$1" label="$2" detail="$3"
+  $quiet || ui_check "$state" "$label" "$detail"
+  case "$state" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+terminal_pkg="${TERMINAL_PACKAGE:-ptyxis}"
+if rpm -q "$terminal_pkg" >/dev/null 2>&1; then
+  version="$(rpm -q --qf '%{VERSION}' "$terminal_pkg" 2>/dev/null || true)"
+  emit OK Ptyxis "RPM ${version:-installed}"
+else
+  emit KO Ptyxis "$terminal_pkg missing"
+fi
+
+if command -v ptyxis >/dev/null 2>&1; then
+  emit OK Ptyxis 'native command available'
+else
+  emit KO Ptyxis 'native command unavailable'
+fi
+
+if [[ -r /usr/share/applications/org.gnome.Ptyxis.desktop ]]; then
+  emit OK Ptyxis 'GNOME desktop entry present'
+else
+  emit KO Ptyxis 'org.gnome.Ptyxis.desktop missing'
+fi
+
+if command -v gsettings >/dev/null 2>&1 && gsettings list-schemas 2>/dev/null | grep -Fxq org.gnome.Ptyxis; then
+  emit OK Ptyxis 'GSettings schema available'
+else
+  emit WARN Ptyxis 'GSettings schema not visible in current runtime'
+fi
+
+login_shell="$(getent passwd "$(id -un)" 2>/dev/null | awk -F: '{print $7}' || true)"
+if [[ "${login_shell##*/}" == bash ]]; then
+  emit OK Shell 'Bash login shell'
+else
+  emit KO Shell "expected Bash login shell, got ${login_shell:-unknown}"
+fi
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* && "${XDG_SESSION_TYPE:-}" == wayland ]]; then
+  emit OK Session 'GNOME/Wayland'
+elif [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  emit WARN Session "GNOME session type=${XDG_SESSION_TYPE:-unknown}"
+fi
+
+$quiet || {
+  ui_meta OK "$ok"
+  ui_meta WARN "$warn"
+  ui_meta KO "$ko"
+}
+(( ko == 0 )) || exit "$EXIT_POSTCHECK_FAILED"
+$quiet || ui_summary 'PTYXIS HEALTHY' 'READY' "$REPORT_ROOT" "$LOG_DIR"

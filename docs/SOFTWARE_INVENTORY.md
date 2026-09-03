@@ -56,6 +56,8 @@ Les packages Python d'un projet applicatif doivent être installés dans un `ven
 - zoxide
 - direnv
 
+Ptyxis est le terminal natif de référence mais appartient au catalogue d'applications GTK4. Toolbx/Podman ne sont pas des dépendances implicites du HOST Golden ; KVM reste la frontière DevOps principale.
+
 ### 1.4 Matériel / diagnostic / Intel Arc B580
 
 - mesa-dri-drivers
@@ -81,31 +83,53 @@ Les packages Python d'un projet applicatif doivent être installés dans un `ven
 - bluez
 - alsa-utils
 
-### 1.5 GNOME / fichiers / portails
+### 1.5 GNOME core / portails
+
+Le GNOME core est volontairement séparé de Nautilus afin que chaque socle possède son module et son doctor :
 
 - gnome-shell
 - mutter
 - gnome-control-center
-- nautilus
-- gvfs
-- gvfs-smb
-- gvfs-mtp
-- gvfs-gphoto2
-- gvfs-fuse
 - xdg-desktop-portal
 - xdg-desktop-portal-gnome
 - xdg-user-dirs
 - flatpak
 
-### 1.6 Extensions GNOME Fedora
+### 1.6 Nautilus / GVfs / fichiers
+
+Socle Golden obligatoire :
+
+- nautilus
+- gvfs
+- gvfs-gphoto2
+- gvfs-fuse
+- gvfs-archive
+- gvfs-afc
+- gvfs-goa
+- gvfs-nfs
+- sushi
+- file-roller-nautilus
+
+Backends déclaratifs activés dans le profil courant :
+
+- gvfs-smb — contrôlé par `NAUTILUS_ENABLE_SMB`
+- gvfs-mtp — contrôlé par `NAUTILUS_ENABLE_MTP`
+
+`gvfs-goa` fournit le backend nécessaire lorsque l'utilisateur configure des services de fichiers via GNOME Online Accounts ; aucun compte n'est créé automatiquement.
+
+Le socle est validé par `diagnostics/nautilus-integration-doctor`. Le benchmark `diagnostics/nautilus-coldstart-doctor` reste séparé afin de distinguer fonctionnalité et performance.
+
+### 1.7 Extensions GNOME Fedora / gérées
+
+RPM Fedora :
 
 - gnome-shell-extension-dash-to-dock
-- gnome-shell-extension-blur-my-shell
+- gnome-shell-extension-blur-my-shell — installé mais désactivé dans le Golden courant
 - gnome-shell-extension-appindicator
 
-DING et Show Desktop Plus ne viennent pas d'un RPM Fedora : ils sont installés depuis les artefacts GNOME Extensions revus et contrôlés par le projet.
+DING, Show Desktop Plus et Resource Monitor ne viennent pas d'un RPM Fedora dans le contrat actuel : ils sont installés depuis des artefacts GNOME Extensions revus, épinglés et contrôlés par le projet.
 
-### 1.7 Intégration desktop
+### 1.8 Intégration desktop
 
 Secrets / credentials :
 
@@ -165,6 +189,8 @@ Téléphone / iPhone :
 - libimobiledevice-utils
 - ifuse
 
+Le backend Nautilus/GIO complémentaire `gvfs-afc` appartient au socle fichiers ci-dessus.
+
 Intel Arc compute :
 
 - intel-compute-runtime
@@ -177,7 +203,7 @@ Lifecycle :
 - dnf5-plugin-automatic
 - dnf5-plugins
 
-### 1.8 Applications GNOME GTK4 / libadwaita
+### 1.9 Applications GNOME GTK4 / libadwaita
 
 - ptyxis
 - gnome-tweaks
@@ -198,7 +224,9 @@ Lifecycle :
 - gnome-contacts
 - simple-scan
 
-### 1.9 Applications professionnelles RPM
+Ptyxis est contrôlé par `diagnostics/ptyxis-doctor`; le shell Bash chargé dans le terminal est contrôlé séparément par `diagnostics/shell-doctor`.
+
+### 1.10 Applications professionnelles RPM
 
 Fedora :
 
@@ -212,7 +240,7 @@ Dépôts éditeurs signés :
 - code (Visual Studio Code)
 - brave-browser
 
-### 1.10 Applications professionnelles Flatpak
+### 1.11 Applications professionnelles Flatpak
 
 - com.bitwarden.desktop
 - com.slack.Slack
@@ -220,7 +248,7 @@ Dépôts éditeurs signés :
 - com.github.marktext.marktext
 - com.jgraph.drawio.desktop
 
-### 1.11 Multimédia / codecs
+### 1.12 Multimédia / codecs
 
 Fondation Fedora :
 
@@ -241,7 +269,7 @@ Complément RPM Fusion :
 
 Le driver `intel-media-driver` RPM Fusion n'est installé que si la mesure VA-API de l'Arc B580 montre qu'il est réellement nécessaire ; sinon le driver Fedora est conservé.
 
-### 1.12 KVM / libvirt / virtualisation
+### 1.13 KVM / libvirt / virtualisation
 
 Hyperviseur :
 

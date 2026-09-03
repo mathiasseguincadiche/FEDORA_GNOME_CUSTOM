@@ -118,6 +118,8 @@ Le runbook est organisé par symptôme :
 - APPLY refusé ;
 - paquet/repository en erreur ;
 - GNOME/Wayland/portals ;
+- Nautilus/GVfs/previews ;
+- Ptyxis/Bash ;
 - GPU Arc B580 ;
 - `/data` ou pool libvirt ;
 - VM sans IP ;
@@ -134,6 +136,8 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 - [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture générale ;
 - [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) — stratégie matériel/firmware/kernel ;
 - [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md) — bureau GNOME 50/Wayland ;
+- [`NAUTILUS.md`](NAUTILUS.md) — profil Files/GVfs/previews/archives complet ;
+- [`PTYXIS.md`](PTYXIS.md) — politique terminal natif et frontière HOST/KVM ;
 - [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md) — FFmpeg/GStreamer/VA-API/oneVPL ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — services quotidiens et mises à jour ;
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — hyperviseur, stockage et réseau ;
@@ -151,6 +155,8 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 - [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md) — extensions gérées ;
 - [`DOCK_FAVORITES.md`](DOCK_FAVORITES.md) — favoris certifiés ;
 - [`HOST_BASH_UX.md`](HOST_BASH_UX.md) — Bash/Ptyxis ;
+- [`NAUTILUS.md`](NAUTILUS.md) — intégration Nautilus certifiée ;
+- [`PTYXIS.md`](PTYXIS.md) — terminal Golden ;
 - [`CI_VALIDATION.md`](CI_VALIDATION.md) — ce que la CI prouve et ce qui reste bare-metal ;
 - [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md) — politique de branche/release.
 

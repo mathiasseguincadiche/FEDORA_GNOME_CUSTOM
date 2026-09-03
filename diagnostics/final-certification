@@ -45,11 +45,13 @@ certify(){
   "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
   "$REPO_ROOT/diagnostics/display-doctor" --quiet
   "$REPO_ROOT/diagnostics/gnome-doctor" --quiet
+  "$REPO_ROOT/diagnostics/nautilus-integration-doctor" --quiet
   "$REPO_ROOT/diagnostics/desktop-integration-doctor" --quiet
   "$REPO_ROOT/diagnostics/portal-doctor" --quiet
   "$REPO_ROOT/diagnostics/arc-compute-doctor" --quiet
   "$REPO_ROOT/diagnostics/lifecycle-doctor" --quiet
   "$REPO_ROOT/diagnostics/shell-doctor" --quiet
+  "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet
   "$REPO_ROOT/diagnostics/applications-doctor" --quiet
   "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet
   if is_true "${ENABLE_KVM:-true}"; then "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet; fi

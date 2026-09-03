@@ -9,7 +9,7 @@ applications_validation_precheck() {
 }
 
 applications_validation_plan() {
-  echo 'Validate the GNOME GTK4/libadwaita desktop set, professional application exceptions, Flatpak apps and the managed Ptyxis terminal.'
+  echo 'Validate the GNOME GTK4/libadwaita desktop set, professional application exceptions, Flatpak apps and the managed native Ptyxis/Bash terminal contract.'
 }
 
 applications_validation_apply() { log_info APPLICATIONS 'application validation is read-only'; }
@@ -30,6 +30,7 @@ applications_validation_postcheck() {
 
   rpm -q "${TERMINAL_PACKAGE:-ptyxis}" >/dev/null 2>&1 || return "$EXIT_POSTCHECK_FAILED"
   rpm -q "${TEXT_EDITOR_PACKAGE:-gnome-text-editor}" >/dev/null 2>&1 || return "$EXIT_POSTCHECK_FAILED"
+  "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
 
   if is_true "${ENABLE_PROFESSIONAL_FLATPAKS:-true}"; then
     while IFS= read -r app; do
