@@ -1,0 +1,11 @@
+# GNOME Files / Nautilus complete integration
+nautilus
+gvfs
+gvfs-gphoto2
+gvfs-fuse
+gvfs-archive
+gvfs-afc
+gvfs-goa
+gvfs-nfs
+sushi
+file-roller-nautilus
