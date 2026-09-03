@@ -10,7 +10,7 @@ Configurer dans GitHub un ruleset ciblant `refs/heads/main` avec :
 - interdiction des force-push ;
 - interdiction de supprimer `main` ;
 - branche à jour avant fusion ;
-- checks obligatoires : **Tests**, **Shell quality**, **Architecture non-regression**, **Fedora 44 package preflight**, **Fedora 44 host integration pretest** ;
+- checks obligatoires : **Tests**, **Shell quality**, **Architecture non-regression**, **Fedora 44 package preflight**, **Fedora 44 host integration pretest**, **Fedora 44 desktop integration pretest** ;
 - le workflow Ubuntu 26.04 doit être vert lorsqu'il est déclenché par une modification de la VM, de son bootstrap ou de sa supply-chain.
 
 Le dépôt contient `scripts/development/check-main-protection.sh` pour vérifier l'état public attendu de la protection. Ce script ne modifie aucun réglage GitHub.
@@ -56,6 +56,7 @@ La documentation est traitée comme une partie du produit. La CI doit notamment 
 
 - commandes documentées qui n'existent plus ;
 - contradiction entre profil GNOME et extensions réellement gérées ;
+- contradiction entre GNOME core et le manifeste Nautilus dédié ;
 - valeurs KVM documentées différentes de `virtualization.conf`/XML ;
 - oubli d'une application professionnelle déjà présente dans les manifests ;
 - liens Markdown locaux cassés dans le portail documentaire ;
