@@ -24,7 +24,8 @@ grep -Fq 'gaming.stack|GAMING|applications.validation|modules/gaming/43_gaming_s
 grep -Fq 'gaming.validation|GAMING|gaming.stack|modules/gaming/44_gaming_validation.sh' manifests/module-plan.conf || fail 'gaming.validation missing from module plan'
 grep -Fq 'kvm.preflight|KVM|applications.validation|modules/virtualization/30_kvm_preflight.sh' manifests/module-plan.conf || fail 'KVM must remain independent from gaming'
 
-grep -Fq 'GAMING_ENABLE:-false' "$stack" || fail 'gaming must default disabled'
+grep -Fxq 'GAMING_ENABLE="false"' config/gaming.conf || fail 'gaming canonical default must be disabled'
+grep -Fq 'GAMING_ENABLE:-false' "$stack" || fail 'gaming runtime fallback must default disabled'
 grep -Fq -- '--enablerepo=rpmfusion-nonfree-steam' "$stack" || fail 'Steam install must use the dedicated RPM Fusion repo transactionally'
 grep -Fq 'Proton remains Steam-managed' "$stack" || fail 'Steam-managed Proton policy missing'
 
@@ -44,6 +45,8 @@ grep -Fq 'Steam-managed Proton' "$doctor" || fail 'Proton diagnostic policy miss
 grep -Fq 'manifests/packages-gaming.txt' "$workflow" || fail 'gaming CI must consume Fedora gaming manifest'
 grep -Fq 'manifests/packages-gaming-rpmfusion.txt' "$workflow" || fail 'gaming CI must consume Steam manifest'
 grep -Fq 'fedora:44' "$workflow" || fail 'gaming CI must run against Fedora 44'
-! grep -Eq '(^|[[:space:]])steam[[:space:]]+--version|steam[[:space:]]*$' "$workflow" || fail 'CI must not launch Steam in a headless container'
+if grep -Eq '^[[:space:]]*steam([[:space:]]|$)' "$workflow"; then
+  fail 'CI must not launch Steam in a headless container'
+fi
 
 echo 'gaming contract: PASS'
