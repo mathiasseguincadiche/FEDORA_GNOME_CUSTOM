@@ -1,6 +1,6 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.13.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe Crucial T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
+**Golden Workstation 0.14.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe Crucial T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
 
 Le projet traite le poste de travail comme une infrastructure versionnée :
 
@@ -10,7 +10,7 @@ mesurer → préflight → sauvegarder → converger → redémarrer → certifi
 
 ## Point d'entrée opérateur
 
-Le point d'entrée recommandé au quotidien est désormais le **Workstation Control Center** :
+Le point d'entrée recommandé au quotidien est le **Workstation Control Center** :
 
 ```bash
 ./control.sh
@@ -31,7 +31,7 @@ Le mode CLI reste disponible pour l'automatisation :
 ./control.sh cert status
 ```
 
-`./menu.sh` reste un alias de compatibilité vers le même cockpit. Les moteurs historiques (`install.sh`, `diagnostic.sh`, scripts backup/kernel/KVM) restent directement appelables et conservent leurs propres garde-fous.
+`./menu.sh` reste un alias de compatibilité vers le même cockpit. Les moteurs spécialisés (`install.sh`, `diagnostic.sh`, scripts backup/kernel/KVM) restent directement appelables et conservent leurs propres garde-fous.
 
 Voir [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
 
@@ -60,9 +60,10 @@ APPLY PROTÉGÉ
   firmware / microcode
   GNOME 50 / Wayland / codecs / applications
   Bureau XDG + Corbeille + Show Desktop
+  Resource Monitor CPU/RAM/réseau/B580
   Bash UX / portals / secrets / print-scan / VPN / power
   Arc Level Zero/OpenCL
-  KVM sur /data + réseau privé fail-closed
+  KVM sur /data + réseau privé fail-closed LAN/VPN
   lifecycle sécurisé + backup quotidien
         ↓
 REBOOT
@@ -72,7 +73,7 @@ CERTIFICATION BARE-METAL
   hardware + firmware + Arc B580/xe
   display actif 1440p/~240 Hz
   desktop/portals/lifecycle/Bash/apps/dock
-  DING + Show Desktop Plus runtime
+  DING + Show Desktop Plus + Resource Monitor runtime
   socle KVM host
   Nautilus cold-start
   5 cycles veille/réveil physiques uniques
@@ -81,9 +82,27 @@ CERTIFICATION BARE-METAL
 
 La CI complète cette certification ; elle ne prétend pas remplacer les preuves physiques.
 
+## 0.14.0 — Final Hardening / Release Candidate
+
+Cette release ferme les écarts identifiés lors de la revue pré-1.0 sans ajouter de nouveau socle fonctionnel :
+
+- runtime `unknown` fail-closed : l'absence de preuve de virtualisation n'est plus assimilée automatiquement au bare-metal ;
+- contrat d'orchestration strict : `precheck`, `plan`, `apply` et `postcheck` sont obligatoires pour chaque module ;
+- un échec pendant `--apply` conserve son code retour et produit toujours un rapport d'état partiellement convergé ;
+- VA-API résout désormais le render node de l'Arc B580 par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` ;
+- DING, Show Desktop Plus et Resource Monitor sont verrouillés par URL GNOME Review **et SHA-256 exact** ;
+- le backup quotidien est lié au SHA Git réellement appliqué ;
+- le prune Restic reste manuel mais couvre désormais les tags `full` et `daily` ;
+- `sshd` est désactivé sur le HOST Fedora tandis que `openssh-clients` reste installé pour HOST → VM ;
+- le guard KVM protège les LAN et les routes non-default du HOST, notamment VPN/réseaux d'entreprise, tout en préservant la route Internet par défaut ;
+- les Flatpaks `community-unverified` doivent appartenir à une allowlist versionnée explicite ;
+- la télémétrie Resource Monitor de la PR #32 est intégrée au contrat/documentation de release.
+
+Choix assumés du profil : pas de chiffrement LUKS imposé par le projet, pas de Secure Boot pour le HOST Golden, kernel `kernel-vanilla/stable` le plus récent avec kernel Fedora conservé comme fallback.
+
 ## 0.13.0 — Workstation Control Center
 
-Cette release ajoute la couche opérateur qui manquait au projet sans déplacer la logique métier hors de ses moteurs spécialisés :
+La 0.13.0 a ajouté la couche opérateur qui manquait au projet sans déplacer la logique métier hors de ses moteurs spécialisés :
 
 - `control.sh` devient le cockpit principal ;
 - `menu.sh` reste un alias compatible ;
@@ -95,8 +114,7 @@ Cette release ajoute la couche opérateur qui manquait au projet sans déplacer 
 - mise à jour complète sécurisée : **backup Restic obligatoire → DNF `--refresh` → Flatpak → firmware check read-only → diagnostic → reboot status** ;
 - aucun flash firmware automatique ;
 - aucune logique `apply_gate_open`, Restic, nftables ou DNF dupliquée dans la couche UI ;
-- le kernel Golden reste `kernel-vanilla/stable`, politique `latest-stable`, avec kernel Fedora conservé comme fallback ;
-- ajout d'un contrat CI dédié empêchant le cockpit de contourner les moteurs protégés.
+- le kernel Golden reste `kernel-vanilla/stable`, politique `latest-stable`, avec kernel Fedora conservé comme fallback.
 
 ## 0.12.0 — Desktop Ergonomics
 
@@ -131,6 +149,7 @@ Politique Golden :
 Golden default     kernel-vanilla/stable
 Cible              latest stable upstream
 Minimum actuel     7.2.2
+Secure Boot HOST   désactivé par choix de profil
 Fallback           kernel Fedora officiel conservé
 Exclus du Golden   mainline / -rc / linux-next
 ```
@@ -145,7 +164,7 @@ Contrôles :
 ./diagnostics/arc-compute-doctor
 ```
 
-Aucun `force_probe`, aucun dépôt GPU tiers, aucun tweak ASPM/APST/C-State aveugle. Fedora/Mesa reste la base ; le chemin média Intel/RPM Fusion n'est convergé qu'en fonction des capacités réellement mesurées par VA-API.
+Aucun `force_probe`, aucun dépôt GPU tiers, aucun tweak ASPM/APST/C-State aveugle. Fedora/Mesa reste la base ; le chemin média Intel/RPM Fusion n'est convergé qu'en fonction des capacités réellement mesurées sur le render node appartenant à l'Arc B580.
 
 ## GNOME et applications
 
@@ -156,9 +175,12 @@ Extensions fonctionnelles gérées :
 - Dash to Dock ;
 - AppIndicator ;
 - Desktop Icons NG (DING) ;
-- Show Desktop Plus.
+- Show Desktop Plus ;
+- Resource Monitor.
 
 Blur My Shell et Just Perfection restent hors de l'état Golden certifié par défaut.
+
+Resource Monitor affiche le profil Golden CPU/RAM/réseau/B580 ; sur bare-metal, l'absence d'une source de charge GPU B580 valide reste un KO plutôt qu'un faux `0 %`.
 
 Ergonomie desktop certifiée :
 
@@ -184,7 +206,7 @@ Dock certifié :
 
 Applications professionnelles supplémentaires : VLC, FileZilla, ONLYOFFICE, MarkText, Remmina et draw.io.
 
-La provenance est documentée dans `manifests/application-provenance.tsv` ; un paquet Flathub communautaire n'est jamais présenté comme un paquet officiel de l'éditeur.
+La provenance est documentée dans `manifests/application-provenance.tsv`. Les applications Flathub communautaires présentes dans le Golden sont explicitement allowlistées ; un nouvel ID `community-unverified` non approuvé bloque le precheck.
 
 ## Multimédia
 
@@ -237,9 +259,9 @@ Profils invités :
 
 L'Arc B580 reste au HOST : aucun GPU passthrough.
 
-### NAT custom et isolation LAN
+### NAT custom et isolation LAN/VPN
 
-Le NAT libvirt permet aux VM d'accéder à Internet. Une table nftables appartenant au projet bloque en plus le forwarding entre `virbr50` et le LAN uplink.
+Le NAT libvirt permet aux VM d'accéder à Internet. Une table nftables appartenant au projet bloque le forwarding entre `virbr50` et les réseaux explicitement routés par le HOST : LAN directement connecté, réseaux VPN/entreprise et tunnels non-default. La route Internet par défaut reste autorisée.
 
 Lors d'un changement de réseau :
 
@@ -249,12 +271,12 @@ NetworkManager event
 mode emergency
   bloque tout forwarding via virbr50
         ↓
-redécouverte + validation uplink
+redécouverte + validation des routes protégées
         ↓
 mode normal uniquement si succès
 ```
 
-Si le recalcul échoue, le mode d'urgence reste actif. Une panne de recalcul coupe donc la sortie réseau des VM au lieu de conserver une ancienne hypothèse LAN potentiellement dangereuse.
+Si le recalcul échoue, le mode d'urgence reste actif. Une panne de recalcul coupe donc la sortie réseau des VM au lieu de conserver une ancienne hypothèse réseau potentiellement dangereuse.
 
 Voir [`docs/KVM_NETWORK.md`](docs/KVM_NETWORK.md).
 
@@ -277,6 +299,8 @@ scripts/kvm/create_ubuntu_devops_vm.sh \
 
 La VM est ensuite provisionnée pour `clone → build/test → containerize → deploy` : Git/GitHub/GitLab, Docker, Terraform, Ansible, AWS/Azure, kubectl/Helm/kind/Minikube/K9s, Node 22, Java 21/Maven, Python et outils Ops.
 
+Le HOST conserve uniquement les **clients SSH** nécessaires à l'administration des VM ; le serveur `sshd` du HOST est désactivé par le Kickstart Golden.
+
 ### Windows 11
 
 ```bash
@@ -291,16 +315,19 @@ Voir [`docs/VM_PROFILES.md`](docs/VM_PROFILES.md) et [`docs/KVM_QUICKSTART.md`](
 
 ## Backup / recovery
 
-Le pré-APPLY Restic est fail-closed : cible externe/remote, chiffrement, intégrité, restore test, snapshot lié au même commit et arrêt des VM pour les disques.
+Le pré-APPLY Restic est fail-closed : cible externe/remote, chiffrement du dépôt Restic, intégrité, restore test, snapshot lié au même commit et arrêt des VM pour les disques. Le profil n'impose pas de chiffrement LUKS des SSD.
 
-La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.).
+La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.) et le timer refuse d'exécuter un checkout dont le SHA diffère de celui appliqué.
 
-Les restores sont staging-first.
+Le prune reste **manuel**. Lorsqu'il est demandé, la rétention `7 daily / 4 weekly / 6 monthly` est appliquée aux snapshots `fedora-gnome-custom-full` et `fedora-gnome-custom-daily`, puis `restic prune` est exécuté.
+
+Les restores sont staging-first. La passphrase Restic doit disposer d'une copie de récupération sécurisée hors de la workstation ; elle n'est jamais sauvegardée dans le dépôt Restic lui-même.
 
 ```bash
 ./prepare-preapply-backup.sh
 ./diagnostics/backup-doctor
 ./diagnostics/daily-backup-doctor
+scripts/backup/backup-now.sh --prune
 ```
 
 Voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
@@ -313,7 +340,7 @@ Voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
 ```
 
-Le générateur affiche la cible, exige `EFFACER /dev/...` et inscrit le SHA Git courant. Le `%post` fetch/checkout exactement ce SHA.
+Le générateur affiche la cible, exige `EFFACER /dev/...` et inscrit le SHA Git courant. Le `%post` fetch/checkout exactement ce SHA. Le HOST n'active pas `sshd`; `openssh-clients` reste installé pour les connexions vers les VM.
 
 ### 2. Baseline
 
@@ -346,7 +373,7 @@ Ou directement :
 ./install.sh --apply
 ```
 
-Le gate exige bare-metal réel, Git propre, preflight du même commit, baseline valide, backup Restic du même commit et confirmation exacte.
+Le gate exige bare-metal réellement prouvé, Git propre, preflight du même commit, baseline valide, backup Restic du même commit et confirmation exacte. Un runtime indéterminé reste `unknown` et ne peut pas ouvrir le gate.
 
 ## Mises à jour quotidiennes
 
@@ -366,14 +393,14 @@ La transaction complète exige bare-metal, réalise un backup Restic complet ava
 
 ## CI et gouvernance
 
-Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop, Control Center et cloisonnement du LAB VirtualBox.
+Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop, Resource Monitor, Control Center et cloisonnement du LAB VirtualBox.
 
-La politique cible pour `main` exige PR + checks verts et interdit force-push/suppression.
+La politique cible pour `main` exige PR + checks verts et interdit force-push/suppression. Le script `scripts/development/check-main-protection.sh` reste le contrôle de conformité de ce réglage GitHub.
 
 Voir [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) et [`docs/GITHUB_GOVERNANCE.md`](docs/GITHUB_GOVERNANCE.md).
 
 ## Version
 
-`0.13.0` — **Workstation Control Center**.
+`0.14.0` — **Final Hardening / Release Candidate**.
 
 La 1.0 sera justifiée par une installation bare-metal complète, une certification finale réussie et une période d'usage réel stable — pas par l'ajout artificiel de fonctionnalités.
