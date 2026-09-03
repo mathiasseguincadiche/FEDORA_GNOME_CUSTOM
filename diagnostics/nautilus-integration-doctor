@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+
+emit() {
+  local state="$1" label="$2" detail="$3"
+  $quiet || ui_check "$state" "$label" "$detail"
+  case "$state" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+required=(nautilus gvfs gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus)
+is_true "${NAUTILUS_ENABLE_SMB:-true}" && required+=(gvfs-smb)
+is_true "${NAUTILUS_ENABLE_MTP:-true}" && required+=(gvfs-mtp)
+
+for pkg in "${required[@]}"; do
+  if rpm -q "$pkg" >/dev/null 2>&1; then
+    emit OK "Nautilus package" "$pkg"
+  else
+    emit KO "Nautilus package" "$pkg missing"
+  fi
+done
+
+if rpm -ql file-roller-nautilus 2>/dev/null | grep -Eq '/nautilus/extensions-4/.*\.so$'; then
+  emit OK 'Archive integration' 'File Roller Nautilus extension present'
+else
+  emit KO 'Archive integration' 'Nautilus extension payload missing'
+fi
+
+if command -v gio >/dev/null 2>&1 && gio mount -l >/dev/null 2>&1; then
+  emit OK GIO 'mount backend enumeration works'
+else
+  emit KO GIO 'gio mount enumeration failed'
+fi
+
+if command -v gsettings >/dev/null 2>&1 && gsettings list-schemas | grep -Fxq org.gnome.nautilus.preferences; then
+  expected="${NAUTILUS_PREVIEW_POLICY:-local-only}"
+  is_true "${NAUTILUS_ENABLE_PREVIEWS:-true}" || expected="never"
+  actual="$(gsettings get org.gnome.nautilus.preferences show-image-thumbnails 2>/dev/null || true)"
+  if [[ "$actual" == "'$expected'" ]]; then
+    emit OK Previews "$expected"
+  else
+    emit KO Previews "expected '$expected', got ${actual:-unavailable}"
+  fi
+else
+  emit KO Previews 'Nautilus GSettings schema unavailable'
+fi
+
+helper="$HOME/.local/libexec/fedora-gnome-nautilus-prewarm"
+if [[ -x "$helper" ]]; then
+  emit OK Prewarm 'helper installed'
+else
+  emit KO Prewarm 'helper missing'
+fi
+if systemctl --user is-enabled --quiet fedora-gnome-nautilus-prewarm.service 2>/dev/null; then
+  emit OK Prewarm 'user service enabled'
+else
+  emit KO Prewarm 'user service disabled'
+fi
+
+if command -v xdg-user-dir >/dev/null 2>&1; then
+  desktop_dir="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+  if [[ -n "$desktop_dir" && -d "$desktop_dir" ]]; then
+    emit OK 'XDG Desktop' "$desktop_dir"
+  else
+    emit WARN 'XDG Desktop' 'directory unavailable before DING convergence/login'
+  fi
+fi
+
+$quiet || {
+  ui_meta OK "$ok"
+  ui_meta WARN "$warn"
+  ui_meta KO "$ko"
+}
+(( ko == 0 )) || exit "$EXIT_POSTCHECK_FAILED"
+$quiet || ui_summary 'NAUTILUS INTEGRATION HEALTHY' 'READY' "$REPORT_ROOT" "$LOG_DIR"
