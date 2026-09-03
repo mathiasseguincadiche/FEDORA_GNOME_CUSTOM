@@ -21,8 +21,9 @@ grep -Fxq 'keep_previous_certified=true' "$policy"
 grep -Fxq 'keep_fedora_fallback=true' "$policy"
 grep -Fxq 'one_shot_test_boot=true' "$policy"
 grep -Fxq 'required_suspend_cycles=5' "$policy"
-grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$conf"
+grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$conf"
+grep -Fq 'Promotion to Golden is governed separately by kernel-lifecycle.policy' "$conf"
 
 grep -Fq 'candidate.env' "$lib"
 grep -Fq 'certified.env' "$lib"
@@ -49,8 +50,9 @@ if grep -RInE '(dnf|rpm)[[:space:]].*(remove|erase)|rpm[[:space:]]+-e|rm[[:space
   exit 1
 fi
 
-if grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$conf"; then
-  echo 'latest stable must not be synonymous with certified Golden' >&2
+# Latest-stable selection must only stage a candidate; certification must remain explicit.
+if grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE' "$doctor" || grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE' "$lib"; then
+  echo 'legacy latest-stable selector must not drive certification logic' >&2
   exit 1
 fi
 
