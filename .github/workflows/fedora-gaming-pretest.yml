@@ -1,0 +1,128 @@
+name: Fedora 44 gaming pretest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '47 6 * * 0'
+  push:
+    paths:
+      - 'manifests/packages-gaming*.txt'
+      - 'modules/gaming/**'
+      - 'diagnostics/gaming-doctor'
+      - 'tests/test_gaming_contract.sh'
+      - 'docs/GAMING.md'
+      - '.github/workflows/fedora-gaming-pretest.yml'
+      - '.github/workflows/fedora-package-preflight.yml'
+      - 'modules/system/04_package_sources.sh'
+  pull_request:
+    paths:
+      - 'manifests/packages-gaming*.txt'
+      - 'modules/gaming/**'
+      - 'diagnostics/gaming-doctor'
+      - 'tests/test_gaming_contract.sh'
+      - 'docs/GAMING.md'
+      - '.github/workflows/fedora-gaming-pretest.yml'
+      - '.github/workflows/fedora-package-preflight.yml'
+      - 'modules/system/04_package_sources.sh'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fedora-44-gaming-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gaming-stack:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Enable RPM Fusion metadata
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          dnf -y install \
+            https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm \
+            https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm
+
+      - name: Install Fedora Steam repository definition
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          dnf -y install fedora-workstation-repositories
+          test -r /etc/yum.repos.d/rpmfusion-nonfree-steam.repo
+          repos="$(dnf repolist --all)"
+          grep -Fq 'rpmfusion-nonfree-steam' <<<"$repos"
+
+      - name: Resolve Fedora gaming manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          while IFS= read -r pkg; do
+            [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+            matches="$(dnf -q repoquery --available "$pkg")"
+            [[ -n "$matches" ]] || { echo "UNRESOLVED FEDORA GAMING PACKAGE: $pkg"; exit 1; }
+          done < manifests/packages-gaming.txt
+
+      - name: Install Fedora gaming payload
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t packages < <(sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' manifests/packages-gaming.txt)
+          dnf -y install "${packages[@]}"
+
+      - name: Resolve and install Steam RPM
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          while IFS= read -r pkg; do
+            [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+            matches="$(dnf -q --enablerepo=rpmfusion-nonfree-steam repoquery --available "$pkg")"
+            [[ -n "$matches" ]] || { echo "UNRESOLVED RPM FUSION GAMING PACKAGE: $pkg"; exit 1; }
+            dnf -y --enablerepo=rpmfusion-nonfree-steam install "$pkg"
+          done < manifests/packages-gaming-rpmfusion.txt
+
+      - name: Validate Steam without launching GUI
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rpm -q fedora-workstation-repositories steam
+          steam_bin="$(command -v steam)"
+          [[ -n "$steam_bin" ]]
+          rpm -qf "$steam_bin"
+          test -r /usr/share/applications/steam.desktop
+
+      - name: Validate Vulkan multilib payload
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rpm -q \
+            mesa-vulkan-drivers.x86_64 mesa-vulkan-drivers.i686 \
+            mesa-dri-drivers.x86_64 mesa-dri-drivers.i686 \
+            vulkan-loader.x86_64 vulkan-loader.i686 \
+            vulkan-tools
+          command -v vulkaninfo >/dev/null
+
+      - name: Validate gaming tools and input payload
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rpm -q gamemode gamescope mangohud goverlay steam-devices
+          command -v gamemoderun >/dev/null
+          command -v mangohud >/dev/null
+          command -v gamescope >/dev/null
+          command -v goverlay >/dev/null
+
+      - name: Enforce GPU repository policy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          repos="$(dnf repolist --all)"
+          ! grep -Eqi 'mesa-git|copr.*mesa|intel.*gpu.*repo|graphics.*driver.*repo' <<<"$repos"
+
+      - name: Validate static gaming contract
+        shell: bash
+        run: bash tests/test_gaming_contract.sh

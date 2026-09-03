@@ -1,0 +1,13 @@
+# Fedora-native gaming stack. Steam is intentionally isolated in the RPM Fusion manifest.
+gamemode
+gamescope
+mangohud
+goverlay
+steam-devices
+vulkan-tools
+mesa-vulkan-drivers.x86_64
+mesa-vulkan-drivers.i686
+mesa-dri-drivers.x86_64
+mesa-dri-drivers.i686
+vulkan-loader.x86_64
+vulkan-loader.i686

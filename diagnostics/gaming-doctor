@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+
+emit() {
+  local state="$1" label="$2" detail="$3"
+  $quiet || ui_check "$state" "$label" "$detail"
+  case "$state" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+if ! is_true "${GAMING_ENABLE:-false}"; then
+  $quiet || ui_summary 'GAMING PROFILE DISABLED' 'OPTIONAL' "$REPORT_ROOT" "$LOG_DIR"
+  exit 0
+fi
+
+if rpm -q steam >/dev/null 2>&1 && command_exists steam; then
+  steam_bin="$(command -v steam)"
+  if rpm -qf "$steam_bin" >/dev/null 2>&1; then
+    emit OK Steam "RPM native: $steam_bin"
+  else
+    emit KO Steam 'command is not owned by an RPM package'
+  fi
+else
+  emit KO Steam 'RPM or native command missing'
+fi
+
+for spec in \
+  'gamemode:gamemoderun:GameMode' \
+  'mangohud:mangohud:MangoHud' \
+  'gamescope:gamescope:Gamescope' \
+  'goverlay:goverlay:GOverlay' \
+  'vulkan-tools:vulkaninfo:Vulkan tools'; do
+  IFS=: read -r pkg cmd label <<<"$spec"
+  if rpm -q "$pkg" >/dev/null 2>&1 && command_exists "$cmd"; then
+    emit OK "$label" 'RPM and command available'
+  else
+    emit KO "$label" "$pkg/$cmd missing"
+  fi
+done
+
+if rpm -q steam-devices >/dev/null 2>&1; then emit OK 'Steam Input' 'steam-devices installed'; else emit KO 'Steam Input' 'steam-devices missing'; fi
+
+for pkg in mesa-vulkan-drivers.x86_64 mesa-vulkan-drivers.i686 mesa-dri-drivers.x86_64 mesa-dri-drivers.i686 vulkan-loader.x86_64 vulkan-loader.i686; do
+  if rpm -q "$pkg" >/dev/null 2>&1; then emit OK Multilib "$pkg"; else emit KO Multilib "$pkg missing"; fi
+done
+
+repo_payload="$(dnf repolist --all 2>/dev/null || true)"
+if rpm -q fedora-workstation-repositories >/dev/null 2>&1 && [[ -r /etc/yum.repos.d/rpmfusion-nonfree-steam.repo ]] && grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload"; then
+  emit OK 'Steam repository' 'Fedora workstation repository definition exposes rpmfusion-nonfree-steam'
+else
+  emit KO 'Steam repository' 'fedora-workstation-repositories or rpmfusion-nonfree-steam definition unavailable'
+fi
+if grep -Eqi 'mesa-git|copr.*mesa|intel.*gpu.*repo|graphics.*driver.*repo' <<<"$repo_payload"; then
+  emit KO 'GPU repositories' 'unexpected third-party GPU repository detected'
+else
+  emit OK 'GPU repositories' 'Fedora/RPM Fusion policy preserved'
+fi
+
+proton_found=false
+for root in \
+  "$HOME/.local/share/Steam/steamapps/common" \
+  "$HOME/.steam/steam/steamapps/common" \
+  "$HOME/.steam/root/steamapps/common"; do
+  [[ -d "$root" ]] || continue
+  proton_path="$(find "$root" -maxdepth 1 -type d -iname 'Proton*' -print -quit 2>/dev/null || true)"
+  if [[ -n "$proton_path" ]]; then proton_found=true; break; fi
+done
+if $proton_found; then
+  emit OK Proton 'Steam-managed Proton payload detected'
+else
+  emit WARN Proton 'not initialized yet; install/select Proton from Steam when a Windows game requires it'
+fi
+
+if runtime_is_baremetal; then
+  if "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; then emit OK 'Arc B580' 'xe/Vulkan graphics doctor PASS'; else emit KO 'Arc B580' 'graphics doctor failed'; fi
+  if "$REPO_ROOT/diagnostics/display-doctor" --quiet; then emit OK Display 'Wayland 2560x1440 / 240 Hz contract PASS'; else emit KO Display 'display doctor failed'; fi
+
+  vulkan_summary="$(vulkaninfo --summary 2>/dev/null || true)"
+  if grep -Eqi 'Intel.*(Arc|B580|Battlemage)|(Arc|B580|Battlemage).*Intel' <<<"$vulkan_summary"; then
+    emit OK Vulkan 'Intel Arc renderer visible'
+  else
+    emit KO Vulkan 'Intel Arc renderer not identified by vulkaninfo'
+  fi
+
+  if command_exists gdctl; then
+    display_payload="$(gdctl show --verbose 2>/dev/null || true)"
+    if grep -Eqi 'VRR|variable[ -]?refresh|adaptive[ -]?sync' <<<"$display_payload"; then
+      emit OK VRR 'variable-refresh capability exposed by GNOME display stack'
+    else
+      emit WARN VRR 'GNOME tooling does not expose an explicit VRR state; verify in Settings/monitor OSD during bare-metal gaming certification'
+    fi
+  else
+    emit WARN VRR 'gdctl unavailable'
+  fi
+else
+  emit WARN 'Bare-metal gate' "runtime=$(runtime_environment); GPU/Vulkan/display/VRR execution intentionally not certified here"
+fi
+
+$quiet || {
+  ui_meta OK "$ok"
+  ui_meta WARN "$warn"
+  ui_meta KO "$ko"
+}
+(( ko == 0 )) || exit "$EXIT_POSTCHECK_FAILED"
+$quiet || ui_summary 'GAMING HEALTHY' 'READY' "$REPORT_ROOT" "$LOG_DIR"

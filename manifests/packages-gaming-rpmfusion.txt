@@ -1,0 +1,2 @@
+# RPM Fusion nonfree Steam repository. Installed transactionally with --enablerepo=rpmfusion-nonfree-steam.
+steam
