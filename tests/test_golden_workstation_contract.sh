@@ -3,7 +3,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 grep -Fq 'KERNEL_VANILLA_COPR="@kernel-vanilla/stable"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_MIN_VERSION="7.2.2"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_LIFECYCLE_MODE="candidate-certified"' "$ROOT/config/kernel.conf"
+grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'system.kernel' "$ROOT/manifests/module-plan.conf"
