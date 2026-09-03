@@ -1,0 +1,2 @@
+# GNOME-native AppImage desktop integration manager from Flathub
+it.mijorus.gearlever
