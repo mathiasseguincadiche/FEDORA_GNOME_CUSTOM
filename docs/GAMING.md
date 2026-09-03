@@ -4,13 +4,19 @@
 
 The Gaming profile is an optional Golden workstation capability. It adds the Linux gaming runtime without changing the DevOps/KVM isolation boundary, without replacing Fedora's kernel/Mesa stack, and without applying global performance tweaks.
 
-The profile is disabled by default. Enable it for an APPLY run with:
+The profile is disabled by default. Enable it persistently for this workstation by setting the validated local override:
+
+```bash
+GAMING_ENABLE="true"
+```
+
+in `config/local.conf`, or enable it for one explicit APPLY run with:
 
 ```bash
 GAMING_ENABLE=true ./install.sh
 ```
 
-A future machine-local override may expose the same policy through validated local configuration; until then the environment switch is deliberate and explicit.
+The canonical project default remains `GAMING_ENABLE="false"` in `config/gaming.conf`, so a workstation that does not request gaming remains unchanged.
 
 ## Golden stack
 
@@ -91,6 +97,23 @@ On the physical workstation, `diagnostics/gaming-doctor` additionally checks the
 - Steam-managed Proton presence after Steam has initialized compatibility tools.
 
 A missing Proton payload on a fresh Steam installation is a warning, not a failure: Steam downloads compatibility tools on demand.
+
+## Certification workflow
+
+After the Gaming profile has been applied and the workstation rebooted, validate the dedicated stack on the physical machine:
+
+```bash
+GAMING_ENABLE=true ./diagnostics/gaming-doctor
+```
+
+Then run the normal Golden certification path. When `GAMING_ENABLE=true`, `diagnostics/final-certification certify` invokes `gaming-doctor --quiet`; when the profile is disabled, Gaming is intentionally excluded from the mandatory bare-metal certificate.
+
+The final Gaming proof therefore has two levels:
+
+1. GitHub Actions proves package resolution, native RPM ownership, multilib Vulkan payload and project contracts on Fedora 44;
+2. the physical workstation proves Arc B580/`xe`, Vulkan renderer, GNOME/Wayland, 2560×1440/~240 Hz and the enabled Gaming payload.
+
+A first real game launch remains an operator acceptance test rather than a CI assertion, because game binaries, Steam authentication, anti-cheat support and title-specific Proton compatibility are external runtime variables.
 
 ## What is deliberately excluded
 
