@@ -12,7 +12,7 @@ gaming_stack_precheck() {
 
 gaming_stack_plan() {
   if gaming_stack_enabled; then
-    echo 'Install Fedora-native Vulkan multilib, GameMode, MangoHud, GOverlay, Gamescope and Steam Input; install Steam from RPM Fusion nonfree Steam without custom Mesa/kernel repositories or global performance tweaks. Proton remains Steam-managed.'
+    echo 'Install Fedora-native Vulkan multilib, GameMode, MangoHud, GOverlay, Gamescope and Steam Input; install Fedora workstation repository definitions and Steam from RPM Fusion nonfree Steam without custom Mesa/kernel repositories or global performance tweaks. Proton remains Steam-managed.'
   else
     echo 'Gaming profile disabled; preserve the Golden HOST without gaming packages.'
   fi
@@ -24,10 +24,15 @@ gaming_stack_apply() {
 
   install_manifest_packages GAMING "$REPO_ROOT/manifests/packages-gaming.txt" || return "$EXIT_APPLY_FAILED"
 
+  # Fedora owns the repository definition for the dedicated RPM Fusion Steam
+  # channel. RPM Fusion's release package supplies the signing material, while
+  # fedora-workstation-repositories supplies rpmfusion-nonfree-steam.repo.
+  run_mutating GAMING sudo dnf -y install fedora-workstation-repositories || return "$EXIT_APPLY_FAILED"
+
   if ! is_true "${DRY_RUN:-true}"; then
     repo_payload="$(dnf repolist --all 2>/dev/null || true)"
     grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload" || {
-      log_error GAMING 'rpmfusion-nonfree-steam repository is unavailable after RPM Fusion setup'
+      log_error GAMING 'rpmfusion-nonfree-steam repository is unavailable after Fedora workstation/RPM Fusion repository setup'
       return "$EXIT_APPLY_FAILED"
     }
   fi
@@ -43,7 +48,7 @@ gaming_stack_postcheck() {
   gaming_stack_enabled || return 0
   is_true "${DRY_RUN:-true}" && return 0
 
-  rpm -q steam gamemode gamescope mangohud goverlay steam-devices vulkan-tools >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  rpm -q fedora-workstation-repositories steam gamemode gamescope mangohud goverlay steam-devices vulkan-tools >/dev/null || return "$EXIT_POSTCHECK_FAILED"
   rpm -q mesa-vulkan-drivers.x86_64 mesa-vulkan-drivers.i686 mesa-dri-drivers.x86_64 mesa-dri-drivers.i686 vulkan-loader.x86_64 vulkan-loader.i686 >/dev/null || return "$EXIT_POSTCHECK_FAILED"
 
   command_exists steam || return "$EXIT_POSTCHECK_FAILED"
