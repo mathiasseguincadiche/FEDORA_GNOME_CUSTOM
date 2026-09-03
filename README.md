@@ -91,8 +91,8 @@ Cette release ferme les écarts identifiés lors de la revue pré-1.0 sans ajout
 - un échec pendant `--apply` conserve son code retour et produit toujours un rapport d'état partiellement convergé ;
 - VA-API résout désormais le render node de l'Arc B580 par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` ;
 - DING, Show Desktop Plus et Resource Monitor sont verrouillés par URL GNOME Review **et SHA-256 exact** ;
-- le backup quotidien est lié au SHA Git réellement appliqué ;
-- le prune Restic reste manuel mais couvre désormais les tags `full` et `daily` ;
+- les timers backup utilisent un runtime autonome versionné par SHA et vérifié par manifeste ;
+- la rétention Restic 7 daily / 4 weekly / 6 monthly est appliquée périodiquement aux tags `full` et `daily` ;
 - `sshd` est désactivé sur le HOST Fedora tandis que `openssh-clients` reste installé pour HOST → VM ;
 - le guard KVM protège les LAN et les routes non-default du HOST, notamment VPN/réseaux d'entreprise, tout en préservant la route Internet par défaut ;
 - les Flatpaks `community-unverified` doivent appartenir à une allowlist versionnée explicite ;
@@ -317,9 +317,9 @@ Voir [`docs/VM_PROFILES.md`](docs/VM_PROFILES.md) et [`docs/KVM_QUICKSTART.md`](
 
 Le pré-APPLY Restic est fail-closed : cible externe/remote, chiffrement du dépôt Restic, intégrité, restore test, snapshot lié au même commit et arrêt des VM pour les disques. Le profil n'impose pas de chiffrement LUKS des SSD.
 
-La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.) et le timer refuse d'exécuter un checkout dont le SHA diffère de celui appliqué.
+La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.). Les timers exécutent un bundle autonome installé sous le SHA appliqué et vérifié par `MANIFEST.sha256`, sans dépendre du checkout Git courant.
 
-Le prune reste **manuel**. Lorsqu'il est demandé, la rétention `7 daily / 4 weekly / 6 monthly` est appliquée aux snapshots `fedora-gnome-custom-full` et `fedora-gnome-custom-daily`, puis `restic prune` est exécuté.
+La rétention `7 daily / 4 weekly / 6 monthly` est appliquée automatiquement chaque semaine aux snapshots `fedora-gnome-custom-full` et `fedora-gnome-custom-daily`, puis un unique `restic prune` est exécuté. Le déclenchement manuel reste disponible depuis le Control Center.
 
 Les restores sont staging-first. La passphrase Restic doit disposer d'une copie de récupération sécurisée hors de la workstation ; elle n'est jamais sauvegardée dans le dépôt Restic lui-même.
 

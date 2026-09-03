@@ -10,7 +10,8 @@ for expected in \
   'BACKUP_RESTORE_TEST_REQUIRED="true"' \
   'BACKUP_VM_SHUTDOWN_REQUIRED="true"' \
   'BACKUP_ALLOW_LIVE_QCOW2_COPY="false"' \
-  'BACKUP_PRUNE_AUTOMATICALLY="false"' \
+  'BACKUP_PRUNE_AUTOMATICALLY="true"' \
+  'RESTIC_RETENTION_TIMER_ENABLED="true"' \
   'DAILY_BACKUP_XDG_DIRS="DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC"' \
   'DAILY_BACKUP_EXTRA_PATHS="Projects Development .config .ssh .gnupg"'; do
   grep -Fq "$expected" "$ROOT/config/backup.conf" || { echo "missing backup policy: $expected" >&2; exit 1; }
@@ -26,7 +27,7 @@ for entry in \
   'backup.dr|BACKUP|backup.restore|modules/backup/58_disaster_recovery.sh'; do
   grep -Fq "$entry" "$ROOT/manifests/module-plan.conf" || { echo "missing backup module: $entry" >&2; exit 1; }
 done
-for file in lib/backup_runtime.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/daily-user-backup.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do
+for file in lib/backup_runtime.sh lib/backup_runtime_bundle.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/daily-user-backup.sh scripts/backup/restic-retention.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do
   [[ -f "$ROOT/$file" ]] || { echo "missing backup/recovery file: $file" >&2; exit 1; }
 done
 grep -Fq 'marker_commit' "$ROOT/lib/apply_gate.sh"
@@ -46,7 +47,8 @@ if grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:s
   echo 'forbidden destructive backup/recovery command found' >&2
   exit 1
 fi
-grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/backup/backup-now.sh"
-grep -Fq 'FEDORA_GNOME_CUSTOM_APPLIED_SHA' "$ROOT/scripts/backup/daily-user-backup.sh"
+grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/backup/restic-retention.sh"
+grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-backup.sh"
+grep -Fq 'MANIFEST.sha256' "$ROOT/lib/backup_runtime_bundle.sh"
 
 echo 'backup/recovery contract: PASS'

@@ -13,19 +13,22 @@ Configurer dans GitHub un ruleset ciblant `refs/heads/main` avec :
 - checks obligatoires : **Tests**, **Shell quality**, **Architecture non-regression**, **Fedora 44 package preflight**, **Fedora 44 host integration pretest** ;
 - le workflow Ubuntu 26.04 doit être vert lorsqu'il est déclenché par une modification de la VM, de son bootstrap ou de sa supply-chain.
 
-Le dépôt contient :
+Le dépôt contient `scripts/development/check-main-protection.sh` pour vérifier l'état public attendu de la protection. Ce script ne modifie aucun réglage GitHub.
 
-```bash
-scripts/development/check-main-protection.sh
-```
-
-pour vérifier l'état public attendu de la protection. Ce script ne modifie aucun réglage GitHub.
-
-## Discipline de branche
+## Discipline de branche et de merge
 
 Les changements fonctionnels ou structurants sont préparés sur une branche dédiée puis proposés par pull request.
 
-Le but n'est pas de multiplier les branches longues : `main` doit rester la représentation intégrable de la Golden Workstation, avec historique de revue et checks visibles.
+Politique de merge du projet :
+
+```text
+merge commit : OUI
+squash merge : NON
+rebase merge : NON
+suppression automatique de la branche après merge : OUI
+```
+
+Le merge commit est retenu afin de conserver la frontière exacte de chaque PR, son SHA de tête validé et son rattachement à l'historique de revue. Les branches de travail sont jetables et doivent être supprimées automatiquement après fusion.
 
 ## Discipline de release
 
@@ -36,6 +39,14 @@ VERSION
 CHANGELOG.md
 README.md lorsque le contrat utilisateur change
 ```
+
+La release candidate 0.14.0 est décrite par `.github/release-manifest.env`. Le workflow `.github/workflows/release.yml`, déclenché uniquement après intégration de ce manifeste sur `main`, crée de façon idempotente la prerelease :
+
+```text
+v0.14.0-rc.1
+```
+
+Le tag est créé sur le SHA exact du push `main` qui introduit le manifeste. Si une release du même nom existe déjà sur un autre SHA, le workflow échoue au lieu de déplacer silencieusement le tag.
 
 Les documents normatifs ne recopient pas inutilement le numéro de release dans leur titre ; ils suivent la version indiquée par `VERSION`. Les anciens numéros restent acceptables dans les release notes et le changelog lorsqu'ils décrivent explicitement l'historique.
 
@@ -52,6 +63,6 @@ La documentation est traitée comme une partie du produit. La CI doit notamment 
 
 ## Limite d'automatisation
 
-Les réglages de protection GitHub ne sont jamais modifiés par `install.sh --apply`. Ils appartiennent à l'administration du dépôt, séparée de la convergence Fedora.
+Les réglages GitHub de protection/merge ne sont jamais modifiés par `install.sh --apply`. Ils appartiennent à l'administration du dépôt, séparée de la convergence Fedora.
 
-Si l'outil utilisé pour administrer GitHub ne possède pas les droits d'écriture nécessaires, le ruleset doit être configuré depuis un compte ou mécanisme disposant explicitement de ces droits. Cette contrainte d'administration n'appartient pas à l'architecture runtime de la workstation.
+La configuration attendue est vérifiée après modification via l'API publique du dépôt. Si l'identité d'administration utilisée ne possède pas l'écriture `administration`, la modification doit être faite par un mécanisme GitHub explicitement autorisé ; la documentation seule ne constitue jamais une preuve que le réglage live est actif.

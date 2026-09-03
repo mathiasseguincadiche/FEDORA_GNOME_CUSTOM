@@ -133,7 +133,7 @@ Le menu expose :
 - backup doctor normal/profond ;
 - restauration vers staging ;
 - plan Disaster Recovery ;
-- rétention Restic manuelle `full + daily` via `backup prune`.
+- rétention Restic périodique `full + daily` par timer dédié, avec déclenchement manuel disponible via `backup prune`.
 
 La restauration proposée par le cockpit conserve la politique non destructive de `scripts/backup/restore.sh`.
 

@@ -26,6 +26,8 @@ jobs:
       - run: bash tests/test_python_toolchain_contract.sh
       - run: bash tests/test_vm_file_access_contract.sh
       - run: bash tests/test_backup_recovery_contract.sh
+      - run: bash tests/test_backup_runtime_bundle_contract.sh
+      - run: bash tests/test_config_schema_contract.sh
       - run: bash tests/test_ci_maturity_contract.sh
       - run: bash tests/test_dash_to_dock_contract.sh
       - run: bash tests/test_desktop_ergonomics_contract.sh
