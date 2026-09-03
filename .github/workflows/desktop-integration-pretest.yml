@@ -69,11 +69,15 @@ jobs:
         run: |
           set -Eeuo pipefail
           dbus-run-session -- gio mount -l >/dev/null
-      - name: Validate Nautilus CLI
+      - name: Validate native Nautilus executable
         shell: bash
         run: |
           set -Eeuo pipefail
-          nautilus --version
+          nautilus_bin="$(command -v nautilus)"
+          test -n "${nautilus_bin}"
+          test -x "${nautilus_bin}"
+          nautilus_owner="$(rpm -qf "${nautilus_bin}")"
+          grep -Eq '^nautilus-[0-9]' <<<"${nautilus_owner}"
       - name: Validate native Ptyxis payload
         shell: bash
         run: |
