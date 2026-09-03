@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/release-manifest.env'
       - '.github/workflows/release.yml'
+      - '.github/scripts/resolve-release-tag-commit.sh'
 
 permissions:
   contents: write
@@ -47,23 +48,22 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          resolver=.github/scripts/resolve-release-tag-commit.sh
+          [[ -x "$resolver" ]]
 
-          resolve_tag_commit() {
-            local ref_json object_type object_sha
-            ref_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" 2>/dev/null || true)"
-            [[ -n "$ref_json" ]] || return 1
-            object_type="$(jq -r '.object.type' <<<"$ref_json")"
-            object_sha="$(jq -r '.object.sha' <<<"$ref_json")"
-            while [[ "$object_type" == tag ]]; do
-              tag_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${object_sha}")"
-              object_type="$(jq -r '.object.type' <<<"$tag_json")"
-              object_sha="$(jq -r '.object.sha' <<<"$tag_json")"
-            done
-            [[ "$object_type" == commit && "$object_sha" =~ ^[0-9a-f]{40}$ ]]
-            printf '%s\n' "$object_sha"
-          }
+          existing_commit=""
+          if existing_commit="$("$resolver" "$RELEASE_TAG")"; then
+            :
+          else
+            rc=$?
+            if [[ "$rc" -eq 3 ]]; then
+              existing_commit=""
+            else
+              echo "Cannot safely resolve existing release tag (rc=$rc)." >&2
+              exit "$rc"
+            fi
+          fi
 
-          existing_commit="$(resolve_tag_commit || true)"
           if [[ -n "$existing_commit" && "$existing_commit" != "$GITHUB_SHA" ]]; then
             echo "Release tag already exists on unexpected SHA: $existing_commit" >&2
             exit 1
@@ -81,15 +81,12 @@ jobs:
             }
             echo "Release $RELEASE_TAG already exists on this SHA; nothing to do."
           else
-            if [[ -n "$existing_commit" ]]; then
-              [[ "$existing_commit" == "$GITHUB_SHA" ]]
-            fi
             gh release create "$RELEASE_TAG" \
               --target "$GITHUB_SHA" \
               --title "$RELEASE_NAME" \
               --generate-notes \
               --prerelease
-            created_commit="$(resolve_tag_commit)"
+            created_commit="$("$resolver" "$RELEASE_TAG")"
             [[ "$created_commit" == "$GITHUB_SHA" ]] || {
               echo "Created release tag does not resolve to GITHUB_SHA." >&2
               exit 1
