@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 system_sources_precheck() { command_exists dnf; }
-system_sources_plan() { echo 'Enable RPM Fusion only for explicitly requested multimedia packages and Flathub for curated desktop apps; never add GPU driver repositories.'; }
+system_sources_plan() { echo 'Enable RPM Fusion only for explicitly approved multimedia and gaming packages and Flathub for curated desktop apps; never add GPU driver repositories.'; }
 system_sources_apply() {
   if is_true "${ENABLE_RPMFUSION:-true}"; then
     local fedora; fedora="$(rpm -E %fedora)"
