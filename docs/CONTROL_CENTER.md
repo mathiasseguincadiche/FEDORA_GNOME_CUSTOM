@@ -33,6 +33,7 @@ Le cockpit :
 - ne remplace pas les checks Restic existants ;
 - ne flashe jamais un firmware automatiquement ;
 - ne fait jamais passer `mainline`, `-rc` ou `linux-next` dans le profil Golden ;
+- ne promeut jamais automatiquement le dernier kernel stable en Golden ;
 - conserve les scripts publics appelables directement pour CI, dépannage et automatisation.
 
 ## Tableau de bord
@@ -43,7 +44,7 @@ L'écran d'accueil affiche sans privilège élevé :
 - version Fedora ;
 - runtime détecté (`BAREMETAL`, `WSL2`, `VM`, `CI`, etc.) ;
 - kernel réellement actif ;
-- politique Golden `kernel-vanilla/stable latest-stable` ;
+- canal kernel `kernel-vanilla/stable` et politique de promotion `candidate → certified` ;
 - Arc B580 / pilote `xe` lorsque la preuve physique est disponible ;
 - état Git (`CLEAN` / `DIRTY`) ;
 - preuve du dernier backup complet Restic ;
@@ -86,9 +87,11 @@ Ce socle expose le chemin de confiance existant :
 
 Le choix « Installation complète » appelle **exactement** `install.sh --apply`. Toutes les protections de `apply_gate_open` restent donc obligatoires.
 
+Lors de l'APPLY, le dernier kernel stable de `@kernel-vanilla/stable` peut être **staged comme candidat**, mais il n'est pas déclaré Golden et le boot par défaut existant est préservé.
+
 ### Mises à jour
 
-Le nouveau moteur `scripts/maintenance/update-system.sh` fournit :
+Le moteur `scripts/maintenance/update-system.sh` fournit :
 
 ```bash
 ./scripts/maintenance/update-system.sh --check
@@ -106,7 +109,7 @@ runtime bare-metal obligatoire
 backup complet Restic + integrity check
         ↓
 DNF upgrade --refresh
-  Fedora + repos activés + kernel-vanilla/stable
+  Fedora + repos activés
         ↓
 Flatpak update
         ↓
@@ -118,7 +121,7 @@ diagnostic global
 indication reboot
 ```
 
-Le kernel Golden reste `kernel-vanilla/stable`, configuré pour suivre la **dernière stable upstream**, avec le kernel Fedora conservé comme fallback.
+Le canal kernel reste `kernel-vanilla/stable`, mais **latest stable n'est plus synonyme de Golden**. Un nouveau kernel doit passer par le lifecycle candidat/certification décrit ci-dessous.
 
 Le flash firmware reste volontairement hors de la mise à jour complète : une mise à jour BIOS/NVMe/firmware doit rester une opération explicitement décidée par l'opérateur.
 
@@ -143,15 +146,60 @@ Les doctors restent indépendants. Le menu fournit une navigation par domaine : 
 
 ### Kernel & boot
 
-Le Control Center montre l'inventaire des kernels et rappelle la politique :
+Le lifecycle Golden est désormais explicite :
 
 ```text
-Golden default     kernel-vanilla/stable → latest stable upstream
-Fallback           kernel Fedora officiel
-Golden interdit    mainline / -rc / linux-next
+@kernel-vanilla/stable latest disponible
+        ↓
+CANDIDATE
+  backup pré-APPLY + baseline requis
+  aucun -rc/mainline/linux-next
+  kernel certifié/Fedora par défaut préservé
+        ↓
+BOOT DE QUALIFICATION ONE-SHOT
+  grub2-reboot
+        ↓
+kernel actif = candidate
+  kernel/xe + firmware + graphics + display
+  GNOME + Nautilus + applications/AppImage
+  KVM si activé
+  5 cycles suspend/resume physiques
+  fingerprint runtime valide
+        ↓
+CERTIFIED
+        ↓
+Golden default persistant
 ```
 
-Le rollback utilise uniquement `scripts/kernel/rollback-to-fedora.sh`.
+Commandes opérateur :
+
+```bash
+./control.sh kernel status
+./control.sh kernel doctor
+./control.sh kernel candidate
+./control.sh kernel boot-candidate
+./control.sh kernel certify
+./control.sh kernel rollback
+./control.sh kernel rollback-fedora
+```
+
+`candidate` exige une baseline matérielle valide et un backup pré-APPLY frais pour le même commit. Le kernel est installé sans supprimer les anciens noyaux et le boot par défaut existant est restauré après l'installation.
+
+`boot-candidate` utilise `grub2-reboot` pour programmer **un seul démarrage** sur le candidat. Le Golden certifié reste le défaut persistant tant que la promotion n'a pas réussi.
+
+`certify` n'accepte que le candidat réellement actif. Il appelle la certification finale bare-metal existante ; les preuves sont donc liées à l'empreinte qui inclut notamment kernel, firmware, Mesa, Mutter et GNOME Shell. Si ces composants changent, les preuves deviennent automatiquement obsolètes.
+
+`rollback` revient au **précédent kernel certifié** et le remet comme défaut sans effacer de kernel. `rollback-fedora` reste le chemin d'urgence distinct vers le kernel Fedora officiel.
+
+Politique de conservation :
+
+```text
+Golden courant certifié
+Golden précédent certifié
+kernel Fedora officiel fallback
+```
+
+Aucune suppression agressive de kernel n'est effectuée par le lifecycle.
 
 ### KVM / machines virtuelles
 
@@ -164,6 +212,8 @@ Le socle maintenance reste conservateur : état charge/RAM/disques/services KO, 
 ### Certification
 
 Le cockpit donne accès au statut final, à l'enregistrement des cycles suspend et aux certifications baseline/finale. Les critères de certification restent dans leurs doctors, pas dans le menu.
+
+La promotion d'un kernel candidat réutilise cette certification finale afin qu'un kernel ne puisse pas être déclaré Golden sur la seule base de son installation ou de son numéro de version.
 
 ### Logs & preuves
 
@@ -200,7 +250,11 @@ Le menu interactif n'est pas obligatoire. Les mêmes familles sont exposées en 
 
 ./control.sh kernel status
 ./control.sh kernel doctor
+./control.sh kernel candidate
+./control.sh kernel boot-candidate
+./control.sh kernel certify
 ./control.sh kernel rollback
+./control.sh kernel rollback-fedora
 
 ./control.sh kvm guard-check
 ./control.sh kvm guard-reconcile
