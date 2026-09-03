@@ -5,27 +5,9 @@ on:
   schedule:
     - cron: '27 6 * * 0'
   push:
-    paths:
-      - 'manifests/packages-gnome.txt'
-      - 'manifests/packages-nautilus*.txt'
-      - 'manifests/packages-applications-gtk4.txt'
-      - 'modules/gnome/20_gnome_core.sh'
-      - 'modules/gnome/21_nautilus_integration.sh'
-      - 'modules/applications/49_applications_validation.sh'
-      - 'diagnostics/nautilus-integration-doctor'
-      - 'diagnostics/ptyxis-doctor'
-      - '.github/workflows/desktop-integration-pretest.yml'
+    branches:
+      - main
   pull_request:
-    paths:
-      - 'manifests/packages-gnome.txt'
-      - 'manifests/packages-nautilus*.txt'
-      - 'manifests/packages-applications-gtk4.txt'
-      - 'modules/gnome/20_gnome_core.sh'
-      - 'modules/gnome/21_nautilus_integration.sh'
-      - 'modules/applications/49_applications_validation.sh'
-      - 'diagnostics/nautilus-integration-doctor'
-      - 'diagnostics/ptyxis-doctor'
-      - '.github/workflows/desktop-integration-pretest.yml'
 
 permissions:
   contents: read
@@ -35,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # This job is a required main-protection status check. Keep the pull_request
+  # trigger unfiltered so the nautilus-ptyxis context exists on every PR.
   nautilus-ptyxis:
     runs-on: ubuntu-latest
     container: fedora:44
