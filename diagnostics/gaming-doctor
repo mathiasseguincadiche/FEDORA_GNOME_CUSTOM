@@ -70,7 +70,8 @@ for root in \
   "$HOME/.steam/steam/steamapps/common" \
   "$HOME/.steam/root/steamapps/common"; do
   [[ -d "$root" ]] || continue
-  if find "$root" -maxdepth 1 -type d -iname 'Proton*' -print -quit 2>/dev/null | grep -q .; then proton_found=true; break; fi
+  proton_path="$(find "$root" -maxdepth 1 -type d -iname 'Proton*' -print -quit 2>/dev/null || true)"
+  if [[ -n "$proton_path" ]]; then proton_found=true; break; fi
 done
 if $proton_found; then
   emit OK Proton 'Steam-managed Proton payload detected'
