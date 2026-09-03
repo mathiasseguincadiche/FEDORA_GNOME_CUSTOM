@@ -27,6 +27,13 @@ fi
 DRY_RUN=false; export DRY_RUN
 ui_banner 'FEDORA WORKSTATION CONTROL' 'PROTECTED REAL APPLY'
 apply_gate_open
-orchestrator_run_all
-report="$(orchestrator_report)"
-ui_summary 'REAL APPLY COMPLETED' 'RUN ./diagnostic.sh AND REBOOT WHEN REQUESTED' "$report" "$LOG_DIR"
+if orchestrator_run_all; then
+  report="$(orchestrator_report)"
+  ui_summary 'REAL APPLY COMPLETED' 'RUN ./diagnostic.sh AND REBOOT WHEN REQUESTED' "$report" "$LOG_DIR"
+  exit 0
+else
+  rc=$?
+  report="$(orchestrator_report)"
+  ui_summary "REAL APPLY FAILED rc=$rc" 'SYSTEM MAY BE PARTIALLY CONVERGED — INSPECT REPORT/LOGS BEFORE RETRY OR REBOOT' "$report" "$LOG_DIR"
+  exit "$rc"
+fi
