@@ -25,7 +25,7 @@ done
 
 grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fxq 'keep_previous_certified=true' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'kernel_lifecycle_latest_available' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/lib/kernel_lifecycle.sh"
