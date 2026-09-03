@@ -17,11 +17,13 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          printf '## Reviewed GNOME artifact SHA-256\n\n' >> "$GITHUB_STEP_SUMMARY"
           for id in 74408 70326 70909; do
             file="${id}.shell-extension.zip"
             curl --fail --location --proto '=https' --tlsv1.2 \
               "https://extensions.gnome.org/review/download/${file}" \
               --output "$file"
-            printf 'GNOME_REVIEW_SHA256 id=%s ' "$id"
-            sha256sum "$file" | awk '{print $1}'
+            digest="$(sha256sum "$file" | awk '{print $1}')"
+            printf 'GNOME_REVIEW_SHA256 id=%s %s\n' "$id" "$digest"
+            printf -- '- `%s`: `%s`\n' "$id" "$digest" >> "$GITHUB_STEP_SUMMARY"
           done
