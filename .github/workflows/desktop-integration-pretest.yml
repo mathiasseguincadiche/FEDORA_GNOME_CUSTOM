@@ -56,8 +56,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          rpm -ql file-roller-nautilus | grep -Eq '/nautilus/extensions-4/.*\.so$'
-          gsettings list-schemas | grep -Fxq org.gnome.nautilus.preferences
+          file_roller_payload="$(rpm -ql file-roller-nautilus)"
+          grep -Eq '/nautilus/extensions-4/.*\.so$' <<<"${file_roller_payload}"
+          nautilus_schemas="$(gsettings list-schemas)"
+          grep -Fxq 'org.gnome.nautilus.preferences' <<<"${nautilus_schemas}"
           dbus-run-session -- gio mount -l >/dev/null
           nautilus --version
       - name: Validate native Ptyxis payload
@@ -66,5 +68,6 @@ jobs:
           set -Eeuo pipefail
           command -v ptyxis >/dev/null
           test -r /usr/share/applications/org.gnome.Ptyxis.desktop
-          gsettings list-schemas | grep -Fxq org.gnome.Ptyxis
+          ptyxis_schemas="$(gsettings list-schemas)"
+          grep -Fxq 'org.gnome.Ptyxis' <<<"${ptyxis_schemas}"
           ptyxis --version
