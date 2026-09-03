@@ -1,0 +1,54 @@
+name: RC1 documentation patch
+on:
+  push:
+    branches: [hardening/0.14.0-rc1-closure]
+    paths: ['.github/workflows/rc1-doc-patch.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Synchronize backup/release documentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          replacements = {
+            'README.md': [
+              ("- le backup quotidien est lié au SHA Git réellement appliqué ;", "- les timers backup utilisent un runtime autonome versionné par SHA et vérifié par manifeste ;"),
+              ("- le prune Restic reste manuel mais couvre désormais les tags `full` et `daily` ;", "- la rétention Restic 7 daily / 4 weekly / 6 monthly est appliquée périodiquement aux tags `full` et `daily` ;"),
+              ("La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.) et le timer refuse d'exécuter un checkout dont le SHA diffère de celui appliqué.", "La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.). Les timers exécutent un bundle autonome installé sous le SHA appliqué et vérifié par `MANIFEST.sha256`, sans dépendre du checkout Git courant."),
+              ("Le prune reste **manuel**. Lorsqu'il est demandé, la rétention `7 daily / 4 weekly / 6 monthly` est appliquée aux snapshots `fedora-gnome-custom-full` et `fedora-gnome-custom-daily`, puis `restic prune` est exécuté.", "La rétention `7 daily / 4 weekly / 6 monthly` est appliquée automatiquement chaque semaine aux snapshots `fedora-gnome-custom-full` et `fedora-gnome-custom-daily`, puis un unique `restic prune` est exécuté. Le déclenchement manuel reste disponible depuis le Control Center."),
+            ],
+            'CHANGELOG.md': [
+              ("- Backup quotidien lié au SHA réellement appliqué; le prune reste manuel mais applique la rétention aux snapshots `full` et `daily`.", "- Backup quotidien et rétention Restic exécutés depuis un bundle autonome versionné par SHA et vérifié par manifeste; timer hebdomadaire 7 daily / 4 weekly / 6 monthly sur les snapshots `full` et `daily`.")
+            ],
+            'docs/CONTROL_CENTER.md': [
+              ("- rétention Restic manuelle `full + daily` via `backup prune`.", "- rétention Restic périodique `full + daily` par timer dédié, avec déclenchement manuel disponible via `backup prune`.")
+            ],
+          }
+          for name, pairs in replacements.items():
+              p = Path(name)
+              text = p.read_text(encoding='utf-8')
+              for old, new in pairs:
+                  if old not in text:
+                      raise SystemExit(f'missing expected text in {name}: {old}')
+                  text = text.replace(old, new)
+              p.write_text(text, encoding='utf-8')
+          p = Path('CHANGELOG.md')
+          text = p.read_text(encoding='utf-8')
+          anchor = '- Ajout de `SECURITY.md`, `CODEOWNERS`, d\'un template de PR et de contrats comportementaux supplémentaires pour le hardening.\n'
+          addition = ('- Ajout d\'un schéma de configuration strict, validé avant sourcing, avec refus des clés inconnues, types invalides, doublons et syntaxe exécutable.\n'
+                      '- Préparation de la prerelease GitHub `v0.14.0-rc.1` via manifeste et workflow idempotent; politique de dépôt cible: merge commit unique et suppression automatique des branches fusionnées.\n')
+          if addition not in text:
+              if anchor not in text:
+                  raise SystemExit('missing changelog anchor')
+              text = text.replace(anchor, anchor + addition)
+              p.write_text(text, encoding='utf-8')
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add README.md CHANGELOG.md docs/CONTROL_CENTER.md
+          git diff --cached --quiet || git commit -m 'docs: synchronize RC1 backup and governance contract'
+          git push
