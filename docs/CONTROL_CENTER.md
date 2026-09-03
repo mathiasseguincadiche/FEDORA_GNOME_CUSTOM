@@ -132,7 +132,8 @@ Le menu expose :
 - liste des snapshots ;
 - backup doctor normal/profond ;
 - restauration vers staging ;
-- plan Disaster Recovery.
+- plan Disaster Recovery ;
+- rétention Restic manuelle `full + daily` via `backup prune`.
 
 La restauration proposée par le cockpit conserve la politique non destructive de `scripts/backup/restore.sh`.
 
@@ -190,6 +191,7 @@ Le menu interactif n'est pas obligatoire. Les mêmes familles sont exposées en 
 ./control.sh backup list
 ./control.sh backup deep
 ./control.sh backup restore latest
+./control.sh backup prune
 
 ./control.sh doctor all
 ./control.sh doctor kernel

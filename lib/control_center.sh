@@ -444,6 +444,7 @@ cc_backup_menu() {
     cc_option 6 'Vérification profonde Restic'
     cc_option 7 'Restaurer vers staging' 'non destructif'
     cc_option 8 'Plan Disaster Recovery'
+    cc_option 9 'Appliquer rétention Restic' 'manuel: full + daily'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
@@ -458,6 +459,11 @@ cc_backup_menu() {
         cc_interactive_exec 'RESTAURATION VERS STAGING' "$REPO_ROOT/scripts/backup/restore.sh" restore "${snap:-latest}"
         ;;
       8) cc_interactive_exec 'PLAN DISASTER RECOVERY' "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
+      9)
+        if cc_confirm 'Créer un backup complet puis appliquer la rétention Restic full + daily ?'; then
+          cc_interactive_exec 'RÉTENTION RESTIC MANUELLE' "$REPO_ROOT/scripts/backup/backup-now.sh" --prune
+        fi
+        ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -683,7 +689,7 @@ Usage:
   ./control.sh status                  Tableau de bord read-only
   ./control.sh install dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
-  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan
+  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh kernel status|doctor|rollback
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-ubuntu|create-windows
@@ -729,6 +735,7 @@ cc_cli_dispatch() {
         deep) "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
         restore) "$REPO_ROOT/scripts/backup/restore.sh" restore "${extra:-latest}" ;;
         dr-plan) "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
+        prune) "$REPO_ROOT/scripts/backup/backup-now.sh" --prune ;;
         *) cc_help; return "$EXIT_USAGE" ;;
       esac
       ;;

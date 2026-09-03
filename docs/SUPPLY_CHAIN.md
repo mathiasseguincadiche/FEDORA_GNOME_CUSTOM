@@ -84,3 +84,20 @@ Les prétests package Fedora, intégration host et Ubuntu VM sont rejoués péri
 - rupture de bootstrap.
 
 La CI complète la provenance et la reproductibilité ; elle ne remplace pas la validation du matériel physique ni la responsabilité de l'opérateur sur les médias Windows fournis manuellement.
+
+
+## Extensions GNOME revues
+
+Les extensions téléchargées directement depuis GNOME Extensions sont verrouillées par review, version **et SHA-256** :
+
+```text
+DING 74408 / v95             48175f0b5c1f8a1a724d761198c91d6994e91e28aec685605ae6a240b0a95aae
+Show Desktop Plus 70326 / v8 9ceab00be63b93c4eade16cf804bf4edd587632750aa89b78e317673fd6016a9
+Resource Monitor 70909 / v28  18f49cf20bd8f96f22f6048d7404e51cb414c1aea94ca16d0c2ad3634e9d8bf2
+```
+
+Un changement de contenu derrière une URL review existante est refusé **avant** `gnome-extensions install`.
+
+## Exceptions Flathub communautaires
+
+Les entrées classées `community-unverified` dans `manifests/application-provenance.tsv` ne sont installables que si leur App ID figure aussi dans `UNVERIFIED_FLATHUB_ALLOWLIST`. Cette allowlist transforme l'exception de confiance en décision versionnée et testable au lieu d'une simple note documentaire.
