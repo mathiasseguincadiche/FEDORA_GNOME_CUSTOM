@@ -5,6 +5,7 @@ TABLE_FAMILY="inet"
 TABLE_NAME="${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}"
 BRIDGE_NAME="${KVM_BRIDGE_NAME:-virbr50}"
 KVM_CIDR="${KVM_NETWORK_CIDR:-192.168.50.0/24}"
+BLOCK_ROUTED_HOST_NETWORKS="${KVM_BLOCK_ROUTED_HOST_NETWORKS:-true}"
 
 log_error() { printf 'ERROR: %s\n' "$*" >&2; }
 
@@ -12,32 +13,48 @@ default_ipv4_device() {
   ip -4 route show default 2>/dev/null | awk 'NR==1 {for (i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}'
 }
 
-physical_link_routes() {
-  local default_dev route prefix dev
-  default_dev="$(default_ipv4_device)"
+normalize_route_prefix() {
+  local prefix="$1"
+  if [[ "$prefix" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    printf '%s/32\n' "$prefix"
+  elif [[ "$prefix" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+    printf '%s\n' "$prefix"
+  else
+    return 1
+  fi
+}
+
+protected_host_routes() {
+  local route prefix normalized dev
   while IFS= read -r route; do
     [[ -n "$route" ]] || continue
     prefix="$(awk '{print $1}' <<<"$route")"
+    [[ "$prefix" != default ]] || continue
+    normalized="$(normalize_route_prefix "$prefix" 2>/dev/null || true)"
+    [[ -n "$normalized" ]] || continue
+    [[ "$normalized" == "$KVM_CIDR" || "$normalized" == 127.0.0.0/8 ]] && continue
     dev="$(awk '{for (i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}' <<<"$route")"
-    [[ "$prefix" == */* && -n "$dev" ]] || continue
-    [[ "$prefix" == "$KVM_CIDR" || "$prefix" == "127.0.0.0/8" ]] && continue
     [[ "$dev" == "$BRIDGE_NAME" ]] && continue
 
-    # Physical NICs expose /sys/class/net/<dev>/device. The default uplink is
-    # also accepted so Wi-Fi/VPN-like uplinks without that symlink remain safe.
-    if [[ -e "/sys/class/net/$dev/device" || "$dev" == "$default_dev" ]]; then
-      printf '%s\n' "$prefix"
+    if [[ "$BLOCK_ROUTED_HOST_NETWORKS" == true ]]; then
+      # Every explicit non-default route is protected. This includes directly
+      # connected LANs plus VPN/enterprise/tunnel destinations. Internet via
+      # the default route remains available to the guests.
+      printf '%s\n' "$normalized"
+    elif [[ -n "$dev" && -e "/sys/class/net/$dev/device" ]]; then
+      # Compatibility mode: only directly connected physical NIC routes.
+      printf '%s\n' "$normalized"
     fi
-  done < <(ip -4 route show scope link 2>/dev/null)
+  done < <(ip -4 route show table main 2>/dev/null)
 }
 
-discover_physical_ipv4() {
-  physical_link_routes | sort -u
+discover_protected_ipv4() {
+  protected_host_routes | sort -u
 }
 
 validate_networks() {
-  local -a local_cidrs=("$@")
-  python3 - "$KVM_CIDR" "${local_cidrs[@]}" <<'PY'
+  local -a protected_cidrs=("$@")
+  python3 - "$KVM_CIDR" "${protected_cidrs[@]}" <<'PY'
 import ipaddress
 import sys
 
@@ -48,7 +65,7 @@ for value in sys.argv[2:]:
         raise SystemExit(1)
     if kvm.overlaps(network):
         print(
-            f"ERROR: KVM subnet {kvm} overlaps host uplink network {network}",
+            f"ERROR: KVM subnet {kvm} overlaps protected host network {network}",
             file=sys.stderr,
         )
         raise SystemExit(10)
@@ -87,7 +104,7 @@ current_guard_mode() {
   fi
   if grep -Fq 'fedora-gnome-custom emergency block VM forwarding' <<<"$rules"; then
     printf '%s' emergency
-  elif grep -Fq 'fedora-gnome-custom normal block VM to physical LAN' <<<"$rules"; then
+  elif grep -Fq 'fedora-gnome-custom normal block VM to protected host networks' <<<"$rules"; then
     printf '%s' normal
   else
     printf '%s' unknown
@@ -96,29 +113,29 @@ current_guard_mode() {
 
 check_guard() {
   local routes default_dev
-  local -a local_cidrs=()
+  local -a protected_cidrs=()
 
   command -v ip >/dev/null 2>&1 || return 1
   command -v python3 >/dev/null 2>&1 || return 1
 
-  routes="$(discover_physical_ipv4)" || return 1
+  routes="$(discover_protected_ipv4)" || return 1
   if [[ -n "$routes" ]]; then
-    mapfile -t local_cidrs <<<"$routes"
+    mapfile -t protected_cidrs <<<"$routes"
   fi
-  validate_networks "${local_cidrs[@]}" || return 1
+  validate_networks "${protected_cidrs[@]}" || return 1
 
   default_dev="$(default_ipv4_device)"
-  if [[ -n "$default_dev" && ${#local_cidrs[@]} -eq 0 ]]; then
-    log_error "default IPv4 uplink $default_dev exists but no directly connected uplink network was discovered"
+  if [[ -n "$default_dev" && ${#protected_cidrs[@]} -eq 0 ]]; then
+    log_error "default IPv4 uplink $default_dev exists but no protected non-default host network was discovered"
     return 1
   fi
 
   printf 'kvm_cidr=%s\n' "$KVM_CIDR"
   printf 'default_uplink=%s\n' "${default_dev:-none}"
-  if ((${#local_cidrs[@]} == 0)); then
-    printf '%s\n' 'physical_networks=none-connected'
+  if ((${#protected_cidrs[@]} == 0)); then
+    printf '%s\n' 'protected_networks=none-connected'
   else
-    printf 'physical_networks=%s\n' "$(IFS=,; echo "${local_cidrs[*]}")"
+    printf 'protected_networks=%s\n' "$(IFS=,; echo "${protected_cidrs[*]}")"
   fi
   printf 'guard_mode=%s\n' "$(current_guard_mode)"
 }
@@ -146,21 +163,21 @@ emergency_guard() {
 
 apply_normal_guard() {
   local routes default_dev tmp first cidr rc=0
-  local -a local_cidrs=()
+  local -a protected_cidrs=()
 
   command -v nft >/dev/null 2>&1 || return 1
   command -v ip >/dev/null 2>&1 || return 1
   command -v python3 >/dev/null 2>&1 || return 1
 
-  routes="$(discover_physical_ipv4)" || return 1
+  routes="$(discover_protected_ipv4)" || return 1
   if [[ -n "$routes" ]]; then
-    mapfile -t local_cidrs <<<"$routes"
+    mapfile -t protected_cidrs <<<"$routes"
   fi
-  validate_networks "${local_cidrs[@]}" || return 1
+  validate_networks "${protected_cidrs[@]}" || return 1
 
   default_dev="$(default_ipv4_device)"
-  if [[ -n "$default_dev" && ${#local_cidrs[@]} -eq 0 ]]; then
-    log_error "refusing normal mode: default IPv4 uplink $default_dev has no discovered directly connected network"
+  if [[ -n "$default_dev" && ${#protected_cidrs[@]} -eq 0 ]]; then
+    log_error "refusing normal mode: default IPv4 uplink $default_dev has no protected non-default host network"
     return 1
   fi
 
@@ -168,13 +185,13 @@ apply_normal_guard() {
   append_delete_if_present "$tmp"
   {
     printf 'table inet %s {\n' "$TABLE_NAME"
-    printf '  set blocked_physical_ipv4 {\n'
+    printf '  set blocked_host_ipv4 {\n'
     printf '    type ipv4_addr\n'
     printf '    flags interval\n'
-    if ((${#local_cidrs[@]} > 0)); then
+    if ((${#protected_cidrs[@]} > 0)); then
       printf '    elements = { '
       first=true
-      for cidr in "${local_cidrs[@]}"; do
+      for cidr in "${protected_cidrs[@]}"; do
         if [[ "$first" == true ]]; then first=false; else printf ', '; fi
         printf '%s' "$cidr"
       done
@@ -183,8 +200,8 @@ apply_normal_guard() {
     printf '  }\n'
     printf '  chain forward_guard {\n'
     printf '    type filter hook forward priority -100; policy accept;\n'
-    printf '    iifname "%s" ip daddr @blocked_physical_ipv4 counter reject with icmp type admin-prohibited comment "fedora-gnome-custom normal block VM to physical LAN"\n' "$BRIDGE_NAME"
-    printf '    oifname "%s" ip saddr @blocked_physical_ipv4 counter drop comment "fedora-gnome-custom normal block physical LAN to VM"\n' "$BRIDGE_NAME"
+    printf '    iifname "%s" ip daddr @blocked_host_ipv4 counter reject with icmp type admin-prohibited comment "fedora-gnome-custom normal block VM to protected host networks"\n' "$BRIDGE_NAME"
+    printf '    oifname "%s" ip saddr @blocked_host_ipv4 counter drop comment "fedora-gnome-custom normal block protected host networks to VM"\n' "$BRIDGE_NAME"
     printf '  }\n'
     printf '}\n'
   } >>"$tmp"
@@ -206,7 +223,7 @@ reconcile_guard() {
     return 0
   fi
 
-  log_error 'normal KVM LAN isolation could not be rebuilt; emergency forwarding block remains active'
+  log_error 'normal KVM host-network isolation could not be rebuilt; emergency forwarding block remains active'
   return 1
 }
 
