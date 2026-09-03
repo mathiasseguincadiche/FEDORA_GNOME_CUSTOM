@@ -20,7 +20,11 @@ grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
 
-# Config files are declarative assignments only: no source-time command execution.
+# Config is schema-validated before sourcing and remains declarative.
+[[ -r "$ROOT/config/schema.digest" ]]
+[[ -r "$ROOT/config/schema-enums.tsv" ]]
+grep -Fq 'validate-config.sh' "$ROOT/lib/config.sh"
+bash "$ROOT/scripts/config/validate-config.sh" "$ROOT/config" >/dev/null
 python3 - "$ROOT/config" <<'PY'
 from pathlib import Path
 import re
@@ -39,8 +43,7 @@ for path in sorted(root.glob('*.conf')):
                 raise SystemExit(f'{path}:{lineno}: executable shell syntax forbidden in config: {forbidden}')
 PY
 
-# Mutating commands must not execute at module source time. Project modules keep
-# lifecycle mutations indented inside functions; an unindented mutator is a regression.
+# Mutating commands must not execute at module source time.
 python3 - "$ROOT/modules" <<'PY'
 from pathlib import Path
 import re
@@ -153,15 +156,17 @@ grep -Fq '48175f0b5c1f8a1a724d761198c91d6994e91e28aec685605ae6a240b0a95aae' "$RO
 grep -Fq '9ceab00be63b93c4eade16cf804bf4edd587632750aa89b78e317673fd6016a9' "$ROOT/docs/SUPPLY_CHAIN.md"
 grep -Fq '18f49cf20bd8f96f22f6048d7404e51cb414c1aea94ca16d0c2ad3634e9d8bf2' "$ROOT/docs/SUPPLY_CHAIN.md"
 
-# Backup retention remains explicit/manual and covers both snapshot classes.
-grep -Fq 'BACKUP_PRUNE_AUTOMATICALLY="false"' "$ROOT/config/backup.conf"
-grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/backup/backup-now.sh"
-grep -Fq 'FEDORA_GNOME_CUSTOM_APPLIED_SHA' "$ROOT/scripts/backup/daily-user-backup.sh"
-grep -Fq 'FEDORA_GNOME_CUSTOM_APPLIED_SHA=' "$ROOT/modules/backup/60_daily_user_backup.sh"
+# Backup runtime is autonomous and retention is periodic for both snapshot classes.
+grep -Fq 'BACKUP_PRUNE_AUTOMATICALLY="true"' "$ROOT/config/backup.conf"
+grep -Fq 'RESTIC_RETENTION_TIMER_ENABLED="true"' "$ROOT/config/backup.conf"
+grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/backup/restic-retention.sh"
+grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-backup.sh"
+grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=' "$ROOT/modules/backup/60_daily_user_backup.sh"
+grep -Fq 'MANIFEST.sha256' "$ROOT/modules/backup/60_daily_user_backup.sh"
+grep -Fq 'fedora-gnome-restic-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq "cc_option 9 'Appliquer rétention Restic'" "$ROOT/lib/control_center.sh"
 grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq 'copie de récupération hors machine' "$ROOT/docs/BACKUP_RESTORE.md"
-grep -Fq 'SHA appliqué' "$ROOT/docs/BACKUP_RESTORE.md"
 
 # KVM protects explicit non-default IPv4 HOST routes while preserving Internet default route.
 grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
@@ -213,10 +218,13 @@ for token in NoNewPrivileges=yes ProtectSystem=strict ProtectHome=yes 'Capabilit
   grep -Fq "$token" "$ROOT/virtualization/systemd/fedora-gnome-custom-kvm-guard.service"
 done
 
-# Governance/release files are present; live main protection is checked separately by check-main-protection.sh.
+# Governance/release artifacts are versioned; live repository settings are checked separately.
 [[ -r "$ROOT/SECURITY.md" ]]
 [[ -r "$ROOT/.github/CODEOWNERS" ]]
 [[ -r "$ROOT/.github/pull_request_template.md" ]]
+[[ -r "$ROOT/.github/release-manifest.env" ]]
+[[ -r "$ROOT/.github/workflows/release.yml" ]]
+grep -Fq 'RELEASE_TAG=v0.14.0-rc.1' "$ROOT/.github/release-manifest.env"
 [[ -x "$ROOT/scripts/development/check-main-protection.sh" || -r "$ROOT/scripts/development/check-main-protection.sh" ]]
 
 echo 'final hardening contract: PASS'

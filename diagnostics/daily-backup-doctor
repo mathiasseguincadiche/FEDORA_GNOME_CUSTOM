@@ -6,13 +6,29 @@ quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 
+runtime_root="$(systemctl --user cat fedora-gnome-daily-backup.service 2>/dev/null | sed -n 's/^Environment="FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=\(.*\)"$/\1/p' | tail -n1)"
+if [[ -n "$runtime_root" && -r "$runtime_root/MANIFEST.sha256" ]] && (cd "$runtime_root" && sha256sum --check --status MANIFEST.sha256); then
+  emit OK 'Backup runtime bundle' "$(basename "$runtime_root") integrity PASS"
+else
+  emit KO 'Backup runtime bundle' 'missing or integrity failure'
+fi
+
 if systemctl --user is-enabled --quiet fedora-gnome-daily-backup.timer; then
   emit OK 'Daily backup timer' enabled
 else
   emit KO 'Daily backup timer' disabled
 fi
 
-state="$STATE_ROOT/last-daily-backup.ok"
+if is_true "${RESTIC_RETENTION_TIMER_ENABLED:-true}" && is_true "${BACKUP_PRUNE_AUTOMATICALLY:-true}"; then
+  if systemctl --user is-enabled --quiet fedora-gnome-restic-retention.timer; then
+    emit OK 'Restic retention timer' "${RESTIC_RETENTION_ON_CALENDAR:-weekly}"
+  else
+    emit KO 'Restic retention timer' disabled
+  fi
+fi
+
+runtime_state="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom"
+state="$runtime_state/last-daily-backup.ok"
 if [[ -s "$state" ]]; then
   ts="$(stat -c %Y "$state")"
   age_h=$(( ( $(date +%s) - ts ) / 3600 ))
@@ -21,10 +37,18 @@ if [[ -s "$state" ]]; then
   else
     emit WARN 'Last daily backup' "${age_h}h old"
   fi
-elif [[ -s "$STATE_ROOT/last-daily-backup-skipped" ]]; then
+elif [[ -s "$runtime_state/last-daily-backup-skipped" ]]; then
   emit WARN 'Last daily backup' 'target/password unavailable; timer remains healthy'
 else
   emit WARN 'Last daily backup' 'timer installed; no run recorded yet'
+fi
+
+if [[ -s "$runtime_state/last-retention.ok" ]]; then
+  emit OK 'Last Restic retention' recorded
+elif [[ -s "$runtime_state/last-retention-skipped" ]]; then
+  emit WARN 'Last Restic retention' 'repository unavailable during scheduled window'
+else
+  emit WARN 'Last Restic retention' 'timer installed; no run recorded yet'
 fi
 
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi

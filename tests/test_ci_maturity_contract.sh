@@ -23,11 +23,25 @@ for workflow in fedora-package-preflight.yml fedora-host-pretest.yml vm-pretest.
   grep -Fq 'schedule:' "$ROOT/.github/workflows/$workflow" || { echo "weekly external dependency schedule missing: $workflow" >&2; exit 1; }
 done
 
+write_workflows=0
 while IFS= read -r workflow; do
+  name="$(basename "$workflow")"
   grep -Fq 'permissions:' "$workflow" || { echo "missing workflow permissions: $workflow" >&2; exit 1; }
-  grep -Fq 'contents: read' "$workflow" || { echo "missing contents: read: $workflow" >&2; exit 1; }
   grep -Fq "actions/checkout@$CHECKOUT_SHA" "$workflow" || { echo "checkout is not pinned to approved SHA: $workflow" >&2; exit 1; }
+
+  if [[ "$name" == release.yml ]]; then
+    grep -Fq 'contents: write' "$workflow" || { echo "release workflow lacks required contents: write: $workflow" >&2; exit 1; }
+    ((write_workflows+=1))
+  else
+    grep -Fq 'contents: read' "$workflow" || { echo "missing contents: read: $workflow" >&2; exit 1; }
+    if grep -Fq 'contents: write' "$workflow"; then
+      echo "unexpected contents: write outside release workflow: $workflow" >&2
+      exit 1
+    fi
+  fi
 done < <(find "$ROOT/.github/workflows" -maxdepth 1 -type f -name '*.yml' -print | sort)
+
+[[ "$write_workflows" -eq 1 ]] || { echo "expected exactly one contents: write workflow, found $write_workflows" >&2; exit 1; }
 
 if grep -RInE 'uses:[[:space:]]+[^[:space:]#]+@v[0-9]+' "$ROOT/.github/workflows"; then echo 'mutable major-version GitHub Action reference found' >&2; exit 1; fi
 

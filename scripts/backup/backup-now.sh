@@ -69,13 +69,7 @@ snap="$(restic snapshots --tag fedora-gnome-custom-full --latest 1 --json | jq -
 restic check --read-data-subset=1/20
 
 if $prune; then
-  for tag in fedora-gnome-custom-full fedora-gnome-custom-daily; do
-    restic forget --tag "$tag" \
-      --keep-daily "${RESTIC_KEEP_DAILY:-7}" \
-      --keep-weekly "${RESTIC_KEEP_WEEKLY:-4}" \
-      --keep-monthly "${RESTIC_KEEP_MONTHLY:-6}"
-  done
-  restic prune
+  "$REPO_ROOT/scripts/backup/restic-retention.sh" --strict
 fi
 printf 'snapshot=%s\ncommit=%s\nutc=%s\ninclude_vms=%s\nintegrity_check=PASS\n' \
   "$snap" "$(repo_commit)" "$(date -u +%FT%TZ)" "$include_vms" > "$STATE_ROOT/last-full-backup.ok"

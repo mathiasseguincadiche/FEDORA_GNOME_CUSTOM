@@ -7,13 +7,15 @@
 - Orchestrateur durci : chaque module doit fournir `precheck`, `plan`, `apply` et `postcheck`; un APPLY en échec conserve son code retour et produit un rapport durable de convergence partielle.
 - Correction Arc B580/VA-API : le render node est résolu par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` sur un HOST multi-GPU.
 - DING review `74408`, Show Desktop Plus review `70326` et Resource Monitor review `70909` sont vérifiés par SHA-256 exact avant installation.
-- Backup quotidien lié au SHA réellement appliqué; le prune reste manuel mais applique la rétention aux snapshots `full` et `daily`.
+- Backup quotidien et rétention Restic exécutés depuis un bundle autonome versionné par SHA et vérifié par manifeste; timer hebdomadaire 7 daily / 4 weekly / 6 monthly sur les snapshots `full` et `daily`.
 - Kickstart : serveur `sshd` HOST désactivé, `openssh-clients` conservé pour les connexions HOST → VM.
 - Guard KVM étendu aux routes IPv4 non-default du HOST afin de bloquer LAN, VPN, réseaux d'entreprise et tunnels routés tout en conservant la sortie Internet via la route par défaut.
 - Les Flatpaks `community-unverified` doivent être présents dans une allowlist versionnée explicite.
 - Service KVM nftables renforcé avec sandbox systemd et capacités réseau bornées.
 - Choix Golden confirmés : pas de LUKS imposé, pas de Secure Boot HOST, `kernel-vanilla/stable` latest-stable avec kernels Fedora conservés comme fallback.
 - Ajout de `SECURITY.md`, `CODEOWNERS`, d'un template de PR et de contrats comportementaux supplémentaires pour le hardening.
+- Ajout d'un schéma de configuration strict, validé avant sourcing, avec refus des clés inconnues, types invalides, doublons et syntaxe exécutable.
+- Préparation de la prerelease GitHub `v0.14.0-rc.1` via manifeste et workflow idempotent; politique de dépôt cible: merge commit unique et suppression automatique des branches fusionnées.
 - Documentation synchronisée avec Resource Monitor, la supply-chain GNOME, la rétention Restic et la portée LAN/VPN du guard KVM.
 
 ## 0.13.0 — 2026-09-01

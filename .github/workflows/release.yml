@@ -1,0 +1,97 @@
+name: Publish release candidate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/release-manifest.env'
+      - '.github/workflows/release.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-candidate
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Validate release manifest
+        id: manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          manifest=.github/release-manifest.env
+          [[ -r "$manifest" ]]
+          tag="$(sed -n 's/^RELEASE_TAG=//p' "$manifest")"
+          name="$(sed -n 's/^RELEASE_NAME=//p' "$manifest")"
+          prerelease="$(sed -n 's/^RELEASE_PRERELEASE=//p' "$manifest")"
+          [[ "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-rc\.([0-9]+)$ ]]
+          base_version="${BASH_REMATCH[1]}"
+          [[ -n "$name" && "$prerelease" == true ]]
+          [[ "$(tr -d '[:space:]' < VERSION)" == "$base_version" ]]
+          [[ "$(grep -c '^RELEASE_TAG=' "$manifest")" -eq 1 ]]
+          [[ "$(grep -c '^RELEASE_NAME=' "$manifest")" -eq 1 ]]
+          [[ "$(grep -c '^RELEASE_PRERELEASE=' "$manifest")" -eq 1 ]]
+          printf 'tag=%s\nname=%s\n' "$tag" "$name" >> "$GITHUB_OUTPUT"
+      - name: Publish idempotent GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.manifest.outputs.tag }}
+          RELEASE_NAME: ${{ steps.manifest.outputs.name }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          resolve_tag_commit() {
+            local ref_json object_type object_sha
+            ref_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" 2>/dev/null || true)"
+            [[ -n "$ref_json" ]] || return 1
+            object_type="$(jq -r '.object.type' <<<"$ref_json")"
+            object_sha="$(jq -r '.object.sha' <<<"$ref_json")"
+            while [[ "$object_type" == tag ]]; do
+              tag_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${object_sha}")"
+              object_type="$(jq -r '.object.type' <<<"$tag_json")"
+              object_sha="$(jq -r '.object.sha' <<<"$tag_json")"
+            done
+            [[ "$object_type" == commit && "$object_sha" =~ ^[0-9a-f]{40}$ ]]
+            printf '%s\n' "$object_sha"
+          }
+
+          existing_commit="$(resolve_tag_commit || true)"
+          if [[ -n "$existing_commit" && "$existing_commit" != "$GITHUB_SHA" ]]; then
+            echo "Release tag already exists on unexpected SHA: $existing_commit" >&2
+            exit 1
+          fi
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            [[ "$existing_commit" == "$GITHUB_SHA" ]] || {
+              echo "Release exists but its tag cannot be proven on GITHUB_SHA=$GITHUB_SHA" >&2
+              exit 1
+            }
+            is_prerelease="$(gh release view "$RELEASE_TAG" --json isPrerelease --jq '.isPrerelease')"
+            [[ "$is_prerelease" == true ]] || {
+              echo "Existing release $RELEASE_TAG is not marked as prerelease." >&2
+              exit 1
+            }
+            echo "Release $RELEASE_TAG already exists on this SHA; nothing to do."
+          else
+            if [[ -n "$existing_commit" ]]; then
+              [[ "$existing_commit" == "$GITHUB_SHA" ]]
+            fi
+            gh release create "$RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "$RELEASE_NAME" \
+              --generate-notes \
+              --prerelease
+            created_commit="$(resolve_tag_commit)"
+            [[ "$created_commit" == "$GITHUB_SHA" ]] || {
+              echo "Created release tag does not resolve to GITHUB_SHA." >&2
+              exit 1
+            }
+          fi
