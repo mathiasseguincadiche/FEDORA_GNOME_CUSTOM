@@ -1,0 +1,70 @@
+name: Fedora 44 desktop integration pretest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '27 6 * * 0'
+  push:
+    paths:
+      - 'manifests/packages-gnome.txt'
+      - 'manifests/packages-nautilus*.txt'
+      - 'manifests/packages-applications-gtk4.txt'
+      - 'modules/gnome/20_gnome_core.sh'
+      - 'modules/gnome/21_nautilus_integration.sh'
+      - 'modules/applications/49_applications_validation.sh'
+      - 'diagnostics/nautilus-integration-doctor'
+      - 'diagnostics/ptyxis-doctor'
+      - '.github/workflows/desktop-integration-pretest.yml'
+  pull_request:
+    paths:
+      - 'manifests/packages-gnome.txt'
+      - 'manifests/packages-nautilus*.txt'
+      - 'manifests/packages-applications-gtk4.txt'
+      - 'modules/gnome/20_gnome_core.sh'
+      - 'modules/gnome/21_nautilus_integration.sh'
+      - 'modules/applications/49_applications_validation.sh'
+      - 'diagnostics/nautilus-integration-doctor'
+      - 'diagnostics/ptyxis-doctor'
+      - '.github/workflows/desktop-integration-pretest.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fedora-44-desktop-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nautilus-ptyxis:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Nautilus and Ptyxis Golden packages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t packages < <(cat \
+            manifests/packages-gnome.txt \
+            manifests/packages-nautilus.txt \
+            manifests/packages-nautilus-optional.txt \
+            manifests/packages-applications-gtk4.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
+          dnf -y install dbus-daemon "${packages[@]}"
+          rpm -q nautilus gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus ptyxis
+      - name: Validate Nautilus integration payloads
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rpm -ql file-roller-nautilus | grep -Eq '/nautilus/extensions-4/.*\.so$'
+          gsettings list-schemas | grep -Fxq org.gnome.nautilus.preferences
+          dbus-run-session -- gio mount -l >/dev/null
+          nautilus --version
+      - name: Validate native Ptyxis payload
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          command -v ptyxis >/dev/null
+          test -r /usr/share/applications/org.gnome.Ptyxis.desktop
+          gsettings list-schemas | grep -Fxq org.gnome.Ptyxis
+          ptyxis --version
