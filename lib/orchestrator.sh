@@ -12,10 +12,12 @@ orchestrator_run_module() {
   local prefix rc=0 phase fn
   prefix="$(module_prefix "$id")"
 
-  if ! source "$path"; then
+  if source "$path"; then
+    :
+  else
     rc=$?
     ORCH_RESULTS+=("KO|$id|source rc=$rc")
-    return "${rc:-$EXIT_CONFIG_FAILED}"
+    return "$rc"
   fi
 
   # Every catalog module is a convergence unit. A missing lifecycle function is
@@ -46,10 +48,11 @@ orchestrator_run_all() {
 }
 
 orchestrator_report() {
-  local report="$REPORT_ROOT/run-$RUN_ID.txt"
+  local report="$REPORT_ROOT/run-$RUN_ID.txt" mode='apply'
+  is_true "${DRY_RUN:-true}" && mode='dry-run'
   {
     printf 'FEDORA_GNOME_CUSTOM REPORT\n'
-    printf 'run_id=%s\nmode=%s\nruntime=%s\ncommit=%s\n\n' "$RUN_ID" "${DRY_RUN:+dry-run}" "${RUNTIME_ENVIRONMENT:-unknown}" "$(repo_commit)"
+    printf 'run_id=%s\nmode=%s\nruntime=%s\ncommit=%s\n\n' "$RUN_ID" "$mode" "${RUNTIME_ENVIRONMENT:-unknown}" "$(repo_commit)"
     printf '%-5s | %-28s | %s\n' STATE MODULE DETAIL
     printf '%s\n' '------+------------------------------+-----------------------------'
     printf '%s\n' "${ORCH_RESULTS[@]}" | awk -F'|' '{printf "%-5s | %-28s | %s\n",$1,$2,$3}'
