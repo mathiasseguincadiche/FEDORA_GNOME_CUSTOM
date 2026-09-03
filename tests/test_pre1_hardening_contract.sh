@@ -2,13 +2,15 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(<"$ROOT/VERSION")" == '0.13.0' ]]
-grep -Fq '**Golden Workstation 0.13.0**' "$ROOT/README.md"
-grep -Fq '## 0.13.0 — 2026-09-01' "$ROOT/CHANGELOG.md"
+[[ "$(<"$ROOT/VERSION")" == '0.14.0' ]]
+grep -Fq '**Golden Workstation 0.14.0**' "$ROOT/README.md"
+grep -Fq '0.14.0 — Final Hardening / Release Candidate' "$ROOT/README.md"
 
-# Runtime identity must fail closed for virtualized environments.
+# Runtime identity must fail closed for virtualized and ambiguous environments.
 grep -Fq 'systemd-detect-virt --container' "$ROOT/lib/common.sh"
 grep -Fq 'systemd-detect-virt --vm' "$ROOT/lib/common.sh"
+grep -Fq 'runtime_baremetal_proven' "$ROOT/lib/common.sh"
+grep -Fq "printf 'unknown\\n'" "$ROOT/lib/common.sh"
 grep -Fq 'vm|container)' "$ROOT/diagnostic.sh"
 
 # The final certificate is tied to graphics/runtime versions and includes KVM host health.
@@ -22,6 +24,7 @@ for stale in BASELINE_NVME_TEST_SECONDS BASELINE_NVME_VERIFY_SECONDS DISPLAY_PRE
 done
 
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'kernel_latest_available' "$ROOT/modules/system/01a_kernel_latest_stable.sh"
 grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/modules/system/01a_kernel_latest_stable.sh"
 grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
@@ -35,6 +38,7 @@ if grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUST
 fi
 
 grep -Fq 'KVM_IPV6_ENABLED="false"' "$ROOT/config/virtualization.conf"
+grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
 grep -Fq 'KVM IPv6 is fail-closed' "$ROOT/modules/virtualization/34_kvm_network.sh"
 grep -Fq 'LIFECYCLE_FLATPAK_UPDATE_POLICY="manual"' "$ROOT/config/desktop.conf"
 grep -Fq 'unexpected project-owned unattended Flatpak updater exists' "$ROOT/diagnostics/lifecycle-doctor"

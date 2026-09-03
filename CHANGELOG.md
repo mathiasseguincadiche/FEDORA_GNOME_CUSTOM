@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.14.0 — 2026-09-03
+
+- **Final Hardening / Release Candidate** : fermeture des écarts pré-1.0 sans ajout d'un nouveau socle fonctionnel.
+- Runtime fail-closed : un environnement dont le bare-metal n'est pas positivement prouvé devient `unknown` et ne peut pas ouvrir l'APPLY.
+- Orchestrateur durci : chaque module doit fournir `precheck`, `plan`, `apply` et `postcheck`; un APPLY en échec conserve son code retour et produit un rapport durable de convergence partielle.
+- Correction Arc B580/VA-API : le render node est résolu par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` sur un HOST multi-GPU.
+- DING review `74408`, Show Desktop Plus review `70326` et Resource Monitor review `70909` sont vérifiés par SHA-256 exact avant installation.
+- Backup quotidien lié au SHA réellement appliqué; le prune reste manuel mais applique la rétention aux snapshots `full` et `daily`.
+- Kickstart : serveur `sshd` HOST désactivé, `openssh-clients` conservé pour les connexions HOST → VM.
+- Guard KVM étendu aux routes IPv4 non-default du HOST afin de bloquer LAN, VPN, réseaux d'entreprise et tunnels routés tout en conservant la sortie Internet via la route par défaut.
+- Les Flatpaks `community-unverified` doivent être présents dans une allowlist versionnée explicite.
+- Service KVM nftables renforcé avec sandbox systemd et capacités réseau bornées.
+- Choix Golden confirmés : pas de LUKS imposé, pas de Secure Boot HOST, `kernel-vanilla/stable` latest-stable avec kernels Fedora conservés comme fallback.
+- Ajout de `SECURITY.md`, `CODEOWNERS`, d'un template de PR et de contrats comportementaux supplémentaires pour le hardening.
+- Documentation synchronisée avec Resource Monitor, la supply-chain GNOME, la rétention Restic et la portée LAN/VPN du guard KVM.
+
 ## 0.13.0 — 2026-09-01
 
 - Ajout du **Workstation Control Center** avec `control.sh` comme point d'entrée opérateur recommandé et `menu.sh` conservé comme alias de compatibilité.

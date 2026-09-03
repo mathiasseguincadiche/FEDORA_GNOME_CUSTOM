@@ -34,7 +34,7 @@ Un débutant n'a pas besoin de comprendre `virt-qemu-qmp-proxy`, `guestfish` ou 
 Le parcours de qualification est volontairement progressif :
 
 1. [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) — GATE 1 CLI/read-only : scripts, runtime guards et contrats sans fabriquer de preuve hardware ;
-2. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — GATE 2 Fedora 44 GNOME 50/Wayland : vraie convergence graphique DING + Show Desktop dans une VM strictement identifiée VirtualBox ;
+2. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — GATE 2 Fedora 44 GNOME 50/Wayland : vraie convergence graphique DING + Show Desktop + Resource Monitor dans une VM strictement identifiée VirtualBox ;
 3. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — GATE 3 bare-metal et APPLY production.
 
 Le LAB VirtualBox possède son propre entrypoint limité et **ne déverrouille jamais `install.sh --apply`**.

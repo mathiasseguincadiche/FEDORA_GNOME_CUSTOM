@@ -28,7 +28,7 @@ rootpw --lock
 user --name=${username} --groups=wheel --password='${hash}' --iscrypted
 firewall --enabled
 selinux --enforcing
-services --enabled=NetworkManager,firewalld,sshd
+services --enabled=NetworkManager,firewalld --disabled=sshd
 bootloader --location=boot --boot-drive=${disk_name}
 ignoredisk --only-use=${disk_name}
 clearpart --all --initlabel --drives=${disk_name}
@@ -43,6 +43,7 @@ ca-certificates
 sudo
 dnf5-plugins
 mokutil
+openssh-clients
 %end
 
 %post --interpreter=/usr/bin/bash --log=/root/fedora-gnome-custom-kickstart-post.log

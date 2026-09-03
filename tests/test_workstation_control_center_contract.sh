@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(tr -d '[:space:]' < "$ROOT/VERSION")" == "0.13.0" ]] || { echo 'VERSION must be 0.13.0' >&2; exit 1; }
+[[ "$(tr -d '[:space:]' < "$ROOT/VERSION")" == "0.14.0" ]] || { echo 'VERSION must be 0.14.0' >&2; exit 1; }
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/maintenance/update-system.sh" ]] || { echo 'update-system.sh missing' >&2; exit 1; }
@@ -54,6 +54,8 @@ grep -Fq "\"\$REPO_ROOT/install.sh\" --dry-run" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/install.sh\" --apply" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/prepare-preapply-backup.sh\"" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/backup/restore.sh\" restore" "$ROOT/lib/control_center.sh"
+grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
+grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh\"" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib/control_center.sh"
 

@@ -13,7 +13,7 @@ while (($#)); do
     --include-vms) include_vms=true; shift ;;
     --prune) prune=true; shift ;;
     -h|--help)
-      echo 'Usage: backup-now.sh [--include-vms] [--prune]'; exit 0 ;;
+      echo 'Usage: backup-now.sh [--include-vms] [--prune]'; echo '  --prune applies the versioned retention policy to full and daily snapshots, then runs restic prune.'; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -69,10 +69,13 @@ snap="$(restic snapshots --tag fedora-gnome-custom-full --latest 1 --json | jq -
 restic check --read-data-subset=1/20
 
 if $prune; then
-  restic forget --tag fedora-gnome-custom-full \
-    --keep-daily "${RESTIC_KEEP_DAILY:-7}" \
-    --keep-weekly "${RESTIC_KEEP_WEEKLY:-4}" \
-    --keep-monthly "${RESTIC_KEEP_MONTHLY:-6}" --prune
+  for tag in fedora-gnome-custom-full fedora-gnome-custom-daily; do
+    restic forget --tag "$tag" \
+      --keep-daily "${RESTIC_KEEP_DAILY:-7}" \
+      --keep-weekly "${RESTIC_KEEP_WEEKLY:-4}" \
+      --keep-monthly "${RESTIC_KEEP_MONTHLY:-6}"
+  done
+  restic prune
 fi
 printf 'snapshot=%s\ncommit=%s\nutc=%s\ninclude_vms=%s\nintegrity_check=PASS\n' \
   "$snap" "$(repo_commit)" "$(date -u +%FT%TZ)" "$include_vms" > "$STATE_ROOT/last-full-backup.ok"

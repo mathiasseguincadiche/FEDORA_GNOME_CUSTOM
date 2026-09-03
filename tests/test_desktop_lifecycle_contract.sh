@@ -55,9 +55,10 @@ grep -Fq 'Current mode' "$ROOT/diagnostics/display-doctor"
 grep -Fq 'current_mode=' "$ROOT/diagnostics/display-doctor"
 grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
 
-grep -Fq 'blocked_physical_ipv4' "$ROOT/scripts/kvm/runtime_certification.sh"
+grep -Fq 'blocked_host_ipv4' "$ROOT/scripts/kvm/runtime_certification.sh"
+grep -Fq 'protected_networks' "$ROOT/scripts/kvm/runtime_certification.sh"
 grep -Fq 'Ubuntu → physical LAN' "$ROOT/scripts/kvm/runtime_certification.sh"
-grep -Fq 'KVM LAN guard' "$ROOT/scripts/kvm/runtime_certification.sh"
+grep -Fq 'KVM host-network guard rules' "$ROOT/scripts/kvm/runtime_certification.sh"
 
 grep -Fq 'clinfo' "$ROOT/diagnostics/arc-compute-doctor"
 grep -Fq 'intel-level-zero' "$ROOT/diagnostics/arc-compute-doctor"

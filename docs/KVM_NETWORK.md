@@ -1,6 +1,6 @@
 # Réseau KVM `devops-nat` — architecture et sécurité
 
-Ce document explique le réseau KVM privé de la workstation. Il complète [`VIRTUALIZATION.md`](VIRTUALIZATION.md) avec un niveau de détail suffisant pour comprendre **qui fournit l'adresse IP, qui fait le NAT, qui filtre le LAN et ce qui se passe lors d'un changement Ethernet/Wi-Fi**.
+Ce document explique le réseau KVM privé de la workstation. Il complète [`VIRTUALIZATION.md`](VIRTUALIZATION.md) avec un niveau de détail suffisant pour comprendre **qui fournit l'adresse IP, qui fait le NAT, qui filtre les réseaux protégés du HOST et ce qui se passe lors d'un changement Ethernet/Wi-Fi**.
 
 ## Contrat réseau
 
@@ -27,8 +27,8 @@ VM → Internet       autorisé
 Flux interdits :
 
 ```text
-VM → LAN uplink     bloqué
-LAN uplink → VM     bloqué en forwarding
+VM → LAN/VPN/route HOST protégée   bloqué
+LAN/VPN/route HOST → VM             bloqué en forwarding
 Internet → VM       aucun port-forward implicite
 ```
 
@@ -47,7 +47,7 @@ ubuntu-devops / windows-11
           │
           ├── libvirt NAT : sortie Internet
           │
-          └── nftables guard : interdit le LAN uplink
+          └── nftables guard : interdit LAN/VPN/routes HOST protégées
                          │
                          ▼
                  Ethernet / Wi-Fi
@@ -60,7 +60,7 @@ ubuntu-devops / windows-11
 
 ## Pourquoi le NAT libvirt ne suffit pas
 
-Le NAT libvirt donne aux VM une connectivité sortante sans les placer directement sur le LAN. Ce comportement est souhaité pour Internet, mais le contrat Golden Workstation ajoute une exigence plus stricte : les VM de laboratoire ne doivent pas pouvoir atteindre directement le réseau local du poste.
+Le NAT libvirt donne aux VM une connectivité sortante sans les placer directement sur le LAN. Ce comportement est souhaité pour Internet, mais le contrat Golden Workstation ajoute une exigence plus stricte : les VM de laboratoire ne doivent pas pouvoir atteindre directement les réseaux privés/routés connus du HOST (LAN, VPN, entreprise, tunnels explicites).
 
 Le projet ajoute donc une table nftables propre :
 
@@ -106,28 +106,26 @@ provient de :
 scripts/kvm/kvm_network_guard.sh
 ```
 
-Il découvre les réseaux IPv4 directement attachés à l'uplink courant et construit le set :
+Il lit la table de routage IPv4 principale du HOST, exclut la route `default`, le loopback et `devops-nat`, puis construit le set :
 
 ```text
-blocked_physical_ipv4
+blocked_host_ipv4
 ```
 
 Le contrat normal contient deux directions :
 
 ```text
-virbr50 → réseau uplink      REJECT
-réseau uplink → virbr50      DROP
+virbr50 → réseau HOST protégé      REJECT
+réseau HOST protégé → virbr50      DROP
 ```
 
-Le HOST lui-même peut toujours parler aux VM parce que ce trafic n'est pas du forwarding entre le LAN physique et `virbr50`.
+Le HOST lui-même peut toujours parler aux VM parce que ce trafic n'est pas du forwarding entre une route protégée et `virbr50`.
 
-## Portée exacte de « LAN physique »
+## Portée exacte des réseaux protégés
 
-Le contrat courant bloque les **réseaux IPv4 directement connectés aux interfaces physiques et l'uplink IPv4 par défaut** détectés par le host.
+Le contrat courant bloque toutes les **routes IPv4 explicites non-default de la table principale du HOST** : réseaux directement connectés, LAN, routes VPN/entreprise et tunnels explicitement routés. Le CIDR KVM lui-même et le loopback sont exclus.
 
-Il ne prétend pas, à lui seul, constituer une politique générique de segmentation pour toutes les routes d'entreprise, tous les VPN ou tous les tunnels qu'un opérateur pourrait ajouter ultérieurement.
-
-Si une future version doit interdire aussi des réseaux routés/VPN spécifiques, ils devront être intégrés explicitement au contrat et recertifiés. Cette précision évite de présenter une portée de sécurité plus large que l'implémentation réelle.
+La route IPv4 `default` reste volontairement hors du set afin de conserver **VM → Internet**. Un nouveau VPN ou une nouvelle route d'entreprise déclenche le reconcile via NetworkManager ; si la nouvelle table ne peut pas être découverte, validée ou appliquée, le guard conserve le mode `emergency` qui bloque tout forwarding via `virbr50`.
 
 ## Détection de chevauchement
 
@@ -161,7 +159,7 @@ Le cycle est :
 MODE EMERGENCY
 bloque tout forwarding via virbr50
         ↓
-redécouverte uplink + CIDR
+redécouverte des routes HOST protégées
         ↓
 validation absence de chevauchement
         ↓
@@ -201,7 +199,7 @@ Exemple attendu avec un LAN `192.168.1.0/24` :
 ```text
 kvm_cidr=192.168.50.0/24
 default_uplink=...
-physical_networks=192.168.1.0/24
+protected_networks=192.168.1.0/24
 guard_mode=normal
 ```
 
@@ -214,9 +212,9 @@ sudo nft list table inet fedora_gnome_custom_kvm
 Le mode certifié doit contenir :
 
 ```text
-blocked_physical_ipv4
-normal block VM to physical LAN
-normal block physical LAN to VM
+blocked_host_ipv4
+normal block VM to protected host networks
+normal block protected host networks to VM
 ```
 
 Un `guard_mode=emergency` n'est pas un état normal de production : il signifie que l'isolation restrictive a été conservée parce que la reconstruction normale n'a pas pu être certifiée.
@@ -231,7 +229,7 @@ sudo nft list table inet fedora_gnome_custom_kvm
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification recharge le guard via systemd, exige son retour en mode normal et vérifie que tous les CIDR uplink détectés sont présents dans la table nftables.
+La certification recharge le guard via systemd, exige son retour en mode normal et vérifie que tous les CIDR HOST protégés détectés sont présents dans la table nftables.
 
 ## Preuve VM → LAN
 

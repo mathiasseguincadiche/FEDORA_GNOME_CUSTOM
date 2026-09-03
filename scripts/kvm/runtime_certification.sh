@@ -90,29 +90,29 @@ if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
   fi
 
   nft_guard="$(sudo nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" 2>/dev/null || true)"
-  if grep -Fq 'blocked_physical_ipv4' <<<"$nft_guard" \
-    && grep -Fq 'normal block VM to physical LAN' <<<"$nft_guard" \
-    && grep -Fq 'normal block physical LAN to VM' <<<"$nft_guard" \
+  if grep -Fq 'blocked_host_ipv4' <<<"$nft_guard" \
+    && grep -Fq 'normal block VM to protected host networks' <<<"$nft_guard" \
+    && grep -Fq 'normal block protected host networks to VM' <<<"$nft_guard" \
     && grep -Fq "${KVM_BRIDGE_NAME:-virbr50}" <<<"$nft_guard"; then
-    record OK 'KVM LAN guard rules' 'bidirectional forwarding isolation loaded'
+    record OK 'KVM host-network guard rules' 'LAN/VPN routed forwarding isolation loaded'
   else
-    record KO 'KVM LAN guard rules' 'normal nft isolation rules missing'
+    record KO 'KVM host-network guard rules' 'normal nft isolation rules missing'
   fi
 
-  physical_networks="$(awk -F= '$1=="physical_networks" {print $2}' <<<"$guard_check")"
-  if [[ -n "$physical_networks" && "$physical_networks" != none-connected ]]; then
+  protected_networks="$(awk -F= '$1=="protected_networks" {print $2}' <<<"$guard_check")"
+  if [[ -n "$protected_networks" && "$protected_networks" != none-connected ]]; then
     coverage_ok=true
-    IFS=',' read -r -a physical_cidrs <<<"$physical_networks"
-    for cidr in "${physical_cidrs[@]}"; do
+    IFS=',' read -r -a protected_cidrs <<<"$protected_networks"
+    for cidr in "${protected_cidrs[@]}"; do
       grep -Fq "$cidr" <<<"$nft_guard" || coverage_ok=false
     done
     if [[ "$coverage_ok" == true ]]; then
-      record OK 'KVM LAN CIDR coverage' "$physical_networks"
+      record OK 'KVM protected CIDR coverage' "$protected_networks"
     else
-      record KO 'KVM LAN CIDR coverage' "guard does not contain every discovered uplink CIDR: $physical_networks"
+      record KO 'KVM protected CIDR coverage' "guard does not contain every discovered LAN/VPN CIDR: $protected_networks"
     fi
   else
-    record WARN 'KVM LAN CIDR coverage' 'no connected physical uplink CIDR to prove'
+    record WARN 'KVM protected CIDR coverage' 'no non-default host CIDR to prove'
   fi
 fi
 
@@ -151,7 +151,7 @@ fi
 
 if "$REPO_ROOT/diagnostics/kvm-io-doctor" --quiet; then record OK 'T705 KVM I/O profile' benchmarked; else record WARN 'T705 KVM I/O profile' 'default profile in use'; fi
 record WARN 'Windows guest integration' 'inside Windows, Configure-GuestIntegration.ps1 must report healthy VirtIO devices and QEMU-GA'
-record WARN 'LAN → VM live proof' 'run the documented second-host test when certifying a new physical LAN; host-side rules are already checked here'
+record WARN 'LAN/VPN → VM live proof' 'run an external-host/VPN test when certifying a new routed environment; host-side rules are already checked here'
 
 printf '\nRuntime certification summary: OK=%d WARN=%d KO=%d\n' "$ok" "$warn" "$ko"
 ((ko == 0))

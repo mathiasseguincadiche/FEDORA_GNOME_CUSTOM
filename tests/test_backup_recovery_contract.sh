@@ -46,4 +46,7 @@ if grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:s
   echo 'forbidden destructive backup/recovery command found' >&2
   exit 1
 fi
+grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'FEDORA_GNOME_CUSTOM_APPLIED_SHA' "$ROOT/scripts/backup/daily-user-backup.sh"
+
 echo 'backup/recovery contract: PASS'

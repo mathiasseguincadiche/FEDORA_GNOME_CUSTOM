@@ -35,15 +35,25 @@ fi
 
 if lspci -Dn 2>/dev/null | grep -Eqi '030[02]:[[:space:]]+8086:e20b'; then
   if command_exists vainfo; then
-    device="${VAAPI_DRM_DEVICE:-/dev/dri/renderD128}"
-    if [[ -e "$device" ]]; then report="$(vainfo --display drm --device "$device" 2>&1 || true)"; else report="$(vainfo 2>&1 || true)"; fi
-    if [[ -z "$report" ]]; then
-      record WARN VA-API 'probe unavailable'
+    configured="${VAAPI_DRM_DEVICE:-auto}"
+    if [[ "$configured" == auto ]]; then
+      device="$(drm_render_node_for_pci_id 8086 e20b || true)"
     else
-      for profile in H264 HEVC AV1 VP9; do
-        if grep -q "VAProfile${profile}" <<<"$report"; then record OK "VA-API:$profile" exposed; else record WARN "VA-API:$profile" missing; fi
-      done
-      if grep -Eqi 'Intel.*iHD|iHD_drv_video' <<<"$report"; then record OK 'VA-API driver' Intel-iHD; else record WARN 'VA-API driver' 'Intel iHD not identified'; fi
+      device="$configured"
+    fi
+    if [[ -z "$device" || ! -e "$device" ]]; then
+      record KO 'Arc B580 render node' 'PCI 8086:e20b is present but no matching /dev/dri/renderD* node was proven'
+    else
+      record OK 'Arc B580 render node' "$device"
+      report="$(vainfo --display drm --device "$device" 2>&1 || true)"
+      if [[ -z "$report" ]]; then
+        record WARN VA-API "probe unavailable on $device"
+      else
+        for profile in H264 HEVC AV1 VP9; do
+          if grep -q "VAProfile${profile}" <<<"$report"; then record OK "VA-API:$profile" exposed; else record WARN "VA-API:$profile" missing; fi
+        done
+        if grep -Eqi 'Intel.*iHD|iHD_drv_video' <<<"$report"; then record OK 'VA-API driver' Intel-iHD; else record WARN 'VA-API driver' 'Intel iHD not identified'; fi
+      fi
     fi
   else
     record WARN VA-API 'vainfo unavailable'

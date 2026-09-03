@@ -35,6 +35,8 @@ Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment 
 
 Les chemins supplémentaires restent `Projects`, `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
 
+Le timer est lié au **SHA appliqué** : si le checkout versionné change ou si ses fichiers suivis sont modifiés sans nouvel APPLY, le backup automatique bloque au lieu de sourcer silencieusement un runtime différent.
+
 Le script refuse une source XDG ambiguë qui résoudrait directement vers `$HOME`, refuse les chemins supplémentaires absolus ou contenant `..`, et enregistre dans `state/last-daily-backup.ok` le nombre ainsi que la liste exacte des sources incluses dans le snapshot.
 
 ## Backup d'exploitation
@@ -53,13 +55,17 @@ scripts/backup/backup-now.sh --include-vms
 
 Cette deuxième commande **refuse** toute VM qui n'est pas arrêtée. Les images sont d'abord recopiées par `qemu-img convert` vers un staging cohérent, vérifiées avec `qemu-img check`, puis seulement envoyées à Restic.
 
-Pour appliquer la rétention 7 daily / 4 weekly / 6 monthly en même temps :
+Pour appliquer **manuellement** la rétention 7 daily / 4 weekly / 6 monthly aux snapshots `full` **et** `daily` :
 
 ```bash
+scripts/backup/backup-now.sh --prune
+# ou, pour inclure aussi les disques VM arrêtés :
+scripts/backup/backup-now.sh --prune
+# ou, pour inclure aussi les disques VM arrêtés :
 scripts/backup/backup-now.sh --include-vms --prune
 ```
 
-Le pruning n'est jamais lancé automatiquement par la convergence.
+Le pruning n'est jamais lancé automatiquement par la convergence ni par le timer quotidien. `--prune` applique les deux politiques `forget` (`full` puis `daily`) puis exécute un unique `restic prune`.
 
 ## Diagnostic
 
@@ -97,6 +103,10 @@ scripts/backup/restore.sh restore <snapshot> /chemin/staging/vide '<glob-optionn
 ```
 
 Le helper refuse les destinations sensibles/actives. On inspecte ensuite le staging avant toute restauration manuelle.
+
+## Secret de récupération
+
+La passphrase Restic n'est volontairement jamais incluse dans les snapshots. Une **copie de récupération hors machine** (gestionnaire de mots de passe ou coffre indépendant) est donc obligatoire pour qu'un dépôt Restic reste exploitable après perte totale du SSD système. Le projet ne copie jamais ce secret automatiquement.
 
 ## Disaster Recovery
 

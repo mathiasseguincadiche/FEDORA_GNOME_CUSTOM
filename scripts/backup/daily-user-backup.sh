@@ -7,6 +7,14 @@ if [[ -z "$REPO_ROOT" || ! -r "$REPO_ROOT/lib/bootstrap.sh" ]]; then
   echo 'FEDORA_GNOME_CUSTOM_REPO does not point to a valid checkout.' >&2
   exit 20
 fi
+command -v git >/dev/null 2>&1 || { echo 'git is required to validate the installed daily-backup runtime.' >&2; exit 20; }
+current_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
+expected_sha="${FEDORA_GNOME_CUSTOM_APPLIED_SHA:-$current_sha}"
+[[ "$current_sha" =~ ^[0-9a-fA-F]{40}$ && "$expected_sha" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'Daily backup cannot prove its repository SHA.' >&2; exit 20; }
+[[ "$current_sha" == "$expected_sha" ]] || { echo "Daily backup blocked: checkout SHA $current_sha differs from applied SHA $expected_sha. Re-APPLY the reviewed version." >&2; exit 20; }
+git -C "$REPO_ROOT" diff --quiet -- . || { echo 'Daily backup blocked: tracked checkout files differ from the applied version.' >&2; exit 20; }
+git -C "$REPO_ROOT" diff --cached --quiet -- . || { echo 'Daily backup blocked: staged checkout changes differ from the applied version.' >&2; exit 20; }
+
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO_ROOT/lib/backup_runtime.sh"
@@ -86,6 +94,7 @@ snap="$(restic snapshots --tag fedora-gnome-custom-daily --latest 1 --json | jq 
 
 {
   printf 'snapshot=%s\n' "$snap"
+  printf 'commit=%s\n' "$current_sha"
   printf 'utc=%s\n' "$(date -u +%FT%TZ)"
   printf 'repository=%s\n' "$repo"
   printf 'source_count=%s\n' "${#sources[@]}"

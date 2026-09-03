@@ -46,11 +46,12 @@ kvm_network_precheck() {
   [[ -r "$REPO_ROOT/virtualization/systemd/fedora-gnome-custom-kvm-guard.service" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/virtualization/networkmanager/90-fedora-gnome-custom-kvm-guard" ]] || return "$EXIT_PRECHECK_FAILED"
   if ! bash "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" check >/dev/null; then
-    log_error KVM 'physical network isolation precheck failed'
+    log_error KVM 'protected host-network isolation precheck failed'
     return "$EXIT_PRECHECK_FAILED"
   fi
   if is_true "${KVM_FAIL_CLOSED:-true}"; then
     is_true "${KVM_BLOCK_PHYSICAL_LAN:-true}" || return "$EXIT_PRECHECK_FAILED"
+    is_true "${KVM_BLOCK_ROUTED_HOST_NETWORKS:-true}" || return "$EXIT_PRECHECK_FAILED"
     if is_true "${KVM_ALLOW_INBOUND_FORWARDING:-false}"; then
       return "$EXIT_PRECHECK_FAILED"
     fi
@@ -67,7 +68,8 @@ FEDORA KVM NETWORK CONTRACT:
 - IPv4 only; enabling IPv6 is fail-closed until equivalent dual-stack isolation is implemented
 - libvirt NAT supplies VM->Internet and DNS through Quad9/Cloudflare forwarders
 - bridge is explicitly attached to firewalld zone libvirt
-- project-owned nftables guard blocks VM<->physical-LAN forwarding only
+- project-owned nftables guard blocks VM<->protected HOST networks (LAN + non-default routed VPN/enterprise networks)
+- the default IPv4 route remains outside the blocked set so VM->Internet stays available
 - HOST<->VM and VM<->VM remain allowed
 - no port forwarding from LAN/Internet to guests
 - NetworkManager reloads the guard when physical connectivity changes
@@ -117,12 +119,14 @@ kvm_network_apply() {
 }
 
 kvm_network_postcheck() {
-  local network="${KVM_NETWORK_NAME:-devops-nat}" current zone
+  local network="${KVM_NETWORK_NAME:-devops-nat}" current zone guard_check
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_KVM:-true}" || return 0
 
   sudo systemctl is-active --quiet fedora-gnome-custom-kvm-guard.service || return "$EXIT_POSTCHECK_FAILED"
   sudo nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  guard_check="$(sudo /usr/local/libexec/fedora-gnome-custom/kvm-network-guard check 2>/dev/null || true)"
+  grep -Fq 'guard_mode=normal' <<<"$guard_check" || return "$EXIT_POSTCHECK_FAILED"
   sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-info "$network" | grep -Eq '^Active:[[:space:]]+yes' || return "$EXIT_POSTCHECK_FAILED"
   sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-info "$network" | grep -Eq '^Autostart:[[:space:]]+yes' || return "$EXIT_POSTCHECK_FAILED"
   current="$(sudo virsh --connect "${LIBVIRT_URI:-qemu:///system}" net-dumpxml "$network")" || return "$EXIT_POSTCHECK_FAILED"

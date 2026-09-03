@@ -171,15 +171,15 @@ fi
 if is_true "${KVM_BLOCK_PHYSICAL_LAN:-true}"; then
   if sudo -n nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" >/dev/null 2>&1; then
     rules="$(sudo -n nft list table inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" 2>/dev/null || true)"
-    if grep -Fq 'block VM to physical LAN' <<<"$rules"; then
-      record OK 'LAN isolation' enforced
+    if grep -Fq 'block VM to protected host networks' <<<"$rules"; then
+      record OK 'Host-network isolation' 'LAN/VPN routes enforced'
     else
-      record KO 'LAN isolation' 'guard rule missing'
+      record KO 'Host-network isolation' 'guard rule missing'
     fi
   elif systemctl is-active --quiet fedora-gnome-custom-kvm-guard.service 2>/dev/null; then
-    record WARN 'LAN isolation' 'guard service active; privileged nft inspection unavailable'
+    record WARN 'Host-network isolation' 'guard service active; privileged nft inspection unavailable'
   else
-    record KO 'LAN isolation' 'guard inactive'
+    record KO 'Host-network isolation' 'guard inactive'
   fi
 fi
 
