@@ -34,8 +34,12 @@ run_legacy_without_fuse() {
   trap 'rm -rf -- "$tmp"' RETURN
   bsdtar -xf "$image" -C "$tmp"
   [[ -x "$tmp/AppRun" ]] || { echo 'Type 1 AppImage does not contain an executable AppRun entrypoint' >&2; return 20; }
-  "$tmp/AppRun" "$@"
-  rc=$?
+
+  if "$tmp/AppRun" "$@"; then
+    rc=0
+  else
+    rc=$?
+  fi
   rm -rf -- "$tmp"
   trap - RETURN
   return "$rc"
