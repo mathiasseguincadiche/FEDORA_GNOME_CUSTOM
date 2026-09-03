@@ -3,23 +3,26 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 conf="$ROOT/config/kernel.conf"
+policy="$ROOT/config/kernel-lifecycle.policy"
 lib="$ROOT/lib/kernel_lifecycle.sh"
 entry="$ROOT/scripts/kernel/kernel-lifecycle.sh"
 module="$ROOT/modules/system/01a_kernel_latest_stable.sh"
 doctor="$ROOT/diagnostics/kernel-doctor"
 control="$ROOT/control.sh"
 
-for file in "$conf" "$lib" "$entry" "$module" "$doctor" "$control"; do
+for file in "$conf" "$policy" "$lib" "$entry" "$module" "$doctor" "$control"; do
   [[ -s "$file" ]] || { echo "missing kernel lifecycle file: $file" >&2; exit 1; }
 done
 
-grep -Fq 'KERNEL_LIFECYCLE_MODE="candidate-certified"' "$conf"
-grep -Fq 'KERNEL_CANDIDATE_TRACK_LATEST_STABLE="true"' "$conf"
+grep -Fxq 'mode=candidate-certified' "$policy"
+grep -Fxq 'candidate_track=latest-stable' "$policy"
+grep -Fxq 'certification_required=true' "$policy"
+grep -Fxq 'keep_previous_certified=true' "$policy"
+grep -Fxq 'keep_fedora_fallback=true' "$policy"
+grep -Fxq 'one_shot_test_boot=true' "$policy"
+grep -Fxq 'required_suspend_cycles=5' "$policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$conf"
-grep -Fq 'KERNEL_CERTIFICATION_REQUIRED="true"' "$conf"
-grep -Fq 'KERNEL_KEEP_PREVIOUS_CERTIFIED="true"' "$conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$conf"
-grep -Fq 'KERNEL_ONE_SHOT_TEST_BOOT="true"' "$conf"
 
 grep -Fq 'candidate.env' "$lib"
 grep -Fq 'certified.env' "$lib"
