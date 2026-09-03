@@ -69,6 +69,12 @@ certification bare-metal
 
 Le Control Center appelle ces mêmes moteurs ; il ne crée aucun chemin parallèle moins sécurisé.
 
+## Je veux utiliser des AppImages anciens et actuels
+
+Lire [`APPIMAGE.md`](APPIMAGE.md). Le socle Applications installe FUSE 2 et FUSE 3 côte à côte, les bibliothèques x86_64/i686, les extracteurs Type 1 ISO9660 et Type 2 SquashFS, la commande `appimage-run` et Gear Lever pour l'intégration GNOME.
+
+La compatibilité AppImage fait partie du contrat Applications Golden : elle n'exige ni désactivation de SELinux, ni kernel alternatif, ni dépôt GPU tiers. `appimage-run --identify` permet d'identifier un Type 1 legacy ou un Type 2 actuel sans exécuter le payload tiers.
+
 ## Je veux activer le profil Gaming
 
 Le Gaming est un socle **optionnel**, désactivé par défaut et indépendant de KVM. Lire [`GAMING.md`](GAMING.md) pour Steam natif RPM Fusion, Proton géré par Steam, Vulkan x86_64/i686, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et la certification Arc B580/Wayland/1440p 240 Hz.
@@ -126,6 +132,7 @@ Le runbook est organisé par symptôme :
 - GNOME/Wayland/portals ;
 - Nautilus/GVfs/previews ;
 - Ptyxis/Bash ;
+- AppImage/FUSE/Type 1/Type 2 ;
 - Gaming/Steam/Proton/Vulkan ;
 - GPU Arc B580 ;
 - `/data` ou pool libvirt ;
@@ -146,6 +153,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 - [`NAUTILUS.md`](NAUTILUS.md) — profil Files/GVfs/previews/archives complet ;
 - [`PTYXIS.md`](PTYXIS.md) — politique terminal natif et frontière HOST/KVM ;
 - [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md) — FFmpeg/GStreamer/VA-API/oneVPL ;
+- [`APPIMAGE.md`](APPIMAGE.md) — compatibilité Type 1/Type 2, FUSE multilib et intégration GNOME ;
 - [`GAMING.md`](GAMING.md) — Steam/Proton/Vulkan et politique Gaming optionnelle ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — services quotidiens et mises à jour ;
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — hyperviseur, stockage et réseau ;
@@ -165,6 +173,7 @@ Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctor
 - [`HOST_BASH_UX.md`](HOST_BASH_UX.md) — Bash/Ptyxis ;
 - [`NAUTILUS.md`](NAUTILUS.md) — intégration Nautilus certifiée ;
 - [`PTYXIS.md`](PTYXIS.md) — terminal Golden ;
+- [`APPIMAGE.md`](APPIMAGE.md) — support AppImage legacy/current ;
 - [`GAMING.md`](GAMING.md) — profil Steam/Proton/Vulkan optionnel ;
 - [`CI_VALIDATION.md`](CI_VALIDATION.md) — ce que la CI prouve et ce qui reste bare-metal ;
 - [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md) — politique de branche/release.

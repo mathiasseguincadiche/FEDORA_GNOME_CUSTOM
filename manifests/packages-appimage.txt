@@ -1,0 +1,17 @@
+# Fedora 44 native runtime/support for current and legacy AppImages
+# FUSE 2 remains required by many Type 1/Type 2 runtimes; keep both arches for legacy 32-bit images.
+fuse
+fuse-libs.x86_64
+fuse-libs.i686
+# Keep modern FUSE 3 available alongside FUSE 2; do not replace/remove either stack.
+fuse3
+fuse3-libs.x86_64
+fuse3-libs.i686
+# Type 1 ISO9660 / Type 2 SquashFS inspection and fallback extraction.
+bsdtar
+squashfs-tools
+file
+# Desktop/MIME integration helpers used by AppImage managers and manual integration.
+desktop-file-utils
+shared-mime-info
+xdg-utils

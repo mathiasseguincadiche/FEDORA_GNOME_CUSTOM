@@ -16,6 +16,7 @@ jobs:
       - run: bash tests/test_baseline_contract.sh
       - run: bash tests/test_gtk4_apps_policy.sh
       - run: bash tests/test_professional_apps_contract.sh
+      - run: bash tests/test_appimage_contract.sh
       - run: bash tests/test_multimedia_contract.sh
       - run: bash tests/test_gaming_contract.sh
       - run: bash tests/test_virtualization_contract.sh

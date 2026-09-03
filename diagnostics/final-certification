@@ -53,6 +53,7 @@ certify(){
   "$REPO_ROOT/diagnostics/shell-doctor" --quiet
   "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet
   "$REPO_ROOT/diagnostics/applications-doctor" --quiet
+  "$REPO_ROOT/diagnostics/appimage-doctor" --quiet
   "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet
   if is_true "${GAMING_ENABLE:-false}"; then "$REPO_ROOT/diagnostics/gaming-doctor" --quiet; fi
   if is_true "${ENABLE_KVM:-true}"; then "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet; fi

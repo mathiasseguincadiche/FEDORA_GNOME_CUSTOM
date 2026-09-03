@@ -32,6 +32,7 @@ if "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet; then emit OK Ptyxis 'native G
 if "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet; then emit OK 'Daily backup' 'timer healthy'; else emit KO 'Daily backup' 'run daily-backup-doctor'; fi
 
 if bash "$REPO_ROOT/diagnostics/applications-doctor" --quiet; then emit OK Applications 'GTK4/libadwaita catalog + Ptyxis'; else emit KO Applications 'run applications-doctor'; fi
+if "$REPO_ROOT/diagnostics/appimage-doctor" --quiet; then emit OK AppImage 'Type 1 + Type 2, FUSE2/FUSE3 multilib, Gear Lever'; else emit KO AppImage 'run appimage-doctor'; fi
 if bash "$REPO_ROOT/diagnostics/media-doctor" --quiet; then emit OK Multimedia 'FFmpeg/GStreamer providers installed'; else emit KO Multimedia 'run media-doctor'; fi
 if is_true "${GAMING_ENABLE:-false}"; then
   if "$REPO_ROOT/diagnostics/gaming-doctor" --quiet; then emit OK Gaming 'Steam/Proton/Vulkan multilib + gaming tools'; else emit KO Gaming 'run gaming-doctor'; fi

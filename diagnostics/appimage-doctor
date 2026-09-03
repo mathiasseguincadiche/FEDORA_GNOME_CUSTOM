@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+
+emit() {
+  local state="$1" label="$2" detail="$3"
+  $quiet || ui_check "$state" "$label" "$detail"
+  case "$state" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+for pkg in fuse fuse-libs.x86_64 fuse-libs.i686 fuse3 fuse3-libs.x86_64 fuse3-libs.i686 bsdtar squashfs-tools file desktop-file-utils shared-mime-info xdg-utils; do
+  if rpm -q "$pkg" >/dev/null 2>&1; then emit OK Package "$pkg"; else emit KO Package "$pkg missing"; fi
+done
+
+for spec in \
+  'fusermount:FUSE2 helper' \
+  'fusermount3:FUSE3 helper' \
+  'bsdtar:Type 1 extractor' \
+  'unsquashfs:Type 2 extractor' \
+  'desktop-file-validate:desktop integration' \
+  'xdg-open:XDG integration'; do
+  IFS=: read -r cmd label <<<"$spec"
+  if command_exists "$cmd"; then emit OK "$label" "$cmd available"; else emit KO "$label" "$cmd missing"; fi
+done
+
+runner="$(command -v appimage-run 2>/dev/null || true)"
+if [[ -n "$runner" ]]; then
+  emit OK 'Compatibility runner' "$runner"
+else
+  emit KO 'Compatibility runner' '/usr/local/bin/appimage-run missing'
+fi
+
+if is_true "${ENABLE_FLATHUB:-true}" && is_true "${ENABLE_PROFESSIONAL_FLATPAKS:-true}"; then
+  if flatpak info it.mijorus.gearlever >/dev/null 2>&1; then
+    emit OK 'Gear Lever' 'desktop integration manager installed'
+  else
+    emit KO 'Gear Lever' 'it.mijorus.gearlever missing'
+  fi
+else
+  emit WARN 'Gear Lever' 'Flathub/professional Flatpaks disabled; runtime compatibility remains available'
+fi
+
+if runtime_is_baremetal; then
+  if [[ -c /dev/fuse ]]; then emit OK '/dev/fuse' 'kernel FUSE device available'; else emit KO '/dev/fuse' 'kernel FUSE device unavailable'; fi
+else
+  if [[ -c /dev/fuse ]]; then emit OK '/dev/fuse' 'available in this runtime'; else emit WARN '/dev/fuse' "runtime=$(runtime_environment); container/VM may not expose FUSE"; fi
+fi
+
+if [[ -n "$runner" ]]; then
+  t1="$(mktemp)"; t2="$(mktemp)"
+  trap 'rm -f -- "$t1" "$t2"' EXIT
+  printf '\177ELF\0\0\0\0AI\001' > "$t1"
+  printf '\177ELF\0\0\0\0AI\002' > "$t2"
+  if [[ "$("$runner" --identify "$t1")" == type1 ]]; then emit OK 'Type 1 detection' 'AI\\x01 legacy image recognized'; else emit KO 'Type 1 detection' 'legacy marker not recognized'; fi
+  if [[ "$("$runner" --identify "$t2")" == type2 ]]; then emit OK 'Type 2 detection' 'AI\\x02 current image recognized'; else emit KO 'Type 2 detection' 'current marker not recognized'; fi
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 )) || exit "$EXIT_POSTCHECK_FAILED"
+$quiet || ui_summary 'APPIMAGE COMPATIBILITY HEALTHY' 'TYPE 1 + TYPE 2 READY' "$REPORT_ROOT" "$LOG_DIR"
