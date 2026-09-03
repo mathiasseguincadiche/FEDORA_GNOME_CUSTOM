@@ -6,11 +6,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/maintenance/update-system.sh" ]] || { echo 'update-system.sh missing' >&2; exit 1; }
+[[ -f "$ROOT/scripts/kernel/kernel-lifecycle.sh" ]] || { echo 'kernel lifecycle entrypoint missing' >&2; exit 1; }
 [[ -f "$ROOT/docs/CONTROL_CENTER.md" ]] || { echo 'CONTROL_CENTER.md missing' >&2; exit 1; }
 
 bash -n "$ROOT/control.sh"
 bash -n "$ROOT/lib/control_center.sh"
 bash -n "$ROOT/scripts/maintenance/update-system.sh"
+bash -n "$ROOT/scripts/kernel/kernel-lifecycle.sh"
 
 # The historical menu entrypoint must remain a compatibility alias, not a second implementation.
 grep -Fq "exec \"\$REPO_ROOT/control.sh\" \"\$@\"" "$ROOT/menu.sh"
@@ -55,8 +57,10 @@ grep -Fq "\"\$REPO_ROOT/install.sh\" --apply" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/prepare-preapply-backup.sh\"" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/backup/restore.sh\" restore" "$ROOT/lib/control_center.sh"
 grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
-grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh\"" "$ROOT/lib/control_center.sh"
+grep -Fq 'scripts/kernel/kernel-lifecycle.sh' "$ROOT/control.sh"
+grep -Fq 'candidate|boot-candidate|certify|rollback' "$ROOT/control.sh"
+grep -Fq 'rollback-fedora' "$ROOT/control.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib/control_center.sh"
 
 # Full update is fail-closed around a real Restic system backup and remains bare-metal only.
@@ -74,9 +78,10 @@ if grep -Eq 'fwupdmgr[[:space:]]+(update|install)' "$ROOT/scripts/maintenance/up
   exit 1
 fi
 
-# Golden kernel policy must remain latest stable vanilla with Fedora fallback.
+# Golden kernel policy keeps latest stable as candidate source, not as auto-certification.
 grep -Fq 'ENABLE_KERNEL_VANILLA_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
+grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 
 # Update order: backup must appear before DNF in the protected full-update branch.
@@ -100,6 +105,8 @@ grep -Fq 'vanilla/stable latest-stable' "$status_file"
 # Documentation must explain both interactive and CLI use and the no-auto-flash rule.
 grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh update all' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh kernel candidate' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh kernel certify' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'kernel-vanilla/stable' "$ROOT/docs/CONTROL_CENTER.md"
 

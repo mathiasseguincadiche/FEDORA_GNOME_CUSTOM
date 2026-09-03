@@ -1,0 +1,10 @@
+# Versioned Golden kernel promotion policy.
+# This file is declarative policy metadata and is intentionally outside *.conf
+# so the canonical runtime config schema/keyset remains stable.
+mode=candidate-certified
+candidate_track=latest-stable
+certification_required=true
+keep_previous_certified=true
+keep_fedora_fallback=true
+one_shot_test_boot=true
+required_suspend_cycles=5

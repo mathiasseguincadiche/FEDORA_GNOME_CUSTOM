@@ -23,10 +23,14 @@ for stale in BASELINE_NVME_TEST_SECONDS BASELINE_NVME_VERIFY_SECONDS DISPLAY_PRE
   ! grep -RIn "^${stale}=" "$ROOT/config" >/dev/null || { echo "stale config key remains: $stale" >&2; exit 1; }
 done
 
+grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'keep_previous_certified=true' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'kernel_latest_available' "$ROOT/modules/system/01a_kernel_latest_stable.sh"
-grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/modules/system/01a_kernel_latest_stable.sh"
+grep -Fq 'kernel_lifecycle_latest_available' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'grub2-reboot' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'diagnostics/final-certification" certify' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
 
 grep -Fq "repo_sha=\"\$(git -C \"\$REPO_ROOT\" rev-parse HEAD" "$ROOT/installer/generate-fedora44-kickstart.sh"
