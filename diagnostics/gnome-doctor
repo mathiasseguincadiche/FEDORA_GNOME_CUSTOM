@@ -69,7 +69,9 @@ check_value() {
   fi
 }
 
-for pkg in gnome-shell nautilus gvfs-smb xdg-desktop-portal-gnome; do
+# GNOME doctor owns only the GNOME core and Shell extension contract.
+# Nautilus/GVfs is validated separately by nautilus-integration-doctor.
+for pkg in gnome-shell mutter gnome-control-center xdg-desktop-portal-gnome; do
   if rpm -q "$pkg" >/dev/null 2>&1; then
     if ! $quiet; then ui_check OK "$pkg" installed; fi
   else
