@@ -1,0 +1,20 @@
+name: Config schema bootstrap
+on:
+  push:
+    branches:
+      - hardening/0.14.0-rc1-closure
+    paths:
+      - 'config/**'
+      - 'scripts/config/validate-config.sh'
+      - '.github/workflows/config-schema-bootstrap.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  emit-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Emit configuration schema digest
+        run: bash scripts/config/validate-config.sh config --emit-schema
