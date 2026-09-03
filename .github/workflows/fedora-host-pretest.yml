@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'VERSION'
       - 'control.sh'
       - 'menu.sh'
       - 'lib/control_center.sh'
@@ -33,6 +34,7 @@ on:
       - '.github/workflows/fedora-host-pretest.yml'
   pull_request:
     paths:
+      - 'VERSION'
       - 'control.sh'
       - 'menu.sh'
       - 'lib/control_center.sh'
@@ -94,8 +96,9 @@ jobs:
           set -Eeuo pipefail
           status="$(NO_COLOR=1 ./control.sh status)"
           printf '%s\n' "$status"
+          version="$(tr -d '[:space:]' < VERSION)"
           grep -Fq 'FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE' <<<"$status"
-          grep -Eq 'Projet[[:space:]]+0\.13\.0' <<<"$status"
+          grep -Eq "Projet[[:space:]]+${version//./\\.}" <<<"$status"
           grep -Eq 'Fedora[[:space:]]+44' <<<"$status"
           grep -Eq 'Runtime[[:space:]]+CI' <<<"$status"
           grep -Fq 'vanilla/stable latest-stable' <<<"$status"
