@@ -39,7 +39,12 @@ for token in gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus 
 done
 
 grep -Fq 'diagnostics/nautilus-integration-doctor' "$ROOT/diagnostics/final-certification"
-grep -Fq 'manifests/packages-nautilus.txt' "$ROOT/.github/workflows/fedora-package-preflight.yml"
+for workflow in fedora-package-preflight.yml fedora-host-pretest.yml desktop-integration-pretest.yml; do
+  grep -Fq 'manifests/packages-nautilus.txt' "$ROOT/.github/workflows/$workflow" || {
+    echo "workflow does not consume Nautilus manifest: $workflow" >&2
+    exit 1
+  }
+done
 grep -Fq 'file-roller-nautilus' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
 
 echo 'nautilus integration contract: PASS'
