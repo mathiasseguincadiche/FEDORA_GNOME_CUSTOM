@@ -5,13 +5,20 @@ multimedia_arc_b580_present() {
   lspci -Dn 2>/dev/null | grep -Eqi '030[02]:[[:space:]]+8086:e20b'
 }
 
-multimedia_vainfo() {
-  local device="${VAAPI_DRM_DEVICE:-/dev/dri/renderD128}"
-  if [[ -e "$device" ]]; then
-    vainfo --display drm --device "$device" 2>&1
-  else
-    vainfo 2>&1
+multimedia_vaapi_device() {
+  local configured="${VAAPI_DRM_DEVICE:-auto}"
+  if [[ "$configured" != auto ]]; then
+    [[ -e "$configured" ]] || return 1
+    printf '%s\n' "$configured"
+    return 0
   fi
+  drm_render_node_for_pci_id 8086 e20b
+}
+
+multimedia_vainfo() {
+  local device
+  device="$(multimedia_vaapi_device)" || return 1
+  vainfo --display drm --device "$device" 2>&1
 }
 
 multimedia_vaapi_profiles_complete() {
@@ -36,7 +43,7 @@ multimedia_install_full_ffmpeg() {
 }
 
 multimedia_converge_intel_media_driver() {
-  local policy="${INTEL_MEDIA_DRIVER_POLICY:-auto}" report=""
+  local policy="${INTEL_MEDIA_DRIVER_POLICY:-auto}" report="" device=""
   case "$policy" in
     auto|fedora-free|rpmfusion-full) ;;
     *) log_error GNOME "invalid INTEL_MEDIA_DRIVER_POLICY=$policy"; return "$EXIT_CONFIG_FAILED" ;;
@@ -51,16 +58,21 @@ multimedia_converge_intel_media_driver() {
       log_warn GNOME 'vainfo unavailable; preserving Fedora Intel media driver instead of guessing'
       return 0
     fi
+    device="$(multimedia_vaapi_device || true)"
+    if [[ -z "$device" ]]; then
+      log_warn GNOME 'Arc B580 render node could not be resolved by PCI id; preserving Fedora Intel media driver instead of probing another GPU'
+      return 0
+    fi
     report="$(multimedia_vainfo || true)"
     if [[ -n "$report" ]] && multimedia_vaapi_profiles_complete "$report"; then
-      log_info GNOME 'Fedora Intel media driver already exposes H264/HEVC/AV1/VP9; no swap needed'
+      log_info GNOME "Arc B580 VA-API on $device already exposes H264/HEVC/AV1/VP9; no swap needed"
       return 0
     fi
     if [[ -z "$report" ]]; then
-      log_warn GNOME 'VA-API probe unavailable; preserving Fedora Intel media driver instead of guessing'
+      log_warn GNOME "Arc B580 VA-API probe unavailable on $device; preserving Fedora Intel media driver instead of guessing"
       return 0
     fi
-    log_info GNOME 'VA-API profile gap detected on Arc B580; selecting RPM Fusion intel-media-driver'
+    log_info GNOME "VA-API profile gap detected on Arc B580 $device; selecting RPM Fusion intel-media-driver"
   fi
 
   if rpm -q intel-media-driver >/dev/null 2>&1; then
@@ -78,7 +90,7 @@ gnome_multimedia_precheck() {
 }
 
 gnome_multimedia_plan() {
-  echo 'Install Fedora GStreamer + OpenH264 + Intel oneVPL, switch ffmpeg-free to full RPM Fusion ffmpeg, add freeworld codecs/thumbnails, and converge Intel Arc VA-API only when the measured profile set requires it.'
+  echo 'Install Fedora GStreamer + OpenH264 + Intel oneVPL, switch ffmpeg-free to full RPM Fusion ffmpeg, add freeworld codecs/thumbnails, and converge Intel Arc VA-API only on the render node proven to belong to PCI 8086:e20b.'
 }
 
 gnome_multimedia_apply() {
@@ -98,10 +110,12 @@ gnome_multimedia_postcheck() {
   rpm -q ffmpeg-free >/dev/null 2>&1 && { log_error GNOME 'ffmpeg-free still installed after full FFmpeg convergence'; return "$EXIT_POSTCHECK_FAILED"; }
 
   if multimedia_arc_b580_present && command_exists vainfo; then
-    local report
+    local report device
+    device="$(multimedia_vaapi_device || true)"
+    [[ -n "$device" ]] || { log_error GNOME 'Arc B580 present but its DRM render node could not be proven'; return "$EXIT_POSTCHECK_FAILED"; }
     report="$(multimedia_vainfo || true)"
     if [[ -n "$report" ]] && ! multimedia_vaapi_profiles_complete "$report"; then
-      log_warn GNOME 'Arc B580 VA-API probe does not expose the complete H264/HEVC/AV1/VP9 profile set; run media-doctor'
+      log_warn GNOME "Arc B580 VA-API probe on $device does not expose the complete H264/HEVC/AV1/VP9 profile set; run media-doctor"
       [[ "${INTEL_MEDIA_DRIVER_POLICY:-auto}" == fedora-free ]] || return "$EXIT_POSTCHECK_FAILED"
     fi
   fi
