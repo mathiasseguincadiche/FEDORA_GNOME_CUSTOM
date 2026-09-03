@@ -17,16 +17,24 @@ grep -Fq 'reconcile_guard()' "$guard"
 grep -Fq 'emergency_guard ||' "$guard"
 grep -Fq 'emergency block VM forwarding' "$guard"
 grep -Fq 'emergency block forwarding to VM' "$guard"
-grep -Fq 'normal block VM to physical LAN' "$guard"
-grep -Fq 'normal block physical LAN to VM' "$guard"
+grep -Fq 'normal block VM to protected host networks' "$guard"
+grep -Fq 'normal block protected host networks to VM' "$guard"
+grep -Fq 'blocked_host_ipv4' "$guard"
+grep -Fq 'protected_networks=' "$guard"
+grep -Fq 'route show table main' "$guard"
+grep -Fq '"$prefix" != default' "$guard"
 grep -Fq 'guard_mode=' "$guard"
 grep -Fq 'default IPv4 uplink' "$guard"
 grep -Fq 'emergency forwarding block remains active' "$guard"
+grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
 
-# Reconcile is the systemd start/reload contract; failed oneshots are retried.
+# Reconcile is the systemd start/reload contract; failed oneshots are retried and sandboxed.
 grep -Fq 'ExecStart=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard reconcile' "$unit"
 grep -Fq 'ExecReload=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard reconcile' "$unit"
 grep -Fq 'Restart=on-failure' "$unit"
+grep -Fq 'NoNewPrivileges=yes' "$unit"
+grep -Fq 'ProtectSystem=strict' "$unit"
+grep -Fq 'CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW' "$unit"
 
 # NetworkManager must synchronously install emergency mode before reload.
 grep -Fq "\"\$helper\" emergency" "$dispatcher"
@@ -43,9 +51,9 @@ fi
 # Runtime certification must prove normal state and rule coverage after reload.
 grep -Fq "systemctl reload \"\$guard_unit\"" "$runtime"
 grep -Fq 'guard_mode=normal' "$runtime"
-grep -Fq 'KVM LAN CIDR coverage' "$runtime"
-grep -Fq 'normal block VM to physical LAN' "$runtime"
-grep -Fq 'normal block physical LAN to VM' "$runtime"
+grep -Fq 'KVM protected CIDR coverage' "$runtime"
+grep -Fq 'normal block VM to protected host networks' "$runtime"
+grep -Fq 'normal block protected host networks to VM' "$runtime"
 grep -Fq 'host cannot prove gateway' "$runtime"
 grep -Fq "ping -c 1 -W 2 \"\$physical_gateway\"" "$runtime"
 
