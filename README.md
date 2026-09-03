@@ -41,6 +41,8 @@ Voir [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
 - [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) — centre de contrôle interactif et CLI ;
 - [`docs/GLOSSARY.md`](docs/GLOSSARY.md) — vocabulaire Fedora/KVM/libvirt ;
 - [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
+- [`docs/NAUTILUS.md`](docs/NAUTILUS.md) — intégration Files/GVfs/Sushi/archives ;
+- [`docs/PTYXIS.md`](docs/PTYXIS.md) — terminal GNOME natif et frontière HOST/KVM ;
 - [`docs/VIRTUALBOX_GNOME_LAB.md`](docs/VIRTUALBOX_GNOME_LAB.md) — GATE 2 GNOME/VirtualBox fail-closed ;
 - [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) — utilisation quotidienne des VM ;
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — runbook par symptôme.
@@ -59,9 +61,10 @@ APPLY PROTÉGÉ
   kernel-vanilla/stable latest-stable
   firmware / microcode
   GNOME 50 / Wayland / codecs / applications
+  Nautilus complet + GVfs + Sushi + File Roller
   Bureau XDG + Corbeille + Show Desktop
   Resource Monitor CPU/RAM/réseau/B580
-  Bash UX / portals / secrets / print-scan / VPN / power
+  Ptyxis + Bash UX / portals / secrets / print-scan / VPN / power
   Arc Level Zero/OpenCL
   KVM sur /data + réseau privé fail-closed LAN/VPN
   lifecycle sécurisé + backup quotidien
@@ -73,6 +76,8 @@ CERTIFICATION BARE-METAL
   hardware + firmware + Arc B580/xe
   display actif 1440p/~240 Hz
   desktop/portals/lifecycle/Bash/apps/dock
+  Nautilus/GVfs/Sushi/File Roller
+  Ptyxis natif + Bash
   DING + Show Desktop Plus + Resource Monitor runtime
   socle KVM host
   Nautilus cold-start
@@ -90,6 +95,10 @@ Cette release ferme les écarts identifiés lors de la revue pré-1.0 sans ajout
 - contrat d'orchestration strict : `precheck`, `plan`, `apply` et `postcheck` sont obligatoires pour chaque module ;
 - un échec pendant `--apply` conserve son code retour et produit toujours un rapport d'état partiellement convergé ;
 - VA-API résout désormais le render node de l'Arc B580 par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` ;
+- Nautilus dispose d'un socle dédié avec GVfs archive/AFC/GOA/NFS, SMB/MTP déclaratifs, Sushi et File Roller ;
+- le doctor Nautilus fonctionnel est distinct du benchmark cold-start et entre dans la certification finale ;
+- Ptyxis possède un doctor natif distinct de la couche Bash ; Toolbx reste hors du HOST Golden par défaut ;
+- le workaround historique `ibus-typing-booster` est découplé de Nautilus et désactivé par défaut ;
 - DING, Show Desktop Plus et Resource Monitor sont verrouillés par URL GNOME Review **et SHA-256 exact** ;
 - les timers backup utilisent un runtime autonome versionné par SHA et vérifié par manifeste ;
 - la rétention Restic 7 daily / 4 weekly / 6 monthly est appliquée périodiquement aux tags `full` et `daily` ;
@@ -193,6 +202,17 @@ Clic gauche          toggle bureau/fenêtres
 Super+D              toggle bureau/fenêtres
 ```
 
+### Nautilus complet
+
+Nautilus reste le gestionnaire de fichiers GNOME natif. Le profil Golden ajoute les backends GVfs pour SMB, MTP, appareil photo, FUSE, archives, Apple/AFC, GNOME Online Accounts et NFS, ainsi que Sushi pour l'aperçu rapide et l'intégration File Roller.
+
+```bash
+./diagnostics/nautilus-integration-doctor
+./diagnostics/nautilus-coldstart-doctor
+```
+
+Le premier valide les fonctionnalités ; le second mesure séparément la latence réelle du premier lancement. Voir [`docs/NAUTILUS.md`](docs/NAUTILUS.md).
+
 Dock certifié :
 
 1. Nautilus
@@ -218,13 +238,18 @@ Le projet assemble explicitement Fedora + RPM Fusion + FFmpeg/GStreamer + VA-API
 
 Voir [`docs/MULTIMEDIA_CODECS.md`](docs/MULTIMEDIA_CODECS.md).
 
-## Bash host
+## Ptyxis / Bash host
 
-Ptyxis ouvre Bash avec une couche légère et versionnée : `bash-completion`, `fzf`, `zoxide`, `direnv`, historique long/synchronisé, prompt Git local-only et aliases Git/Docker/Kubernetes/Terraform non destructifs.
+Ptyxis est le terminal GNOME natif. Il ouvre Bash avec une couche légère et versionnée : `bash-completion`, `fzf`, `zoxide`, `direnv`, historique long/synchronisé, prompt Git local-only et aliases Git/Docker/Kubernetes/Terraform non destructifs.
+
+Toolbx/Podman ne sont pas imposés au HOST Golden : KVM reste la frontière DevOps principale.
 
 ```bash
+./diagnostics/ptyxis-doctor
 ./diagnostics/shell-doctor
 ```
+
+Voir [`docs/PTYXIS.md`](docs/PTYXIS.md) et [`docs/HOST_BASH_UX.md`](docs/HOST_BASH_UX.md).
 
 ## Affichage et veille
 
@@ -232,7 +257,9 @@ Le repair GNOME cible 2560×1440, ~240 Hz, scale 1.0, SDR/default et Full RGB.
 
 ```bash
 ./diagnostics/display-doctor
+./diagnostics/nautilus-integration-doctor
 ./diagnostics/nautilus-coldstart-doctor
+./diagnostics/ptyxis-doctor
 ./diagnostics/final-certification record-suspend
 ./diagnostics/final-certification certify
 ```
@@ -393,9 +420,9 @@ La transaction complète exige bare-metal, réalise un backup Restic complet ava
 
 ## CI et gouvernance
 
-Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop, Resource Monitor, Control Center et cloisonnement du LAB VirtualBox.
+Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, **prétest desktop Fedora 44 Nautilus/Ptyxis**, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop, Resource Monitor, Control Center et cloisonnement du LAB VirtualBox.
 
-La politique cible pour `main` exige PR + checks verts et interdit force-push/suppression. Le script `scripts/development/check-main-protection.sh` reste le contrôle de conformité de ce réglage GitHub.
+La politique cible pour `main` exige PR + checks verts, branche à jour, merge commit uniquement et interdit force-push/suppression. Le script `scripts/development/check-main-protection.sh` vérifie le ruleset effectif, les checks requis et les réglages de merge du dépôt.
 
 Voir [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) et [`docs/GITHUB_GOVERNANCE.md`](docs/GITHUB_GOVERNANCE.md).
 
