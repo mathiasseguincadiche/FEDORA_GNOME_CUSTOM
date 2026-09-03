@@ -9,9 +9,9 @@ professional_apps_unverified_allowed() {
 professional_apps_validate_provenance() {
   local provenance="$REPO_ROOT/manifests/application-provenance.tsv"
   local flatpaks="$REPO_ROOT/manifests/flatpaks-applications-professional.txt"
-  local id delivery trust note allowed
+  local id delivery trust _note allowed
 
-  while IFS=$'\t' read -r id delivery trust note; do
+  while IFS=$'\t' read -r id delivery trust _note; do
     [[ -z "$id" || "$id" == \#* ]] && continue
     if [[ "$delivery" == flathub && "$trust" == community-unverified ]]; then
       professional_apps_unverified_allowed "$id" || {
