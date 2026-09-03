@@ -16,9 +16,12 @@ if grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/generate-fedora44
   echo 'Kickstart must not silently introduce LUKS into the chosen Golden policy' >&2
   exit 1
 fi
-grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_LIFECYCLE_MODE="candidate-certified"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_KEEP_PREVIOUS_CERTIFIED="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'diagnostics/final-certification" certify' "$ROOT/lib/kernel_lifecycle.sh"
 
 # Config is schema-validated before sourcing and remains declarative.
 [[ -r "$ROOT/config/schema.digest" ]]
