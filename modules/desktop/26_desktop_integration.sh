@@ -17,11 +17,16 @@ Complete Fedora GNOME daily-workstation integration:
 - mobile/iPhone filesystem support
 - Intel Arc Level Zero/OpenCL compute
 - functional Wayland/Flatpak portal surfaces
+- legacy input-method workaround remains opt-in and is never coupled to Nautilus
 EOF
 }
 
 desktop_integration_apply() {
   install_manifest_packages DESKTOP "$REPO_ROOT/manifests/packages-desktop-integration.txt" || return "$EXIT_APPLY_FAILED"
+
+  if is_true "${REMOVE_IBUS_TYPING_BOOSTER:-false}" && rpm -q ibus-typing-booster >/dev/null 2>&1; then
+    run_mutating DESKTOP sudo dnf -y remove ibus-typing-booster || return "$EXIT_APPLY_FAILED"
+  fi
 
   run_mutating DESKTOP sudo systemctl enable --now cups.socket || return "$EXIT_APPLY_FAILED"
   run_mutating DESKTOP sudo systemctl enable --now avahi-daemon.service || return "$EXIT_APPLY_FAILED"
