@@ -23,9 +23,9 @@ for stale in BASELINE_NVME_TEST_SECONDS BASELINE_NVME_VERIFY_SECONDS DISPLAY_PRE
   ! grep -RIn "^${stale}=" "$ROOT/config" >/dev/null || { echo "stale config key remains: $stale" >&2; exit 1; }
 done
 
-grep -Fq 'KERNEL_LIFECYCLE_MODE="candidate-certified"' "$ROOT/config/kernel.conf"
+grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'keep_previous_certified=true' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="false"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_KEEP_PREVIOUS_CERTIFIED="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'kernel_lifecycle_latest_available' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/lib/kernel_lifecycle.sh"
