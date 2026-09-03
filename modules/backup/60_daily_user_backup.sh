@@ -7,12 +7,14 @@ backup_daily_precheck() {
 }
 
 backup_daily_plan() {
-  echo 'Install a persistent user timer for encrypted daily Restic backups; unavailable external targets are skipped without weakening pre-APPLY fail-closed backup policy.'
+  echo 'Install a persistent user timer for encrypted daily Restic backups, bound to the Git SHA applied to the workstation; unavailable external targets are skipped without weakening pre-APPLY fail-closed backup policy.'
 }
 
 backup_daily_apply() {
-  local service
+  local service applied_sha
   is_true "${DAILY_BACKUP_ENABLED:-true}" || return 0
+  applied_sha="$(repo_commit)"
+  [[ "$applied_sha" =~ ^[0-9a-fA-F]{40}$ ]] || return "$EXIT_APPLY_FAILED"
 
   if is_true "${DRY_RUN:-true}"; then
     run_mutating BACKUP install -m 0755 "$REPO_ROOT/scripts/backup/daily-user-backup.sh" "$HOME/.local/libexec/fedora-gnome-daily-backup"
@@ -32,6 +34,7 @@ After=network-online.target
 [Service]
 Type=oneshot
 Environment="FEDORA_GNOME_CUSTOM_REPO=$REPO_ROOT"
+Environment="FEDORA_GNOME_CUSTOM_APPLIED_SHA=$applied_sha"
 ExecStart=%h/.local/libexec/fedora-gnome-daily-backup
 EOF
   chmod 0644 "$service"
