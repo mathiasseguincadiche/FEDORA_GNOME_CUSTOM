@@ -1,14 +1,24 @@
 [Unit]
-Description=FEDORA_GNOME_CUSTOM KVM fail-closed LAN isolation guard
+Description=FEDORA_GNOME_CUSTOM KVM fail-closed host-network isolation guard
 Wants=network-online.target
 After=network-online.target firewalld.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
 Environment=KVM_BRIDGE_NAME=virbr50
 Environment=KVM_NETWORK_CIDR=192.168.50.0/24
 Environment=KVM_NFT_TABLE=fedora_gnome_custom_kvm
+Environment=KVM_BLOCK_ROUTED_HOST_NETWORKS=true
 ExecStart=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard reconcile
 ExecReload=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard reconcile
 ExecStop=/usr/local/libexec/fedora-gnome-custom/kvm-network-guard remove
