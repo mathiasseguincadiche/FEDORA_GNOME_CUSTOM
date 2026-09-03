@@ -52,15 +52,27 @@ jobs:
             manifests/packages-applications-gtk4.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install dbus-daemon "${packages[@]}"
           rpm -q nautilus gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus ptyxis
-      - name: Validate Nautilus integration payloads
+      - name: Validate File Roller Nautilus extension payload
         shell: bash
         run: |
           set -Eeuo pipefail
           file_roller_payload="$(rpm -ql file-roller-nautilus)"
           grep -Eq '/nautilus/extensions-4/.*\.so$' <<<"${file_roller_payload}"
+      - name: Validate Nautilus GSettings schema
+        shell: bash
+        run: |
+          set -Eeuo pipefail
           nautilus_schemas="$(gsettings list-schemas)"
           grep -Fxq 'org.gnome.nautilus.preferences' <<<"${nautilus_schemas}"
+      - name: Validate GVfs GIO D-Bus enumeration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
           dbus-run-session -- gio mount -l >/dev/null
+      - name: Validate Nautilus CLI
+        shell: bash
+        run: |
+          set -Eeuo pipefail
           nautilus --version
       - name: Validate native Ptyxis payload
         shell: bash
@@ -68,6 +80,14 @@ jobs:
           set -Eeuo pipefail
           command -v ptyxis >/dev/null
           test -r /usr/share/applications/org.gnome.Ptyxis.desktop
+      - name: Validate Ptyxis GSettings schema
+        shell: bash
+        run: |
+          set -Eeuo pipefail
           ptyxis_schemas="$(gsettings list-schemas)"
           grep -Fxq 'org.gnome.Ptyxis' <<<"${ptyxis_schemas}"
+      - name: Validate Ptyxis CLI
+        shell: bash
+        run: |
+          set -Eeuo pipefail
           ptyxis --version
