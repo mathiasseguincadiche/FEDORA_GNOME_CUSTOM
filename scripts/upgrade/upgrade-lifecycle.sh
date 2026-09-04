@@ -38,7 +38,7 @@ final_release_url() {
 
 final_release_available() {
   local target="$1"
-  command -v curl >/dev/null 2>&1 || return 1
+  command_exists curl || return 1
   curl -fsSL --connect-timeout 10 --max-time 30 -o /dev/null "$(final_release_url "$target")"
 }
 
@@ -94,7 +94,7 @@ write_inventory() {
 
 check() {
   local target="${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}" report duplicates
-  command -v dnf5 >/dev/null 2>&1 || { ui_error 'dnf5 is required'; return "$EXIT_PRECHECK_FAILED"; }
+  command_exists dnf5 || { ui_error 'dnf5 is required'; return "$EXIT_PRECHECK_FAILED"; }
   valid_target "$target" || { ui_error "Only the validated one-hop path ${FEDORA_UPGRADE_SOURCE_RELEASE:-44} -> ${FEDORA_UPGRADE_TARGET_RELEASE:-45} is allowed"; return "$EXIT_SECURITY_BLOCK"; }
   upgrade_ensure_dirs
   report="$(upgrade_report "$target")"
@@ -111,13 +111,16 @@ check() {
 qualify() {
   local target="${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}" report txdir duplicates
   check "$target"
-  command -v dnf5 >/dev/null 2>&1 || return "$EXIT_PRECHECK_FAILED"
+  command_exists dnf5 || return "$EXIT_PRECHECK_FAILED"
   upgrade_ensure_dirs
   report="$(upgrade_report "$target")"
   txdir="$(mktemp -d)"
   trap 'rm -rf "$txdir"' RETURN
 
-  duplicates="$(repo_query_lines duplicates)"
+  if ! duplicates="$(dnf5 -q repoquery --duplicates)"; then
+    ui_error 'Unable to query installed duplicate RPMs'
+    return "$EXIT_PRECHECK_FAILED"
+  fi
   if [[ -n "$duplicates" ]]; then
     ui_error 'Installed duplicate RPMs block Fedora N+1 qualification'
     return "$EXIT_PRECHECK_FAILED"
@@ -158,7 +161,7 @@ qualify() {
 }
 
 prepare() {
-  local target="${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}"
+  local target="${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}" rc=0
   runtime_is_baremetal || { ui_error 'Major Fedora upgrade preparation is bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
   valid_target "$target" || { ui_error 'Invalid major-upgrade target'; return "$EXIT_SECURITY_BLOCK"; }
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet || { ui_error 'Golden HOST policy is not compliant'; return "$EXIT_SECURITY_BLOCK"; }
@@ -168,8 +171,9 @@ prepare() {
   if is_true "${FEDORA_UPGRADE_REQUIRE_PREAPPLY_BACKUP:-true}"; then apply_gate_require_backup || { ui_error 'Fresh same-commit Restic backup + restore-canary proof required'; return "$EXIT_PRECHECK_FAILED"; }; fi
   if is_true "${FEDORA_UPGRADE_REQUIRE_QUALIFICATION:-true}"; then qualification_fresh "$target" || { ui_error 'Fresh same-commit N+1 qualification marker required'; return "$EXIT_PRECHECK_FAILED"; }; fi
   if is_true "${FEDORA_UPGRADE_REQUIRE_FINAL_RELEASE:-true}"; then final_release_available "$target" || { ui_error "Fedora $target final release is not published; preparation is intentionally blocked"; return "$EXIT_PRECHECK_FAILED"; }; fi
-  command -v dnf5 >/dev/null 2>&1 || return "$EXIT_PRECHECK_FAILED"
+  command_exists dnf5 || return "$EXIT_PRECHECK_FAILED"
   dnf5 system-upgrade --help >/dev/null 2>&1 || { ui_error 'dnf5 system-upgrade plugin is unavailable'; return "$EXIT_PRECHECK_FAILED"; }
+  command_exists needs-restarting || { ui_error 'needs-restarting is required before major-upgrade preparation'; return "$EXIT_PRECHECK_FAILED"; }
 
   if ! needs-restarting -r >/dev/null 2>&1; then
     ui_error 'Current Fedora requires a reboot before major-upgrade preparation'
@@ -230,7 +234,7 @@ status() {
 
 clean() {
   runtime_is_baremetal || { ui_error 'Cleanup is bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
-  command -v dnf5 >/dev/null 2>&1 || return "$EXIT_PRECHECK_FAILED"
+  command_exists dnf5 || return "$EXIT_PRECHECK_FAILED"
   sudo dnf5 system-upgrade clean
   rm -f "$(upgrade_prepared_marker "${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}")"
   ui_check OK 'Offline transaction' cleaned
