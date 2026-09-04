@@ -25,15 +25,21 @@ emit() {
 
 $quiet || ui_banner 'GOLDEN HOST POLICY' 'SECURE BOOT OFF — LOCAL DISK ENCRYPTION FORBIDDEN'
 
-[[ "${HOST_SECURE_BOOT_POLICY:-}" == "disabled-required" ]] \
-  && emit OK 'Secure Boot policy' 'disabled-required' \
-  || emit KO 'Secure Boot policy' 'must be disabled-required'
-[[ "${HOST_STORAGE_ENCRYPTION_POLICY:-}" == "forbidden" ]] \
-  && emit OK 'Storage encryption policy' forbidden \
-  || emit KO 'Storage encryption policy' 'must be forbidden'
-[[ "${HOST_LUKS_POLICY:-}" == "forbidden" ]] \
-  && emit OK 'LUKS policy' forbidden \
-  || emit KO 'LUKS policy' 'must be forbidden'
+if [[ "${HOST_SECURE_BOOT_POLICY:-}" == "disabled-required" ]]; then
+  emit OK 'Secure Boot policy' 'disabled-required'
+else
+  emit KO 'Secure Boot policy' 'must be disabled-required'
+fi
+if [[ "${HOST_STORAGE_ENCRYPTION_POLICY:-}" == "forbidden" ]]; then
+  emit OK 'Storage encryption policy' forbidden
+else
+  emit KO 'Storage encryption policy' 'must be forbidden'
+fi
+if [[ "${HOST_LUKS_POLICY:-}" == "forbidden" ]]; then
+  emit OK 'LUKS policy' forbidden
+else
+  emit KO 'LUKS policy' 'must be forbidden'
+fi
 
 if runtime_is_baremetal; then
   if command_exists mokutil; then
