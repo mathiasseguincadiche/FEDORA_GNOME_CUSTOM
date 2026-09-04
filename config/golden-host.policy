@@ -1,0 +1,7 @@
+# Fedora Golden Workstation — host security/storage invariants
+# This file is policy, not an optional profile. Values are intentionally fixed.
+# Scope: physical Fedora Golden HOST and its local block storage.
+
+HOST_SECURE_BOOT_POLICY=disabled-required
+HOST_STORAGE_ENCRYPTION_POLICY=forbidden
+HOST_LUKS_POLICY=forbidden
