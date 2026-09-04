@@ -18,6 +18,13 @@ if [[ "${1:-}" == kernel ]]; then
   esac
 fi
 
+# Major Fedora upgrades have their own fail-closed engine. Keeping this routing
+# outside the UI layer prevents DNF system-upgrade business logic from leaking
+# into the Control Center facade.
+if [[ "${1:-}" == upgrade ]]; then
+  exec bash "$REPO_ROOT/scripts/upgrade/upgrade-lifecycle.sh" "${@:2}"
+fi
+
 # shellcheck source=lib/control_center.sh
 source "$REPO_ROOT/lib/control_center.sh"
 control_center_main "$@"
