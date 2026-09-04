@@ -39,58 +39,112 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          state=/tmp/f45-qualification
+          mkdir -p "$state"
+
           grep -Eq '^VERSION_ID="?45"?$' /etc/os-release
           dnf -y install dnf5-plugins curl jq gnome-shell nautilus ptyxis restic qemu-kvm libvirt mesa-dri-drivers mesa-vulkan-drivers flatpak
+
           shell_major="$(rpm -q --qf '%{VERSION}' gnome-shell | cut -d. -f1)"
           test "$shell_major" -ge 51
           dnf5 repoclosure --help >/dev/null
-          dnf5 repoquery --duplicates >/tmp/f45-duplicates.txt || true
-          dnf5 repoquery --extras >/tmp/f45-extras.txt || true
-          dnf5 repoclosure --json >/tmp/f45-repoclosure.json
+
+          if ! dnf5 repoquery --duplicates >"$state/duplicates.txt" 2>"$state/duplicates.err"; then
+            printf 'ERROR: dnf5 repoquery --duplicates failed.\n' >&2
+            cat "$state/duplicates.err" >&2
+            exit 1
+          fi
+          if ! dnf5 repoquery --extras >"$state/extras.txt" 2>"$state/extras.err"; then
+            printf 'ERROR: dnf5 repoquery --extras failed.\n' >&2
+            cat "$state/extras.err" >&2
+            exit 1
+          fi
+
+          # shellcheck disable=SC1091
+          source lib/fedora-upgrade-qualification.sh
+          if ! fedora_upgrade_repoclosure_probe 45 "$state/repoclosure.json" "$state/repoclosure.err" "$state/repoclosure.status"; then
+            printf 'ERROR: repoclosure mechanism failed or produced an invalid report.\n' >&2
+            cat "$state/repoclosure.err" >&2 || true
+            exit 1
+          fi
+
           rpm -q gnome-shell nautilus ptyxis restic qemu-kvm libvirt mesa-dri-drivers mesa-vulkan-drivers flatpak
+          printf 'PASS\n' >"$state/mechanism.status"
 
       - name: Build Fedora 45 qualification report
         shell: bash
         run: |
           set -Eeuo pipefail
+          state=/tmp/f45-qualification
           report=fedora45-qualification-report.txt
           blockers=0
+
+          grep -Fxq 'PASS' "$state/mechanism.status"
           {
             printf 'Fedora 45 N+1 qualification report\n'
             printf 'generated_utc=%s\n' "$(date -u +%FT%TZ)"
             printf 'project_sha=%s\n' "$GITHUB_SHA"
             printf 'fedora_release=45\n'
             printf 'gnome_shell=%s\n' "$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell)"
+            printf 'mechanism_status=PASS\n'
             printf '\n[duplicates]\n'
-            cat /tmp/f45-duplicates.txt
+            cat "$state/duplicates.txt"
             printf '\n[extras]\n'
-            cat /tmp/f45-extras.txt
+            cat "$state/extras.txt"
             printf '\n[repository-closure]\n'
-            cat /tmp/f45-repoclosure.json
+            cat "$state/repoclosure.json"
             printf '\n[golden-extension-compatibility]\n'
-          } > "$report"
+          } >"$report"
+
+          if grep -Fxq 'BLOCKED' "$state/repoclosure.status"; then
+            closure_count="$(jq 'length' "$state/repoclosure.json")"
+            printf 'BLOCKER: Fedora 45 repositories contain %s unresolved dependency set(s); see repository-closure.\n' "$closure_count" >>"$report"
+            blockers=$((blockers+1))
+          fi
 
           if grep -Eq 'shell_version=.*50|GNOME Shell target.*50' scripts/gnome/install-*.sh; then
-            printf 'BLOCKER: reviewed Golden extension artifacts remain pinned to GNOME Shell 50.\n' >> "$report"
+            printf 'BLOCKER: reviewed Golden extension artifacts remain pinned to GNOME Shell 50.\n' >>"$report"
             blockers=$((blockers+1))
           fi
 
           final_url='https://download.fedoraproject.org/pub/fedora/linux/releases/45/'
-          if curl -fsSL --connect-timeout 10 --max-time 30 -o /dev/null "$final_url"; then
-            printf 'final_release=published\n' >> "$report"
+          if http_code="$(curl -sS -L --connect-timeout 10 --max-time 30 -o /dev/null -w '%{http_code}' "$final_url")"; then
+            case "$http_code" in
+              2??|3??)
+                printf 'final_release=published\n' >>"$report"
+                ;;
+              404|410)
+                printf 'final_release=not-published\n' >>"$report"
+                printf 'BLOCKER: Fedora 45 final release is not published at the configured release URL.\n' >>"$report"
+                blockers=$((blockers+1))
+                ;;
+              *)
+                printf 'ERROR: Fedora 45 release publication probe returned HTTP %s.\n' "$http_code" >&2
+                exit 1
+                ;;
+            esac
           else
-            printf 'BLOCKER: Fedora 45 final release is not published at the configured release URL.\n' >> "$report"
-            blockers=$((blockers+1))
+            printf 'ERROR: Fedora 45 release publication probe could not reach the configured URL.\n' >&2
+            exit 1
           fi
 
           if (( blockers == 0 )); then
-            printf 'verdict=READY_FOR_HOST_QUALIFICATION\n' >> "$report"
+            printf 'readiness=READY\nverdict=READY_FOR_HOST_QUALIFICATION\n' >>"$report"
           else
-            printf 'verdict=BLOCKED\nblockers=%d\n' "$blockers" >> "$report"
+            printf 'readiness=BLOCKED\nverdict=BLOCKED\nblockers=%d\n' "$blockers" >>"$report"
           fi
 
           cat "$report"
           test -s "$report"
+
+      - name: Validate Fedora 45 qualification result
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          report=fedora45-qualification-report.txt
+          grep -Fxq 'mechanism_status=PASS' "$report"
+          grep -Eq '^readiness=(READY|BLOCKED)$' "$report"
+          grep -Eq '^verdict=(READY_FOR_HOST_QUALIFICATION|BLOCKED)$' "$report"
 
       - name: Validate static Fedora upgrade contract
         run: bash tests/test_fedora_upgrade_lifecycle_contract.sh
