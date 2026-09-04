@@ -19,9 +19,9 @@ grep -Fq 'sudo reboot' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq "actions/upload-artifact@$UPLOAD_ARTIFACT_SHA" "$ROOT/.github/workflows/vm-pretest.yml"
 grep -Fq 'Backup fail-closed invariants' "$ROOT/.github/workflows/non-regression.yml"
 
-# A status check required by the main ruleset must exist on every pull request.
-# Keep nautilus-ptyxis unfiltered at trigger level; otherwise unrelated PRs can
-# become permanently pending once the check is made mandatory.
+# Status checks required by the main ruleset must exist on every pull request.
+# Keep required workflows unfiltered at trigger level; otherwise unrelated PRs
+# can become permanently pending once the check is mandatory.
 python3 - "$ROOT/.github/workflows/desktop-integration-pretest.yml" <<'PY'
 from pathlib import Path
 import re
@@ -35,6 +35,27 @@ if "paths:" in pr.group("body") or "paths-ignore:" in pr.group("body"):
     raise SystemExit("nautilus-ptyxis required check must not be path-filtered on pull_request")
 if not re.search(r"(?ms)^  push:\s*\n(?:^    .*\n)*?^    branches:\s*\n^      - main\s*$", text):
     raise SystemExit("desktop integration workflow must validate every push to main")
+PY
+
+python3 - "$ROOT/.github/workflows/fedora-host-pretest.yml" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+pr = re.search(r"(?ms)^  pull_request:\s*\n(?P<body>(?:^    .*\n)*)", text)
+if pr is None:
+    raise SystemExit("host integration workflow must run on pull_request")
+if "paths:" in pr.group("body") or "paths-ignore:" in pr.group("body"):
+    raise SystemExit("packages-and-integration required check must not be path-filtered on pull_request")
+push = re.search(r"(?ms)^  push:\s*\n(?P<body>(?:^    .*\n)*)", text)
+if push is None:
+    raise SystemExit("host integration workflow must run on push")
+push_body = push.group("body")
+if "paths:" in push_body or "paths-ignore:" in push_body:
+    raise SystemExit("packages-and-integration required check must validate every push to main")
+if "branches: [main]" not in push_body and not re.search(r"(?m)^    branches:\s*\n^      - main\s*$", push_body):
+    raise SystemExit("host integration workflow push trigger must target main")
 PY
 
 for workflow in fedora-package-preflight.yml fedora-host-pretest.yml vm-pretest.yml; do
