@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_bootstrap
+# shellcheck disable=SC1091
+source "$REPO_ROOT/config/golden-host.policy"
+
+quiet=false
+[[ "${1:-}" == "--quiet" ]] && quiet=true
+ok=0
+warn=0
+ko=0
+
+emit() {
+  local state="$1" label="$2" detail="$3"
+  if ! $quiet; then ui_check "$state" "$label" "$detail"; fi
+  case "$state" in
+    OK) ((ok+=1)) ;;
+    WARN) ((warn+=1)) ;;
+    KO) ((ko+=1)) ;;
+  esac
+}
+
+$quiet || ui_banner 'GOLDEN HOST POLICY' 'SECURE BOOT OFF — LOCAL DISK ENCRYPTION FORBIDDEN'
+
+if [[ "${HOST_SECURE_BOOT_POLICY:-}" == "disabled-required" ]]; then
+  emit OK 'Secure Boot policy' 'disabled-required'
+else
+  emit KO 'Secure Boot policy' 'must be disabled-required'
+fi
+if [[ "${HOST_STORAGE_ENCRYPTION_POLICY:-}" == "forbidden" ]]; then
+  emit OK 'Storage encryption policy' forbidden
+else
+  emit KO 'Storage encryption policy' 'must be forbidden'
+fi
+if [[ "${HOST_LUKS_POLICY:-}" == "forbidden" ]]; then
+  emit OK 'LUKS policy' forbidden
+else
+  emit KO 'LUKS policy' 'must be forbidden'
+fi
+
+if runtime_is_baremetal; then
+  if command_exists mokutil; then
+    sb_state="$(mokutil --sb-state 2>&1 || true)"
+    if grep -Eqi 'SecureBoot disabled|Secure Boot disabled' <<<"$sb_state"; then
+      emit OK 'Secure Boot runtime' disabled
+    else
+      emit KO 'Secure Boot runtime' "${sb_state//$'\n'/ }"
+    fi
+  else
+    emit KO 'Secure Boot runtime' 'mokutil is required for bare-metal proof'
+  fi
+else
+  emit WARN 'Secure Boot runtime' 'physical firmware state deferred outside bare metal'
+fi
+
+crypt_lsblk=''
+if command_exists lsblk; then
+  crypt_lsblk="$(lsblk -nr -o TYPE 2>/dev/null | awk '$1=="crypt" {print}' || true)"
+fi
+if [[ -n "$crypt_lsblk" ]]; then
+  emit KO 'dm-crypt/LUKS runtime' 'active crypt block device detected'
+else
+  emit OK 'dm-crypt/LUKS runtime' 'no active crypt block device'
+fi
+
+crypttab_entries=''
+if [[ -r /etc/crypttab ]]; then
+  crypttab_entries="$(sed -E 's/[[:space:]]*#.*$//' /etc/crypttab | awk 'NF {print}' || true)"
+fi
+if [[ -n "$crypttab_entries" ]]; then
+  emit KO crypttab 'configured encrypted block devices detected'
+else
+  emit OK crypttab 'no configured encrypted block device'
+fi
+
+if command_exists dmsetup; then
+  crypt_targets="$(dmsetup table --target crypt 2>/dev/null || true)"
+  if [[ -n "$crypt_targets" ]]; then
+    emit KO 'device-mapper crypt' 'active crypt target detected'
+  else
+    emit OK 'device-mapper crypt' 'no active crypt target'
+  fi
+else
+  emit WARN 'device-mapper crypt' 'dmsetup unavailable; lsblk/crypttab checks still applied'
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 )) || exit "$EXIT_POSTCHECK_FAILED"

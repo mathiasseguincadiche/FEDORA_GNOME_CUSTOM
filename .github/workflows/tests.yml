@@ -15,6 +15,7 @@ jobs:
       - run: bash tests/test_policy.sh
       - run: bash tests/test_baseline_contract.sh
       - run: bash tests/test_kernel_lifecycle_contract.sh
+      - run: bash tests/test_host_security_policy_contract.sh
       - run: bash tests/test_gtk4_apps_policy.sh
       - run: bash tests/test_professional_apps_contract.sh
       - run: bash tests/test_appimage_contract.sh
