@@ -12,6 +12,7 @@ if lscpu | grep -Fq "$EXPECTED_CPU"; then emit OK CPU "$EXPECTED_CPU"; else emit
 mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
 if (( mem_kib >= 45*1024*1024 )); then emit OK Memory '48 GiB class detected'; else emit KO Memory 'less than expected'; fi
 
+if "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet; then emit OK 'HOST security policy' 'Secure Boot OFF / local disk encryption forbidden'; else emit KO 'HOST security policy' 'Secure Boot or local disk encryption violates Golden policy'; fi
 if "$REPO_ROOT/diagnostics/firmware-doctor" --quiet; then emit OK Firmware 'AMD microcode + Intel GPU firmware'; else emit KO Firmware 'run firmware-doctor'; fi
 if "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet; then emit OK 'Board components' '5G LAN/Wi-Fi/BT/audio/xHCI'; else emit KO 'Board components' 'run hardware-components-doctor'; fi
 if "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; then emit OK Graphics 'Arc B580/xe baseline'; else emit KO Graphics 'run graphics-doctor'; fi
