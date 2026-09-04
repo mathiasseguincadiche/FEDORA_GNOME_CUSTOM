@@ -27,7 +27,7 @@ fi
 # are intentionally excluded because they need to describe and verify the prohibition.
 while IFS= read -r file; do
   if grep -Eqi -- 'cryptsetup[[:space:]].*(luksFormat|luksOpen|open)|autopart[^[:cntrl:]]*--encrypted|--luks-version' "$file"; then
-    echo "Forbidden local disk-encryption implementation detected: ${file#$ROOT/}" >&2
+    echo "Forbidden local disk-encryption implementation detected: ${file#"$ROOT"/}" >&2
     exit 1
   fi
 done < <(find "$ROOT/installer" "$ROOT/modules" "$ROOT/scripts" -type f -print)
