@@ -6,6 +6,8 @@ source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 # shellcheck disable=SC1091
 source "$REPO_ROOT/config/fedora-upgrade.policy"
+# shellcheck disable=SC1091
+source "$REPO_ROOT/lib/fedora-upgrade-qualification.sh"
 
 upgrade_state_dir() { printf '%s/upgrade' "$STATE_ROOT"; }
 upgrade_marker() { printf '%s/qualified-%s.ok' "$(upgrade_state_dir)" "$1"; }
@@ -54,6 +56,8 @@ qualification_fresh() {
   local target="$1" marker age now ts max_hours
   marker="$(upgrade_marker "$target")"
   [[ -s "$marker" ]] || return 1
+  grep -Fxq 'mechanism_status=PASS' "$marker" || return 1
+  grep -Fxq 'readiness=READY' "$marker" || return 1
   grep -Fxq 'verdict=PASS' "$marker" || return 1
   grep -Fxq "source_release=${FEDORA_UPGRADE_SOURCE_RELEASE:-44}" "$marker" || return 1
   grep -Fxq "target_release=$target" "$marker" || return 1
@@ -89,7 +93,7 @@ write_inventory() {
     repo_query_lines extras
     printf '\n[gnome-extension-targets]\n'
     grep -Hn "shell_version=.*50\|GNOME Shell target.*50" "$REPO_ROOT"/scripts/gnome/install-*.sh 2>/dev/null || true
-  } > "$report"
+  } >"$report"
 }
 
 check() {
@@ -109,11 +113,13 @@ check() {
 }
 
 qualify() {
-  local target="${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}" report txdir duplicates
+  local target="${1:-${FEDORA_UPGRADE_TARGET_RELEASE:-45}}" report txdir duplicates closure_status blockers=0 marker
   check "$target"
   command_exists dnf5 || return "$EXIT_PRECHECK_FAILED"
+  command_exists jq || { ui_error 'jq is required'; return "$EXIT_PRECHECK_FAILED"; }
   upgrade_ensure_dirs
   report="$(upgrade_report "$target")"
+  marker="$(upgrade_marker "$target")"
   txdir="$(mktemp -d)"
   trap 'rm -rf "$txdir"' RETURN
 
@@ -122,18 +128,38 @@ qualify() {
     return "$EXIT_PRECHECK_FAILED"
   fi
   if [[ -n "$duplicates" ]]; then
-    ui_error 'Installed duplicate RPMs block Fedora N+1 qualification'
-    return "$EXIT_PRECHECK_FAILED"
+    {
+      printf '\n[blocker]\n'
+      printf 'Installed duplicate RPMs block Fedora N+1 qualification.\n'
+    } >>"$report"
+    blockers=$((blockers+1))
   fi
 
   ui_check OK 'Target metadata' "refreshing Fedora $target repositories"
   dnf5 --releasever="$target" -y makecache --refresh
 
   ui_check OK 'Repository closure' "Fedora $target"
-  dnf5 --releasever="$target" repoclosure --json > "$txdir/repoclosure.json"
+  if ! fedora_upgrade_repoclosure_probe "$target" "$txdir/repoclosure.json" "$txdir/repoclosure.err" "$txdir/repoclosure.status"; then
+    ui_error 'repoclosure mechanism failed or produced an invalid report'
+    cat "$txdir/repoclosure.err" >&2 || true
+    return "$EXIT_PRECHECK_FAILED"
+  fi
+  closure_status="$(<"$txdir/repoclosure.status")"
+  {
+    printf '\n[repository-closure]\n'
+    cat "$txdir/repoclosure.json"
+  } >>"$report"
 
-  ui_check OK 'Transaction resolution' 'distro-sync transaction is stored, not executed'
-  dnf5 --releasever="$target" distro-sync --store="$txdir/transaction"
+  if [[ "$closure_status" == BLOCKED ]]; then
+    {
+      printf '\n[blocker]\n'
+      printf 'Fedora %s repositories contain unresolved dependencies; see repository-closure.\n' "$target"
+    } >>"$report"
+    blockers=$((blockers+1))
+  else
+    ui_check OK 'Transaction resolution' 'distro-sync transaction is stored, not executed'
+    dnf5 --releasever="$target" distro-sync --store="$txdir/transaction"
+  fi
 
   # Current Golden desktop extensions are intentionally pinned to the running
   # GNOME major. A major Fedora qualification must not silently assume they work
@@ -143,21 +169,36 @@ qualify() {
       printf '\n[blocker]\n'
       printf 'Current reviewed GNOME extension artifacts are pinned to GNOME Shell 50.\n'
       printf 'Fedora 45 / GNOME 51 compatibility must be explicitly repinned and reviewed before qualification can pass.\n'
-    } >> "$report"
-    ui_error 'Fedora 45 qualification blocked: Golden GNOME extension artifacts are still pinned to GNOME Shell 50'
-    return "$EXIT_PRECHECK_FAILED"
+    } >>"$report"
+    blockers=$((blockers+1))
   fi
 
-  cat "$txdir/repoclosure.json" >> "$report"
-  {
-    printf 'verdict=PASS\n'
-    printf 'source_release=%s\n' "$(fedora_release)"
-    printf 'target_release=%s\n' "$target"
-    printf 'project_commit=%s\n' "$(repo_commit)"
-    printf 'qualified_utc=%s\n' "$(date -u +%FT%TZ)"
-    printf 'final_release_available=%s\n' "$(final_release_available "$target" && printf yes || printf no)"
-  } > "$(upgrade_marker "$target")"
-  ui_check OK 'Fedora N+1 qualification' "PASS marker=$(upgrade_marker "$target")"
+  if (( blockers == 0 )); then
+    {
+      printf 'mechanism_status=PASS\n'
+      printf 'readiness=READY\n'
+      printf 'verdict=PASS\n'
+      printf 'source_release=%s\n' "$(fedora_release)"
+      printf 'target_release=%s\n' "$target"
+      printf 'project_commit=%s\n' "$(repo_commit)"
+      printf 'qualified_utc=%s\n' "$(date -u +%FT%TZ)"
+      printf 'final_release_available=%s\n' "$(final_release_available "$target" && printf yes || printf no)"
+    } >"$marker"
+    ui_check OK 'Fedora N+1 qualification' "PASS marker=$marker"
+  else
+    {
+      printf 'mechanism_status=PASS\n'
+      printf 'readiness=BLOCKED\n'
+      printf 'verdict=BLOCKED\n'
+      printf 'blockers=%d\n' "$blockers"
+      printf 'source_release=%s\n' "$(fedora_release)"
+      printf 'target_release=%s\n' "$target"
+      printf 'project_commit=%s\n' "$(repo_commit)"
+      printf 'qualified_utc=%s\n' "$(date -u +%FT%TZ)"
+      printf 'final_release_available=%s\n' "$(final_release_available "$target" && printf yes || printf no)"
+    } >"$marker"
+    ui_check WARN 'Fedora N+1 qualification' "BLOCKED blockers=$blockers report=$report"
+  fi
 }
 
 prepare() {
@@ -201,7 +242,7 @@ prepare() {
     printf 'project_commit=%s\n' "$(repo_commit)"
     printf 'prepared_utc=%s\n' "$(date -u +%FT%TZ)"
     printf 'automatic_reboot=false\n'
-  } > "$(upgrade_prepared_marker "$target")"
+  } >"$(upgrade_prepared_marker "$target")"
   ui_check OK 'Offline transaction' 'downloaded and prepared; NOT rebooted'
   printf '\nReview the transaction and backups. The project never auto-reboots into a major upgrade.\n'
   printf 'When deliberately approved by the operator, the DNF command is: sudo dnf5 system-upgrade reboot\n'
