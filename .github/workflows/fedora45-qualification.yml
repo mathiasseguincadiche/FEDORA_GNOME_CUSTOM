@@ -1,0 +1,158 @@
+name: Fedora 45 N+1 qualification
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '19 6 * * 3'
+  push:
+    branches: [main]
+    paths:
+      - 'config/fedora-upgrade.policy'
+      - 'scripts/upgrade/**'
+      - 'scripts/gnome/**'
+      - 'manifests/**'
+      - 'config/repos/**'
+      - '.github/workflows/fedora45-qualification.yml'
+      - 'tests/test_fedora_upgrade_lifecycle_contract.sh'
+  pull_request:
+    paths:
+      - 'config/fedora-upgrade.policy'
+      - 'scripts/upgrade/**'
+      - 'scripts/gnome/**'
+      - 'manifests/**'
+      - 'config/repos/**'
+      - '.github/workflows/fedora45-qualification.yml'
+      - 'tests/test_fedora_upgrade_lifecycle_contract.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  fedora45-qualification:
+    runs-on: ubuntu-latest
+    container: fedora:45
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Fedora 45 / GNOME 51 readiness
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          state=/tmp/f45-qualification
+          mkdir -p "$state"
+
+          grep -Eq '^VERSION_ID="?45"?$' /etc/os-release
+          dnf -y install dnf5-plugins curl jq gnome-shell nautilus ptyxis restic qemu-kvm libvirt mesa-dri-drivers mesa-vulkan-drivers flatpak
+
+          shell_major="$(rpm -q --qf '%{VERSION}' gnome-shell | cut -d. -f1)"
+          test "$shell_major" -ge 51
+          dnf5 repoclosure --help >/dev/null
+
+          if ! dnf5 repoquery --duplicates >"$state/duplicates.txt" 2>"$state/duplicates.err"; then
+            printf 'ERROR: dnf5 repoquery --duplicates failed.\n' >&2
+            cat "$state/duplicates.err" >&2
+            exit 1
+          fi
+          if ! dnf5 repoquery --extras >"$state/extras.txt" 2>"$state/extras.err"; then
+            printf 'ERROR: dnf5 repoquery --extras failed.\n' >&2
+            cat "$state/extras.err" >&2
+            exit 1
+          fi
+
+          # shellcheck disable=SC1091
+          source lib/fedora-upgrade-qualification.sh
+          if ! fedora_upgrade_repoclosure_probe 45 "$state/repoclosure.json" "$state/repoclosure.err" "$state/repoclosure.status"; then
+            printf 'ERROR: repoclosure mechanism failed or produced an invalid report.\n' >&2
+            cat "$state/repoclosure.err" >&2 || true
+            exit 1
+          fi
+
+          rpm -q gnome-shell nautilus ptyxis restic qemu-kvm libvirt mesa-dri-drivers mesa-vulkan-drivers flatpak
+          printf 'PASS\n' >"$state/mechanism.status"
+
+      - name: Build Fedora 45 qualification report
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          state=/tmp/f45-qualification
+          report=fedora45-qualification-report.txt
+          blockers=0
+
+          grep -Fxq 'PASS' "$state/mechanism.status"
+          {
+            printf 'Fedora 45 N+1 qualification report\n'
+            printf 'generated_utc=%s\n' "$(date -u +%FT%TZ)"
+            printf 'project_sha=%s\n' "$GITHUB_SHA"
+            printf 'fedora_release=45\n'
+            printf 'gnome_shell=%s\n' "$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell)"
+            printf 'mechanism_status=PASS\n'
+            printf '\n[duplicates]\n'
+            cat "$state/duplicates.txt"
+            printf '\n[extras]\n'
+            cat "$state/extras.txt"
+            printf '\n[repository-closure]\n'
+            cat "$state/repoclosure.json"
+            printf '\n[golden-extension-compatibility]\n'
+          } >"$report"
+
+          if grep -Fxq 'BLOCKED' "$state/repoclosure.status"; then
+            closure_count="$(jq 'length' "$state/repoclosure.json")"
+            printf 'BLOCKER: Fedora 45 repositories contain %s unresolved dependency set(s); see repository-closure.\n' "$closure_count" >>"$report"
+            blockers=$((blockers+1))
+          fi
+
+          if grep -Eq 'shell_version=.*50|GNOME Shell target.*50' scripts/gnome/install-*.sh; then
+            printf 'BLOCKER: reviewed Golden extension artifacts remain pinned to GNOME Shell 50.\n' >>"$report"
+            blockers=$((blockers+1))
+          fi
+
+          final_url='https://download.fedoraproject.org/pub/fedora/linux/releases/45/'
+          if http_code="$(curl -sS -L --connect-timeout 10 --max-time 30 -o /dev/null -w '%{http_code}' "$final_url")"; then
+            case "$http_code" in
+              2??|3??)
+                printf 'final_release=published\n' >>"$report"
+                ;;
+              404|410)
+                printf 'final_release=not-published\n' >>"$report"
+                printf 'BLOCKER: Fedora 45 final release is not published at the configured release URL.\n' >>"$report"
+                blockers=$((blockers+1))
+                ;;
+              *)
+                printf 'ERROR: Fedora 45 release publication probe returned HTTP %s.\n' "$http_code" >&2
+                exit 1
+                ;;
+            esac
+          else
+            printf 'ERROR: Fedora 45 release publication probe could not reach the configured URL.\n' >&2
+            exit 1
+          fi
+
+          if (( blockers == 0 )); then
+            printf 'readiness=READY\nverdict=READY_FOR_HOST_QUALIFICATION\n' >>"$report"
+          else
+            printf 'readiness=BLOCKED\nverdict=BLOCKED\nblockers=%d\n' "$blockers" >>"$report"
+          fi
+
+          cat "$report"
+          test -s "$report"
+
+      - name: Validate Fedora 45 qualification result
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          report=fedora45-qualification-report.txt
+          grep -Fxq 'mechanism_status=PASS' "$report"
+          grep -Eq '^readiness=(READY|BLOCKED)$' "$report"
+          grep -Eq '^verdict=(READY_FOR_HOST_QUALIFICATION|BLOCKED)$' "$report"
+
+      - name: Validate static Fedora upgrade contract
+        run: bash tests/test_fedora_upgrade_lifecycle_contract.sh
+
+      - name: Upload Fedora 45 qualification report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fedora45-qualification-${{ github.run_id }}
+          path: fedora45-qualification-report.txt
+          if-no-files-found: warn
