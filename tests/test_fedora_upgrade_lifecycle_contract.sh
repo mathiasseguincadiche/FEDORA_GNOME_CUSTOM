@@ -19,7 +19,7 @@ grep -Fxq 'FEDORA_UPGRADE_ALLOW_ALLERASING=false' "$policy"
 grep -Fxq 'FEDORA_UPGRADE_AUTOMATIC_REBOOT=false' "$policy"
 
 grep -Fq "upgrade-lifecycle.sh\" \"\${@:2}\"" "$ROOT/control.sh"
-grep -Fq 'fedora_upgrade_repoclosure_probe "$target"' "$engine"
+grep -Fq "fedora_upgrade_repoclosure_probe \"\$target\"" "$engine"
 grep -Fq "distro-sync --store=\"\$txdir/transaction\"" "$engine"
 grep -Fq 'apply_gate_require_backup' "$engine"
 grep -Fq 'current_gold_cert_valid' "$engine"
@@ -40,7 +40,10 @@ grep -Fq "printf 'fedora_release=%s\\n'" "$ROOT/lib/baseline.sh"
 # Current GNOME 50 reviewed artifacts are a business blocker, not a mechanism
 # crash. The qualify command records BLOCKED and returns normally.
 grep -Fq 'Current reviewed GNOME extension artifacts are pinned to GNOME Shell 50.' "$engine"
-! grep -Fq "return \"\$EXIT_PRECHECK_FAILED\"" < <(grep -A8 'GNOME Shell 50' "$engine")
+if grep -Fq "return \"\$EXIT_PRECHECK_FAILED\"" < <(grep -A8 'GNOME Shell 50' "$engine"); then
+  printf 'FAIL: GNOME 50 pin mismatch must be BLOCKED, not a mechanism error\n' >&2
+  exit 1
+fi
 
 [[ -r "$workflow" ]]
 grep -Fq 'container: fedora:45' "$workflow"
@@ -50,14 +53,23 @@ grep -Fq 'mechanism_status=PASS' "$workflow"
 grep -Fq 'readiness=BLOCKED' "$workflow"
 grep -Fq 'Validate Fedora 45 qualification result' "$workflow"
 grep -Fq 'fedora_upgrade_repoclosure_probe 45' "$workflow"
-grep -Fq 'test -s "$report"' "$workflow"
+grep -Fq "test -s \"\$report\"" "$workflow"
 
 # Guard rails: no broad error suppression and no forbidden major-upgrade
 # dependency erasure. repoclosure remains mandatory.
-! grep -Fq 'continue-on-error:' "$workflow"
-! grep -Eq 'dnf5 .*--allowerasing' "$engine" "$workflow"
-! grep -Eq 'repoclosure .*([|][|] true|continue-on-error)' "$engine" "$workflow"
-grep -Fq 'dnf5 --releasever="$target" repoclosure --json' "$helper"
+if grep -Fq 'continue-on-error:' "$workflow"; then
+  printf 'FAIL: broad continue-on-error is forbidden\n' >&2
+  exit 1
+fi
+if grep -Eq 'dnf5 .*--allowerasing' "$engine" "$workflow"; then
+  printf 'FAIL: --allowerasing is forbidden\n' >&2
+  exit 1
+fi
+if grep -Eq 'repoclosure .*([|][|] true|continue-on-error)' "$engine" "$workflow"; then
+  printf 'FAIL: repoclosure must not be bypassed\n' >&2
+  exit 1
+fi
+grep -Fq "dnf5 --releasever=\"\$target\" repoclosure --json" "$helper"
 
 # Behavioral contract for repoclosure classification. DNF5 documents rc=1 as
 # the unresolved-dependency result; valid non-empty JSON must therefore become
