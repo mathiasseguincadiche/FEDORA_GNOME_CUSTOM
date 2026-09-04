@@ -33,9 +33,14 @@ runtime_component_version() {
   printf '%s\n' "${version:-missing}"
 }
 
+runtime_fedora_release() {
+  awk -F= '$1=="VERSION_ID" {gsub(/"/,"",$2); print $2; exit}' /etc/os-release 2>/dev/null || printf 'unknown\n'
+}
+
 workstation_runtime_fingerprint_payload() {
   local pkg
   printf 'hardware=%s\n' "$(baseline_fingerprint)"
+  printf 'fedora_release=%s\n' "$(runtime_fedora_release)"
   printf 'kernel=%s\n' "$(uname -r)"
   for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell}; do
     printf '%s=%s\n' "$pkg" "$(runtime_component_version "$pkg")"
