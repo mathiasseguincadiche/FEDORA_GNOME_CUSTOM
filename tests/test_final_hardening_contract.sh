@@ -102,7 +102,7 @@ SH
   [[ "${ORCH_RESULTS[*]}" == *'contract missing fake_module_apply'* ]]
 )
 
-# A mid-APPLY module failure preserves its rc and produces a durable partial report.
+# A mid-APPLY module failure preserves its rc and produces durable text + JSON reports.
 cat > "$tmp/fail.sh" <<'SH'
 fail_module_precheck() { :; }
 fail_module_plan() { printf 'plan\n'; }
@@ -128,7 +128,8 @@ SH
   [[ "$rc" -eq 42 ]]
   report="$(orchestrator_report)"
   [[ -s "$report" ]]
-  grep -Eq 'fail\.module.*apply rc=42' "$report"
+  [[ -s "$REPORT_ROOT/run-$RUN_ID.json" ]]
+  grep -Eq 'fail\.module.*apply.*42.*apply rc=42' "$report"
 )
 grep -Fq 'REAL APPLY FAILED rc=' "$ROOT/install.sh"
 grep -Fq 'SYSTEM MAY BE PARTIALLY CONVERGED' "$ROOT/install.sh"
@@ -168,25 +169,38 @@ grep -Fq "cc_option 9 'Appliquer rétention Restic'" "$ROOT/lib/control_center.s
 grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq 'copie de récupération hors machine' "$ROOT/docs/BACKUP_RESTORE.md"
 
-# KVM protects explicit non-default IPv4 HOST routes while preserving Internet default route.
+# KVM protects explicit main-table and policy-routed IPv4 HOST networks while preserving the Internet default route.
 grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
 grep -Fq 'blocked_host_ipv4' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq 'protected_networks=' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 grep -Fq 'route show table main' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq "\"\$prefix\" != default" "$ROOT/scripts/kvm/kvm_network_guard.sh"
+grep -Fq 'ip -4 rule show' "$ROOT/scripts/kvm/kvm_network_guard.sh"
+grep -Fq 'custom_policy_tables' "$ROOT/scripts/kvm/kvm_network_guard.sh"
 cat > "$tmp/ip" <<'SH'
 #!/usr/bin/env sh
 case "$*" in
   '-4 route show default')
     echo 'default via 192.168.1.1 dev enp1s0 proto dhcp'
     ;;
+  '-4 rule show')
+    cat <<'EOF'
+0: from all lookup local
+1000: from 10.8.0.0/24 lookup 100
+32766: from all lookup main
+32767: from all lookup default
+EOF
+    ;;
   '-4 route show table main')
     cat <<'EOF'
 default via 192.168.1.1 dev enp1s0 proto dhcp
 192.168.1.0/24 dev enp1s0 proto kernel scope link src 192.168.1.20
+192.168.50.0/24 dev virbr50 proto kernel scope link src 192.168.50.254
+EOF
+    ;;
+  '-4 route show table 100')
+    cat <<'EOF'
 10.8.0.0/24 dev tun0 proto kernel scope link src 10.8.0.2
 172.20.0.0/16 via 10.8.0.1 dev tun0
-192.168.50.0/24 dev virbr50 proto kernel scope link src 192.168.50.254
 EOF
     ;;
 esac
@@ -202,6 +216,7 @@ chmod +x "$tmp/ip" "$tmp/nft"
 (
   PATH="$tmp:$PATH"
   output="$(KVM_BLOCK_ROUTED_HOST_NETWORKS=true bash "$ROOT/scripts/kvm/kvm_network_guard.sh" check)"
+  grep -Fq 'policy_tables=100' <<<"$output"
   grep -Fq 'protected_networks=10.8.0.0/24,172.20.0.0/16,192.168.1.0/24' <<<"$output"
   grep -Fq 'guard_mode=normal' <<<"$output"
 )

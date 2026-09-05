@@ -13,6 +13,10 @@ engine_bootstrap() {
   source "$REPO_ROOT/lib/module_catalog.sh"
   source "$REPO_ROOT/lib/orchestrator.sh"
   source "$REPO_ROOT/lib/baseline.sh"
+  source "$REPO_ROOT/lib/evidence.sh"
+  source "$REPO_ROOT/lib/hardware_profile.sh"
+  source "$REPO_ROOT/lib/storage_health.sh"
+  source "$REPO_ROOT/lib/backup_runtime.sh"
   source "$REPO_ROOT/lib/apply_gate.sh"
   logging_init
   config_load

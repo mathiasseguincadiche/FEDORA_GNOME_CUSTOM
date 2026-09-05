@@ -42,11 +42,11 @@ grep -Fq "fingerprint=\$expected" "$ROOT/lib/control_center.sh"
 grep -Fq 'STALE' "$ROOT/lib/control_center.sh"
 
 # Thin facade: dangerous business logic must stay in the dedicated engines.
-if grep -Eq 'apply_gate_open|dnf[[:space:]]+upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh"; then
+if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh"; then
   echo 'business logic leaked into control_center.sh' >&2
   exit 1
 fi
-if grep -Eq 'apply_gate_open|dnf[[:space:]]+upgrade|restic[[:space:]]+backup' "$ROOT/control.sh"; then
+if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|restic[[:space:]]+backup' "$ROOT/control.sh"; then
   echo 'business logic leaked into control.sh' >&2
   exit 1
 fi
@@ -63,11 +63,13 @@ grep -Fq 'candidate|boot-candidate|certify|rollback' "$ROOT/control.sh"
 grep -Fq 'rollback-fedora' "$ROOT/control.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib/control_center.sh"
 
-# Full update is fail-closed around a real Restic system backup and remains bare-metal only.
+# Routine Fedora updates are fail-closed, bare-metal only, backed up first and staged offline.
 grep -Fq 'runtime_is_baremetal' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'mandatory_preupdate_backup' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/backup/backup-now.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
-grep -Fq 'sudo dnf upgrade --refresh -y' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq 'sudo dnf5 --refresh upgrade --offline -y' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq 'sudo dnf5 offline reboot' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq 'sudo dnf5 check' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'flatpak update -y' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq "\"\$REPO_ROOT/diagnostic.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
 
@@ -84,13 +86,13 @@ grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 
-# Update order: backup must appear before DNF in the protected full-update branch.
+# Update order: backup must precede preparation of the offline DNF transaction.
 python3 - "$ROOT/scripts/maintenance/update-system.sh" <<'PY'
 from pathlib import Path
 import sys
 text = Path(sys.argv[1]).read_text(encoding='utf-8')
 branch = text.split('  --apply)', 1)[1].split('    ;;', 1)[0]
-assert branch.index('mandatory_preupdate_backup') < branch.index('apply_dnf'), 'backup must precede DNF'
+assert branch.index('mandatory_preupdate_backup') < branch.index('prepare_dnf_offline'), 'backup must precede offline DNF preparation'
 PY
 
 # Real non-interactive smoke test of the dashboard. It must not require Fedora or bare-metal.
@@ -105,6 +107,7 @@ grep -Fq 'vanilla/stable latest-stable' "$status_file"
 # Documentation must explain both interactive and CLI use and the no-auto-flash rule.
 grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh update all' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'DNF5 offline' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kernel candidate' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kernel certify' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"

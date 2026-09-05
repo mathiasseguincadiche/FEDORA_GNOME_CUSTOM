@@ -19,9 +19,47 @@ matrix_payload(){
   done
 }
 
+matrix_write_current(){
+  matrix_payload | evidence_atomic_write "$current" 0600
+}
+
+matrix_diff(){
+  matrix_write_current || { ui_error 'required package missing while building current software matrix'; return 1; }
+  [[ -s "$approved" ]] || { ui_check WARN 'Software matrix diff' 'no certified matrix exists yet'; return 1; }
+  python3 - "$approved" "$current" <<'PY'
+from pathlib import Path
+import sys
+
+def read(path, approved=False):
+    out={}
+    for line in Path(path).read_text(encoding='utf-8').splitlines():
+        if '=' not in line: continue
+        k,v=line.split('=',1)
+        if approved and k in {'matrix_hash','certified_utc'}: continue
+        out[k]=v
+    return out
+old=read(sys.argv[1], True); new=read(sys.argv[2])
+keys=sorted(set(old)|set(new))
+changes=[]
+for k in keys:
+    if old.get(k) != new.get(k): changes.append((k, old.get(k), new.get(k)))
+if not changes:
+    print('SOFTWARE MATRIX: IDENTICAL TO CERTIFIED')
+    raise SystemExit(0)
+print('SOFTWARE MATRIX: STALE')
+print()
+for k,a,b in changes:
+    if a is None: print(f'ADDED    {k}: {b}')
+    elif b is None: print(f'REMOVED  {k}: {a}')
+    else: print(f'CHANGED  {k}: {a} -> {b}')
+raise SystemExit(1)
+PY
+}
+
 case "${1:-status}" in
   snapshot)
-    matrix_payload | tee "$current"
+    matrix_write_current
+    cat "$current"
     ;;
   certify)
     runtime_is_baremetal || { ui_error 'software matrix certification is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }
@@ -29,16 +67,19 @@ case "${1:-status}" in
     "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
     "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
     "$REPO_ROOT/diagnostics/storage-doctor" --quiet
-    matrix_payload > "$current"
+    matrix_write_current
     {
       printf 'matrix_hash=%s\n' "$(sha256sum "$current" | awk '{print $1}')"
       printf 'certified_utc=%s\n' "$(date -u +%FT%TZ)"
       cat "$current"
-    } > "$approved"
+    } | evidence_atomic_write "$approved" 0600
     ui_check OK 'Software matrix' "$approved"
     ;;
+  diff)
+    matrix_diff
+    ;;
   --quiet|status)
-    if ! matrix_payload > "$current"; then
+    if ! matrix_write_current; then
       [[ "${1:-}" == "--quiet" ]] || ui_check KO 'Software matrix' 'required package missing'
       exit 1
     fi
@@ -49,12 +90,12 @@ case "${1:-status}" in
         [[ "${1:-}" == "--quiet" ]] || ui_check OK 'Software matrix' 'matches certified known-good set'
         exit 0
       fi
-      [[ "${1:-}" == "--quiet" ]] || ui_check WARN 'Software matrix' 'versions changed since certification; recertify after validation'
+      [[ "${1:-}" == "--quiet" ]] || { ui_check WARN 'Software matrix' 'versions changed since certification'; matrix_diff || true; }
       is_true "${SOFTWARE_MATRIX_INVALIDATE_ON_CHANGE:-true}" && exit 1
       exit 0
     fi
     [[ "${1:-}" == "--quiet" ]] || ui_check WARN 'Software matrix' 'not certified yet'
     exit 1
     ;;
-  *) echo 'Usage: software-matrix-doctor [status|--quiet|snapshot|certify]' >&2; exit "$EXIT_USAGE" ;;
+  *) echo 'Usage: software-matrix-doctor [status|--quiet|snapshot|diff|certify]' >&2; exit "$EXIT_USAGE" ;;
 esac

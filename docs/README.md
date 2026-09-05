@@ -1,55 +1,40 @@
 # Documentation — commencer ici
 
-Cette documentation explique comment **comprendre, administrer, installer, utiliser, valider et dépanner** FEDORA_GNOME_CUSTOM sans devoir lire les scripts internes en premier.
+Cette documentation explique comment installer, administrer, certifier et dépanner FEDORA_GNOME_CUSTOM sans devoir lire tous les scripts internes.
 
-La version du projet est toujours celle du fichier [`../VERSION`](../VERSION). Les documents normatifs évitent volontairement de recopier un numéro de version dans leur titre afin de ne pas devenir obsolètes à chaque release.
+La version du projet est celle du fichier [`../VERSION`](../VERSION).
 
-## Je veux administrer la workstation au quotidien
-
-Le point d'entrée recommandé est :
+## Utilisation quotidienne
 
 ```bash
 ./control.sh
 ```
 
-Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif, son tableau de bord, les neuf socles opérateur et le mode CLI scriptable.
+Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif et le mode CLI.
 
-`./menu.sh` reste un alias de compatibilité. Les scripts spécialisés restent directement utilisables pour CI, dépannage et automatisation.
+## Parcours recommandé
 
-## Je découvre le projet
+1. [`../README.md`](../README.md) — contrat Golden et invariants ;
+2. [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — interface opérateur ;
+3. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture ;
+4. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal ;
+5. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification physique ;
+6. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
+7. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
+8. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
+9. [`adr/README.md`](adr/README.md) — décisions d'architecture.
 
-Commencer dans cet ordre :
+## Validation avant production
 
-1. [`../README.md`](../README.md) — objectif global et contrat Golden Workstation ;
-2. [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — interface opérateur quotidienne ;
-3. [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md) — inventaire explicite HOST Fedora + VM Ubuntu DevOps, dont le socle Python ;
-4. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire Fedora, KVM, libvirt, stockage et réseau ;
-5. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et chaîne de confiance ;
-6. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal complète.
+Le parcours est progressif :
 
-Un débutant n'a pas besoin de comprendre `virt-qemu-qmp-proxy`, `guestfish` ou les détails nftables avant d'installer la workstation. Ces sujets appartiennent aux documents de référence avancée.
-
-## Je veux valider avant le bare-metal
-
-Le parcours de qualification est volontairement progressif :
-
-1. [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) — GATE 1 CLI/read-only : scripts, runtime guards et contrats sans fabriquer de preuve hardware ;
-2. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — GATE 2 Fedora 44 GNOME 50/Wayland : vraie convergence graphique DING + Show Desktop + Resource Monitor dans une VM strictement identifiée VirtualBox ;
-3. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — GATE 3 bare-metal et APPLY production.
+1. [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) — CLI/read-only ;
+2. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — LAB GNOME 50/Wayland ;
+3. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — bare-metal.
 
 Le LAB VirtualBox possède son propre entrypoint limité et **ne déverrouille jamais `install.sh --apply`**.
 
-## Je veux installer la workstation
-
-Lire :
-
-- [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — parcours principal ;
-- [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — tests RAM/NVMe avant APPLY ;
-- [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — backup Restic obligatoire avant APPLY ;
-- [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) — différence diagnostic / dry-run / APPLY et protections ;
-- [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — accès au même parcours depuis le cockpit.
-
-Le parcours de confiance bare-metal reste :
+## Chaîne bare-metal
 
 ```text
 Fedora 44 fraîche
@@ -62,131 +47,59 @@ backup Restic + restore canary
       ↓
 ./install.sh --apply
       ↓
-reboot
+kernel candidate → boot one-shot
       ↓
-certification bare-metal
+qualification physique
+      ↓
+final certification + golden-release.json
 ```
 
-Le Control Center appelle ces mêmes moteurs ; il ne crée aucun chemin parallèle moins sécurisé.
+## Domaines
 
-## Je veux utiliser des AppImages anciens et actuels
+### Hardware / kernel
 
-Lire [`APPIMAGE.md`](APPIMAGE.md). Le socle Applications installe FUSE 2 et FUSE 3 côte à côte, les bibliothèques x86_64/i686, les extracteurs Type 1 ISO9660 et Type 2 SquashFS, la commande `appimage-run` et Gear Lever pour l'intégration GNOME.
+- [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md)
+- [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md)
+- [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md)
 
-La compatibilité AppImage fait partie du contrat Applications Golden : elle n'exige ni désactivation de SELinux, ni kernel alternatif, ni dépôt GPU tiers. `appimage-run --identify` permet d'identifier un Type 1 legacy ou un Type 2 actuel sans exécuter le payload tiers.
+### GNOME / desktop
 
-## Je veux activer le profil Gaming
+- [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md)
+- [`GNOME_PROFILE.md`](GNOME_PROFILE.md)
+- [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md)
+- [`RESOURCE_MONITOR.md`](RESOURCE_MONITOR.md)
+- [`NAUTILUS.md`](NAUTILUS.md)
+- [`PTYXIS.md`](PTYXIS.md)
+- [`DOCK_FAVORITES.md`](DOCK_FAVORITES.md)
 
-Le Gaming est un socle **optionnel**, désactivé par défaut et indépendant de KVM. Lire [`GAMING.md`](GAMING.md) pour Steam natif RPM Fusion, Proton géré par Steam, Vulkan x86_64/i686, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et la certification Arc B580/Wayland/1440p 240 Hz.
+### Applications / multimédia
 
-Le profil canonique reste `GAMING_ENABLE="false"`. Une machine qui ne l'active pas ne reçoit pas les paquets gaming.
+- [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md)
+- [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md)
+- [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md)
+- [`APPIMAGE.md`](APPIMAGE.md)
+- [`GAMING.md`](GAMING.md)
 
-## Je veux mettre à jour le poste
+### KVM / VM
 
-Le cockpit fournit un socle **Mises à jour** :
+- [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md)
+- [`VIRTUALIZATION.md`](VIRTUALIZATION.md)
+- [`KVM_NETWORK.md`](KVM_NETWORK.md)
+- [`VM_PROFILES.md`](VM_PROFILES.md)
+- [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md)
+- [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md)
+- [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md)
 
-```bash
-./control.sh update check
-./control.sh update all
-```
+### Exploitation / sécurité
 
-La mise à jour complète suit :
+- [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md)
+- [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md)
+- [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md)
+- [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md)
+- [`CI_VALIDATION.md`](CI_VALIDATION.md)
+- [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md)
 
-```text
-backup Restic obligatoire
-      ↓
-DNF --refresh
-      ↓
-Flatpak
-      ↓
-firmware check read-only
-      ↓
-diagnostic global
-      ↓
-reboot status
-```
-
-Aucun firmware n'est flashé automatiquement. Le kernel Golden reste `kernel-vanilla/stable` en politique `latest-stable`, avec le kernel Fedora conservé comme fallback.
-
-## Je veux utiliser KVM et les VM
-
-Lire dans cet ordre :
-
-1. [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) — commandes quotidiennes et premier démarrage ;
-2. [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — architecture KVM, stockage et réseau ;
-3. [`KVM_NETWORK.md`](KVM_NETWORK.md) — fonctionnement précis de `devops-nat` et de l'isolation LAN ;
-4. [`VM_PROFILES.md`](VM_PROFILES.md) — profils Ubuntu et Windows ;
-5. [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md) — contenu de la VM Ubuntu DevOps ;
-6. [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md) — inventaire commun HOST/VM et dépendances directes ;
-7. [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) — SFTP Ubuntu et SMB Windows depuis Nautilus ;
-8. [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — référence CLI avancée.
-
-## Je veux dépanner
-
-Commencer par [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
-
-Le runbook est organisé par symptôme :
-
-- APPLY refusé ;
-- paquet/repository en erreur ;
-- GNOME/Wayland/portals ;
-- Nautilus/GVfs/previews ;
-- Ptyxis/Bash ;
-- AppImage/FUSE/Type 1/Type 2 ;
-- Gaming/Steam/Proton/Vulkan ;
-- GPU Arc B580 ;
-- `/data` ou pool libvirt ;
-- VM sans IP ;
-- `devops-nat` / nftables ;
-- cloud-init Ubuntu ;
-- VirtIO/TPM/Guest Agent Windows ;
-- Restic et restauration ;
-- veille, affichage ou reboot anormal.
-
-Ne désactiver ni SELinux ni firewalld pour « voir si ça marche ». Les doctors et logs sont conçus pour diagnostiquer sans supprimer les protections.
-
-## Documents d'architecture
-
-- [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture générale ;
-- [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) — stratégie matériel/firmware/kernel ;
-- [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md) — bureau GNOME 50/Wayland ;
-- [`NAUTILUS.md`](NAUTILUS.md) — profil Files/GVfs/previews/archives complet ;
-- [`PTYXIS.md`](PTYXIS.md) — politique terminal natif et frontière HOST/KVM ;
-- [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md) — FFmpeg/GStreamer/VA-API/oneVPL ;
-- [`APPIMAGE.md`](APPIMAGE.md) — compatibilité Type 1/Type 2, FUSE multilib et intégration GNOME ;
-- [`GAMING.md`](GAMING.md) — Steam/Proton/Vulkan et politique Gaming optionnelle ;
-- [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — services quotidiens et mises à jour ;
-- [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — hyperviseur, stockage et réseau ;
-- [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — backup/recovery ;
-- [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md) — provenance et signatures.
-
-## Documents de référence
-
-- [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — cockpit terminal et mode CLI ;
-- [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md) — paquets et outils explicitement gérés sur le HOST et la VM Ubuntu ;
-- [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — contrat et checklist du GATE 2 ;
-- [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — outils KVM/libvirt avancés ;
-- [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md) — catalogue graphique et exceptions ;
-- [`GNOME_PROFILE.md`](GNOME_PROFILE.md) — profil GNOME de référence ;
-- [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md) — extensions gérées ;
-- [`DOCK_FAVORITES.md`](DOCK_FAVORITES.md) — favoris certifiés ;
-- [`HOST_BASH_UX.md`](HOST_BASH_UX.md) — Bash/Ptyxis ;
-- [`NAUTILUS.md`](NAUTILUS.md) — intégration Nautilus certifiée ;
-- [`PTYXIS.md`](PTYXIS.md) — terminal Golden ;
-- [`APPIMAGE.md`](APPIMAGE.md) — support AppImage legacy/current ;
-- [`GAMING.md`](GAMING.md) — profil Steam/Proton/Vulkan optionnel ;
-- [`CI_VALIDATION.md`](CI_VALIDATION.md) — ce que la CI prouve et ce qui reste bare-metal ;
-- [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md) — politique de branche/release.
-
-## Documents historiques ou de transition
-
-Certains documents décrivent une étape ayant conduit au contrat actuel. Ils restent utiles pour comprendre les décisions, mais ne sont pas la première source de vérité opérationnelle :
-
-- [`PRE1_HARDENING.md`](PRE1_HARDENING.md) — consolidation de la release 0.10.0 ;
-- [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) — validation intermédiaire sous WSL2 ;
-- [`HARDWARE_KVM_COMPLETION.md`](HARDWARE_KVM_COMPLETION.md) — décisions de complétion hardware/KVM, désormais intégrées au contrat courant.
-
-En cas de contradiction, l'ordre d'autorité est :
+## Ordre d'autorité
 
 ```text
 code + config + tests CI
@@ -196,4 +109,4 @@ document normatif courant
 document historique / release note
 ```
 
-Une contradiction entre code et documentation est considérée comme un bug et doit faire échouer le contrat documentaire CI lorsque le cas est automatisable.
+Une contradiction code/documentation est un bug.
