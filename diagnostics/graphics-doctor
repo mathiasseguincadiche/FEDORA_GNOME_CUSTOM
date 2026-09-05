@@ -4,12 +4,21 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
-check() { local s="$1" n="$2" d="$3"; if ! $quiet; then ui_check "$s" "$n" "$d"; fi; case "$s" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac; }
-if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then check OK 'Intel Arc B580 / xe' 'PCI 8086:e20b'; else check KO 'Intel Arc B580 / xe' 'binding incorrect or device absent'; fi
+check(){ local s="$1" n="$2" d="$3"; if ! $quiet; then ui_check "$s" "$n" "$d"; fi; case "$s" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+bdf="$(hardware_expected_gpu_bdf 2>/dev/null || true)"
+if [[ -n "$bdf" ]] && lspci -nnk -s "$bdf" 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then check OK 'Intel Arc B580 / xe' "$bdf PCI 8086:e20b"; else check KO 'Intel Arc B580 / xe' 'binding incorrect or device absent'; fi
+if [[ -n "$bdf" ]]; then
+  caps="$(hardware_pcie_link_caps "$bdf")"
+  if hardware_b580_pcie_validate; then check OK 'B580 PCIe/ReBAR' "x8 + ReBAR PASS; $(tr '\n' ' ' <<<"$caps")"; else check KO 'B580 PCIe/ReBAR' "expected PCIe >=4.0 x8 with ReBAR; $(tr '\n' ' ' <<<"$caps")"; fi
+fi
 if command_exists vulkaninfo && vulkaninfo --summary 2>/dev/null | grep -Eqi 'Intel|B580|Battlemage'; then check OK Vulkan 'Intel Mesa device visible'; else check WARN Vulkan 'probe unavailable or no graphical session'; fi
-if command_exists vainfo && vainfo >/dev/null 2>&1; then check OK VA-API 'media acceleration visible'; else check WARN VA-API 'probe unavailable'; fi
+if command_exists vainfo; then
+  node="$(drm_render_node_for_pci_id 8086 e20b 2>/dev/null || true)"
+  if [[ -n "$node" ]] && vainfo --display drm --device "$node" >/dev/null 2>&1; then check OK VA-API "$node media acceleration visible"; else check WARN VA-API 'B580 render-node probe unavailable'; fi
+else check WARN VA-API 'vainfo unavailable'; fi
 if [[ "${XDG_SESSION_TYPE:-unknown}" == wayland ]]; then check OK Wayland 'current session'; else check WARN Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
-errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)' | tail -n 20 || true)"
-if [[ -z "$errors" ]]; then check OK 'xe/DRM journal' 'no matching reset/hang/fault'; else check WARN 'xe/DRM journal' 'matching events found'; fi
+errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|PCIe Bus Error: severity=Uncorrected' | tail -n 20 || true)"
+if [[ -z "$errors" ]]; then check OK 'xe/DRM/PCIe journal' clean; else check KO 'xe/DRM/PCIe journal' 'critical reset/hang/fault/uncorrected PCIe event found'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

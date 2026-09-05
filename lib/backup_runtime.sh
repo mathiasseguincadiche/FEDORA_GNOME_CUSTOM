@@ -11,34 +11,26 @@ backup_runtime_local_source_is_external() {
   [[ -n "$source" && -b "$source" ]] || return 1
   while read -r name type tran rm hotplug; do
     [[ "$type" == disk ]] || continue
-    if [[ "$tran" == usb || "$rm" == 1 || "$hotplug" == 1 ]]; then
-      return 0
-    fi
+    if [[ "$tran" == usb || "$rm" == 1 || "$hotplug" == 1 ]]; then return 0; fi
   done < <(lsblk -s -n -p -o NAME,TYPE,TRAN,RM,HOTPLUG "$source" 2>/dev/null || true)
   return 1
 }
 
 backup_runtime_external_mounts() {
   python3 - <<'PY'
-import json
-import subprocess
-payload = subprocess.check_output([
-    'lsblk', '-J', '-p', '-o', 'NAME,TYPE,TRAN,RM,HOTPLUG,MOUNTPOINTS'
-], text=True)
+import json, subprocess
+payload = subprocess.check_output(['lsblk','-J','-p','-o','NAME,TYPE,TRAN,RM,HOTPLUG,MOUNTPOINTS'], text=True)
 data = json.loads(payload)
-seen = set()
+seen=set()
 def walk(node, external=False):
     if node.get('type') == 'disk':
         external = external or node.get('tran') == 'usb' or bool(node.get('rm')) or bool(node.get('hotplug'))
     if external:
         for mountpoint in node.get('mountpoints') or []:
             if mountpoint and mountpoint != '/' and mountpoint not in seen:
-                seen.add(mountpoint)
-                print(mountpoint)
-    for child in node.get('children') or []:
-        walk(child, external)
-for device in data.get('blockdevices') or []:
-    walk(device)
+                seen.add(mountpoint); print(mountpoint)
+    for child in node.get('children') or []: walk(child, external)
+for device in data.get('blockdevices') or []: walk(device)
 PY
 }
 
@@ -55,22 +47,17 @@ backup_runtime_validate_local_target() {
   backup_runtime_local_source_is_external "$source" || return 1
   required="${BACKUP_PREAPPLY_REQUIRED_FSTYPE:-ext4}"
   [[ -z "$required" || "$fstype" == "$required" ]] || return 1
-  [[ ",$options," == *,rw,* ]] || return 1
+  [[ ",$options," == *,rw,* ]]
 }
 
 backup_runtime_resolve_repository() {
   local configured="${BACKUP_REPOSITORY:-}" mount subdir
   if [[ -n "$configured" ]]; then
-    if backup_runtime_is_remote_repository "$configured"; then
-      printf '%s\n' "$configured"
-      return 0
-    fi
+    if backup_runtime_is_remote_repository "$configured"; then printf '%s\n' "$configured"; return 0; fi
     [[ "$configured" == /* ]] || return 1
     backup_runtime_validate_local_target "$configured" || return 1
-    printf '%s\n' "$configured"
-    return 0
+    printf '%s\n' "$configured"; return 0
   fi
-
   local -a mounts=()
   mapfile -t mounts < <(backup_runtime_external_mounts)
   (( ${#mounts[@]} == 1 )) || return 1
@@ -82,11 +69,7 @@ backup_runtime_resolve_repository() {
 }
 
 backup_runtime_password_path() {
-  if [[ -n "${BACKUP_PASSWORD_FILE:-}" ]]; then
-    printf '%s\n' "$BACKUP_PASSWORD_FILE"
-  else
-    printf '%s/%s\n' "$HOME" "${BACKUP_PREAPPLY_PASSWORD_FILE_RELATIVE:-.config/fedora-gnome-custom/secrets/restic-password}"
-  fi
+  if [[ -n "${BACKUP_PASSWORD_FILE:-}" ]]; then printf '%s\n' "$BACKUP_PASSWORD_FILE"; else printf '%s/%s\n' "$HOME" "${BACKUP_PREAPPLY_PASSWORD_FILE_RELATIVE:-.config/fedora-gnome-custom/secrets/restic-password}"; fi
 }
 
 backup_runtime_prepare_password() {
@@ -94,20 +77,14 @@ backup_runtime_prepare_password() {
   file="$(backup_runtime_password_path)"
   if [[ ! -s "$file" ]]; then
     [[ -t 0 ]] || return 1
-    mkdir -p "$(dirname "$file")"
-    chmod 0700 "$(dirname "$file")"
-    read -r -s -p 'Passphrase Restic (16 caractères minimum): ' first
-    printf '\n' >&2
-    read -r -s -p 'Confirmer la passphrase Restic: ' second
-    printf '\n' >&2
+    mkdir -p "$(dirname "$file")"; chmod 0700 "$(dirname "$file")"
+    read -r -s -p 'Passphrase Restic (16 caractères minimum): ' first; printf '\n' >&2
+    read -r -s -p 'Confirmer la passphrase Restic: ' second; printf '\n' >&2
     [[ "$first" == "$second" && ${#first} -ge 16 ]] || return 1
-    printf '%s\n' "$first" > "$file"
-    chmod 0600 "$file"
-    unset first second
+    printf '%s\n' "$first" > "$file"; chmod 0600 "$file"; unset first second
   fi
   [[ -r "$file" ]] || return 1
-  mode="$(stat -c '%a' "$file")"
-  (( (8#$mode & 077) == 0 )) || return 1
+  mode="$(stat -c '%a' "$file")"; (( (8#$mode & 077) == 0 )) || return 1
   printf '%s\n' "$file"
 }
 
@@ -115,76 +92,65 @@ backup_runtime_require_password() {
   local file mode
   file="$(backup_runtime_password_path)"
   [[ -s "$file" && -r "$file" ]] || return 1
-  mode="$(stat -c '%a' "$file")"
-  (( (8#$mode & 077) == 0 )) || return 1
+  mode="$(stat -c '%a' "$file")"; (( (8#$mode & 077) == 0 )) || return 1
   printf '%s\n' "$file"
 }
 
-backup_runtime_export_env() {
-  local repo="$1" password_file="$2"
-  export RESTIC_REPOSITORY="$repo"
-  export RESTIC_PASSWORD_FILE="$password_file"
-}
+backup_runtime_export_env() { export RESTIC_REPOSITORY="$1" RESTIC_PASSWORD_FILE="$2"; }
 
 backup_runtime_capture_inventory() {
-  local out="$1"
-  mkdir -p "$out"
+  local out="$1"; mkdir -p "$out"
   {
-    printf 'commit=%s\n' "$(repo_commit)"
-    printf 'run_id=%s\n' "$RUN_ID"
-    printf 'utc=%s\n' "$(date -u +%FT%TZ)"
-    printf 'hostname=%s\n' "$(hostname)"
+    printf 'commit=%s\n' "$(repo_commit)"; printf 'run_id=%s\n' "$RUN_ID"; printf 'utc=%s\n' "$(date -u +%FT%TZ)"; printf 'hostname=%s\n' "$(hostname)"
+    printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"; printf 'module_plan_sha256=%s\n' "$(module_plan_sha256)"
   } > "$out/metadata.txt"
   rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\n' | sort > "$out/rpm-packages.tsv"
-  if command -v flatpak >/dev/null 2>&1; then
-    flatpak list --app > "$out/flatpak-apps.txt" || true
-  fi
+  command -v flatpak >/dev/null 2>&1 && flatpak list --app > "$out/flatpak-apps.txt" || true
   systemctl list-unit-files --state=enabled --no-pager > "$out/systemd-enabled.txt" 2>/dev/null || true
   lsblk -o NAME,PATH,TYPE,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINTS,TRAN,RM,HOTPLUG,MODEL > "$out/lsblk.txt"
   findmnt -rn -o SOURCE,TARGET,FSTYPE,OPTIONS > "$out/findmnt.txt"
   ip -4 route show > "$out/ip-route.txt" 2>/dev/null || true
+  ip -4 rule show > "$out/ip-rule.txt" 2>/dev/null || true
   lspci -nnk > "$out/lspci-nnk.txt" 2>/dev/null || true
 }
 
-backup_runtime_virsh_capture() {
-  local uri="$1" output="$2"
-  shift 2
-  sudo virsh -c "$uri" "$@" | cat > "$output"
-}
+backup_runtime_virsh_capture() { local uri="$1" output="$2"; shift 2; sudo virsh -c "$uri" "$@" | cat > "$output"; }
 
 backup_runtime_export_libvirt() {
   local out="$1" uri="${LIBVIRT_URI:-qemu:///system}" name
   mkdir -p "$out/domains" "$out/networks" "$out/pools"
   command -v virsh >/dev/null 2>&1 || return 0
   sudo virsh -c "$uri" list --all --name | sed '/^$/d' > "$out/domains.txt" || true
-  while IFS= read -r name; do
-    [[ -n "$name" ]] || continue
-    backup_runtime_virsh_capture "$uri" "$out/domains/$name.xml" dumpxml "$name"
-    backup_runtime_virsh_capture "$uri" "$out/domains/$name-blocks.txt" domblklist "$name" --details
-  done < "$out/domains.txt"
+  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/domains/$name.xml" dumpxml "$name"; backup_runtime_virsh_capture "$uri" "$out/domains/$name-blocks.txt" domblklist "$name" --details; done < "$out/domains.txt"
   sudo virsh -c "$uri" net-list --all --name | sed '/^$/d' > "$out/networks.txt" || true
-  while IFS= read -r name; do
-    [[ -n "$name" ]] || continue
-    backup_runtime_virsh_capture "$uri" "$out/networks/$name.xml" net-dumpxml "$name"
-  done < "$out/networks.txt"
+  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/networks/$name.xml" net-dumpxml "$name"; done < "$out/networks.txt"
   sudo virsh -c "$uri" pool-list --all --name | sed '/^$/d' > "$out/pools.txt" || true
-  while IFS= read -r name; do
-    [[ -n "$name" ]] || continue
-    backup_runtime_virsh_capture "$uri" "$out/pools/$name.xml" pool-dumpxml "$name"
-    if ! backup_runtime_virsh_capture "$uri" "$out/pools/$name-volumes.txt" vol-list "$name" --details 2>/dev/null; then
-      : > "$out/pools/$name-volumes.txt"
-    fi
-  done < "$out/pools.txt"
+  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/pools/$name.xml" pool-dumpxml "$name"; backup_runtime_virsh_capture "$uri" "$out/pools/$name-volumes.txt" vol-list "$name" --details 2>/dev/null || : > "$out/pools/$name-volumes.txt"; done < "$out/pools.txt"
 }
 
 backup_runtime_require_free_space() {
   local repository="$1" existing available min_bytes min_gib
   backup_runtime_is_remote_repository "$repository" && return 0
-  existing="$repository"
-  while [[ ! -e "$existing" && "$existing" != / ]]; do existing="$(dirname "$existing")"; done
-  min_gib="${BACKUP_PREAPPLY_MIN_FREE_GIB:-20}"
-  available="$(df -B1 --output=avail "$existing" | awk 'NR==2 {print $1}')"
+  existing="$repository"; while [[ ! -e "$existing" && "$existing" != / ]]; do existing="$(dirname "$existing")"; done
+  min_gib="${BACKUP_PREAPPLY_MIN_FREE_GIB:-20}"; available="$(df -B1 --output=avail "$existing" | awk 'NR==2 {print $1}')"
   [[ "$available" =~ ^[0-9]+$ && "$min_gib" =~ ^[0-9]+$ ]] || return 1
-  min_bytes=$((min_gib * 1024 * 1024 * 1024))
-  (( available >= min_bytes ))
+  min_bytes=$((min_gib * 1024 * 1024 * 1024)); (( available >= min_bytes ))
+}
+
+backup_runtime_validate_preapply_marker() {
+  local marker="$1" snapshot repo password_file json
+  command -v restic >/dev/null 2>&1 || return 1
+  command -v python3 >/dev/null 2>&1 || return 1
+  snapshot="$(evidence_marker_value "$marker" snapshot 2>/dev/null || true)"
+  repo="$(evidence_marker_value "$marker" repository 2>/dev/null || true)"
+  password_file="$(evidence_marker_value "$marker" password_file 2>/dev/null || true)"
+  [[ "$snapshot" =~ ^[0-9a-fA-F]{64}$ && -n "$repo" && -s "$password_file" ]] || return 1
+  if ! backup_runtime_is_remote_repository "$repo"; then backup_runtime_validate_local_target "$repo" || return 1; fi
+  local mode; mode="$(stat -c '%a' "$password_file" 2>/dev/null || true)"; [[ "$mode" =~ ^[0-7]+$ ]] || return 1; (( (8#$mode & 077) == 0 )) || return 1
+  backup_runtime_export_env "$repo" "$password_file"
+  restic cat config >/dev/null 2>&1 || return 1
+  json="$(restic cat snapshot "$snapshot" --json 2>/dev/null)" || return 1
+  python3 -c 'import json,sys
+data=json.load(sys.stdin)
+raise SystemExit(0 if "fedora-gnome-custom-preapply" in (data.get("tags") or []) else 1)' <<<"$json"
 }
