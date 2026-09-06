@@ -48,7 +48,12 @@ done
 grep -Fq 'com.redhat.spice.0' "$root/scripts/kvm/create_windows11_vm.sh"
 grep -Fq 'QEMU-GA' "$root/guest/windows-11/configure-guest-integration.ps1"
 grep -Fq 'pnputil.exe' "$root/guest/windows-11/configure-guest-integration.ps1"
-grep -Fq 'qemu-agent-command' "$root/scripts/kvm/runtime_certification.sh"
+# Runtime QGA is split deliberately: the core performs generic guest-ping checks,
+# while the Windows doctor retrieves and validates the in-guest JSON evidence.
+grep -Fq 'runtime_certification_core.sh' "$root/scripts/kvm/runtime_certification.sh"
+grep -Fq 'windows-guest-doctor' "$root/scripts/kvm/runtime_certification.sh"
+grep -Fq 'qemu-agent-command' "$root/scripts/kvm/runtime_certification_core.sh"
+grep -Fq 'qemu-agent-command' "$root/diagnostics/windows-guest-doctor"
 grep -Fq 'test_hardware_kvm_completion_contract.sh' "$root/.github/workflows/tests.yml"
 grep -Fq 'test_hardware_platform_behavior.sh' "$root/.github/workflows/tests.yml"
 echo 'Hardware/KVM completion contract OK'
