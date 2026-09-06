@@ -10,17 +10,79 @@ Le HOST Fedora 44 installe explicitement `linux-firmware`, `amd-ucode-firmware` 
 
 `fwupd` reste inventaire/metadata-only : aucun flash BIOS/firmware automatique.
 
+## Carte mère, DMI et BIOS
+
+La certification ne se contente plus du nom configuré. `hardware-components-doctor` exige sur le bare-metal :
+
+- constructeur DMI MSI / Micro-Star ;
+- carte `MAG B850M MORTAR WIFI` ou identifiant DMI `MS-7E61` ;
+- BIOS AMI ;
+- version et date BIOS réellement exposées et non génériques.
+
+Le fingerprint de baseline inclut désormais `board_vendor`, `board_name`, `bios_vendor`, `bios_version` et `bios_date`. Une mise à jour BIOS invalide donc automatiquement la baseline précédente et impose une nouvelle qualification.
+
+## Ryzen 7 7700 — P-State et boost
+
+Le contrat Golden exige un pilote CPUFreq AMD moderne :
+
+```text
+amd-pstate
+ou
+amd-pstate-epp
+```
+
+Le statut `amd_pstate` doit être `active`, `passive` ou `guided`, et le contrôle de boost exposé par le noyau doit être à `1`.
+
+Un fallback silencieux vers un autre pilote n'est plus considéré comme une certification Golden. Le projet n'applique cependant aucun overclocking, aucun réglage PBO et aucun changement de C-State : il valide le comportement exposé par le noyau/firmware.
+
+## Wi-Fi 7 — identité physique verrouillée
+
+Le modèle Wi-Fi n'est toujours pas inventé depuis la fiche commerciale MSI. L'identité réelle de l'exemplaire physique reste l'autorité.
+
+Avant la première certification baseline :
+
+```bash
+./diagnostics/baseline-doctor enroll-wifi
+```
+
+Cette commande, bare-metal uniquement, enregistre localement :
+
+- PCI ID exact ;
+- driver kernel réellement attaché ;
+- BDF à titre de preuve ;
+- nom DMI de la carte mère.
+
+Le lock est stocké dans l'état local de la Golden Workstation et n'est pas commité. Toute modification du PCI ID ou du driver invalide ensuite `hardware-components-doctor`, la baseline et la certification finale.
+
+## NCT6687D-R — températures et ventilateurs
+
+La MSI MAG B850M MORTAR WIFI utilise le contrôleur Super-I/O Nuvoton NCT6687D-R. Le projet utilise uniquement le pilote hwmon **in-tree Fedora/Linux** `nct6683`.
+
+Le module est chargé par :
+
+```text
+/etc/modules-load.d/fedora-gnome-custom-hwmon.conf
+```
+
+Aucun `force=1`, aucun `msi_fan_brute_force` et aucun module tiers ne sont admis dans la Golden.
+
+La certification exige que le hwmon NCT6687D expose :
+
+- au moins une température valide ;
+- au moins un tachymètre de ventilateur ;
+- au moins un tachymètre avec RPM > 0 au moment du contrôle.
+
+Le projet observe uniquement les capteurs. Le BIOS/EC reste propriétaire du pilotage des ventilateurs et de la pompe.
+
 ## Carte mère et périphériques
 
-`hardware-components-doctor` vérifie notamment :
+`hardware-components-doctor` vérifie également :
 
 - Realtek 8126-VB avec pilote `r8169` et capacité 5000baseT ;
-- Wi-Fi détecté dynamiquement, driver attaché, PHY `iw`, EHT/802.11be et visibilité 6 GHz ;
+- Wi-Fi, PHY `iw`, EHT/802.11be et visibilité 6 GHz ;
 - contrôleur Bluetooth ;
 - ALC4080/USB Audio, `snd_usb_audio` et graphe PipeWire ;
 - contrôleurs USB liés à `xhci_hcd`.
-
-Le modèle Wi-Fi exact n'est pas inventé : le PCI ID réel de la machine reste l'autorité.
 
 ## Veille / USB
 

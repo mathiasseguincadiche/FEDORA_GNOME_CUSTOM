@@ -40,11 +40,16 @@ baseline_memory_inventory() { printf 'mem_total_kib=%s|expected_gib=%s|tested_mt
 baseline_edid_hashes() { local f; for f in /sys/class/drm/card*-*/edid; do [[ -s "$f" ]] || continue; printf 'edid=%s\n' "$(sha256sum "$f" | awk '{print $1}')"; done | sort; }
 
 baseline_fingerprint_payload() {
+  printf 'board_vendor=%s\n' "$(baseline_hw_value /sys/class/dmi/id/board_vendor)"
   printf 'board=%s\n' "$(baseline_hw_value /sys/class/dmi/id/board_name)"
+  printf 'bios_vendor=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_vendor)"
   printf 'bios=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_version)"
   printf 'bios_date=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_date)"
   printf 'product_uuid=%s\n' "$(baseline_hw_value /sys/class/dmi/id/product_uuid)"
   printf 'cpu=%s\n' "$(baseline_cpu_model)"
+  printf 'cpu_scaling_driver=%s\n' "$(hardware_platform_cpu_scaling_driver 2>/dev/null || echo unknown)"
+  printf 'amd_pstate=%s\n' "$(hardware_platform_cpu_pstate_status 2>/dev/null || echo unknown)"
+  printf 'cpu_boost=%s\n' "$(hardware_platform_cpu_boost_value 2>/dev/null || echo unknown)"
   printf 'gpu=%s\n' "$(baseline_gpu_inventory)"
   printf '[memory]\n%s\n' "$(baseline_memory_inventory)"
   printf '[nvme]\n%s\n' "$(baseline_nvme_inventory)"
@@ -73,6 +78,10 @@ baseline_automatic_health_check() {
   runtime_is_baremetal || return 1
   grep -Eq '^VERSION_ID="?44"?$' /etc/os-release || return 1
   lscpu 2>/dev/null | grep -Fq "${EXPECTED_CPU:-AMD Ryzen 7 7700}" || return 1
+  hardware_platform_validate_dmi || { log_error BASELINE 'MSI MAG B850M MORTAR WIFI DMI/AMI BIOS validation failed'; return 1; }
+  hardware_platform_validate_cpu_power || { log_error BASELINE 'Ryzen AMD P-State/boost validation failed'; return 1; }
+  hardware_platform_wifi_lock_valid || { log_error BASELINE 'Wi-Fi identity lock is missing or does not match the current PCI ID/driver'; return 1; }
+  hardware_platform_validate_hwmon || { log_error BASELINE 'NCT6687D motherboard temperature/fan telemetry validation failed'; return 1; }
   local gpu driver severe=0
   gpu="$(baseline_find_expected_gpu)" || return 1; driver="${gpu#*|}"; [[ "$driver" == "${EXPECTED_GPU_KERNEL_DRIVER:-xe}" ]] || return 1
   (( $(baseline_nvme_model_count) >= ${EXPECTED_NVME_COUNT:-2} )) || return 1
@@ -95,6 +104,7 @@ baseline_certify() {
   {
     printf 'verdict=PASS\nfingerprint=%s\ncertified_utc=%s\nmemory_5600=PASS\nmemory_6000=PASS\nnvme_root=%s\nnvme_data=%s\n' "$(baseline_fingerprint)" "$(date -u +%FT%TZ)" "$rd" "$dd"
     printf 'display_edid_sha256=%s\n' "$(hardware_b580_expected_edid_sha256)"
+    printf 'dmi_platform=PASS\namd_pstate=PASS\ncpu_boost=PASS\nwifi_identity_lock=PASS\nnct6687_hwmon=PASS\n'
     printf 'b580_pcie_x8=PASS\nrebar=PASS\nt705_pcie_x4=PASS\n'
   } | evidence_atomic_write "$path" 0600
 }
@@ -105,6 +115,12 @@ baseline_certification_valid() {
   [[ -s "$marker" ]] || return 1
   grep -Fxq 'verdict=PASS' "$marker" || return 1
   grep -Fxq "fingerprint=$(baseline_fingerprint)" "$marker" || return 1
+  grep -Fxq 'dmi_platform=PASS' "$marker" || return 1
+  grep -Fxq 'amd_pstate=PASS' "$marker" || return 1
+  grep -Fxq 'cpu_boost=PASS' "$marker" || return 1
+  grep -Fxq 'wifi_identity_lock=PASS' "$marker" || return 1
+  grep -Fxq 'nct6687_hwmon=PASS' "$marker" || return 1
+  hardware_platform_wifi_lock_valid || return 1
   [[ "$(evidence_marker_value "$marker" display_edid_sha256 2>/dev/null || true)" == "$(hardware_b580_expected_edid_sha256)" ]]
 }
 

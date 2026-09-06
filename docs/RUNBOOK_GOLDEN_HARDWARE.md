@@ -2,6 +2,77 @@
 
 Complément de [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) pour les invariants ajoutés à la certification.
 
+## DMI / BIOS de la carte mère en KO
+
+```bash
+cat /sys/class/dmi/id/board_vendor
+cat /sys/class/dmi/id/board_name
+cat /sys/class/dmi/id/bios_vendor
+cat /sys/class/dmi/id/bios_version
+cat /sys/class/dmi/id/bios_date
+./diagnostics/hardware-components-doctor
+```
+
+Attendu : MSI/Micro-Star, `MAG B850M MORTAR WIFI` ou `MS-7E61`, BIOS AMI avec version/date réelles.
+
+Une mise à jour BIOS change volontairement le fingerprint Golden. Ne recopier aucun ancien marker : refaire la baseline et la qualification matérielle.
+
+## AMD P-State / boost en KO
+
+```bash
+cat /sys/devices/system/cpu/cpufreq/policy0/scaling_driver
+cat /sys/devices/system/cpu/amd_pstate/status
+cat /sys/devices/system/cpu/cpufreq/boost 2>/dev/null || true
+cat /sys/devices/system/cpu/cpu0/cpufreq/boost 2>/dev/null || true
+./diagnostics/hardware-components-doctor
+```
+
+Attendu : `amd-pstate` ou `amd-pstate-epp`, statut `active`, `passive` ou `guided`, boost autorisé (`1`).
+
+Si `acpi-cpufreq` apparaît, vérifier en priorité le BIOS/UEFI, CPPC et la ligne de commande kernel. Ne pas ajouter un réglage arbitraire ou un overclocking pour forcer la certification.
+
+## Première qualification Wi-Fi
+
+Sur le bare-metal uniquement :
+
+```bash
+./diagnostics/baseline-doctor enroll-wifi
+./diagnostics/baseline-doctor status
+```
+
+Le lock enregistre le PCI ID et le driver réellement présents sur **cet exemplaire** de la carte mère. Il est local et n'est jamais commité.
+
+Si `Wi-Fi identity lock` devient KO après une mise à jour :
+
+```bash
+lspci -Dnnk | grep -A4 -Ei 'Network controller|Wireless'
+./diagnostics/hardware-components-doctor
+```
+
+Ne ré-enrôler qu'après avoir compris pourquoi le PCI ID ou le driver a changé. Un simple changement de BDF n'invalide pas le lock ; le PCI ID et le driver sont les critères d'identité.
+
+## NCT6687D-R / ventilateurs en KO
+
+La carte mère utilise un Nuvoton NCT6687D-R. Le seul module autorisé par le projet est le pilote kernel Fedora `nct6683`.
+
+```bash
+lsmod | grep nct6683
+modinfo nct6683
+sudo modprobe nct6683
+sensors
+for h in /sys/class/hwmon/hwmon*; do printf '%s: ' "$h"; cat "$h/name" 2>/dev/null; done
+```
+
+Le module est aussi installé dans :
+
+```text
+/etc/modules-load.d/fedora-gnome-custom-hwmon.conf
+```
+
+La Golden refuse `force=1`, `msi_fan_brute_force` et les modules NCT6687 tiers. Le BIOS/EC garde le contrôle des ventilateurs ; Linux ne fait ici que lire les températures/RPM.
+
+Si le pilote `nct6683` se charge mais qu'aucun tachymètre vivant n'est exposé, vérifier d'abord les branchements CPU_FAN/PUMP/SYS_FAN et la visibilité BIOS des RPM avant de modifier Linux.
+
 ## ReBAR absent sur l'Arc B580
 
 ```bash
