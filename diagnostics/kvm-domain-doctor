@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+quiet=false; require_guests=false
+for arg in "$@"; do
+  case "$arg" in --quiet) quiet=true;; --require-guests) require_guests=true;; *) echo 'Usage: kvm-domain-doctor [--quiet] [--require-guests]' >&2; exit "$EXIT_USAGE";; esac
+done
+ok=0; warn=0; ko=0
+emit(){
+  local level="$1" label="$2" detail="$3"
+  [[ "$quiet" == true ]] || ui_check "$level" "$label" "$detail"
+  case "$level" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac
+}
+
+is_true "${ENABLE_KVM:-true}" || { emit OK KVM disabled; exit 0; }
+if ! runtime_is_baremetal; then emit WARN 'KVM runtime certification' "bare-metal only; runtime=$(runtime_environment)"; exit 0; fi
+
+if [[ -r /sys/fs/cgroup/cgroup.controllers ]]; then emit OK 'cgroups v2' active; else emit KO 'cgroups v2' missing; fi
+
+if virsh --connect "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null 2>&1; then
+  emit OK 'Operator libvirt access' 'direct qemu:///system access works without sudo fallback'
+else
+  emit KO 'Operator libvirt access' 'direct qemu:///system access failed; re-login after libvirt/kvm group enrollment'
+fi
+
+unit_exists(){ systemctl list-unit-files "$1" --no-legend 2>/dev/null | grep -Fq "$1"; }
+if unit_exists virtqemud.socket; then
+  for unit in virtqemud.socket virtnetworkd.socket virtstoraged.socket; do
+    if systemctl is-active --quiet "$unit"; then emit OK "$unit" active; else emit KO "$unit" inactive; fi
+  done
+else
+  if systemctl is-active --quiet libvirtd.socket || systemctl is-active --quiet libvirtd.service; then emit OK libvirtd 'legacy endpoint active because modular units are unavailable'; else emit KO libvirtd 'no libvirt activation endpoint'; fi
+fi
+
+tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
+if virsh --connect "${LIBVIRT_URI:-qemu:///system}" domcapabilities --virttype kvm --arch x86_64 --machine q35 > "$tmpdir/domcaps.xml" 2>/dev/null \
+   && kvm_contract_validate_domcaps_file "$tmpdir/domcaps.xml"; then
+  emit OK 'QEMU/libvirt domain capabilities' 'KVM + x86_64 + q35 + host-passthrough + EFI + TPM-CRB/emulator'
+else
+  emit KO 'QEMU/libvirt domain capabilities' 'required Golden capabilities are missing'
+fi
+
+expected_io="$(kvm_contract_expected_io)"
+check_domain(){
+  local profile="$1" name="$2" info
+  local xml="$tmpdir/$profile.xml"
+  if ! virsh --connect "${LIBVIRT_URI:-qemu:///system}" dominfo "$name" >/dev/null 2>&1; then
+    if [[ "$require_guests" == true ]]; then emit KO "$name" 'required runtime guest is missing'; else emit WARN "$name" 'not created yet; XML proof deferred'; fi
+    return
+  fi
+  if virsh --connect "${LIBVIRT_URI:-qemu:///system}" dumpxml "$name" > "$xml" 2>/dev/null \
+     && kvm_contract_validate_guest_file "$profile" "$xml" "$expected_io"; then
+    emit OK "$name XML" "q35/host-passthrough/VirtIO/QGA/RNG/balloon policy PASS (io=$expected_io)"
+  else
+    emit KO "$name XML" 'domain XML differs from the Golden profile'
+  fi
+  info="$(virsh --connect "${LIBVIRT_URI:-qemu:///system}" dominfo "$name" 2>/dev/null || true)"
+  if grep -Eq '^Autostart:[[:space:]]+(disable|no)' <<<"$info"; then emit OK "$name autostart" disabled; else emit KO "$name autostart" 'must remain disabled'; fi
+}
+check_domain ubuntu "${UBUNTU_SERVER_NAME:-ubuntu-devops}"
+check_domain windows "${WINDOWS11_NAME:-windows-11}"
+
+report="$REPORT_ROOT/$RUN_ID-kvm-domain-contract.txt"
+{
+  printf 'expected_io=%s\n' "$expected_io"
+  printf 'domcaps_sha256=%s\n' "$(sha256sum "$tmpdir/domcaps.xml" 2>/dev/null | awk '{print $1}')"
+  for profile in ubuntu windows; do [[ -s "$tmpdir/$profile.xml" ]] && printf '%s_xml_sha256=%s\n' "$profile" "$(sha256sum "$tmpdir/$profile.xml" | awk '{print $1}')"; done
+} | evidence_atomic_write "$report" 0644
+[[ "$quiet" == true ]] || { ui_meta Report "$report"; ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 ))

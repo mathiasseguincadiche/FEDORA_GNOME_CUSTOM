@@ -1,0 +1,13 @@
+# delivery	id	executable	smoke_arg	trust_class
+fedora-rpm	ptyxis	ptyxis	--version	fedora-repository
+fedora-rpm	gnome-text-editor	gnome-text-editor	--version	fedora-repository
+fedora-rpm	vlc	vlc	--version	fedora-repository
+fedora-rpm	libreoffice	libreoffice	--version	fedora-repository
+fedora-rpm	filezilla	filezilla	--version	fedora-repository
+vendor-rpm	code	code	--version	signed-vendor
+vendor-rpm	brave-browser	brave-browser	--version	signed-vendor
+flatpak	com.bitwarden.desktop	-	-	verified-publisher
+flatpak	com.slack.Slack	-	-	community-unverified
+flatpak	org.onlyoffice.desktopeditors	-	-	verified-publisher
+flatpak	com.github.marktext.marktext	-	-	community-unverified
+flatpak	com.jgraph.drawio.desktop	-	-	community-unverified

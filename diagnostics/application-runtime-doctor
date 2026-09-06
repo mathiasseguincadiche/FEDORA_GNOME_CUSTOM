@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; ko=0
+emit(){
+  local level="$1" label="$2" detail="$3"
+  [[ "$quiet" == true ]] || ui_check "$level" "$label" "$detail"
+  case "$level" in OK) ((ok+=1));; KO) ((ko+=1));; esac
+}
+
+report="$REPORT_ROOT/$RUN_ID-application-runtime.txt"
+: > "$report"
+while IFS=$'\t' read -r delivery id executable smoke_arg trust; do
+  [[ -z "$delivery" || "$delivery" == \#* ]] && continue
+  {
+    printf 'id=%s\tdelivery=%s\ttrust=%s\n' "$id" "$delivery" "$trust"
+    if [[ "$delivery" == flatpak ]]; then
+      printf 'origin=%s\n' "$(flatpak info --show-origin "$id" 2>/dev/null || printf missing)"
+      printf 'runtime=%s\n' "$(flatpak info --show-runtime "$id" 2>/dev/null || printf missing)"
+    else
+      printf 'nevra=%s\n' "$(rpm -q --qf '%{NEVRA}' "$id" 2>/dev/null || printf missing)"
+      printf 'executable=%s\n' "$(command -v "$executable" 2>/dev/null || printf missing)"
+    fi
+  } >> "$report"
+  if application_runtime_validate_entry "$delivery" "$id" "$executable" "$smoke_arg" "$trust"; then
+    emit OK "$id" "$delivery / $trust runtime validated"
+  else
+    emit KO "$id" "$delivery / $trust runtime contract failed"
+  fi
+done < "$(application_runtime_contract_path)"
+
+[[ "$quiet" == true ]] || { ui_meta Report "$report"; ui_meta OK "$ok"; ui_meta KO "$ko"; }
+(( ko == 0 ))

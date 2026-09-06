@@ -82,6 +82,7 @@ baseline_automatic_health_check() {
   hardware_platform_validate_cpu_power || { log_error BASELINE 'Ryzen AMD P-State/boost validation failed'; return 1; }
   hardware_platform_wifi_lock_valid || { log_error BASELINE 'Wi-Fi identity lock is missing or does not match the current PCI ID/driver'; return 1; }
   hardware_platform_validate_hwmon || { log_error BASELINE 'NCT6687D motherboard temperature/fan telemetry validation failed'; return 1; }
+  driver_contract_validate || { log_error BASELINE 'critical kernel driver binding/provenance contract failed'; return 1; }
   local gpu driver severe=0
   gpu="$(baseline_find_expected_gpu)" || return 1; driver="${gpu#*|}"; [[ "$driver" == "${EXPECTED_GPU_KERNEL_DRIVER:-xe}" ]] || return 1
   (( $(baseline_nvme_model_count) >= ${EXPECTED_NVME_COUNT:-2} )) || return 1
@@ -105,6 +106,7 @@ baseline_certify() {
     printf 'verdict=PASS\nfingerprint=%s\ncertified_utc=%s\nmemory_5600=PASS\nmemory_6000=PASS\nnvme_root=%s\nnvme_data=%s\n' "$(baseline_fingerprint)" "$(date -u +%FT%TZ)" "$rd" "$dd"
     printf 'display_edid_sha256=%s\n' "$(hardware_b580_expected_edid_sha256)"
     printf 'dmi_platform=PASS\namd_pstate=PASS\ncpu_boost=PASS\nwifi_identity_lock=PASS\nnct6687_hwmon=PASS\n'
+    printf 'driver_contract=PASS\n'
     printf 'b580_pcie_x8=PASS\nrebar=PASS\nt705_pcie_x4=PASS\n'
   } | evidence_atomic_write "$path" 0600
 }
@@ -120,7 +122,9 @@ baseline_certification_valid() {
   grep -Fxq 'cpu_boost=PASS' "$marker" || return 1
   grep -Fxq 'wifi_identity_lock=PASS' "$marker" || return 1
   grep -Fxq 'nct6687_hwmon=PASS' "$marker" || return 1
+  grep -Fxq 'driver_contract=PASS' "$marker" || return 1
   hardware_platform_wifi_lock_valid || return 1
+  driver_contract_validate || return 1
   [[ "$(evidence_marker_value "$marker" display_edid_sha256 2>/dev/null || true)" == "$(hardware_b580_expected_edid_sha256)" ]]
 }
 
@@ -128,7 +132,13 @@ runtime_component_version() { local pkg="$1" version; version="$(rpm -q --qf '%{
 
 workstation_runtime_fingerprint_payload() {
   local pkg
-  printf 'hardware=%s\n' "$(baseline_fingerprint)"; printf 'kernel=%s\n' "$(uname -r)"
+  printf 'hardware=%s\n' "$(baseline_fingerprint)"
+  printf 'kernel=%s\n' "$(uname -r)"
+  if runtime_is_baremetal; then
+    printf 'drivers=%s\n' "$(driver_contract_fingerprint)"
+    printf 'applications=%s\n' "$(application_runtime_fingerprint)"
+    if is_true "${ENABLE_KVM:-true}"; then printf 'kvm=%s\n' "$(kvm_contract_fingerprint)"; fi
+  fi
   for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell}; do printf '%s=%s\n' "$pkg" "$(runtime_component_version "$pkg")"; done
 }
 workstation_runtime_fingerprint() { workstation_runtime_fingerprint_payload | sha256sum | awk '{print $1}'; }

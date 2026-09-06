@@ -12,17 +12,16 @@ Usage:
   create_windows11_vm.sh \
     --windows-iso /path/to/windows11.iso \
     --virtio-iso /path/to/virtio-win.iso \
-    [--windows-sha256 <trusted-sha256>] \
-    [--virtio-sha256 <trusted-sha256>]
+    --windows-sha256 <trusted-sha256> \
+    --virtio-sha256 <trusted-sha256>
 
-When hashes are supplied, both media files are verified before any VM disk is
-created. The expected hashes must come from a trusted publisher/source; a hash
-invented locally does not establish provenance.
+Both hashes are mandatory Golden inputs and must come from trusted publisher/source
+material. A digest calculated only after downloading an untrusted file does not
+establish provenance.
 TXT
 }
 
 fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
-warn() { printf 'WARN: %s\n' "$*" >&2; }
 need() { command -v "$1" >/dev/null 2>&1 || fail "missing command: $1"; }
 
 verify_sha256() {
@@ -51,19 +50,13 @@ done
 
 [[ -r "$windows_iso" ]] || { usage; fail 'valid --windows-iso is required'; }
 [[ -r "$virtio_iso" ]] || { usage; fail 'valid --virtio-iso is required'; }
+[[ -n "$windows_sha256" && -n "$virtio_sha256" ]] || { usage; fail 'trusted SHA-256 is mandatory for both Windows and VirtIO media'; }
 
 for cmd in virsh virt-install qemu-img findmnt xorriso restorecon sha256sum; do
   need "$cmd"
 done
-
-if [[ -n "$windows_sha256" || -n "$virtio_sha256" ]]; then
-  [[ -n "$windows_sha256" && -n "$virtio_sha256" ]] \
-    || fail 'provide both --windows-sha256 and --virtio-sha256, or neither'
-  verify_sha256 "$windows_iso" "$windows_sha256" 'Windows ISO'
-  verify_sha256 "$virtio_iso" "$virtio_sha256" 'VirtIO ISO'
-else
-  warn 'Windows/VirtIO SHA-256 values were not supplied; media provenance remains an explicit operator responsibility'
-fi
+verify_sha256 "$windows_iso" "$windows_sha256" 'Windows ISO'
+verify_sha256 "$virtio_iso" "$virtio_sha256" 'VirtIO ISO'
 
 uri="${LIBVIRT_URI:-qemu:///system}"
 pool="${KVM_POOL_NAME:-devops-data}"
@@ -104,8 +97,9 @@ sudo qemu-img create -f "${WINDOWS11_DISK_FORMAT:-qcow2}" "$disk" "${WINDOWS11_D
 sudo restorecon "$disk" 2>/dev/null || true
 
 io_state="${KVM_IO_PROFILE_STATE:-$HOME/.local/state/fedora-gnome-custom/kvm-io-profile.env}"
-[[ -r "$io_state" ]] && source "$io_state"
-disk_io="${KVM_IO_SELECTED_PROFILE:-${VM_DISK_IO_DEFAULT:-io_uring}}"
+disk_io=""
+[[ -r "$io_state" ]] && disk_io="$(awk -F= '$1=="KVM_IO_SELECTED_PROFILE" {print $2; exit}' "$io_state")"
+case "$disk_io" in io_uring|native|threads) ;; *) disk_io="${VM_DISK_IO_DEFAULT:-io_uring}" ;; esac
 disk_help="$(virt-install --disk=? 2>&1 || true)"
 disk_opts="path=${disk},format=${WINDOWS11_DISK_FORMAT:-qcow2},bus=${WINDOWS11_DISK_BUS:-virtio},cache=${VM_DISK_CACHE_MODE:-none},driver.io=${disk_io},driver.discard=${VM_DISK_DISCARD:-unmap}"
 grep -Fq 'driver.detect_zeroes' <<<"$disk_help" && disk_opts+=",driver.detect_zeroes=${VM_DISK_DETECT_ZEROES:-unmap}"
@@ -142,6 +136,7 @@ sudo virt-install \
   --noautoconsole
 
 printf '\nCreated %s with disk I/O profile %s. Install VirtIO drivers, then run Configure-GuestIntegration.ps1 from FGC_TOOLS.\n' "$name" "$disk_io"
+printf 'Windows and VirtIO media SHA-256 values were verified before disk creation.\n'
 if [[ "${VM_NAUTILUS_ACCESS_ENABLED:-true}" == true && -r "$nautilus_helper" ]]; then
   bash "$nautilus_helper" install || true
 fi

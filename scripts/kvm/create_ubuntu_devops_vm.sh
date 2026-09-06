@@ -145,8 +145,9 @@ sudo install -m 0644 "$tmpdir/seed.iso" "$seed"
 sudo restorecon -R "$seed_dir" 2>/dev/null || true
 
 io_state="${KVM_IO_PROFILE_STATE:-$HOME/.local/state/fedora-gnome-custom/kvm-io-profile.env}"
-[[ -r "$io_state" ]] && source "$io_state"
-disk_io="${KVM_IO_SELECTED_PROFILE:-${VM_DISK_IO_DEFAULT:-io_uring}}"
+disk_io=""
+[[ -r "$io_state" ]] && disk_io="$(awk -F= '$1=="KVM_IO_SELECTED_PROFILE" {print $2; exit}' "$io_state")"
+case "$disk_io" in io_uring|native|threads) ;; *) disk_io="${VM_DISK_IO_DEFAULT:-io_uring}" ;; esac
 disk_help="$(virt-install --disk=? 2>&1 || true)"
 disk_opts="path=${disk},format=${UBUNTU_SERVER_DISK_FORMAT:-qcow2},bus=${UBUNTU_SERVER_DISK_BUS:-virtio},cache=${VM_DISK_CACHE_MODE:-none},driver.io=${disk_io},driver.discard=${VM_DISK_DISCARD:-unmap}"
 grep -Fq 'driver.detect_zeroes' <<<"$disk_help" && disk_opts+=",driver.detect_zeroes=${VM_DISK_DETECT_ZEROES:-unmap}"

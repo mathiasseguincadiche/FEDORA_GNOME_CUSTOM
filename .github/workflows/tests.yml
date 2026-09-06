@@ -54,4 +54,8 @@ jobs:
       - run: bash tests/test_mutation_wrapper_behavior.sh
       - run: bash tests/test_three_gate_validation_contract.sh
       - run: bash tests/test_validation_gate_proof_behavior.sh
+      - run: bash tests/test_driver_runtime_behavior.sh
+      - run: bash tests/test_kvm_xml_policy_behavior.sh
+      - run: bash tests/test_application_runtime_behavior.sh
+      - run: bash tests/test_stack_certification_contract.sh
       - run: bash tests/test_documentation_contract.sh

@@ -52,6 +52,13 @@ for dom in "$ubuntu" "$windows"; do
 done
 ((ko == 0)) || exit 1
 
+if "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet --require-guests; then
+  record OK 'Golden guest XML contract' 'both guests match exact q35/CPU/storage/network/security policy'
+else
+  record KO 'Golden guest XML contract' 'libvirt capabilities or domain XML differs from policy'
+fi
+((ko == 0)) || exit 1
+
 for dom in "$ubuntu" "$windows"; do
   if domain_xml_has "$dom" 'org.qemu.guest_agent.0'; then record OK "$dom QGA channel" present; else record KO "$dom QGA channel" missing; fi
   if domain_xml_has "$dom" '<rng'; then record OK "$dom VirtIO RNG" present; else record KO "$dom VirtIO RNG" missing; fi
