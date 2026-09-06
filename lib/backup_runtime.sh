@@ -105,7 +105,7 @@ backup_runtime_capture_inventory() {
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"; printf 'module_plan_sha256=%s\n' "$(module_plan_sha256)"
   } > "$out/metadata.txt"
   rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\n' | sort > "$out/rpm-packages.tsv"
-  command -v flatpak >/dev/null 2>&1 && flatpak list --app > "$out/flatpak-apps.txt" || true
+  if command -v flatpak >/dev/null 2>&1; then flatpak list --app > "$out/flatpak-apps.txt"; fi
   systemctl list-unit-files --state=enabled --no-pager > "$out/systemd-enabled.txt" 2>/dev/null || true
   lsblk -o NAME,PATH,TYPE,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINTS,TRAN,RM,HOTPLUG,MODEL > "$out/lsblk.txt"
   findmnt -rn -o SOURCE,TARGET,FSTYPE,OPTIONS > "$out/findmnt.txt"
