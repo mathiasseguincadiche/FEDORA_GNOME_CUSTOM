@@ -87,7 +87,14 @@ physical_enroll_cooling() {
   for role in pump cpu system; do
     case "$role" in pump) ch="$pump";; cpu) ch="$cpu";; system) ch="$system";; esac
     rpm="$(physical_cooling_channel_rpm "$ch" 2>/dev/null || true)"
-    [[ "$rpm" =~ ^[0-9]+$ ]] && (( rpm >= min )) || { ui_error "$role cooling channel $ch is unavailable or below ${min} RPM"; return "$EXIT_PRECHECK_FAILED"; }
+    if [[ ! "$rpm" =~ ^[0-9]+$ ]]; then
+      ui_error "$role cooling channel $ch is unavailable or below ${min} RPM"
+      return "$EXIT_PRECHECK_FAILED"
+    fi
+    if (( rpm < min )); then
+      ui_error "$role cooling channel $ch is unavailable or below ${min} RPM"
+      return "$EXIT_PRECHECK_FAILED"
+    fi
   done
   path="$(physical_cooling_lock_path)"; mkdir -p "$(dirname "$path")"
   {
@@ -108,7 +115,8 @@ physical_cooling_lock_valid() {
   for role in pump cpu system; do
     ch="$(awk -F= -v role="$role" '$1==role {print $2; exit}' "$path")"
     rpm="$(physical_cooling_channel_rpm "$ch" 2>/dev/null || true)"
-    [[ "$rpm" =~ ^[0-9]+$ ]] && (( rpm >= min )) || return 1
+    [[ "$rpm" =~ ^[0-9]+$ ]] || return 1
+    (( rpm >= min )) || return 1
   done
 }
 
