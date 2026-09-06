@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2015
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+quiet=false
+[[ "${1:-}" == --quiet ]] && { quiet=true; shift; }
+command="${1:-status}"; shift || true
+ok=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
+require_baremetal(){ runtime_is_baremetal || { ui_error 'Physical runtime certification is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }; }
+
+marker_status(){
+  local name
+  for name in gpu-soak network-lan network-wifi audio display-capabilities; do
+    if physical_runtime_evidence_valid "$name"; then emit OK "$name" 'current physical fingerprint PASS'; else emit KO "$name" 'missing or stale physical evidence'; fi
+  done
+  $quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
+  (( ko == 0 ))
+}
+
+gpu_soak(){
+  require_baremetal
+  [[ "${XDG_SESSION_TYPE:-}" == wayland ]] || { ui_error 'GPU soak requires the physical Wayland session'; exit "$EXIT_PRECHECK_FAILED"; }
+  "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
+  local seconds="${GPU_SOAK_SECONDS:-900}" instances="${GPU_SOAK_INSTANCES:-2}" start log cube i pid rc=0 bad=0
+  [[ "$seconds" =~ ^[0-9]+$ && "$instances" =~ ^[0-9]+$ ]] || exit "$EXIT_CONFIG_FAILED"
+  if command -v vkcube-wayland >/dev/null 2>&1; then cube='vkcube-wayland';
+  elif command -v vkcube >/dev/null 2>&1; then cube='vkcube --wsi wayland';
+  else ui_error 'vkcube/vkcube-wayland missing; vulkan-tools is required'; exit "$EXIT_PRECHECK_FAILED"; fi
+  start="$(date --iso-8601=seconds)"; log="$REPORT_ROOT/$RUN_ID-gpu-vulkan-soak.log"; : > "$log"
+  pids=()
+  for ((i=1;i<=instances;i++)); do
+    # shellcheck disable=SC2086
+    timeout --signal=TERM --kill-after=3 "${seconds}s" $cube >>"$log" 2>&1 & pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do
+    rc=0; wait "$pid" || rc=$?
+    [[ "$rc" == 124 || "$rc" == 0 ]] || bad=1
+  done
+  (( bad == 0 )) || { ui_error "Vulkan soak process failed; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
+  if journalctl -k -b --since "$start" --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(gpu hang|wedged|reset failed|fault|error)|PCIe Bus Error: severity=Uncorrected|AER:.*Uncorrected'; then
+    ui_error 'Critical xe/PCIe/AER signal during Vulkan soak'; exit "$EXIT_POSTCHECK_FAILED"
+  fi
+  "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
+  physical_runtime_write_evidence gpu-soak "vulkan=true seconds=$seconds instances=$instances log=$log"
+  ui_check OK 'GPU Vulkan soak' "${seconds}s x ${instances} instances"
+}
+
+network_cert(){
+  require_baremetal
+  local kind="$1" type iface ipv4 route wifi_link ipv6
+  case "$kind" in lan) type=ethernet;; wifi) type=wifi;; *) echo 'network requires lan|wifi' >&2; exit "$EXIT_USAGE";; esac
+  systemctl is-active --quiet NetworkManager || { ui_error 'NetworkManager is not active'; exit "$EXIT_POSTCHECK_FAILED"; }
+  iface="$(nmcli -t -f DEVICE,TYPE,STATE device status | awk -F: -v type="$type" '$2==type && $3=="connected" {print $1; exit}')"
+  [[ -n "$iface" ]] || { ui_error "No connected NetworkManager $type interface"; exit "$EXIT_POSTCHECK_FAILED"; }
+  ipv4="$(ip -4 -o addr show dev "$iface" scope global | awk 'NR==1 {print $4}')"; [[ -n "$ipv4" ]] || { ui_error "$iface has no global IPv4 address"; exit "$EXIT_POSTCHECK_FAILED"; }
+  route="$(ip -4 route show default dev "$iface" | head -n1)"; [[ -n "$route" ]] || { ui_error "$iface has no IPv4 default route"; exit "$EXIT_POSTCHECK_FAILED"; }
+  getent ahostsv4 example.com >/dev/null || { ui_error 'IPv4 DNS resolution failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  curl -4 -fsS --max-time 15 https://example.com/ >/dev/null || { ui_error 'IPv4 HTTPS connectivity failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  if [[ "$kind" == wifi ]]; then
+    wifi_link="$(iw dev "$iface" link 2>/dev/null || true)"; grep -Fq 'Connected to' <<<"$wifi_link" || { ui_error 'Wi-Fi interface is not associated'; exit "$EXIT_POSTCHECK_FAILED"; }
+  fi
+  ipv6="$(ip -6 -o addr show dev "$iface" scope global | awk 'NR==1 {print $4}')"
+  if [[ -n "$ipv6" ]]; then
+    ip -6 route show default dev "$iface" | grep -q '^default' || { ui_error "$iface has global IPv6 but no IPv6 default route"; exit "$EXIT_POSTCHECK_FAILED"; }
+    getent ahostsv6 example.com >/dev/null || { ui_error 'IPv6 DNS resolution failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  fi
+  physical_runtime_write_evidence "network-$kind" "interface=$iface ipv4=$ipv4 ipv6=${ipv6:-none} nm=true dns=true https=true associated=$([[ $kind == wifi ]] && echo true || echo n/a)"
+  ui_check OK "Network $kind" "$iface DHCP/IP + route + DNS + HTTPS PASS"
+}
+
+audio_cert(){
+  require_baremetal
+  command -v wpctl >/dev/null && command -v speaker-test >/dev/null && command -v arecord >/dev/null || { ui_error 'wpctl, speaker-test and arecord are required'; exit "$EXIT_PRECHECK_FAILED"; }
+  wpctl status 2>/dev/null | grep -q 'Audio' || { ui_error 'PipeWire audio graph unavailable'; exit "$EXIT_POSTCHECK_FAILED"; }
+  local wav="$REPORT_ROOT/$RUN_ID-audio-capture.wav" rc=0 answer
+  timeout 20 speaker-test -c 2 -t sine -l 1 >/dev/null 2>&1 || rc=$?
+  (( rc == 0 )) || { ui_error "speaker-test failed rc=$rc"; exit "$EXIT_POSTCHECK_FAILED"; }
+  timeout 12 arecord -d 3 -f S16_LE -r 48000 -c 1 "$wav" >/dev/null 2>&1 || { ui_error '3-second audio capture failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  [[ -s "$wav" && "$(stat -c %s "$wav")" -gt 1000 ]] || { ui_error 'Captured WAV is empty'; exit "$EXIT_POSTCHECK_FAILED"; }
+  [[ -t 0 ]] || { ui_error 'Audio certification requires an interactive physical confirmation'; exit "$EXIT_PRECHECK_FAILED"; }
+  printf 'Confirmez que le son a été entendu et que le micro a capturé un signal. Tapez JE_CONFIRME_AUDIO_GATE3 : '
+  read -r answer
+  [[ "$answer" == JE_CONFIRME_AUDIO_GATE3 ]] || { ui_error 'Audio confirmation refused'; exit "$EXIT_PRECHECK_FAILED"; }
+  physical_runtime_write_evidence audio "pipewire=true playback=true capture=true wav=$wav manual=true"
+  ui_check OK Audio 'playback + capture + manual confirmation PASS'
+}
+
+hdr_edid_capable(){
+  local edid="$1"
+  python3 - "$edid" <<'PY'
+from pathlib import Path
+import sys
+b=Path(sys.argv[1]).read_bytes()
+if len(b)<128 or b[:8] != bytes([0,255,255,255,255,255,255,0]): raise SystemExit(1)
+for off in range(128, len(b), 128):
+    ext=b[off:off+128]
+    if len(ext)<128 or ext[0] != 0x02: continue
+    end=ext[2] or 127
+    i=4
+    while i < min(end,127):
+        h=ext[i]; tag=(h>>5)&7; n=h&31; payload=ext[i+1:i+1+n]
+        if tag==7 and payload and payload[0]==0x06: raise SystemExit(0)
+        i += 1+n
+raise SystemExit(1)
+PY
+}
+
+display_cert(){
+  require_baremetal
+  "$REPO_ROOT/diagnostics/display-doctor" --quiet
+  local connector edid vrr report answer
+  connector="$(hardware_b580_certified_connector)"; edid="$connector/edid"; [[ -s "$edid" ]] || { ui_error 'Certified display EDID missing'; exit "$EXIT_POSTCHECK_FAILED"; }
+  vrr=false
+  if [[ -r "$connector/vrr_capable" && "$(<"$connector/vrr_capable")" == 1 ]]; then vrr=true
+  elif command -v drm_info >/dev/null 2>&1 && drm_info 2>/dev/null | grep -Eiq 'vrr[_ -]?capable[^0-9]*(1|true|yes)'; then vrr=true; fi
+  $vrr || { ui_error 'DRM does not expose VRR capability for the certified display'; exit "$EXIT_POSTCHECK_FAILED"; }
+  hdr_edid_capable "$edid" || { ui_error 'EDID does not expose CTA HDR Static Metadata'; exit "$EXIT_POSTCHECK_FAILED"; }
+  report="$REPORT_ROOT/$RUN_ID-display-capabilities.txt"
+  { echo "connector=$connector"; echo 'vrr_capable=1'; echo 'hdr_static_metadata=1'; gdctl show --verbose 2>&1 || true; } > "$report"
+  [[ -t 0 ]] || { ui_error 'VRR/HDR certification requires interactive physical confirmation'; exit "$EXIT_PRECHECK_FAILED"; }
+  printf 'Activez/testez VRR + HDR dans GNOME sur cet écran puis tapez JE_CONFIRME_VRR_HDR_GATE3 : '
+  read -r answer
+  [[ "$answer" == JE_CONFIRME_VRR_HDR_GATE3 ]] || { ui_error 'VRR/HDR confirmation refused'; exit "$EXIT_PRECHECK_FAILED"; }
+  physical_runtime_write_evidence display-capabilities "vrr=PASS hdr_edid=PASS manual_active=PASS report=$report"
+  ui_check OK 'Display VRR/HDR' 'DRM/EDID capability + physical active confirmation PASS'
+}
+
+case "$command" in
+  status) marker_status ;;
+  gpu-soak) gpu_soak ;;
+  network) network_cert "${1:-}" ;;
+  audio) audio_cert ;;
+  display-capabilities) display_cert ;;
+  *) echo 'Usage: physical-runtime-doctor [--quiet] status|gpu-soak|network <lan|wifi>|audio|display-capabilities' >&2; exit "$EXIT_USAGE" ;;
+esac

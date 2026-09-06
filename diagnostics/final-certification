@@ -1,150 +1,89 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 source "$REPO_ROOT/lib/validation_gates.sh"
 final_dir="$STATE_ROOT/final"; evidence_dir="$final_dir/evidence"; cert="$final_dir/certified.ok"; mkdir -p "$evidence_dir"
-
 require_baremetal(){ runtime_is_baremetal || { ui_error 'Final certification is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }; }
 require_validation_chain(){ validation_require_chain || { ui_error 'Final certification requires current imported Gate 1 → Gate 2 PASS proofs'; exit "$EXIT_PRECHECK_FAILED"; }; }
 final_fingerprint(){ workstation_runtime_fingerprint; }
 suspend_count(){ local f c=0; shopt -s nullglob; for f in "$evidence_dir"/suspend-*.ok; do if grep -Fxq "fingerprint=$(final_fingerprint)" "$f"; then ((c+=1)); fi; done; shopt -u nullglob; printf '%d\n' "$c"; }
-latest_post_resume_log() { local link=/var/lib/fedora-gnome-custom/suspend/latest-post.log target; target="$(readlink -f "$link" 2>/dev/null || true)"; [[ -n "$target" && -s "$target" ]] || return 1; printf '%s\n' "$target"; }
+latest_post_resume_log(){ local link=/var/lib/fedora-gnome-custom/suspend/latest-post.log target; target="$(readlink -f "$link" 2>/dev/null || true)"; [[ -n "$target" && -s "$target" ]] || return 1; printf '%s\n' "$target"; }
 
 record_suspend(){
-  require_baremetal
-  require_validation_chain
-  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet
-  "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
-  "$REPO_ROOT/diagnostics/display-doctor" --quiet
-  "$REPO_ROOT/diagnostics/storage-doctor" --quiet
-  "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
-  "$REPO_ROOT/diagnostics/driver-doctor" --quiet
-  "$REPO_ROOT/diagnostics/usb-resume-doctor" --quiet
+  require_baremetal; require_validation_chain
+  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; "$REPO_ROOT/diagnostics/display-doctor" --quiet
+  "$REPO_ROOT/diagnostics/storage-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet; "$REPO_ROOT/diagnostics/driver-doctor" --quiet; "$REPO_ROOT/diagnostics/usb-resume-doctor" --quiet
   local marker="$HOME/.local/state/fedora-gnome-custom/display-repair-last.txt" post_log cycle_id now marker_ts post_ts marker_age post_age n f evidence
-  post_log="$(latest_post_resume_log)" || { ui_error 'No physical post-resume sleep-hook evidence'; exit "$EXIT_POSTCHECK_FAILED"; }
-  cycle_id="$(basename "$post_log" | sha256sum | awk '{print $1}')"
-  shopt -s nullglob
-  for f in "$evidence_dir"/suspend-*.ok; do if grep -Fxq "cycle_id=$cycle_id" "$f"; then shopt -u nullglob; ui_error 'This physical suspend/resume cycle is already recorded'; exit "$EXIT_POSTCHECK_FAILED"; fi; done
-  shopt -u nullglob
+  post_log="$(latest_post_resume_log)" || { ui_error 'No physical post-resume sleep-hook evidence'; exit "$EXIT_POSTCHECK_FAILED"; }; cycle_id="$(basename "$post_log" | sha256sum | awk '{print $1}')"
+  shopt -s nullglob; for f in "$evidence_dir"/suspend-*.ok; do if grep -Fxq "cycle_id=$cycle_id" "$f"; then shopt -u nullglob; ui_error 'This physical suspend/resume cycle is already recorded'; exit "$EXIT_POSTCHECK_FAILED"; fi; done; shopt -u nullglob
   [[ -s "$marker" ]] || { ui_error 'No display repair marker after resume'; exit "$EXIT_POSTCHECK_FAILED"; }
   now="$(date +%s)"; marker_ts="$(stat -c %Y "$marker")"; post_ts="$(stat -c %Y "$post_log")"; marker_age=$((now-marker_ts)); post_age=$((now-post_ts))
   (( post_age >= 0 && post_age <= 600 )) || { ui_error "Post-resume evidence is stale (${post_age}s)"; exit "$EXIT_POSTCHECK_FAILED"; }
-  (( marker_age >= 0 && marker_age <= 300 )) || { ui_error "Display repair marker is stale (${marker_age}s)"; exit "$EXIT_POSTCHECK_FAILED"; }
-  (( marker_ts >= post_ts )) || { ui_error 'Display repair marker predates this physical resume cycle'; exit "$EXIT_POSTCHECK_FAILED"; }
+  (( marker_age >= 0 && marker_age <= 300 )) || { ui_error "Display repair marker is stale (${marker_age}s)"; exit "$EXIT_POSTCHECK_FAILED"; }; (( marker_ts >= post_ts )) || { ui_error 'Display repair marker predates this physical resume cycle'; exit "$EXIT_POSTCHECK_FAILED"; }
   if journalctl -k -b --since '-10 min' --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(wedged|reset failed|gpu hang)|PCIe Bus Error: severity=Uncorrected|nvme.*(I/O error|reset controller)|xhci.*(HC died|error|timeout)'; then ui_error 'Critical kernel/xe/PCIe/NVMe/xHCI signal after recent suspend'; exit "$EXIT_POSTCHECK_FAILED"; fi
   n=$(( $(suspend_count)+1 )); evidence="$evidence_dir/suspend-$(printf '%02d' "$n").ok"
-  {
-    printf 'fingerprint=%s\n' "$(final_fingerprint)"
-    printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
-    printf 'gate1_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 1)")"
-    printf 'gate2_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
-    printf 'cycle_id=%s\n' "$cycle_id"
-    printf 'post_resume_log=%s\n' "$post_log"
-    printf 'display_edid_sha256=%s\n' "$(hardware_b580_expected_edid_sha256)"
-    printf 'driver_contract=PASS\n'
-    printf 'utc=%s\n' "$(date -u +%FT%TZ)"
-    printf 'repair_marker_age_s=%s\n' "$marker_age"
-  } | evidence_atomic_write "$evidence" 0600
+  { printf 'fingerprint=%s\neffective_config_sha256=%s\ngate1_proof_sha256=%s\ngate2_proof_sha256=%s\ncycle_id=%s\npost_resume_log=%s\ndisplay_edid_sha256=%s\ndriver_contract=PASS\nutc=%s\nrepair_marker_age_s=%s\n' "$(final_fingerprint)" "$(effective_config_sha256)" "$(validation_file_sha256 "$(validation_imported_proof_path 1)")" "$(validation_file_sha256 "$(validation_imported_proof_path 2)")" "$cycle_id" "$post_log" "$(hardware_b580_expected_edid_sha256)" "$(date -u +%FT%TZ)" "$marker_age"; } | evidence_atomic_write "$evidence" 0600
   ui_check OK suspend-cycle "$n / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"
 }
 
 valid_coldstart(){ local f="$evidence_dir/nautilus-coldstart.ok" elapsed; [[ -s "$f" ]] || return 1; grep -Fxq "fingerprint=$(final_fingerprint)" "$f" || return 1; elapsed="$(awk -F= '$1=="elapsed_ms" {print $2; exit}' "$f")"; [[ "$elapsed" =~ ^[0-9]+$ ]] || return 1; (( elapsed <= ${NAUTILUS_COLDSTART_HARD_LIMIT_MS:-2000} )); }
-
 runtime_stack_valid(){
   runtime_is_baremetal || return 1
   "$REPO_ROOT/diagnostics/driver-doctor" --quiet || return 1
   "$REPO_ROOT/diagnostics/application-runtime-doctor" --quiet || return 1
-  if is_true "${ENABLE_KVM:-true}"; then "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet || return 1; fi
+  "$REPO_ROOT/diagnostics/backup-doctor" --certify-status --quiet || return 1
+  "$REPO_ROOT/diagnostics/physical-runtime-doctor" --quiet status || return 1
+  if is_true "${ENABLE_KVM:-true}"; then
+    "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet --require-guests || return 1
+    "$REPO_ROOT/diagnostics/windows-guest-doctor" --quiet || return 1
+  fi
 }
 
 certify(){
-  require_baremetal
-  require_validation_chain
+  require_baremetal; require_validation_chain
   baseline_certification_valid || { ui_error 'Pre-APPLY hardware baseline is not valid'; exit "$EXIT_PRECHECK_FAILED"; }
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet
-  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet
-  "$REPO_ROOT/diagnostics/firmware-doctor" --quiet
-  "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
-  "$REPO_ROOT/diagnostics/driver-doctor" --quiet
-  "$REPO_ROOT/diagnostics/storage-doctor" --quiet
-  "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
-  "$REPO_ROOT/diagnostics/display-doctor" --quiet
-  "$REPO_ROOT/diagnostics/media-doctor" --quiet
-  "$REPO_ROOT/diagnostics/gnome-doctor" --quiet
-  "$REPO_ROOT/diagnostics/nautilus-integration-doctor" --quiet
-  "$REPO_ROOT/diagnostics/desktop-integration-doctor" --quiet
-  "$REPO_ROOT/diagnostics/portal-doctor" --quiet
-  "$REPO_ROOT/diagnostics/arc-compute-doctor" --quiet
-  "$REPO_ROOT/diagnostics/lifecycle-doctor" --quiet
-  "$REPO_ROOT/diagnostics/shell-doctor" --quiet
-  "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet
-  "$REPO_ROOT/diagnostics/applications-doctor" --quiet
-  "$REPO_ROOT/diagnostics/application-runtime-doctor" --quiet
-  "$REPO_ROOT/diagnostics/appimage-doctor" --quiet
-  "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet
+  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/firmware-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
+  "$REPO_ROOT/diagnostics/driver-doctor" --quiet; "$REPO_ROOT/diagnostics/storage-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; "$REPO_ROOT/diagnostics/display-doctor" --quiet
+  "$REPO_ROOT/diagnostics/media-doctor" --quiet; "$REPO_ROOT/diagnostics/gnome-doctor" --quiet; "$REPO_ROOT/diagnostics/nautilus-integration-doctor" --quiet
+  "$REPO_ROOT/diagnostics/desktop-integration-doctor" --quiet; "$REPO_ROOT/diagnostics/portal-doctor" --quiet; "$REPO_ROOT/diagnostics/arc-compute-doctor" --quiet
+  "$REPO_ROOT/diagnostics/lifecycle-doctor" --quiet; "$REPO_ROOT/diagnostics/shell-doctor" --quiet; "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet
+  "$REPO_ROOT/diagnostics/applications-doctor" --quiet; "$REPO_ROOT/diagnostics/application-runtime-doctor" --quiet; "$REPO_ROOT/diagnostics/appimage-doctor" --quiet
+  "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet; "$REPO_ROOT/diagnostics/backup-doctor" --certify --quiet
+  "$REPO_ROOT/diagnostics/physical-runtime-doctor" --quiet status
   if is_true "${GAMING_ENABLE:-false}"; then "$REPO_ROOT/diagnostics/gaming-doctor" --quiet; fi
   if is_true "${ENABLE_KVM:-true}"; then
     "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet
-    "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet
+    "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet --require-guests
+    "$REPO_ROOT/diagnostics/windows-guest-doctor" --quiet
+    "$REPO_ROOT/scripts/kvm/runtime_certification.sh"
   fi
   (( $(suspend_count) >= ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} )) || { ui_error 'Not enough unique physical post-APPLY suspend/resume cycles for the current graphics/runtime stack'; exit "$EXIT_PRECHECK_FAILED"; }
-  valid_coldstart || { ui_error 'Current runtime-stack Nautilus cold-start evidence missing or above hard limit; run nautilus-coldstart-doctor immediately after login'; exit "$EXIT_PRECHECK_FAILED"; }
+  valid_coldstart || { ui_error 'Current runtime-stack Nautilus cold-start evidence missing or above hard limit'; exit "$EXIT_PRECHECK_FAILED"; }
   "$REPO_ROOT/diagnostics/software-matrix-doctor" certify
-  local release_manifest
-  release_manifest="$("$REPO_ROOT/scripts/release/capture-golden-release.sh")" || { ui_error 'Golden release manifest capture failed'; exit "$EXIT_POSTCHECK_FAILED"; }
-  [[ -s "$release_manifest" ]] || { ui_error 'Golden release manifest is missing'; exit "$EXIT_POSTCHECK_FAILED"; }
+  local release_manifest; release_manifest="$("$REPO_ROOT/scripts/release/capture-golden-release.sh")" || { ui_error 'Golden release manifest capture failed'; exit "$EXIT_POSTCHECK_FAILED"; }; [[ -s "$release_manifest" ]] || { ui_error 'Golden release manifest is missing'; exit "$EXIT_POSTCHECK_FAILED"; }
   {
-    printf 'verdict=PASS\n'
-    printf 'fingerprint=%s\n' "$(final_fingerprint)"
-    printf 'hardware_fingerprint=%s\n' "$(baseline_fingerprint)"
-    printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
-    printf 'module_plan_sha256=%s\n' "$(module_plan_sha256)"
-    printf 'gate1_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 1)")"
-    printf 'gate2_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
-    printf 'validation_chain=PASS\n'
-    printf 'driver_contract=PASS\n'
-    printf 'application_runtime_contract=PASS\n'
-    if is_true "${ENABLE_KVM:-true}"; then printf 'kvm_domain_contract=PASS\n'; fi
-    printf 'kernel=%s\n' "$(uname -r)"
-    printf 'display_edid_sha256=%s\n' "$(hardware_b580_expected_edid_sha256)"
-    printf 'golden_release_manifest=%s\n' "$release_manifest"
-    printf 'certified_utc=%s\n' "$(date -u +%FT%TZ)"
-    printf 'suspend_cycles=%s\n' "$(suspend_count)"
-    printf 'gaming_profile=%s\n' "${GAMING_ENABLE:-false}"
-    printf 'secure_boot=disabled\n'
-    printf 'local_disk_encryption=forbidden\n'
+    printf 'verdict=PASS\nfingerprint=%s\nhardware_fingerprint=%s\neffective_config_sha256=%s\nmodule_plan_sha256=%s\n' "$(final_fingerprint)" "$(baseline_fingerprint)" "$(effective_config_sha256)" "$(module_plan_sha256)"
+    printf 'gate1_proof_sha256=%s\ngate2_proof_sha256=%s\nvalidation_chain=PASS\n' "$(validation_file_sha256 "$(validation_imported_proof_path 1)")" "$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
+    printf 'driver_contract=PASS\napplication_runtime_contract=PASS\nbackup_runtime_contract=PASS\nphysical_runtime_contract=PASS\n'
+    if is_true "${ENABLE_KVM:-true}"; then printf 'kvm_domain_contract=PASS\nkvm_runtime_contract=PASS\nwindows_guest_contract=PASS\n'; fi
+    printf 'kernel=%s\ndisplay_edid_sha256=%s\ngolden_release_manifest=%s\ncertified_utc=%s\nsuspend_cycles=%s\ngaming_profile=%s\nsecure_boot=disabled\nlocal_disk_encryption=forbidden\n' "$(uname -r)" "$(hardware_b580_expected_edid_sha256)" "$release_manifest" "$(date -u +%FT%TZ)" "$(suspend_count)" "${GAMING_ENABLE:-false}"
   } | evidence_atomic_write "$cert" 0600
-  ui_check OK 'Golden workstation' "$cert"
-  ui_check OK 'Golden release manifest' "$release_manifest"
+  ui_check OK 'Golden workstation' "$cert"; ui_check OK 'Golden release manifest' "$release_manifest"
 }
 
 status(){
   local marker_valid=false runtime_valid=false
-  ui_banner 'GOLDEN WORKSTATION' 'POST-APPLY CERTIFICATION'
-  ui_meta Kernel "$(uname -r)"; ui_meta Fingerprint "$(final_fingerprint)"; ui_meta Gaming "${GAMING_ENABLE:-false}"
-  if validation_require_chain; then ui_check OK 'Gate 1 → Gate 2 chain' PASS; else ui_check WARN 'Gate 1 → Gate 2 chain' 'missing/stale for current source'; fi
-  if "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet; then ui_meta 'HOST policy' 'Secure Boot OFF / disk encryption forbidden'; else ui_meta 'HOST policy' 'NON-COMPLIANT'; fi
-  ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"
-  if valid_coldstart; then ui_check OK 'Nautilus cold-start' PASS; else ui_check WARN 'Nautilus cold-start' missing; fi
-
-  if [[ -s "$cert" ]] \
-    && grep -Fxq 'verdict=PASS' "$cert" \
-    && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" \
-    && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" \
-    && grep -Fxq 'validation_chain=PASS' "$cert" \
-    && grep -Fxq 'driver_contract=PASS' "$cert" \
-    && grep -Fxq 'application_runtime_contract=PASS' "$cert"; then
-    if ! is_true "${ENABLE_KVM:-true}" || grep -Fxq 'kvm_domain_contract=PASS' "$cert"; then marker_valid=true; fi
+  ui_banner 'GOLDEN WORKSTATION' 'POST-APPLY CERTIFICATION'; ui_meta Kernel "$(uname -r)"; ui_meta Fingerprint "$(final_fingerprint)"; ui_meta Gaming "${GAMING_ENABLE:-false}"
+  validation_require_chain && ui_check OK 'Gate 1 → Gate 2 chain' PASS || ui_check WARN 'Gate 1 → Gate 2 chain' 'missing/stale for current source'
+  "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet && ui_meta 'HOST policy' 'Secure Boot OFF / disk encryption forbidden' || ui_meta 'HOST policy' 'NON-COMPLIANT'
+  ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"; valid_coldstart && ui_check OK 'Nautilus cold-start' PASS || ui_check WARN 'Nautilus cold-start' missing
+  if [[ -s "$cert" ]] && grep -Fxq 'verdict=PASS' "$cert" && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" && grep -Fxq 'validation_chain=PASS' "$cert" && grep -Fxq 'driver_contract=PASS' "$cert" && grep -Fxq 'application_runtime_contract=PASS' "$cert" && grep -Fxq 'backup_runtime_contract=PASS' "$cert" && grep -Fxq 'physical_runtime_contract=PASS' "$cert"; then
+    if ! is_true "${ENABLE_KVM:-true}" || { grep -Fxq 'kvm_domain_contract=PASS' "$cert" && grep -Fxq 'kvm_runtime_contract=PASS' "$cert" && grep -Fxq 'windows_guest_contract=PASS' "$cert"; }; then marker_valid=true; fi
   fi
-  if runtime_stack_valid; then runtime_valid=true; fi
-
-  if [[ "$marker_valid" == true && "$runtime_valid" == true ]]; then
-    ui_check OK Certification 'valid and live runtime contracts still match'
-  elif [[ "$marker_valid" == true ]]; then
-    ui_check WARN Certification 'STALE: marker matches source identity but live driver/application/KVM runtime drifted'
-  else
-    ui_check WARN Certification 'not yet certified for current runtime/configuration/validation stack'
-  fi
+  runtime_stack_valid && runtime_valid=true
+  if [[ "$marker_valid" == true && "$runtime_valid" == true ]]; then ui_check OK Certification 'valid and live runtime contracts still match'; elif [[ "$marker_valid" == true ]]; then ui_check WARN Certification 'STALE: live driver/application/backup/physical/KVM contract drifted'; else ui_check WARN Certification 'not yet certified for current runtime/configuration/validation stack'; fi
 }
 case "${1:-status}" in status) status;; record-suspend) record_suspend;; certify) certify;; *) echo 'Usage: final-certification [status|record-suspend|certify]' >&2; exit "$EXIT_USAGE";; esac

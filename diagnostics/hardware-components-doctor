@@ -1,101 +1,58 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
-quiet=false; [[ "${1:-}" == "--quiet" ]] && quiet=true
+quiet=false; [[ "${1:-}" == --quiet ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 report="$REPORT_ROOT/$RUN_ID-hardware-physical-ids.txt"
 {
-  echo '[dmi]'
-  printf 'board_vendor=%s\n' "$(hardware_platform_board_vendor)"
-  printf 'board_name=%s\n' "$(hardware_platform_board_name)"
-  printf 'bios_vendor=%s\n' "$(hardware_platform_bios_vendor)"
-  printf 'bios_version=%s\n' "$(hardware_platform_bios_version)"
-  printf 'bios_date=%s\n' "$(hardware_platform_bios_date)"
-  echo '[cpu-power]'
-  printf 'scaling_driver=%s\n' "$(hardware_platform_cpu_scaling_driver 2>/dev/null || echo unknown)"
-  printf 'amd_pstate=%s\n' "$(hardware_platform_cpu_pstate_status 2>/dev/null || echo unknown)"
-  printf 'boost=%s\n' "$(hardware_platform_cpu_boost_value 2>/dev/null || echo unknown)"
-  echo '[pci]'; lspci -Dnnk 2>/dev/null || true
-  echo '[usb]'; lsusb 2>/dev/null || true
-  echo '[bluetooth]'; bluetoothctl list 2>/dev/null || true
-  echo '[alsa]'; aplay -l 2>/dev/null || true
-  echo '[network]'; ip -br link 2>/dev/null || true
-  echo '[hwmon]'; sensors 2>/dev/null || true
+  echo '[dmi]'; printf 'board_vendor=%s\nboard_name=%s\nbios_vendor=%s\nbios_version=%s\nbios_date=%s\n' "$(hardware_platform_board_vendor)" "$(hardware_platform_board_name)" "$(hardware_platform_bios_vendor)" "$(hardware_platform_bios_version)" "$(hardware_platform_bios_date)"
+  echo '[cpu-power]'; printf 'scaling_driver=%s\namd_pstate=%s\nboost=%s\n' "$(hardware_platform_cpu_scaling_driver 2>/dev/null || echo unknown)" "$(hardware_platform_cpu_pstate_status 2>/dev/null || echo unknown)" "$(hardware_platform_cpu_boost_value 2>/dev/null || echo unknown)"
+  echo '[pci]'; lspci -Dnnk 2>/dev/null || true; echo '[usb]'; lsusb 2>/dev/null || true
+  echo '[bluetooth]'; bluetoothctl list 2>/dev/null || true; physical_bluetooth_identity 2>/dev/null || true
+  echo '[alsa]'; aplay -l 2>/dev/null || true; echo '[network]'; ip -br link 2>/dev/null || true
+  echo '[hwmon]'; sensors 2>/dev/null || true; physical_cooling_list 2>/dev/null || true
 } | evidence_atomic_write "$report" 0644
 
-if hardware_platform_validate_dmi; then
-  emit OK 'Motherboard DMI/BIOS' "vendor=$(hardware_platform_board_vendor) board=$(hardware_platform_board_name) bios=$(hardware_platform_bios_version) date=$(hardware_platform_bios_date)"
-else
-  emit KO 'Motherboard DMI/BIOS' "expected MSI MAG B850M MORTAR WIFI/MS-7E61 with AMI BIOS; got vendor=$(hardware_platform_board_vendor) board=$(hardware_platform_board_name) bios_vendor=$(hardware_platform_bios_vendor)"
-fi
+hardware_platform_validate_dmi && emit OK 'Motherboard DMI/BIOS' "vendor=$(hardware_platform_board_vendor) board=$(hardware_platform_board_name) bios=$(hardware_platform_bios_version)" || emit KO 'Motherboard DMI/BIOS' 'expected MSI MAG B850M MORTAR WIFI/MS-7E61 with AMI BIOS'
+hardware_platform_validate_cpu_power && emit OK 'Ryzen power management' "driver=$(hardware_platform_cpu_scaling_driver) pstate=$(hardware_platform_cpu_pstate_status) boost=$(hardware_platform_cpu_boost_value)" || emit KO 'Ryzen power management' 'AMD P-State/boost contract failed'
 
-if hardware_platform_validate_cpu_power; then
-  emit OK 'Ryzen power management' "driver=$(hardware_platform_cpu_scaling_driver) amd_pstate=$(hardware_platform_cpu_pstate_status) boost=$(hardware_platform_cpu_boost_value)"
-else
-  emit KO 'Ryzen power management' "Ryzen 7 7700 requires amd-pstate/amd-pstate-epp with active/passive/guided status and boost=1"
-fi
-
-lan_if=""; lan_bdf=""; lan_id=""
-for n in /sys/class/net/*; do
-  [[ -e "$n/device" && -L "$n/device/driver" ]] || continue
-  driver="$(basename "$(readlink -f "$n/device/driver")")"
-  if [[ "$driver" == "${HARDWARE_LAN_DRIVER:-r8169}" ]]; then
-    lan_if="${n##*/}"; lan_bdf="$(basename "$(readlink -f "$n/device")")"; break
-  fi
-done
+lan_if=''; lan_bdf=''
+for n in /sys/class/net/*; do [[ -e "$n/device" && -L "$n/device/driver" ]] || continue; driver="$(basename "$(readlink -f "$n/device/driver")")"; if [[ "$driver" == "${HARDWARE_LAN_DRIVER:-r8169}" ]]; then lan_if="${n##*/}"; lan_bdf="$(basename "$(readlink -f "$n/device")")"; break; fi; done
 if [[ -n "$lan_if" ]]; then
-  lan_id="$(lspci -s "$lan_bdf" -nn 2>/dev/null | grep -Eo '\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]' | tail -n1 || true)"
-  emit OK '5G LAN identity' "$lan_if bdf=$lan_bdf pci=${lan_id:-unknown} driver=${HARDWARE_LAN_DRIVER:-r8169}"
-  ethtool_report="$(ethtool "$lan_if" 2>/dev/null || true)"
-  if grep -Eq '5000baseT|5000baseT/Full' <<<"$ethtool_report"; then emit OK '5G LAN capability' '5000baseT supported'; else emit KO '5G LAN capability' '5000baseT not advertised by driver/NIC'; fi
-  speed="$(awk -F: '/^[[:space:]]*Speed:/ {gsub(/[[:space:]]|Mb\/s/,"",$2); print $2; exit}' <<<"$ethtool_report")"
-  if [[ "$speed" =~ ^[0-9]+$ ]]; then
-    if (( speed >= ${HARDWARE_LAN_MIN_CAPABILITY_MBPS:-5000} )); then emit OK 'LAN negotiated speed' "${speed}Mb/s"; else emit WARN 'LAN negotiated speed' "${speed}Mb/s (link equipment may limit it)"; fi
-  else emit WARN 'LAN negotiated speed' 'link down or speed unknown'; fi
+  lan_id="$(lspci -s "$lan_bdf" -nn 2>/dev/null | grep -Eo '\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]' | tail -n1 || true)"; emit OK '5G LAN identity' "$lan_if bdf=$lan_bdf pci=${lan_id:-unknown} driver=${HARDWARE_LAN_DRIVER:-r8169}"
+  ethtool_report="$(ethtool "$lan_if" 2>/dev/null || true)"; grep -Eq '5000baseT|5000baseT/Full' <<<"$ethtool_report" && emit OK '5G LAN capability' '5000baseT supported' || emit KO '5G LAN capability' '5000baseT not advertised'
+  speed="$(awk -F: '/^[[:space:]]*Speed:/ {gsub(/[[:space:]]|Mb\/s/,"",$2); print $2; exit}' <<<"$ethtool_report")"; if [[ "$speed" =~ ^[0-9]+$ ]]; then (( speed >= ${HARDWARE_LAN_MIN_CAPABILITY_MBPS:-5000} )) && emit OK 'LAN negotiated speed' "${speed}Mb/s" || emit WARN 'LAN negotiated speed' "${speed}Mb/s (link equipment may limit it)"; else emit WARN 'LAN negotiated speed' 'link down or speed unknown'; fi
 else emit KO '5G LAN identity' "${HARDWARE_LAN_DRIVER:-r8169} interface not found"; fi
 
 wifi_pci="$(hardware_platform_wifi_block || true)"
 if [[ -n "$wifi_pci" ]]; then
-  wifi_header="$(head -n1 <<<"$wifi_pci")"; wifi_bdf="${wifi_header%% *}"; wifi_id="$(hardware_platform_wifi_identity_value pci_id 2>/dev/null || true)"
-  wifi_driver="$(hardware_platform_wifi_identity_value driver 2>/dev/null || true)"
-  if [[ -n "$wifi_driver" ]]; then emit OK 'Wi-Fi identity' "bdf=$wifi_bdf pci=${wifi_id:-unknown} driver=$wifi_driver"; else emit KO 'Wi-Fi identity' "bdf=$wifi_bdf pci=${wifi_id:-unknown} unbound"; fi
-  if hardware_platform_wifi_lock_valid; then
-    emit OK 'Wi-Fi identity lock' "pci=$wifi_id driver=$wifi_driver matches enrolled bare-metal identity"
-  else
-    emit KO 'Wi-Fi identity lock' 'missing/stale identity; run ./diagnostics/baseline-doctor enroll-wifi on this bare-metal host'
-  fi
-  if command_exists iw && iw phy 2>/dev/null | grep -q 'Wiphy'; then
-    emit OK 'Wi-Fi PHY' detected; iw_report="$(iw phy 2>/dev/null || true)"
-    if grep -Eqi 'EHT|802\.11be' <<<"$iw_report"; then emit OK 'Wi-Fi 7 capability' 'EHT/802.11be advertised'; else emit WARN 'Wi-Fi 7 capability' 'EHT marker not exposed by iw'; fi
-    if grep -Eq '59[0-9]{2} MHz|6[0-9]{3} MHz' <<<"$iw_report"; then emit OK 'Wi-Fi 6 GHz' advertised; else emit WARN 'Wi-Fi 6 GHz' '6 GHz channels not visible (regulatory domain may apply)'; fi
-  else emit KO 'Wi-Fi PHY' 'iw cannot enumerate a PHY'; fi
+  wifi_header="$(head -n1 <<<"$wifi_pci")"; wifi_bdf="${wifi_header%% *}"; wifi_id="$(hardware_platform_wifi_identity_value pci_id 2>/dev/null || true)"; wifi_driver="$(hardware_platform_wifi_identity_value driver 2>/dev/null || true)"
+  [[ -n "$wifi_driver" ]] && emit OK 'Wi-Fi identity' "bdf=$wifi_bdf pci=${wifi_id:-unknown} driver=$wifi_driver" || emit KO 'Wi-Fi identity' 'controller unbound'
+  hardware_platform_wifi_lock_valid && emit OK 'Wi-Fi identity lock' "pci=$wifi_id driver=$wifi_driver" || emit KO 'Wi-Fi identity lock' 'run baseline-doctor enroll-wifi on bare metal'
+  if command_exists iw && iw phy 2>/dev/null | grep -q Wiphy; then emit OK 'Wi-Fi PHY' detected; iw_report="$(iw phy 2>/dev/null || true)"; grep -Eqi 'EHT|802\.11be' <<<"$iw_report" && emit OK 'Wi-Fi 7 capability' 'EHT/802.11be advertised' || emit WARN 'Wi-Fi 7 capability' 'EHT marker not exposed'; grep -Eq '59[0-9]{2} MHz|6[0-9]{3} MHz' <<<"$iw_report" && emit OK 'Wi-Fi 6 GHz' advertised || emit WARN 'Wi-Fi 6 GHz' '6 GHz channels not visible'; else emit KO 'Wi-Fi PHY' 'iw cannot enumerate a PHY'; fi
 else emit KO Wi-Fi 'PCI network controller not found'; fi
 
 if command_exists bluetoothctl; then
   bt="$(bluetoothctl list 2>/dev/null || true)"
   if [[ -n "$bt" ]]; then
-    bt_usb="$(lsusb 2>/dev/null | grep -Ei 'Bluetooth|Wireless|MediaTek|Intel|Realtek|Qualcomm' | head -n1 || true)"
-    emit OK 'Bluetooth controller' "${bt_usb:-$bt}"
-  else emit WARN Bluetooth 'controller not currently visible'; fi
+    bt_identity="$(physical_bluetooth_identity 2>/dev/null || true)"; [[ -n "$bt_identity" ]] && emit OK 'Bluetooth controller' "$(tr '\n' ' ' <<<"$bt_identity")" || emit KO 'Bluetooth controller' 'HCI exists but USB/driver identity unresolved'
+    physical_bluetooth_lock_valid && emit OK 'Bluetooth identity lock' 'USB identity + Fedora btusb match enrollment' || emit KO 'Bluetooth identity lock' 'run baseline-doctor enroll-bluetooth on bare metal'
+  else
+    if runtime_is_baremetal && is_true "${HARDWARE_REQUIRE_BLUETOOTH:-true}"; then emit KO Bluetooth 'required controller is not visible'; else emit WARN Bluetooth 'controller not currently visible'; fi
+  fi
 else emit KO Bluetooth 'bluetoothctl missing'; fi
 
 audio="$(aplay -l 2>/dev/null || true)"; audio_usb="$(lsusb 2>/dev/null | grep -Ei 'Audio|Realtek|ALC4080' | head -n1 || true)"
-if grep -Eqi 'ALC4080|Realtek.*USB|USB.*Audio' <<<"$audio"; then emit OK 'ALC4080/USB audio' "${audio_usb:-detected by ALSA}"; else emit KO 'ALC4080/USB audio' 'Realtek USB audio device not detected by ALSA'; fi
-if command_exists wpctl && wpctl status 2>/dev/null | grep -q 'Audio'; then emit OK PipeWire 'audio graph available'; else emit KO PipeWire 'audio graph unavailable'; fi
-if lsmod | grep -q '^snd_usb_audio'; then emit OK snd_usb_audio loaded; else emit WARN snd_usb_audio 'module not currently loaded'; fi
+grep -Eqi 'ALC4080|Realtek.*USB|USB.*Audio' <<<"$audio" && emit OK 'ALC4080/USB audio' "${audio_usb:-detected by ALSA}" || emit KO 'ALC4080/USB audio' 'Realtek USB audio device not detected by ALSA'
+command_exists wpctl && wpctl status 2>/dev/null | grep -q Audio && emit OK PipeWire 'audio graph available' || emit KO PipeWire 'audio graph unavailable'
+lsmod | grep -q '^snd_usb_audio' && emit OK snd_usb_audio loaded || emit WARN snd_usb_audio 'module not currently loaded'
 
-xhci="$(lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /USB controller/ && /xhci_hcd/ {count++} END{print count+0}')"
-if (( xhci > 0 )); then emit OK xHCI "$xhci controller(s) bound to xhci_hcd"; else emit KO xHCI 'no USB controller bound to xhci_hcd'; fi
+xhci="$(lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /USB controller/ && /xhci_hcd/ {count++} END{print count+0}')"; (( xhci > 0 )) && emit OK xHCI "$xhci controller(s) bound to xhci_hcd" || emit KO xHCI 'no USB controller bound to xhci_hcd'
+if hardware_platform_validate_hwmon; then emit OK 'NCT6687D hwmon' "$(hardware_platform_hwmon_counts | tr '\n' ' ')"; else emit KO 'NCT6687D hwmon' 'Fedora in-tree nct6683 must expose live temperature/fan telemetry'; fi
+physical_cooling_lock_valid && emit OK 'Cooling channels' 'pump + CPU fan + system fan enrolled and live' || emit KO 'Cooling channels' 'run baseline-doctor list-cooling then enroll-cooling <pump> <cpu> <system>'
 
-if hardware_platform_validate_hwmon; then
-  hwmon_counts="$(hardware_platform_hwmon_counts)"
-  emit OK 'NCT6687D hwmon' "$(tr '\n' ' ' <<<"$hwmon_counts")"
-else
-  emit KO 'NCT6687D hwmon' 'Fedora in-tree nct6683 driver must expose motherboard temperature and at least one live fan tachometer; no force option is permitted'
-fi
-
-$quiet || ui_meta 'Physical ID report' "$report"
-if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+$quiet || ui_meta 'Physical ID report' "$report"; $quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
 (( ko == 0 ))

@@ -58,4 +58,5 @@ jobs:
       - run: bash tests/test_kvm_xml_policy_behavior.sh
       - run: bash tests/test_application_runtime_behavior.sh
       - run: bash tests/test_stack_certification_contract.sh
+      - run: bash tests/test_golden_completeness_closure.sh
       - run: bash tests/test_documentation_contract.sh

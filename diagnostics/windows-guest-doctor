@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; [[ "${1:-}" == --quiet ]] && quiet=true
+uri="${LIBVIRT_URI:-qemu:///system}"; domain="${WINDOWS11_NAME:-windows-11}"
+ok=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
+vsh(){ if virsh -c "$uri" list --all >/dev/null 2>&1; then virsh -c "$uri" "$@"; else sudo -n virsh -c "$uri" "$@"; fi; }
+
+vsh dominfo "$domain" >/dev/null 2>&1 || { emit KO Windows "domain $domain missing"; exit 1; }
+vsh qemu-agent-command "$domain" '{"execute":"guest-ping"}' >/dev/null 2>&1 || { emit KO QEMU-GA 'guest-ping failed'; exit 1; }
+command -v jq >/dev/null && command -v base64 >/dev/null || { emit KO Tooling 'jq/base64 required'; exit 1; }
+
+path='C:\ProgramData\FedoraGnomeCustom\guest-integration.json'
+open_req="$(jq -nc --arg path "$path" '{execute:"guest-file-open",arguments:{path:$path,mode:"r"}}')"
+open_resp="$(vsh qemu-agent-command "$domain" "$open_req" 2>/dev/null || true)"
+handle="$(jq -r '.return // empty' <<<"$open_resp" 2>/dev/null || true)"
+[[ "$handle" =~ ^[0-9]+$ ]] || { emit KO Marker 'Windows integration marker cannot be opened through QGA'; exit 1; }
+close_marker(){ local req; req="$(jq -nc --argjson h "$handle" '{execute:"guest-file-close",arguments:{handle:$h}}')"; vsh qemu-agent-command "$domain" "$req" >/dev/null 2>&1 || true; }
+trap close_marker EXIT
+read_req="$(jq -nc --argjson h "$handle" '{execute:"guest-file-read",arguments:{handle:$h,count:65536}}')"
+read_resp="$(vsh qemu-agent-command "$domain" "$read_req" 2>/dev/null || true)"
+b64="$(jq -r '.return["buf-b64"] // empty' <<<"$read_resp" 2>/dev/null || true)"
+[[ -n "$b64" ]] || { emit KO Marker 'QGA returned no marker payload'; exit 1; }
+marker="$(printf '%s' "$b64" | base64 -d 2>/dev/null || true)"
+if jq -e '.schema == 2 and .verdict == "PASS" and .virtio_storage == "PASS" and .virtio_network == "PASS" and .virtio_balloon == "PASS" and .qemu_ga == "PASS" and .virtio_bad_count == 0' <<<"$marker" >/dev/null 2>&1; then
+  emit OK 'Windows guest integration' 'live VirtIO storage/network/balloon + QEMU-GA marker PASS'
+else
+  emit KO 'Windows guest integration' 'marker missing required PASS fields; rerun Configure-GuestIntegration.ps1 as Administrator'
+fi
+$quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
+(( ko == 0 ))

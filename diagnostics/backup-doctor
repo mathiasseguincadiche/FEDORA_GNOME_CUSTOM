@@ -1,77 +1,65 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source "$REPO_ROOT/lib/bootstrap.sh"
-engine_bootstrap
-# shellcheck source=lib/backup_runtime.sh
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 source "$REPO_ROOT/lib/backup_runtime.sh"
-
-policy_only=false
-deep=false
+policy_only=false; deep=false; certify=false; quiet=false
 for arg in "$@"; do
   case "$arg" in
     --policy-only) policy_only=true ;;
     --deep) deep=true ;;
+    --certify) certify=true; deep=true ;;
+    --certify-status) certify=true ;;
+    --quiet) quiet=true ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
+ok=0; warn=0; ko=0
+record(){ local level="$1" label="$2" detail="$3"; $quiet || printf '%-4s %-30s %s\n' "$level" "$label" "$detail"; case "$level" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+strict_or_warn(){ if $certify; then record KO "$1" "$2"; else record WARN "$1" "$2"; fi; }
 
-ok=0
-warn=0
-ko=0
-record() {
-  local level="$1" label="$2" detail="$3"
-  printf '%-4s %-30s %s\n' "$level" "$label" "$detail"
-  case "$level" in
-    OK) ((ok+=1)) ;;
-    WARN) ((warn+=1)) ;;
-    KO) ((ko+=1)) ;;
-  esac
-}
-
-if [[ "${BACKUP_ENGINE:-}" == restic ]]; then record OK engine restic; else record KO engine "${BACKUP_ENGINE:-unset}"; fi
-if is_true "${BACKUP_FAIL_CLOSED:-false}"; then record OK fail-closed enabled; else record KO fail-closed disabled; fi
-if is_true "${BACKUP_REQUIRE_EXTERNAL_TARGET:-false}"; then record OK external-target required; else record KO external-target not-required; fi
-if is_true "${BACKUP_ENCRYPTION_REQUIRED:-false}"; then record OK encryption required; else record KO encryption not-required; fi
-if is_true "${BACKUP_INTEGRITY_CHECK_REQUIRED:-false}"; then record OK integrity-check required; else record KO integrity-check not-required; fi
-if is_true "${BACKUP_RESTORE_TEST_REQUIRED:-false}"; then record OK restore-test required; else record KO restore-test not-required; fi
-if is_true "${BACKUP_ALLOW_LIVE_QCOW2_COPY:-false}"; then record KO live-qcow2 allowed; else record OK live-qcow2 forbidden; fi
-if is_true "${BACKUP_VM_SHUTDOWN_REQUIRED:-false}"; then record OK vm-shutdown required; else record KO vm-shutdown not-required; fi
-
-for file in scripts/backup/backup-now.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh prepare-preapply-backup.sh; do
-  if [[ -r "$REPO_ROOT/$file" ]]; then record OK "$file" present; else record KO "$file" missing; fi
-done
-if command -v restic >/dev/null 2>&1; then record OK restic installed; else record WARN restic 'not installed yet'; fi
+[[ "${BACKUP_ENGINE:-}" == restic ]] && record OK engine restic || record KO engine "${BACKUP_ENGINE:-unset}"
+is_true "${BACKUP_FAIL_CLOSED:-false}" && record OK fail-closed enabled || record KO fail-closed disabled
+is_true "${BACKUP_REQUIRE_EXTERNAL_TARGET:-false}" && record OK external-target required || record KO external-target not-required
+is_true "${BACKUP_ENCRYPTION_REQUIRED:-false}" && record OK encryption required || record KO encryption not-required
+is_true "${BACKUP_INTEGRITY_CHECK_REQUIRED:-false}" && record OK integrity-check required || record KO integrity-check not-required
+is_true "${BACKUP_RESTORE_TEST_REQUIRED:-false}" && record OK restore-test required || record KO restore-test not-required
+is_true "${BACKUP_ALLOW_LIVE_QCOW2_COPY:-false}" && record KO live-qcow2 allowed || record OK live-qcow2 forbidden
+is_true "${BACKUP_VM_SHUTDOWN_REQUIRED:-false}" && record OK vm-shutdown required || record KO vm-shutdown not-required
+for file in scripts/backup/backup-now.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh prepare-preapply-backup.sh; do [[ -r "$REPO_ROOT/$file" ]] && record OK "$file" present || record KO "$file" missing; done
+if command -v restic >/dev/null 2>&1; then record OK restic installed; else strict_or_warn restic 'not installed yet'; fi
 
 if ! $policy_only; then
   marker="$STATE_ROOT/preapply-backup.ok"
   if [[ -s "$marker" ]]; then
-    marker_commit="$(awk -F= '$1=="commit" {print $2; exit}' "$marker")"
-    marker_snapshot="$(awk -F= '$1=="snapshot" {print $2; exit}' "$marker")"
-    if [[ "$marker_commit" == "$(repo_commit)" ]]; then record OK preapply-commit "$marker_commit"; else record WARN preapply-commit "${marker_commit:-missing}"; fi
-    if [[ "$marker_snapshot" =~ ^[0-9a-fA-F]{64}$ ]]; then record OK preapply-snapshot valid; else record WARN preapply-snapshot missing-or-invalid; fi
-  else
-    record WARN preapply-marker 'not created yet'
-  fi
+    marker_commit="$(awk -F= '$1=="commit" {print $2; exit}' "$marker")"; marker_snapshot="$(awk -F= '$1=="snapshot" {print $2; exit}' "$marker")"
+    [[ "$marker_commit" == "$(repo_commit)" ]] && record OK preapply-commit "$marker_commit" || strict_or_warn preapply-commit "${marker_commit:-missing}"
+    [[ "$marker_snapshot" =~ ^[0-9a-fA-F]{64}$ ]] && record OK preapply-snapshot valid || strict_or_warn preapply-snapshot missing-or-invalid
+  else strict_or_warn preapply-marker 'not created yet'; fi
 
   if command -v restic >/dev/null 2>&1; then
-    repo="$(backup_runtime_resolve_repository 2>/dev/null || true)"
-    password_file="$(backup_runtime_require_password 2>/dev/null || true)"
+    repo="$(backup_runtime_resolve_repository 2>/dev/null || true)"; password_file="$(backup_runtime_require_password 2>/dev/null || true)"
     if [[ -n "$repo" && -n "$password_file" ]]; then
       backup_runtime_export_env "$repo" "$password_file"
       if restic snapshots --latest 1 >/dev/null 2>&1; then
         record OK repository reachable
-        if $deep; then
-          if restic check --read-data-subset=1/20 >/dev/null; then record OK deep-integrity PASS; else record KO deep-integrity FAIL; fi
-        fi
-      else
-        record KO repository unreachable
-      fi
-    else
-      record WARN repository 'runtime repository/password not resolved'
-    fi
+        if $deep; then restic check --read-data-subset=1/20 >/dev/null && record OK deep-integrity PASS || record KO deep-integrity FAIL; fi
+      else record KO repository unreachable; fi
+    else strict_or_warn repository 'runtime repository/password not resolved'; fi
+  fi
+
+  if $certify; then
+    full="$STATE_ROOT/last-full-backup.ok"; max_h="${DAILY_BACKUP_MAX_AGE_HOURS:-36}"
+    if [[ -s "$full" ]]; then
+      age_h=$(( ( $(date +%s) - $(stat -c %Y "$full") ) / 3600 ))
+      snap="$(awk -F= '$1=="snapshot" {print $2; exit}' "$full")"; commit="$(awk -F= '$1=="commit" {print $2; exit}' "$full")"; integrity="$(awk -F= '$1=="integrity_check" {print $2; exit}' "$full")"
+      [[ "$snap" =~ ^[0-9a-fA-F]{64}$ ]] && record OK 'Full backup snapshot' "$snap" || record KO 'Full backup snapshot' invalid
+      [[ "$commit" == "$(repo_commit)" ]] && record OK 'Full backup commit' "$commit" || record KO 'Full backup commit' "${commit:-missing} != $(repo_commit)"
+      [[ "$integrity" == PASS ]] && record OK 'Full backup integrity marker' PASS || record KO 'Full backup integrity marker' "${integrity:-missing}"
+      (( age_h >= 0 && age_h <= max_h )) && record OK 'Full backup freshness' "${age_h}h <= ${max_h}h" || record KO 'Full backup freshness' "${age_h}h > ${max_h}h"
+    else record KO 'Full backup certification' 'run scripts/backup/backup-now.sh on the current commit before Gate 3'; fi
   fi
 fi
-
-printf '\nBackup doctor: OK=%d WARN=%d KO=%d\n' "$ok" "$warn" "$ko"
-((ko == 0))
+$quiet || printf '\nBackup doctor: OK=%d WARN=%d KO=%d\n' "$ok" "$warn" "$ko"
+(( ko == 0 ))
