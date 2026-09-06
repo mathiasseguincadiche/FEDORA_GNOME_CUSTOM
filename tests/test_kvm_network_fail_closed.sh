@@ -6,10 +6,15 @@ guard="$ROOT/scripts/kvm/kvm_network_guard.sh"
 unit="$ROOT/virtualization/systemd/fedora-gnome-custom-kvm-guard.service"
 dispatcher="$ROOT/virtualization/networkmanager/90-fedora-gnome-custom-kvm-guard"
 runtime="$ROOT/scripts/kvm/runtime_certification.sh"
+runtime_core="$ROOT/scripts/kvm/runtime_certification_core.sh"
 
-for file in "$guard" "$unit" "$dispatcher" "$runtime"; do
+for file in "$guard" "$unit" "$dispatcher" "$runtime" "$runtime_core"; do
   [[ -f "$file" ]] || { echo "missing KVM fail-closed file: $file" >&2; exit 1; }
 done
+
+# The public runtime wrapper must delegate to the strict core and add Windows live proof.
+grep -Fq 'runtime_certification_core.sh' "$runtime"
+grep -Fq 'windows-guest-doctor' "$runtime"
 
 # Guard must expose an explicit restrictive state and reconcile through it.
 grep -Fq 'emergency_guard()' "$guard"
@@ -52,13 +57,13 @@ if grep -Eq 'reload-or-restart.*\|\|[[:space:]]*true' "$dispatcher"; then
   exit 1
 fi
 
-# Runtime certification must prove normal state and rule coverage after reload.
-grep -Fq "systemctl reload \"\$guard_unit\"" "$runtime"
-grep -Fq 'guard_mode=normal' "$runtime"
-grep -Fq 'KVM protected CIDR coverage' "$runtime"
-grep -Fq 'normal block VM to protected host networks' "$runtime"
-grep -Fq 'normal block protected host networks to VM' "$runtime"
-grep -Fq 'host cannot prove gateway' "$runtime"
-grep -Fq "ping -c 1 -W 2 \"\$physical_gateway\"" "$runtime"
+# The runtime core owns network certification and must prove normal state and rule coverage after reload.
+grep -Fq "systemctl reload \"\$guard_unit\"" "$runtime_core"
+grep -Fq 'guard_mode=normal' "$runtime_core"
+grep -Fq 'KVM protected CIDR coverage' "$runtime_core"
+grep -Fq 'normal block VM to protected host networks' "$runtime_core"
+grep -Fq 'normal block protected host networks to VM' "$runtime_core"
+grep -Fq 'host cannot prove gateway' "$runtime_core"
+grep -Fq "ping -c 1 -W 2 \"\$physical_gateway\"" "$runtime_core"
 
 echo 'KVM network fail-closed contract: PASS'

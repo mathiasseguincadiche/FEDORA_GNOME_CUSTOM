@@ -1,6 +1,22 @@
 # delivery	id	executable	smoke_arg	trust_class
-fedora-rpm	ptyxis	ptyxis	--version	fedora-repository
-fedora-rpm	gnome-text-editor	gnome-text-editor	--version	fedora-repository
+fedora-rpm	ptyxis	-	__desktop__	fedora-repository
+fedora-rpm	gnome-tweaks	-	__desktop__	fedora-repository
+fedora-rpm	gnome-software	-	__desktop__	fedora-repository
+fedora-rpm	gnome-system-monitor	-	__desktop__	fedora-repository
+fedora-rpm	baobab	-	__desktop__	fedora-repository
+fedora-rpm	gnome-calculator	-	__desktop__	fedora-repository
+fedora-rpm	file-roller	-	__desktop__	fedora-repository
+fedora-rpm	gnome-text-editor	-	__desktop__	fedora-repository
+fedora-rpm	loupe	-	__desktop__	fedora-repository
+fedora-rpm	papers	-	__desktop__	fedora-repository
+fedora-rpm	showtime	-	__desktop__	fedora-repository
+fedora-rpm	snapshot	-	__desktop__	fedora-repository
+fedora-rpm	gnome-calendar	-	__desktop__	fedora-repository
+fedora-rpm	gnome-clocks	-	__desktop__	fedora-repository
+fedora-rpm	gnome-weather	-	__desktop__	fedora-repository
+fedora-rpm	gnome-maps	-	__desktop__	fedora-repository
+fedora-rpm	gnome-contacts	-	__desktop__	fedora-repository
+fedora-rpm	simple-scan	-	__desktop__	fedora-repository
 fedora-rpm	vlc	vlc	--version	fedora-repository
 fedora-rpm	libreoffice	libreoffice	--version	fedora-repository
 fedora-rpm	filezilla	filezilla	--version	fedora-repository

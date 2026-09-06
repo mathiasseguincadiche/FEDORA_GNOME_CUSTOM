@@ -21,10 +21,11 @@ Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif et le m
 5. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal ;
 6. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification physique ;
 7. [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md) — drivers, KVM/libvirt et applications en runtime ;
-8. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
-9. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
-10. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
-11. [`adr/README.md`](adr/README.md) — décisions d'architecture.
+8. [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) — fermeture CPU/cooling/BT/network/audio/GPU/VRR-HDR/Windows/backup ;
+9. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
+10. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
+11. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
+12. [`adr/README.md`](adr/README.md) — décisions d'architecture.
 
 ## Validation avant production
 
@@ -32,7 +33,7 @@ Le parcours officiel est désormais une chaîne de preuves ordonnée :
 
 1. **Gate 1** — [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) + [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) : Fedora 44/WSL2, système et logique uniquement ;
 2. **Gate 2** — [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) : Fedora 44 GNOME 50/Wayland, Nautilus, Ptyxis, extensions et validation visuelle ;
-3. **Gate 3** — [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) : Fedora 44 bare-metal et certification Golden complète.
+3. **Gate 3** — [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) + [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) : Fedora 44 bare-metal et certification Golden complète.
 
 Gate 1 et Gate 2 produisent des preuves JSON portables avec `hardware_certification=DEFERRED`. Gate 2 référence le SHA-256 exact de Gate 1. Gate 3 refuse `final-certification PASS` si cette chaîne est absente ou périmée.
 
@@ -45,7 +46,7 @@ Gate 1 PASS + Gate 2 PASS
       ↓
 Fedora 44 fraîche
       ↓
-baseline hardware
+baseline hardware + CPU soak + BT/cooling locks
       ↓
 ./install.sh --dry-run
       ↓
@@ -57,6 +58,8 @@ kernel candidate → boot one-shot
       ↓
 qualification physique + drivers/runtime
       ↓
+GPU/network/audio/VRR-HDR + KVM/Windows live proofs
+      ↓
 Gate 3 final certification + golden-release.json
 ```
 
@@ -66,6 +69,7 @@ Gate 3 final certification + golden-release.json
 
 - [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md)
 - [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md)
+- [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md)
 - [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md)
 - [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md)
 
@@ -91,6 +95,7 @@ Gate 3 final certification + golden-release.json
 ### KVM / VM
 
 - [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md)
+- [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md)
 - [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md)
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md)
 - [`KVM_NETWORK.md`](KVM_NETWORK.md)
@@ -102,6 +107,7 @@ Gate 3 final certification + golden-release.json
 ### Exploitation / sécurité
 
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md)
+- [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md)
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md)
 - [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md)
 - [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md)
