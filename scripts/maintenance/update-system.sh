@@ -154,10 +154,10 @@ apply_flatpak() {
 
 capture_offline_log() {
   local report="$REPORT_ROOT/$RUN_ID-dnf5-offline-last.log"
-  sudo dnf5 offline log --number=-1 > "$report" 2>&1 || {
+  if ! sudo dnf5 offline log --number=-1 2>&1 | tee "$report" >/dev/null; then
     ui_error "Unable to read latest DNF5 offline log: $report"
     return "$EXIT_POSTCHECK_FAILED"
-  }
+  fi
   ui_check PASS 'DNF5 offline log' "$report"
 }
 
