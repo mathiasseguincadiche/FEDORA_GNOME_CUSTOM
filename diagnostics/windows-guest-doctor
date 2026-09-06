@@ -10,7 +10,10 @@ vsh(){ if virsh -c "$uri" list --all >/dev/null 2>&1; then virsh -c "$uri" "$@";
 
 vsh dominfo "$domain" >/dev/null 2>&1 || { emit KO Windows "domain $domain missing"; exit 1; }
 vsh qemu-agent-command "$domain" '{"execute":"guest-ping"}' >/dev/null 2>&1 || { emit KO QEMU-GA 'guest-ping failed'; exit 1; }
-command -v jq >/dev/null && command -v base64 >/dev/null || { emit KO Tooling 'jq/base64 required'; exit 1; }
+if ! command -v jq >/dev/null || ! command -v base64 >/dev/null; then
+  emit KO Tooling 'jq/base64 required'
+  exit 1
+fi
 
 path='C:\ProgramData\FedoraGnomeCustom\guest-integration.json'
 open_req="$(jq -nc --arg path "$path" '{execute:"guest-file-open",arguments:{path:$path,mode:"r"}}')"
