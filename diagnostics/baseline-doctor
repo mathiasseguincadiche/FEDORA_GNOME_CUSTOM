@@ -42,6 +42,7 @@ case "${1:-status}" in
    hardware_platform_wifi_lock_valid && ui_check OK 'Wi-Fi identity lock' "$(hardware_platform_wifi_lock_path)" || ui_check WARN 'Wi-Fi identity lock' 'run baseline-doctor enroll-wifi'
    physical_bluetooth_lock_valid && ui_check OK 'Bluetooth identity lock' "$(physical_bt_lock_path)" || ui_check WARN 'Bluetooth identity lock' 'run baseline-doctor enroll-bluetooth'
    physical_cooling_lock_valid && ui_check OK 'Cooling channel lock' "$(physical_cooling_lock_path)" || ui_check WARN 'Cooling channel lock' 'run list-cooling then enroll-cooling'
+   ui_check INFO Suspend 'certified after APPLY/reboot by final-certification'
    ;;
  snapshot) require_baremetal; ui_meta Report "$(snapshot)" ;;
  enroll-wifi) prepare_platform; path="$(hardware_platform_enroll_wifi_identity)"; ui_check OK 'Wi-Fi identity enrolled' "$path" ;;
