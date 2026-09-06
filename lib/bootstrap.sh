@@ -12,6 +12,7 @@ engine_bootstrap() {
   source "$REPO_ROOT/lib/mutations.sh"
   source "$REPO_ROOT/lib/module_catalog.sh"
   source "$REPO_ROOT/lib/orchestrator.sh"
+  source "$REPO_ROOT/lib/hardware_platform.sh"
   source "$REPO_ROOT/lib/baseline.sh"
   source "$REPO_ROOT/lib/evidence.sh"
   source "$REPO_ROOT/lib/hardware_profile.sh"
