@@ -93,7 +93,7 @@ kernel_lifecycle_candidate_nevras() {
   local release="$1" repo pkg found vr arch
   repo="$(kernel_lifecycle_vanilla_repo_id)" || return 1
   arch="${release##*.}"
-  vr="${release%.$arch}"
+  vr="${release%.*}"
   for pkg in kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra; do
     found="$(dnf5 -q --repo="$repo" repoquery --available --qf $'%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' "$pkg" 2>/dev/null \
       | grep -Fx "$pkg-$release" | head -n1)"
