@@ -5,31 +5,15 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
-
 if lspci -Dnnd 8086:e20b >/dev/null 2>&1; then emit OK GPU 'Arc B580 8086:e20b'; else emit KO GPU 'Arc B580 missing'; fi
-for pkg in intel-compute-runtime intel-level-zero intel-opencl clinfo; do
-  if rpm -q "$pkg" >/dev/null 2>&1; then emit OK Package "$pkg"; else emit KO Package "$pkg missing"; fi
-done
-
-if ldconfig -p 2>/dev/null | grep -Eq 'libze_loader[.]so|libze_intel_gpu[.]so'; then
-  emit OK 'Level Zero' 'runtime library visible'
+for pkg in intel-compute-runtime intel-level-zero intel-opencl clinfo; do if rpm -q "$pkg" >/dev/null 2>&1; then emit OK Package "$pkg"; else emit KO Package "$pkg missing"; fi; done
+if ldconfig -p 2>/dev/null | grep -Eq 'libze_loader[.]so|libze_intel_gpu[.]so'; then emit OK 'Level Zero' 'runtime library visible'; else emit KO 'Level Zero' 'runtime library unavailable'; fi
+clout="$(clinfo 2>/dev/null || true)"; if grep -Eqi 'Platform Name.*Intel|Platform Vendor.*Intel' <<<"$clout" && grep -Eqi 'Device Name.*(Intel|Arc)|Device Vendor.*Intel' <<<"$clout"; then emit OK OpenCL 'Intel compute device enumerated'; else emit KO OpenCL 'Intel Arc compute device not enumerated'; fi
+if runtime_is_baremetal; then
+  if python3 "$REPO_ROOT/scripts/hardware/opencl-smoke.py" >"$REPORT_ROOT/$RUN_ID-opencl-smoke.txt" 2>&1; then emit OK 'OpenCL compute' 'real kernel execution PASS'; else emit KO 'OpenCL compute' "real kernel execution failed; see $REPORT_ROOT/$RUN_ID-opencl-smoke.txt"; fi
 else
-  emit KO 'Level Zero' 'runtime library unavailable'
+  emit WARN 'OpenCL compute' 'real GPU execution deferred outside bare-metal'
 fi
-
-clout="$(clinfo 2>/dev/null || true)"
-if grep -Eqi 'Platform Name.*Intel|Platform Vendor.*Intel' <<<"$clout" &&
-   grep -Eqi 'Device Name.*(Intel|Arc)|Device Vendor.*Intel' <<<"$clout"; then
-  emit OK OpenCL 'Intel compute device enumerated'
-else
-  emit KO OpenCL 'Intel Arc compute device not enumerated'
-fi
-
-if command_exists vulkaninfo && vulkaninfo --summary 2>/dev/null | grep -Eqi 'Intel.*Arc|Arc.*Intel|B580'; then
-  emit OK Vulkan 'Arc device enumerated'
-else
-  emit WARN Vulkan 'Arc name not confirmed by vulkaninfo summary'
-fi
-
+if command_exists vulkaninfo && vulkaninfo --summary 2>/dev/null | grep -Eqi 'Intel.*Arc|Arc.*Intel|B580'; then emit OK Vulkan 'Arc device enumerated'; else emit WARN Vulkan 'Arc name not confirmed by vulkaninfo summary'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 [[ "$(<"$ROOT/VERSION")" == '0.14.0' ]]
 grep -Fq '**Golden Workstation 0.14.0**' "$ROOT/README.md"
-grep -Fq '0.14.0 — Final Hardening / Release Candidate' "$ROOT/README.md"
+grep -Fq 'docs/GOLDEN_RELEASE.md' "$ROOT/README.md"
 
 # Runtime identity must fail closed for virtualized and ambiguous environments.
 grep -Fq 'systemd-detect-virt --container' "$ROOT/lib/common.sh"

@@ -1,24 +1,20 @@
 # FEDORA_GNOME_CUSTOM
 
-**Golden Workstation 0.14.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue pour une workstation AMD Ryzen + Intel Arc B580 avec deux NVMe Crucial T705, écran 2560×1440/240 Hz et environnement KVM/DevOps.
+**Golden Workstation 0.14.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue et certifiée pour une workstation AMD Ryzen 7 7700 + Intel Arc B580 + 2× Crucial T705.
 
-Le projet traite le poste de travail comme une infrastructure versionnée :
+Le projet traite l'OS principal comme une infrastructure versionnée :
 
 ```text
-mesurer → préflight → sauvegarder → converger → redémarrer → certifier
+mesurer → préflight → sauvegarder → converger → qualifier → certifier
 ```
 
-## Point d'entrée opérateur
-
-Le point d'entrée recommandé au quotidien est le **Workstation Control Center** :
+## Point d'entrée
 
 ```bash
 ./control.sh
 ```
 
-Il fournit une interface terminal structurée autour de neuf socles : installation, mises à jour, backup/restauration, diagnostics, kernel/boot, KVM, maintenance, certification et logs/preuves.
-
-Le mode CLI reste disponible pour l'automatisation :
+Mode CLI :
 
 ```bash
 ./control.sh status
@@ -31,403 +27,144 @@ Le mode CLI reste disponible pour l'automatisation :
 ./control.sh cert status
 ```
 
-`./menu.sh` reste un alias de compatibilité vers le même cockpit. Les moteurs spécialisés (`install.sh`, `diagnostic.sh`, scripts backup/kernel/KVM) restent directement appelables et conservent leurs propres garde-fous.
+`./menu.sh` reste un alias de compatibilité. Les moteurs spécialisés conservent leurs propres garde-fous.
 
 Voir [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
 
-## Commencer ici
-
-- [`docs/README.md`](docs/README.md) — portail documentaire et parcours de lecture ;
-- [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) — centre de contrôle interactif et CLI ;
-- [`docs/GLOSSARY.md`](docs/GLOSSARY.md) — vocabulaire Fedora/KVM/libvirt ;
-- [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
-- [`docs/NAUTILUS.md`](docs/NAUTILUS.md) — intégration Files/GVfs/Sushi/archives ;
-- [`docs/PTYXIS.md`](docs/PTYXIS.md) — terminal GNOME natif et frontière HOST/KVM ;
-- [`docs/VIRTUALBOX_GNOME_LAB.md`](docs/VIRTUALBOX_GNOME_LAB.md) — GATE 2 GNOME/VirtualBox fail-closed ;
-- [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) — utilisation quotidienne des VM ;
-- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — runbook par symptôme.
-
-## Contrat Golden Workstation
+## Contrat Golden
 
 ```text
-FEDORA 44 WORKSTATION
-        ↓
-BASELINE MATÉRIELLE
-  CPU / RAM / 2× T705 / Arc B580 / EDID
-        ↓
-PREFLIGHT NON-MUTANT + BACKUP RESTIC
-        ↓
-APPLY PROTÉGÉ
-  kernel-vanilla/stable latest-stable
-  firmware / microcode
-  GNOME 50 / Wayland / codecs / applications
-  Nautilus complet + GVfs + Sushi + File Roller
-  Bureau XDG + Corbeille + Show Desktop
-  Resource Monitor CPU/RAM/réseau/B580
-  Ptyxis + Bash UX / portals / secrets / print-scan / VPN / power
-  Arc Level Zero/OpenCL
-  KVM sur /data + réseau privé fail-closed LAN/VPN
-  lifecycle sécurisé + backup quotidien
-        ↓
-REBOOT
-        ↓
-CERTIFICATION BARE-METAL
-  kernel réellement installé
-  hardware + firmware + Arc B580/xe
-  display actif 1440p/~240 Hz
-  desktop/portals/lifecycle/Bash/apps/dock
-  Nautilus/GVfs/Sushi/File Roller
-  Ptyxis natif + Bash
-  DING + Show Desktop Plus + Resource Monitor runtime
-  socle KVM host
-  Nautilus cold-start
-  5 cycles veille/réveil physiques uniques
-  matrice software known-good
+Fedora 44 fraîche
+      ↓
+baseline bare-metal
+  Ryzen / DDR5 / B580 / ReBAR / PCIe / 2× T705 / EDID
+      ↓
+FULL DRY-RUN
+  commit + configuration effective + module plan + hardware fingerprint
+      ↓
+backup Restic vérifié
+  snapshot réel + integrity check + restore canary
+      ↓
+APPLY protégé
+      ↓
+Kernel Vanilla = candidat uniquement
+      ↓
+boot one-shot du candidat
+      ↓
+qualification bare-metal
+  xe / ReBAR / PCIe / SMART / display / VA-API / OpenCL / GNOME / KVM
+      ↓
+5 cycles veille/réveil physiques + cold-start Nautilus
+      ↓
+certification
+      ↓
+golden-release.json + inventaires exacts
 ```
 
-La CI complète cette certification ; elle ne prétend pas remplacer les preuves physiques.
+Une modification de la configuration locale après le dry-run, un changement matériel/BIOS significatif ou une évolution de la pile runtime invalide les preuves correspondantes.
 
-## 0.14.0 — Final Hardening / Release Candidate
+## Invariants du HOST
 
-Cette release ferme les écarts identifiés lors de la revue pré-1.0 sans ajouter de nouveau socle fonctionnel :
-
-- runtime `unknown` fail-closed : l'absence de preuve de virtualisation n'est plus assimilée automatiquement au bare-metal ;
-- contrat d'orchestration strict : `precheck`, `plan`, `apply` et `postcheck` sont obligatoires pour chaque module ;
-- un échec pendant `--apply` conserve son code retour et produit toujours un rapport d'état partiellement convergé ;
-- VA-API résout désormais le render node de l'Arc B580 par PCI `8086:e20b` au lieu de supposer `/dev/dri/renderD128` ;
-- Nautilus dispose d'un socle dédié avec GVfs archive/AFC/GOA/NFS, SMB/MTP déclaratifs, Sushi et File Roller ;
-- le doctor Nautilus fonctionnel est distinct du benchmark cold-start et entre dans la certification finale ;
-- Ptyxis possède un doctor natif distinct de la couche Bash ; Toolbx reste hors du HOST Golden par défaut ;
-- le workaround historique `ibus-typing-booster` est découplé de Nautilus et désactivé par défaut ;
-- DING, Show Desktop Plus et Resource Monitor sont verrouillés par URL GNOME Review **et SHA-256 exact** ;
-- les timers backup utilisent un runtime autonome versionné par SHA et vérifié par manifeste ;
-- la rétention Restic 7 daily / 4 weekly / 6 monthly est appliquée périodiquement aux tags `full` et `daily` ;
-- `sshd` est désactivé sur le HOST Fedora tandis que `openssh-clients` reste installé pour HOST → VM ;
-- le guard KVM protège les LAN et les routes non-default du HOST, notamment VPN/réseaux d'entreprise, tout en préservant la route Internet par défaut ;
-- les Flatpaks `community-unverified` doivent appartenir à une allowlist versionnée explicite ;
-- la télémétrie Resource Monitor de la PR #32 est intégrée au contrat/documentation de release.
-
-Choix assumés du profil : pas de chiffrement LUKS imposé par le projet, pas de Secure Boot pour le HOST Golden, kernel `kernel-vanilla/stable` le plus récent avec kernel Fedora conservé comme fallback.
-
-## 0.13.0 — Workstation Control Center
-
-La 0.13.0 a ajouté la couche opérateur qui manquait au projet sans déplacer la logique métier hors de ses moteurs spécialisés :
-
-- `control.sh` devient le cockpit principal ;
-- `menu.sh` reste un alias compatible ;
-- interface terminal structurée et lisible avec couleurs ANSI uniquement en TTY et support `NO_COLOR=1` ;
-- tableau de bord immédiat : version, Fedora, runtime, kernel, politique Golden, B580/xe, Git, backup, certification, KVM et reboot ;
-- neuf sous-menus fonctionnels au lieu d'une liste plate d'actions ;
-- mode CLI scriptable avec conservation des codes de retour ;
-- nouveau moteur `scripts/maintenance/update-system.sh` ;
-- mise à jour complète sécurisée : **backup Restic obligatoire → DNF `--refresh` → Flatpak → firmware check read-only → diagnostic → reboot status** ;
-- aucun flash firmware automatique ;
-- aucune logique `apply_gate_open`, Restic, nftables ou DNF dupliquée dans la couche UI ;
-- le kernel Golden reste `kernel-vanilla/stable`, politique `latest-stable`, avec kernel Fedora conservé comme fallback.
-
-## 0.12.0 — Desktop Ergonomics
-
-La 0.12.0 a ajouté deux fonctions utilisateur au contrat Golden sans transformer GNOME en bureau lourdement thémé :
-
-- **Desktop Icons NG (DING)** depuis l'artefact GNOME Extensions review `74408` / version de site `95`, compatible GNOME Shell 50 ;
-- `~/Bureau` comme dossier XDG Desktop, avec contenu visible sur le fond d'écran ;
-- **Corbeille visible**, Home/volumes externes/réseau masqués ;
-- **Show Desktop Plus** depuis review `70326` / version `8` ;
-- bouton Show Desktop à gauche de la barre supérieure, clic gauche toggle bureau/fenêtres ;
-- `Super+D` pour le même comportement ;
-- LAB GNOME VirtualBox fail-closed pour la validation graphique GATE 2.
+- Fedora Linux **44** Workstation ;
+- GNOME **50**, Wayland ;
+- SELinux **Enforcing** ;
+- firewalld actif ;
+- **Secure Boot désactivé** par politique ;
+- **aucun LUKS / dm-crypt sur les disques locaux du HOST** ;
+- Restic reste chiffré pour les sauvegardes externes ;
+- aucun `force_probe`, aucun Mesa Git, aucun dépôt GPU tiers ;
+- Intel Arc B580 conservée par le HOST, sans passthrough GPU ;
+- firmware inventorié, **aucun flash automatique** ;
+- Kernel Vanilla stable passe toujours par `candidate → boot-candidate → certify` ;
+- au moins un kernel Fedora 44 officiel reste installé comme fallback ;
+- KVM/libvirt reste fail-closed vis-à-vis des réseaux HOST protégés.
 
 ## Matériel ciblé
 
-Le profil versionné attend notamment :
+| Élément | Contrat |
+|---|---|
+| Carte mère | MSI MAG B850M Mortar WiFi |
+| CPU | AMD Ryzen 7 7700 |
+| RAM | 48 Gio, validation 5600 puis 6000 MT/s |
+| GPU | Intel Arc B580 `8086:e20b`, pilote `xe` |
+| GPU PCIe | ReBAR actif, x8, capacité ≥ PCIe 4.0 |
+| SSD système | Crucial T705, Btrfs non chiffré |
+| SSD KVM | Crucial T705, EXT4 monté sur `/data` |
+| NVMe PCIe | x4, capacité PCIe 5.0 |
+| Écran | ASUS ROG Strix OLED XG27AQDMES, 2560×1440/~240 Hz |
 
-- AMD Ryzen 7 7700 ;
-- MSI MAG B850M Mortar WiFi ;
-- 48 Gio DDR5 dans la baseline actuelle ;
-- Intel Arc B580 PCI `8086:e20b` sur pilote `xe` ;
-- deux Crucial T705 ;
-- écran ASUS 2560×1440/240 Hz.
+Le profil d'affichage est lié à l'**EDID réellement certifié sur un connecteur appartenant à la B580**. L'iGPU Ryzen peut donc rester disponible comme solution de récupération sans rendre le repair ambigu.
 
-Cette précision est volontaire : un changement de composant majeur est traité comme une évolution de plateforme et doit être recertifié.
+## Kernel
 
-## Kernel, Arc et stabilité
-
-Politique Golden :
-
-```text
-Golden default     kernel-vanilla/stable
-Cible              latest stable upstream
-Minimum actuel     7.2.2
-Secure Boot HOST   désactivé par choix de profil
-Fallback           kernel Fedora officiel conservé
-Exclus du Golden   mainline / -rc / linux-next
-```
-
-Contrôles :
+Le Golden n'est jamais « le dernier kernel installé ».
 
 ```bash
+./control.sh kernel candidate
+./control.sh kernel boot-candidate
+# reboot
 ./diagnostics/kernel-doctor
-./diagnostics/firmware-doctor
-./diagnostics/hardware-components-doctor
-./diagnostics/graphics-doctor
-./diagnostics/arc-compute-doctor
+./diagnostics/final-certification record-suspend   # après chaque cycle physique
+./control.sh kernel certify
 ```
 
-Aucun `force_probe`, aucun dépôt GPU tiers, aucun tweak ASPM/APST/C-State aveugle. Fedora/Mesa reste la base ; le chemin média Intel/RPM Fusion n'est convergé qu'en fonction des capacités réellement mesurées sur le render node appartenant à l'Arc B580.
+Le candidat est résolu depuis le repository Kernel Vanilla stable, par NEVRA exacte, avec version minimale et fallback Fedora obligatoires. Une version plus récente n'est jamais promue automatiquement.
 
-## GNOME et applications
+## Mises à jour
 
-GNOME reste proche de l'upstream Adwaita/libadwaita.
-
-Extensions fonctionnelles gérées :
-
-- Dash to Dock ;
-- AppIndicator ;
-- Desktop Icons NG (DING) ;
-- Show Desktop Plus ;
-- Resource Monitor.
-
-Blur My Shell et Just Perfection restent hors de l'état Golden certifié par défaut.
-
-Resource Monitor affiche le profil Golden CPU/RAM/réseau/B580 ; sur bare-metal, l'absence d'une source de charge GPU B580 valide reste un KO plutôt qu'un faux `0 %`.
-
-Ergonomie desktop certifiée :
-
-```text
-~/Bureau             contenu visible sur le fond d'écran
-Corbeille            visible
-Home/volumes         masqués
-Show Desktop         bouton en haut/gauche
-Clic gauche          toggle bureau/fenêtres
-Super+D              toggle bureau/fenêtres
-```
-
-### Nautilus complet
-
-Nautilus reste le gestionnaire de fichiers GNOME natif. Le profil Golden ajoute les backends GVfs pour SMB, MTP, appareil photo, FUSE, archives, Apple/AFC, GNOME Online Accounts et NFS, ainsi que Sushi pour l'aperçu rapide et l'intégration File Roller.
-
-```bash
-./diagnostics/nautilus-integration-doctor
-./diagnostics/nautilus-coldstart-doctor
-```
-
-Le premier valide les fonctionnalités ; le second mesure séparément la latence réelle du premier lancement. Voir [`docs/NAUTILUS.md`](docs/NAUTILUS.md).
-
-Dock certifié :
-
-1. Nautilus
-2. Brave
-3. Ptyxis
-4. Visual Studio Code
-5. Bitwarden
-6. Slack
-7. LibreOffice
-8. GNOME Software
-
-Applications professionnelles supplémentaires : VLC, FileZilla, ONLYOFFICE, MarkText, Remmina et draw.io.
-
-La provenance est documentée dans `manifests/application-provenance.tsv`. Les applications Flathub communautaires présentes dans le Golden sont explicitement allowlistées ; un nouvel ID `community-unverified` non approuvé bloque le precheck.
-
-## Multimédia
-
-Le projet assemble explicitement Fedora + RPM Fusion + FFmpeg/GStreamer + VA-API/oneVPL pour couvrir les formats courants tout en évitant les swaps graphiques aveugles.
-
-```bash
-./diagnostics/media-doctor
-```
-
-Voir [`docs/MULTIMEDIA_CODECS.md`](docs/MULTIMEDIA_CODECS.md).
-
-## Ptyxis / Bash host
-
-Ptyxis est le terminal GNOME natif. Il ouvre Bash avec une couche légère et versionnée : `bash-completion`, `fzf`, `zoxide`, `direnv`, historique long/synchronisé, prompt Git local-only et aliases Git/Docker/Kubernetes/Terraform non destructifs.
-
-Toolbx/Podman ne sont pas imposés au HOST Golden : KVM reste la frontière DevOps principale.
-
-```bash
-./diagnostics/ptyxis-doctor
-./diagnostics/shell-doctor
-```
-
-Voir [`docs/PTYXIS.md`](docs/PTYXIS.md) et [`docs/HOST_BASH_UX.md`](docs/HOST_BASH_UX.md).
-
-## Affichage et veille
-
-Le repair GNOME cible 2560×1440, ~240 Hz, scale 1.0, SDR/default et Full RGB.
-
-```bash
-./diagnostics/display-doctor
-./diagnostics/nautilus-integration-doctor
-./diagnostics/nautilus-coldstart-doctor
-./diagnostics/ptyxis-doctor
-./diagnostics/final-certification record-suspend
-./diagnostics/final-certification certify
-```
-
-Une mise à jour du kernel, firmware GPU, Mesa, Mutter ou GNOME Shell peut invalider les anciennes preuves sensibles et imposer une recertification.
-
-## KVM / VMs
-
-KVM utilise :
-
-```text
-libvirt        qemu:///system
-stockage       /data EXT4 sur le second T705
-pool           devops-data
-réseau         devops-nat
-bridge         virbr50
-CIDR           192.168.50.0/24
-```
-
-Profils invités :
-
-- `ubuntu-devops` — Ubuntu Server 26.04, 6 vCPU, 16 Gio, 160 Gio ;
-- `windows-11` — Windows 11, 4 vCPU, 12 Gio, 128 Gio, UEFI Secure Boot + TPM 2.0.
-
-L'Arc B580 reste au HOST : aucun GPU passthrough.
-
-### NAT custom et isolation LAN/VPN
-
-Le NAT libvirt permet aux VM d'accéder à Internet. Une table nftables appartenant au projet bloque le forwarding entre `virbr50` et les réseaux explicitement routés par le HOST : LAN directement connecté, réseaux VPN/entreprise et tunnels non-default. La route Internet par défaut reste autorisée.
-
-Lors d'un changement de réseau :
-
-```text
-NetworkManager event
-        ↓
-mode emergency
-  bloque tout forwarding via virbr50
-        ↓
-redécouverte + validation des routes protégées
-        ↓
-mode normal uniquement si succès
-```
-
-Si le recalcul échoue, le mode d'urgence reste actif. Une panne de recalcul coupe donc la sortie réseau des VM au lieu de conserver une ancienne hypothèse réseau potentiellement dangereuse.
-
-Voir [`docs/KVM_NETWORK.md`](docs/KVM_NETWORK.md).
-
-### Ubuntu DevOps Ready
-
-Pour créer Ubuntu, l'opérateur fournit ensemble :
-
-```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
-```
-
-Le projet authentifie la liste de checksums avec l'empreinte Canonical attendue puis vérifie le SHA-256 de l'image avant de créer le disque.
-
-```bash
-scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
-```
-
-La VM est ensuite provisionnée pour `clone → build/test → containerize → deploy` : Git/GitHub/GitLab, Docker, Terraform, Ansible, AWS/Azure, kubectl/Helm/kind/Minikube/K9s, Node 22, Java 21/Maven, Python et outils Ops.
-
-Le HOST conserve uniquement les **clients SSH** nécessaires à l'administration des VM ; le serveur `sshd` du HOST est désactivé par le Kickstart Golden.
-
-### Windows 11
-
-```bash
-scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso
-```
-
-Lorsque des SHA-256 obtenus depuis les sources de confiance sont disponibles, les deux ISO peuvent être vérifiées avant création.
-
-Voir [`docs/VM_PROFILES.md`](docs/VM_PROFILES.md) et [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md).
-
-## Backup / recovery
-
-Le pré-APPLY Restic est fail-closed : cible externe/remote, chiffrement du dépôt Restic, intégrité, restore test, snapshot lié au même commit et arrêt des VM pour les disques. Le profil n'impose pas de chiffrement LUKS des SSD.
-
-La sauvegarde quotidienne résout les dossiers utilisateur via XDG afin de rester correcte quelle que soit la langue (`Bureau`, `Images`, `Vidéos`, `Musique`, etc.). Les timers exécutent un bundle autonome installé sous le SHA appliqué et vérifié par `MANIFEST.sha256`, sans dépendre du checkout Git courant.
-
-La rétention `7 daily / 4 weekly / 6 monthly` est appliquée automatiquement chaque semaine aux snapshots `fedora-gnome-custom-full` et `fedora-gnome-custom-daily`, puis un unique `restic prune` est exécuté. Le déclenchement manuel reste disponible depuis le Control Center.
-
-Les restores sont staging-first. La passphrase Restic doit disposer d'une copie de récupération sécurisée hors de la workstation ; elle n'est jamais sauvegardée dans le dépôt Restic lui-même.
-
-```bash
-./prepare-preapply-backup.sh
-./diagnostics/backup-doctor
-./diagnostics/daily-backup-doctor
-scripts/backup/backup-now.sh --prune
-```
-
-Voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
-
-## Installation
-
-### 1. Kickstart piné
-
-```bash
-installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
-```
-
-Le générateur affiche la cible, exige `EFFACER /dev/...` et inscrit le SHA Git courant. Le `%post` fetch/checkout exactement ce SHA. Le HOST n'active pas `sshd`; `openssh-clients` reste installé pour les connexions vers les VM.
-
-### 2. Baseline
-
-```bash
-./diagnostics/baseline-doctor snapshot
-./diagnostics/baseline-doctor run-memory-test 5600
-# profil mémoire BIOS à 6000 puis reboot
-./diagnostics/baseline-doctor run-memory-test 6000
-./diagnostics/baseline-doctor run-nvme-test root
-./diagnostics/baseline-doctor run-nvme-test data
-./diagnostics/baseline-doctor certify
-```
-
-La qualification mémoire automatisée utilise **60 minutes** par profil mémoire conformément à `config/performance.conf`.
-
-### 3. Preflight, backup, APPLY
-
-Depuis le cockpit :
-
-```bash
-./control.sh
-```
-
-Ou directement :
-
-```bash
-./install.sh --dry-run
-./prepare-preapply-backup.sh
-# après revue : REAL_MACHINE_APPROVED=true dans config/local.conf
-./install.sh --apply
-```
-
-Le gate exige bare-metal réellement prouvé, Git propre, preflight du même commit, baseline valide, backup Restic du même commit et confirmation exacte. Un runtime indéterminé reste `unknown` et ne peut pas ouvrir le gate.
-
-## Mises à jour quotidiennes
-
-Vérification read-only :
-
-```bash
-./control.sh update check
-```
-
-Mise à jour complète sécurisée :
+Les RPM Fedora sont préparés via **DNF5 offline** après backup :
 
 ```bash
 ./control.sh update all
+sudo scripts/maintenance/update-system.sh --offline-reboot
+# après le reboot
+scripts/maintenance/update-system.sh --post-offline
 ```
 
-La transaction complète exige bare-metal, réalise un backup Restic complet avant DNF, met ensuite à jour Fedora et les Flatpaks, consulte fwupd sans flasher, exécute le diagnostic global et indique si un reboot est requis.
+Flatpak reste une mise à jour explicite et le firmware reste en consultation uniquement.
 
-## CI et gouvernance
+## Reproductibilité et preuves
 
-Les workflows couvrent contrats, ShellCheck, non-régression, résolution Fedora 44, intégration host Fedora 44, **prétest desktop Fedora 44 Nautilus/Ptyxis**, vraie VM Ubuntu 26.04, sécurité KVM, cohérence documentaire, ergonomie desktop, Resource Monitor, Control Center et cloisonnement du LAB VirtualBox.
+Le projet verrouille :
 
-La politique cible pour `main` exige PR + checks verts, branche à jour, merge commit uniquement et interdit force-push/suppression. Le script `scripts/development/check-main-protection.sh` vérifie le ruleset effectif, les checks requis et les réglages de merge du dépôt.
+- le commit Git appliqué ;
+- le hash de configuration effective ;
+- le hash du plan de modules ;
+- le fingerprint hardware ;
+- le média Fedora 44 approuvé dans `installer/fedora44-media.lock` ;
+- les NEVRA RPM ;
+- les commits Flatpak ;
+- les hashes des extensions GNOME ;
+- BIOS, microcode, firmware, kernel et fallback.
 
-Voir [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) et [`docs/GITHUB_GOVERNANCE.md`](docs/GITHUB_GOVERNANCE.md).
+Après certification, `scripts/release/capture-golden-release.sh` produit `golden-release.json` et les inventaires associés.
 
-## Version
+## Documentation
 
-`0.14.0` — **Final Hardening / Release Candidate**.
+- [`docs/README.md`](docs/README.md) — portail documentaire ;
+- [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
+- [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) — architecture ;
+- [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) — qualification hardware ;
+- [`docs/MULTIMEDIA_CODECS.md`](docs/MULTIMEDIA_CODECS.md) — média B580 ;
+- [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) — KVM/libvirt ;
+- [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) — Restic / recovery ;
+- [`docs/GOLDEN_RELEASE.md`](docs/GOLDEN_RELEASE.md) — manifeste de reproductibilité ;
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — runbook principal par symptôme ;
+- [`docs/RUNBOOK_GOLDEN_HARDWARE.md`](docs/RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline update ;
+- [`docs/adr/README.md`](docs/adr/README.md) — décisions d'architecture.
 
-La 1.0 sera justifiée par une installation bare-metal complète, une certification finale réussie et une période d'usage réel stable — pas par l'ajout artificiel de fonctionnalités.
+La source de vérité est :
+
+```text
+code + config + tests CI
+        ↓
+document normatif courant
+        ↓
+document historique / release note
+```
+
+## Sécurité et portée
+
+Le profil est volontairement **sans Secure Boot et sans chiffrement local du HOST**. Il ne protège donc pas le contenu des SSD contre un accès physique offline. En revanche, il conserve SELinux, firewalld, provenance logicielle, contrôle des mutations, KVM fail-closed et sauvegardes Restic chiffrées.
+
+Lire [`SECURITY.md`](SECURITY.md) et [`docs/HOST_SECURITY_POLICY.md`](docs/HOST_SECURITY_POLICY.md) avant de modifier ces invariants.

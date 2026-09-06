@@ -8,7 +8,7 @@ logging_init() {
   REPORT_ROOT="$REPO_ROOT/reports"
   STATE_ROOT="$REPO_ROOT/state"
   LOG_DIR="$LOG_ROOT/$RUN_ID"
-  mkdir -p "$LOG_DIR" "$REPORT_ROOT" "$STATE_ROOT"
+  mkdir -p "$LOG_DIR" "$REPORT_ROOT" "$STATE_ROOT" "$STATE_ROOT/releases"
   MAIN_LOG="$LOG_DIR/main.log"
   MODULE_LOG="$LOG_DIR/modules.log"
   : > "$MAIN_LOG"

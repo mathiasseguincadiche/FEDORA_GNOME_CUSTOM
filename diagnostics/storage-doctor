@@ -3,21 +3,21 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
-count="$(lsblk -dn -o MODEL 2>/dev/null | grep -c "$EXPECTED_NVME_MODEL" || true)"
-if ! $quiet; then
-  if (( count >= EXPECTED_NVME_COUNT )); then ui_check OK 'Crucial T705' "found=$count expected=$EXPECTED_NVME_COUNT"; else ui_check KO 'Crucial T705' "found=$count expected=$EXPECTED_NVME_COUNT"; fi
-fi
-if command_exists nvme; then
-  if sudo -n true 2>/dev/null; then
-    for d in /dev/nvme[0-9]; do
-      [[ -e "$d" ]] || continue
-      smart="$(sudo -n nvme smart-log "$d" 2>/dev/null || true)"
-      if ! $quiet; then
-        if grep -Eq 'critical_warning[[:space:]]*:[[:space:]]*(0|0x0)$' <<< "$smart"; then ui_check OK "$d" 'critical_warning=0'; else ui_check WARN "$d" 'SMART unavailable or requires review'; fi
-      fi
-    done
-  elif ! $quiet; then
-    ui_check WARN 'NVMe SMART' 'sudo credential not cached; model inventory remains read-only'
-  fi
-fi
-(( count >= EXPECTED_NVME_COUNT ))
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+mapfile -t devices < <(storage_nvme_expected_controllers)
+if (( ${#devices[@]} >= ${EXPECTED_NVME_COUNT:-2} )); then emit OK 'Crucial T705 inventory' "found=${#devices[@]} expected=${EXPECTED_NVME_COUNT:-2}"; else emit KO 'Crucial T705 inventory' "found=${#devices[@]} expected=${EXPECTED_NVME_COUNT:-2}"; fi
+
+for dev in "${devices[@]}"; do
+  json="$(storage_nvme_health_json "$dev" 2>/dev/null || true)"
+  if [[ -z "$json" ]]; then emit KO "$dev" 'SMART JSON unavailable'; continue; fi
+  summary="$(printf '%s\n' "$json" | storage_nvme_health_summary 2>/dev/null || true)"
+  if storage_nvme_validate_controller "$dev"; then emit OK "$dev" "SMART+PCIe PASS; $(tr '\n' ' ' <<<"$summary")"; else emit KO "$dev" "SMART or PCIe x4 health failed; $(tr '\n' ' ' <<<"$summary")"; fi
+  err="$(awk -F= '$1=="error_log_entries"{print $2}' <<<"$summary")"
+  [[ "$err" =~ ^[0-9]+$ && "$err" -gt 0 ]] && emit WARN "$dev error-log" "$err historical entries; kernel/runtime errors remain fail-closed"
+done
+
+if storage_nvme_kernel_health; then emit OK 'NVMe/PCIe journal' clean; else emit KO 'NVMe/PCIe journal' 'I/O/reset/uncorrected PCIe error detected'; fi
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

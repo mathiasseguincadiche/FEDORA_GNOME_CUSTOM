@@ -5,57 +5,61 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == "--quiet" ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+report="$REPORT_ROOT/$RUN_ID-hardware-physical-ids.txt"
+{
+  echo '[pci]'; lspci -Dnnk 2>/dev/null || true
+  echo '[usb]'; lsusb 2>/dev/null || true
+  echo '[bluetooth]'; bluetoothctl list 2>/dev/null || true
+  echo '[alsa]'; aplay -l 2>/dev/null || true
+  echo '[network]'; ip -br link 2>/dev/null || true
+} | evidence_atomic_write "$report" 0644
 
-lan_if=""
+lan_if=""; lan_bdf=""; lan_id=""
 for n in /sys/class/net/*; do
   [[ -e "$n/device" && -L "$n/device/driver" ]] || continue
   driver="$(basename "$(readlink -f "$n/device/driver")")"
-  if [[ "$driver" == "${HARDWARE_LAN_DRIVER:-r8169}" ]]; then lan_if="${n##*/}"; break; fi
+  if [[ "$driver" == "${HARDWARE_LAN_DRIVER:-r8169}" ]]; then
+    lan_if="${n##*/}"; lan_bdf="$(basename "$(readlink -f "$n/device")")"; break
+  fi
 done
 if [[ -n "$lan_if" ]]; then
-  emit OK '5G LAN driver' "$lan_if/${HARDWARE_LAN_DRIVER:-r8169}"
+  lan_id="$(lspci -s "$lan_bdf" -nn 2>/dev/null | grep -Eo '\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]' | tail -n1 || true)"
+  emit OK '5G LAN identity' "$lan_if bdf=$lan_bdf pci=${lan_id:-unknown} driver=${HARDWARE_LAN_DRIVER:-r8169}"
   ethtool_report="$(ethtool "$lan_if" 2>/dev/null || true)"
   if grep -Eq '5000baseT|5000baseT/Full' <<<"$ethtool_report"; then emit OK '5G LAN capability' '5000baseT supported'; else emit KO '5G LAN capability' '5000baseT not advertised by driver/NIC'; fi
   speed="$(awk -F: '/^[[:space:]]*Speed:/ {gsub(/[[:space:]]|Mb\/s/,"",$2); print $2; exit}' <<<"$ethtool_report")"
   if [[ "$speed" =~ ^[0-9]+$ ]]; then
     if (( speed >= ${HARDWARE_LAN_MIN_CAPABILITY_MBPS:-5000} )); then emit OK 'LAN negotiated speed' "${speed}Mb/s"; else emit WARN 'LAN negotiated speed' "${speed}Mb/s (link equipment may limit it)"; fi
-  else
-    emit WARN 'LAN negotiated speed' 'link down or speed unknown'
-  fi
-else
-  emit KO '5G LAN driver' "${HARDWARE_LAN_DRIVER:-r8169} interface not found"
-fi
+  else emit WARN 'LAN negotiated speed' 'link down or speed unknown'; fi
+else emit KO '5G LAN identity' "${HARDWARE_LAN_DRIVER:-r8169} interface not found"; fi
 
 wifi_pci="$(lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /Network controller|Wireless/ {print; exit}')"
 if [[ -n "$wifi_pci" ]]; then
+  wifi_header="$(head -n1 <<<"$wifi_pci")"; wifi_bdf="${wifi_header%% *}"; wifi_id="$(grep -Eo '\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]' <<<"$wifi_header" | tail -n1 || true)"
   wifi_driver="$(awk -F: '/Kernel driver in use:/ {gsub(/^[ \t]+/,"",$2); print $2; exit}' <<<"$wifi_pci")"
-  if [[ -n "$wifi_driver" ]]; then emit OK 'Wi-Fi kernel driver' "$wifi_driver"; else emit KO 'Wi-Fi kernel driver' unbound; fi
+  if [[ -n "$wifi_driver" ]]; then emit OK 'Wi-Fi identity' "bdf=$wifi_bdf pci=${wifi_id:-unknown} driver=$wifi_driver"; else emit KO 'Wi-Fi identity' "bdf=$wifi_bdf pci=${wifi_id:-unknown} unbound"; fi
   if command_exists iw && iw phy 2>/dev/null | grep -q 'Wiphy'; then
-    emit OK 'Wi-Fi PHY' detected
-    iw_report="$(iw phy 2>/dev/null || true)"
+    emit OK 'Wi-Fi PHY' detected; iw_report="$(iw phy 2>/dev/null || true)"
     if grep -Eqi 'EHT|802\.11be' <<<"$iw_report"; then emit OK 'Wi-Fi 7 capability' 'EHT/802.11be advertised'; else emit WARN 'Wi-Fi 7 capability' 'EHT marker not exposed by iw'; fi
     if grep -Eq '59[0-9]{2} MHz|6[0-9]{3} MHz' <<<"$iw_report"; then emit OK 'Wi-Fi 6 GHz' advertised; else emit WARN 'Wi-Fi 6 GHz' '6 GHz channels not visible (regulatory domain may apply)'; fi
-  else
-    emit KO 'Wi-Fi PHY' 'iw cannot enumerate a PHY'
-  fi
-else
-  emit KO Wi-Fi 'PCI network controller not found'
-fi
+  else emit KO 'Wi-Fi PHY' 'iw cannot enumerate a PHY'; fi
+else emit KO Wi-Fi 'PCI network controller not found'; fi
 
 if command_exists bluetoothctl; then
   bt="$(bluetoothctl list 2>/dev/null || true)"
-  if [[ -n "$bt" ]]; then emit OK Bluetooth "$bt"; else emit WARN Bluetooth 'controller not currently visible'; fi
-else
-  emit KO Bluetooth 'bluetoothctl missing'
-fi
+  if [[ -n "$bt" ]]; then
+    bt_usb="$(lsusb 2>/dev/null | grep -Ei 'Bluetooth|Wireless|MediaTek|Intel|Realtek' | head -n1 || true)"
+    emit OK 'Bluetooth controller' "${bt_usb:-$bt}"
+  else emit WARN Bluetooth 'controller not currently visible'; fi
+else emit KO Bluetooth 'bluetoothctl missing'; fi
 
-audio="$(aplay -l 2>/dev/null || true)"
-if grep -Eqi 'ALC4080|Realtek.*USB|USB.*Audio' <<<"$audio"; then emit OK 'ALC4080/USB audio' detected; else emit KO 'ALC4080/USB audio' 'Realtek USB audio device not detected by ALSA'; fi
+audio="$(aplay -l 2>/dev/null || true)"; audio_usb="$(lsusb 2>/dev/null | grep -Ei 'Audio|Realtek|ALC4080' | head -n1 || true)"
+if grep -Eqi 'ALC4080|Realtek.*USB|USB.*Audio' <<<"$audio"; then emit OK 'ALC4080/USB audio' "${audio_usb:-detected by ALSA}"; else emit KO 'ALC4080/USB audio' 'Realtek USB audio device not detected by ALSA'; fi
 if command_exists wpctl && wpctl status 2>/dev/null | grep -q 'Audio'; then emit OK PipeWire 'audio graph available'; else emit KO PipeWire 'audio graph unavailable'; fi
 if lsmod | grep -q '^snd_usb_audio'; then emit OK snd_usb_audio loaded; else emit WARN snd_usb_audio 'module not currently loaded'; fi
 
 xhci="$(lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /USB controller/ && /xhci_hcd/ {count++} END{print count+0}')"
 if (( xhci > 0 )); then emit OK xHCI "$xhci controller(s) bound to xhci_hcd"; else emit KO xHCI 'no USB controller bound to xhci_hcd'; fi
-
+$quiet || ui_meta 'Physical ID report' "$report"
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

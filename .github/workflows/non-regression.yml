@@ -104,8 +104,12 @@ jobs:
           grep -F 'BACKUP_RESTORE_TEST_REQUIRED="true"' config/backup.conf
           grep -F 'BACKUP_VM_SHUTDOWN_REQUIRED="true"' config/backup.conf
           grep -F 'BACKUP_ALLOW_LIVE_QCOW2_COPY="false"' config/backup.conf
-          grep -F 'marker_commit' lib/apply_gate.sh
-          grep -F '$(repo_commit)' lib/apply_gate.sh
+          grep -Fq 'evidence_require_current_identity' lib/apply_gate.sh
+          grep -Fq 'backup_runtime_validate_preapply_marker' lib/apply_gate.sh
+          grep -Fq 'restic cat snapshot' lib/backup_runtime.sh
+          grep -Fq 'fedora-gnome-custom-preapply' lib/backup_runtime.sh
+          grep -Fq 'effective_config_sha256' prepare-preapply-backup.sh
+          grep -Fq 'hardware_fingerprint' prepare-preapply-backup.sh
       - name: No obvious committed secrets
         shell: bash
         run: |

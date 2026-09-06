@@ -5,32 +5,41 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; [[ "${1:-}" == "--quiet" ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+report="$REPORT_ROOT/$RUN_ID-firmware-runtime.txt"
+{
+  printf 'bios=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_version)"
+  printf 'bios_date=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_date)"
+  printf 'kernel=%s\n' "$(uname -r)"
+  for pkg in linux-firmware amd-ucode-firmware intel-gpu-firmware; do
+    printf '%s=%s\n' "$pkg" "$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' "$pkg" 2>/dev/null || printf missing)"
+  done
+  printf 'amd_microcode_runtime=%s\n' "$(cat /sys/devices/system/cpu/microcode/version 2>/dev/null || printf unavailable)"
+  echo '[xe-firmware-declarations]'; modinfo -F firmware xe 2>/dev/null || true
+  echo '[firmware-journal]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'firmware|microcode|xe.*(guc|huc|gsc)' || true
+} | evidence_atomic_write "$report" 0644
 
 if grep -q 'AuthenticAMD' /proc/cpuinfo 2>/dev/null; then
-  if rpm -q amd-ucode-firmware >/dev/null 2>&1; then emit OK 'AMD microcode package' installed; else emit KO 'AMD microcode package' missing; fi
+  if rpm -q amd-ucode-firmware >/dev/null 2>&1; then emit OK 'AMD microcode package' "$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' amd-ucode-firmware)"; else emit KO 'AMD microcode package' missing; fi
   if [[ -r /sys/devices/system/cpu/microcode/version ]]; then
     version="$(cat /sys/devices/system/cpu/microcode/version 2>/dev/null || true)"
     if [[ -n "$version" ]]; then emit OK 'CPU microcode runtime' "$version"; else emit WARN 'CPU microcode runtime' 'version unavailable'; fi
-  else
-    emit WARN 'CPU microcode runtime' 'sysfs version node unavailable'
-  fi
+  else emit WARN 'CPU microcode runtime' 'sysfs version node unavailable'; fi
 fi
 
 if lspci -Dn 2>/dev/null | grep -Eqi '030[02]:[[:space:]]+8086:e20b'; then
-  if rpm -q intel-gpu-firmware >/dev/null 2>&1; then emit OK 'Intel GPU firmware' installed; else emit KO 'Intel GPU firmware' missing; fi
+  if rpm -q intel-gpu-firmware >/dev/null 2>&1; then emit OK 'Intel GPU firmware' "$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' intel-gpu-firmware)"; else emit KO 'Intel GPU firmware' missing; fi
   if modinfo -F firmware xe 2>/dev/null | grep -q .; then emit OK 'xe firmware declarations' present; else emit WARN 'xe firmware declarations' 'modinfo returned none'; fi
+  if journalctl -k -b --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(GuC|HuC|GSC|firmware)'; then emit OK 'xe firmware runtime' 'firmware activity recorded in current boot journal'; else emit WARN 'xe firmware runtime' 'no explicit xe firmware load line found; package/module checks remain authoritative'; fi
 fi
 
-if rpm -q linux-firmware >/dev/null 2>&1; then emit OK linux-firmware installed; else emit KO linux-firmware missing; fi
+if rpm -q linux-firmware >/dev/null 2>&1; then emit OK linux-firmware "$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' linux-firmware)"; else emit KO linux-firmware missing; fi
 if find /usr/lib/firmware/rtl_nic -maxdepth 1 -type f -name 'rtl8126*.fw*' -print -quit 2>/dev/null | grep -q .; then emit OK 'RTL8126 firmware' present; else emit WARN 'RTL8126 firmware' 'dedicated file not found; driver may not require it'; fi
 failures="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'firmware.*(failed to load|not found|direct-loading.*failed)' | tail -n 30 || true)"
 if [[ -z "$failures" ]]; then emit OK 'Firmware load journal' clean; else emit KO 'Firmware load journal' 'firmware load failure detected'; fi
 
 if command_exists fwupdmgr; then
-  if fwupdmgr get-devices >/dev/null 2>&1; then emit OK fwupd 'device inventory available'; else emit WARN fwupd 'device inventory unavailable'; fi
-else
-  emit KO fwupd missing
-fi
-
+  if fwupdmgr get-devices >/dev/null 2>&1; then emit OK fwupd 'device inventory available; flashing remains manual'; else emit WARN fwupd 'device inventory unavailable'; fi
+else emit KO fwupd missing; fi
+$quiet || ui_meta 'Firmware report' "$report"
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

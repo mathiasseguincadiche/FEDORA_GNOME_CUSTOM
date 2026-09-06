@@ -8,33 +8,35 @@ emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1))
 
 if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then emit OK Wayland active; else emit KO Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
 
-if command_exists gdctl; then
-  report="$(gdctl show --verbose 2>&1 || true)"
-  mkdir -p "$REPORT_ROOT"
-  printf '%s\n' "$report" > "$REPORT_ROOT/$RUN_ID-display-gdctl.txt"
-
-  current_mode="$(grep -A1 -m1 'Current mode' <<<"$report" | grep -oE '[0-9]+x[0-9]+@[0-9.]+' | head -n1 || true)"
-  target_prefix="${DISPLAY_TARGET_WIDTH:-2560}x${DISPLAY_TARGET_HEIGHT:-1440}@"
-  if [[ "$current_mode" == "$target_prefix"* ]]; then emit OK Resolution "$current_mode active"; else emit KO Resolution "active mode=${current_mode:-unavailable}; expected ${target_prefix}~${DISPLAY_TARGET_REFRESH_HZ:-240}"; fi
-
-  refresh="${current_mode##*@}"
-  target_refresh="${DISPLAY_TARGET_REFRESH_HZ:-240}"
-  tolerance="${DISPLAY_CERT_TOLERANCE_HZ:-1.0}"
-  if [[ "$refresh" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v r="$refresh" -v t="$target_refresh" -v d="$tolerance" 'BEGIN { x=r-t; if(x<0)x=-x; exit !(x<=d) }'; then
-    emit OK Refresh "${refresh} Hz active (target ${target_refresh} ± ${tolerance})"
-  else
-    emit KO Refresh "active refresh=${refresh:-unavailable}; target=${target_refresh} tolerance=${tolerance}"
-  fi
-
-  if grep -Eqi 'rgb.*full|full.*rgb' <<<"$report"; then emit OK 'RGB range' full; else emit WARN 'RGB range' 'gdctl did not expose Full RGB in parsed output; repair explicitly requests it'; fi
+connector_path="$(hardware_b580_certified_connector 2>/dev/null || true)"
+if [[ -n "$connector_path" ]]; then
+  connector="$(basename "$connector_path" | sed -E 's/^card[0-9]+-//')"
+  emit OK 'Certified display' "$connector / EDID $(hardware_b580_expected_edid_sha256)"
 else
-  emit KO gdctl missing
+  connector=''
+  emit KO 'Certified display' 'no unique connected Arc B580 connector matches the baseline EDID'
+fi
+
+if command_exists gdctl && [[ -n "$connector" ]]; then
+  report="$(gdctl show --verbose 2>&1 || true)"; mkdir -p "$REPORT_ROOT"; printf '%s\n' "$report" > "$REPORT_ROOT/$RUN_ID-display-gdctl.txt"
+  current_mode="$(awk -v monitor="$connector" '
+    $0 ~ ("Monitor " monitor " ") {inside=1; next}
+    inside && $0 ~ /Monitor [A-Za-z0-9-]+ / {exit}
+    inside && /Current mode/ {getline; if (match($0,/[0-9]+x[0-9]+@[0-9.]+/)) {print substr($0,RSTART,RLENGTH); exit}}
+  ' <<<"$report")"
+  target_prefix="${DISPLAY_TARGET_WIDTH:-2560}x${DISPLAY_TARGET_HEIGHT:-1440}@"
+  if [[ "$current_mode" == "$target_prefix"* ]]; then emit OK Resolution "$current_mode active on $connector"; else emit KO Resolution "active mode=${current_mode:-unavailable}; expected ${target_prefix}~${DISPLAY_TARGET_REFRESH_HZ:-240} on $connector"; fi
+  refresh="${current_mode##*@}"; target_refresh="${DISPLAY_TARGET_REFRESH_HZ:-240}"; tolerance="${DISPLAY_CERT_TOLERANCE_HZ:-1.0}"
+  if [[ "$refresh" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v r="$refresh" -v t="$target_refresh" -v d="$tolerance" 'BEGIN{x=r-t;if(x<0)x=-x;exit !(x<=d)}'; then emit OK Refresh "${refresh} Hz active (target ${target_refresh} ± ${tolerance})"; else emit KO Refresh "active refresh=${refresh:-unavailable}; target=${target_refresh} tolerance=${tolerance}"; fi
+  if awk -v monitor="$connector" '$0 ~ ("Monitor " monitor " "){inside=1} inside && /rgb-range.*full/{found=1} END{exit !found}' <<<"$report"; then emit OK 'RGB range' full; else emit WARN 'RGB range' 'Full RGB not confirmed in selected monitor block'; fi
+else
+  [[ -n "$connector" ]] && emit KO gdctl missing
 fi
 
 if command_exists drm_info; then drm_info > "$REPORT_ROOT/$RUN_ID-drm-info.txt" 2>&1 || true; emit OK DRM 'drm_info captured'; else emit WARN DRM 'drm_info missing'; fi
 errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|link.*(fail|bad)|AER:|PCIe Bus Error' | tail -n 30 || true)"
 if [[ -z "$errors" ]]; then emit OK 'DRM/xe journal' clean; else emit WARN 'DRM/xe journal' 'matching display/GPU/PCIe signals found'; fi
 marker="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom/display-repair-last.txt"
-if [[ -s "$marker" ]]; then emit OK Repair 'display repair marker present'; else emit WARN Repair 'no display repair marker yet'; fi
+if [[ -s "$marker" ]] && grep -Fxq "edid_sha256=$(hardware_b580_expected_edid_sha256)" "$marker"; then emit OK Repair 'display repair marker matches certified EDID'; else emit WARN Repair 'no current certified-EDID display repair marker yet'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

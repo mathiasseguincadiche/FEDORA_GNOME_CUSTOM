@@ -1,0 +1,9 @@
+# Fedora Workstation 44 x86_64 installation-media lock.
+# Source verified from the Fedora Project download page on 2026-09-04.
+FEDORA_RELEASE=44
+FEDORA_COMPOSE=1.7
+ISO_FILENAME=Fedora-Workstation-Live-44-1.7.x86_64.iso
+ISO_SHA256=1620295f6a00c27c3208f0c00b8ece4eab1ec69b9002152d97488bf26a426ddf
+CHECKSUM_FILENAME=Fedora-Workstation-44-1.7-x86_64-CHECKSUM
+SOURCE_URL=https://fedoraproject.org/workstation/download/
+VERIFIED_UTC=2026-09-04T00:00:00Z

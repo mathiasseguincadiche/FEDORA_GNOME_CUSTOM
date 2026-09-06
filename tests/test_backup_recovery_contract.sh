@@ -30,9 +30,19 @@ done
 for file in lib/backup_runtime.sh lib/backup_runtime_bundle.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/daily-user-backup.sh scripts/backup/restic-retention.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do
   [[ -f "$ROOT/$file" ]] || { echo "missing backup/recovery file: $file" >&2; exit 1; }
 done
-grep -Fq 'marker_commit' "$ROOT/lib/apply_gate.sh"
+
+# Pre-APPLY backup authorization is tied to the entire Golden identity and to a live Restic snapshot.
+grep -Fq 'evidence_require_current_identity' "$ROOT/lib/apply_gate.sh"
+grep -Fq 'backup_runtime_validate_preapply_marker' "$ROOT/lib/apply_gate.sh"
+grep -Fq 'effective_config_sha256' "$ROOT/prepare-preapply-backup.sh"
+grep -Fq 'module_plan_sha256' "$ROOT/prepare-preapply-backup.sh"
+grep -Fq 'hardware_fingerprint' "$ROOT/prepare-preapply-backup.sh"
+grep -Fq 'backup_runtime_validate_preapply_marker' "$ROOT/prepare-preapply-backup.sh"
+grep -Fq 'restic cat snapshot' "$ROOT/lib/backup_runtime.sh"
+grep -Fq 'fedora-gnome-custom-preapply' "$ROOT/lib/backup_runtime.sh"
 grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'restic check' "$ROOT/prepare-preapply-backup.sh"
+
 grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'Refusing in-place/live restore target' "$ROOT/scripts/backup/restore.sh"
 grep -Fq 'xdg-user-dir' "$ROOT/scripts/backup/daily-user-backup.sh"
