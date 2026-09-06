@@ -1,22 +1,47 @@
-# Validation intermédiaire Fedora 44 sous WSL2
+# GATE 1 — Fedora 44 sous WSL2
 
 ## Objectif
 
-Fedora 44 sous WSL2 sert de banc de validation **intermédiaire** entre GitHub Actions et le GATE 2 Fedora 44 GNOME/VirtualBox, puis la workstation Fedora 44 bare-metal.
+Fedora 44 sous WSL2 est le **GATE 1 officiel** de la chaîne de validation :
 
-Ce profil peut valider :
+```text
+GitHub Actions
+      ↓
+GATE 1 — Fedora 44 / WSL2
+      ↓ preuve JSON portable
+GATE 2 — Fedora 44 GNOME / VirtualBox
+      ↓ preuve JSON liée à Gate 1
+GATE 3 — Fedora 44 / bare-metal
+      ↓
+Golden Workstation
+```
 
-- l'identité Fedora 44 ;
-- la visibilité du CPU hôte ;
+Gate 1 valide la **couche système et la logique du projet**. Il ne valide jamais le matériel physique de la workstation.
+
+Le protocole complet est défini dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
+
+## Ce que Gate 1 valide
+
+- identité Fedora 44 ;
+- détection explicite WSL2 ;
+- visibilité CPU/mémoire disponible dans WSL2 ;
 - systemd sous WSL2 ;
-- les outils de base (`bash`, `dnf`, `rpm`, `git`, `grep`, `awk`, `free`, `lscpu`, `lsblk`, `findmnt`, `systemctl`) ;
-- la cohérence du catalogue de modules ;
-- la syntaxe et une partie des contrats statiques ;
-- la détection explicite de WSL2 ;
-- le blocage du REAL APPLY et de la certification hardware bare-metal ;
-- le contrat statique du LAB GNOME VirtualBox sans prétendre exécuter sa preuve graphique.
+- outils de base (`bash`, `dnf`, `rpm`, `git`, `grep`, `awk`, `free`, `lscpu`, `lsblk`, `findmnt`, `systemctl`) ;
+- schéma de configuration ;
+- catalogue et plan de modules ;
+- totalité des contrats listés par `.github/workflows/tests.yml` ;
+- comportement dry-run et suppression des mutations ;
+- logique fail-closed ;
+- logique Kernel Vanilla candidat/certifié ;
+- logique APPLY/Restic/KVM ;
+- contrats/fixtures B580, T705 et EDID sans prétendre observer le matériel réel ;
+- blocage du REAL APPLY et de la certification bare-metal.
 
-Il ne remplace jamais la certification VirtualBox graphique ni la certification physique.
+La preuve produite porte explicitement :
+
+```text
+hardware_certification=DEFERRED
+```
 
 ## Ce qui reste hors de portée WSL2
 
@@ -24,13 +49,17 @@ Sous WSL2, les éléments suivants sont volontairement différés :
 
 - DING réellement rendu sur le bureau GNOME et action Show Desktop avec de vraies fenêtres — **GATE 2 VirtualBox puis bare-metal** ;
 - Intel Arc B580 PCI `8086:e20b` et pilote Linux natif `xe` — bare-metal ;
-- inventaire/SMART/I/O des deux Crucial T705 — bare-metal ;
-- GNOME Shell 50, Mutter, Wayland et timing 2560×1440/240 Hz physique ;
-- suspend/resume et interactions BIOS/UEFI ;
+- ReBAR et PCIe x8 réels — bare-metal ;
+- inventaire/SMART/I/O/PCIe x4 des deux Crucial T705 — bare-metal ;
+- EDID physique de l'écran ASUS et 2560×1440/~240 Hz — bare-metal ;
+- VA-API/OpenCL exécutés sur la vraie B580 — bare-metal ;
+- BIOS/UEFI et firmware/microcode — bare-metal ;
+- suspend/resume physique — bare-metal ;
 - SELinux Enforcing comme état réel de la workstation ;
 - KVM/libvirt `qemu:///system`, `devops-nat`, firewalld/nftables et isolation LAN réelle ;
-- baseline RAM/NVMe bare-metal ;
 - certification finale Golden Workstation.
+
+Un `GATE 1 PASS` signifie donc : **la logique est saine dans son périmètre**. Il ne signifie jamais « matériel validé ».
 
 ## Préparer WSL2
 
@@ -47,7 +76,7 @@ systemctl is-system-running || true
 
 ### Installer le socle CLI requis
 
-L'image Fedora WSL peut être plus minimale qu'une Fedora Workstation. Installer explicitement les outils utilisés par le protocole avant de lancer les diagnostics :
+L'image Fedora WSL peut être plus minimale qu'une Fedora Workstation. Installer explicitement les outils utilisés par le protocole :
 
 ```bash
 sudo dnf upgrade --refresh -y
@@ -75,37 +104,70 @@ done
 
 Aucune ligne `MANQUANT` ne doit apparaître.
 
-Le `wsl2-doctor` actuel vérifie ce socle **avant** sa première utilisation et transforme une dépendance absente en `KO Core tools` lisible au lieu de terminer brutalement avec un code 127.
+Le `wsl2-doctor` vérifie ce socle **avant** sa première utilisation et transforme une dépendance absente en `KO Core tools` lisible au lieu de terminer brutalement avec un code 127.
 
-## Cloner le dépôt
+## Utiliser exactement le commit à qualifier
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
-git checkout main
+git switch main
 git pull --ff-only
-cat VERSION
+git status --short
 git rev-parse HEAD
 ```
 
-## Validation recommandée
+Le worktree doit être propre. Le même SHA devra être utilisé à Gate 2 puis Gate 3.
+
+## Exécuter Gate 1
+
+Commande officielle :
 
 ```bash
-./diagnostic.sh
-./diagnostics/wsl2-doctor
+./control.sh validate gate1 run
 ```
 
-Le diagnostic WSL2 utilise :
+Le runner exécute notamment :
 
-- `OK` : contrôle réellement validable sous WSL2 ;
-- `EXPECTED` : contrôle volontairement différé à un gate ultérieur ;
-- `KO` : problème réel dans ce qui devrait fonctionner sous WSL2.
+```bash
+./diagnostics/wsl2-doctor
+./scripts/config/validate-config.sh config
+```
 
-Un statut `EXPECTED` n'est jamais une preuve VirtualBox ou physique.
+puis tous les tests de contrats explicitement déclarés dans `.github/workflows/tests.yml`.
 
-### Production dry-run depuis WSL2
+Statut :
 
-Le protocole de prévalidation peut aussi lancer :
+```bash
+./control.sh validate gate1 status
+```
+
+La preuve locale est créée sous :
+
+```text
+state/validation/outbox/gate1-<commit>.json
+```
+
+## Exporter vers Gate 2
+
+Par exemple vers Windows :
+
+```bash
+./control.sh validate export 1 /mnt/c/GoldenValidation
+```
+
+Deux fichiers sont transférés :
+
+```text
+gate1-<commit>.json
+gate1-<commit>.json.sha256
+```
+
+Gate 2 rejettera la preuve si elle ne correspond pas à son commit/module-plan courant.
+
+## Production dry-run depuis WSL2
+
+On peut également observer le comportement du preflight production :
 
 ```bash
 ./install.sh --dry-run
@@ -137,17 +199,7 @@ process exit code=0
 
 est un **KO logiciel**, car un preflight échoué ne doit jamais être signalé comme succès au shell ou à la CI.
 
-Le dry-run WSL2 sert donc à vérifier le fail-closed et à observer le premier blocage production ; il ne remplace pas le dry-run complet qui sera obligatoirement rejoué sur Fedora bare-metal avant APPLY.
-
-Pour exécuter les contrats statiques locaux :
-
-```bash
-for test in tests/test_*.sh; do
-  bash "$test"
-done
-```
-
-Le contrat `tests/test_virtualbox_gnome_lab_contract.sh` est statique sous WSL2 : il vérifie la séparation architecture/sécurité mais **ne constitue pas un PASS graphique GATE 2**. Les tests d'intégration Fedora/VM restent mieux couverts par GitHub Actions que par WSL2.
+Le dry-run WSL2 sert donc à vérifier le fail-closed et à observer le premier blocage production ; il ne remplace pas le dry-run complet obligatoirement rejoué sur Fedora bare-metal avant APPLY.
 
 ## Interdictions sous WSL2
 
@@ -169,32 +221,19 @@ Le LAB VirtualBox doit également refuser WSL2 :
 ./scripts/lab/apply-gnome-virtualbox.sh --check
 ```
 
-Cette commande doit terminer avec le code de sécurité du LAB hors VirtualBox ; il ne faut pas chercher à contourner ce refus.
+Les commandes qui produisent de vraies preuves RAM/NVMe ou une certification bare-metal doivent être exécutées uniquement sur Fedora native. Sous WSL2, les contrôles hardware ne sont que des validations de logique/fixtures.
 
-Les commandes qui produisent de vraies preuves RAM/NVMe ou une certification bare-metal doivent être exécutées uniquement sur Fedora native. Sous WSL2, utiliser seulement les modes non destructifs/read-only prévus, par exemple :
+Ne créer jamais manuellement des fichiers de preuve ou markers pour transformer WSL2 en pseudo bare-metal.
 
-```bash
-./diagnostics/baseline-doctor status
-./diagnostics/baseline-doctor snapshot
-```
+## Passage à Gate 2
 
-Ne créer jamais manuellement des fichiers de preuve ou markers pour transformer un environnement WSL2 en pseudo bare-metal.
-
-## Chaîne de confiance
+Gate 1 est terminé seulement lorsque :
 
 ```text
-GitHub Actions
-      ↓
-GATE 1 — Fedora 44 WSL2
-scripts / Fedora / systemd / contrats / détection runtime
-      ↓
-GATE 2 — Fedora 44 GNOME 50 / VirtualBox
-DING / ~/Bureau / Corbeille / Show Desktop / Super+D / persistance
-      ↓
-GATE 3 — Fedora 44 bare-metal
-GPU / NVMe / GNOME physique / KVM / suspend / APPLY
-      ↓
-runtime certification
+Gate 1 proof = PASS
+hardware_certification = DEFERRED
+worktree = clean
+preuve exportée avec SHA-256
 ```
 
-Un `WSL2 VALIDATION PASS` signifie uniquement que la couche GATE 1 est saine. La workstation devient Golden runtime-certified uniquement après GATE 2 puis les preuves physiques sur Fedora 44 native.
+La suite se fait dans [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md).
