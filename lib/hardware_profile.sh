@@ -39,9 +39,9 @@ hardware_pcie_link_caps() {
 }
 
 hardware_pci_largest_bar_bytes() {
-  local bdf="$1" file="/sys/bus/pci/devices/$1/resource" start end flags size max=0
+  local bdf="$1" file="/sys/bus/pci/devices/$1/resource" start end size max=0
   [[ -r "$file" ]] || return 1
-  while read -r start end flags; do
+  while read -r start end _; do
     [[ "$start" =~ ^0x[0-9a-fA-F]+$ && "$end" =~ ^0x[0-9a-fA-F]+$ ]] || continue
     (( end >= start )) || continue
     size=$((16#${end#0x} - 16#${start#0x} + 1))
