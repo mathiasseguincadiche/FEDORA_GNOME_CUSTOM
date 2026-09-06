@@ -57,7 +57,7 @@ grep -Fq 'diagnostics/storage-doctor' "$ROOT/diagnostics/final-certification"
 
 # Kernel latest-stable is candidate-only and resolved/installed deterministically.
 grep -Fq 'kernel_lifecycle_vanilla_repo_id' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq -- '--repo="$repo"' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq -- "--repo=\"\$repo\"" "$ROOT/lib/kernel_lifecycle.sh"
 if grep -Fq -- '--repoid=' "$ROOT/lib/kernel_lifecycle.sh"; then
   echo 'legacy DNF4 --repoid syntax found in DNF5 kernel resolver' >&2
   exit 1
