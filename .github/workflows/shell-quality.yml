@@ -23,6 +23,20 @@ jobs:
           # Modules are intentionally sourced by the orchestrator, so externally
           # injected config variables use the narrow SC2154 exception. Unused and
           # misspelled local variables remain visible to ShellCheck.
-          git ls-files '*.sh' 'diagnostics/*' 'scripts/systemd/*' 'virtualization/networkmanager/*' | while IFS= read -r file; do
-            shellcheck -x -e SC1090,SC1091,SC2154 "$file"
-          done
+          : > shellcheck.log
+          rc=0
+          while IFS= read -r file; do
+            if ! shellcheck -x -e SC1090,SC1091,SC2154 "$file" >>shellcheck.log 2>&1; then
+              rc=1
+            fi
+          done < <(git ls-files '*.sh' 'diagnostics/*' 'scripts/systemd/*' 'virtualization/networkmanager/*')
+          cat shellcheck.log
+          exit "$rc"
+      - name: Upload ShellCheck failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: shellcheck-failure-${{ github.run_id }}
+          path: shellcheck.log
+          if-no-files-found: error
+          retention-days: 7
