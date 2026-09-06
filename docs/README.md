@@ -20,10 +20,11 @@ Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif et le m
 4. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture ;
 5. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal ;
 6. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification physique ;
-7. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
-8. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
-9. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
-10. [`adr/README.md`](adr/README.md) — décisions d'architecture.
+7. [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md) — drivers, KVM/libvirt et applications en runtime ;
+8. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
+9. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
+10. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
+11. [`adr/README.md`](adr/README.md) — décisions d'architecture.
 
 ## Validation avant production
 
@@ -54,17 +55,18 @@ backup Restic + restore canary
       ↓
 kernel candidate → boot one-shot
       ↓
-qualification physique
+qualification physique + drivers/runtime
       ↓
 Gate 3 final certification + golden-release.json
 ```
 
 ## Domaines
 
-### Hardware / kernel
+### Hardware / kernel / drivers
 
 - [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md)
 - [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md)
+- [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md)
 - [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md)
 
 ### GNOME / desktop
@@ -79,6 +81,7 @@ Gate 3 final certification + golden-release.json
 
 ### Applications / multimédia
 
+- [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md)
 - [`SOFTWARE_INVENTORY.md`](SOFTWARE_INVENTORY.md)
 - [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md)
 - [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md)
@@ -87,6 +90,7 @@ Gate 3 final certification + golden-release.json
 
 ### KVM / VM
 
+- [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md)
 - [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md)
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md)
 - [`KVM_NETWORK.md`](KVM_NETWORK.md)

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+
+quiet=false
+[[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){
+  local level="$1" label="$2" detail="$3"
+  [[ "$quiet" == true ]] || ui_check "$level" "$label" "$detail"
+  case "$level" in OK) ((ok+=1));; WARN) ((warn+=1));; KO) ((ko+=1));; esac
+}
+
+if ! runtime_is_baremetal; then
+  emit WARN 'Driver certification' "bare-metal only; runtime=$(runtime_environment)"
+  exit 0
+fi
+
+report="$REPORT_ROOT/$RUN_ID-driver-runtime.txt"
+{
+  echo '[pci]'; lspci -Dnnk 2>/dev/null || true
+  echo '[usb]'; lsusb 2>/dev/null || true
+  echo '[modules]'; lsmod 2>/dev/null || true
+  echo '[module-provenance]'
+  wifi_driver="$(driver_contract_wifi_locked_driver 2>/dev/null || true)"
+  for module in xe r8169 nvme xhci_hcd snd_usb_audio nct6683 ${wifi_driver:+$wifi_driver}; do
+    printf '%s\tintree=%s\tfilename=%s\n' "$module" \
+      "$(modinfo -F intree "$module" 2>/dev/null | head -n1 || printf unavailable)" \
+      "$(modinfo -F filename "$module" 2>/dev/null | head -n1 || printf unavailable)"
+  done
+} | evidence_atomic_write "$report" 0644
+
+gpu_driver="$(driver_contract_pci_driver_for_id "${EXPECTED_GPU_PCI_VENDOR:-8086}" "${EXPECTED_GPU_PCI_DEVICE:-e20b}" 2>/dev/null || true)"
+if [[ "$gpu_driver" == "${EXPECTED_GPU_KERNEL_DRIVER:-xe}" ]]; then emit OK 'Arc B580 driver' "$gpu_driver"; else emit KO 'Arc B580 driver' "${gpu_driver:-unbound}"; fi
+
+if hardware_platform_wifi_lock_valid; then
+  wifi_driver="$(driver_contract_wifi_locked_driver)"
+  emit OK 'Wi-Fi identity/driver lock' "$wifi_driver"
+else
+  wifi_driver=""
+  emit KO 'Wi-Fi identity/driver lock' 'missing, stale, or changed since enrollment'
+fi
+
+if driver_contract_lspci_block_uses 'Ethernet controller' "${EXPECTED_LAN_DRIVER:-r8169}"; then emit OK '5G LAN driver' "${EXPECTED_LAN_DRIVER:-r8169}"; else emit KO '5G LAN driver' 'expected Ethernet binding missing'; fi
+if driver_contract_lspci_block_uses 'USB controller' xhci_hcd; then emit OK 'xHCI driver' xhci_hcd; else emit KO 'xHCI driver' 'no USB controller bound to xhci_hcd'; fi
+if driver_contract_nvme_expected_bound; then emit OK 'T705 NVMe drivers' "${EXPECTED_NVME_COUNT:-2} controller(s) bound to nvme"; else emit KO 'T705 NVMe drivers' 'expected controllers are missing or not bound to nvme'; fi
+
+for module in xe r8169 nvme xhci_hcd snd_usb_audio nct6683 ${wifi_driver:+$wifi_driver}; do
+  if driver_contract_module_intree "$module"; then emit OK "in-tree $module" 'Fedora/Linux kernel module'; else emit KO "in-tree $module" 'module is missing or not marked in-tree'; fi
+done
+
+if driver_contract_no_foreign_gpu_stack; then emit OK 'Foreign GPU stack' 'no NVIDIA akmod/module on Golden host'; else emit KO 'Foreign GPU stack' 'unexpected NVIDIA kernel/RPM stack detected'; fi
+
+if driver_contract_validate; then emit OK 'Driver contract' 'all critical bindings/provenance match the Golden machine'; else emit KO 'Driver contract' 'one or more critical driver invariants failed'; fi
+
+[[ "$quiet" == true ]] || { ui_meta Report "$report"; ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 ))

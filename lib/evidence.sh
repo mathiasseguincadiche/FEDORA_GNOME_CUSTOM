@@ -24,12 +24,15 @@ effective_config_payload() {
     rel="${file#"$REPO_ROOT"/}"
     printf '%s\t%s\n' "$rel" "$(evidence_file_sha256 "$file")"
   done < <(
-    find "$REPO_ROOT/config" -maxdepth 1 -type f \
-      \( -name '*.conf' -o -name '*.policy' -o -name 'schema.digest' -o -name 'schema-enums.tsv' \) \
-      -print | sort
+    {
+      find "$REPO_ROOT/config" -type f \
+        \( -name '*.conf' -o -name '*.policy' -o -name '*.repo' -o -name 'schema.digest' -o -name 'schema-enums.tsv' \) -print
+      find "$REPO_ROOT/manifests" -maxdepth 1 -type f \
+        \( -name '*.txt' -o -name '*.tsv' -o -name 'module-plan.conf' \) -print
+      find "$REPO_ROOT/virtualization/xml" -type f -name '*.xml' -print 2>/dev/null || true
+      [[ -r "$REPO_ROOT/installer/fedora44-media.lock" ]] && printf '%s\n' "$REPO_ROOT/installer/fedora44-media.lock"
+    } | sort -u
   )
-  file="$REPO_ROOT/manifests/module-plan.conf"
-  [[ -r "$file" ]] && printf '%s\t%s\n' 'manifests/module-plan.conf' "$(evidence_file_sha256 "$file")"
 }
 
 effective_config_sha256() {
