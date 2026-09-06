@@ -2,15 +2,18 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/validation_gates.sh"
 final_dir="$STATE_ROOT/final"; evidence_dir="$final_dir/evidence"; cert="$final_dir/certified.ok"; mkdir -p "$evidence_dir"
 
 require_baremetal(){ runtime_is_baremetal || { ui_error 'Final certification is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }; }
+require_validation_chain(){ validation_require_chain || { ui_error 'Final certification requires current imported Gate 1 → Gate 2 PASS proofs'; exit "$EXIT_PRECHECK_FAILED"; }; }
 final_fingerprint(){ workstation_runtime_fingerprint; }
 suspend_count(){ local f c=0; shopt -s nullglob; for f in "$evidence_dir"/suspend-*.ok; do if grep -Fxq "fingerprint=$(final_fingerprint)" "$f"; then ((c+=1)); fi; done; shopt -u nullglob; printf '%d\n' "$c"; }
 latest_post_resume_log() { local link=/var/lib/fedora-gnome-custom/suspend/latest-post.log target; target="$(readlink -f "$link" 2>/dev/null || true)"; [[ -n "$target" && -s "$target" ]] || return 1; printf '%s\n' "$target"; }
 
 record_suspend(){
   require_baremetal
+  require_validation_chain
   "$REPO_ROOT/diagnostics/kernel-doctor" --quiet
   "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
   "$REPO_ROOT/diagnostics/display-doctor" --quiet
@@ -33,6 +36,8 @@ record_suspend(){
   {
     printf 'fingerprint=%s\n' "$(final_fingerprint)"
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
+    printf 'gate1_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 1)")"
+    printf 'gate2_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
     printf 'cycle_id=%s\n' "$cycle_id"
     printf 'post_resume_log=%s\n' "$post_log"
     printf 'display_edid_sha256=%s\n' "$(hardware_b580_expected_edid_sha256)"
@@ -46,6 +51,7 @@ valid_coldstart(){ local f="$evidence_dir/nautilus-coldstart.ok" elapsed; [[ -s 
 
 certify(){
   require_baremetal
+  require_validation_chain
   baseline_certification_valid || { ui_error 'Pre-APPLY hardware baseline is not valid'; exit "$EXIT_PRECHECK_FAILED"; }
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet
   "$REPO_ROOT/diagnostics/kernel-doctor" --quiet
@@ -80,6 +86,9 @@ certify(){
     printf 'hardware_fingerprint=%s\n' "$(baseline_fingerprint)"
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
     printf 'module_plan_sha256=%s\n' "$(module_plan_sha256)"
+    printf 'gate1_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 1)")"
+    printf 'gate2_proof_sha256=%s\n' "$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
+    printf 'validation_chain=PASS\n'
     printf 'kernel=%s\n' "$(uname -r)"
     printf 'display_edid_sha256=%s\n' "$(hardware_b580_expected_edid_sha256)"
     printf 'golden_release_manifest=%s\n' "$release_manifest"
@@ -96,13 +105,14 @@ certify(){
 status(){
   ui_banner 'GOLDEN WORKSTATION' 'POST-APPLY CERTIFICATION'
   ui_meta Kernel "$(uname -r)"; ui_meta Fingerprint "$(final_fingerprint)"; ui_meta Gaming "${GAMING_ENABLE:-false}"
+  if validation_require_chain; then ui_check OK 'Gate 1 → Gate 2 chain' PASS; else ui_check WARN 'Gate 1 → Gate 2 chain' 'missing/stale for current source'; fi
   if "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet; then ui_meta 'HOST policy' 'Secure Boot OFF / disk encryption forbidden'; else ui_meta 'HOST policy' 'NON-COMPLIANT'; fi
   ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"
   if valid_coldstart; then ui_check OK 'Nautilus cold-start' PASS; else ui_check WARN 'Nautilus cold-start' missing; fi
-  if [[ -s "$cert" ]] && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert"; then
+  if [[ -s "$cert" ]] && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" && grep -Fxq 'validation_chain=PASS' "$cert"; then
     ui_check OK Certification valid
   else
-    ui_check WARN Certification 'not yet certified for current runtime/configuration stack'
+    ui_check WARN Certification 'not yet certified for current runtime/configuration/validation stack'
   fi
 }
 case "${1:-status}" in status) status;; record-suspend) record_suspend;; certify) certify;; *) echo 'Usage: final-certification [status|record-suspend|certify]' >&2; exit "$EXIT_USAGE";; esac

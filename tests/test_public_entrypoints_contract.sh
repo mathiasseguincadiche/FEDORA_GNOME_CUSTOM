@@ -9,6 +9,7 @@ public_entrypoints=(
   scripts/maintenance/update-system.sh
   scripts/kernel/rollback-to-fedora.sh scripts/kvm/configure_nautilus_vm_access.sh scripts/kvm/create_ubuntu_devops_vm.sh scripts/kvm/create_windows11_vm.sh scripts/kvm/runtime_certification.sh
   scripts/gnome/display-repair.sh scripts/gnome/display-watch.sh scripts/gnome/nautilus-prewarm.sh scripts/lab/apply-gnome-virtualbox.sh
+  scripts/validation/gate1-wsl2.sh scripts/validation/gate2-virtualbox.sh scripts/validation/gate3-baremetal.sh scripts/validation/import-proof.sh scripts/validation/export-proof.sh scripts/validation/status.sh
 )
 for file in "${public_entrypoints[@]}"; do
   [[ -f "$ROOT/$file" ]] || { echo "missing public entrypoint: $file" >&2; exit 1; }
@@ -21,5 +22,8 @@ grep -Fq 'runtime_is_baremetal' "$ROOT/lib/apply_gate.sh"
 grep -Fq 'runtime_is_virtualbox' "$ROOT/lib/common.sh"
 grep -Fq 'wsl2)' "$ROOT/diagnostic.sh"
 grep -Fq 'control_center_main' "$ROOT/control.sh"
+grep -Fq 'validate gate1' "$ROOT/control.sh"
+grep -Fq 'validate gate2' "$ROOT/control.sh"
+grep -Fq 'validate gate3' "$ROOT/control.sh"
 grep -Fq "exec \"\$REPO_ROOT/control.sh\" \"\$@\"" "$ROOT/menu.sh"
 echo 'public entrypoints: PASS'

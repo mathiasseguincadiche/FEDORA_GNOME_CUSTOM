@@ -5,7 +5,7 @@
 Le projet traite l'OS principal comme une infrastructure versionnée :
 
 ```text
-mesurer → préflight → sauvegarder → converger → qualifier → certifier
+valider → mesurer → préflight → sauvegarder → converger → qualifier → certifier
 ```
 
 ## Point d'entrée
@@ -18,6 +18,7 @@ Mode CLI :
 
 ```bash
 ./control.sh status
+./control.sh validate status
 ./control.sh install dry-run
 ./control.sh update check
 ./control.sh update all
@@ -31,9 +32,49 @@ Mode CLI :
 
 Voir [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
 
-## Contrat Golden
+## Validation officielle en trois gates
+
+Avant la certification Golden, le même commit traverse trois environnements distincts :
 
 ```text
+GATE 1 — Fedora 44 / WSL2
+  système + contrats + logique fail-closed
+  matériel physique = DEFERRED
+            ↓ preuve JSON
+GATE 2 — Fedora 44 GNOME / VirtualBox
+  GNOME + extensions + Nautilus + Ptyxis + contrôle visuel humain
+  matériel physique = DEFERRED
+            ↓ preuve JSON liée au SHA-256 de Gate 1
+GATE 3 — Fedora 44 / BARE-METAL
+  matériel + pilotes + boot + desktop + KVM + backup
+            ↓
+final-certification PASS
+            ↓
+golden-release.json
+```
+
+Commandes principales :
+
+```bash
+./control.sh validate gate1 run
+./control.sh validate import /chemin/gate1-<commit>.json
+./control.sh validate gate2 apply
+./control.sh validate gate2 check
+./control.sh validate gate2 sign
+./control.sh validate import /chemin/gate2-<commit>.json
+./control.sh validate gate3 status
+./control.sh validate gate3 certify
+```
+
+Gate 1 et Gate 2 ne peuvent jamais être converties en preuve hardware. Le `final-certification` bare-metal vérifie lui-même la chaîne Gate 1 → Gate 2 avant de certifier.
+
+Voir [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md).
+
+## Contrat Golden bare-metal
+
+```text
+Gate 1 PASS + Gate 2 PASS
+      ↓
 Fedora 44 fraîche
       ↓
 baseline bare-metal
@@ -56,12 +97,12 @@ qualification bare-metal
       ↓
 5 cycles veille/réveil physiques + cold-start Nautilus
       ↓
-certification
+Gate 3 certification
       ↓
-golden-release.json + inventaires exacts
+golden-release.json + inventaires + preuves Gate 1/2
 ```
 
-Une modification de la configuration locale après le dry-run, un changement matériel/BIOS significatif ou une évolution de la pile runtime invalide les preuves correspondantes.
+Une modification du commit ou du plan de modules invalide les preuves Gate 1/2. Une modification de la configuration locale après le dry-run, un changement matériel/BIOS significatif ou une évolution de la pile runtime invalide les preuves bare-metal correspondantes.
 
 ## Invariants du HOST
 
@@ -104,7 +145,7 @@ Le Golden n'est jamais « le dernier kernel installé ».
 ./control.sh kernel boot-candidate
 # reboot
 ./diagnostics/kernel-doctor
-./diagnostics/final-certification record-suspend   # après chaque cycle physique
+./control.sh validate gate3 record-suspend   # après chaque cycle physique
 ./control.sh kernel certify
 ```
 
@@ -118,7 +159,7 @@ Les RPM Fedora sont préparés via **DNF5 offline** après backup :
 ./control.sh update all
 sudo scripts/maintenance/update-system.sh --offline-reboot
 # après le reboot
-scripts/maintenance/update-system.sh --post-offline
+scripts/maintenance/update-system.sh --finalize
 ```
 
 Flatpak reste une mise à jour explicite et le firmware reste en consultation uniquement.
@@ -130,6 +171,7 @@ Le projet verrouille :
 - le commit Git appliqué ;
 - le hash de configuration effective ;
 - le hash du plan de modules ;
+- les preuves portables Gate 1 et Gate 2 et leur chaîne SHA-256 ;
 - le fingerprint hardware ;
 - le média Fedora 44 approuvé dans `installer/fedora44-media.lock` ;
 - les NEVRA RPM ;
@@ -137,11 +179,12 @@ Le projet verrouille :
 - les hashes des extensions GNOME ;
 - BIOS, microcode, firmware, kernel et fallback.
 
-Après certification, `scripts/release/capture-golden-release.sh` produit `golden-release.json` et les inventaires associés.
+Après certification, `scripts/release/capture-golden-release.sh` produit `golden-release.json`, embarque `gate1-proof.json` et `gate2-proof.json`, et inscrit leurs SHA-256 dans le manifeste.
 
 ## Documentation
 
 - [`docs/README.md`](docs/README.md) — portail documentaire ;
+- [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) — procédure WSL2 → VirtualBox → bare-metal ;
 - [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
 - [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) — architecture ;
 - [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) — qualification hardware ;

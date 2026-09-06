@@ -10,3 +10,4 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0006 — Pas de dépôt GPU tiers](0006-fedora-gpu-stack.md)
 - [0007 — KVM réseau fail-closed](0007-kvm-network-fail-closed.md)
 - [0008 — Aucun flash firmware automatique](0008-no-automatic-firmware-flash.md)
+- [0009 — Validation en trois gates WSL2 → VirtualBox → bare-metal](0009-three-gate-validation.md)

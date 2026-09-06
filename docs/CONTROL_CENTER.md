@@ -1,6 +1,6 @@
 # Workstation Control Center
 
-`./control.sh` est la façade opérateur de FEDORA_GNOME_CUSTOM. Elle reste volontairement mince : l'installation, Restic, DNF5, kernel lifecycle, KVM et les doctors restent implémentés dans leurs moteurs dédiés.
+`./control.sh` est la façade opérateur de FEDORA_GNOME_CUSTOM. Elle reste volontairement mince : la validation, l'installation, Restic, DNF5, kernel lifecycle, KVM et les doctors restent implémentés dans leurs moteurs dédiés.
 
 ```bash
 ./control.sh
@@ -15,6 +15,78 @@
 ```
 
 Le dashboard affiche version/SHA, Fedora/runtime, kernel, B580/xe, Git, backup, certification, KVM et état reboot. Une certification dont le fingerprint runtime ne correspond plus est affichée `STALE`.
+
+## Validation en trois gates
+
+La prévalidation et la certification sont désormais ordonnées :
+
+```text
+Gate 1 — Fedora 44 / WSL2
+  système + logique, hardware DEFERRED
+        ↓
+Gate 2 — Fedora 44 GNOME / VirtualBox
+  GNOME + extensions + Nautilus + Ptyxis + contrôle visuel
+        ↓
+Gate 3 — Fedora 44 / bare-metal
+  certification Golden complète
+```
+
+Afficher le statut :
+
+```bash
+./control.sh validate status
+```
+
+### Gate 1 — WSL2
+
+```bash
+./control.sh validate gate1 run
+./control.sh validate gate1 status
+./control.sh validate export 1 /chemin/export
+```
+
+Gate 1 exécute le doctor WSL2, la validation de configuration et la suite des contrats, puis produit une preuve JSON portable avec `hardware_certification=DEFERRED`.
+
+### Gate 2 — VirtualBox
+
+Importer d'abord Gate 1 :
+
+```bash
+./control.sh validate import /chemin/gate1-<commit>.json
+```
+
+Puis :
+
+```bash
+./control.sh validate gate2 plan
+./control.sh validate gate2 apply
+./control.sh validate gate2 check
+./control.sh validate gate2 sign
+./control.sh validate export 2 /chemin/export
+```
+
+La signature `gate2 sign` relance les doctors puis exige une validation visuelle humaine. La preuve Gate 2 contient le SHA-256 exact de la preuve Gate 1 importée.
+
+### Gate 3 — bare-metal
+
+Importer Gate 1 puis Gate 2 dans cet ordre :
+
+```bash
+./control.sh validate import /chemin/gate1-<commit>.json
+./control.sh validate import /chemin/gate2-<commit>.json
+./control.sh validate gate3 status
+```
+
+Enregistrer les cycles physiques puis certifier :
+
+```bash
+./control.sh validate gate3 record-suspend
+./control.sh validate gate3 certify
+```
+
+Le moteur `diagnostics/final-certification` vérifie lui-même la chaîne Gate 1 → Gate 2 : appeler directement le doctor ne contourne pas cette règle. Seul Gate 3 peut produire `final-certification PASS` et `golden-release.json`.
+
+Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
 
 ## Installation
 
@@ -181,7 +253,7 @@ Les restores restent staging-first ; aucune restauration n'écrase silencieuseme
 ./control.sh cert baseline-certify
 ```
 
-La certification Golden exige notamment cinq cycles veille/réveil physiques uniques, le cold-start Nautilus, SMART/PCIe T705, B580/ReBAR/x8, EDID certifié, VA-API fonctionnel, OpenCL fonctionnel et KVM si activé. Elle génère ensuite le bundle `state/releases/.../golden-release.json`.
+La certification Golden exige désormais la chaîne de preuves Gate 1 → Gate 2 en plus des preuves physiques : cinq cycles veille/réveil uniques, cold-start Nautilus, SMART/PCIe T705, B580/ReBAR/x8, EDID certifié, VA-API fonctionnel, OpenCL fonctionnel et KVM si activé. Elle génère ensuite le bundle `state/releases/.../golden-release.json` avec `gate1-proof.json` et `gate2-proof.json`.
 
 ## CLI kernel avancée
 

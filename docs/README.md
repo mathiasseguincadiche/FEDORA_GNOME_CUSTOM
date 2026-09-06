@@ -15,28 +15,33 @@ Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif et le m
 ## Parcours recommandé
 
 1. [`../README.md`](../README.md) — contrat Golden et invariants ;
-2. [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — interface opérateur ;
-3. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture ;
-4. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal ;
-5. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification physique ;
-6. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
-7. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
-8. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
-9. [`adr/README.md`](adr/README.md) — décisions d'architecture.
+2. [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) — validation officielle WSL2 → VirtualBox → bare-metal ;
+3. [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — interface opérateur ;
+4. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture ;
+5. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation bare-metal ;
+6. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification physique ;
+7. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
+8. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
+9. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
+10. [`adr/README.md`](adr/README.md) — décisions d'architecture.
 
 ## Validation avant production
 
-Le parcours est progressif :
+Le parcours officiel est désormais une chaîne de preuves ordonnée :
 
-1. [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) — CLI/read-only ;
-2. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — LAB GNOME 50/Wayland ;
-3. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — bare-metal.
+1. **Gate 1** — [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) + [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) : Fedora 44/WSL2, système et logique uniquement ;
+2. **Gate 2** — [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) : Fedora 44 GNOME 50/Wayland, Nautilus, Ptyxis, extensions et validation visuelle ;
+3. **Gate 3** — [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) : Fedora 44 bare-metal et certification Golden complète.
+
+Gate 1 et Gate 2 produisent des preuves JSON portables avec `hardware_certification=DEFERRED`. Gate 2 référence le SHA-256 exact de Gate 1. Gate 3 refuse `final-certification PASS` si cette chaîne est absente ou périmée.
 
 Le LAB VirtualBox possède son propre entrypoint limité et **ne déverrouille jamais `install.sh --apply`**.
 
 ## Chaîne bare-metal
 
 ```text
+Gate 1 PASS + Gate 2 PASS
+      ↓
 Fedora 44 fraîche
       ↓
 baseline hardware
@@ -51,7 +56,7 @@ kernel candidate → boot one-shot
       ↓
 qualification physique
       ↓
-final certification + golden-release.json
+Gate 3 final certification + golden-release.json
 ```
 
 ## Domaines
