@@ -33,5 +33,16 @@ while IFS=$'\t' read -r delivery id executable smoke_arg trust; do
   fi
 done < "$(application_runtime_contract_path)"
 
+# The final runtime status must detect desktop-integration drift as well as package drift.
+# Restrict this to the real GNOME bare-metal session so CI/WSL2/VirtualBox package tests do not
+# claim physical UX certification.
+if runtime_is_baremetal && [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  if "$REPO_ROOT/diagnostics/gnome-desktop-integration-doctor" --quiet; then
+    emit OK 'GNOME desktop integration' 'live cross-component contract PASS'
+  else
+    emit KO 'GNOME desktop integration' 'live cross-component contract failed or Gate 3 UX evidence is stale'
+  fi
+fi
+
 [[ "$quiet" == true ]] || { ui_meta Report "$report"; ui_meta OK "$ok"; ui_meta KO "$ko"; }
 (( ko == 0 ))

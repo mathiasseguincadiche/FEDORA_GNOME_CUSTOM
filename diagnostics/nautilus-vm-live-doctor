@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/config/virtualization.conf"
+source "$REPO_ROOT/config/vm-profiles.conf"
+quiet=false; mode=status
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --certify) mode=certify;; --status) mode=status;; *) echo 'Usage: nautilus-vm-live-doctor [--quiet] [--status|--certify]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
+require_baremetal(){ if ! runtime_is_baremetal; then emit KO Runtime 'bare-metal required'; exit "$EXIT_SECURITY_BLOCK"; fi; }
+vsh(){ if virsh -c "${LIBVIRT_URI:-qemu:///system}" list --all >/dev/null 2>&1; then virsh -c "${LIBVIRT_URI:-qemu:///system}" "$@"; else sudo -n virsh -c "${LIBVIRT_URI:-qemu:///system}" "$@"; fi; }
+domain_ip(){ local dom="$1" network="${KVM_NETWORK_NAME:-devops-nat}" ip mac
+  ip="$(vsh domifaddr "$dom" --source agent 2>/dev/null | awk '/ipv4/ {sub(/\/.*/,"",$4); print $4; exit}' || true)"
+  if [[ -z "$ip" ]]; then
+    mac="$(vsh domiflist "$dom" 2>/dev/null | awk -v n="$network" '$3==n {print $5; exit}' || true)"
+    if [[ -n "$mac" ]]; then ip="$(vsh net-dhcp-leases "$network" 2>/dev/null | awk -v m="$mac" '$0~m && $0~/ipv4/ {sub(/\/.*/,"",$5); print $5; exit}' || true)"; fi
+  fi
+  printf '%s\n' "$ip"
+}
+
+require_baremetal
+if [[ "$mode" == status ]]; then
+  if ! is_true "${ENABLE_KVM:-true}"; then emit OK KVM 'disabled by policy; VM file access not required'; exit 0; fi
+  if physical_runtime_evidence_valid nautilus-vm-live; then emit OK 'Nautilus VM live' 'current physical fingerprint PASS'; else emit KO 'Nautilus VM live' 'missing or stale live SFTP/SMB evidence'; fi
+  (( ko == 0 )); exit
+fi
+
+if ! is_true "${ENABLE_KVM:-true}"; then emit OK KVM 'disabled by policy'; exit 0; fi
+if [[ ! -t 0 || ! -t 1 ]]; then emit KO Interactive 'live SFTP/SMB certification requires an interactive GNOME session'; exit "$EXIT_PRECHECK_FAILED"; fi
+if ! command -v gio >/dev/null 2>&1; then emit KO GIO missing; exit "$EXIT_PRECHECK_FAILED"; fi
+ubuntu="${UBUNTU_SERVER_NAME:-ubuntu-devops}"; windows="${WINDOWS11_NAME:-windows-11}"
+if [[ "$(vsh domstate "$ubuntu" 2>/dev/null | tr '[:upper:]' '[:lower:]')" != running ]]; then emit KO Ubuntu 'domain not running'; exit "$EXIT_POSTCHECK_FAILED"; fi
+if [[ "$(vsh domstate "$windows" 2>/dev/null | tr '[:upper:]' '[:lower:]')" != running ]]; then emit KO Windows 'domain not running'; exit "$EXIT_POSTCHECK_FAILED"; fi
+ubuntu_ip="$(domain_ip "$ubuntu")"; windows_ip="$(domain_ip "$windows")"
+if [[ -z "$ubuntu_ip" || -z "$windows_ip" ]]; then emit KO Network 'guest IP discovery failed'; exit "$EXIT_POSTCHECK_FAILED"; fi
+ubuntu_uri="sftp://${UBUNTU_SERVER_USERNAME:-mathias}@${ubuntu_ip}/home/${UBUNTU_SERVER_USERNAME:-mathias}"
+windows_uri="smb://${windows_ip}/${WINDOWS11_SMB_SHARE_NAME:-VM-Share}"
+
+roundtrip(){ local label="$1" uri="$2" token localf remotef got
+  token="FGC-${label// /-}-${RANDOM}-$$"; localf="$(mktemp)"; printf '%s\n' "$token" > "$localf"; remotef="$uri/$token.txt"
+  if ! gio list "$uri" >/dev/null 2>&1; then rm -f "$localf"; emit KO "$label" 'gio list failed; authenticate/open bookmark and retry'; return 1; fi
+  if ! gio copy "$localf" "$remotef" >/dev/null 2>&1; then rm -f "$localf"; emit KO "$label" 'remote canary write failed'; return 1; fi
+  got="$(gio cat "$remotef" 2>/dev/null || true)"; gio remove "$remotef" >/dev/null 2>&1 || true; rm -f "$localf"
+  if [[ "$got" == "$token" ]]; then emit OK "$label" 'GIO list + write/read/remove canary PASS'; else emit KO "$label" 'remote canary readback mismatch'; return 1; fi
+}
+roundtrip 'Ubuntu SFTP' "$ubuntu_uri"
+roundtrip 'Windows SMB' "$windows_uri"
+if (( ko == 0 )); then
+  "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh >/dev/null
+  physical_runtime_write_evidence nautilus-vm-live "ubuntu=$ubuntu_uri windows=$windows_uri gio_roundtrip=PASS bookmarks=refreshed"
+fi
+$quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
+(( ko == 0 ))

@@ -11,7 +11,9 @@ done
 grep -Fq 'diagnostics/ptyxis-doctor' "$ROOT/modules/applications/49_applications_validation.sh"
 grep -Fq 'diagnostics/ptyxis-doctor' "$ROOT/diagnostics/final-certification"
 grep -Fq 'diagnostics/ptyxis-doctor' "$ROOT/diagnostics/workstation-doctor"
-grep -Fq 'ptyxis --version' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+grep -Fq 'rpm -q ptyxis' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+grep -Fq 'test -x /usr/bin/ptyxis' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+grep -Fq "grep -aFq 'working-directory' /usr/bin/ptyxis" "$ROOT/.github/workflows/desktop-integration-pretest.yml"
 
 # Toolbx remains intentionally outside the Golden HOST until explicitly enabled
 # by a future policy; KVM is still the primary DevOps isolation boundary.

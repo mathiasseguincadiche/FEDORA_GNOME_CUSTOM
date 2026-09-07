@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; scope=full
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --gate2) scope=gate2;; --full) scope=full;; *) echo 'Usage: default-apps-doctor [--quiet] [--gate2|--full]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
+check(){ local mime="$1" wanted="$2" actual; actual="$(xdg-mime query default "$mime" 2>/dev/null || true)"; if [[ "$actual" == "$wanted" ]]; then emit OK "$mime" "$wanted"; else emit KO "$mime" "expected=$wanted actual=${actual:-unset}"; fi; }
+if ! command -v xdg-mime >/dev/null 2>&1; then emit KO xdg-mime missing; exit "$EXIT_PRECHECK_FAILED"; fi
+
+file_manager="${DEFAULT_FILE_MANAGER_DESKTOP:-org.gnome.Nautilus.desktop}"
+pdf="${DEFAULT_PDF_DESKTOP:-org.gnome.Papers.desktop}"
+image="${DEFAULT_IMAGE_DESKTOP:-org.gnome.Loupe.desktop}"
+text="${DEFAULT_TEXT_DESKTOP:-org.gnome.TextEditor.desktop}"
+video="${DEFAULT_VIDEO_DESKTOP:-org.gnome.Showtime.desktop}"
+archive="${DEFAULT_ARCHIVE_DESKTOP:-org.gnome.FileRoller.desktop}"
+browser="${DEFAULT_BROWSER_DESKTOP:-brave-browser.desktop}"
+
+check inode/directory "$file_manager"
+check application/pdf "$pdf"
+for mime in image/jpeg image/png image/webp image/gif; do check "$mime" "$image"; done
+check text/plain "$text"
+for mime in video/mp4 video/x-matroska video/webm; do check "$mime" "$video"; done
+for mime in application/zip application/x-tar application/x-compressed-tar; do check "$mime" "$archive"; done
+if [[ "$scope" == full ]]; then
+  check text/html "$browser"; check x-scheme-handler/http "$browser"; check x-scheme-handler/https "$browser"
+fi
+$quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
+(( ko == 0 ))

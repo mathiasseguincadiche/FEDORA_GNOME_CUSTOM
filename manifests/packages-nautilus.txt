@@ -1,5 +1,6 @@
 # GNOME Files / Nautilus complete integration
 nautilus
+localsearch
 gvfs
 gvfs-gphoto2
 gvfs-fuse

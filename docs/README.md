@@ -22,18 +22,19 @@ Lire [`CONTROL_CENTER.md`](CONTROL_CENTER.md) pour le cockpit interactif et le m
 6. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification physique ;
 7. [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md) — drivers, KVM/libvirt et applications en runtime ;
 8. [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) — fermeture CPU/cooling/BT/network/audio/GPU/VRR-HDR/Windows/backup ;
-9. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
-10. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
-11. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
-12. [`adr/README.md`](adr/README.md) — décisions d'architecture.
+9. [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) — certification GNOME/Nautilus/Ptyxis/LocalSearch/Portals et UX Gate 2/3 ;
+10. [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — reproductibilité et manifeste ;
+11. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — runbook principal ;
+12. [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline ;
+13. [`adr/README.md`](adr/README.md) — décisions d'architecture.
 
 ## Validation avant production
 
 Le parcours officiel est désormais une chaîne de preuves ordonnée :
 
 1. **Gate 1** — [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) + [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) : Fedora 44/WSL2, système et logique uniquement ;
-2. **Gate 2** — [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) : Fedora 44 GNOME 50/Wayland, Nautilus, Ptyxis, extensions et validation visuelle ;
-3. **Gate 3** — [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) + [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) : Fedora 44 bare-metal et certification Golden complète.
+2. **Gate 2** — [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) + [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) : Fedora 44 GNOME 50/Wayland, Nautilus, Ptyxis, LocalSearch, Portals et validation visuelle ;
+3. **Gate 3** — [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) + [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) + [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) : Fedora 44 bare-metal et certification Golden complète.
 
 Gate 1 et Gate 2 produisent des preuves JSON portables avec `hardware_certification=DEFERRED`. Gate 2 référence le SHA-256 exact de Gate 1. Gate 3 refuse `final-certification PASS` si cette chaîne est absente ou périmée.
 
@@ -60,6 +61,8 @@ qualification physique + drivers/runtime
       ↓
 GPU/network/audio/VRR-HDR + KVM/Windows live proofs
       ↓
+GNOME UX Gate 3 après les cycles suspend/resume
+      ↓
 Gate 3 final certification + golden-release.json
 ```
 
@@ -75,6 +78,7 @@ Gate 3 final certification + golden-release.json
 
 ### GNOME / desktop
 
+- [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md)
 - [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md)
 - [`GNOME_PROFILE.md`](GNOME_PROFILE.md)
 - [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md)

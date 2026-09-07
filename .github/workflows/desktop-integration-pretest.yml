@@ -35,7 +35,7 @@ jobs:
             manifests/packages-nautilus-optional.txt \
             manifests/packages-applications-gtk4.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
           dnf -y install dbus-daemon "${packages[@]}"
-          rpm -q nautilus gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus ptyxis
+          rpm -q nautilus localsearch xdg-user-dirs-gtk gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus ptyxis
       - name: Validate File Roller Nautilus extension payload
         shell: bash
         run: |
@@ -53,7 +53,16 @@ jobs:
         run: |
           set -Eeuo pipefail
           dbus-run-session -- gio mount -l >/dev/null
-      - name: Validate native Nautilus executable
+      - name: Validate Fedora 44 LocalSearch payload
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rpm -q localsearch xdg-user-dirs-gtk
+          test -x /usr/bin/localsearch
+          localsearch_payload="$(rpm -ql localsearch)"
+          grep -Fxq '/usr/lib/systemd/user/localsearch-3.service' <<<"${localsearch_payload}"
+          grep -Fxq '/usr/share/dbus-1/services/org.freedesktop.LocalSearch3.service' <<<"${localsearch_payload}"
+      - name: Validate native Nautilus executable and Fedora Ptyxis binding
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -62,6 +71,7 @@ jobs:
           test -x "${nautilus_bin}"
           nautilus_owner="$(rpm -qf "${nautilus_bin}")"
           grep -Eq '^nautilus-[0-9]' <<<"${nautilus_owner}"
+          LC_ALL=C grep -aFq 'org.gnome.Ptyxis' "${nautilus_bin}"
       - name: Validate native Ptyxis payload
         shell: bash
         run: |
@@ -78,4 +88,20 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          ptyxis --version
+          rpm -q ptyxis
+          test -x /usr/bin/ptyxis
+          LC_ALL=C grep -aFq 'working-directory' /usr/bin/ptyxis
+      - name: Validate Golden native desktop IDs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for desktop in \
+            org.gnome.Nautilus.desktop \
+            org.gnome.Ptyxis.desktop \
+            org.gnome.Papers.desktop \
+            org.gnome.Loupe.desktop \
+            org.gnome.TextEditor.desktop \
+            org.gnome.Showtime.desktop \
+            org.gnome.FileRoller.desktop; do
+            test -r "/usr/share/applications/${desktop}"
+          done
