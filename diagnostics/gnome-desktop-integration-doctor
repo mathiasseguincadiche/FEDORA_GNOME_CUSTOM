@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; functional=false; preflight=false
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --functional) functional=true;; --preflight) preflight=true;; *) echo 'Usage: gnome-desktop-integration-doctor [--quiet] [--functional] [--preflight]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; warn=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+run_check(){ local label="$1"; shift; if "$@"; then emit OK "$label" PASS; else emit KO "$label" FAIL; fi; }
+suspend_count(){ local f c=0 fp; fp="$(workstation_runtime_fingerprint)"; shopt -s nullglob; for f in "$STATE_ROOT/final/evidence"/suspend-*.ok; do if grep -Fxq "fingerprint=$fp" "$f"; then ((c+=1)); fi; done; shopt -u nullglob; printf '%d\n' "$c"; }
+gnome_ux_marker_valid(){ local f="$STATE_ROOT/final/evidence/gnome-ux.ok"; [[ -s "$f" ]] || return 1; grep -Fxq 'status=PASS' "$f" || return 1; grep -Fxq "workstation_fingerprint=$(workstation_runtime_fingerprint)" "$f" || return 1; grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$f"; }
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || "${XDG_SESSION_TYPE:-}" != wayland ]]; then emit KO Session 'GNOME/Wayland required'; exit "$EXIT_PRECHECK_FAILED"; fi
+if rpm -q xdg-user-dirs-gtk >/dev/null 2>&1; then emit OK 'XDG user dirs GTK' installed; else emit KO 'XDG user dirs GTK' missing; fi
+if [[ -r /etc/xdg/autostart/user-dirs-update-gtk.desktop || -r /usr/share/applications/user-dirs-update-gtk.desktop ]]; then emit OK 'XDG user dirs integration' 'GTK locale/bookmark integration present'; else emit KO 'XDG user dirs integration' 'autostart/desktop payload missing'; fi
+
+run_check 'GNOME runtime' "$REPO_ROOT/diagnostics/gnome-runtime-doctor" --quiet
+run_check LocalSearch "$REPO_ROOT/diagnostics/localsearch-doctor" --quiet
+if $functional; then run_check 'Nautilus → Ptyxis' "$REPO_ROOT/diagnostics/nautilus-ptyxis-doctor" --quiet --functional; else run_check 'Nautilus → Ptyxis' "$REPO_ROOT/diagnostics/nautilus-ptyxis-doctor" --quiet; run_check 'Ptyxis integration' "$REPO_ROOT/diagnostics/ptyxis-integration-doctor" --quiet; fi
+if runtime_is_virtualbox; then run_check 'Default applications' "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --gate2; else run_check 'Default applications' "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --full; fi
+run_check 'Portal functional substrate' "$REPO_ROOT/diagnostics/portal-functional-doctor" --quiet
+
+if runtime_is_baremetal && ! $preflight; then
+  cycles="$(suspend_count)"
+  if (( cycles >= ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} )); then
+    if physical_runtime_evidence_valid portal-functional; then emit OK 'Portal Gate 3 evidence' current; else emit KO 'Portal Gate 3 evidence' 'missing/stale; run portal-functional-doctor --interactive --gate3'; fi
+    if is_true "${ENABLE_KVM:-true}"; then if physical_runtime_evidence_valid nautilus-vm-live; then emit OK 'Nautilus VM live evidence' current; else emit KO 'Nautilus VM live evidence' 'missing/stale; run nautilus-vm-live-doctor --certify'; fi; fi
+    if gnome_ux_marker_valid; then emit OK 'GNOME UX Gate 3 evidence' current; else emit KO 'GNOME UX Gate 3 evidence' 'missing/stale; run scripts/validation/gnome-ux-matrix.sh gate3'; fi
+  else emit WARN 'GNOME UX Gate 3 evidence' "deferred until ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} current-fingerprint suspend cycles (now $cycles)"; fi
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 ))

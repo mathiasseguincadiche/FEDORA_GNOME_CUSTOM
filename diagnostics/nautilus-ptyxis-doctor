@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; functional=false
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --functional) functional=true;; *) echo 'Usage: nautilus-ptyxis-doctor [--quiet] [--functional]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; warn=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+if rpm -q nautilus >/dev/null 2>&1; then emit OK Nautilus "$(rpm -q nautilus)"; else emit KO Nautilus missing; fi
+if rpm -q ptyxis >/dev/null 2>&1; then emit OK Ptyxis "$(rpm -q ptyxis)"; else emit KO Ptyxis missing; fi
+if command -v ptyxis >/dev/null 2>&1; then
+  ptyxis_help="$(ptyxis --help 2>&1 || true)"
+  if grep -Fq -- '--working-directory' <<<"$ptyxis_help"; then
+    emit OK 'Ptyxis working-directory API' '--working-directory supported'
+  else
+    emit KO 'Ptyxis working-directory API' '--working-directory missing'
+  fi
+else
+  emit KO 'Ptyxis working-directory API' 'ptyxis command unavailable'
+fi
+if rpm -q gnome-terminal-nautilus >/dev/null 2>&1; then
+  emit KO 'Terminal menu conflict' 'gnome-terminal-nautilus must be absent from the Ptyxis Golden profile'
+else
+  emit OK 'Terminal menu conflict' 'no legacy gnome-terminal-nautilus extension'
+fi
+
+nautilus_bin="$(command -v nautilus 2>/dev/null || true)"
+if [[ -x "$nautilus_bin" ]] && LC_ALL=C grep -aFq 'org.gnome.Ptyxis' "$nautilus_bin" 2>/dev/null; then
+  emit OK 'Fedora Nautilus terminal binding' 'org.gnome.Ptyxis present in Nautilus payload'
+else
+  emit KO 'Fedora Nautilus terminal binding' 'org.gnome.Ptyxis not found in Nautilus executable'
+fi
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  if gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus --method org.freedesktop.DBus.ListActivatableNames 2>/dev/null | grep -Fq org.gnome.Ptyxis; then
+    emit OK 'Ptyxis D-Bus activation' 'org.gnome.Ptyxis advertised'
+  else
+    emit KO 'Ptyxis D-Bus activation' 'org.gnome.Ptyxis missing from activatable names'
+  fi
+fi
+
+if $functional; then
+  if "$REPO_ROOT/diagnostics/ptyxis-integration-doctor" --quiet --functional; then
+    emit OK 'Nautilus → Ptyxis CWD substrate' 'Ptyxis functional working-directory canary PASS'
+  else
+    emit KO 'Nautilus → Ptyxis CWD substrate' 'Ptyxis working-directory canary failed'
+  fi
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 ))

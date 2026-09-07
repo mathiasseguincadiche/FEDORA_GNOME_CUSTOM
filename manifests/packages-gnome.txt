@@ -4,4 +4,5 @@ gnome-control-center
 xdg-desktop-portal
 xdg-desktop-portal-gnome
 xdg-user-dirs
+xdg-user-dirs-gtk
 flatpak

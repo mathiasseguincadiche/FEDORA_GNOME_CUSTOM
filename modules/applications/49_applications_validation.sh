@@ -9,13 +9,18 @@ applications_validation_precheck() {
   [[ -r "$REPO_ROOT/manifests/application-runtime-contract.tsv" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/manifests/packages-appimage.txt" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/manifests/flatpaks-appimage.txt" ]] || return "$EXIT_PRECHECK_FAILED"
+  [[ -x "$REPO_ROOT/scripts/gnome/configure-default-apps.sh" ]] || return "$EXIT_PRECHECK_FAILED"
 }
 
 applications_validation_plan() {
-  echo 'Validate GTK4/libadwaita apps, professional RPM/Flatpak provenance and actual runtime startup, AppImage compatibility, and the managed Ptyxis/Bash terminal contract.'
+  echo 'Validate GTK4/libadwaita apps, professional RPM/Flatpak provenance and actual runtime startup, AppImage compatibility, Nautilus/Ptyxis integration, and deterministic GNOME default application associations.'
 }
 
-applications_validation_apply() { log_info APPLICATIONS 'application validation is read-only'; }
+applications_validation_apply() {
+  is_true "${GNOME_DEFAULT_APPS_ENABLED:-true}" || return 0
+  is_true "${DRY_RUN:-true}" && { log_info APPLICATIONS 'DRY-RUN: configure GNOME default application associations'; return 0; }
+  "$REPO_ROOT/scripts/gnome/configure-default-apps.sh" full || return "$EXIT_APPLY_FAILED"
+}
 
 applications_validation_postcheck() {
   local pkg app manifest
@@ -35,6 +40,9 @@ applications_validation_postcheck() {
   rpm -q "${TERMINAL_PACKAGE:-ptyxis}" >/dev/null 2>&1 || return "$EXIT_POSTCHECK_FAILED"
   rpm -q "${TEXT_EDITOR_PACKAGE:-gnome-text-editor}" >/dev/null 2>&1 || return "$EXIT_POSTCHECK_FAILED"
   "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
+  "$REPO_ROOT/diagnostics/ptyxis-integration-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
+  "$REPO_ROOT/diagnostics/nautilus-ptyxis-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
+  "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --full || return "$EXIT_POSTCHECK_FAILED"
   "$REPO_ROOT/diagnostics/appimage-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
   "$REPO_ROOT/diagnostics/application-runtime-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
 

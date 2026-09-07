@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; functional=false
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --functional) functional=true;; *) echo 'Usage: ptyxis-integration-doctor [--quiet] [--functional]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; warn=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+if rpm -q ptyxis >/dev/null 2>&1; then emit OK Package ptyxis; else emit KO Package 'ptyxis missing'; fi
+if command -v ptyxis >/dev/null 2>&1; then emit OK Command "$(command -v ptyxis)"; else emit KO Command 'ptyxis unavailable'; fi
+if [[ -r /usr/share/applications/org.gnome.Ptyxis.desktop ]]; then emit OK Desktop 'org.gnome.Ptyxis.desktop'; else emit KO Desktop 'desktop entry missing'; fi
+
+help="$(ptyxis --help 2>&1 || true)"
+for option in --working-directory --new-window --tab --standalone; do
+  if grep -Fq -- "$option" <<<"$help"; then emit OK "CLI $option" supported; else emit KO "CLI $option" missing; fi
+done
+
+login_shell="$(getent passwd "$(id -un)" 2>/dev/null | awk -F: '{print $7}' || true)"
+if [[ "${login_shell##*/}" == bash ]]; then emit OK Shell 'Bash login shell'; else emit KO Shell "expected Bash, got ${login_shell:-unknown}"; fi
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  if gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus --method org.freedesktop.DBus.ListActivatableNames 2>/dev/null | grep -Fq org.gnome.Ptyxis; then
+    emit OK GApplication 'org.gnome.Ptyxis activatable'
+  else
+    emit KO GApplication 'org.gnome.Ptyxis not activatable on user bus'
+  fi
+fi
+
+if $functional; then
+  if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || "${XDG_SESSION_TYPE:-}" != wayland ]]; then
+    emit KO Functional 'GNOME/Wayland session required'
+    $quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
+    exit "$EXIT_PRECHECK_FAILED"
+  fi
+  runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+  probe_dir="$(mktemp -d "$runtime_dir/fgc-ptyxis cwd.XXXXXX")"
+  marker="$(mktemp "$runtime_dir/fgc-ptyxis-marker.XXXXXX")"; rm -f "$marker"
+  cleanup(){ rm -rf -- "$probe_dir"; rm -f -- "$marker"; }
+  trap cleanup EXIT
+  rc=0
+  # shellcheck disable=SC2016
+  timeout 20 env FGC_PTYXIS_MARKER="$marker" ptyxis --standalone --working-directory "$probe_dir" -- bash -lc 'printf "%s\n%s\n%s\n%s\n" "$PWD" "$SHELL" "${TERM:-}" "${COLORTERM:-}" > "$FGC_PTYXIS_MARKER"' >/dev/null 2>&1 || rc=$?
+  if [[ -s "$marker" ]]; then
+    mapfile -t values < "$marker"
+    if [[ "${values[0]:-}" == "$probe_dir" ]]; then emit OK 'Working directory' 'Ptyxis preserved requested CWD including spaces'; else emit KO 'Working directory' "expected=$probe_dir actual=${values[0]:-missing}"; fi
+    if [[ "${values[1]##*/}" == bash ]]; then emit OK 'Child shell' bash; else emit KO 'Child shell' "${values[1]:-missing}"; fi
+    if [[ -n "${values[2]:-}" ]]; then emit OK TERM "${values[2]}"; else emit KO TERM missing; fi
+    if [[ -n "${values[3]:-}" ]]; then emit OK COLORTERM "${values[3]}"; else emit WARN COLORTERM 'not exported by current Ptyxis runtime'; fi
+  else
+    emit KO Functional "Ptyxis probe did not produce marker (rc=$rc)"
+  fi
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 ))

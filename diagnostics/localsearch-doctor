@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false
+[[ "${1:-}" == --quiet ]] && quiet=true
+ok=0; warn=0; ko=0; canary=''
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+cleanup(){ if [[ -n "$canary" ]]; then rm -f -- "$canary" 2>/dev/null || true; fi; }
+trap cleanup EXIT
+
+if rpm -q localsearch >/dev/null 2>&1; then emit OK Package localsearch; else emit KO Package 'localsearch missing'; fi
+if command -v localsearch >/dev/null 2>&1; then emit OK CLI localsearch; else emit KO CLI 'localsearch command missing'; fi
+if rpm -q xdg-user-dirs-gtk >/dev/null 2>&1; then emit OK 'XDG user dirs GTK' installed; else emit KO 'XDG user dirs GTK' missing; fi
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
+  if localsearch status >/dev/null 2>&1; then emit OK Status 'indexer responds'; else emit KO Status 'localsearch status failed'; fi
+  if systemctl --user is-active --quiet localsearch-3.service; then emit OK Service 'localsearch-3.service active'; else emit KO Service 'localsearch-3.service inactive after status probe'; fi
+  if localsearch index >/dev/null 2>&1; then emit OK Index 'indexed locations readable'; else emit KO Index 'localsearch index failed'; fi
+
+  token="FGCLocalSearchCanary${RANDOM}${RANDOM}"
+  canary="$HOME/${token}.txt"
+  printf 'Fedora GNOME Golden LocalSearch canary %s\n' "$token" > "$canary"
+  if localsearch info --eligible="$canary" >/dev/null 2>&1; then emit OK Eligibility "$canary"; else emit KO Eligibility 'canary is not eligible for indexing'; fi
+
+  found=false
+  for _ in $(seq 1 "${LOCALSEARCH_CANARY_WAIT_SECONDS:-30}"); do
+    if localsearch search --files "$token" 2>/dev/null | grep -Fq "$token"; then found=true; break; fi
+    sleep 1
+  done
+  if $found; then emit OK Search 'new HOME canary became searchable'; else emit KO Search "canary not searchable within ${LOCALSEARCH_CANARY_WAIT_SECONDS:-30}s"; fi
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+(( ko == 0 ))

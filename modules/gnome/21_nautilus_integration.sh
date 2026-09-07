@@ -15,9 +15,10 @@ gnome_nautilus_precheck() {
 gnome_nautilus_plan() {
   cat <<'EOF'
 Converge the complete Fedora-native Nautilus stack:
-- Nautilus + GVfs core, camera, FUSE, archive, AFC/iPhone, GOA/cloud and NFS backends
+- Nautilus + LocalSearch + GVfs core, camera, FUSE, archive, AFC/iPhone, GOA/cloud and NFS backends
 - SMB and MTP are enabled only when their declared Golden flags are true
 - Sushi quick preview and File Roller Nautilus extension
+- Fedora Ptyxis Open in Console path is kept unambiguous by removing the legacy gnome-terminal-nautilus extension
 - explicit thumbnail policy
 - true first-click cold-start optimization by prewarming Portal/GIO only, never Nautilus itself
 EOF
@@ -33,6 +34,10 @@ gnome_nautilus_apply() {
   fi
   if is_true "${NAUTILUS_ENABLE_MTP:-true}"; then
     run_mutating GNOME sudo dnf -y install gvfs-mtp || return "$EXIT_APPLY_FAILED"
+  fi
+
+  if rpm -q gnome-terminal-nautilus >/dev/null 2>&1; then
+    run_mutating GNOME sudo dnf -y remove gnome-terminal-nautilus || return "$EXIT_APPLY_FAILED"
   fi
 
   if ! is_true "${NAUTILUS_ENABLE_PREVIEWS:-true}"; then
@@ -56,4 +61,5 @@ gnome_nautilus_apply() {
 gnome_nautilus_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   "$REPO_ROOT/diagnostics/nautilus-integration-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
+  "$REPO_ROOT/diagnostics/localsearch-doctor" --quiet || return "$EXIT_POSTCHECK_FAILED"
 }

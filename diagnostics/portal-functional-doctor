@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+quiet=false; interactive=false; scope=''
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --interactive) interactive=true;; --gate2) scope=gate2;; --gate3) scope=gate3;; *) echo 'Usage: portal-functional-doctor [--quiet] [--interactive] [--gate2|--gate3]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
+portal_call(){ gdbus call --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop --method "$@"; }
+confirm(){ local label="$1" phrase="$2" answer; printf '%s\nTapez exactement %s : ' "$label" "$phrase"; read -r answer; [[ "$answer" == "$phrase" ]]; }
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || "${XDG_SESSION_TYPE:-}" != wayland ]]; then emit KO Session 'GNOME/Wayland required'; exit "$EXIT_PRECHECK_FAILED"; fi
+if ! "$REPO_ROOT/diagnostics/portal-doctor" --quiet; then emit KO Portal 'base portal doctor failed'; exit "$EXIT_POSTCHECK_FAILED"; fi
+interfaces="$(busctl --user introspect org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop 2>/dev/null || true)"
+for iface in FileChooser OpenURI Notification ScreenCast; do
+  if grep -Fq "org.freedesktop.portal.$iface" <<<"$interfaces"; then emit OK "$iface" exposed; else emit KO "$iface" missing; fi
+done
+
+sc_token="fgc_sc_${RANDOM}_$$"; sc_session="fgc_session_${RANDOM}_$$"
+if portal_call org.freedesktop.portal.ScreenCast.CreateSession "{'handle_token': <'$sc_token'>, 'session_handle_token': <'$sc_session'>}" >/dev/null 2>&1; then
+  emit OK ScreenCast 'CreateSession request accepted by portal'
+else
+  emit KO ScreenCast 'CreateSession request failed'
+fi
+
+if $interactive; then
+  if [[ ! -t 0 || ! -t 1 ]]; then emit KO Interactive 'TTY required'; exit "$EXIT_PRECHECK_FAILED"; fi
+  nid="fgc-portal-${RANDOM}-$$"
+  if portal_call org.freedesktop.portal.Notification.AddNotification "$nid" "{'title': <'Fedora GNOME Golden'>, 'body': <'Portal notification smoke test'>}" >/dev/null 2>&1; then
+    if confirm 'Confirmez que la notification GNOME est apparue.' JE_CONFIRME_NOTIFICATION; then emit OK Notification 'visual smoke PASS'; else emit KO Notification 'visual confirmation refused'; fi
+  else emit KO Notification 'portal AddNotification failed'; fi
+  portal_call org.freedesktop.portal.Notification.RemoveNotification "$nid" >/dev/null 2>&1 || true
+
+  if portal_call org.freedesktop.portal.OpenURI.OpenURI '' 'https://example.com/' "{'ask': <false>}" >/dev/null 2>&1; then
+    if confirm 'Confirmez que la requête OpenURI a ouvert/proposé le navigateur attendu.' JE_CONFIRME_OPENURI; then emit OK OpenURI 'functional smoke PASS'; else emit KO OpenURI 'visual confirmation refused'; fi
+  else emit KO OpenURI 'portal OpenURI failed'; fi
+
+  if portal_call org.freedesktop.portal.FileChooser.OpenFile '' 'Fedora GNOME Golden — FileChooser smoke' "{'multiple': <false>}" >/dev/null 2>&1; then
+    if confirm 'Le sélecteur de fichiers GNOME doit être visible; sélectionnez ou annulez puis confirmez.' JE_CONFIRME_FILECHOOSER; then emit OK FileChooser 'functional smoke PASS'; else emit KO FileChooser 'visual confirmation refused'; fi
+  else emit KO FileChooser 'portal OpenFile failed'; fi
+
+  if confirm "Confirmez que ScreenCast est disponible dans le sélecteur de partage d’écran d’une application compatible; annulez sans partager si souhaité." JE_CONFIRME_SCREENCAST; then
+    emit OK ScreenCast 'manual chooser validation PASS'
+  else
+    emit KO ScreenCast 'manual chooser validation refused'
+  fi
+fi
+
+if (( ko == 0 )) && $interactive; then
+  case "$scope" in
+    gate2)
+      marker="$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok"; mkdir -p "$(dirname "$marker")"
+      { printf 'schema=1\nstatus=PASS\ncommit=%s\neffective_config_sha256=%s\nutc=%s\n' "$(repo_commit)" "$(effective_config_sha256)" "$(date -u +%FT%TZ)"; } | evidence_atomic_write "$marker" 0600
+      ;;
+    gate3)
+      if ! runtime_is_baremetal; then emit KO Gate3 'bare-metal required'; exit "$EXIT_SECURITY_BLOCK"; fi
+      physical_runtime_write_evidence portal-functional 'FileChooser=PASS OpenURI=PASS Notification=PASS ScreenCast=PASS'
+      ;;
+  esac
+fi
+$quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
+(( ko == 0 ))
