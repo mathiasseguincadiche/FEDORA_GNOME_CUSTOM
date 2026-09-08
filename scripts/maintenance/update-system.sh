@@ -17,6 +17,7 @@ Usage: update-system.sh [ACTION]
   --dnf-only        Backup + prepare a Fedora-only DNF5 offline transaction
   --offline-reboot  Reboot into the prepared DNF5 offline transaction
   --finalize        After normal boot: validate DNF, then Flatpak (full mode), firmware check and doctor
+  --post-offline    Compatibility alias for --finalize
   --offline-status  Show project marker and DNF5 offline status
   --offline-log     Show the latest DNF5 offline transaction log
   --flatpak-only    Update Flatpak applications only
@@ -215,7 +216,7 @@ case "$mode" in
   --offline-reboot)
     require_baremetal_update; request_offline_reboot
     ;;
-  --finalize)
+  --finalize|--post-offline)
     require_baremetal_update; finalize_offline_update
     ;;
   --offline-status)

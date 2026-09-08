@@ -18,7 +18,7 @@ Le dashboard affiche version/SHA, Fedora/runtime, kernel, B580/xe, Git, backup, 
 
 ## Validation en trois gates
 
-La prévalidation et la certification sont désormais ordonnées :
+La prévalidation et la certification sont ordonnées :
 
 ```text
 Gate 1 — Fedora 44 / WSL2
@@ -84,7 +84,7 @@ Enregistrer les cycles physiques puis certifier :
 ./control.sh validate gate3 certify
 ```
 
-Le moteur `diagnostics/final-certification` vérifie lui-même la chaîne Gate 1 → Gate 2 : appeler directement le doctor ne contourne pas cette règle. Seul Gate 3 peut produire `final-certification PASS` et `golden-release.json`.
+Le moteur `diagnostics/final-certification` vérifie lui-même la chaîne Gate 1 → Gate 2. Seul Gate 3 peut produire `final-certification PASS` et `golden-release.json`.
 
 Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
 
@@ -96,39 +96,45 @@ Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
 ./control.sh install apply
 ```
 
-Ces commandes appellent respectivement :
+Ces commandes appellent respectivement `install.sh --dry-run`, `prepare-preapply-backup.sh` et `install.sh --apply`.
 
-```text
-install.sh --dry-run
-prepare-preapply-backup.sh
-install.sh --apply
-```
-
-Le chemin APPLY garde donc les protections natives : bare-metal, Git propre, baseline, même commit/configuration effective/plan matériel que le dry-run, **backup complet Restic** dont le snapshot exact est relu, et confirmation opérateur.
+Le chemin APPLY conserve les protections natives : bare-metal, Git propre, baseline, même commit/configuration effective/plan matériel que le dry-run, backup complet Restic dont le snapshot exact est relu, et confirmation opérateur.
 
 ## Mises à jour
+
+Surface opérateur complète :
 
 ```bash
 ./control.sh update check
 ./control.sh update all
 ./control.sh update dnf
+./control.sh update reboot
+./control.sh update finalize
+./control.sh update status
+./control.sh update log
 ./control.sh update flatpak
 ./control.sh update firmware
 ```
 
-`update all` et `update dnf` ne remplacent plus les paquets RPM dans la session GNOME active. Ils préparent une transaction **DNF5 offline** après un backup Restic complet :
+`update all` et `update dnf` ne remplacent pas les paquets RPM dans la session GNOME active. Ils préparent une transaction **DNF5 offline** après un backup Restic complet :
 
 ```text
 backup complet Restic
         ↓
 dnf5 --refresh upgrade --offline
         ↓
-transaction stockée, aucun RPM remplacé dans la session active
+transaction stockée
+        ↓
+./control.sh update reboot
+        ↓
+DNF5 offline + redémarrage normal
+        ↓
+./control.sh update finalize
+        ↓
+dnf5 check → Flatpak si mode all → firmware check → diagnostic global
 ```
 
-Le moteur détaillé est `scripts/maintenance/update-system.sh`.
-
-### 1. Préparer
+### Préparer
 
 ```bash
 ./control.sh update all
@@ -136,44 +142,34 @@ Le moteur détaillé est `scripts/maintenance/update-system.sh`.
 ./control.sh update dnf
 ```
 
-`all` mémorise qu'après l'update RPM il faudra également converger les Flatpaks. `dnf` n'exécutera pas cette étape.
-
-### 2. Déclencher l'update offline
+### Redémarrer dans la transaction offline
 
 ```bash
-scripts/maintenance/update-system.sh --offline-status
-sudo scripts/maintenance/update-system.sh --offline-reboot
+./control.sh update status
+./control.sh update reboot
 ```
 
-DNF5 redémarre alors dans son environnement minimal, applique la transaction, puis revient sur Fedora normal.
-
-### 3. Finaliser après retour sur Fedora
+### Finaliser après retour sur Fedora
 
 ```bash
-scripts/maintenance/update-system.sh --finalize
+./control.sh update finalize
 ```
 
-La finalisation :
-
-```text
-journal dernière transaction DNF5 offline
-        ↓
-dnf5 check
-        ↓
-Flatpak update si mode "all"
-        ↓
-fwupd get-updates uniquement
-        ↓
-diagnostic global
-```
-
-Pour inspecter la dernière transaction sans rien modifier :
+La commande historique directe :
 
 ```bash
-scripts/maintenance/update-system.sh --offline-log
+scripts/maintenance/update-system.sh --post-offline
 ```
 
-Une évolution du kernel, Mesa, firmware, Mutter ou GNOME Shell peut rendre la certification `STALE`; le `software-matrix-doctor diff` explique alors précisément ce qui a changé.
+reste acceptée comme alias de compatibilité, mais `finalize` est le nom canonique.
+
+Pour inspecter la dernière transaction :
+
+```bash
+./control.sh update log
+```
+
+Une évolution du kernel, Mesa, firmware, Mutter ou GNOME Shell peut rendre la certification `STALE`; `software-matrix-doctor diff` explique alors ce qui a changé.
 
 Pour le firmware : **aucun flash automatique**. `fwupdmgr` reste une surface d'inventaire/consultation.
 
@@ -189,25 +185,23 @@ La politique Golden reste `kernel-vanilla/stable`, mais latest-stable signifie *
 ./control.sh kernel rollback-fedora
 ```
 
-`control.sh` route directement ces actions vers le moteur `scripts/kernel/kernel-lifecycle.sh` afin de ne pas dupliquer la logique.
-
 Séquence normale :
 
 ```text
-candidat résolu dans le repo Kernel Vanilla stable
+candidat latest-stable
       ↓
-NEVRA exactes + Fedora fallback obligatoire
+NEVRA exactes + Fedora fallback
       ↓
 boot-candidate one-shot
       ↓
-reboot + qualification hardware/runtime
+qualification hardware/runtime
       ↓
 certify
       ↓
 default persistant
 ```
 
-Un kernel Fedora 44 officiel doit rester installé comme fallback pendant tout le lifecycle.
+Un kernel Fedora 44 officiel reste installé comme fallback pendant tout le lifecycle.
 
 ## Diagnostics
 
@@ -243,6 +237,32 @@ Les doctors matériels stricts sont également exécutés par la certification f
 
 Les restores restent staging-first ; aucune restauration n'écrase silencieusement le système actif.
 
+## Logs, rapports et rétention
+
+Lister les preuves opérateur :
+
+```bash
+./control.sh logs list
+./control.sh logs tail
+./control.sh logs boot-failure
+```
+
+La politique `config/log-retention.policy` conserve les logs ordinaires 90 jours et les rapports ordinaires 365 jours. `state/` et `state/releases/` ne sont jamais supprimés par le helper. Un log ou rapport encore référencé dans l'état Golden est également protégé.
+
+La prévisualisation est non destructive :
+
+```bash
+./control.sh logs prune
+```
+
+L'application est volontairement explicite :
+
+```bash
+./control.sh logs prune-apply
+```
+
+Le menu interactif demande en plus une confirmation avant l'APPLY de la rétention.
+
 ## Certification
 
 ```bash
@@ -253,17 +273,20 @@ Les restores restent staging-first ; aucune restauration n'écrase silencieuseme
 ./control.sh cert baseline-certify
 ```
 
-La certification Golden exige désormais la chaîne de preuves Gate 1 → Gate 2 en plus des preuves physiques : cinq cycles veille/réveil uniques, cold-start Nautilus, SMART/PCIe T705, B580/ReBAR/x8, EDID certifié, VA-API fonctionnel, OpenCL fonctionnel et KVM si activé. Elle génère ensuite le bundle `state/releases/.../golden-release.json` avec `gate1-proof.json` et `gate2-proof.json`.
+La certification Golden exige la chaîne Gate 1 → Gate 2 en plus des preuves physiques : cinq cycles veille/réveil uniques, cold-start Nautilus, SMART/PCIe T705, B580/ReBAR/x8, EDID certifié, VA-API, OpenCL et KVM si activé. Elle génère ensuite le bundle `state/releases/.../golden-release.json`.
 
-## CLI kernel avancée
+## Archivage long terme des payloads
 
-Les actions candidat sont disponibles directement :
+Après une certification PASS, les payloads que l'opérateur souhaite conserver indépendamment des mirrors peuvent être liés à la release Golden dans une archive externe :
 
 ```bash
-./control.sh kernel candidate
-./control.sh kernel boot-candidate
-./control.sh kernel certify
+bash scripts/release/archive-golden-payloads.sh \
+  --destination /media/backup-golden \
+  --payload /chemin/Fedora-Workstation-Live-44-1.7.x86_64.iso \
+  --payload /chemin/payloads-rpm
 ```
+
+Le helper refuse d'écrire les payloads dans Git et produit des manifests SHA-256. Voir [`GOLDEN_PAYLOAD_ARCHIVE.md`](GOLDEN_PAYLOAD_ARCHIVE.md).
 
 ## Couleurs
 

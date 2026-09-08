@@ -1,0 +1,8 @@
+# Versioned retention policy for project-owned operational evidence.
+# Golden state and release bundles are never pruned by this policy.
+schema=1
+log_retention_days=90
+report_retention_days=365
+protect_state=true
+protect_releases=true
+protect_referenced=true

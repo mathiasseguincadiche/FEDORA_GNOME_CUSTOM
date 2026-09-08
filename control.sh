@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
@@ -14,6 +13,39 @@ if [[ "${1:-}" == kernel ]]; then
       ;;
     rollback-fedora)
       exec bash "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh"
+      ;;
+  esac
+fi
+
+# Offline update continuation is exposed at the top-level facade because the
+# base control-center menu historically only prepared transactions. Keep the
+# actual update state machine in update-system.sh.
+if [[ "${1:-}" == update ]]; then
+  case "${2:-}" in
+    reboot)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-reboot
+      ;;
+    finalize)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --finalize
+      ;;
+    status)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-status
+      ;;
+    log)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-log
+      ;;
+  esac
+fi
+
+# Evidence retention is deliberately explicit. A plain prune is a dry-run;
+# destructive cleanup requires the unambiguous prune-apply action.
+if [[ "${1:-}" == logs ]]; then
+  case "${2:-}" in
+    prune)
+      exec bash "$REPO_ROOT/scripts/maintenance/prune-project-evidence.sh" --dry-run
+      ;;
+    prune-apply)
+      exec bash "$REPO_ROOT/scripts/maintenance/prune-project-evidence.sh" --apply
       ;;
   esac
 fi
@@ -64,4 +96,6 @@ fi
 
 # shellcheck source=lib/control_center.sh
 source "$REPO_ROOT/lib/control_center.sh"
+# shellcheck source=lib/control_center_operator_polish.sh
+[[ ! -r "$REPO_ROOT/lib/control_center_operator_polish.sh" ]] || source "$REPO_ROOT/lib/control_center_operator_polish.sh"
 control_center_main "$@"
