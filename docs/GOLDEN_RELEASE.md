@@ -80,7 +80,7 @@ La certification finale ajoute en plus les doctors, le cold-start Nautilus, les 
 
 ## Ce que ce manifeste prouve
 
-Il fournit une **attestation d'état** et de chaîne de validation, pas une promesse que les mirrors Fedora/Flathub permettront éternellement de reconstruire bit-for-bit le même poste. Pour une reconstruction historique totalement autonome, il faudrait en plus archiver les payloads RPM/Flatpak/ISO eux-mêmes.
+Il fournit une **attestation d'état** et de chaîne de validation, pas une promesse que les mirrors Fedora/Flathub permettront éternellement de reconstruire bit-for-bit le même poste. Pour une reconstruction historique totalement autonome, il faut en plus conserver les payloads RPM/Flatpak/ISO nécessaires.
 
 Pour l'usage Golden personnel, la politique retenue est :
 
@@ -94,5 +94,31 @@ source versionnée
 ```
 
 Toute modification du commit ou du module plan invalide les preuves Gate 1/2. Toute modification significative de la matrice bare-metal doit être validée puis capturée à nouveau.
+
+## Archive historique longue durée
+
+Après une certification finale `PASS`, le projet fournit un helper opt-in :
+
+```bash
+./control.sh cert archive /mnt/archive/golden-2026 \
+  /chemin/Fedora-Workstation-Live-44.iso \
+  /chemin/offline-rpm-flatpak-cache \
+  /chemin/Windows11.iso \
+  /chemin/virtio-win.iso
+```
+
+`scripts/release/seal-golden-archive.sh` :
+
+- lit le `golden_release_manifest` de la certification finale courante ;
+- vérifie d'abord le `MANIFEST.sha256` du bundle Golden ;
+- refuse une destination située dans le checkout Git ;
+- copie le bundle certifié dans `release/` ;
+- copie les payloads explicitement fournis dans `payloads/` ;
+- écrit `ARCHIVE.txt` avec commit et configuration effective ;
+- génère puis vérifie un nouveau `MANIFEST.sha256` couvrant l'archive complète.
+
+Le helper **ne télécharge rien automatiquement**. Cette limite est volontaire : les médias Windows/VirtIO et les snapshots de dépôts/caches doivent provenir d'une source de confiance choisie par l'opérateur. Pour les RPM/Flatpak, on peut fournir un cache ou miroir offline préalablement constitué ; l'archive scellée conserve ensuite exactement ce qui lui a été remis.
+
+L'archive doit être stockée hors machine ou sur un stockage dédié. Elle complète Restic et le bundle Golden ; elle ne remplace ni le backup courant ni la certification runtime.
 
 Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) pour le protocole complet.

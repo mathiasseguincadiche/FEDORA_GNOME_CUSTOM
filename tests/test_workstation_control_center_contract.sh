@@ -6,12 +6,17 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/maintenance/update-system.sh" ]] || { echo 'update-system.sh missing' >&2; exit 1; }
+[[ -f "$ROOT/scripts/maintenance/prune-project-artifacts.sh" ]] || { echo 'prune-project-artifacts.sh missing' >&2; exit 1; }
+[[ -f "$ROOT/scripts/release/seal-golden-archive.sh" ]] || { echo 'seal-golden-archive.sh missing' >&2; exit 1; }
+[[ -f "$ROOT/config/operator-retention.policy" ]] || { echo 'operator-retention.policy missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/kernel/kernel-lifecycle.sh" ]] || { echo 'kernel lifecycle entrypoint missing' >&2; exit 1; }
 [[ -f "$ROOT/docs/CONTROL_CENTER.md" ]] || { echo 'CONTROL_CENTER.md missing' >&2; exit 1; }
 
 bash -n "$ROOT/control.sh"
 bash -n "$ROOT/lib/control_center.sh"
 bash -n "$ROOT/scripts/maintenance/update-system.sh"
+bash -n "$ROOT/scripts/maintenance/prune-project-artifacts.sh"
+bash -n "$ROOT/scripts/release/seal-golden-archive.sh"
 bash -n "$ROOT/scripts/kernel/kernel-lifecycle.sh"
 
 # The historical menu entrypoint must remain a compatibility alias, not a second implementation.
@@ -73,6 +78,12 @@ grep -Fq 'sudo dnf5 check' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'flatpak update -y' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq "\"\$REPO_ROOT/diagnostic.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
 
+# The operator CLI must expose the complete offline lifecycle without duplicating business logic.
+grep -Fq 'update-system.sh" --offline-reboot' "$ROOT/control.sh"
+grep -Fq 'update-system.sh" --finalize' "$ROOT/control.sh"
+grep -Fq 'update-system.sh" --offline-status' "$ROOT/control.sh"
+grep -Fq 'update-system.sh" --offline-log' "$ROOT/control.sh"
+
 # Firmware is query-only from the automated update path.
 grep -Fq 'fwupdmgr get-updates' "$ROOT/scripts/maintenance/update-system.sh"
 if grep -Eq 'fwupdmgr[[:space:]]+(update|install)' "$ROOT/scripts/maintenance/update-system.sh"; then
@@ -95,6 +106,31 @@ branch = text.split('  --apply)', 1)[1].split('    ;;', 1)[0]
 assert branch.index('mandatory_preupdate_backup') < branch.index('prepare_dnf_offline'), 'backup must precede offline DNF preparation'
 PY
 
+# Transient artifact retention is explicit and must never prune Golden evidence.
+grep -Fxq 'logs_days=90' "$ROOT/config/operator-retention.policy"
+grep -Fxq 'reports_days=180' "$ROOT/config/operator-retention.policy"
+grep -Fxq 'preserve_state=true' "$ROOT/config/operator-retention.policy"
+grep -Fxq 'preserve_releases=true' "$ROOT/config/operator-retention.policy"
+grep -Fq 'prune-project-artifacts.sh" --check' "$ROOT/control.sh"
+grep -Fq 'prune-project-artifacts.sh" --apply' "$ROOT/control.sh"
+grep -Fq 'state/=preserved' "$ROOT/scripts/maintenance/prune-project-artifacts.sh"
+if grep -Eq 'rm .*STATE_ROOT|find .*STATE_ROOT.*-delete' "$ROOT/scripts/maintenance/prune-project-artifacts.sh"; then
+  echo 'artifact retention must never delete Golden state' >&2
+  exit 1
+fi
+
+# Long-term archive sealing requires a current certified release and safe source/destination separation.
+grep -Fq 'seal-golden-archive.sh' "$ROOT/control.sh"
+grep -Fq 'runtime_is_baremetal' "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq "grep -Fxq 'verdict=PASS'" "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq "fingerprint=\$(workstation_runtime_fingerprint)" "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq "effective_config_sha256=\$(effective_config_sha256)" "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq 'state/releases/' "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq 'Destination must not be inside a payload source' "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq 'MANIFEST.sha256' "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq 'must be stored outside the Git checkout' "$ROOT/scripts/release/seal-golden-archive.sh"
+grep -Fq 'The script never downloads external payloads automatically.' "$ROOT/scripts/release/seal-golden-archive.sh"
+
 # Real non-interactive smoke test of the dashboard. It must not require Fedora or bare-metal.
 status_file="$(mktemp)"
 trap 'rm -f "$status_file"' EXIT
@@ -107,10 +143,23 @@ grep -Fq 'vanilla/stable latest-stable' "$status_file"
 # Documentation must explain both interactive and CLI use and the no-auto-flash rule.
 grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh update all' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh update reboot' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh update finalize' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'DNF5 offline' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kernel candidate' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kernel certify' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh logs retention' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh cert archive' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'kernel-vanilla/stable' "$ROOT/docs/CONTROL_CENTER.md"
+
+if grep -Fq -- '--post-offline' "$ROOT/docs/INSTALLATION_GUIDE.md" "$ROOT/docs/RUNBOOK_GOLDEN_HARDWARE.md"; then
+  echo 'stale --post-offline documentation remains' >&2
+  exit 1
+fi
+
+grep -Fq './control.sh update finalize' "$ROOT/docs/INSTALLATION_GUIDE.md"
+grep -Fq './control.sh update finalize' "$ROOT/docs/RUNBOOK_GOLDEN_HARDWARE.md"
+grep -Fq './control.sh cert archive' "$ROOT/docs/GOLDEN_RELEASE.md"
 
 echo 'workstation control center contract: PASS'

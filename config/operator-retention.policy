@@ -1,0 +1,6 @@
+# Versioned retention policy for transient operator artifacts.
+# Golden state and release evidence are intentionally excluded from pruning.
+logs_days=90
+reports_days=180
+preserve_state=true
+preserve_releases=true

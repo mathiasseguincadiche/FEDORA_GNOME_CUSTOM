@@ -257,17 +257,20 @@ Préparer une mise à jour complète :
 ./control.sh update all
 ```
 
-Cela effectue le backup et prépare la transaction RPM DNF5 offline. Ensuite :
+Cela effectue le backup et prépare la transaction RPM DNF5 offline. Vérifier l'état puis déclencher le reboot offline :
 
 ```bash
-sudo scripts/maintenance/update-system.sh --offline-reboot
+./control.sh update status
+./control.sh update reboot
 ```
 
 Après le redémarrage :
 
 ```bash
-scripts/maintenance/update-system.sh --post-offline
+./control.sh update finalize
 ```
+
+La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, met à jour les Flatpaks en mode complet, consulte les firmwares disponibles sans les flasher puis lance le diagnostic global.
 
 Aucun firmware n'est flashé automatiquement.
 
