@@ -76,7 +76,7 @@ Gate 1 valide le **code de validation**, la cohérence système et les décision
 - totalité de la suite de contrats déclarée dans `.github/workflows/tests.yml` ;
 - logique dry-run / mutation ;
 - guards runtime ;
-- logique Kernel Vanilla candidat/certifié ;
+- logique Kernel Vanilla rolling N / N-1 ;
 - logique Restic et APPLY gates ;
 - logique KVM fail-closed ;
 - logique B580/T705/EDID via les contrats et fixtures du dépôt.
@@ -274,7 +274,7 @@ LUKS local            interdit
 SELinux               enforcing
 firewalld             actif
 Arc B580              host-only
-Kernel Fedora         fallback obligatoire
+Kernel Vanilla        rolling N / N-1, max 2
 Firmware              aucun flash automatique
 ```
 
@@ -311,13 +311,15 @@ Exécuter la séquence Golden habituelle :
 ./control.sh install apply
 ```
 
-Puis qualifier le Kernel Vanilla candidat selon le lifecycle documenté :
+Le module kernel installe directement le dernier Kernel Vanilla stable comme N, le sélectionne comme défaut GRUB et conserve au maximum N-1. Redémarrer normalement puis contrôler :
 
 ```bash
-./control.sh kernel candidate
-./control.sh kernel boot-candidate
-# reboot
+sudo reboot
+./control.sh kernel status
+./diagnostics/kernel-doctor
 ```
+
+La qualification Gate 3 porte donc sur le kernel N réellement utilisé ; il n'existe plus de promotion préalable `candidate → boot-candidate → certify`.
 
 ## 5. Preuves physiques obligatoires
 
@@ -326,6 +328,7 @@ Gate 3 certifie notamment :
 - BIOS/UEFI et politique Secure Boot OFF ;
 - absence de chiffrement local LUKS ;
 - firmware/microcode runtime ;
+- kernel N stable, N-1 rollback et rétention maximum 2 ;
 - B580 `8086:e20b` ;
 - driver `xe` ;
 - ReBAR ;
@@ -377,7 +380,7 @@ gate2-proof.json
 MANIFEST.sha256
 ```
 
-et `golden-release.json` enregistre les SHA-256 des deux preuves.
+et `golden-release.json` enregistre les SHA-256 des deux preuves ainsi que l'état kernel N/N-1.
 
 ---
 

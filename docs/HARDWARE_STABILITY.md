@@ -18,11 +18,18 @@ Les contrôles couvrent Vulkan, VA-API, firmware, journal xe/DRM et état Waylan
 
 ## Kernel
 
-Le profil utilise Fedora Kernel Vanilla stable avec plancher 7.2.2 et garde les kernels Fedora installés comme fallback.
+Le profil utilise Fedora Kernel Vanilla stable avec plancher 7.2.2 et une politique **rolling N / N-1**.
+
+- le dernier stable disponible devient N ;
+- N est le défaut GRUB normal ;
+- le kernel précédent reste N-1 pour rollback ;
+- `installonly_limit=2` impose au maximum deux versions `kernel-core` ;
+- les versions plus anciennes sont purgées via DNF5 `oldinstallonly` ;
+- un kernel Fedora permanent n'est plus conservé comme troisième fallback.
 
 Secure Boot actif bloque ce chemin par défaut tant qu'un workflow de confiance/signature n'a pas été choisi explicitement.
 
-Aucun retrait agressif des kernels Fedora de secours n'est prévu.
+Le retour aux paquets kernel Fedora reste disponible comme procédure de récupération explicite. Une mise à jour kernel peut rendre la certification Golden `STALE` jusqu'à une nouvelle qualification du runtime.
 
 ## Display
 

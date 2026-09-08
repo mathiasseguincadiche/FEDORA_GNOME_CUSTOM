@@ -140,31 +140,54 @@ sudo dmidecode --type 17 | grep -E 'Configured Memory Speed|Speed:'
 
 La modification de vitesse change le fingerprint de baseline. Refaire les tests mémoire 5600/6000 et la certification au lieu de réutiliser les anciennes preuves.
 
-## Kernel candidat installé mais Fedora a démarré
+## Nouveau kernel N installé mais démarrage sur N-1
 
 ```bash
-scripts/kernel/kernel-lifecycle.sh status
+./control.sh kernel status
 uname -r
 ```
 
-Le comportement est normal si `boot-candidate` n'a pas été planifié. Utiliser :
+La politique normale attend le dernier stable `N` comme défaut GRUB. Si la machine a démarré sur `N-1`, vérifier le défaut puis rétablir N :
 
 ```bash
-scripts/kernel/kernel-lifecycle.sh boot-candidate
+./control.sh kernel install-latest
 sudo reboot
 ```
 
-Le candidat est booté une fois ; le défaut persistant n'est modifié qu'après `certify`.
+Lors d'une mise à jour DNF5 offline déjà préparée, `./control.sh update finalize` remet également N comme défaut et demande un reboot supplémentaire si le runtime courant est encore N-1.
 
-## Kernel candidat refuse la certification
+Aucun kernel n'est supprimé tant que le projet ne peut pas confirmer que N est démarré pour la finalisation.
+
+## Rollback volontaire vers N-1
+
+Si le nouveau N présente une régression :
 
 ```bash
 ./diagnostics/kernel-doctor
-./diagnostics/final-certification status
-./diagnostics/software-matrix-doctor diff
+./control.sh kernel rollback
+sudo reboot
 ```
 
-Vérifier en priorité : fallback Fedora présent, kernel courant exactement égal au candidat, 5 cycles resume, cold-start Nautilus, B580/PCIe/SMART/média/compute et KVM.
+`rollback` sélectionne uniquement le kernel précédent N-1 comme défaut GRUB. N reste installé, ce qui permet de revenir ensuite au dernier stable sans réinstaller toute la pile.
+
+Le doctor peut afficher un `WARN` lorsque N-1 est volontairement démarré. La Golden précédente n'est pas automatiquement restaurée : vérifier la matrice logicielle et recertifier l'état réellement retenu si nécessaire.
+
+## Plus de deux kernels installés
+
+```bash
+rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | sort -V
+./control.sh kernel status
+```
+
+Attendu : `installonly_limit=2` et au maximum deux versions `kernel-core`.
+
+Appliquer la politique :
+
+```bash
+./control.sh kernel prune
+```
+
+Le moteur utilise uniquement `dnf5 remove --oldinstallonly --limit=2`. Il n'utilise ni `rpm -e` direct ni suppression manuelle de `/boot/vmlinuz-*`. Si un ancien kernel est encore le kernel actuellement démarré, DNF le protège ; redémarrer sur N puis relancer la purge.
 
 ## Certification `STALE`
 
@@ -172,7 +195,7 @@ Vérifier en priorité : fallback Fedora présent, kernel courant exactement ég
 ./diagnostics/software-matrix-doctor diff
 ```
 
-Ne recréer pas manuellement les markers. Identifier les composants modifiés, exécuter les doctors correspondants puis recertifier.
+Une mise à jour kernel est autorisée à devenir le runtime normal avant recertification, mais elle peut rendre l'ancienne Golden `STALE`. Ne recréer pas manuellement les markers. Identifier les composants modifiés, exécuter les doctors correspondants puis recertifier.
 
 ## EDID attendu absent
 
@@ -211,4 +234,4 @@ Après reboot :
 ./control.sh update finalize
 ```
 
-Ne considérer pas la nouvelle pile comme Golden avant les postchecks et, si la matrice sensible a changé, la recertification.
+La finalisation vérifie N/N-1 et la rétention à deux kernels avant les postchecks applicatifs. Ne considérer pas la nouvelle pile comme Golden avant les postchecks et, si la matrice sensible a changé, la recertification.

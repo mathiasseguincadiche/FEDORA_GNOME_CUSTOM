@@ -120,14 +120,23 @@ Le chemin APPLY garde donc les protections natives : bare-metal, Git propre, bas
 ./control.sh update finalize
 ```
 
-`update all` et `update dnf` ne remplacent plus les paquets RPM dans la session GNOME active. Ils préparent une transaction **DNF5 offline** après un backup Restic complet :
+`update all` et `update dnf` préparent une transaction **DNF5 offline** après un backup Restic complet. Le dernier Kernel Vanilla stable fait désormais partie intégrante de la mise à jour : il est résolu avant la transaction, installé directement par DNF5 et devient le noyau normal au redémarrage.
 
 ```text
 backup complet Restic
         ↓
+résolution latest-stable Kernel Vanilla
+        ↓
+DNF installonly_limit = 2
+        ↓
 dnf5 --refresh upgrade --offline
         ↓
-transaction stockée, aucun RPM remplacé dans la session active
+reboot offline
+        ↓
+N = nouveau kernel par défaut
+N-1 = kernel précédent conservé
+        ↓
+finalize : vérification + purge des kernels plus anciens
 ```
 
 Le moteur détaillé est `scripts/maintenance/update-system.sh`.
@@ -140,7 +149,7 @@ Le moteur détaillé est `scripts/maintenance/update-system.sh`.
 ./control.sh update dnf
 ```
 
-`all` mémorise qu'après l'update RPM il faudra également converger les Flatpaks. `dnf` n'exécutera pas cette étape.
+`all` mémorise qu'après l'update RPM il faudra également converger les Flatpaks. `dnf` n'exécutera pas cette étape. Les deux chemins Fedora incluent la politique kernel rolling.
 
 ### 2. Déclencher l'update offline
 
@@ -149,7 +158,7 @@ Le moteur détaillé est `scripts/maintenance/update-system.sh`.
 ./control.sh update reboot
 ```
 
-DNF5 redémarre alors dans son environnement minimal, applique la transaction, puis revient sur Fedora normal.
+DNF5 redémarre alors dans son environnement minimal, applique la transaction, puis revient sur Fedora normal. Le nouveau kernel stable est attendu comme noyau démarré et comme défaut GRUB.
 
 ### 3. Finaliser après retour sur Fedora
 
@@ -164,6 +173,12 @@ journal dernière transaction DNF5 offline
         ↓
 dnf5 check
         ↓
+vérification kernel N démarré + GRUB default
+        ↓
+dnf5 remove --oldinstallonly --limit=2
+        ↓
+validation N / N-1
+        ↓
 Flatpak update si mode "all"
         ↓
 fwupd get-updates uniquement
@@ -171,47 +186,52 @@ fwupd get-updates uniquement
 diagnostic global
 ```
 
+Si le nouveau kernel est installé mais que la machine a redémarré sur N-1, `finalize` remet N comme défaut et demande simplement un reboot supplémentaire avant de terminer. Il ne supprime jamais le kernel actuellement démarré.
+
 Pour inspecter la dernière transaction sans rien modifier :
 
 ```bash
 ./control.sh update log
 ```
 
-Une évolution du kernel, Mesa, firmware, Mutter ou GNOME Shell peut rendre la certification `STALE`; le `software-matrix-doctor diff` explique alors précisément ce qui a changé.
+Une évolution du kernel, Mesa, firmware, Mutter ou GNOME Shell peut rendre la certification `STALE`; le `software-matrix-doctor diff` explique alors précisément ce qui a changé. Le kernel n'attend plus une certification préalable pour être utilisé, mais la **Golden Workstation** peut toujours nécessiter une recertification après la mise à jour.
 
 Pour le firmware : **aucun flash automatique**. `fwupdmgr` reste une surface d'inventaire/consultation.
 
-## Kernel
+## Kernel — politique N / N-1
 
-La politique Golden reste `kernel-vanilla/stable`, mais latest-stable signifie **source des candidats**, pas promotion automatique.
+La politique Golden est désormais : **latest stable direct + N / N-1**.
+
+- `N` = dernier Kernel Vanilla stable installé, noyau par défaut ;
+- `N-1` = version immédiatement précédente, conservée pour rollback ;
+- maximum **2 versions `kernel-core`** installées ;
+- tout noyau plus ancien est supprimé via le mécanisme DNF5 `installonly` ;
+- le fallback Fedora n'est plus conservé obligatoirement ;
+- aucune étape `candidate → boot-candidate → certify` n'est requise avant le premier boot du nouveau noyau.
+
+Exemple :
+
+```text
+7.2.2 installé
+      ↓ mise à jour complète
+7.2.3 = N, défaut GRUB
+7.2.2 = N-1
+      ↓ mise à jour suivante
+7.2.4 = N, défaut GRUB
+7.2.3 = N-1
+7.2.2 supprimé
+```
+
+Commandes :
 
 ```bash
-./control.sh kernel candidate
-./control.sh kernel boot-candidate
-./control.sh kernel certify
+./control.sh kernel install-latest
+./control.sh kernel prune
 ./control.sh kernel rollback
 ./control.sh kernel rollback-fedora
 ```
 
-`control.sh` route directement ces actions vers le moteur `scripts/kernel/kernel-lifecycle.sh` afin de ne pas dupliquer la logique.
-
-Séquence normale :
-
-```text
-candidat résolu dans le repo Kernel Vanilla stable
-      ↓
-NEVRA exactes + Fedora fallback obligatoire
-      ↓
-boot-candidate one-shot
-      ↓
-reboot + qualification hardware/runtime
-      ↓
-certify
-      ↓
-default persistant
-```
-
-Un kernel Fedora 44 officiel doit rester installé comme fallback pendant tout le lifecycle.
+`install-latest` force l'installation directe du dernier stable hors cycle de mise à jour complet. `prune` applique explicitement la rétention à deux noyaux. `rollback` sélectionne N-1 comme défaut GRUB sans supprimer N. `rollback-fedora` reste uniquement une récupération d'urgence permettant de revenir aux paquets Fedora ; ce n'est plus le fallback permanent du Golden.
 
 ## Diagnostics
 
@@ -230,6 +250,8 @@ Un kernel Fedora 44 officiel doit rester installé comme fallback pendant tout l
 ```
 
 Les doctors matériels stricts sont également exécutés par la certification finale. `diagnostics/software-matrix-doctor diff` compare l'état courant au dernier état known-good certifié.
+
+`diagnostics/kernel-doctor` contrôle notamment le noyau courant, le dernier stable installé, N-1, le défaut GRUB, `installonly_limit=2`, le nombre de versions `kernel-core`, Secure Boot et le binding `xe` de la B580.
 
 ## Backup / restauration
 
@@ -302,13 +324,13 @@ Appliquer explicitement la rétention :
 
 ## CLI kernel avancée
 
-Les actions candidat sont disponibles directement :
-
 ```bash
-./control.sh kernel candidate
-./control.sh kernel boot-candidate
-./control.sh kernel certify
+./control.sh kernel install-latest
+./control.sh kernel prune
+./control.sh kernel rollback
 ```
+
+Le chemin normal reste `./control.sh update all`; ces commandes servent au diagnostic, à la maintenance ciblée et au rollback N-1.
 
 ## Couleurs
 

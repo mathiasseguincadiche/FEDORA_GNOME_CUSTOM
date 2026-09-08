@@ -2,11 +2,13 @@
 
 Cette release est une phase de durcissement : elle réduit les ambiguïtés plutôt qu'ajouter des fonctions.
 
+> Note historique : la politique kernel décrite lors de cette phase a depuis été remplacée par ADR 0010. La politique active est rolling N / N-1 avec deux kernels maximum.
+
 ## Garanties renforcées
 
 - VM et conteneurs sont détectés explicitement et ne peuvent pas être pris pour du bare-metal ;
 - le preflight `--dry-run` est défini comme un plan non-mutant, pas comme une simulation transactionnelle ;
-- Kernel Vanilla doit être le `kernel-core` le plus récent réellement disponible dans les dépôts activés, avec plancher 7.2.2 et fallback Fedora ;
+- Kernel Vanilla devait être le `kernel-core` le plus récent réellement disponible dans les dépôts activés, avec plancher 7.2.2 ; la politique active installe aujourd'hui ce dernier stable directement comme N et conserve seulement N-1 ;
 - la tolérance de refresh display est réellement pilotée par la configuration ;
 - les preuves Nautilus/suspend sont liées au hardware, au kernel, au firmware GPU, à Mesa, Mutter et GNOME Shell ;
 - le socle KVM du host est obligatoire dans la certification Golden Workstation lorsqu'il est activé ;

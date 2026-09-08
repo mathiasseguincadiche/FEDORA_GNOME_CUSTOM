@@ -55,7 +55,8 @@ backup Restic + restore canary
       ↓
 ./install.sh --apply
       ↓
-kernel candidate → boot one-shot
+Kernel Vanilla latest-stable = N, défaut GRUB
+N-1 conservé, maximum 2 kernels
       ↓
 qualification physique + drivers/runtime
       ↓
@@ -65,6 +66,8 @@ GNOME UX Gate 3 après les cycles suspend/resume
       ↓
 Gate 3 final certification + golden-release.json
 ```
+
+La certification Gate 3 qualifie le kernel N réellement utilisé. Une future mise à jour peut installer un nouveau N directement ; l'ancienne certification devient alors potentiellement `STALE` jusqu'à la nouvelle preuve runtime.
 
 ## Domaines
 

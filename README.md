@@ -88,9 +88,10 @@ backup Restic vérifié
       ↓
 APPLY protégé
       ↓
-Kernel Vanilla = candidat uniquement
+Kernel Vanilla latest-stable installé directement
+  GRUB default = N, rétention max 2 kernels
       ↓
-boot one-shot du candidat
+reboot sur N
       ↓
 qualification bare-metal
   xe / ReBAR / PCIe / SMART / display / VA-API / OpenCL / GNOME / KVM
@@ -116,8 +117,10 @@ Une modification du commit ou du plan de modules invalide les preuves Gate 1/2. 
 - aucun `force_probe`, aucun Mesa Git, aucun dépôt GPU tiers ;
 - Intel Arc B580 conservée par le HOST, sans passthrough GPU ;
 - firmware inventorié, **aucun flash automatique** ;
-- Kernel Vanilla stable passe toujours par `candidate → boot-candidate → certify` ;
-- au moins un kernel Fedora 44 officiel reste installé comme fallback ;
+- Kernel Vanilla stable suit une politique rolling **N / N-1** ;
+- dernier stable installé directement, maximum **2 versions kernel-core** ;
+- N est le défaut GRUB, N-1 reste disponible pour rollback ;
+- le fallback Fedora permanent n'est plus requis ;
 - KVM/libvirt reste fail-closed vis-à-vis des réseaux HOST protégés.
 
 ## Matériel ciblé
@@ -138,31 +141,51 @@ Le profil d'affichage est lié à l'**EDID réellement certifié sur un connecte
 
 ## Kernel
 
-Le Golden n'est jamais « le dernier kernel installé ».
+Le Kernel Vanilla stable est désormais géré en mode **rolling N / N-1**.
 
-```bash
-./control.sh kernel candidate
-./control.sh kernel boot-candidate
-# reboot
-./diagnostics/kernel-doctor
-./control.sh validate gate3 record-suspend   # après chaque cycle physique
-./control.sh kernel certify
+```text
+N   = dernier stable installé, défaut GRUB
+N-1 = noyau immédiatement précédent, rollback
+max = 2 versions kernel-core
 ```
 
-Le candidat est résolu depuis le repository Kernel Vanilla stable, par NEVRA exacte, avec version minimale et fallback Fedora obligatoires. Une version plus récente n'est jamais promue automatiquement.
+Exemple :
+
+```text
+7.2.2
+  ↓ update
+7.2.3 = N
+7.2.2 = N-1
+  ↓ update
+7.2.4 = N
+7.2.3 = N-1
+7.2.2 supprimé
+```
+
+Commandes ciblées :
+
+```bash
+./control.sh kernel install-latest
+./control.sh kernel prune
+./control.sh kernel rollback
+```
+
+Le chemin normal reste la mise à jour complète. Il n'existe plus de passage obligatoire `candidate → boot-candidate → certify` avant d'utiliser le nouveau noyau. La certification Golden reste une validation globale **après** la mise à jour.
 
 ## Mises à jour
 
-Les RPM Fedora sont préparés via **DNF5 offline** après backup :
+Les RPM Fedora et le dernier Kernel Vanilla stable sont préparés via **DNF5 offline** après backup :
 
 ```bash
 ./control.sh update all
-sudo scripts/maintenance/update-system.sh --offline-reboot
+./control.sh update reboot
 # après le reboot
-scripts/maintenance/update-system.sh --finalize
+./control.sh update finalize
 ```
 
-Flatpak reste une mise à jour explicite et le firmware reste en consultation uniquement.
+`update all` résout le dernier stable, applique `installonly_limit=2`, prépare la transaction offline, puis `finalize` vérifie que N est démarré et défaut GRUB avant de supprimer les noyaux plus anciens que N-1.
+
+Flatpak reste une mise à jour explicite dans le mode complet et le firmware reste en consultation uniquement.
 
 ## Reproductibilité et preuves
 
@@ -177,7 +200,7 @@ Le projet verrouille :
 - les NEVRA RPM ;
 - les commits Flatpak ;
 - les hashes des extensions GNOME ;
-- BIOS, microcode, firmware, kernel et fallback.
+- BIOS, microcode, firmware, kernel et état N/N-1.
 
 Après certification, `scripts/release/capture-golden-release.sh` produit `golden-release.json`, embarque `gate1-proof.json` et `gate2-proof.json`, et inscrit leurs SHA-256 dans le manifeste.
 

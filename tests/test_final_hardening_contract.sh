@@ -17,8 +17,10 @@ if grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/generate-fedora44
   exit 1
 fi
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="false"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
+grep -Fxq 'mode=rolling-n-nminus1' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'max_installed_kernels=2' "$ROOT/config/kernel-lifecycle.policy"
 
 # Config is schema-validated before sourcing and remains declarative.
 [[ -r "$ROOT/config/schema.digest" ]]

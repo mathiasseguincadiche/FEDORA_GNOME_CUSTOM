@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
-# Kernel candidate -> certified lifecycle helpers.
+# Rolling Kernel Vanilla N / N-1 lifecycle helpers.
 # REPO_ROOT, STATE_ROOT and project configuration are loaded by engine_bootstrap.
 
 kernel_lifecycle_state_dir() { printf '%s/kernel' "$STATE_ROOT"; }
-kernel_lifecycle_candidate_path() { printf '%s/candidate.env' "$(kernel_lifecycle_state_dir)"; }
-kernel_lifecycle_certified_path() { printf '%s/certified.env' "$(kernel_lifecycle_state_dir)"; }
-kernel_lifecycle_previous_path() { printf '%s/previous-certified.env' "$(kernel_lifecycle_state_dir)"; }
-kernel_lifecycle_last_promoted_path() { printf '%s/last-promoted.env' "$(kernel_lifecycle_state_dir)"; }
-kernel_lifecycle_rollback_path() { printf '%s/rollback.env' "$(kernel_lifecycle_state_dir)"; }
+kernel_lifecycle_state_path() { printf '%s/rolling.env' "$(kernel_lifecycle_state_dir)"; }
 kernel_lifecycle_policy_path() { printf '%s/config/kernel-lifecycle.policy' "$REPO_ROOT"; }
 kernel_lifecycle_ensure_dir() { mkdir -p "$(kernel_lifecycle_state_dir)"; }
 
@@ -18,9 +14,13 @@ kernel_lifecycle_value() {
 }
 
 kernel_lifecycle_policy_value() { kernel_lifecycle_value "$(kernel_lifecycle_policy_path)" "$1"; }
-kernel_lifecycle_candidate_release() { kernel_lifecycle_value "$(kernel_lifecycle_candidate_path)" release 2>/dev/null || true; }
-kernel_lifecycle_certified_release() { kernel_lifecycle_value "$(kernel_lifecycle_certified_path)" release 2>/dev/null || true; }
-kernel_lifecycle_previous_release() { kernel_lifecycle_value "$(kernel_lifecycle_previous_path)" release 2>/dev/null || true; }
+
+kernel_lifecycle_max_installed() {
+  local value
+  value="$(kernel_lifecycle_policy_value max_installed_kernels 2>/dev/null || true)"
+  [[ "$value" =~ ^[2-9][0-9]*$ ]] || value=2
+  printf '%s\n' "$value"
+}
 
 kernel_lifecycle_release_is_stable() {
   local release="${1,,}"
@@ -34,36 +34,6 @@ kernel_lifecycle_version_at_least() {
   [[ "$version" =~ ^[0-9]+([.][0-9]+){1,3}$ && "$minimum" =~ ^[0-9]+([.][0-9]+){1,3}$ ]] || return 1
   first="$(printf '%s\n%s\n' "$minimum" "$version" | sort -V | head -n1)"
   [[ "$first" == "$minimum" ]]
-}
-
-kernel_lifecycle_fedora_fallback_release() {
-  rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null \
-    | grep -E '[.]fc44([.]|$)' \
-    | grep -Fv vanilla \
-    | sort -V \
-    | tail -n1
-}
-
-kernel_lifecycle_require_fedora_fallback() {
-  is_true "${KERNEL_KEEP_FEDORA_FALLBACK:-true}" || { ui_error 'Golden policy requires KERNEL_KEEP_FEDORA_FALLBACK=true'; return "$EXIT_SECURITY_BLOCK"; }
-  local fallback
-  fallback="$(kernel_lifecycle_fedora_fallback_release)"
-  [[ -n "$fallback" ]] || { ui_error 'No Fedora 44 kernel-core fallback is installed'; return "$EXIT_PRECHECK_FAILED"; }
-  kernel_lifecycle_release_installed "$fallback" || return "$EXIT_PRECHECK_FAILED"
-}
-
-kernel_lifecycle_current_certification_valid() {
-  local file release fingerprint config_hash
-  file="$(kernel_lifecycle_certified_path)"
-  [[ -s "$file" ]] || return 1
-  [[ "$(kernel_lifecycle_value "$file" status 2>/dev/null || true)" == certified ]] || return 1
-  release="$(kernel_lifecycle_value "$file" release 2>/dev/null || true)"
-  [[ -n "$release" && "$release" == "$(uname -r)" ]] || return 1
-  fingerprint="$(kernel_lifecycle_value "$file" fingerprint 2>/dev/null || true)"
-  config_hash="$(kernel_lifecycle_value "$file" effective_config_sha256 2>/dev/null || true)"
-  [[ -n "$fingerprint" && "$fingerprint" == "$(workstation_runtime_fingerprint)" ]] || return 1
-  [[ -n "$config_hash" && "$config_hash" == "$(effective_config_sha256)" ]] || return 1
-  kernel_lifecycle_require_fedora_fallback >/dev/null 2>&1
 }
 
 kernel_lifecycle_vanilla_repo_id() {
@@ -89,7 +59,7 @@ kernel_lifecycle_latest_available() {
     | tail -n1
 }
 
-kernel_lifecycle_candidate_nevras() {
+kernel_lifecycle_latest_nevras() {
   local release="$1" repo pkg found vr
   repo="$(kernel_lifecycle_vanilla_repo_id)" || return 1
   vr="${release%.*}"
@@ -105,13 +75,39 @@ kernel_lifecycle_candidate_nevras() {
   done
 }
 
-kernel_lifecycle_latest_installed_vanilla() {
-  rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null | grep -F vanilla | sort -V | tail -n1
+kernel_lifecycle_installed_releases() {
+  rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null \
+    | sed '/^[[:space:]]*$/d' \
+    | sort -Vu
+}
+
+kernel_lifecycle_installed_count() {
+  local -a releases=()
+  mapfile -t releases < <(kernel_lifecycle_installed_releases)
+  printf '%s\n' "${#releases[@]}"
+}
+
+kernel_lifecycle_latest_installed() {
+  kernel_lifecycle_installed_releases | tail -n1
+}
+
+kernel_lifecycle_previous_installed() {
+  local -a releases=()
+  mapfile -t releases < <(kernel_lifecycle_installed_releases)
+  (( ${#releases[@]} >= 2 )) || return 0
+  printf '%s\n' "${releases[${#releases[@]}-2]}"
 }
 
 kernel_lifecycle_release_installed() {
   local release="$1"
-  rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null | grep -Fxq "$release"
+  kernel_lifecycle_installed_releases | grep -Fxq "$release"
+}
+
+kernel_lifecycle_default_release() {
+  local kernel
+  kernel="$(grubby --default-kernel 2>/dev/null || true)"
+  kernel="${kernel##*/vmlinuz-}"
+  printf '%s\n' "${kernel:-unknown}"
 }
 
 kernel_lifecycle_secure_boot_state() {
@@ -129,145 +125,179 @@ kernel_lifecycle_secure_boot_state() {
   printf 'unknown\n'
 }
 
-kernel_lifecycle_require_mutation_gate() {
-  runtime_is_baremetal || { ui_error 'Kernel lifecycle mutations are bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
-  apply_gate_require_clean_git || { ui_error 'Kernel lifecycle requires a clean Git worktree'; return "$EXIT_SECURITY_BLOCK"; }
-  apply_gate_require_baseline || { ui_error 'Valid hardware baseline required before staging a kernel candidate'; return "$EXIT_PRECHECK_FAILED"; }
-  apply_gate_require_backup || { ui_error 'Fresh current-identity pre-APPLY backup required before staging a kernel candidate'; return "$EXIT_PRECHECK_FAILED"; }
-  kernel_lifecycle_require_fedora_fallback || return $?
+kernel_lifecycle_require_host_gate() {
+  runtime_is_baremetal || { ui_error 'Kernel mutations are bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
   case "$(kernel_lifecycle_secure_boot_state)" in
     disabled) ;;
-    enabled) ui_error 'Secure Boot is enabled; candidate staging is blocked by Golden policy'; return "$EXIT_SECURITY_BLOCK" ;;
-    *) ui_error 'Secure Boot state is unknown; candidate staging is blocked fail-closed'; return "$EXIT_SECURITY_BLOCK" ;;
+    enabled) ui_error 'Secure Boot is enabled; Kernel Vanilla is blocked by Golden HOST policy'; return "$EXIT_SECURITY_BLOCK" ;;
+    *) ui_error 'Secure Boot state is unknown; Kernel Vanilla mutation is blocked fail-closed'; return "$EXIT_SECURITY_BLOCK" ;;
   esac
 }
 
-kernel_lifecycle_write_marker() {
-  local path="$1" release="$2" status="$3"
-  shift 3
+kernel_lifecycle_require_install_gate() {
+  kernel_lifecycle_require_host_gate || return $?
+  apply_gate_require_clean_git || { ui_error 'Kernel installation requires a clean Git worktree'; return "$EXIT_SECURITY_BLOCK"; }
+  apply_gate_require_baseline || { ui_error 'Valid hardware baseline required before Kernel Vanilla installation'; return "$EXIT_PRECHECK_FAILED"; }
+  apply_gate_require_backup || { ui_error 'Fresh current-identity pre-APPLY backup required before Kernel Vanilla installation'; return "$EXIT_PRECHECK_FAILED"; }
+}
+
+kernel_lifecycle_dnf_limit() {
+  dnf5 --dump-main-config 2>/dev/null \
+    | awk -F= '$1 ~ /^[[:space:]]*installonly_limit[[:space:]]*$/ {gsub(/[[:space:]]/, "", $2); print $2; exit}'
+}
+
+kernel_lifecycle_ensure_tooling_and_repo() {
+  command_exists dnf5 || { ui_error 'dnf5 is required for Kernel Vanilla management'; return "$EXIT_PRECHECK_FAILED"; }
+  sudo dnf5 -y install dnf5-plugins mokutil grubby grub2-tools-minimal
+  sudo dnf5 -y copr enable "${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}"
+  kernel_lifecycle_vanilla_repo_id >/dev/null || { ui_error 'Unable to identify exactly one enabled Kernel Vanilla stable repository'; return "$EXIT_POSTCHECK_FAILED"; }
+}
+
+kernel_lifecycle_ensure_dnf_retention() {
+  local limit current
+  limit="$(kernel_lifecycle_max_installed)"
+  (( limit == 2 )) || { ui_error "Golden N/N-1 policy requires max_installed_kernels=2, got $limit"; return "$EXIT_CONFIG_FAILED"; }
+  sudo dnf5 config-manager setopt "installonly_limit=$limit"
+  current="$(kernel_lifecycle_dnf_limit)"
+  [[ "$current" == "$limit" ]] || { ui_error "DNF installonly_limit mismatch: expected=$limit actual=${current:-unknown}"; return "$EXIT_POSTCHECK_FAILED"; }
+  ui_check OK 'Kernel retention' "DNF installonly_limit=$limit"
+}
+
+kernel_lifecycle_resolve_latest_stable() {
+  local available
+  available="$(kernel_lifecycle_latest_available)"
+  [[ -n "$available" ]] || { ui_error 'Unable to resolve latest available Kernel Vanilla stable'; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_release_is_stable "$available" || { ui_error "Refusing non-stable kernel: $available"; return "$EXIT_SECURITY_BLOCK"; }
+  kernel_lifecycle_version_at_least "$available" || { ui_error "Kernel $available is below minimum ${KERNEL_MIN_VERSION:-7.2.2}"; return "$EXIT_SECURITY_BLOCK"; }
+  [[ "$available" == *vanilla* ]] || { ui_error "Resolved kernel is not Kernel Vanilla: $available"; return "$EXIT_SECURITY_BLOCK"; }
+  printf '%s\n' "$available"
+}
+
+kernel_lifecycle_prepare_rolling_update() {
+  kernel_lifecycle_require_host_gate || return $?
+  kernel_lifecycle_ensure_tooling_and_repo || return $?
+  kernel_lifecycle_ensure_dnf_retention || return $?
+  kernel_lifecycle_resolve_latest_stable
+}
+
+kernel_lifecycle_prune_old() {
+  local limit count
+  limit="$(kernel_lifecycle_max_installed)"
+  sudo dnf5 -y remove --oldinstallonly --limit="$limit"
+  count="$(kernel_lifecycle_installed_count)"
+  (( count <= limit )) || {
+    ui_error "Kernel retention still exceeds policy after prune: installed=$count max=$limit. Boot the newest kernel and retry."
+    return "$EXIT_POSTCHECK_FAILED"
+  }
+  ui_check OK 'Kernel retention' "$count kernel-core version(s) installed; max=$limit"
+}
+
+kernel_lifecycle_set_latest_default() {
+  local latest
+  latest="$(kernel_lifecycle_latest_installed)"
+  [[ -n "$latest" && -e "/boot/vmlinuz-$latest" ]] || { ui_error 'Latest installed kernel boot image is missing'; return "$EXIT_POSTCHECK_FAILED"; }
+  sudo grubby --set-default "/boot/vmlinuz-$latest"
+  [[ "$(kernel_lifecycle_default_release)" == "$latest" ]] || { ui_error "GRUB default does not match latest installed kernel $latest"; return "$EXIT_POSTCHECK_FAILED"; }
+  ui_check OK 'GRUB default' "$latest"
+}
+
+kernel_lifecycle_write_state() {
+  local source="${1:-runtime}" latest previous default count
   kernel_lifecycle_ensure_dir
+  latest="$(kernel_lifecycle_latest_installed)"
+  previous="$(kernel_lifecycle_previous_installed)"
+  default="$(kernel_lifecycle_default_release)"
+  count="$(kernel_lifecycle_installed_count)"
   {
-    printf 'release=%s\n' "$release"
-    printf 'status=%s\n' "$status"
+    printf 'schema=2\n'
+    printf 'mode=rolling-n-nminus1\n'
     printf 'utc=%s\n' "$(date -u +%FT%TZ)"
     printf 'project_commit=%s\n' "$(repo_commit)"
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
-    while (($#)); do printf '%s\n' "$1"; shift; done
-  } | evidence_atomic_write "$path" 0600
+    printf 'source=%s\n' "$source"
+    printf 'running=%s\n' "$(uname -r)"
+    printf 'latest_installed=%s\n' "${latest:-none}"
+    printf 'previous_installed=%s\n' "${previous:-none}"
+    printf 'default=%s\n' "${default:-unknown}"
+    printf 'installed_count=%s\n' "$count"
+    printf 'max_installed=%s\n' "$(kernel_lifecycle_max_installed)"
+  } | evidence_atomic_write "$(kernel_lifecycle_state_path)" 0600
 }
 
-kernel_lifecycle_stage_candidate() {
-  kernel_lifecycle_require_mutation_gate || return $?
-  command_exists dnf5 || return "$EXIT_PRECHECK_FAILED"
-  command_exists rpm || return "$EXIT_PRECHECK_FAILED"
+kernel_lifecycle_install_latest() {
+  kernel_lifecycle_require_install_gate || return $?
+  kernel_lifecycle_ensure_tooling_and_repo || return $?
+  kernel_lifecycle_ensure_dnf_retention || return $?
 
-  local old_default='' available='' installed='' certified='' repo=''
+  local available installed
   local -a exact_nevras=() install_args=()
-  old_default="$(grubby --default-kernel 2>/dev/null || true)"
-
-  sudo dnf5 -y install dnf5-plugins mokutil grubby grub2-tools-minimal
-  sudo dnf5 -y copr enable "${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}"
-  repo="$(kernel_lifecycle_vanilla_repo_id)" || { ui_error 'Unable to identify exactly one enabled Kernel Vanilla stable repository'; return "$EXIT_POSTCHECK_FAILED"; }
-
-  available="$(kernel_lifecycle_latest_available)"
-  [[ -n "$available" ]] || { ui_error 'Unable to resolve latest available kernel-core from Kernel Vanilla stable'; return "$EXIT_POSTCHECK_FAILED"; }
-  kernel_lifecycle_release_is_stable "$available" || { ui_error "Refusing non-stable kernel candidate: $available"; return "$EXIT_SECURITY_BLOCK"; }
-  kernel_lifecycle_version_at_least "$available" || { ui_error "Candidate $available is below minimum ${KERNEL_MIN_VERSION:-7.2.2}"; return "$EXIT_SECURITY_BLOCK"; }
-  [[ "$available" == *vanilla* ]] || { ui_error "Resolved candidate is not Kernel Vanilla: $available"; return "$EXIT_SECURITY_BLOCK"; }
-
-  mapfile -t exact_nevras < <(kernel_lifecycle_candidate_nevras "$available")
+  available="$(kernel_lifecycle_resolve_latest_stable)" || return $?
+  mapfile -t exact_nevras < <(kernel_lifecycle_latest_nevras "$available")
   (( ${#exact_nevras[@]} >= 5 )) || { ui_error 'Incomplete exact Kernel Vanilla NEVRA set'; return "$EXIT_POSTCHECK_FAILED"; }
   is_true "${KERNEL_VENDOR_CHANGE_ALLOWED:-true}" && install_args+=(--setopt=allow_vendor_change=1)
   sudo dnf5 -y "${install_args[@]}" install "${exact_nevras[@]}"
 
-  installed="$(kernel_lifecycle_latest_installed_vanilla)"
-  [[ "$installed" == "$available" ]] || { ui_error "Candidate install mismatch: installed=${installed:-missing} available=$available"; return "$EXIT_POSTCHECK_FAILED"; }
-  kernel_lifecycle_require_fedora_fallback || { ui_error 'Fedora fallback disappeared while staging candidate'; return "$EXIT_POSTCHECK_FAILED"; }
-
-  if [[ -n "$old_default" && -e "$old_default" ]]; then sudo grubby --set-default "$old_default"; fi
-
-  certified="$(kernel_lifecycle_certified_release)"
-  kernel_lifecycle_write_marker "$(kernel_lifecycle_candidate_path)" "$installed" candidate \
-    "source=${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}" \
-    "repo_id=$repo" \
-    "exact_nevras=$(IFS=,; echo "${exact_nevras[*]}")" \
-    "fedora_fallback=$(kernel_lifecycle_fedora_fallback_release)" \
-    "certified_at_stage=${certified:-none}" \
-    "preserved_default=${old_default:-unknown}"
-  ui_check OK 'Kernel candidate' "$installed staged from $repo; Fedora fallback preserved"
+  installed="$(kernel_lifecycle_latest_installed)"
+  [[ "$installed" == "$available" ]] || { ui_error "Kernel install mismatch: installed=${installed:-missing} available=$available"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_set_latest_default || return $?
+  kernel_lifecycle_prune_old || return $?
+  kernel_lifecycle_write_state initial-install
+  ui_check OK 'Kernel Vanilla rolling' "$installed installed directly; previous kernel retained as N-1"
 }
 
-kernel_lifecycle_schedule_candidate_once() {
-  runtime_is_baremetal || { ui_error 'Candidate boot scheduling is bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
-  kernel_lifecycle_require_fedora_fallback || return $?
-  command_exists grubby || return "$EXIT_PRECHECK_FAILED"
-  command_exists grub2-reboot || { ui_error 'grub2-reboot is required for one-shot candidate qualification'; return "$EXIT_PRECHECK_FAILED"; }
-  local candidate entry_id info
-  candidate="$(kernel_lifecycle_candidate_release)"
-  [[ -n "$candidate" ]] || { ui_error 'No staged candidate'; return "$EXIT_PRECHECK_FAILED"; }
-  kernel_lifecycle_release_installed "$candidate" || { ui_error "Candidate package is not installed: $candidate"; return "$EXIT_POSTCHECK_FAILED"; }
-  info="$(grubby --info="/boot/vmlinuz-$candidate" 2>/dev/null || true)"
-  entry_id="$(awk -F= '$1=="id" {gsub(/"/,"",$2); print $2; exit}' <<<"$info")"
-  [[ -n "$entry_id" ]] || { ui_error "No GRUB/BLS entry found for candidate $candidate"; return "$EXIT_POSTCHECK_FAILED"; }
-  sudo grub2-reboot "$entry_id"
-  kernel_lifecycle_write_marker "$(kernel_lifecycle_state_dir)/qualification-boot.env" "$candidate" scheduled "entry_id=$entry_id" "fedora_fallback=$(kernel_lifecycle_fedora_fallback_release)"
-  ui_check OK 'One-shot candidate boot' "$candidate scheduled for next reboot only"
-}
+kernel_lifecycle_finalize_update() {
+  local target="$1" latest running
+  [[ -n "$target" && "$target" != none ]] || return 0
+  kernel_lifecycle_require_host_gate || return $?
+  kernel_lifecycle_ensure_dnf_retention || return $?
+  kernel_lifecycle_release_installed "$target" || { ui_error "Expected updated kernel is not installed: $target"; return "$EXIT_POSTCHECK_FAILED"; }
 
-kernel_lifecycle_certify_candidate() {
-  runtime_is_baremetal || { ui_error 'Kernel certification is bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
-  kernel_lifecycle_require_fedora_fallback || return $?
-  local candidate running certified fp
-  candidate="$(kernel_lifecycle_candidate_release)"; running="$(uname -r)"
-  [[ -n "$candidate" ]] || { ui_error 'No staged candidate to certify'; return "$EXIT_PRECHECK_FAILED"; }
-  [[ "$running" == "$candidate" ]] || { ui_error "Boot the candidate before certification: running=$running candidate=$candidate"; return "$EXIT_PRECHECK_FAILED"; }
-  kernel_lifecycle_release_is_stable "$candidate" || { ui_error "Candidate is not stable: $candidate"; return "$EXIT_SECURITY_BLOCK"; }
-  kernel_lifecycle_version_at_least "$candidate" || { ui_error "Candidate is below minimum ${KERNEL_MIN_VERSION:-7.2.2}"; return "$EXIT_SECURITY_BLOCK"; }
+  latest="$(kernel_lifecycle_latest_installed)"
+  [[ "$latest" == "$target" ]] || { ui_error "Latest installed kernel mismatch: expected=$target actual=${latest:-missing}"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_set_latest_default || return $?
 
-  "$REPO_ROOT/diagnostics/final-certification" certify
-  fp="$(workstation_runtime_fingerprint)"
-  kernel_lifecycle_ensure_dir
-  certified="$(kernel_lifecycle_certified_release)"
-  if [[ -n "$certified" && -s "$(kernel_lifecycle_certified_path)" && "$certified" != "$candidate" ]]; then cp -f "$(kernel_lifecycle_certified_path)" "$(kernel_lifecycle_previous_path)"; fi
-  kernel_lifecycle_write_marker "$(kernel_lifecycle_certified_path)" "$candidate" certified \
-    "fingerprint=$fp" \
-    "fedora_fallback=$(kernel_lifecycle_fedora_fallback_release)"
-  kernel_lifecycle_current_certification_valid || { ui_error 'Certified kernel marker does not match the current runtime/configuration/fallback'; return "$EXIT_POSTCHECK_FAILED"; }
-  cp -f "$(kernel_lifecycle_candidate_path)" "$(kernel_lifecycle_last_promoted_path)"
-  rm -f "$(kernel_lifecycle_candidate_path)" "$(kernel_lifecycle_state_dir)/qualification-boot.env"
-  sudo grubby --set-default "/boot/vmlinuz-$candidate"
-  ui_check OK 'Certified Golden kernel' "$candidate promoted and set as persistent default"
+  running="$(uname -r)"
+  if [[ "$running" != "$target" ]]; then
+    ui_error "Updated kernel $target is installed and set as GRUB default, but running=$running. Reboot once into $target, then rerun ./control.sh update finalize."
+    return "$EXIT_PRECHECK_FAILED"
+  fi
+
+  kernel_lifecycle_prune_old || return $?
+  kernel_lifecycle_write_state system-update
+  ui_check OK 'Kernel N/N-1' "running N=$target; rollback N-1=$(kernel_lifecycle_previous_installed)"
 }
 
 kernel_lifecycle_rollback() {
-  runtime_is_baremetal || { ui_error 'Kernel rollback is bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
-  local previous current
-  previous="$(kernel_lifecycle_previous_release)"; current="$(kernel_lifecycle_certified_release)"
-  [[ -n "$previous" ]] || { ui_error 'No previous certified kernel is recorded'; return "$EXIT_PRECHECK_FAILED"; }
-  kernel_lifecycle_release_installed "$previous" || { ui_error "Previous certified kernel is no longer installed: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
-  [[ -e "/boot/vmlinuz-$previous" ]] || { ui_error "Boot image missing for previous certified kernel: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
-  kernel_lifecycle_require_fedora_fallback || return $?
-
-  kernel_lifecycle_ensure_dir
-  [[ -s "$(kernel_lifecycle_certified_path)" ]] && cp -f "$(kernel_lifecycle_certified_path)" "$(kernel_lifecycle_rollback_path)"
-  cp -f "$(kernel_lifecycle_previous_path)" "$(kernel_lifecycle_certified_path)"
-  rm -f "$(kernel_lifecycle_candidate_path)" "$(kernel_lifecycle_state_dir)/qualification-boot.env"
+  kernel_lifecycle_require_host_gate || return $?
+  command_exists grubby || { ui_error 'grubby is required for kernel rollback'; return "$EXIT_PRECHECK_FAILED"; }
+  local previous latest
+  latest="$(kernel_lifecycle_latest_installed)"
+  previous="$(kernel_lifecycle_previous_installed)"
+  [[ -n "$previous" && "$previous" != "$latest" ]] || { ui_error 'No N-1 kernel is installed for rollback'; return "$EXIT_PRECHECK_FAILED"; }
+  [[ -e "/boot/vmlinuz-$previous" ]] || { ui_error "Boot image missing for N-1 kernel: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
   sudo grubby --set-default "/boot/vmlinuz-$previous"
-  ui_check OK 'Kernel rollback' "default=$previous previous-current=${current:-none}; reboot required"
+  [[ "$(kernel_lifecycle_default_release)" == "$previous" ]] || { ui_error "Unable to set N-1 kernel as GRUB default: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_write_state rollback-selected
+  ui_check OK 'Kernel rollback' "N-1=$previous is now GRUB default; N=$latest remains installed"
 }
 
 kernel_lifecycle_status() {
-  local candidate certified previous running available mode certified_state fallback
-  candidate="$(kernel_lifecycle_candidate_release)"; certified="$(kernel_lifecycle_certified_release)"; previous="$(kernel_lifecycle_previous_release)"
-  running="$(uname -r)"; available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"; fallback="$(kernel_lifecycle_fedora_fallback_release)"
-  mode="$(kernel_lifecycle_policy_value mode 2>/dev/null || printf 'candidate-certified')"; certified_state='not-running'
-  if [[ -n "$certified" && "$running" == "$certified" ]]; then if kernel_lifecycle_current_certification_valid; then certified_state='valid'; else certified_state='stale'; fi; fi
-  printf 'mode=%s\n' "$mode"
+  local running latest previous available default count limit dnf_limit
+  running="$(uname -r)"
+  latest="$(kernel_lifecycle_latest_installed)"
+  previous="$(kernel_lifecycle_previous_installed)"
+  available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
+  default="$(kernel_lifecycle_default_release)"
+  count="$(kernel_lifecycle_installed_count)"
+  limit="$(kernel_lifecycle_max_installed)"
+  dnf_limit="$(kernel_lifecycle_dnf_limit 2>/dev/null || true)"
+  printf 'mode=rolling-n-nminus1\n'
   printf 'running=%s\n' "$running"
-  printf 'certified=%s\n' "${certified:-none}"
-  printf 'certified_state=%s\n' "$certified_state"
-  printf 'candidate=%s\n' "${candidate:-none}"
-  printf 'previous_certified=%s\n' "${previous:-none}"
+  printf 'latest_installed=%s\n' "${latest:-none}"
+  printf 'previous_installed=%s\n' "${previous:-none}"
+  printf 'grub_default=%s\n' "${default:-unknown}"
   printf 'latest_available=%s\n' "${available:-unresolved}"
-  printf 'fedora_fallback=%s\n' "${fallback:-MISSING}"
+  printf 'installed_count=%s\n' "$count"
+  printf 'max_installed=%s\n' "$limit"
+  printf 'dnf_installonly_limit=%s\n' "${dnf_limit:-unknown}"
 }

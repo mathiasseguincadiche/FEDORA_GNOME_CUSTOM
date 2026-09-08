@@ -5,11 +5,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 
-# Kernel lifecycle commands are routed directly to the dedicated engine so the
-# operator CLI can expose candidate -> certify without duplicating business logic.
+# Kernel lifecycle commands are routed directly to the rolling N/N-1 engine.
+# Complete system updates install latest-stable automatically; these commands
+# provide status, explicit maintenance and rollback surfaces.
 if [[ "${1:-}" == kernel ]]; then
   case "${2:-}" in
-    candidate|boot-candidate|certify|rollback)
+    install-latest|prune|rollback)
       exec bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" "$2"
       ;;
     rollback-fedora)
@@ -106,4 +107,6 @@ fi
 
 # shellcheck source=lib/control_center.sh
 source "$REPO_ROOT/lib/control_center.sh"
+# shellcheck source=lib/control_center_kernel_rolling.sh
+source "$REPO_ROOT/lib/control_center_kernel_rolling.sh"
 control_center_main "$@"

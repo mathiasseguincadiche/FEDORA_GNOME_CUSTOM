@@ -44,7 +44,9 @@ Un succès CI signifie que le dépôt est intégrable selon ses contrats automat
 
 La machine réelle doit prouver notamment :
 
-- kernel courant conforme ;
+- kernel courant conforme à la politique N / N-1 ;
+- N comme noyau normal et défaut GRUB ;
+- maximum deux versions `kernel-core` ;
 - Arc B580 liée à `xe` ;
 - hardware/firmware sains ;
 - display 1440p/~240 Hz sain ;
@@ -66,7 +68,11 @@ La création de la VM Ubuntu exige en outre l'authentification de l'image Canoni
 
 ## Recovery
 
-Les kernels Fedora restent disponibles comme fallback. Un rollback Kernel Vanilla ne supprime pas agressivement les kernels de secours.
+Le rollback normal conserve **N-1** comme deuxième kernel disponible. `./control.sh kernel rollback` sélectionne N-1 comme défaut GRUB sans supprimer N.
+
+Le projet ne conserve plus un troisième kernel Fedora comme fallback permanent. `scripts/kernel/rollback-to-fedora.sh` reste une procédure de récupération explicite si N et N-1 ne permettent pas de retrouver un runtime exploitable.
+
+Les kernels plus anciens que N-1 sont supprimés uniquement par DNF5 `oldinstallonly`; aucun effacement direct des images de boot n'est utilisé.
 
 Restic reste staging-first pour les restaurations et aucun helper n'écrase automatiquement le système live.
 
