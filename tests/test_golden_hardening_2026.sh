@@ -56,6 +56,16 @@ grep -Fq 'storage_nvme_validate_controller' "$ROOT/diagnostics/storage-doctor"
 grep -Fq 'storage_nvme_kernel_health' "$ROOT/diagnostics/storage-doctor"
 grep -Fq 'diagnostics/storage-doctor' "$ROOT/diagnostics/final-certification"
 
+# Persistent second-T705 user data is centralized in lib/persistent_data.sh and
+# the doctor must validate the whole catalog instead of duplicating path logic.
+for helper in persistent_data_documents persistent_data_projects persistent_data_iso persistent_data_games persistent_data_layout_paths; do
+  grep -Fq "$helper" "$ROOT/lib/persistent_data.sh" || { echo "persistent data helper missing $helper" >&2; exit 1; }
+done
+grep -Fq "persistent_data_mount() { printf '%s\\n' '/data'; }" "$ROOT/lib/persistent_data.sh"
+grep -Fq 'source "$REPO_ROOT/lib/persistent_data.sh"' "$ROOT/diagnostics/data-storage-doctor"
+grep -Fq 'persistent_data_layout_paths' "$ROOT/diagnostics/data-storage-doctor"
+grep -Fq '/data/{Documents,Projets,ISO,Jeux}' "$ROOT/diagnostics/data-storage-doctor"
+
 # Kernel latest-stable is installed directly with a strict N/N-1 retention.
 grep -Fq 'kernel_lifecycle_vanilla_repo_id' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq -- "--repo=\"\$repo\"" "$ROOT/lib/kernel_lifecycle.sh"
@@ -106,12 +116,15 @@ grep -Fxq 'FEDORA_COMPOSE=1.7' "$ROOT/installer/fedora44-media.lock"
 grep -Fxq 'ISO_SHA256=1620295f6a00c27c3208f0c00b8ece4eab1ec69b9002152d97488bf26a426ddf' "$ROOT/installer/fedora44-media.lock"
 grep -Fq 'gpgv' "$ROOT/installer/verify-fedora44-media.sh"
 
-# Architecture decisions are explicit and discoverable. ADR 0003 is historical
-# and ADR 0010 supersedes its kernel promotion model.
-for adr in 0001-fedora44-gnome50 0002-no-secureboot-no-local-luks 0003-kernel-vanilla-candidate-certified 0004-btrfs-root-ext4-kvm 0005-b580-host-only 0006-fedora-gpu-stack 0007-kvm-network-fail-closed 0008-no-automatic-firmware-flash 0009-three-gate-validation 0010-kernel-rolling-n-nminus1; do
+# Architecture decisions are explicit and discoverable. ADR 0003 and 0004 are
+# historical; ADR 0010 and 0011 are their current replacements.
+for adr in 0001-fedora44-gnome50 0002-no-secureboot-no-local-luks 0003-kernel-vanilla-candidate-certified 0004-btrfs-root-ext4-kvm 0005-b580-host-only 0006-fedora-gpu-stack 0007-kvm-network-fail-closed 0008-no-automatic-firmware-flash 0009-three-gate-validation 0010-kernel-rolling-n-nminus1 0011-persistent-second-t705-data-layout; do
   [[ -s "$ROOT/docs/adr/$adr.md" ]] || { echo "missing ADR: $adr" >&2; exit 1; }
 done
 grep -Fq 'Statut : remplacé' "$ROOT/docs/adr/0003-kernel-vanilla-candidate-certified.md"
 grep -Fq 'ADR 0010' "$ROOT/docs/adr/0003-kernel-vanilla-candidate-certified.md"
+grep -Fq 'Statut : remplacé par ADR 0011' "$ROOT/docs/adr/0004-btrfs-root-ext4-kvm.md"
+grep -Fq 'Second T705 persistant' "$ROOT/docs/adr/0011-persistent-second-t705-data-layout.md"
+grep -Fq '/data/Jeux' "$ROOT/docs/adr/0011-persistent-second-t705-data-layout.md"
 
 echo 'September 2026 Golden hardening contract: PASS'

@@ -17,6 +17,21 @@ grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'installonly_limit=$limit' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
+
+# Persistent second-T705 user data is a first-class Golden storage socle.
+grep -Fq 'desktop.persistent_data|DESKTOP|gnome.validation|modules/desktop/25_persistent_data.sh' "$ROOT/manifests/module-plan.conf"
+for file in lib/persistent_data.sh modules/desktop/25_persistent_data.sh diagnostics/data-storage-doctor; do
+  [[ -s "$ROOT/$file" ]] || { echo "missing persistent data file: $file" >&2; exit 1; }
+done
+for path in '/data/Documents' '/data/Projets' '/data/ISO' '/data/Jeux'; do
+  grep -Fq "$path" "$ROOT/modules/desktop/25_persistent_data.sh" || { echo "persistent data module missing $path" >&2; exit 1; }
+done
+grep -Fq 'persistent_data_games' "$ROOT/lib/persistent_data.sh"
+grep -Fq 'xdg-user-dirs-update --set DOCUMENTS' "$ROOT/modules/desktop/25_persistent_data.sh"
+grep -Fq 'user_home_t' "$ROOT/modules/desktop/25_persistent_data.sh"
+grep -Fq 'diagnostics/data-storage-doctor' "$ROOT/diagnostics/desktop-integration-doctor"
+grep -Fq '/data/{Documents,Projets,ISO,Jeux}' "$ROOT/diagnostics/data-storage-doctor"
+
 grep -Fq 'ENABLE_BLUR_MY_SHELL="false"' "$ROOT/config/gnome.conf"
 grep -Fq 'GNOME_WINDOW_BUTTONS_ENABLED="true"' "$ROOT/config/gnome.conf"
 grep -Fq 'GNOME_WINDOW_BUTTON_LAYOUT=":minimize,maximize,close"' "$ROOT/config/gnome.conf"

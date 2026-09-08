@@ -87,6 +87,7 @@ backup Restic vérifié
   snapshot réel + integrity check + restore canary
       ↓
 APPLY protégé
+  /data/{Documents,Projets,ISO,Jeux} + /data/libvirt
       ↓
 Kernel Vanilla latest-stable installé directement
   GRUB default = N, rétention max 2 kernels
@@ -94,7 +95,7 @@ Kernel Vanilla latest-stable installé directement
 reboot sur N
       ↓
 qualification bare-metal
-  xe / ReBAR / PCIe / SMART / display / VA-API / OpenCL / GNOME / KVM
+  xe / ReBAR / PCIe / SMART / data / display / VA-API / OpenCL / GNOME / KVM
       ↓
 5 cycles veille/réveil physiques + cold-start Nautilus
       ↓
@@ -121,6 +122,7 @@ Une modification du commit ou du plan de modules invalide les preuves Gate 1/2. 
 - dernier stable installé directement, maximum **2 versions kernel-core** ;
 - N est le défaut GRUB, N-1 reste disponible pour rollback ;
 - le fallback Fedora permanent n'est plus requis ;
+- second T705 EXT4 persistant sur `/data`, jamais formaté automatiquement, avec `Documents`, `Projets`, `ISO`, `Jeux` et `/data/libvirt` séparés ;
 - KVM/libvirt reste fail-closed vis-à-vis des réseaux HOST protégés.
 
 ## Matériel ciblé
@@ -133,7 +135,7 @@ Une modification du commit ou du plan de modules invalide les preuves Gate 1/2. 
 | GPU | Intel Arc B580 `8086:e20b`, pilote `xe` |
 | GPU PCIe | ReBAR actif, x8, capacité ≥ PCIe 4.0 |
 | SSD système | Crucial T705, Btrfs non chiffré |
-| SSD KVM | Crucial T705, EXT4 monté sur `/data` |
+| SSD données + KVM | Crucial T705, EXT4 monté sur `/data` ; Documents/Projets/ISO/Jeux persistants + sous-arbre `/data/libvirt` |
 | NVMe PCIe | x4, capacité PCIe 5.0 |
 | Écran | ASUS ROG Strix OLED XG27AQDMES, 2560×1440/~240 Hz |
 

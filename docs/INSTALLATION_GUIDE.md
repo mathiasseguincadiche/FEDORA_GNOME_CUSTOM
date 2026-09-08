@@ -39,11 +39,11 @@ Le générateur :
 - clone exactement le commit incorporé ;
 - ne lance jamais l'APPLY automatiquement.
 
-## 3. Préparer le second T705
+## 3. Préparer le second T705 — stockage persistant + KVM
 
-Le second Crucial T705 est dédié à KVM. Le dépôt **ne partitionne et ne formate jamais ce disque**.
+Le second Crucial T705 est le disque **persistant** de la workstation. Il ne sert plus uniquement à KVM : il protège les données de travail, la bibliothèque ISO et la bibliothèque de jeux d'une réinstallation ou d'une perte du disque système Btrfs. Le dépôt **ne partitionne et ne formate jamais ce disque**.
 
-Le préparer manuellement en EXT4 et le monter sur `/data`, puis :
+Le préparer manuellement en EXT4 et le monter durablement sur `/data` (de préférence par UUID dans `/etc/fstab`), puis :
 
 ```bash
 findmnt /data
@@ -51,6 +51,25 @@ lsblk -f
 ```
 
 Le root et `/data` doivent être deux NVMe physiques distincts.
+
+L'APPLY crée ou normalise ensuite cette structure **sans supprimer le contenu existant** :
+
+```text
+/data/
+├── Documents/          # documents utilisateur persistants ; XDG Documents pointe ici
+├── Projets/            # projets de travail persistants
+├── ISO/                # bibliothèque ISO persistante, hors backup automatique par défaut
+├── Jeux/               # bibliothèque de jeux persistante, hors backup automatique par défaut
+└── libvirt/
+    ├── images/         # pool devops-data / disques qcow2
+    ├── iso/
+    ├── cloud-init/
+    ├── nvram/
+    ├── snapshots/
+    └── exports/
+```
+
+`Documents`, `Projets`, `ISO` et `Jeux` restent des répertoires utilisateur séparés de `/data/libvirt`. Une réinstallation du premier T705 doit **réutiliser le second T705 sans le reformater**.
 
 ## 4. Configuration locale
 
@@ -166,6 +185,8 @@ L'APPLY refuse notamment :
 
 Le module kernel installe **directement le dernier Kernel Vanilla stable**, applique `DNF installonly_limit=2`, définit ce noyau comme défaut GRUB et conserve au maximum le noyau immédiatement précédent.
 
+Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO` et `/data/Jeux`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
+
 ## 9. Premier boot sur le Kernel Vanilla N
 
 Après APPLY :
@@ -183,13 +204,14 @@ Après démarrage sur N :
 ./diagnostics/kernel-doctor
 ./diagnostics/firmware-doctor
 ./diagnostics/storage-doctor
+./diagnostics/data-storage-doctor
 ./diagnostics/graphics-doctor
 ./diagnostics/display-doctor
 ./diagnostics/media-doctor
 ./diagnostics/arc-compute-doctor
 ```
 
-Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB.
+Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les quatre répertoires persistants, leurs droits/labels et le mapping XDG Documents.
 
 ## 10. Premier login GNOME
 
@@ -207,6 +229,8 @@ Puis contrôler :
 ./diagnostics/portal-doctor
 ./diagnostics/applications-doctor
 ```
+
+Dans Nautilus et les boîtes de dialogue GNOME, « Documents » doit maintenant pointer vers `/data/Documents`.
 
 ## 11. Cinq cycles veille/réveil
 
@@ -232,6 +256,8 @@ La certification finale :
 2. certifie la matrice logicielle réellement démarrée ;
 3. génère un `golden-release.json` et ses inventaires ;
 4. lie la preuve au kernel/runtime courant.
+
+Le diagnostic desktop bare-metal inclut le contrat de données persistantes ; une Golden ne doit donc pas être considérée conforme si `/data/Documents`, `/data/Projets`, `/data/ISO` ou `/data/Jeux` dérivent de leur contrat.
 
 Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal. En revanche, une mise à jour kernel peut rendre l'ancienne Golden `STALE` jusqu'à une nouvelle certification.
 
@@ -283,7 +309,13 @@ Exemple :
 
 Aucun firmware n'est flashé automatiquement.
 
-## 15. Recovery
+## 15. Backup et récupération des données persistantes
+
+La sauvegarde quotidienne Restic protège les dossiers XDG habituels ; `DOCUMENTS` se résout désormais vers `/data/Documents`. `/data/Projets` est également ajouté explicitement aux sources quotidiennes. `/data/ISO` et `/data/Jeux` ne sont pas sauvegardés automatiquement par défaut afin d'éviter de dupliquer de gros payloads reproductibles ou retéléchargeables.
+
+Le second T705 protège contre la perte/réinstallation du **disque système**, mais il ne remplace pas un backup externe : une panne physique du second T705 reste possible. Les données importantes conservent donc la protection Restic externe.
+
+## 16. Recovery
 
 Affichage :
 
@@ -317,7 +349,7 @@ Ce dernier chemin est une récupération explicite, pas un fallback Fedora conse
 
 Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) avant toute restauration et [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant tout contournement.
 
-## 16. KVM après certification HOST
+## 17. KVM après certification HOST
 
 Avant de créer les VM :
 

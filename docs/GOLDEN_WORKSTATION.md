@@ -24,9 +24,12 @@ backup Restic + restore canary
       ↓
 APPLY protégé
       ↓
-reboot
+second T705 persistant /data
+  Documents + Projets + ISO + Jeux + libvirt
       ↓
-certification hardware / desktop / KVM
+reboot sur Kernel Vanilla N
+      ↓
+certification hardware / desktop / KVM / backup
       ↓
 5 cycles suspend/resume
       ↓
@@ -35,7 +38,17 @@ matrice known-good
 
 ## Kernel
 
-Le profil installe le dernier kernel stable disponible via Fedora Kernel Vanilla `@kernel-vanilla/stable`, avec plancher 7.2.2. Les kernels Fedora existants ne sont pas supprimés et restent disponibles comme fallback.
+Le profil installe directement le dernier kernel stable disponible via Fedora Kernel Vanilla `@kernel-vanilla/stable`, avec plancher 7.2.2.
+
+La politique est rolling **N / N-1** :
+
+```text
+N   = dernier stable installé, défaut GRUB
+N-1 = version immédiatement précédente, rollback
+max = 2 versions kernel-core
+```
+
+Les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly`. Un kernel Fedora supplémentaire n'est plus conservé en permanence ; le retour vers les paquets Fedora reste un chemin de récupération explicite.
 
 Secure Boot actif bloque ce chemin par défaut. Le projet ne désactive pas Secure Boot automatiquement et ne génère/importera pas une clé MOK sans décision opérateur explicite.
 
@@ -49,6 +62,25 @@ La baseline certifie notamment :
 - fingerprint BIOS/plateforme/CPU/GPU/NVMe/EDID.
 
 Aucun test n'écrit volontairement sur un block device brut.
+
+## Stockage persistant
+
+Le premier T705 est le disque système Fedora Btrfs. Le second T705 est un EXT4 monté sur `/data` et doit survivre aux réinstallations normales du système.
+
+```text
+/data/
+├── Documents/       XDG Documents
+├── Projets/         projets de travail
+├── ISO/             bibliothèque ISO persistante
+├── Jeux/            bibliothèque de jeux persistante
+└── libvirt/         stockage KVM séparé
+```
+
+L'APPLY ne partitionne et ne formate jamais le second SSD. Il crée les répertoires manquants sans supprimer leur contenu, normalise uniquement leurs racines et applique les labels SELinux attendus.
+
+`/data/Documents` et `/data/Projets` sont aussi protégés par Restic externe. `/data/ISO` et `/data/Jeux` restent hors backups automatiques par défaut afin d'éviter de dupliquer des payloads volumineux généralement reproductibles ou retéléchargeables. La séparation des SSD protège contre une réinstallation du disque système ; Restic protège les données importantes contre la panne du second SSD lui-même.
+
+Voir ADR 0011 et [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 ## Arc B580
 
@@ -93,9 +125,14 @@ Le bureau reste proche de Fedora/GNOME upstream.
 Extensions fonctionnelles gérées :
 
 - Dash to Dock ;
-- AppIndicator.
+- AppIndicator ;
+- Desktop Icons NG ;
+- Show Desktop Plus ;
+- Resource Monitor.
 
 Blur My Shell reste désactivé dans l'état Golden afin de réduire les variables de rendu/compositor.
+
+Le répertoire standard GNOME « Documents » pointe vers `/data/Documents`, de sorte que les applications et Nautilus utilisent directement le stockage persistant sans symlink bricolé dans le HOME.
 
 ## KVM
 
@@ -103,8 +140,8 @@ Le socle KVM fait partie de la certification finale lorsqu'il est activé :
 
 ```text
 qemu:///system
-/data EXT4
-pool devops-data
+/data EXT4 persistant
+/data/libvirt/images = pool devops-data
 network devops-nat
 Ubuntu Server 26.04
 Windows 11
@@ -128,18 +165,23 @@ Le pré-APPLY Restic exige :
 - `restic check` ;
 - restauration réelle d'un canary.
 
+Le backup quotidien protège notamment `/data/Documents` et `/data/Projets`. Le backup full les inclut également. `/data/ISO` et `/data/Jeux` restent hors sauvegarde automatique par défaut.
+
 Les disques QCOW2 ne sont sauvegardés que VM arrêtée, via staging cohérent et validation `qemu-img`.
+
+La restauration reste staging-first : aucune procédure ne doit formater ou écraser automatiquement le second T705.
 
 ## Certification finale
 
 Après APPLY/reboot :
 
-1. lancer `diagnostics/nautilus-coldstart-doctor` immédiatement après login ;
-2. effectuer cinq cycles suspend/resume ;
-3. après chaque cycle lancer `diagnostics/final-certification record-suspend` ;
-4. terminer avec `diagnostics/final-certification certify`.
+1. vérifier `diagnostics/data-storage-doctor` ;
+2. lancer `diagnostics/nautilus-coldstart-doctor` immédiatement après login ;
+3. effectuer cinq cycles suspend/resume ;
+4. après chaque cycle lancer `diagnostics/final-certification record-suspend` ;
+5. terminer avec `diagnostics/final-certification certify`.
 
-Un cycle est refusé si kernel, Arc/xe, display ou USB resume échouent, ou si des signatures critiques xe/PCIe/NVMe apparaissent.
+Un cycle est refusé si kernel, Arc/xe, display ou USB resume échouent, ou si des signatures critiques xe/PCIe/NVMe apparaissent. La certification finale refuse également un stockage persistant `/data` non conforme via les doctors desktop/backup.
 
 ## Politique de remédiation
 

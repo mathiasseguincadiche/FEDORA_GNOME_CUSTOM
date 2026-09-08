@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/persistent_data.sh"
 quiet=false
 [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
@@ -19,6 +20,12 @@ emit() {
 if ! is_true "${GAMING_ENABLE:-false}"; then
   $quiet || ui_summary 'GAMING PROFILE DISABLED' 'OPTIONAL' "$REPORT_ROOT" "$LOG_DIR"
   exit 0
+fi
+
+if persistent_data_validate_mount && [[ -d "$(persistent_data_games)" && -w "$(persistent_data_games)" ]]; then
+  emit OK 'Games storage' '/data/Jeux persistent and writable'
+else
+  emit KO 'Games storage' '/data/Jeux or the dedicated EXT4 /data mount is not compliant'
 fi
 
 if rpm -q steam >/dev/null 2>&1 && command_exists steam; then
@@ -68,7 +75,8 @@ proton_found=false
 for root in \
   "$HOME/.local/share/Steam/steamapps/common" \
   "$HOME/.steam/steam/steamapps/common" \
-  "$HOME/.steam/root/steamapps/common"; do
+  "$HOME/.steam/root/steamapps/common" \
+  "$(persistent_data_games)/steamapps/common"; do
   [[ -d "$root" ]] || continue
   proton_path="$(find "$root" -maxdepth 1 -type d -iname 'Proton*' -print -quit 2>/dev/null || true)"
   if [[ -n "$proton_path" ]]; then proton_found=true; break; fi

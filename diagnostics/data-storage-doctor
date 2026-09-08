@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_bootstrap
+source "$REPO_ROOT/lib/persistent_data.sh"
+
+quiet=false
+[[ "${1:-}" == --quiet ]] && quiet=true
+
+fail() {
+  $quiet || ui_check KO 'Persistent data' "$1"
+  exit "$EXIT_POSTCHECK_FAILED"
+}
+pass() { $quiet || ui_check PASS 'Persistent data' "$1"; }
+
+runtime_is_baremetal || fail 'bare-metal runtime required'
+persistent_data_validate_mount || fail '/data is not the dedicated EXT4 second T705'
+
+owner="$(persistent_data_owner_user 2>/dev/null || true)"
+[[ -n "$owner" ]] || fail 'cannot resolve workstation operator user'
+
+while IFS= read -r path; do
+  [[ -d "$path" && ! -L "$path" ]] || fail "missing real directory: $path"
+  [[ "$path" != /data/libvirt && "$path" != /data/libvirt/* ]] || fail "user-data path overlaps libvirt: $path"
+  [[ "$(stat -c '%U' "$path")" == "$owner" ]] || fail "unexpected owner for $path"
+  [[ "$(stat -c '%a' "$path")" == 750 ]] || fail "unexpected mode for $path (expected 750)"
+  context="$(stat -c '%C' "$path" 2>/dev/null || true)"
+  grep -Fq ':user_home_t:' <<<"$context" || fail "SELinux user_home_t missing on $path"
+done < <(persistent_data_layout_paths)
+
+[[ "$(xdg-user-dir DOCUMENTS 2>/dev/null || true)" == "$(persistent_data_documents)" ]] || fail 'XDG Documents is not mapped to /data/Documents'
+
+pass '/data/{Documents,Projets,ISO,Jeux} are persistent, private and separated from /data/libvirt'

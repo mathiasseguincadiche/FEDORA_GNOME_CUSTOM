@@ -5,6 +5,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO_ROOT/lib/backup_runtime.sh"
+# shellcheck source=lib/persistent_data.sh
+source "$REPO_ROOT/lib/persistent_data.sh"
 
 include_vms=false
 prune=false
@@ -62,6 +64,11 @@ fi
 
 sources=("$staging")
 [[ -d "$HOME/.config" ]] && sources+=("$HOME/.config")
+if runtime_is_baremetal; then
+  persistent_data_validate_mount || { echo 'Refusing full backup: /data is not the dedicated EXT4 second T705.' >&2; exit 20; }
+  [[ -d "$(persistent_data_documents)" ]] && sources+=("$(persistent_data_documents)")
+  [[ -d "$(persistent_data_projects)" ]] && sources+=("$(persistent_data_projects)")
+fi
 while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(git -C "$REPO_ROOT" ls-files -z)
 restic backup --tag fedora-gnome-custom-full "${sources[@]}"
 snap="$(restic snapshots --tag fedora-gnome-custom-full --latest 1 --json | jq -r '.[0].id // empty')"

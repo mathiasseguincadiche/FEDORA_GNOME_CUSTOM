@@ -18,6 +18,22 @@ GAMING_ENABLE=true ./install.sh
 
 The canonical project default remains `GAMING_ENABLE="false"` in `config/gaming.conf`, so a workstation that does not request gaming remains unchanged.
 
+## Persistent games storage
+
+The second T705 provides the canonical persistent games root:
+
+```text
+/data/Jeux
+```
+
+This directory exists independently from `GAMING_ENABLE`, survives normal reinstallations of the Fedora Btrfs system disk, uses workstation-user ownership and the same SELinux user-data policy as the other persistent data roots, and is validated by `diagnostics/data-storage-doctor`.
+
+When the Gaming profile is enabled, `gaming-doctor` also requires `/data/Jeux` to be present and writable. Steam is installed as a native RPM, so no Flatpak filesystem permission is required for this path.
+
+The project deliberately does **not** generate or rewrite Steam's internal `libraryfolders.vdf`. Register `/data/Jeux` as a Steam library from Steam's normal Storage settings after first launch. This keeps the Golden storage contract independent from Steam's private file format and also leaves the same directory usable by other launchers later.
+
+`/data/Jeux` is excluded from automatic Restic daily/full backups by default because installed games are generally very large and retéléchargeable. Saves or other irreplaceable game data remain protected when they live in the normal user/XDG paths covered by Restic; any non-reproducible payload stored directly under `/data/Jeux` needs an explicit operator backup policy.
+
 ## Golden stack
 
 ### Steam
@@ -90,8 +106,9 @@ The Fedora 44 gaming pretest validates in a headless Fedora container:
 
 CI does **not** claim GPU rendering, VRR, 240 Hz, or successful game launch.
 
-On the physical workstation, `diagnostics/gaming-doctor` additionally checks the existing Arc/display contracts:
+On the physical workstation, `diagnostics/gaming-doctor` additionally checks the existing Arc/display/storage contracts:
 
+- `/data/Jeux` on the compliant persistent second T705 and writable by the workstation user;
 - Intel Arc B580 bound to `xe`;
 - Intel Arc Vulkan renderer visible through `vulkaninfo`;
 - GNOME/Wayland;
@@ -114,7 +131,7 @@ Then run the normal Golden certification path. When `GAMING_ENABLE=true`, `diagn
 The final Gaming proof therefore has two levels:
 
 1. GitHub Actions proves repository provisioning, package resolution, native RPM ownership, multilib Vulkan payload and project contracts on Fedora 44;
-2. the physical workstation proves Arc B580/`xe`, Vulkan renderer, GNOME/Wayland, 2560×1440/~240 Hz and the enabled Gaming payload.
+2. the physical workstation proves persistent games storage, Arc B580/`xe`, Vulkan renderer, GNOME/Wayland, 2560×1440/~240 Hz and the enabled Gaming payload.
 
 A first real game launch remains an operator acceptance test rather than a CI assertion, because game binaries, Steam authentication, anti-cheat support and title-specific Proton compatibility are external runtime variables.
 

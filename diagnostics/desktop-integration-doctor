@@ -47,5 +47,15 @@ done
 for pkg in remmina remmina-plugins-rdp remmina-plugins-vnc remmina-plugins-secret; do need_pkg "$pkg" 'Remote desktop'; done
 for pkg in libimobiledevice libimobiledevice-utils ifuse; do need_pkg "$pkg" 'Mobile integration'; done
 
+if runtime_is_baremetal; then
+  if "$REPO_ROOT/diagnostics/data-storage-doctor" --quiet; then
+    emit OK 'Persistent data' '/data/Documents + /data/Projets + /data/ISO'
+  else
+    emit KO 'Persistent data' 'second-T705 user-data contract failed'
+  fi
+else
+  emit WARN 'Persistent data' 'bare-metal validation deferred'
+fi
+
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

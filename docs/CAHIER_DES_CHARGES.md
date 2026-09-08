@@ -1,6 +1,6 @@
 # Cahier des charges — Golden Workstation Fedora 44
 
-**Révision documentaire : 1.8**  
+**Révision documentaire : 1.9**  
 **Version du projet : voir [`../VERSION`](../VERSION)**
 
 La révision du cahier des charges n'est pas le numéro de release du logiciel.
@@ -25,6 +25,8 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - 48 Gio RAM testés automatiquement à 5600 puis 6000 MT/s ;
 - Intel Arc B580 `8086:e20b` sur `xe` ;
 - deux Crucial T705, root et `/data` sur deux NVMe physiques distincts ;
+- premier T705 : Fedora Btrfs système ;
+- second T705 : EXT4 persistant monté sur `/data`, réutilisable après réinstallation du système sans formatage automatique ;
 - fingerprint BIOS/plateforme/GPU/NVMe/EDID ;
 - aucun tweak kernel/power expérimental aveugle.
 
@@ -40,6 +42,16 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - aucun fallback Fedora permanent obligatoire ;
 - Secure Boot actif bloque ce chemin tant qu'un workflow de confiance/signature explicite n'est pas mis en œuvre ;
 - une évolution kernel peut rendre la certification Golden `STALE`, mais n'attend pas une promotion préalable avant le premier boot.
+
+## P1 — données persistantes
+
+- `/data/Documents`, `/data/Projets`, `/data/ISO` et `/data/Jeux` créés idempotemment sur le second T705 sans suppression du contenu existant ;
+- `Documents` XDG pointe vers `/data/Documents` ;
+- répertoires utilisateur en mode `0750`, propriétaire workstation et labels SELinux persistants adaptés aux données utilisateur ;
+- `/data/libvirt` reste un sous-arbre séparé avec son propre contexte SELinux ;
+- `/data/Documents` et `/data/Projets` sont protégés par la sauvegarde quotidienne Restic externe ;
+- `/data/ISO` et `/data/Jeux` restent persistants mais hors backup automatique par défaut ;
+- le second T705 protège contre la perte/réinstallation du disque système, mais ne remplace jamais la sauvegarde off-machine.
 
 ## P1 — GNOME
 
@@ -65,8 +77,8 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 ## P1 — virtualisation
 
 - KVM/libvirt sur `qemu:///system` ;
-- `/data` EXT4 dédié sur le second T705 ;
-- pool `devops-data` ;
+- sous-arbre KVM `/data/libvirt` sur le second T705 EXT4 persistant ;
+- pool `devops-data` sur `/data/libvirt/images` ;
 - profils `ubuntu-devops` et `windows-11` créés uniquement sur demande ;
 - réseau `devops-nat` / `virbr50` / `192.168.50.0/24` ;
 - VM → Internet autorisé ;
@@ -80,9 +92,12 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - Restic chiffré ;
 - backup pré-APPLY lié au commit ;
 - `restic check` et restore-canary ;
+- sauvegarde quotidienne de `/data/Documents` et `/data/Projets` en plus des données utilisateur configurées ;
+- `/data/ISO` et `/data/Jeux` hors backup automatique par défaut pour éviter de dupliquer des payloads volumineux reproductibles ;
 - sauvegarde QCOW2 uniquement VM arrêtée ;
 - restauration staging-first ;
-- disaster-recovery non destructif.
+- disaster-recovery non destructif ;
+- réinstallation du T705 système sans formatage automatique du second T705 `/data`.
 
 ## P1 — certification finale
 
@@ -90,6 +105,7 @@ Après APPLY/reboot :
 
 - kernel N / N-1 conforme à la politique de rétention ;
 - firmware/hardware sains ;
+- second T705 `/data` EXT4 distinct du root avec `Documents`, `Projets`, `ISO`, `Jeux` conformes ;
 - Arc B580/`xe` saine ;
 - display 1440p/~240 Hz ;
 - desktop/portals/applications/lifecycle/Bash conformes ;
