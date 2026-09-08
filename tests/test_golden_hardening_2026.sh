@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -55,7 +56,7 @@ grep -Fq 'storage_nvme_validate_controller' "$ROOT/diagnostics/storage-doctor"
 grep -Fq 'storage_nvme_kernel_health' "$ROOT/diagnostics/storage-doctor"
 grep -Fq 'diagnostics/storage-doctor' "$ROOT/diagnostics/final-certification"
 
-# Kernel latest-stable is candidate-only and resolved/installed deterministically.
+# Kernel latest-stable is installed directly with a strict N/N-1 retention.
 grep -Fq 'kernel_lifecycle_vanilla_repo_id' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq -- "--repo=\"\$repo\"" "$ROOT/lib/kernel_lifecycle.sh"
 if grep -Fq -- '--repoid=' "$ROOT/lib/kernel_lifecycle.sh"; then
@@ -63,11 +64,13 @@ if grep -Fq -- '--repoid=' "$ROOT/lib/kernel_lifecycle.sh"; then
   exit 1
 fi
 grep -Fq "qf $'%{VERSION}-%{RELEASE}.%{ARCH}\\n'" "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'kernel_lifecycle_candidate_nevras' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'Candidate install mismatch' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'kernel_lifecycle_latest_nevras' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'Kernel install mismatch' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'kernel_lifecycle_version_at_least' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'kernel_lifecycle_require_fedora_fallback' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'mandatory Fedora 44 kernel-core fallback missing' "$ROOT/diagnostics/kernel-doctor"
+grep -Fq 'installonly_limit=$limit' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'rolling N/N-1 max=2' "$ROOT/diagnostics/kernel-doctor"
+grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
 
 # GPU capabilities must be exercised, not only enumerated.
 grep -Fq 'clEnqueueNDRangeKernel' "$ROOT/scripts/hardware/opencl-smoke.py"
@@ -79,16 +82,20 @@ grep -Fq 'decode=h264,hevc,vp9,av1' "$ROOT/scripts/hardware/vaapi-smoke.sh"
 grep -Fq 'opencl-smoke.py' "$ROOT/diagnostics/arc-compute-doctor"
 grep -Fq 'vaapi-smoke.sh' "$ROOT/diagnostics/media-doctor"
 
-# Routine package maintenance is an explicit DNF5 offline lifecycle.
+# Routine package maintenance is an explicit DNF5 offline lifecycle with kernel target evidence.
 grep -Fq 'dnf5 --refresh upgrade --offline' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'dnf5 offline reboot' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq -- '--finalize' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'dnf5 check' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq 'kernel_target=' "$ROOT/scripts/maintenance/update-system.sh"
 
-# Golden release is an exact state attestation with hashed inventories.
+# Golden release is an exact state attestation with hashed inventories and N/N-1 kernel metadata.
 for name in golden-release.json rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora44-media.lock MANIFEST.sha256; do
   grep -Fq "$name" "$ROOT/scripts/release/capture-golden-release.sh" || { echo "release capture missing artifact: $name" >&2; exit 1; }
 done
+grep -Fq 'kernel_n' "$ROOT/scripts/release/capture-golden-release.sh"
+grep -Fq 'kernel_n_minus_1' "$ROOT/scripts/release/capture-golden-release.sh"
+grep -Fq 'kernel_grub_default' "$ROOT/scripts/release/capture-golden-release.sh"
 grep -Fq 'capture-golden-release.sh' "$ROOT/diagnostics/final-certification"
 grep -Fq 'golden_release_manifest' "$ROOT/diagnostics/final-certification"
 grep -Fq 'diff)' "$ROOT/diagnostics/software-matrix-doctor"
@@ -99,9 +106,12 @@ grep -Fxq 'FEDORA_COMPOSE=1.7' "$ROOT/installer/fedora44-media.lock"
 grep -Fxq 'ISO_SHA256=1620295f6a00c27c3208f0c00b8ece4eab1ec69b9002152d97488bf26a426ddf' "$ROOT/installer/fedora44-media.lock"
 grep -Fq 'gpgv' "$ROOT/installer/verify-fedora44-media.sh"
 
-# Architecture decisions are explicit and discoverable.
-for adr in 0001-fedora44-gnome50 0002-no-secureboot-no-local-luks 0003-kernel-vanilla-candidate-certified 0004-btrfs-root-ext4-kvm 0005-b580-host-only 0006-fedora-gpu-stack 0007-kvm-network-fail-closed 0008-no-automatic-firmware-flash; do
+# Architecture decisions are explicit and discoverable. ADR 0003 is historical
+# and ADR 0010 supersedes its kernel promotion model.
+for adr in 0001-fedora44-gnome50 0002-no-secureboot-no-local-luks 0003-kernel-vanilla-candidate-certified 0004-btrfs-root-ext4-kvm 0005-b580-host-only 0006-fedora-gpu-stack 0007-kvm-network-fail-closed 0008-no-automatic-firmware-flash 0009-three-gate-validation 0010-kernel-rolling-n-nminus1; do
   [[ -s "$ROOT/docs/adr/$adr.md" ]] || { echo "missing ADR: $adr" >&2; exit 1; }
 done
+grep -Fq 'Statut : remplacé' "$ROOT/docs/adr/0003-kernel-vanilla-candidate-certified.md"
+grep -Fq 'ADR 0010' "$ROOT/docs/adr/0003-kernel-vanilla-candidate-certified.md"
 
 echo 'September 2026 Golden hardening contract: PASS'

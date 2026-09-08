@@ -162,25 +162,22 @@ L'APPLY refuse notamment :
 - un dry-run obsolète ;
 - une baseline obsolète ;
 - un snapshot pré-APPLY absent/inaccessible ;
-- Secure Boot actif ou indéterminé ;
-- un fallback Fedora absent.
+- Secure Boot actif ou indéterminé.
 
-Le module kernel **stage uniquement un candidat Kernel Vanilla**. Il ne change pas immédiatement le kernel Golden persistant.
+Le module kernel installe **directement le dernier Kernel Vanilla stable**, applique `DNF installonly_limit=2`, définit ce noyau comme défaut GRUB et conserve au maximum le noyau immédiatement précédent.
 
-## 9. Qualifier le kernel candidat
+## 9. Premier boot sur le Kernel Vanilla N
 
 Après APPLY :
 
 ```bash
 ./control.sh kernel status
-./control.sh kernel boot-candidate
+sudo reboot
 ```
 
-Puis redémarrer.
+Le démarrage normal doit utiliser `N`, le dernier stable installé. Le noyau `N-1` reste disponible dans GRUB comme rollback. Il n'existe plus de boot `candidate` one-shot ni de promotion préalable.
 
-Le boot est **one-shot** : en cas de problème, le défaut de boot persistant reste le kernel précédemment certifié/Fedora.
-
-Après démarrage du candidat :
+Après démarrage sur N :
 
 ```bash
 ./diagnostics/kernel-doctor
@@ -192,7 +189,7 @@ Après démarrage du candidat :
 ./diagnostics/arc-compute-doctor
 ```
 
-Le candidat doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580.
+Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB.
 
 ## 10. Premier login GNOME
 
@@ -221,23 +218,22 @@ Effectuer cinq vrais cycles physiques. Après chaque reprise :
 
 Chaque preuve est unique et liée au fingerprint courant. Les erreurs critiques xe/PCIe/NVMe/xHCI après resume rendent le cycle invalide.
 
-## 12. Certifier le candidat
+## 12. Certification Golden
 
 Quand toutes les preuves sont présentes :
 
 ```bash
-./control.sh kernel certify
+./control.sh validate gate3 certify
 ```
 
 La certification finale :
 
 1. exécute tous les doctors obligatoires ;
-2. certifie la matrice logicielle ;
+2. certifie la matrice logicielle réellement démarrée ;
 3. génère un `golden-release.json` et ses inventaires ;
-4. enregistre le kernel comme Golden ;
-5. le définit seulement alors comme défaut persistant.
+4. lie la preuve au kernel/runtime courant.
 
-Le **dernier kernel installé n'est jamais automatiquement Golden**.
+Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal. En revanche, une mise à jour kernel peut rendre l'ancienne Golden `STALE` jusqu'à une nouvelle certification.
 
 ## 13. Vérifier l'état certifié
 
@@ -257,7 +253,7 @@ Préparer une mise à jour complète :
 ./control.sh update all
 ```
 
-Cela effectue le backup et prépare la transaction RPM DNF5 offline. Vérifier l'état puis déclencher le reboot offline :
+Le chemin complet effectue le backup, résout le dernier Kernel Vanilla stable, impose `installonly_limit=2` et prépare la transaction RPM DNF5 offline. Vérifier l'état puis déclencher le reboot offline :
 
 ```bash
 ./control.sh update status
@@ -270,7 +266,20 @@ Après le redémarrage :
 ./control.sh update finalize
 ```
 
-La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, met à jour les Flatpaks en mode complet, consulte les firmwares disponibles sans les flasher puis lance le diagnostic global.
+La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, vérifie que le nouveau kernel N est installé, démarré et défaut GRUB, puis exécute `dnf5 remove --oldinstallonly --limit=2`. Il ne reste donc que N et N-1. Ensuite viennent Flatpak en mode complet, consultation firmware et diagnostic global.
+
+Exemple :
+
+```text
+7.2.2
+  ↓ update all
+7.2.3 = N
+7.2.2 = N-1
+  ↓ update all
+7.2.4 = N
+7.2.3 = N-1
+7.2.2 supprimé
+```
 
 Aucun firmware n'est flashé automatiquement.
 
@@ -284,18 +293,27 @@ Affichage :
 
 Le repair refuse un écran arbitraire : il cible l'EDID certifié sur un connecteur de la B580.
 
-Kernel :
+Kernel N-1 :
 
 ```bash
 ./diagnostics/kernel-doctor
-scripts/kernel/kernel-lifecycle.sh rollback
+./control.sh kernel rollback
+sudo reboot
 ```
 
-Retour complet aux paquets Fedora :
+`rollback` ne supprime pas N ; il sélectionne N-1 comme défaut GRUB. Pour revenir ensuite au dernier noyau installé :
+
+```bash
+./control.sh kernel install-latest
+```
+
+Retour d'urgence aux paquets Fedora :
 
 ```bash
 scripts/kernel/rollback-to-fedora.sh
 ```
+
+Ce dernier chemin est une récupération explicite, pas un fallback Fedora conservé en permanence.
 
 Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) avant toute restauration et [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant tout contournement.
 

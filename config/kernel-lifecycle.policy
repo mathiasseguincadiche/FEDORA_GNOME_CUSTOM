@@ -1,10 +1,14 @@
-# Versioned Golden kernel promotion policy.
+# Versioned rolling Kernel Vanilla policy.
 # This file is declarative policy metadata and is intentionally outside *.conf
 # so the canonical runtime config schema/keyset remains stable.
-mode=candidate-certified
-candidate_track=latest-stable
-certification_required=true
-keep_previous_certified=true
-keep_fedora_fallback=true
-one_shot_test_boot=true
+mode=rolling-n-nminus1
+track=latest-stable
+install_latest_direct=true
+max_installed_kernels=2
+keep_previous=true
+keep_fedora_fallback=false
+rescue_entry_enabled=false
+one_shot_test_boot=false
+preboot_certification_required=false
+post_update_recertification=true
 required_suspend_cycles=5

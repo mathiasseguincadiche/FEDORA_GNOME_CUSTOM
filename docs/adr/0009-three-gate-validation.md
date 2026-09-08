@@ -26,13 +26,16 @@ Les preuves Gate 1 et Gate 2 sont des JSON portables liés au commit Git et au `
 - la certification finale devient traçable jusqu'aux deux prévalidations ;
 - le bundle Golden embarque les deux preuves et leurs SHA-256.
 
-## Invariants inchangés
+## Invariants actuels
 
 - Fedora 44 / GNOME 50 / Wayland ;
 - Secure Boot OFF ;
 - aucun LUKS local ;
 - Restic externe chiffré ;
 - Arc B580 host-only ;
-- kernel Fedora fallback obligatoire ;
+- Kernel Vanilla rolling N / N-1, maximum deux versions ;
+- récupération Fedora explicite, sans fallback Fedora permanent ;
 - KVM réseau fail-closed ;
 - aucun flash firmware automatique.
+
+La politique kernel détaillée est portée par ADR 0010 ; elle remplace l'ancien invariant de fallback Fedora permanent sans modifier la séparation des trois gates.

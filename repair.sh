@@ -9,6 +9,9 @@ case "${1:-help}" in
    exec "$REPO_ROOT/diagnostics/kernel-doctor"
    ;;
  kernel-rollback)
+   exec bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" rollback
+   ;;
+ kernel-fedora-recovery)
    exec "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh"
    ;;
  coldstart)
@@ -17,10 +20,11 @@ case "${1:-help}" in
  help|*)
    cat <<EOF
 Diagnosis-first recovery:
-  $0 display          Reapply the certified GNOME display link/mode
-  $0 coldstart        Measure a true Nautilus first-click cold launch
-  $0 kernel-status    Validate current kernel + Arc B580/xe
-  $0 kernel-rollback  Return packages to Fedora kernel repositories
+  $0 display                 Reapply the certified GNOME display link/mode
+  $0 coldstart               Measure a true Nautilus first-click cold launch
+  $0 kernel-status           Validate current kernel + Arc B580/xe
+  $0 kernel-rollback         Set retained N-1 kernel as GRUB default
+  $0 kernel-fedora-recovery  Emergency distro-sync back to Fedora kernel packages
 
 Diagnostics:
   $REPO_ROOT/diagnostic.sh

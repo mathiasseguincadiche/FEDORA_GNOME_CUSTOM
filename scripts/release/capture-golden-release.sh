@@ -13,7 +13,16 @@ validation_require_chain || { ui_error 'Golden release capture requires the curr
 baseline_certification_valid || { ui_error 'A valid hardware baseline is required before Golden release capture'; exit "$EXIT_PRECHECK_FAILED"; }
 hardware_b580_pcie_validate || { ui_error 'Arc B580 PCIe/ReBAR qualification is not valid'; exit "$EXIT_POSTCHECK_FAILED"; }
 storage_nvme_validate_all_expected || { ui_error 'T705 SMART/PCIe qualification is not valid'; exit "$EXIT_POSTCHECK_FAILED"; }
-kernel_lifecycle_require_fedora_fallback || exit $?
+
+kernel_n="$(kernel_lifecycle_latest_installed)"
+kernel_n_minus_1="$(kernel_lifecycle_previous_installed)"
+kernel_default="$(kernel_lifecycle_default_release)"
+kernel_count="$(kernel_lifecycle_installed_count)"
+kernel_limit="$(kernel_lifecycle_max_installed)"
+[[ "$kernel_limit" == 2 ]] || { ui_error "Golden release requires kernel max_installed=2, got $kernel_limit"; exit "$EXIT_POSTCHECK_FAILED"; }
+(( kernel_count <= kernel_limit )) || { ui_error "Golden release requires at most two kernel-core versions, got $kernel_count"; exit "$EXIT_POSTCHECK_FAILED"; }
+[[ -n "$kernel_n" && "$(uname -r)" == "$kernel_n" ]] || { ui_error "Golden release requires running N kernel: running=$(uname -r) N=${kernel_n:-missing}"; exit "$EXIT_POSTCHECK_FAILED"; }
+[[ "$kernel_default" == "$kernel_n" ]] || { ui_error "Golden release requires N as GRUB default: default=$kernel_default N=$kernel_n"; exit "$EXIT_POSTCHECK_FAILED"; }
 
 release_root="$STATE_ROOT/releases"
 short_sha="$(repo_commit | cut -c1-12)"
@@ -84,8 +93,13 @@ PY
 
 {
   printf 'component\tversion\n'
-  printf 'kernel\t%s\n' "$(uname -r)"
-  printf 'fedora_fallback\t%s\n' "$(kernel_lifecycle_fedora_fallback_release)"
+  printf 'kernel_running\t%s\n' "$(uname -r)"
+  printf 'kernel_n\t%s\n' "$kernel_n"
+  printf 'kernel_n_minus_1\t%s\n' "${kernel_n_minus_1:-none}"
+  printf 'kernel_grub_default\t%s\n' "$kernel_default"
+  printf 'kernel_installed_count\t%s\n' "$kernel_count"
+  printf 'kernel_max_installed\t%s\n' "$kernel_limit"
+  printf 'kernel_dnf_installonly_limit\t%s\n' "$(kernel_lifecycle_dnf_limit 2>/dev/null || printf unknown)"
   for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell} qemu-kvm libvirt; do
     printf '%s\t%s\n' "$pkg" "$(runtime_component_version "$pkg")"
   done
@@ -155,7 +169,12 @@ data = {
     "hardware_fingerprint": "$(baseline_fingerprint)",
     "runtime_fingerprint": "$(workstation_runtime_fingerprint)",
     "kernel": "$(uname -r)",
-    "fedora_fallback": "$(kernel_lifecycle_fedora_fallback_release)",
+    "kernel_policy": "rolling-n-nminus1",
+    "kernel_n": "$kernel_n",
+    "kernel_n_minus_1": "${kernel_n_minus_1:-none}",
+    "kernel_grub_default": "$kernel_default",
+    "kernel_installed_count": $kernel_count,
+    "kernel_max_installed": $kernel_limit,
     "bios": "$(baseline_hw_value /sys/class/dmi/id/bios_version)",
     "bios_date": "$(baseline_hw_value /sys/class/dmi/id/bios_date)",
     "amd_microcode_runtime": "$microcode",

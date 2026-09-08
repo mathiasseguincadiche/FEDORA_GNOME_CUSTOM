@@ -6,21 +6,60 @@ source "$REPO_ROOT/lib/kernel_lifecycle.sh"
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
 current="$(uname -r)"
+latest="$(kernel_lifecycle_latest_installed)"
+previous="$(kernel_lifecycle_previous_installed)"
+default="$(kernel_lifecycle_default_release)"
+count="$(kernel_lifecycle_installed_count)"
+limit="$(kernel_lifecycle_max_installed)"
+dnf_limit="$(kernel_lifecycle_dnf_limit 2>/dev/null || true)"
+
 if kernel_lifecycle_version_at_least "$current"; then emit OK Kernel "$current >= ${KERNEL_MIN_VERSION:-7.2.2}"; else emit KO Kernel "$current < ${KERNEL_MIN_VERSION:-7.2.2}"; fi
-candidate="$(kernel_lifecycle_candidate_release)"; certified="$(kernel_lifecycle_certified_release)"; previous="$(kernel_lifecycle_previous_release)"
-if [[ -n "$candidate" && "$current" == "$candidate" ]]; then emit OK 'Kernel lifecycle' "running candidate $candidate in qualification mode"
-elif [[ -n "$certified" && "$current" == "$certified" ]]; then if kernel_lifecycle_current_certification_valid; then emit OK 'Kernel lifecycle' "running certified Golden $certified with valid runtime fingerprint/fallback"; else emit KO 'Kernel lifecycle' "certified marker is stale for running=$current"; fi
-elif [[ -n "$certified" ]]; then emit WARN 'Kernel lifecycle' "running=$current certified=$certified candidate=${candidate:-none}"
-else emit WARN 'Kernel lifecycle' "no certified Golden kernel yet; running=$current candidate=${candidate:-none}"; fi
-if [[ -n "$candidate" ]]; then if kernel_lifecycle_release_installed "$candidate" && kernel_lifecycle_release_is_stable "$candidate" && kernel_lifecycle_version_at_least "$candidate" && [[ "$candidate" == *vanilla* ]]; then emit OK Candidate "$candidate staged"; else emit KO Candidate "$candidate invalid or not installed"; fi; fi
-if [[ -n "$certified" ]]; then if kernel_lifecycle_release_installed "$certified"; then emit OK Certified "$certified installed"; else emit KO Certified "$certified marker exists but package is missing"; fi; fi
-if [[ -n "$previous" ]]; then if kernel_lifecycle_release_installed "$previous"; then emit OK 'Previous certified' "$previous retained"; else emit WARN 'Previous certified' "$previous marker exists but package is missing"; fi; fi
+if kernel_lifecycle_release_is_stable "$current"; then emit OK 'Kernel stability' "$current is stable"; else emit KO 'Kernel stability' "$current is not a stable release"; fi
+
+if ((limit == 2)); then emit OK 'Kernel policy' 'rolling N/N-1 max=2'; else emit KO 'Kernel policy' "max_installed=$limit expected=2"; fi
+if ((count <= limit)); then emit OK 'Kernel retention' "installed=$count max=$limit"; else emit KO 'Kernel retention' "installed=$count exceeds max=$limit"; fi
+if [[ "$dnf_limit" == "$limit" ]]; then emit OK 'DNF installonly_limit' "$dnf_limit"; else emit KO 'DNF installonly_limit' "actual=${dnf_limit:-unknown} expected=$limit"; fi
+
+if [[ -n "$latest" ]]; then
+  if [[ "$latest" == *vanilla* ]] && kernel_lifecycle_release_is_stable "$latest" && kernel_lifecycle_version_at_least "$latest"; then emit OK N "$latest"; else emit KO N "latest installed kernel invalid: $latest"; fi
+else
+  emit KO N 'no installed kernel-core release found'
+fi
+if [[ -n "$previous" ]]; then emit OK 'N-1' "$previous retained for rollback"; else emit WARN 'N-1' 'only one kernel is installed; a previous kernel will exist after the next kernel update'; fi
+
+if [[ "$default" == "$latest" ]]; then
+  emit OK 'GRUB default' "N=$latest"
+elif [[ -n "$previous" && "$default" == "$previous" ]]; then
+  emit WARN 'GRUB default' "N-1=$previous selected for rollback; N=$latest remains installed"
+else
+  emit KO 'GRUB default' "default=${default:-unknown} is outside N/N-1"
+fi
+
+if [[ "$current" == "$latest" ]]; then emit OK 'Running kernel' "N=$current"
+elif [[ -n "$previous" && "$current" == "$previous" ]]; then emit WARN 'Running kernel' "N-1=$current rollback session; N=$latest remains installed"
+else emit KO 'Running kernel' "running=$current is outside retained N/N-1 set"; fi
+
+if rpm -q dracut-config-rescue >/dev/null 2>&1; then
+  emit KO 'GRUB rescue' 'dracut-config-rescue is installed and may generate a third boot entry'
+elif grubby --info=ALL 2>/dev/null | grep -Eq '^kernel=.*vmlinuz-0-rescue-'; then
+  emit KO 'GRUB rescue' '0-rescue entry exists outside N/N-1 policy'
+else
+  emit OK 'GRUB rescue' 'disabled; boot surface is limited to N/N-1'
+fi
+
 available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
-if [[ -n "$available" ]]; then if [[ "$available" == "$candidate" ]]; then emit OK 'Latest stable' "$available is staged candidate"; elif [[ "$available" == "$certified" ]]; then emit OK 'Latest stable' "$available already certified"; else emit WARN 'Latest stable' "available=$available certified=${certified:-none} candidate=${candidate:-none}; newer does not auto-promote"; fi; else emit WARN 'Latest stable' 'unresolved from exact Kernel Vanilla stable repo'; fi
+if [[ -n "$available" ]]; then
+  if [[ "$available" == "$latest" ]]; then emit OK 'Latest stable' "$available installed"
+  else emit WARN 'Latest stable' "available=$available installed=${latest:-none}; run a complete system update"
+  fi
+else
+  emit WARN 'Latest stable' 'unresolved from exact Kernel Vanilla stable repo'
+fi
+
 if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then emit OK 'Arc B580' 'xe bound'; else emit KO 'Arc B580' 'xe not bound'; fi
 case "$(kernel_lifecycle_secure_boot_state)" in disabled) emit OK 'Secure Boot' disabled;; enabled) emit KO 'Secure Boot' 'enabled against Golden HOST policy';; *) emit KO 'Secure Boot' 'state unknown on Golden HOST';; esac
-fallback="$(kernel_lifecycle_fedora_fallback_release)"; if [[ -n "$fallback" ]] && kernel_lifecycle_release_installed "$fallback"; then emit OK 'Fedora fallback' "$fallback retained"; else emit KO 'Fedora fallback' 'mandatory Fedora 44 kernel-core fallback missing'; fi
 if journalctl -k -b --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(wedged|reset failed|gpu hang)|kernel panic|Oops:'; then emit KO Journal 'critical kernel/xe signature found'; else emit OK Journal 'no critical kernel/xe signature'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

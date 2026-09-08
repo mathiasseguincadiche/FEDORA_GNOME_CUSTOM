@@ -4,19 +4,22 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
+source "$REPO_ROOT/lib/kernel_lifecycle.sh"
 
 UPDATE_STATE_FILE="$STATE_ROOT/last-system-update.status"
 UPDATE_REBOOT_REQUIRED="unknown"
+UPDATE_KERNEL_TARGET=""
+UPDATE_KERNEL_PREVIOUS=""
 
 usage() {
   cat <<'EOF'
 Usage: update-system.sh [ACTION]
 
   --check           Read-only overview: Fedora, Flatpak, firmware and offline state
-  --apply           Backup + prepare a full Fedora DNF5 offline transaction
-  --dnf-only        Backup + prepare a Fedora-only DNF5 offline transaction
+  --apply           Backup + prepare a full Fedora DNF5 offline transaction, latest stable kernel included
+  --dnf-only        Backup + prepare a Fedora-only DNF5 offline transaction, latest stable kernel included
   --offline-reboot  Reboot into the prepared DNF5 offline transaction
-  --finalize        After normal boot: validate DNF, then Flatpak (full mode), firmware check and doctor
+  --finalize        After normal boot: validate kernel N/N-1, DNF, Flatpak (full mode), firmware and doctor
   --offline-status  Show project marker and DNF5 offline status
   --offline-log     Show the latest DNF5 offline transaction log
   --flatpak-only    Update Flatpak applications only
@@ -44,8 +47,15 @@ update_state_value() {
 
 write_update_state() {
   local phase="$1" mode="$2" doctor_rc="${3:-pending}"
+  local kernel_target kernel_previous
+  kernel_target="$UPDATE_KERNEL_TARGET"
+  kernel_previous="$UPDATE_KERNEL_PREVIOUS"
+  [[ -n "$kernel_target" ]] || kernel_target="$(update_state_value kernel_target)"
+  [[ -n "$kernel_previous" ]] || kernel_previous="$(update_state_value kernel_previous)"
+  [[ -n "$kernel_target" ]] || kernel_target=none
+  [[ -n "$kernel_previous" ]] || kernel_previous=none
   {
-    printf 'schema=1\n'
+    printf 'schema=2\n'
     printf 'utc=%s\n' "$(date -u +%FT%TZ)"
     printf 'commit=%s\n' "$(repo_commit)"
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
@@ -54,6 +64,10 @@ write_update_state() {
     printf 'doctor_rc=%s\n' "$doctor_rc"
     printf 'reboot_required=%s\n' "$UPDATE_REBOOT_REQUIRED"
     printf 'kernel_running=%s\n' "$(uname -r)"
+    printf 'kernel_policy=rolling-n-nminus1\n'
+    printf 'kernel_target=%s\n' "$kernel_target"
+    printf 'kernel_previous=%s\n' "$kernel_previous"
+    printf 'kernel_max_installed=%s\n' "$(kernel_lifecycle_max_installed)"
   } | evidence_atomic_write "$UPDATE_STATE_FILE" 0600
 }
 
@@ -81,6 +95,15 @@ check_dnf() {
       ui_check KO 'Fedora updates' "dnf5 check-upgrade rc=$rc"
       return "$rc"
     fi
+  fi
+}
+
+check_kernel() {
+  printf '\n--- Kernel Vanilla rolling N/N-1 ---\n'
+  if is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}"; then
+    kernel_lifecycle_status || true
+  else
+    ui_check EXPECTED 'Kernel Vanilla' 'disabled by configuration'
   fi
 }
 
@@ -115,6 +138,17 @@ mandatory_preupdate_backup() {
   ui_check PASS 'Pre-update backup' 'full snapshot + integrity check completed'
 }
 
+prepare_kernel_rolling_target() {
+  if ! is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}"; then
+    UPDATE_KERNEL_TARGET=none
+    UPDATE_KERNEL_PREVIOUS="$(uname -r)"
+    return 0
+  fi
+  UPDATE_KERNEL_PREVIOUS="$(kernel_lifecycle_latest_installed)"
+  UPDATE_KERNEL_TARGET="$(kernel_lifecycle_prepare_rolling_update)" || return $?
+  ui_check PASS 'Kernel update target' "N=$UPDATE_KERNEL_TARGET; current=${UPDATE_KERNEL_PREVIOUS:-none}; retention=$(kernel_lifecycle_max_installed)"
+}
+
 prepare_dnf_offline() {
   local mode="$1"
   require_dnf5
@@ -123,11 +157,12 @@ prepare_dnf_offline() {
     exit "$EXIT_SECURITY_BLOCK"
   fi
   ui_banner 'FEDORA WORKSTATION UPDATE' 'PREPARE DNF5 OFFLINE TRANSACTION'
+  prepare_kernel_rolling_target || exit $?
   sudo dnf5 --refresh upgrade --offline -y
   sudo dnf5 offline status
   UPDATE_REBOOT_REQUIRED=true
   write_update_state prepared "$mode" pending
-  ui_summary 'OFFLINE UPDATE PREPARED' 'NO RPM WAS REPLACED IN THE RUNNING SESSION — NEXT: ./control.sh update reboot' "$UPDATE_STATE_FILE" "$LOG_DIR"
+  ui_summary 'OFFLINE UPDATE PREPARED' "LATEST STABLE KERNEL TARGET=${UPDATE_KERNEL_TARGET}; MAX TWO KERNELS; NEXT: ./control.sh update reboot" "$UPDATE_STATE_FILE" "$LOG_DIR"
 }
 
 request_offline_reboot() {
@@ -135,10 +170,12 @@ request_offline_reboot() {
   require_current_update_state || exit $?
   local mode
   mode="$(update_state_value mode)"
+  UPDATE_KERNEL_TARGET="$(update_state_value kernel_target)"
+  UPDATE_KERNEL_PREVIOUS="$(update_state_value kernel_previous)"
   sudo dnf5 offline status >/dev/null
   UPDATE_REBOOT_REQUIRED=true
   write_update_state reboot-requested "$mode" pending
-  ui_check WARN 'DNF5 offline reboot' 'system will reboot into the minimal offline transaction now'
+  ui_check WARN 'DNF5 offline reboot' 'system will reboot into the minimal offline transaction now; latest stable kernel becomes the normal default'
   sudo dnf5 offline reboot
 }
 
@@ -164,13 +201,28 @@ capture_offline_log() {
 finalize_offline_update() {
   require_dnf5
   require_current_update_state || exit $?
-  local mode doctor_rc=0
+  local mode doctor_rc=0 kernel_rc=0
   mode="$(update_state_value mode)"
+  UPDATE_KERNEL_TARGET="$(update_state_value kernel_target)"
+  UPDATE_KERNEL_PREVIOUS="$(update_state_value kernel_previous)"
   ui_banner 'FEDORA WORKSTATION UPDATE' 'POST-OFFLINE VALIDATION'
 
   capture_offline_log || exit $?
   sudo dnf5 check || { ui_error 'DNF5 packagedb/dependency validation failed after offline transaction'; write_update_state failed "$mode" 1; exit "$EXIT_POSTCHECK_FAILED"; }
   ui_check PASS 'DNF5 packagedb' 'dependency/database check PASS'
+
+  if is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}"; then
+    kernel_lifecycle_finalize_update "$UPDATE_KERNEL_TARGET" || kernel_rc=$?
+    if ((kernel_rc != 0)); then
+      if ((kernel_rc == EXIT_PRECHECK_FAILED)); then
+        ui_summary 'KERNEL REBOOT REQUIRED' 'NEW KERNEL IS INSTALLED; BOOT IT ONCE THEN RERUN ./control.sh update finalize' "$UPDATE_STATE_FILE" "$LOG_DIR"
+        return "$kernel_rc"
+      fi
+      write_update_state failed "$mode" "$kernel_rc"
+      return "$kernel_rc"
+    fi
+    UPDATE_KERNEL_PREVIOUS="$(kernel_lifecycle_previous_installed)"
+  fi
 
   if [[ "$mode" == full ]]; then apply_flatpak; fi
   check_firmware
@@ -186,7 +238,7 @@ finalize_offline_update() {
   UPDATE_REBOOT_REQUIRED=false
   if ((doctor_rc == 0)); then
     write_update_state completed "$mode" 0
-    ui_summary 'UPDATE COMPLETED' 'OFFLINE RPM TRANSACTION + POSTCHECK PASS; RECERTIFY IF THE SOFTWARE MATRIX CHANGED' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    ui_summary 'UPDATE COMPLETED' 'LATEST STABLE KERNEL RUNNING + N/N-1 RETENTION + POSTCHECK PASS; GOLDEN RECERTIFICATION MAY NOW BE REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"
   else
     write_update_state failed "$mode" "$doctor_rc"
     ui_summary 'UPDATE POSTCHECK FAILED' 'INSPECT DNF5 OFFLINE LOG AND DIAGNOSTICS BEFORE CONTINUING' "$UPDATE_STATE_FILE" "$LOG_DIR"
@@ -204,7 +256,7 @@ require_fedora
 case "$mode" in
   --check)
     ui_banner 'FEDORA WORKSTATION UPDATE' 'READ-ONLY UPDATE OVERVIEW'
-    check_dnf; check_flatpak; check_firmware; show_offline_status
+    check_dnf; check_kernel; check_flatpak; check_firmware; show_offline_status
     ;;
   --apply)
     require_baremetal_update; mandatory_preupdate_backup; prepare_dnf_offline full

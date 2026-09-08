@@ -8,12 +8,11 @@ source "$REPO_ROOT/lib/kernel_lifecycle.sh"
 
 case "${1:-status}" in
   status) kernel_lifecycle_status ;;
-  candidate) kernel_lifecycle_stage_candidate ;;
-  boot-candidate) kernel_lifecycle_schedule_candidate_once ;;
-  certify) kernel_lifecycle_certify_candidate ;;
+  install-latest) kernel_lifecycle_install_latest ;;
+  prune) kernel_lifecycle_prune_old ;;
   rollback) kernel_lifecycle_rollback ;;
   *)
-    echo 'Usage: kernel-lifecycle.sh [status|candidate|boot-candidate|certify|rollback]' >&2
+    echo 'Usage: kernel-lifecycle.sh [status|install-latest|prune|rollback]' >&2
     exit "$EXIT_USAGE"
     ;;
 esac

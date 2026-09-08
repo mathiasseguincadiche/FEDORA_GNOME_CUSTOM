@@ -1,6 +1,6 @@
 # Cahier des charges — Golden Workstation Fedora 44
 
-**Révision documentaire : 1.7**  
+**Révision documentaire : 1.8**  
 **Version du projet : voir [`../VERSION`](../VERSION)**
 
 La révision du cahier des charges n'est pas le numéro de release du logiciel.
@@ -15,7 +15,8 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - aucun choix destructif automatique de disque ;
 - SELinux Enforcing et firewalld actifs ;
 - dry-run non-mutant + baseline + backup Restic avant APPLY ;
-- rollback kernel disponible ;
+- rollback kernel disponible vers N-1 ;
+- récupération explicite vers les paquets kernel Fedora disponible en cas d'urgence ;
 - aucune confiance implicite dans une image Ubuntu fournie uniquement par son nom : checksum signé Canonical requis avant création de `ubuntu-devops`.
 
 ## P0 — matériel
@@ -31,8 +32,14 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 
 - Fedora Kernel Vanilla stable ;
 - minimum 7.2.2 ;
-- kernels Fedora conservés comme fallback ;
-- Secure Boot actif bloque ce chemin tant qu'un workflow de confiance/signature explicite n'est pas mis en œuvre.
+- dernier stable installé directement comme N lors de la convergence et des mises à jour Fedora complètes ;
+- N devient le défaut GRUB normal ;
+- N-1 reste installé comme rollback ;
+- maximum deux versions `kernel-core` installées (`installonly_limit=2`) ;
+- les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly` ;
+- aucun fallback Fedora permanent obligatoire ;
+- Secure Boot actif bloque ce chemin tant qu'un workflow de confiance/signature explicite n'est pas mis en œuvre ;
+- une évolution kernel peut rendre la certification Golden `STALE`, mais n'attend pas une promotion préalable avant le premier boot.
 
 ## P1 — GNOME
 
@@ -81,7 +88,8 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 
 Après APPLY/reboot :
 
-- kernel/firmware/hardware sains ;
+- kernel N / N-1 conforme à la politique de rétention ;
+- firmware/hardware sains ;
 - Arc B580/`xe` saine ;
 - display 1440p/~240 Hz ;
 - desktop/portals/applications/lifecycle/Bash conformes ;

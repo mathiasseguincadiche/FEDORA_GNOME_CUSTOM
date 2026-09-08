@@ -53,11 +53,17 @@ Une preuve WSL2 ou VirtualBox ne devient donc jamais une preuve matérielle : el
 - SHA-256 de la preuve Gate 2 ;
 - fingerprint hardware et runtime ;
 - kernel courant ;
-- kernel Fedora fallback ;
+- politique kernel `rolling-n-nminus1` ;
+- kernel N ;
+- kernel N-1 ou `none` lors d'une première installation ;
+- défaut GRUB ;
+- nombre de versions `kernel-core` installées et limite maximale `2` ;
 - BIOS et microcode AMD ;
 - Arc B580 `8086:e20b`, `xe`, ReBAR, PCIe x8 et EDID certifié ;
 - Fedora release/compose/ISO/SHA-256 ;
 - hashes des inventaires RPM/Flatpak/extensions/repositories et des IDs PCI/USB/DRM réellement observés.
+
+`runtime-stack.tsv` capture également N, N-1, le défaut GRUB et la valeur effective `installonly_limit` afin que l'état du boot soit reproductible et auditable.
 
 Les inventaires détaillés conservent les NEVRA RPM, commits Flatpak et hashes d'extensions afin qu'une évolution externe ne soit pas confondue avec l'état certifié historique.
 
@@ -73,8 +79,12 @@ Gate 2 → Gate 1 SHA-256 = valide
 baseline hardware = valide
 B580 PCIe/ReBAR = valide
 T705 SMART/PCIe = valide
-kernel Fedora fallback = présent
+kernel courant = N
+GRUB default = N
+kernel-core installés <= 2
 ```
+
+Le fallback Fedora permanent n'est plus une condition Golden. Le retour aux paquets Fedora reste une procédure de récupération explicite hors politique normale N/N-1.
 
 La certification finale ajoute en plus les doctors, le cold-start Nautilus, les cycles suspend/resume et les autres preuves Golden.
 
@@ -93,7 +103,7 @@ source versionnée
   + certification hardware/runtime bare-metal
 ```
 
-Toute modification du commit ou du module plan invalide les preuves Gate 1/2. Toute modification significative de la matrice bare-metal doit être validée puis capturée à nouveau.
+Toute modification du commit ou du module plan invalide les preuves Gate 1/2. Toute modification significative de la matrice bare-metal — notamment un nouveau kernel N — doit être validée puis capturée à nouveau.
 
 ## Archive historique longue durée
 

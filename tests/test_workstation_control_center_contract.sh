@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -Eeuo pipefail
+trap 'echo "workstation control center contract failed at line $LINENO" >&2' ERR
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 [[ "$(tr -d '[:space:]' < "$ROOT/VERSION")" == "0.14.0" ]] || { echo 'VERSION must be 0.14.0' >&2; exit 1; }
@@ -64,7 +66,7 @@ grep -Fq "\"\$REPO_ROOT/scripts/backup/restore.sh\" restore" "$ROOT/lib/control_
 grep -Fq "backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh\"" "$ROOT/lib/control_center.sh"
 grep -Fq 'scripts/kernel/kernel-lifecycle.sh' "$ROOT/control.sh"
-grep -Fq 'candidate|boot-candidate|certify|rollback' "$ROOT/control.sh"
+grep -Fq 'install-latest|prune|rollback' "$ROOT/control.sh"
 grep -Fq 'rollback-fedora' "$ROOT/control.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib/control_center.sh"
 
@@ -72,9 +74,11 @@ grep -Fq "\"\$REPO_ROOT/scripts/kvm/kvm_network_guard.sh\" reconcile" "$ROOT/lib
 grep -Fq 'runtime_is_baremetal' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'mandatory_preupdate_backup' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq "\"\$REPO_ROOT/scripts/backup/backup-now.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq 'kernel_lifecycle_prepare_rolling_update' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'sudo dnf5 --refresh upgrade --offline -y' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'sudo dnf5 offline reboot' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'sudo dnf5 check' "$ROOT/scripts/maintenance/update-system.sh"
+grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'flatpak update -y' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq "\"\$REPO_ROOT/diagnostic.sh\"" "$ROOT/scripts/maintenance/update-system.sh"
 
@@ -91,11 +95,15 @@ if grep -Eq 'fwupdmgr[[:space:]]+(update|install)' "$ROOT/scripts/maintenance/up
   exit 1
 fi
 
-# Golden kernel policy keeps latest stable as candidate source, not as auto-certification.
+# Golden kernel policy installs latest stable directly and retains only N/N-1.
 grep -Fq 'ENABLE_KERNEL_VANILLA_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="false"' "$ROOT/config/kernel.conf"
+grep -Fxq 'mode=rolling-n-nminus1' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'install_latest_direct=true' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'max_installed_kernels=2' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fq 'installonly_limit=$limit' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.sh"
 
 # Update order: backup must precede preparation of the offline DNF transaction.
 python3 - "$ROOT/scripts/maintenance/update-system.sh" <<'PY'
@@ -146,12 +154,13 @@ grep -Fq './control.sh update all' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh update reboot' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh update finalize' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'DNF5 offline' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh kernel candidate' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh kernel certify' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh kernel install-latest' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh kernel rollback' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'N / N-1' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh logs retention' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh cert archive' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'kernel-vanilla/stable' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'Kernel Vanilla stable' "$ROOT/docs/CONTROL_CENTER.md"
 
 if grep -Fq -- '--post-offline' "$ROOT/docs/INSTALLATION_GUIDE.md" "$ROOT/docs/RUNBOOK_GOLDEN_HARDWARE.md"; then
   echo 'stale --post-offline documentation remains' >&2

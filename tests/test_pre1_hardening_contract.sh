@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -23,14 +24,18 @@ for stale in BASELINE_NVME_TEST_SECONDS BASELINE_NVME_VERIFY_SECONDS DISPLAY_PRE
   ! grep -RIn "^${stale}=" "$ROOT/config" >/dev/null || { echo "stale config key remains: $stale" >&2; exit 1; }
 done
 
-grep -Fxq 'mode=candidate-certified' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fxq 'keep_previous_certified=true' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'mode=rolling-n-nminus1' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'max_installed_kernels=2' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'keep_previous=true' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'preboot_certification_required=false' "$ROOT/config/kernel-lifecycle.policy"
+grep -Fxq 'post_update_recertification=true' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="false"' "$ROOT/config/kernel.conf"
 grep -Fq 'kernel_lifecycle_latest_available' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'grub2-reboot' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'diagnostics/final-certification" certify' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'installonly_limit=$limit' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
 
 grep -Fq "repo_sha=\"\$(git -C \"\$REPO_ROOT\" rev-parse HEAD" "$ROOT/installer/generate-fedora44-kickstart.sh"
