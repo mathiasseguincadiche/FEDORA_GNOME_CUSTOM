@@ -2,21 +2,15 @@
 
 ## Scope
 
-The Gaming profile is an optional Golden workstation capability. It adds the Linux gaming runtime without changing the DevOps/KVM isolation boundary, without replacing Fedora's kernel/Mesa stack, and without applying global performance tweaks.
+The Gaming profile is part of the canonical Golden workstation. It adds the Linux gaming runtime without changing the DevOps/KVM isolation boundary, without replacing Fedora's kernel/Mesa stack, and without applying global performance tweaks.
 
-The profile is disabled by default. Enable it persistently for this workstation by setting the validated local override:
+The canonical project setting is:
 
 ```bash
 GAMING_ENABLE="true"
 ```
 
-in `config/local.conf`, or enable it for one explicit APPLY run with:
-
-```bash
-GAMING_ENABLE=true ./install.sh
-```
-
-The canonical project default remains `GAMING_ENABLE="false"` in `config/gaming.conf`, so a workstation that does not request gaming remains unchanged.
+in `config/gaming.conf`. A local override may still be used for troubleshooting or a deliberately reduced non-target build, but the normal Golden installation for this workstation keeps Gaming enabled and the final certification therefore runs the Gaming doctor.
 
 ## Persistent games storage
 
@@ -123,10 +117,10 @@ A missing Proton payload on a fresh Steam installation is a warning, not a failu
 After the Gaming profile has been applied and the workstation rebooted, validate the dedicated stack on the physical machine:
 
 ```bash
-GAMING_ENABLE=true ./diagnostics/gaming-doctor
+./diagnostics/gaming-doctor
 ```
 
-Then run the normal Golden certification path. When `GAMING_ENABLE=true`, `diagnostics/final-certification certify` invokes `gaming-doctor --quiet`; when the profile is disabled, Gaming is intentionally excluded from the mandatory bare-metal certificate.
+Then run the normal Golden certification path. Because the canonical workstation has `GAMING_ENABLE=true`, `diagnostics/final-certification certify` invokes `gaming-doctor --quiet` as part of the normal certificate.
 
 The final Gaming proof therefore has two levels:
 

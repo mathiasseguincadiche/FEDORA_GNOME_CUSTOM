@@ -35,6 +35,8 @@ runtime_stack_valid(){
   "$REPO_ROOT/diagnostics/application-runtime-doctor" --quiet || return 1
   "$REPO_ROOT/diagnostics/backup-doctor" --certify-status --quiet || return 1
   "$REPO_ROOT/diagnostics/physical-runtime-doctor" --quiet status || return 1
+  is_true "${GAMING_ENABLE:-false}" || return 1
+  "$REPO_ROOT/diagnostics/gaming-doctor" --quiet || return 1
   if is_true "${ENABLE_KVM:-true}"; then
     "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet --require-guests || return 1
     "$REPO_ROOT/diagnostics/windows-guest-doctor" --quiet || return 1
@@ -44,6 +46,7 @@ runtime_stack_valid(){
 certify(){
   require_baremetal; require_validation_chain
   baseline_certification_valid || { ui_error 'Pre-APPLY hardware baseline is not valid'; exit "$EXIT_PRECHECK_FAILED"; }
+  is_true "${GAMING_ENABLE:-false}" || { ui_error 'Canonical Golden profile requires Gaming enabled'; exit "$EXIT_CONFIG_FAILED"; }
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet
   "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/firmware-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
   "$REPO_ROOT/diagnostics/driver-doctor" --quiet; "$REPO_ROOT/diagnostics/storage-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; "$REPO_ROOT/diagnostics/display-doctor" --quiet
@@ -53,7 +56,7 @@ certify(){
   "$REPO_ROOT/diagnostics/applications-doctor" --quiet; "$REPO_ROOT/diagnostics/application-runtime-doctor" --quiet; "$REPO_ROOT/diagnostics/appimage-doctor" --quiet
   "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet; "$REPO_ROOT/diagnostics/backup-doctor" --certify --quiet
   "$REPO_ROOT/diagnostics/physical-runtime-doctor" --quiet status
-  if is_true "${GAMING_ENABLE:-false}"; then "$REPO_ROOT/diagnostics/gaming-doctor" --quiet; fi
+  "$REPO_ROOT/diagnostics/gaming-doctor" --quiet
   if is_true "${ENABLE_KVM:-true}"; then
     "$REPO_ROOT/diagnostics/virtualization-doctor" --quiet
     "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet --require-guests
@@ -67,9 +70,9 @@ certify(){
   {
     printf 'verdict=PASS\nfingerprint=%s\nhardware_fingerprint=%s\neffective_config_sha256=%s\nmodule_plan_sha256=%s\n' "$(final_fingerprint)" "$(baseline_fingerprint)" "$(effective_config_sha256)" "$(module_plan_sha256)"
     printf 'gate1_proof_sha256=%s\ngate2_proof_sha256=%s\nvalidation_chain=PASS\n' "$(validation_file_sha256 "$(validation_imported_proof_path 1)")" "$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
-    printf 'driver_contract=PASS\napplication_runtime_contract=PASS\nbackup_runtime_contract=PASS\nphysical_runtime_contract=PASS\n'
+    printf 'driver_contract=PASS\napplication_runtime_contract=PASS\nbackup_runtime_contract=PASS\nphysical_runtime_contract=PASS\ngaming_contract=PASS\n'
     if is_true "${ENABLE_KVM:-true}"; then printf 'kvm_domain_contract=PASS\nkvm_runtime_contract=PASS\nwindows_guest_contract=PASS\n'; fi
-    printf 'kernel=%s\ndisplay_edid_sha256=%s\ngolden_release_manifest=%s\ncertified_utc=%s\nsuspend_cycles=%s\ngaming_profile=%s\nsecure_boot=disabled\nlocal_disk_encryption=forbidden\n' "$(uname -r)" "$(hardware_b580_expected_edid_sha256)" "$release_manifest" "$(date -u +%FT%TZ)" "$(suspend_count)" "${GAMING_ENABLE:-false}"
+    printf 'kernel=%s\ndisplay_edid_sha256=%s\ngolden_release_manifest=%s\ncertified_utc=%s\nsuspend_cycles=%s\ngaming_profile=true\nsecure_boot=disabled\nlocal_disk_encryption=forbidden\n' "$(uname -r)" "$(hardware_b580_expected_edid_sha256)" "$release_manifest" "$(date -u +%FT%TZ)" "$(suspend_count)"
   } | evidence_atomic_write "$cert" 0600
   ui_check OK 'Golden workstation' "$cert"; ui_check OK 'Golden release manifest' "$release_manifest"
 }
@@ -80,10 +83,10 @@ status(){
   validation_require_chain && ui_check OK 'Gate 1 → Gate 2 chain' PASS || ui_check WARN 'Gate 1 → Gate 2 chain' 'missing/stale for current source'
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet && ui_meta 'HOST policy' 'Secure Boot OFF / disk encryption forbidden' || ui_meta 'HOST policy' 'NON-COMPLIANT'
   ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"; valid_coldstart && ui_check OK 'Nautilus cold-start' PASS || ui_check WARN 'Nautilus cold-start' missing
-  if [[ -s "$cert" ]] && grep -Fxq 'verdict=PASS' "$cert" && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" && grep -Fxq 'validation_chain=PASS' "$cert" && grep -Fxq 'driver_contract=PASS' "$cert" && grep -Fxq 'application_runtime_contract=PASS' "$cert" && grep -Fxq 'backup_runtime_contract=PASS' "$cert" && grep -Fxq 'physical_runtime_contract=PASS' "$cert"; then
+  if [[ -s "$cert" ]] && grep -Fxq 'verdict=PASS' "$cert" && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" && grep -Fxq 'validation_chain=PASS' "$cert" && grep -Fxq 'driver_contract=PASS' "$cert" && grep -Fxq 'application_runtime_contract=PASS' "$cert" && grep -Fxq 'backup_runtime_contract=PASS' "$cert" && grep -Fxq 'physical_runtime_contract=PASS' "$cert" && grep -Fxq 'gaming_contract=PASS' "$cert" && grep -Fxq 'gaming_profile=true' "$cert"; then
     if ! is_true "${ENABLE_KVM:-true}" || { grep -Fxq 'kvm_domain_contract=PASS' "$cert" && grep -Fxq 'kvm_runtime_contract=PASS' "$cert" && grep -Fxq 'windows_guest_contract=PASS' "$cert"; }; then marker_valid=true; fi
   fi
   runtime_stack_valid && runtime_valid=true
-  if [[ "$marker_valid" == true && "$runtime_valid" == true ]]; then ui_check OK Certification 'valid and live runtime contracts still match'; elif [[ "$marker_valid" == true ]]; then ui_check WARN Certification 'STALE: live driver/application/backup/physical/KVM contract drifted'; else ui_check WARN Certification 'not yet certified for current runtime/configuration/validation stack'; fi
+  if [[ "$marker_valid" == true && "$runtime_valid" == true ]]; then ui_check OK Certification 'valid and live runtime contracts still match'; elif [[ "$marker_valid" == true ]]; then ui_check WARN Certification 'STALE: live driver/application/backup/physical/gaming/KVM contract drifted'; else ui_check WARN Certification 'not yet certified for current runtime/configuration/validation stack'; fi
 }
 case "${1:-status}" in status) status;; record-suspend) record_suspend;; certify) certify;; *) echo 'Usage: final-certification [status|record-suspend|certify]' >&2; exit "$EXIT_USAGE";; esac

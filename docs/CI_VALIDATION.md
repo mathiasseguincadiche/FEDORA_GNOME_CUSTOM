@@ -8,7 +8,7 @@ La CI combine contrats statiques, intégration Fedora 44 et vraie VM Ubuntu 26.0
 
 - structure et politiques hardware/GNOME ;
 - applications et multimédia ;
-- **Gaming optionnel Steam/Proton/Vulkan sans couplage KVM** ;
+- **Gaming Golden Steam/Proton/Vulkan sans couplage KVM** ;
 - KVM/libvirt ;
 - bootstrap Ubuntu ;
 - accès VM ;
@@ -64,15 +64,17 @@ Ce test ne remplace pas la relecture éditoriale humaine, mais empêche les dive
 
 ## Gaming
 
-`tests/test_gaming_contract.sh` protège le caractère optionnel et borné du socle Gaming :
+`tests/test_gaming_contract.sh` protège le socle Gaming canonique et borné :
 
-- `GAMING_ENABLE="false"` comme défaut canonique ;
+- `GAMING_ENABLE="true"` comme réglage Golden canonique ;
+- fallback runtime restant désactivé si la configuration n'est pas chargée ;
 - Steam isolé dans le manifeste RPM Fusion dédié ;
 - Vulkan/Mesa x86_64 **et i686** ;
 - GameMode, MangoHud, GOverlay, Gamescope et `steam-devices` ;
 - Proton géré par Steam, sans Proton-GE/Wine imposé globalement ;
 - absence de Mesa git/COPR, `force_probe`, kernel gaming et tuning `sysctl` global ;
 - `gaming-doctor` raccordé aux doctors Arc/display sur bare-metal ;
+- certification finale raccordée à `gaming-doctor` lorsque le profil canonique est chargé ;
 - KVM restant indépendant de `gaming.stack`.
 
 ## Desktop ergonomics

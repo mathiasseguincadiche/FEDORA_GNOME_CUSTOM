@@ -24,14 +24,18 @@ grep -Fq 'gaming.stack|GAMING|applications.validation|modules/gaming/43_gaming_s
 grep -Fq 'gaming.validation|GAMING|gaming.stack|modules/gaming/44_gaming_validation.sh' manifests/module-plan.conf || fail 'gaming.validation missing from module plan'
 grep -Fq 'kvm.preflight|KVM|applications.validation|modules/virtualization/30_kvm_preflight.sh' manifests/module-plan.conf || fail 'KVM must remain independent from gaming'
 
-grep -Fxq 'GAMING_ENABLE="false"' config/gaming.conf || fail 'gaming canonical default must be disabled'
-grep -Fq 'GAMING_ENABLE:-false' "$stack" || fail 'gaming runtime fallback must default disabled'
+grep -Fxq 'GAMING_ENABLE="true"' config/gaming.conf || fail 'gaming canonical Golden profile must be enabled'
+grep -Fq 'GAMING_ENABLE:-false' "$stack" || fail 'gaming runtime fallback must remain fail-safe disabled when configuration is missing'
 grep -Fq 'fedora-workstation-repositories' "$stack" || fail 'Steam repo definition must be provisioned from Fedora workstation repositories'
 grep -Fq -- '--enablerepo=rpmfusion-nonfree-steam' "$stack" || fail 'Steam install must use the dedicated RPM Fusion repo transactionally'
 grep -Fq 'Proton remains Steam-managed' "$stack" || fail 'Steam-managed Proton policy missing'
 grep -Fq 'persistent_data_games' "$stack" || fail 'gaming module must use the persistent /data/Jeux root'
 grep -Fq '/data/Jeux' "$doctor" || fail 'gaming doctor must validate persistent Games storage'
 grep -Fq 'persistent_data_games' lib/persistent_data.sh || fail 'persistent Games helper missing'
+grep -Fq 'Canonical Golden profile requires Gaming enabled' diagnostics/final-certification || fail 'final Golden certification must reject Gaming disabled'
+grep -Fq 'gaming-doctor" --quiet' diagnostics/final-certification || fail 'final Golden certification must execute gaming doctor'
+grep -Fq 'gaming_contract=PASS' diagnostics/final-certification || fail 'final certificate must record gaming contract PASS'
+grep -Fq 'gaming_profile=true' diagnostics/final-certification || fail 'final certificate must record canonical Gaming profile'
 
 if grep -Eqi 'dnf[[:space:]]+copr|mesa-git|force_probe|sysctl[[:space:]]+-w|kernel.*(cachy|zen|liquorix)' "$stack"; then
   fail 'gaming module contains forbidden global/kernel/GPU tweaks'
