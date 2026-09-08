@@ -6,7 +6,7 @@ This runbook closes the final gaps between a correct Fedora 44 deployment and a 
 
 The closure makes the following contracts fail-closed on bare metal:
 
-- `gaming-doctor` is executable when the optional gaming profile is enabled;
+- `gaming-doctor` is mandatory because Gaming is part of the canonical Golden profile;
 - Gate 3 requires both Golden KVM guests and a live Windows VirtIO/QEMU-GA proof;
 - final backup certification requires a current full Restic snapshot plus repository reachability and a deep integrity sample;
 - the Ryzen 7 7700 has a dedicated sustained CPU soak before baseline certification;
@@ -196,6 +196,7 @@ A final PASS now requires, in addition to the existing contracts:
 - valid CPU-soak/Bluetooth/cooling baseline;
 - strict Restic certification;
 - all five physical runtime proofs;
+- Gaming enabled and `gaming-doctor` PASS on the Arc B580/Wayland/240 Hz stack;
 - both KVM domains;
 - live Windows VirtIO/QGA proof;
 - complete managed application runtime activation;

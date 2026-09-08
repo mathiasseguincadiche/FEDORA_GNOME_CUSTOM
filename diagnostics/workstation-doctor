@@ -38,7 +38,7 @@ if bash "$REPO_ROOT/diagnostics/media-doctor" --quiet; then emit OK Multimedia '
 if is_true "${GAMING_ENABLE:-false}"; then
   if "$REPO_ROOT/diagnostics/gaming-doctor" --quiet; then emit OK Gaming 'Steam/Proton/Vulkan multilib + gaming tools'; else emit KO Gaming 'run gaming-doctor'; fi
 else
-  emit OK Gaming 'optional profile disabled'
+  emit KO Gaming 'canonical Golden profile requires Gaming enabled'
 fi
 if "$REPO_ROOT/diagnostics/software-matrix-doctor" --quiet; then emit OK 'Known-good matrix' certified; else emit WARN 'Known-good matrix' 'not certified or software versions changed'; fi
 
