@@ -64,13 +64,17 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **GPU passthrough / VFIO** — attribution directe d'un GPU physique à une VM. Ce projet l'interdit pour l'Arc B580, qui reste au HOST.
 
-## Stockage KVM
+## Stockage persistant et KVM
 
 **Pool libvirt** — emplacement de stockage déclaré à libvirt. `devops-data` pointe vers `/data/libvirt/images`.
 
 **qcow2** — format d'image disque QEMU permettant notamment allocation dynamique et certaines fonctions de snapshot.
 
-**`/data`** — point de montage EXT4 du deuxième Crucial T705, réservé au stockage KVM et aux données associées.
+**`/data`** — point de montage EXT4 du deuxième Crucial T705. Il constitue le stockage persistant de la workstation : `/data/Documents`, `/data/Projets`, `/data/ISO` et un sous-arbre `/data/libvirt` réservé à KVM.
+
+**Données persistantes** — données placées sur le second T705 afin qu'une réinstallation du SSD système Btrfs ne les efface pas. Cette séparation physique ne remplace pas une sauvegarde externe contre la panne du second SSD.
+
+**XDG Documents** — répertoire standard « Documents » de la session graphique. Dans le profil Golden, il est redirigé vers `/data/Documents`.
 
 **IOThread** — thread QEMU dédié aux entrées/sorties d'un disque lorsque le backend et `virt-install` le permettent.
 

@@ -25,8 +25,13 @@ Fedora 44 HOST
 │   ├── pool devops-data
 │   └── réseau devops-nat
 │
-├── /data sur le second T705
-│   └── /data/libvirt/images/*.qcow2
+├── /data sur le second T705 (EXT4 persistant)
+│   ├── Documents/        données utilisateur
+│   ├── Projets/          projets utilisateur
+│   ├── ISO/              bibliothèque ISO utilisateur
+│   ├── Jeux/             bibliothèque de jeux utilisateur
+│   └── libvirt/
+│       └── images/*.qcow2
 │
 └── virbr50 / 192.168.50.0/24
     ├── VM ↔ HOST
@@ -88,7 +93,7 @@ Aucun VFIO/passthrough automatique n'est autorisé. Cette décision évite de fr
 
 Pour Windows, `SPICE + virtio video` fournit une console de VM adaptée à l'administration, aux tests et à la bureautique. Ce n'est pas l'équivalent d'une B580 directement attribuée au guest.
 
-## Stockage dédié
+## Second T705 : données persistantes + sous-arbre KVM
 
 Le deuxième Crucial T705 est monté manuellement sur :
 
@@ -97,19 +102,30 @@ Le deuxième Crucial T705 est monté manuellement sur :
 filesystem : EXT4
 ```
 
-Le projet ne partitionne et ne formate jamais ce SSD automatiquement.
+Le projet ne partitionne et ne formate jamais ce SSD automatiquement. Il est volontairement séparé du SSD système Btrfs afin qu'une réinstallation du HOST puisse conserver les données de travail, les ISO, les jeux et les VM.
 
-Arborescence gérée :
+Arborescence Golden :
 
 ```text
-/data/libvirt/
-├── images/       disques qcow2 des VM
-├── iso/          ISO et images cloud fournis par l'opérateur
-├── cloud-init/   seeds Ubuntu
-├── nvram/        données UEFI si nécessaires
-├── snapshots/    espace réservé aux opérations de snapshot
-└── exports/      exports/staging liés aux opérations KVM
+/data/
+├── Documents/          XDG Documents, données persistantes
+├── Projets/            projets de travail persistants
+├── ISO/                bibliothèque ISO utilisateur
+├── Jeux/               bibliothèque de jeux utilisateur persistante
+└── libvirt/
+    ├── images/         disques qcow2 des VM
+    ├── iso/            médias explicitement préparés pour libvirt
+    ├── cloud-init/     seeds Ubuntu
+    ├── nvram/          données UEFI si nécessaires
+    ├── snapshots/      espace réservé aux opérations de snapshot
+    └── exports/        exports/staging liés aux opérations KVM
 ```
+
+Les quatre répertoires utilisateur sont créés en `0750`, appartiennent à l'utilisateur workstation et reçoivent un label SELinux de données utilisateur. `/data/libvirt` conserve au contraire son contexte libvirt dédié. Le projet ne mélange donc pas les permissions des données personnelles et celles des VM.
+
+`/data/ISO` est une bibliothèque utilisateur persistante ; `/data/libvirt/iso` reste la zone explicitement préparée pour les médias que QEMU/libvirt doit consommer. Le projet ne donne pas automatiquement à libvirt accès à toute la bibliothèque utilisateur.
+
+`/data/Jeux` reste indépendant de libvirt et d'un launcher précis. Il peut servir de bibliothèque Steam/Lutris/Heroic ou autre lorsque le profil gaming est activé, sans que le socle de stockage dépende d'une plateforme particulière.
 
 Pool libvirt :
 
@@ -120,11 +136,12 @@ cible     /data/libvirt/images
 autostart oui
 ```
 
-SELinux reste actif. Le projet persiste le type `virt_image_t` avec `semanage fcontext`, puis applique les labels avec `restorecon`.
+SELinux reste actif. Le projet persiste le type `virt_image_t` sur le sous-arbre libvirt avec `semanage fcontext`, puis applique les labels avec `restorecon`.
 
 Avant de créer les VM :
 
 ```bash
+./diagnostics/data-storage-doctor
 ./diagnostics/kvm-io-doctor benchmark
 ```
 
@@ -280,6 +297,7 @@ La référence avancée (`virt-admin`, `virt-xml`, `qemu-nbd`, guestfs, virt-v2v
 Avant création des VM :
 
 ```bash
+./diagnostics/data-storage-doctor
 ./diagnostics/virtualization-doctor
 ./diagnostics/kvm-io-doctor benchmark
 ```
@@ -325,11 +343,12 @@ qemu-img convert vers staging
 Restic
 ```
 
-Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
+Les données utilisateur `/data/Documents` et `/data/Projets` sont sauvegardées par le timer Restic quotidien, indépendamment du cycle de backup des VM. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut. Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 ## Interdictions structurantes
 
 - aucun formatage/partitionnement automatique du second T705 ;
+- aucune suppression automatique de `/data/Documents`, `/data/Projets`, `/data/ISO` ou `/data/Jeux` ;
 - aucun `chmod 777` ;
 - aucun SELinux désactivé ;
 - aucun firewalld désactivé ;

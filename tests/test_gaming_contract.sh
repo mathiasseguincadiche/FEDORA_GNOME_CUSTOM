@@ -11,7 +11,7 @@ validation=modules/gaming/44_gaming_validation.sh
 doctor=diagnostics/gaming-doctor
 workflow=.github/workflows/fedora-gaming-pretest.yml
 
-for file in "$fedora_manifest" "$rpmfusion_manifest" "$stack" "$validation" "$doctor" "$workflow"; do
+for file in "$fedora_manifest" "$rpmfusion_manifest" "$stack" "$validation" "$doctor" "$workflow" lib/persistent_data.sh; do
   [[ -s "$file" ]] || fail "missing $file"
 done
 
@@ -29,6 +29,9 @@ grep -Fq 'GAMING_ENABLE:-false' "$stack" || fail 'gaming runtime fallback must d
 grep -Fq 'fedora-workstation-repositories' "$stack" || fail 'Steam repo definition must be provisioned from Fedora workstation repositories'
 grep -Fq -- '--enablerepo=rpmfusion-nonfree-steam' "$stack" || fail 'Steam install must use the dedicated RPM Fusion repo transactionally'
 grep -Fq 'Proton remains Steam-managed' "$stack" || fail 'Steam-managed Proton policy missing'
+grep -Fq 'persistent_data_games' "$stack" || fail 'gaming module must use the persistent /data/Jeux root'
+grep -Fq '/data/Jeux' "$doctor" || fail 'gaming doctor must validate persistent Games storage'
+grep -Fq 'persistent_data_games' lib/persistent_data.sh || fail 'persistent Games helper missing'
 
 if grep -Eqi 'dnf[[:space:]]+copr|mesa-git|force_probe|sysctl[[:space:]]+-w|kernel.*(cachy|zen|liquorix)' "$stack"; then
   fail 'gaming module contains forbidden global/kernel/GPU tweaks'

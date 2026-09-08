@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 for expected in \
@@ -13,7 +14,7 @@ for expected in \
   'BACKUP_PRUNE_AUTOMATICALLY="true"' \
   'RESTIC_RETENTION_TIMER_ENABLED="true"' \
   'DAILY_BACKUP_XDG_DIRS="DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC"' \
-  'DAILY_BACKUP_EXTRA_PATHS="Projects Development .config .ssh .gnupg"'; do
+  'DAILY_BACKUP_EXTRA_PATHS="/data/Projets Development .config .ssh .gnupg"'; do
   grep -Fq "$expected" "$ROOT/config/backup.conf" || { echo "missing backup policy: $expected" >&2; exit 1; }
 done
 for entry in \
@@ -27,7 +28,7 @@ for entry in \
   'backup.dr|BACKUP|backup.restore|modules/backup/58_disaster_recovery.sh'; do
   grep -Fq "$entry" "$ROOT/manifests/module-plan.conf" || { echo "missing backup module: $entry" >&2; exit 1; }
 done
-for file in lib/backup_runtime.sh lib/backup_runtime_bundle.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/daily-user-backup.sh scripts/backup/restic-retention.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do
+for file in lib/backup_runtime.sh lib/backup_runtime_bundle.sh lib/persistent_data.sh prepare-preapply-backup.sh scripts/backup/backup-now.sh scripts/backup/daily-user-backup.sh scripts/backup/restic-retention.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh diagnostics/backup-doctor; do
   [[ -f "$ROOT/$file" ]] || { echo "missing backup/recovery file: $file" >&2; exit 1; }
 done
 
@@ -43,14 +44,29 @@ grep -Fq 'fedora-gnome-custom-preapply' "$ROOT/lib/backup_runtime.sh"
 grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'restic check' "$ROOT/prepare-preapply-backup.sh"
 
+# Full and daily backups protect Documents/Projets; ISO and Jeux stay excluded by default.
 grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'source "$REPO_ROOT/lib/persistent_data.sh"' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'persistent_data_documents' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'persistent_data_projects' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'Refusing full backup: /data is not the dedicated EXT4 second T705.' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'Refusing in-place/live restore target' "$ROOT/scripts/backup/restore.sh"
 grep -Fq 'xdg-user-dir' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'DAILY_BACKUP_XDG_DIRS' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'DAILY_BACKUP_EXTRA_PATHS' "$ROOT/scripts/backup/daily-user-backup.sh"
+grep -Fq '/data/Documents|/data/Projets' "$ROOT/scripts/backup/daily-user-backup.sh"
+grep -Fq 'Refusing persistent-data backup: /data is not the dedicated EXT4 second T705.' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'source_count=' "$ROOT/scripts/backup/daily-user-backup.sh"
 if grep -Fq 'Documents Desktop Pictures Videos Music' "$ROOT/scripts/backup/daily-user-backup.sh"; then
   echo 'daily backup still contains locale-dependent English user-directory defaults' >&2
+  exit 1
+fi
+if grep -Fq '/data/ISO' "$ROOT/config/backup.conf" && grep -Fq '/data/ISO' "$ROOT/scripts/backup/daily-user-backup.sh"; then
+  echo 'ISO library must not enter the default daily backup source allowlist' >&2
+  exit 1
+fi
+if grep -Fq '/data/Jeux' "$ROOT/config/backup.conf" || grep -Fq '/data/Jeux' "$ROOT/scripts/backup/daily-user-backup.sh" || grep -Fq 'persistent_data_games' "$ROOT/scripts/backup/backup-now.sh"; then
+  echo 'Games library must remain outside automatic daily/full backup sources by default' >&2
   exit 1
 fi
 if grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0)' "$ROOT/scripts/backup" "$ROOT/modules/backup"; then

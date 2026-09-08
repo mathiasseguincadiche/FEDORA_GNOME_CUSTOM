@@ -1,7 +1,7 @@
 # ADR 0004 — Btrfs root + EXT4 KVM
 
-**Statut : accepté**
+**Statut : remplacé par ADR 0011**
 
-Fedora utilise Btrfs non chiffré sur le T705 système. Les images KVM utilisent un second T705 préparé manuellement en EXT4 sur `/data`.
+Cette décision a établi la séparation physique entre le T705 système Btrfs et un second T705 EXT4 monté sur `/data`, ainsi que l'interdiction pour le dépôt de partitionner ou formater automatiquement ce second SSD.
 
-Le dépôt ne partitionne ni ne formate automatiquement le second SSD. Cette séparation réduit le couplage entre lifecycle HOST et I/O des VM.
+ADR 0011 conserve ces invariants mais élargit le rôle de `/data` : le second T705 devient le stockage persistant de la workstation, avec des répertoires utilisateur dédiés et un sous-arbre `/data/libvirt` réservé à KVM.

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+source "$REPO_ROOT/lib/persistent_data.sh"
+
 gaming_stack_enabled() { is_true "${GAMING_ENABLE:-false}"; }
 
 gaming_stack_precheck() {
@@ -8,13 +10,17 @@ gaming_stack_precheck() {
   command_exists dnf || { log_error GAMING 'dnf is required'; return "$EXIT_PRECHECK_FAILED"; }
   [[ "$(uname -m)" == x86_64 ]] || { log_error GAMING 'Steam Golden profile requires x86_64'; return "$EXIT_PRECHECK_FAILED"; }
   is_true "${ENABLE_RPMFUSION:-true}" || { log_error GAMING 'GAMING_ENABLE=true requires ENABLE_RPMFUSION=true for the Steam RPM'; return "$EXIT_PRECHECK_FAILED"; }
+  if ! is_true "${DRY_RUN:-true}"; then
+    persistent_data_validate_mount || { log_error GAMING '/data persistent EXT4 mount is required'; return "$EXIT_PRECHECK_FAILED"; }
+    [[ -d "$(persistent_data_games)" && -w "$(persistent_data_games)" ]] || { log_error GAMING '/data/Jeux must exist and be writable by the workstation user'; return "$EXIT_PRECHECK_FAILED"; }
+  fi
 }
 
 gaming_stack_plan() {
   if gaming_stack_enabled; then
-    echo 'Install Fedora-native Vulkan multilib, GameMode, MangoHud, GOverlay, Gamescope and Steam Input; install Fedora workstation repository definitions and Steam from RPM Fusion nonfree Steam without custom Mesa/kernel repositories or global performance tweaks. Proton remains Steam-managed.'
+    echo 'Install Fedora-native Vulkan multilib, GameMode, MangoHud, GOverlay, Gamescope and Steam Input; install Fedora workstation repository definitions and Steam from RPM Fusion nonfree Steam without custom Mesa/kernel repositories or global performance tweaks. Proton remains Steam-managed. /data/Jeux is the persistent Golden games library root; Steam library registration remains an explicit user action.'
   else
-    echo 'Gaming profile disabled; preserve the Golden HOST without gaming packages.'
+    echo 'Gaming profile disabled; preserve /data/Jeux as persistent storage without installing gaming packages.'
   fi
 }
 
@@ -58,4 +64,5 @@ gaming_stack_postcheck() {
   command_exists vulkaninfo || return "$EXIT_POSTCHECK_FAILED"
   steam_bin="$(command -v steam)"
   rpm -qf "$steam_bin" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
+  [[ -d "$(persistent_data_games)" && -w "$(persistent_data_games)" ]] || return "$EXIT_POSTCHECK_FAILED"
 }

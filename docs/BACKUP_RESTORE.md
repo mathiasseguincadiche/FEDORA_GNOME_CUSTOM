@@ -12,9 +12,28 @@ Le projet utilise **Restic chiffré** et applique un modèle fail-closed. Une sa
 - restauration du canary obligatoire avant création de `state/preapply-backup.ok` ;
 - aucune copie live d'un QCOW2 ;
 - pour sauvegarder les disques VM, les domaines doivent être `shut off` ;
-- aucune restauration automatique en place de `/`, `/etc`, `/boot`, `$HOME` ou `/data/libvirt/images` ;
+- aucune restauration automatique en place de `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images` ;
 - runtime des timers installé dans un bundle immutable versionné par SHA et contrôlé par `MANIFEST.sha256` ;
 - rétention Restic périodique versionnée : 7 daily / 4 weekly / 6 monthly sur les tags `full` et `daily`, groupée par `host,tags`.
+
+## Deux niveaux de protection des données
+
+Le second T705 monté sur `/data` fournit une première protection contre la perte ou la réinstallation du **SSD système Btrfs**. Il contient :
+
+```text
+/data/
+├── Documents/
+├── Projets/
+├── ISO/
+├── Jeux/
+└── libvirt/
+```
+
+Ce disque n'est jamais formaté automatiquement par le projet. Une réinstallation du premier T705 doit donc remonter le même `/data` et conserver ces données.
+
+Ce mécanisme n'est toutefois **pas un backup** contre la panne du second T705. Les données irremplaçables restent protégées par Restic sur une cible externe/off-machine : `/data/Documents` via XDG Documents et `/data/Projets` explicitement. `/data/ISO` et `/data/Jeux` sont exclus des backups automatiques par défaut car ces payloads sont généralement volumineux et reproductibles/retéléchargeables.
+
+Les sauvegardes de jeux non reproductibles, mods rares ou autres contenus importants stockés directement sous `/data/Jeux` doivent donc être ajoutées par une politique opérateur explicite si nécessaire. Les sauvegardes de parties placées dans les chemins utilisateur/XDG restent couvertes normalement par Restic.
 
 ## Pré-APPLY
 
@@ -62,11 +81,13 @@ ${XDG_STATE_HOME:-~/.local/state}/fedora-gnome-custom/
 
 ## Sauvegarde quotidienne utilisateur
 
-Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment de l'exécution. Les clés `DESKTOP`, `DOCUMENTS`, `PICTURES`, `VIDEOS` et `MUSIC` suivent donc la configuration XDG réelle de l'utilisateur : sur le profil français, `Bureau`, `Images`, `Vidéos` et `Musique` sont protégés sans dépendre de noms anglais codés en dur.
+Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment de l'exécution. Les clés `DESKTOP`, `DOCUMENTS`, `PICTURES`, `VIDEOS` et `MUSIC` suivent donc la configuration XDG réelle de l'utilisateur. Dans le profil Golden, `DOCUMENTS` pointe vers `/data/Documents`; les autres dossiers restent résolus selon la locale utilisateur.
 
-Les chemins supplémentaires restent `Projects`, `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
+Le chemin supplémentaire persistant `/data/Projets` est sauvegardé avec `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
 
-Le script refuse une source XDG ambiguë qui résoudrait directement vers `$HOME`, refuse les chemins supplémentaires absolus ou contenant `..`, et enregistre le nombre ainsi que la liste exacte des sources incluses dans le snapshot.
+La surface absolue autorisée est volontairement étroite : le script accepte `/data/Documents` et `/data/Projets`, mais refuse tout autre chemin absolu. `/data/ISO`, `/data/Jeux` et `/data/libvirt` ne peuvent donc pas être ajoutés accidentellement au backup quotidien par une dérive de configuration.
+
+Le script refuse une source XDG ambiguë qui résoudrait directement vers `$HOME`, refuse les chemins contenant `..`, et enregistre le nombre ainsi que la liste exacte des sources incluses dans le snapshot.
 
 L'indisponibilité temporaire du repository externe ou de la passphrase fait **skipper** le run quotidien sans désactiver le timer. Cela ne change pas le comportement fail-closed du backup pré-APPLY.
 
@@ -104,7 +125,7 @@ Le chemin manuel est strict : une cible Restic indisponible provoque un échec e
 
 ## Backup d'exploitation
 
-HOST + métadonnées KVM :
+HOST + métadonnées KVM + Documents/Projets persistants :
 
 ```bash
 scripts/backup/backup-now.sh
@@ -129,12 +150,13 @@ scripts/backup/backup-now.sh --include-vms --prune
 ## Diagnostic
 
 ```bash
+diagnostics/data-storage-doctor
 diagnostics/backup-doctor
 diagnostics/backup-doctor --deep
 diagnostics/daily-backup-doctor
 ```
 
-Le doctor quotidien vérifie notamment l'intégrité du bundle installé, l'activation des timers daily/rétention et les derniers états enregistrés. `backup-doctor --deep` ajoute un contrôle Restic partiel plus coûteux.
+`data-storage-doctor` vérifie que `/data` est bien l'EXT4 dédié, que `Documents`, `Projets`, `ISO` et `Jeux` existent avec le bon propriétaire, le mode `0750`, le label SELinux utilisateur et le mapping XDG Documents. Le doctor quotidien vérifie notamment l'intégrité du bundle installé, l'activation des timers daily/rétention et les derniers états enregistrés. `backup-doctor --deep` ajoute un contrôle Restic partiel plus coûteux.
 
 ## Restauration staging-first
 
@@ -162,7 +184,7 @@ ou :
 scripts/backup/restore.sh restore <snapshot> /chemin/staging/vide '<glob-optionnel>'
 ```
 
-Le helper refuse les destinations sensibles/actives. On inspecte ensuite le staging avant toute restauration manuelle.
+Le helper refuse les destinations sensibles/actives. On inspecte ensuite le staging avant toute restauration manuelle. Cette règle s'applique également à `/data` : le projet ne remplace jamais automatiquement les données persistantes existantes.
 
 ## Secret de récupération
 
@@ -174,7 +196,7 @@ La passphrase Restic n'est volontairement jamais incluse dans les snapshots. Une
 scripts/backup/disaster-recovery.sh
 ```
 
-Le script vérifie le repository et le dernier snapshot puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, `/data`, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
+Le script vérifie le repository et le dernier snapshot puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
 
 ## Règle QCOW2
 

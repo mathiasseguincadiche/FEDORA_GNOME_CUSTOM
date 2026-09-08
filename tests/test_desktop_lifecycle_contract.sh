@@ -14,7 +14,10 @@ for pkg in gnome-keyring gnome-keyring-pam libsecret cups ipp-usb avahi sane-air
   grep -Fxq "$pkg" "$ROOT/manifests/packages-desktop-integration.txt"
 done
 
-grep -Fq 'desktop.integration|DESKTOP|gnome.validation|' "$ROOT/manifests/module-plan.conf"
+# Persistent second-T705 data is now a mandatory desktop stage between GNOME
+# validation and the wider desktop integration/lifecycle layers.
+grep -Fq 'desktop.persistent_data|DESKTOP|gnome.validation|modules/desktop/25_persistent_data.sh' "$ROOT/manifests/module-plan.conf"
+grep -Fq 'desktop.integration|DESKTOP|desktop.persistent_data|modules/desktop/26_desktop_integration.sh' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'desktop.lifecycle|DESKTOP|desktop.integration|' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'backup.daily|BACKUP|backup.validation|' "$ROOT/manifests/module-plan.conf"
 

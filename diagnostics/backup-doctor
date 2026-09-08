@@ -50,6 +50,14 @@ if ! $policy_only; then
   fi
 
   if $certify; then
+    if runtime_is_baremetal; then
+      if "$REPO_ROOT/diagnostics/data-storage-doctor" --quiet; then
+        record OK 'Persistent data layout' '/data/Documents + /data/Projets + /data/ISO'
+      else
+        record KO 'Persistent data layout' 'second-T705 contract failed'
+      fi
+    fi
+
     full="$STATE_ROOT/last-full-backup.ok"; max_h="${DAILY_BACKUP_MAX_AGE_HOURS:-36}"
     if [[ -s "$full" ]]; then
       age_h=$(( ( $(date +%s) - $(stat -c %Y "$full") ) / 3600 ))
