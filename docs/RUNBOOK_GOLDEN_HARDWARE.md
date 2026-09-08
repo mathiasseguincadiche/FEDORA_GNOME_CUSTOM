@@ -201,14 +201,14 @@ L'APPLY doit rester bloqué. La présence de `state/preapply-backup.ok` ne suffi
 ## Transaction DNF offline préparée
 
 ```bash
-dnf offline status
-sudo scripts/maintenance/update-system.sh --offline-reboot
+./control.sh update status
+./control.sh update reboot
 ```
 
 Après reboot :
 
 ```bash
-scripts/maintenance/update-system.sh --post-offline
+./control.sh update finalize
 ```
 
 Ne considérer pas la nouvelle pile comme Golden avant les postchecks et, si la matrice sensible a changé, la recertification.

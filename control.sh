@@ -18,6 +18,48 @@ if [[ "${1:-}" == kernel ]]; then
   esac
 fi
 
+# Advanced update lifecycle actions stay in the dedicated DNF5 offline engine.
+# Routine check/all/dnf/flatpak/firmware actions continue through the Control Center.
+if [[ "${1:-}" == update ]]; then
+  case "${2:-}" in
+    reboot)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-reboot
+      ;;
+    finalize)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --finalize
+      ;;
+    status)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-status
+      ;;
+    log)
+      exec bash "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-log
+      ;;
+  esac
+fi
+
+# Transient logs/reports have an explicit retention policy. Golden state and
+# release evidence are excluded by the maintenance engine itself.
+if [[ "${1:-}" == logs ]]; then
+  case "${2:-}" in
+    retention)
+      exec bash "$REPO_ROOT/scripts/maintenance/prune-project-artifacts.sh" --check
+      ;;
+    prune)
+      exec bash "$REPO_ROOT/scripts/maintenance/prune-project-artifacts.sh" --apply
+      ;;
+  esac
+fi
+
+# Long-term payload sealing is opt-in and requires an already certified Golden
+# release plus an off-repository destination and operator-supplied payloads.
+if [[ "${1:-}" == cert && "${2:-}" == archive ]]; then
+  [[ -n "${3:-}" && -n "${4:-}" ]] || {
+    echo 'Usage: ./control.sh cert archive DESTINATION PAYLOAD [PAYLOAD ...]' >&2
+    exit "$EXIT_USAGE"
+  }
+  exec bash "$REPO_ROOT/scripts/release/seal-golden-archive.sh" "${@:3}"
+fi
+
 # Three-gate validation is intentionally routed to dedicated engines. Gate 1
 # and Gate 2 can never invoke production APPLY/final certification; Gate 3 is
 # the only path that delegates to the bare-metal final-certification engine.

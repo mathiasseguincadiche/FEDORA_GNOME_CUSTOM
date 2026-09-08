@@ -114,6 +114,10 @@ Le chemin APPLY garde donc les protections natives : bare-metal, Git propre, bas
 ./control.sh update dnf
 ./control.sh update flatpak
 ./control.sh update firmware
+./control.sh update status
+./control.sh update log
+./control.sh update reboot
+./control.sh update finalize
 ```
 
 `update all` et `update dnf` ne remplacent plus les paquets RPM dans la session GNOME active. Ils préparent une transaction **DNF5 offline** après un backup Restic complet :
@@ -141,8 +145,8 @@ Le moteur détaillé est `scripts/maintenance/update-system.sh`.
 ### 2. Déclencher l'update offline
 
 ```bash
-scripts/maintenance/update-system.sh --offline-status
-sudo scripts/maintenance/update-system.sh --offline-reboot
+./control.sh update status
+./control.sh update reboot
 ```
 
 DNF5 redémarre alors dans son environnement minimal, applique la transaction, puis revient sur Fedora normal.
@@ -150,7 +154,7 @@ DNF5 redémarre alors dans son environnement minimal, applique la transaction, p
 ### 3. Finaliser après retour sur Fedora
 
 ```bash
-scripts/maintenance/update-system.sh --finalize
+./control.sh update finalize
 ```
 
 La finalisation :
@@ -170,7 +174,7 @@ diagnostic global
 Pour inspecter la dernière transaction sans rien modifier :
 
 ```bash
-scripts/maintenance/update-system.sh --offline-log
+./control.sh update log
 ```
 
 Une évolution du kernel, Mesa, firmware, Mutter ou GNOME Shell peut rendre la certification `STALE`; le `software-matrix-doctor diff` explique alors précisément ce qui a changé.
@@ -254,6 +258,47 @@ Les restores restent staging-first ; aucune restauration n'écrase silencieuseme
 ```
 
 La certification Golden exige désormais la chaîne de preuves Gate 1 → Gate 2 en plus des preuves physiques : cinq cycles veille/réveil uniques, cold-start Nautilus, SMART/PCIe T705, B580/ReBAR/x8, EDID certifié, VA-API fonctionnel, OpenCL fonctionnel et KVM si activé. Elle génère ensuite le bundle `state/releases/.../golden-release.json` avec `gate1-proof.json` et `gate2-proof.json`.
+
+### Archive Golden longue durée
+
+Après une certification Golden réelle, un archivage hors dépôt peut sceller le bundle certifié avec des payloads conservés par l'opérateur :
+
+```bash
+./control.sh cert archive /mnt/archive/golden-2026 \
+  /chemin/Fedora-Workstation-Live-44.iso \
+  /chemin/offline-rpm-flatpak-cache \
+  /chemin/Windows11.iso \
+  /chemin/virtio-win.iso
+```
+
+Le moteur `scripts/release/seal-golden-archive.sh` exige une certification finale `PASS`, vérifie d'abord le `MANIFEST.sha256` du bundle Golden, refuse une destination située dans le checkout Git et produit un nouveau `MANIFEST.sha256` couvrant release + payloads. Il ne télécharge jamais automatiquement de média externe.
+
+Cet archivage est optionnel et destiné à la conservation historique/off-machine ; il ne remplace ni Restic ni la certification runtime.
+
+## Logs et rétention
+
+Les logs ordinaires et rapports transitoires ont une politique versionnée dans `config/operator-retention.policy` :
+
+```text
+logs = 90 jours
+reports = 180 jours
+state/ = conservé
+state/releases/ = conservé
+```
+
+Afficher ce qui serait supprimé :
+
+```bash
+./control.sh logs retention
+```
+
+Appliquer explicitement la rétention :
+
+```bash
+./control.sh logs prune
+```
+
+`scripts/maintenance/prune-project-artifacts.sh` ne touche jamais aux markers de certification, à `state/` ni aux Golden releases.
 
 ## CLI kernel avancée
 
