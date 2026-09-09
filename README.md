@@ -96,7 +96,7 @@ valider → mesurer → sauvegarder → converger → qualifier → certifier �
 ## Architecture globale
 
 <p align="center">
-  <img src="docs/assets/architecture-global.svg" alt="Architecture globale de Fedora 44 Golden Workstation : contrôle et gouvernance, socle HOST, couches d’usage, stockage persistant, résilience et certification" width="100%">
+  <img src="docs/assets/architecture-global-direct.svg" alt="Architecture globale directe de Fedora 44 Golden Workstation : matériel cible, système Fedora, stockage, usages, sauvegarde, maintenance et certification" width="100%">
 </p>
 
 L'objectif n'est pas d'empiler des tweaks. Le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
@@ -242,16 +242,9 @@ Voir [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) et [`docs/VIRTUALIZATION
 
 La maintenance complète suit une chaîne protégée :
 
-```mermaid
-flowchart LR
-    A[Backup Restic] --> B[Résolution updates + latest-stable]
-    B --> C[DNF5 offline]
-    C --> D[Reboot]
-    D --> E[Kernel N / N-1]
-    E --> F[Flatpak si mode all]
-    F --> G[Firmware check]
-    G --> H[Diagnostics]
-```
+<p align="center">
+  <img src="docs/assets/update-cycle-direct.svg" alt="Cycle de mise à jour : backup Restic, préparation, DNF5 offline, redémarrage et finalisation, diagnostics" width="100%">
+</p>
 
 Commandes :
 
@@ -375,14 +368,9 @@ La validation est volontairement placée en fin de README : elle **prouve** le p
 
 > Gate 1 et Gate 2 sont des prévalidations avant installation de production. **Gate 3 est la certification de la vraie machine après installation/APPLY** ; il ne peut donc pas être déclaré PASS à l'avance.
 
-```mermaid
-flowchart LR
-    G1[Gate 1 · Fedora 44 / WSL2] --> G2[Gate 2 · Fedora 44 GNOME / VirtualBox]
-    G2 --> I[Installation Fedora 44 bare-metal]
-    I --> A[Baseline + dry-run + backup + APPLY]
-    A --> G3[Gate 3 · preuves physiques]
-    G3 --> GR[Golden release PASS]
-```
+<p align="center">
+  <img src="docs/assets/validation-gates-direct.svg" alt="Validation complète : Gate 1 WSL2, Gate 2 VirtualBox, installation bare-metal, APPLY protégé, Gate 3 physique, Golden PASS" width="100%">
+</p>
 
 ## Gate 1 — système / WSL2
 
