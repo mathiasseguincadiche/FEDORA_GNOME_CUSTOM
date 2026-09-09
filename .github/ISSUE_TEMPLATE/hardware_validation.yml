@@ -1,0 +1,71 @@
+name: Hardware / Gate 3 validation
+description: Signaler un échec ou une anomalie sur le matériel cible pendant la qualification physique
+title: "[GATE3] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ce formulaire est destiné aux preuves bare-metal : kernel, B580/xe, T705, mémoire, affichage, réseau, audio, suspend/resume, Gaming et KVM.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit certifié/testé
+      placeholder: SHA Git 40 caractères
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domaine physique
+      options:
+        - CPU / températures / P-State
+        - DDR5 5600 / 6000
+        - Intel Arc B580 / xe / Vulkan
+        - Affichage / EDID / 240 Hz / VRR / HDR
+        - NVMe T705 système
+        - NVMe T705 data / EXT4
+        - Ethernet 5 GbE
+        - Wi-Fi / Bluetooth
+        - Audio ALC4080
+        - Suspend / resume
+        - Gaming / Steam / Proton
+        - KVM / Ubuntu / Windows
+        - Firmware / BIOS
+    validations:
+      required: true
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel actif
+      placeholder: uname -r
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Commande / doctor en échec
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Résultat / erreur
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte matériel utile
+      description: BIOS, profil RAM, câble/port écran, réseau utilisé, état de veille, VM démarrées, etc.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Sécurité
+      options:
+        - label: Je n'ai pas désactivé SELinux, firewalld ou les garde-fous KVM pour contourner le problème.
+          required: true
+        - label: Je n'ai pas ajouté force_probe, Mesa tiers ou kernel tiers non prévu par le projet.
+          required: true

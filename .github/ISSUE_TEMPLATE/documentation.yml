@@ -1,0 +1,46 @@
+name: Documentation
+description: Signaler une information manquante, ambiguë ou contradictoire dans la documentation
+title: "[DOC] "
+labels: []
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Document concerné
+      placeholder: README.md ou docs/...
+    validations:
+      required: true
+  - type: dropdown
+    id: problem
+    attributes:
+      label: Type de problème
+      options:
+        - Information obsolète
+        - Contradiction code / documentation
+        - Commande incorrecte
+        - Étape manquante
+        - Formulation ambiguë
+        - Lien cassé
+        - Présentation / lisibilité
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: État actuel
+      description: Texte ou section concernée.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Correction attendue
+    validations:
+      required: true
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Contrat
+      options:
+        - label: J'ai vérifié si le code/config actuel permet de déterminer la source de vérité.
+          required: true
