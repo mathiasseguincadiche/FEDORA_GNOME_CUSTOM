@@ -6,6 +6,7 @@ fail() { echo "github presentation contract: FAIL: $*" >&2; exit 1; }
 
 for file in \
   README.md \
+  LICENSE \
   CONTRIBUTING.md \
   docs/README.md \
   .github/ISSUE_TEMPLATE/bug_report.yml \
@@ -16,6 +17,10 @@ for file in \
   lib/control_center_presentation.sh; do
   [[ -s "$ROOT/$file" ]] || fail "missing $file"
 done
+
+# Public repository licensing must remain explicit and machine-detectable.
+grep -Fq 'Apache License' "$ROOT/LICENSE" || fail 'Apache-2.0 license title missing'
+grep -Fq 'Version 2.0' "$ROOT/LICENSE" || fail 'Apache-2.0 version missing'
 
 # Landing page: identity, live CI badges, quick start and honest project status.
 grep -Fq '# Fedora 44 Golden Workstation' "$ROOT/README.md" || fail 'landing title missing'
