@@ -7,6 +7,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ "$(tr -d '[:space:]' < "$ROOT/VERSION")" == "0.14.0" ]] || { echo 'VERSION must be 0.14.0' >&2; exit 1; }
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
+[[ -f "$ROOT/lib/control_center_presentation.sh" ]] || { echo 'control center presentation layer missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/maintenance/update-system.sh" ]] || { echo 'update-system.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/maintenance/prune-project-artifacts.sh" ]] || { echo 'prune-project-artifacts.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/release/seal-golden-archive.sh" ]] || { echo 'seal-golden-archive.sh missing' >&2; exit 1; }
@@ -16,6 +17,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 bash -n "$ROOT/control.sh"
 bash -n "$ROOT/lib/control_center.sh"
+bash -n "$ROOT/lib/control_center_presentation.sh"
 bash -n "$ROOT/scripts/maintenance/update-system.sh"
 bash -n "$ROOT/scripts/maintenance/prune-project-artifacts.sh"
 bash -n "$ROOT/scripts/release/seal-golden-archive.sh"
@@ -41,6 +43,17 @@ for expected in \
   grep -Fq "$expected" "$ROOT/lib/control_center.sh" || { echo "control center missing contract: $expected" >&2; exit 1; }
 done
 
+# The presentation layer must expose the current Golden vocabulary and mandatory pillars.
+grep -Fq 'Politique N / N-1 · max 2' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq "cc_option 5 'Kernel & boot' 'latest-stable / N-N-1 / recovery'" "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'Gaming / Steam / Vulkan' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'Stockage / T705 / data' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'cc_gaming_state' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'cc_data_state' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'control_center_presentation.sh' "$ROOT/control.sh"
+grep -Fq 'diagnostics/data-storage-doctor' "$ROOT/control.sh"
+grep -Fq 'diagnostics/gaming-doctor' "$ROOT/control.sh"
+
 # Dashboard truth must be based on real runtime data, not marker presence alone.
 grep -Fq 'os_id' "$ROOT/lib/control_center.sh"
 grep -Fq "if [[ \"\$os_id\" != fedora ]]; then" "$ROOT/lib/control_center.sh"
@@ -49,8 +62,8 @@ grep -Fq "fingerprint=\$expected" "$ROOT/lib/control_center.sh"
 grep -Fq 'STALE' "$ROOT/lib/control_center.sh"
 
 # Thin facade: dangerous business logic must stay in the dedicated engines.
-if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh"; then
-  echo 'business logic leaked into control_center.sh' >&2
+if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh" "$ROOT/lib/control_center_presentation.sh"; then
+  echo 'business logic leaked into Control Center UI' >&2
   exit 1
 fi
 if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|restic[[:space:]]+backup' "$ROOT/control.sh"; then
@@ -146,7 +159,9 @@ NO_COLOR=1 "$ROOT/control.sh" status > "$status_file"
 grep -Fq 'FEDORA GOLDEN WORKSTATION' "$status_file"
 grep -Fq 'Projet' "$status_file"
 grep -Fq 'Runtime' "$status_file"
-grep -Fq 'vanilla/stable latest-stable' "$status_file"
+grep -Fq 'Politique N / N-1 · max 2' "$status_file"
+grep -Fq 'Data' "$status_file"
+grep -Fq 'Gaming' "$status_file"
 
 # Documentation must explain both interactive and CLI use and the no-auto-flash rule.
 grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"

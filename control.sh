@@ -38,6 +38,19 @@ if [[ "${1:-}" == update ]]; then
   esac
 fi
 
+# The canonical Gaming and persistent-data pillars have dedicated read-only
+# diagnostic routes without duplicating their business logic in the facade.
+if [[ "${1:-}" == doctor ]]; then
+  case "${2:-}" in
+    data)
+      exec "$REPO_ROOT/diagnostics/data-storage-doctor"
+      ;;
+    gaming)
+      exec "$REPO_ROOT/diagnostics/gaming-doctor"
+      ;;
+  esac
+fi
+
 # Transient logs/reports have an explicit retention policy. Golden state and
 # release evidence are excluded by the maintenance engine itself.
 if [[ "${1:-}" == logs ]]; then
@@ -109,4 +122,6 @@ fi
 source "$REPO_ROOT/lib/control_center.sh"
 # shellcheck source=lib/control_center_kernel_rolling.sh
 source "$REPO_ROOT/lib/control_center_kernel_rolling.sh"
+# shellcheck source=lib/control_center_presentation.sh
+source "$REPO_ROOT/lib/control_center_presentation.sh"
 control_center_main "$@"

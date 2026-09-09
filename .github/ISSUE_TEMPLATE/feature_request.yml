@@ -1,0 +1,49 @@
+name: Évolution / amélioration
+description: Proposer une évolution compatible avec le périmètre Golden Workstation
+title: "[ENHANCEMENT] "
+labels: []
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Besoin
+      description: Quel problème concret l'évolution résout-elle ?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Socle concerné
+      options:
+        - Installation / UX opérateur
+        - Kernel / hardware
+        - GNOME / desktop
+        - Applications
+        - Gaming
+        - Stockage
+        - KVM / VM
+        - Backup / restauration
+        - Maintenance / mises à jour
+        - Certification / observabilité
+        - Documentation / GitHub
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: Décrire le comportement souhaité, pas seulement l'implémentation imaginée.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risques / invariants à préserver
+      description: Stabilité, fail-closed, hardware cible, sécurité, maintenance, surface de panne, etc.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Vérification du périmètre
+      options:
+        - label: Cette évolution apporte une valeur concrète sans ajouter un tweak gratuit ou un contournement non mesuré.
+          required: true

@@ -1,149 +1,162 @@
-# FEDORA_GNOME_CUSTOM
+<div align="center">
 
-**Golden Workstation 0.14.0** pour Fedora Linux 44 Workstation + GNOME 50, conçue et certifiée pour une workstation AMD Ryzen 7 7700 + Intel Arc B580 + 2× Crucial T705.
+# Fedora 44 Golden Workstation
 
-Le projet traite l'OS principal comme une infrastructure versionnée :
+**GNOME 50 · Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
 
-```text
-valider → mesurer → préflight → sauvegarder → converger → qualifier → certifier
-```
+[![Tests](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml)
+[![Shell quality](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml)
+[![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
+[![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-## Point d'entrée
+**Golden Workstation 0.14.0** — une Fedora 44 Workstation versionnée, reproductible, mesurée et récupérable, construite pour une workstation précise plutôt que pour un PC générique.
+
+**État logiciel : CODE-READY** · **Certification matérielle : Gate 3 bare-metal à exécuter**
+
+</div>
+
+---
+
+## Démarrage rapide
+
+Le point d'entrée recommandé est le **Workstation Control Center**.
 
 ```bash
+git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
+cd FEDORA_GNOME_CUSTOM
 ./control.sh
 ```
 
-Mode CLI :
+Le menu interactif permet d'installer, mettre à jour, sauvegarder, diagnostiquer, administrer KVM et suivre la certification sans mémoriser les scripts internes.
+
+```text
+══════════════════════════════════════════════════════════════════════════════════════
+  FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
+══════════════════════════════════════════════════════════════════════════════════════
+  Projet      0.14.0      Fedora 44      Runtime BAREMETAL
+  Kernel      <kernel actif>             N / N-1 · max 2
+  GPU         Arc B580 / xe              Git      [CLEAN]
+  Data        /data EXT4                 Gaming   [PASS]
+  Backup      [PASS]                     Certif.  [PENDING]
+══════════════════════════════════════════════════════════════════════════════════════
+
+  [1] Installation & convergence
+  [2] Mises à jour
+  [3] Sauvegarde & restauration
+  [4] Diagnostics & santé
+  [5] Kernel & boot
+  [6] KVM / machines virtuelles
+  [7] Maintenance
+  [8] Certification
+  [9] Logs & preuves
+```
+
+Quelques commandes utiles :
 
 ```bash
 ./control.sh status
-./control.sh validate status
 ./control.sh install dry-run
 ./control.sh update check
-./control.sh update all
 ./control.sh backup now
 ./control.sh doctor all
 ./control.sh kernel status
 ./control.sh cert status
 ```
 
-`./menu.sh` reste un alias de compatibilité. Les moteurs spécialisés conservent leurs propres garde-fous.
+`./menu.sh` reste un alias de compatibilité. Le détail de l'interface est dans [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
 
-Voir [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
+> **Important :** ne lancer `install apply` qu'après préparation du matériel, de `/data`, de la baseline et du backup pré-APPLY. Les garde-fous du projet restent actifs même lorsque l'opération est lancée depuis le menu.
 
-## Validation officielle en trois gates
+---
 
-Avant la certification Golden, le même commit traverse trois environnements distincts :
+## Ce que construit le projet
 
-```text
-GATE 1 — Fedora 44 / WSL2
-  système + contrats + logique fail-closed
-  matériel physique = DEFERRED
-            ↓ preuve JSON
-GATE 2 — Fedora 44 GNOME / VirtualBox
-  GNOME + extensions + Nautilus + Ptyxis + contrôle visuel humain
-  matériel physique = DEFERRED
-            ↓ preuve JSON liée au SHA-256 de Gate 1
-GATE 3 — Fedora 44 / BARE-METAL
-  matériel + pilotes + boot + desktop + KVM + backup
-            ↓
-final-certification PASS
-            ↓
-golden-release.json
-```
-
-Commandes principales :
-
-```bash
-./control.sh validate gate1 run
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate gate2 apply
-./control.sh validate gate2 check
-./control.sh validate gate2 sign
-./control.sh validate import /chemin/gate2-<commit>.json
-./control.sh validate gate3 status
-./control.sh validate gate3 certify
-```
-
-Gate 1 et Gate 2 ne peuvent jamais être converties en preuve hardware. Le `final-certification` bare-metal vérifie lui-même la chaîne Gate 1 → Gate 2 avant de certifier.
-
-Voir [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md).
-
-## Contrat Golden bare-metal
-
-```text
-Gate 1 PASS + Gate 2 PASS
-      ↓
-Fedora 44 fraîche
-      ↓
-baseline bare-metal
-  Ryzen / DDR5 / B580 / ReBAR / PCIe / 2× T705 / EDID
-      ↓
-FULL DRY-RUN
-  commit + configuration effective + module plan + hardware fingerprint
-      ↓
-backup Restic vérifié
-  snapshot réel + integrity check + restore canary
-      ↓
-APPLY protégé
-  /data/{Documents,Projets,ISO,Jeux} + /data/libvirt
-      ↓
-Kernel Vanilla latest-stable installé directement
-  GRUB default = N, rétention max 2 kernels
-      ↓
-reboot sur N
-      ↓
-qualification bare-metal
-  xe / ReBAR / PCIe / SMART / data / display / VA-API / OpenCL / GNOME / KVM
-      ↓
-5 cycles veille/réveil physiques + cold-start Nautilus
-      ↓
-Gate 3 certification
-      ↓
-golden-release.json + inventaires + preuves Gate 1/2
-```
-
-Une modification du commit ou du plan de modules invalide les preuves Gate 1/2. Une modification de la configuration locale après le dry-run, un changement matériel/BIOS significatif ou une évolution de la pile runtime invalide les preuves bare-metal correspondantes.
-
-## Invariants du HOST
-
-- Fedora Linux **44** Workstation ;
-- GNOME **50**, Wayland ;
-- SELinux **Enforcing** ;
-- firewalld actif ;
-- **Secure Boot désactivé** par politique ;
-- **aucun LUKS / dm-crypt sur les disques locaux du HOST** ;
-- Restic reste chiffré pour les sauvegardes externes ;
-- aucun `force_probe`, aucun Mesa Git, aucun dépôt GPU tiers ;
-- Intel Arc B580 conservée par le HOST, sans passthrough GPU ;
-- firmware inventorié, **aucun flash automatique** ;
-- Kernel Vanilla stable suit une politique rolling **N / N-1** ;
-- dernier stable installé directement, maximum **2 versions kernel-core** ;
-- N est le défaut GRUB, N-1 reste disponible pour rollback ;
-- le fallback Fedora permanent n'est plus requis ;
-- second T705 EXT4 persistant sur `/data`, jamais formaté automatiquement, avec `Documents`, `Projets`, `ISO`, `Jeux` et `/data/libvirt` séparés ;
-- KVM/libvirt reste fail-closed vis-à-vis des réseaux HOST protégés.
-
-## Matériel ciblé
-
-| Élément | Contrat |
+| Socle | Contrat Golden |
 |---|---|
-| Carte mère | MSI MAG B850M Mortar WiFi |
+| **Système** | Fedora Linux 44 Workstation, GNOME 50, Wayland, SELinux Enforcing, firewalld |
+| **Kernel** | Kernel Vanilla latest-stable, politique rolling **N / N-1**, maximum 2 `kernel-core` |
+| **Hardware** | Ryzen 7 7700, Arc B580 sur `xe`, 48 Gio DDR5, 2× Crucial T705, écran 1440p/~240 Hz |
+| **Desktop** | Nautilus, Ptyxis, Portals, Dash to Dock, AppIndicator, DING, Show Desktop Plus, Resource Monitor |
+| **Applications** | VS Code, Brave, GTK4/libadwaita, applications professionnelles et Flatpak contrôlés |
+| **Gaming** | Steam RPM, Proton géré par Steam, Vulkan multilib, GameMode, MangoHud, GOverlay, Gamescope |
+| **Virtualisation** | QEMU/KVM/libvirt, Ubuntu DevOps 26.04, Windows 11, réseau KVM fail-closed |
+| **Stockage** | T705 système Btrfs + T705 `/data` EXT4 persistant |
+| **Backup** | Restic chiffré, backup pré-APPLY, restore canary, restauration staging-first |
+| **Maintenance** | DNF5 offline, mises à jour kernel, Flatpak, firmware en consultation, diagnostics post-update |
+| **Traçabilité** | logs, reports, fingerprints, preuves Gate 1/2/3, Golden release manifest |
+
+Le projet traite la workstation comme une infrastructure versionnée :
+
+```text
+valider → mesurer → sauvegarder → converger → qualifier → certifier → maintenir
+```
+
+---
+
+## Architecture globale
+
+```mermaid
+flowchart TB
+    A[Fedora 44 + GNOME 50] --> B[Kernel Vanilla N / N-1]
+    B --> C[Drivers + firmware + hardware]
+    C --> D[Desktop + applications + gaming]
+    D --> E[KVM / Ubuntu / Windows]
+    D --> F[Stockage persistant /data]
+    E --> F
+    F --> G[Restic + restauration]
+    G --> H[Mises à jour + diagnostics]
+    H --> I[Gate 3 + Golden release]
+```
+
+L'objectif n'est pas d'empiler des tweaks. Le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
+
+---
+
+## Matériel cible
+
+| Élément | Cible |
+|---|---|
+| Carte mère | MSI MAG B850M MORTAR WIFI |
 | CPU | AMD Ryzen 7 7700 |
-| RAM | 48 Gio, validation 5600 puis 6000 MT/s |
+| RAM | 48 Gio DDR5, validation 5600 puis 6000 MT/s |
 | GPU | Intel Arc B580 `8086:e20b`, pilote `xe` |
-| GPU PCIe | ReBAR actif, x8, capacité ≥ PCIe 4.0 |
+| GPU PCIe | ReBAR actif, lien x8, capacité ≥ PCIe 4.0 |
 | SSD système | Crucial T705, Btrfs non chiffré |
-| SSD données + KVM | Crucial T705, EXT4 monté sur `/data` ; Documents/Projets/ISO/Jeux persistants + sous-arbre `/data/libvirt` |
+| SSD données | Crucial T705, EXT4 monté sur `/data` |
 | NVMe PCIe | x4, capacité PCIe 5.0 |
 | Écran | ASUS ROG Strix OLED XG27AQDMES, 2560×1440/~240 Hz |
 
-Le profil d'affichage est lié à l'**EDID réellement certifié sur un connecteur appartenant à la B580**. L'iGPU Ryzen peut donc rester disponible comme solution de récupération sans rendre le repair ambigu.
+Le profil d'affichage est lié à l'EDID réellement certifié sur un connecteur appartenant à la B580. L'iGPU Ryzen peut rester disponible comme solution de récupération.
 
-## Kernel
+---
 
-Le Kernel Vanilla stable est désormais géré en mode **rolling N / N-1**.
+## Stockage persistant
+
+Le premier T705 contient le système. Le second T705 protège les données de travail d'une réinstallation du disque système.
+
+```text
+Crucial T705 #1
+└── Fedora 44 / Btrfs
+    └── système, applications, HOME système
+
+Crucial T705 #2
+└── /data / EXT4
+    ├── Documents/      → XDG Documents
+    ├── Projets/        → travail / Git / DevOps
+    ├── ISO/            → bibliothèque ISO
+    ├── Jeux/           → bibliothèque Steam / jeux
+    └── libvirt/        → images et données KVM
+```
+
+Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstallation doit remonter `/data` et réutiliser son contenu existant.
+
+`Documents` et `Projets` sont également protégés par Restic. `ISO` et `Jeux` restent hors backup automatique par défaut pour éviter de dupliquer de gros payloads reproductibles.
+
+---
+
+## Kernel et boot
+
+Le Kernel Vanilla stable suit une politique simple :
 
 ```text
 N   = dernier stable installé, défaut GRUB
@@ -170,69 +183,283 @@ Commandes ciblées :
 ./control.sh kernel install-latest
 ./control.sh kernel prune
 ./control.sh kernel rollback
+./control.sh kernel rollback-fedora   # récupération d'urgence uniquement
 ```
 
-Le chemin normal reste la mise à jour complète. Il n'existe plus de passage obligatoire `candidate → boot-candidate → certify` avant d'utiliser le nouveau noyau. La certification Golden reste une validation globale **après** la mise à jour.
+Le retour vers les paquets kernel Fedora reste une procédure de récupération explicite ; il n'existe plus de troisième fallback Fedora permanent dans le profil normal.
+
+---
+
+## Gaming
+
+Gaming fait partie du **profil Golden canonique**.
+
+Le socle installe :
+
+- Steam depuis le dépôt RPM Fusion Steam dédié ;
+- Mesa/Vulkan x86_64 et i686 ;
+- GameMode ;
+- MangoHud ;
+- GOverlay ;
+- Gamescope ;
+- `steam-devices` / Steam Input ;
+- bibliothèque persistante `/data/Jeux`.
+
+Le projet conserve la pile Fedora : pas de kernel gaming tiers, pas de Mesa git/COPR, pas de `force_probe`, pas de Proton-GE imposé globalement.
+
+```bash
+./control.sh doctor gaming
+```
+
+La preuve physique finale reste bare-metal : vrai rendu Vulkan Arc B580, Wayland, VRR/240 Hz et lancement Steam/Proton.
+
+Voir [`docs/GAMING.md`](docs/GAMING.md).
+
+---
+
+## Virtualisation
+
+KVM/libvirt est isolé du profil Gaming et utilise le second T705.
+
+```text
+qemu:///system
+└── pool devops-data → /data/libvirt/images
+
+réseau devops-nat
+└── virbr50 / 192.168.50.0/24
+    ├── Internet autorisé
+    ├── forwarding entrant refusé
+    └── accès aux réseaux HOST protégés fail-closed
+```
+
+Profils prévus :
+
+- **Ubuntu DevOps 26.04** — Q35, host-passthrough, VirtIO, cloud image authentifiée ;
+- **Windows 11** — Q35, TPM 2.0, UEFI Secure Boot, VirtIO, QEMU Guest Agent.
+
+```bash
+./control.sh kvm status
+./control.sh kvm create-ubuntu
+./control.sh kvm create-windows
+```
+
+Voir [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) et [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md).
+
+---
 
 ## Mises à jour
 
-Les RPM Fedora et le dernier Kernel Vanilla stable sont préparés via **DNF5 offline** après backup :
+La maintenance complète suit une chaîne protégée :
+
+```mermaid
+flowchart LR
+    A[Backup Restic] --> B[Résolution updates + latest-stable]
+    B --> C[DNF5 offline]
+    C --> D[Reboot]
+    D --> E[Kernel N / N-1]
+    E --> F[Flatpak si mode all]
+    F --> G[Firmware check]
+    G --> H[Diagnostics]
+```
+
+Commandes :
 
 ```bash
 ./control.sh update all
+./control.sh update status
 ./control.sh update reboot
-# après le reboot
+# après le redémarrage
 ./control.sh update finalize
 ```
 
-`update all` résout le dernier stable, applique `installonly_limit=2`, prépare la transaction offline, puis `finalize` vérifie que N est démarré et défaut GRUB avant de supprimer les noyaux plus anciens que N-1.
+`finalize` vérifie le nouveau kernel, GRUB, `dnf5 check`, puis applique la rétention N/N-1. Aucun firmware n'est flashé automatiquement.
 
-Flatpak reste une mise à jour explicite dans le mode complet et le firmware reste en consultation uniquement.
+---
 
-## Reproductibilité et preuves
+## Sauvegarde et restauration
 
-Le projet verrouille :
+Restic fournit la deuxième couche de résilience :
 
-- le commit Git appliqué ;
-- le hash de configuration effective ;
-- le hash du plan de modules ;
-- les preuves portables Gate 1 et Gate 2 et leur chaîne SHA-256 ;
-- le fingerprint hardware ;
-- le média Fedora 44 approuvé dans `installer/fedora44-media.lock` ;
-- les NEVRA RPM ;
-- les commits Flatpak ;
-- les hashes des extensions GNOME ;
-- BIOS, microcode, firmware, kernel et état N/N-1.
+```text
+T705 système perdu
+    → réinstallation Fedora
+    → /data conservé
 
-Après certification, `scripts/release/capture-golden-release.sh` produit `golden-release.json`, embarque `gate1-proof.json` et `gate2-proof.json`, et inscrit leurs SHA-256 dans le manifeste.
+T705 données perdu
+    → Restic externe chiffré
+    → restauration staging-first
+```
+
+Commandes utiles :
+
+```bash
+./control.sh backup now
+./control.sh backup now-with-vms
+./control.sh backup check
+./control.sh backup deep
+./control.sh backup restore latest
+./control.sh backup dr-plan
+```
+
+Les images QCOW2 doivent être froides/arrêtées avant une sauvegarde VM cohérente. Une restauration ne remplace jamais silencieusement le système actif.
+
+Voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
+
+---
+
+## Sécurité et garde-fous
+
+Le profil Golden assume explicitement certains compromis :
+
+- SELinux **Enforcing** ;
+- firewalld actif ;
+- Secure Boot **désactivé** par politique ;
+- aucun LUKS/dm-crypt sur les disques locaux du HOST ;
+- Restic reste chiffré pour les sauvegardes externes ;
+- aucun formatage automatique du second T705 ;
+- aucun flash firmware automatique ;
+- aucun GPU passthrough de la B580 ;
+- aucun `force_probe`, Mesa git ou dépôt GPU tiers ;
+- réseau KVM fail-closed ;
+- APPLY réel uniquement sur bare-metal, avec Git propre, baseline, dry-run et backup valides.
+
+Lire [`SECURITY.md`](SECURITY.md) et [`docs/HOST_SECURITY_POLICY.md`](docs/HOST_SECURITY_POLICY.md) avant de modifier ces invariants.
+
+---
 
 ## Documentation
 
-- [`docs/README.md`](docs/README.md) — portail documentaire ;
-- [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) — procédure WSL2 → VirtualBox → bare-metal ;
-- [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal ;
-- [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) — architecture ;
-- [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) — qualification hardware ;
-- [`docs/MULTIMEDIA_CODECS.md`](docs/MULTIMEDIA_CODECS.md) — média B580 ;
-- [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) — KVM/libvirt ;
-- [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) — Restic / recovery ;
-- [`docs/GOLDEN_RELEASE.md`](docs/GOLDEN_RELEASE.md) — manifeste de reproductibilité ;
-- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — runbook principal par symptôme ;
-- [`docs/RUNBOOK_GOLDEN_HARDWARE.md`](docs/RUNBOOK_GOLDEN_HARDWARE.md) — ReBAR/PCIe/NVMe/EDID/kernel/offline update ;
+### Installer
+
+- [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal complète ;
+- [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) — baseline CPU/RAM/NVMe/hardware ;
+- [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) — interface opérateur et CLI.
+
+### Comprendre
+
+- [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) — architecture Golden ;
+- [`docs/SOFTWARE_INVENTORY.md`](docs/SOFTWARE_INVENTORY.md) — inventaire logiciel ;
+- [`docs/GAMING.md`](docs/GAMING.md) — profil Gaming ;
 - [`docs/adr/README.md`](docs/adr/README.md) — décisions d'architecture.
 
-La source de vérité est :
+### Exploiter
+
+- [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) — KVM/libvirt ;
+- [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) — Restic et recovery ;
+- [`docs/RUNBOOK_GOLDEN_HARDWARE.md`](docs/RUNBOOK_GOLDEN_HARDWARE.md) — hardware/kernel/offline update ;
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — dépannage par symptôme.
+
+### Certifier et reproduire
+
+- [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) — Gate 1 → Gate 2 → installation → Gate 3 ;
+- [`docs/GOLDEN_COMPLETENESS_CLOSURE.md`](docs/GOLDEN_COMPLETENESS_CLOSURE.md) — preuves physiques finales ;
+- [`docs/GOLDEN_RELEASE.md`](docs/GOLDEN_RELEASE.md) — manifeste et reproductibilité ;
+- [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) — couverture CI.
+
+Le portail complet se trouve dans [`docs/README.md`](docs/README.md).
+
+La source de vérité reste :
 
 ```text
-code + config + tests CI
-        ↓
+code + configuration + tests CI
+            ↓
 document normatif courant
-        ↓
+            ↓
 document historique / release note
 ```
 
-## Sécurité et portée
+---
 
-Le profil est volontairement **sans Secure Boot et sans chiffrement local du HOST**. Il ne protège donc pas le contenu des SSD contre un accès physique offline. En revanche, il conserve SELinux, firewalld, provenance logicielle, contrôle des mutations, KVM fail-closed et sauvegardes Restic chiffrées.
+## Contribuer
 
-Lire [`SECURITY.md`](SECURITY.md) et [`docs/HOST_SECURITY_POLICY.md`](docs/HOST_SECURITY_POLICY.md) avant de modifier ces invariants.
+Les changements doivent préserver les garde-fous Golden et passer la CI avant fusion.
+
+Lire [`CONTRIBUTING.md`](CONTRIBUTING.md) avant d'ouvrir une PR. Les bugs, problèmes de validation hardware et écarts documentaires disposent de templates dédiés dans GitHub Issues.
+
+---
+
+# Validation complète — à lire avant l'installation de production
+
+La validation est volontairement placée en fin de README : elle **prouve** le projet, mais elle n'est pas son interface quotidienne.
+
+> Gate 1 et Gate 2 sont des prévalidations avant installation de production. **Gate 3 est la certification de la vraie machine après installation/APPLY** ; il ne peut donc pas être déclaré PASS à l'avance.
+
+```mermaid
+flowchart LR
+    G1[Gate 1 · Fedora 44 / WSL2] --> G2[Gate 2 · Fedora 44 GNOME / VirtualBox]
+    G2 --> I[Installation Fedora 44 bare-metal]
+    I --> A[Baseline + dry-run + backup + APPLY]
+    A --> G3[Gate 3 · preuves physiques]
+    G3 --> GR[Golden release PASS]
+```
+
+## Gate 1 — système / WSL2
+
+```bash
+./control.sh validate gate1 run
+./control.sh validate gate1 status
+./control.sh validate export 1 /chemin/export
+```
+
+La preuve est portable et porte `hardware_certification=DEFERRED`.
+
+## Gate 2 — GNOME / VirtualBox
+
+Importer la preuve Gate 1 puis exécuter :
+
+```bash
+./control.sh validate import /chemin/gate1-<commit>.json
+./control.sh validate gate2 plan
+./control.sh validate gate2 apply
+./control.sh validate gate2 check
+./control.sh validate gate2 sign
+./control.sh validate export 2 /chemin/export
+```
+
+Gate 2 valide GNOME 50/Wayland, Nautilus, Ptyxis, extensions et contrôle visuel, sans déverrouiller l'APPLY bare-metal.
+
+## Installation bare-metal
+
+La procédure détaillée est dans [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md). Le chemin normal est :
+
+```text
+média Fedora 44 vérifié
+      ↓
+second T705 /data préparé
+      ↓
+baseline hardware
+      ↓
+./control.sh install dry-run
+      ↓
+./control.sh install backup
+      ↓
+./control.sh install apply
+      ↓
+reboot sur Kernel Vanilla N
+```
+
+## Gate 3 — certification physique
+
+Importer les preuves Gate 1 puis Gate 2 sur le HOST :
+
+```bash
+./control.sh validate import /chemin/gate1-<commit>.json
+./control.sh validate import /chemin/gate2-<commit>.json
+./control.sh validate gate3 status
+```
+
+Produire ensuite les preuves physiques prévues par le runbook : GPU/Vulkan, LAN, Wi-Fi, audio, affichage VRR/HDR, KVM/Windows et cinq cycles veille/réveil. Les commandes détaillées sont documentées dans [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) et [`docs/GOLDEN_COMPLETENESS_CLOSURE.md`](docs/GOLDEN_COMPLETENESS_CLOSURE.md).
+
+Après chaque vrai cycle suspend/resume :
+
+```bash
+./control.sh validate gate3 record-suspend
+```
+
+Certification finale :
+
+```bash
+./control.sh validate gate3 certify
+```
+
+Un PASS produit le marker Golden et [`golden-release.json`](docs/GOLDEN_RELEASE.md). Tant que cette commande n'a pas réussi sur le matériel cible, le dépôt est **code-ready**, mais la workstation physique n'est pas encore **Golden runtime-certified**.

@@ -51,7 +51,7 @@ jobs:
           grep -Eq "Projet[[:space:]]+${version//./\\.}" <<<"$status"
           grep -Eq 'Fedora[[:space:]]+44' <<<"$status"
           grep -Eq 'Runtime[[:space:]]+CI' <<<"$status"
-          grep -Fq 'vanilla/stable latest-stable' <<<"$status"
+          grep -Fq 'Politique N / N-1 · max 2' <<<"$status"
           ./control.sh --help >/dev/null
           ./scripts/maintenance/update-system.sh --help >/dev/null
           set +e

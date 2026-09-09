@@ -1,0 +1,85 @@
+name: Bug report
+description: Signaler une régression ou un comportement incorrect du projet
+title: "[BUG] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de fournir des faits reproductibles. Pour un problème de sécurité, utilisez SECURITY.md et ne publiez aucun secret ici.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit / version
+      description: SHA Git exact et version du fichier VERSION.
+      placeholder: d9f6a1ca… / 0.14.0
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environnement
+      options:
+        - Fedora 44 bare-metal
+        - Fedora 44 / VirtualBox Gate 2
+        - Fedora 44 / WSL2 Gate 1
+        - CI GitHub Actions
+        - Autre
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Socle concerné
+      options:
+        - Installation / Control Center
+        - Kernel / boot
+        - Hardware / drivers / firmware
+        - GNOME / Nautilus / Ptyxis
+        - Applications / multimédia
+        - Gaming
+        - Stockage / data
+        - KVM / VM
+        - Backup / restauration
+        - Mise à jour / maintenance
+        - Certification / logs / preuves
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportement observé
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Étapes de reproduction
+      description: Commandes exactes, dans l'ordre.
+      placeholder: |
+        1. ./control.sh ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs / preuves utiles
+      description: Collez uniquement les extraits nécessaires et supprimez toute donnée sensible.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Vérifications
+      options:
+        - label: J'ai vérifié que le dépôt Git était propre ou j'indique les modifications locales ci-dessus.
+          required: true
+        - label: Je n'ai inclus aucun secret, token, mot de passe ou clé privée.
+          required: true
