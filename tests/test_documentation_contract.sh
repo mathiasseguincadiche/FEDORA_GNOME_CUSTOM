@@ -3,12 +3,14 @@ set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+fail() { echo "documentation contract: FAIL: $*" >&2; exit 1; }
 require_file() {
   [[ -f "$ROOT/$1" ]] || { echo "missing required documentation file: $1" >&2; exit 1; }
 }
 
 for file in \
   docs/README.md \
+  docs/LEARNING_PATH.md \
   docs/CONTROL_CENTER.md \
   docs/GLOSSARY.md \
   docs/KVM_QUICKSTART.md \
@@ -25,6 +27,59 @@ for file in \
   docs/GTK4_APPLICATIONS.md \
   docs/SUPPLY_CHAIN.md; do
   require_file "$file"
+done
+
+# Pedagogical contract: the portal must orient by goal and the learning path
+# must distinguish discovery, operation, construction/certification and maintenance.
+for token in \
+  'Je veux…' \
+  'LEARNING_PATH.md' \
+  'Trois profondeurs de lecture' \
+  'Pourquoi' \
+  'préconditions' \
+  'résultat observable' \
+  "faut-il s'arrêter"; do
+  grep -Fq "$token" "$ROOT/docs/README.md" || fail "docs portal missing pedagogical token: $token"
+done
+
+for token in \
+  'Niveau 1 — Découvrir' \
+  'Niveau 2 — Opérer' \
+  'Niveau 3 — Construire et certifier' \
+  'Niveau 4 — Maintenir et contribuer' \
+  'Réflexe opérateur' \
+  'Ne pas continuer si' \
+  'CODE-READY' \
+  'Golden runtime-certified' \
+  'Pourquoi' \
+  'Quelles préconditions' \
+  'Quel résultat' \
+  "faut-il s'arrêter"; do
+  grep -Fq "$token" "$ROOT/docs/LEARNING_PATH.md" || fail "learning path missing pedagogical token: $token"
+done
+
+for token in \
+  'Contrat pédagogique' \
+  'Objectif' \
+  'Public' \
+  'Préconditions' \
+  'Résultat attendu' \
+  "Critère d'arrêt" \
+  'Étape suivante' \
+  'symptôme → observation → diagnostic → correction sûre → revalidation'; do
+  grep -Fq "$token" "$ROOT/docs/DOCUMENTATION_MODEL.md" || fail "documentation model missing pedagogy rule: $token"
+done
+
+for token in \
+  'Avant de commencer' \
+  'Préconditions' \
+  'Les cinq phases' \
+  "Règle d'arrêt" \
+  'Checkpoint :' \
+  'Résultat attendu :' \
+  'LEARNING_PATH.md' \
+  'Golden runtime-certified'; do
+  grep -Fq "$token" "$ROOT/docs/INSTALLATION_GUIDE.md" || fail "installation guide missing operator guidance: $token"
 done
 
 # Control Center is the operator facade but must document the protected engines.
