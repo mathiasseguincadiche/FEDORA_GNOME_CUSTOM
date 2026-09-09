@@ -2,14 +2,18 @@
 
 # Fedora 44 Golden Workstation
 
-**GNOME 50 · Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
+**Production-oriented · Reproductible · Récupérable · CI-gated**
+
+**Fedora 44 · GNOME 50 · Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
 
 [![Tests](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml)
 [![Shell quality](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml)
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.14.0** — une Fedora 44 Workstation versionnée, reproductible, mesurée et récupérable, construite pour une workstation précise plutôt que pour un PC générique.
+**Golden Workstation 0.14.0**
+
+Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
 **État logiciel : CODE-READY** · **Certification matérielle : Gate 3 bare-metal à exécuter**
 
@@ -17,9 +21,36 @@
 
 ---
 
+<p align="center">
+  <a href="#démarrage-rapide">Démarrage</a> ·
+  <a href="#architecture-globale">Architecture</a> ·
+  <a href="#les-6-piliers-golden">6 piliers</a> ·
+  <a href="#matériel-cible">Matériel</a> ·
+  <a href="#gaming">Gaming</a> ·
+  <a href="#virtualisation">KVM</a> ·
+  <a href="#sauvegarde-et-restauration">Backup</a> ·
+  <a href="#mises-à-jour">Updates</a> ·
+  <a href="#validation-complète--à-lire-avant-linstallation-de-production">Validation</a> ·
+  <a href="#documentation">Docs</a>
+</p>
+
+## État du projet
+
+| Contrôle | État |
+|---|---|
+| **Code / contrats** | `CODE-READY` |
+| **CI de `main`** | 6 checks obligatoires avant fusion : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration`, `nautilus-ptyxis` |
+| **Matériel cible** | MSI MAG B850M MORTAR WIFI · Ryzen 7 7700 · Arc B580 · 48 Gio · 2× Crucial T705 |
+| **Certification physique** | **PENDING** — Gate 3 bare-metal |
+| **Golden runtime-certified** | Non, tant que `gate3 certify` n'a pas réussi sur la machine cible |
+
+Les badges ci-dessus donnent l'état live des principaux workflows. La CI prouve les contrats logiciels ; **elle ne remplace jamais la preuve physique Gate 3**.
+
+---
+
 ## Démarrage rapide
 
-Le point d'entrée recommandé est le **Workstation Control Center**.
+Le point d'entrée public est le **Workstation Control Center**.
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
@@ -27,7 +58,21 @@ cd FEDORA_GNOME_CUSTOM
 ./control.sh
 ```
 
-Le menu interactif permet d'installer, mettre à jour, sauvegarder, diagnostiquer, administrer KVM et suivre la certification sans mémoriser les scripts internes.
+Routes opérateur essentielles :
+
+```bash
+./control.sh status
+./control.sh install dry-run
+./control.sh update check
+./control.sh backup now
+./control.sh doctor all
+./control.sh doctor gaming
+./control.sh kernel status
+./control.sh cert status
+```
+
+<details>
+<summary><strong>Aperçu du Control Center</strong></summary>
 
 ```text
 ══════════════════════════════════════════════════════════════════════════════════════
@@ -51,45 +96,11 @@ Le menu interactif permet d'installer, mettre à jour, sauvegarder, diagnostique
   [9] Logs & preuves
 ```
 
-Quelques commandes utiles :
-
-```bash
-./control.sh status
-./control.sh install dry-run
-./control.sh update check
-./control.sh backup now
-./control.sh doctor all
-./control.sh kernel status
-./control.sh cert status
-```
+</details>
 
 `./menu.sh` reste un alias de compatibilité. Le détail de l'interface est dans [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md).
 
-> **Important :** ne lancer `install apply` qu'après préparation du matériel, de `/data`, de la baseline et du backup pré-APPLY. Les garde-fous du projet restent actifs même lorsque l'opération est lancée depuis le menu.
-
----
-
-## Ce que construit le projet
-
-| Socle | Contrat Golden |
-|---|---|
-| **Système** | Fedora Linux 44 Workstation, GNOME 50, Wayland, SELinux Enforcing, firewalld |
-| **Kernel** | Kernel Vanilla latest-stable, politique rolling **N / N-1**, maximum 2 `kernel-core` |
-| **Hardware** | Ryzen 7 7700, Arc B580 sur `xe`, 48 Gio DDR5, 2× Crucial T705, écran 1440p/~240 Hz |
-| **Desktop** | Nautilus, Ptyxis, Portals, Dash to Dock, AppIndicator, DING, Show Desktop Plus, Resource Monitor |
-| **Applications** | VS Code, Brave, GTK4/libadwaita, applications professionnelles et Flatpak contrôlés |
-| **Gaming** | Steam RPM, Proton géré par Steam, Vulkan multilib, GameMode, MangoHud, GOverlay, Gamescope |
-| **Virtualisation** | QEMU/KVM/libvirt, Ubuntu DevOps 26.04, Windows 11, réseau KVM fail-closed |
-| **Stockage** | T705 système Btrfs + T705 `/data` EXT4 persistant |
-| **Backup** | Restic chiffré, backup pré-APPLY, restore canary, restauration staging-first |
-| **Maintenance** | DNF5 offline, mises à jour kernel, Flatpak, firmware en consultation, diagnostics post-update |
-| **Traçabilité** | logs, reports, fingerprints, preuves Gate 1/2/3, Golden release manifest |
-
-Le projet traite la workstation comme une infrastructure versionnée :
-
-```text
-valider → mesurer → sauvegarder → converger → qualifier → certifier → maintenir
-```
+> **Important :** ne lancer `install apply` qu'après préparation du matériel, de `/data`, de la baseline et du backup pré-APPLY. Les garde-fous restent actifs même lorsque l'opération est lancée depuis le menu.
 
 ---
 
@@ -99,7 +110,26 @@ valider → mesurer → sauvegarder → converger → qualifier → certifier �
   <img src="docs/assets/architecture-global-direct.svg" alt="Architecture globale directe de Fedora 44 Golden Workstation : matériel cible, système Fedora, stockage, usages, sauvegarde, maintenance et certification" width="100%">
 </p>
 
-L'objectif n'est pas d'empiler des tweaks. Le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
+**En une phrase :** Fedora 44 constitue le HOST, `/data` porte la persistance, Gaming et KVM sont les workloads, Restic assure la résilience et les Gates prouvent l'état obtenu.
+
+L'objectif n'est pas d'empiler des tweaks : le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
+
+---
+
+## Les 6 piliers Golden
+
+| Pilier | Contrat |
+|---|---|
+| **HOST** | Fedora Linux 44 Workstation · GNOME 50 · Wayland · SELinux Enforcing · firewalld |
+| **Kernel & hardware** | Kernel Vanilla latest-stable · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
+| **Données & recovery** | T705 système Btrfs · T705 `/data` EXT4 · Restic chiffré · restauration staging-first |
+| **Workloads** | Desktop GNOME · applications pro · Steam/Proton · bibliothèque `/data/Jeux` · QEMU/KVM/libvirt |
+| **Opérations** | dry-run avant mutation · DNF5 offline · diagnostics · rollback kernel · firmware en consultation |
+| **Preuves & gouvernance** | CI obligatoire · logs/reports/fingerprints · Gate 1/2/3 · Golden release manifest |
+
+```text
+valider → mesurer → sauvegarder → converger → qualifier → certifier → maintenir
+```
 
 ---
 
@@ -123,7 +153,7 @@ Le profil d'affichage est lié à l'EDID réellement certifié sur un connecteur
 
 ## Stockage persistant
 
-Le premier T705 contient le système. Le second T705 protège les données de travail d'une réinstallation du disque système.
+Le premier T705 contient le système. Le second protège les données de travail d'une réinstallation du disque système.
 
 ```text
 Crucial T705 #1
@@ -141,31 +171,18 @@ Crucial T705 #2
 
 Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstallation doit remonter `/data` et réutiliser son contenu existant.
 
-`Documents` et `Projets` sont également protégés par Restic. `ISO` et `Jeux` restent hors backup automatique par défaut pour éviter de dupliquer de gros payloads reproductibles.
+`Documents` et `Projets` sont protégés par Restic. `ISO` et `Jeux` restent hors backup automatique par défaut pour éviter de dupliquer de gros payloads reproductibles.
 
 ---
 
 ## Kernel et boot
 
-Le Kernel Vanilla stable suit une politique simple :
+Politique Golden :
 
 ```text
 N   = dernier stable installé, défaut GRUB
 N-1 = noyau immédiatement précédent, rollback
 max = 2 versions kernel-core
-```
-
-Exemple :
-
-```text
-7.2.2
-  ↓ update
-7.2.3 = N
-7.2.2 = N-1
-  ↓ update
-7.2.4 = N
-7.2.3 = N-1
-7.2.2 supprimé
 ```
 
 Commandes ciblées :
@@ -177,7 +194,7 @@ Commandes ciblées :
 ./control.sh kernel rollback-fedora   # récupération d'urgence uniquement
 ```
 
-Le retour vers les paquets kernel Fedora reste une procédure de récupération explicite ; il n'existe plus de troisième fallback Fedora permanent dans le profil normal.
+Le retour vers les paquets kernel Fedora reste une procédure de récupération explicite ; il n'existe pas de troisième fallback Fedora permanent dans le profil normal.
 
 ---
 
@@ -185,16 +202,7 @@ Le retour vers les paquets kernel Fedora reste une procédure de récupération 
 
 Gaming fait partie du **profil Golden canonique**.
 
-Le socle installe :
-
-- Steam depuis le dépôt RPM Fusion Steam dédié ;
-- Mesa/Vulkan x86_64 et i686 ;
-- GameMode ;
-- MangoHud ;
-- GOverlay ;
-- Gamescope ;
-- `steam-devices` / Steam Input ;
-- bibliothèque persistante `/data/Jeux`.
+Le socle couvre Steam RPM, Proton géré par Steam, Mesa/Vulkan x86_64+i686, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et la bibliothèque persistante `/data/Jeux`.
 
 Le projet conserve la pile Fedora : pas de kernel gaming tiers, pas de Mesa git/COPR, pas de `force_probe`, pas de Proton-GE imposé globalement.
 
@@ -202,9 +210,7 @@ Le projet conserve la pile Fedora : pas de kernel gaming tiers, pas de Mesa git/
 ./control.sh doctor gaming
 ```
 
-La preuve physique finale reste bare-metal : vrai rendu Vulkan Arc B580, Wayland, VRR/240 Hz et lancement Steam/Proton.
-
-Voir [`docs/GAMING.md`](docs/GAMING.md).
+La preuve finale reste bare-metal : rendu Vulkan Arc B580, Wayland, VRR/~240 Hz et lancement Steam/Proton. Voir [`docs/GAMING.md`](docs/GAMING.md).
 
 ---
 
@@ -240,13 +246,11 @@ Voir [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) et [`docs/VIRTUALIZATION
 
 ## Mises à jour
 
-La maintenance complète suit une chaîne protégée :
+La maintenance suit une chaîne protégée :
 
 <p align="center">
   <img src="docs/assets/update-cycle-direct.svg" alt="Cycle de mise à jour : backup Restic, préparation, DNF5 offline, redémarrage et finalisation, diagnostics" width="100%">
 </p>
-
-Commandes :
 
 ```bash
 ./control.sh update all
@@ -274,8 +278,6 @@ T705 données perdu
     → restauration staging-first
 ```
 
-Commandes utiles :
-
 ```bash
 ./control.sh backup now
 ./control.sh backup now-with-vms
@@ -293,7 +295,7 @@ Voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 
 ## Sécurité et garde-fous
 
-Le profil Golden assume explicitement certains compromis :
+Les invariants principaux sont explicites :
 
 - SELinux **Enforcing** ;
 - firewalld actif ;
@@ -313,32 +315,20 @@ Lire [`SECURITY.md`](SECURITY.md) et [`docs/HOST_SECURITY_POLICY.md`](docs/HOST_
 
 ## Documentation
 
-### Installer
+Le README reste la **synthèse opérateur** ; les détails normatifs et runbooks vivent dans `docs/`.
 
-- [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) — installation bare-metal complète ;
-- [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) — baseline CPU/RAM/NVMe/hardware ;
-- [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) — interface opérateur et CLI.
-
-### Comprendre
-
-- [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) — architecture Golden ;
-- [`docs/SOFTWARE_INVENTORY.md`](docs/SOFTWARE_INVENTORY.md) — inventaire logiciel ;
-- [`docs/GAMING.md`](docs/GAMING.md) — profil Gaming ;
-- [`docs/adr/README.md`](docs/adr/README.md) — décisions d'architecture.
-
-### Exploiter
-
-- [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) — KVM/libvirt ;
-- [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) — Restic et recovery ;
-- [`docs/RUNBOOK_GOLDEN_HARDWARE.md`](docs/RUNBOOK_GOLDEN_HARDWARE.md) — hardware/kernel/offline update ;
-- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — dépannage par symptôme.
-
-### Certifier et reproduire
-
-- [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) — Gate 1 → Gate 2 → installation → Gate 3 ;
-- [`docs/GOLDEN_COMPLETENESS_CLOSURE.md`](docs/GOLDEN_COMPLETENESS_CLOSURE.md) — preuves physiques finales ;
-- [`docs/GOLDEN_RELEASE.md`](docs/GOLDEN_RELEASE.md) — manifeste et reproductibilité ;
-- [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) — couverture CI.
+| Besoin | Référence |
+|---|---|
+| Installer | [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) · [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) |
+| Piloter | [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) |
+| Comprendre l'architecture | [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
+| Gaming | [`docs/GAMING.md`](docs/GAMING.md) |
+| KVM | [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) · [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) |
+| Backup / recovery | [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) |
+| Dépanner | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) |
+| Certifier | [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) · [`docs/GOLDEN_COMPLETENESS_CLOSURE.md`](docs/GOLDEN_COMPLETENESS_CLOSURE.md) |
+| Reproduire une release | [`docs/GOLDEN_RELEASE.md`](docs/GOLDEN_RELEASE.md) |
+| Comprendre la CI | [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) |
 
 Le portail complet se trouve dans [`docs/README.md`](docs/README.md).
 
