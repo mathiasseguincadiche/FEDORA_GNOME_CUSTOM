@@ -49,7 +49,7 @@ for pkg in libimobiledevice libimobiledevice-utils ifuse; do need_pkg "$pkg" 'Mo
 
 if runtime_is_baremetal; then
   if "$REPO_ROOT/diagnostics/data-storage-doctor" --quiet; then
-    emit OK 'Persistent data' '/data/Documents + /data/Projets + /data/ISO'
+    emit OK 'Persistent data' '/data/Documents + /data/Projets + /data/ISO + /data/Jeux'
   else
     emit KO 'Persistent data' 'second-T705 user-data contract failed'
   fi

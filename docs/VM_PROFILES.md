@@ -2,11 +2,9 @@
 
 La workstation maintient **exactement deux profils invités de référence**. Ils sont déclaratifs et ne sont jamais créés pendant `install.sh --apply`.
 
-La version applicable est celle de [`../VERSION`](../VERSION).
+La version applicable est celle de [`../VERSION`](../VERSION). Les valeurs exécutables viennent de [`../config/vm-profiles.conf`](../config/vm-profiles.conf) et [`../config/virtualization.conf`](../config/virtualization.conf). La connexion libvirt canonique est `qemu:///system`.
 
 ## Ubuntu Server 26.04 LTS — `ubuntu-devops`
-
-VM principale pour les laboratoires DevOps/Ops.
 
 ```text
 vCPU               6
@@ -25,9 +23,7 @@ mot de passe       runtime, console/sudo
 autostart          non
 ```
 
-### Avant création
-
-Préparer :
+### Entrées obligatoires
 
 ```text
 ubuntu-26.04-server-cloudimg-amd64.img
@@ -48,19 +44,7 @@ bash scripts/kvm/create_ubuntu_devops_vm.sh \
   --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
 ```
 
-Le script :
-
-- vérifie l'image Canonical ;
-- demande le mot de passe console/sudo ;
-- construit le seed cloud-init ;
-- embarque les scripts de bootstrap/validation exacts du checkout ;
-- crée le disque qcow2 ;
-- crée la VM avec VirtIO/QGA/RNG/balloon ;
-- n'active pas l'autostart.
-
-### Premier démarrage
-
-Le bootstrap invité installe notamment Git/forge CLI, Docker, Ansible, Terraform, AWS/Azure, kubectl/Helm/kind/Minikube, Node, Java/Maven, Python et outils d'exploitation.
+Le script vérifie l'image Canonical, demande le mot de passe console/sudo, construit le seed cloud-init, embarque les scripts de bootstrap/validation du checkout, crée le disque qcow2 puis la VM avec VirtIO/QGA/RNG/balloon, sans autostart.
 
 Vérification dans le guest :
 
@@ -68,11 +52,9 @@ Vérification dans le guest :
 sudo /usr/local/sbin/devops-verify.sh
 ```
 
-Accès depuis Fedora : SSH/SFTP. Aucun partage HOST VirtioFS.
+Accès depuis Fedora : SSH/SFTP. Aucun partage HOST VirtioFS automatique.
 
 ## Windows 11 — `windows-11`
-
-VM secondaire pour les besoins Windows et les tests multi-plateformes.
 
 ```text
 vCPU               4
@@ -88,41 +70,43 @@ graphique          SPICE + virtio video
 autostart          non
 ```
 
-### Avant création
+### Entrées obligatoires
 
-Préparer depuis leurs sources de confiance :
+Préparer depuis des sources de confiance :
 
 ```text
-Windows 11 ISO
-virtio-win.iso
+Windows 11 ISO officiel Microsoft
+virtio-win.iso Fedora/Red Hat
+SHA-256 Windows de confiance
+SHA-256 VirtIO de confiance
 ```
 
-Le projet ne télécharge aucun de ces médias silencieusement.
+Le projet ne télécharge aucun de ces médias silencieusement. **Les deux SHA-256 sont des entrées Golden obligatoires.**
 
 ### Création
 
 ```bash
 bash scripts/kvm/create_windows11_vm.sh \
   --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso
+  --virtio-iso /data/libvirt/iso/virtio-win.iso \
+  --windows-sha256 '<sha256-windows-de-confiance>' \
+  --virtio-sha256 '<sha256-virtio-de-confiance>'
 ```
 
-Le script crée aussi `windows-guest-tools.iso` avec les helpers du projet.
+Le script refuse l'opération si l'un des deux hashes manque ou ne correspond pas au média. Les vérifications ont lieu avant `qemu-img create`.
 
-Après installation Windows :
+Le script crée aussi `windows-guest-tools.iso` avec les helpers du projet. Après installation Windows :
 
-1. monter/ouvrir `FGC_TOOLS` ;
+1. ouvrir `FGC_TOOLS` ;
 2. lancer PowerShell en administrateur ;
 3. exécuter `Configure-GuestIntegration.ps1` ;
 4. exécuter `Configure-VMShare.ps1` seulement si l'accès SMB via Nautilus est souhaité.
 
-`virtio-win.iso` contient les pilotes Windows nécessaires au stockage/réseau VirtIO. `SPICE + virtio video` est un affichage de VM, pas un passthrough de la B580.
+`virtio-win.iso` fournit les pilotes Windows nécessaires au stockage/réseau VirtIO. `SPICE + virtio video` est un affichage virtuel et non un passthrough de la B580.
 
 ## Ressources HOST
 
 Le HOST de référence dispose de 8 cœurs / 16 threads et 48 Gio de RAM.
-
-Avec les deux VM démarrées :
 
 ```text
 Ubuntu             6 vCPU / 16 Gio
@@ -131,11 +115,9 @@ RAM VM totale               28 Gio
 HOST restant                ~20 Gio avant consommation dynamique
 ```
 
-Les vCPU sont sur-allouables par KVM ; cette configuration reste volontairement modérée et ne monopolise pas tous les threads du HOST.
+Les vCPU sont sur-allouables ; la configuration reste volontairement modérée.
 
 ## Réseau commun
-
-Les deux VM utilisent :
 
 ```text
 devops-nat
@@ -143,54 +125,50 @@ devops-nat
 virbr50
 ```
 
-Le HOST peut atteindre les VM, les VM peuvent communiquer entre elles et sortir vers Internet, tandis que le forwarding vers le LAN uplink est bloqué par le guard dédié.
+HOST↔VM, VM↔VM et VM→Internet sont autorisés. Le forwarding vers le LAN uplink est bloqué par le guard dédié.
 
 Voir [`KVM_NETWORK.md`](KVM_NETWORK.md).
 
 ## Cycle de vie recommandé
 
-### Démarrer
+Démarrer :
 
 ```bash
 virsh --connect qemu:///system start ubuntu-devops
 virsh --connect qemu:///system start windows-11
 ```
 
-### Arrêter proprement
+Arrêter proprement :
 
 ```bash
 virsh --connect qemu:///system shutdown ubuntu-devops
 virsh --connect qemu:///system shutdown windows-11
 ```
 
-### Valider
+Valider :
 
 ```bash
 bash scripts/kvm/runtime_certification.sh
 ```
 
-### Sauvegarder les disques
-
-Les VM doivent être arrêtées :
+Sauvegarder les disques, VM arrêtées :
 
 ```bash
 scripts/backup/backup-now.sh --include-vms
 ```
 
-### Recréer
-
-Une VM n'est pas un élément à bricoler dans `install.sh --apply`. Si un guest doit être reconstruit, conserver d'abord les données utiles et la sauvegarde, supprimer explicitement le domaine/disque concerné selon le runbook opérateur, puis relancer le script de création correspondant.
+Pour reconstruire un guest, conserver les données utiles et la sauvegarde, retirer explicitement le domaine/disque concerné selon [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md), puis relancer le script de création correspondant.
 
 ## Règles communes
 
-- pool : `devops-data` sur `/data/libvirt/images` ;
-- réseau : `devops-nat` ;
+- pool `devops-data` sur `/data/libvirt/images` ;
+- réseau `devops-nat` ;
 - aucun autostart invité ;
 - création opérateur explicite ;
 - aucune VM Fedora de référence ;
 - aucun VFIO/passthrough de l'Intel Arc B580 ;
 - aucun média OS téléchargé automatiquement ;
 - aucun mot de passe en clair dans Git ;
-- aucun partage HOST VirtioFS ;
+- aucun partage HOST VirtioFS automatique ;
 - accès Ubuntu via SSH/SFTP ;
 - accès fichiers Windows via partage SMB limité lorsque l'opérateur l'active.

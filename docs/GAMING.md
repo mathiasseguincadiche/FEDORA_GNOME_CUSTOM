@@ -1,143 +1,149 @@
-# Gaming profile — Fedora 44 / GNOME 50 / Intel Arc B580
+# Gaming — Fedora 44 / GNOME 50 / Intel Arc B580
 
-## Scope
+## Périmètre
 
-The Gaming profile is part of the canonical Golden workstation. It adds the Linux gaming runtime without changing the DevOps/KVM isolation boundary, without replacing Fedora's kernel/Mesa stack, and without applying global performance tweaks.
+Le profil Gaming fait partie de la **Golden Workstation canonique**. Il ajoute le runtime de jeu Linux sans modifier la frontière DevOps/KVM, sans remplacer le kernel/Mesa Fedora et sans appliquer de tuning global agressif.
 
-The canonical project setting is:
+La configuration canonique est :
 
 ```bash
 GAMING_ENABLE="true"
 ```
 
-in `config/gaming.conf`. A local override may still be used for troubleshooting or a deliberately reduced non-target build, but the normal Golden installation for this workstation keeps Gaming enabled and the final certification therefore runs the Gaming doctor.
+Une surcharge locale peut servir au dépannage ou à un build volontairement réduit, mais une machine avec Gaming désactivé n'est pas la Golden cible et ne peut pas obtenir la certification finale attendue.
 
-## Persistent games storage
+Pour le dépannage, voir [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md).
 
-The second T705 provides the canonical persistent games root:
+## Stockage persistant des jeux
+
+Le second T705 fournit la racine canonique :
 
 ```text
 /data/Jeux
 ```
 
-This directory exists independently from `GAMING_ENABLE`, survives normal reinstallations of the Fedora Btrfs system disk, uses workstation-user ownership and the same SELinux user-data policy as the other persistent data roots, and is validated by `diagnostics/data-storage-doctor`.
+Cette racine existe indépendamment de Steam, survit à une réinstallation normale du SSD système Btrfs et suit le même contrat utilisateur/SELinux que `/data/Documents`, `/data/Projets` et `/data/ISO`.
 
-When the Gaming profile is enabled, `gaming-doctor` also requires `/data/Jeux` to be present and writable. Steam is installed as a native RPM, so no Flatpak filesystem permission is required for this path.
+`diagnostics/data-storage-doctor` vérifie le layout. Lorsque Gaming est actif, `diagnostics/gaming-doctor` exige en plus que `/data/Jeux` soit disponible et inscriptible.
 
-The project deliberately does **not** generate or rewrite Steam's internal `libraryfolders.vdf`. Register `/data/Jeux` as a Steam library from Steam's normal Storage settings after first launch. This keeps the Golden storage contract independent from Steam's private file format and also leaves the same directory usable by other launchers later.
+Steam est installé en RPM natif : aucune permission filesystem Flatpak n'est nécessaire pour `/data/Jeux`.
 
-`/data/Jeux` is excluded from automatic Restic daily/full backups by default because installed games are generally very large and retéléchargeable. Saves or other irreplaceable game data remain protected when they live in the normal user/XDG paths covered by Restic; any non-reproducible payload stored directly under `/data/Jeux` needs an explicit operator backup policy.
+Le projet ne génère et ne réécrit pas `libraryfolders.vdf`. Après le premier lancement, enregistrer `/data/Jeux` depuis **Steam → Settings → Storage**. Le contrat Golden reste ainsi indépendant du format privé de Steam et le même répertoire peut être utilisé ultérieurement par d'autres launchers.
 
-## Golden stack
+`/data/Jeux` est exclu des backups Restic daily/full automatiques par défaut, car les jeux installés sont volumineux et généralement retéléchargeables. Toute donnée non reproductible stockée directement sous `/data/Jeux` nécessite une politique de backup explicite.
+
+## Stack Golden
 
 ### Steam
 
-Steam is installed as the native RPM from RPM Fusion's dedicated `rpmfusion-nonfree-steam` repository. On Fedora Workstation, the repository definition itself is supplied by Fedora's official `fedora-workstation-repositories` package; the RPM Fusion release packages supply the RPM Fusion repository/signing integration. The project provisions both pieces explicitly, verifies `/etc/yum.repos.d/rpmfusion-nonfree-steam.repo`, and enables the Steam repository only for the Steam installation transaction with `--enablerepo=rpmfusion-nonfree-steam`.
+Steam est installé comme RPM natif depuis le dépôt dédié `rpmfusion-nonfree-steam`.
 
-This keeps Steam on its dedicated RPM Fusion channel without enabling a third-party GPU repository or globally enabling unrelated optional repositories.
-
-### Proton policy
-
-Compatibility order:
-
-1. Valve Proton managed by Steam;
-2. Proton Experimental when a title needs a newer Valve compatibility layer;
-3. Proton-GE only as an explicit per-title exception.
-
-The Golden profile never downloads Proton-GE automatically, never makes it the global compatibility tool, and does not install system Wine merely because Steam is enabled.
-
-### Vulkan and 32-bit compatibility
-
-Steam/Proton require both native x86_64 and i686 userspace graphics libraries. The profile therefore converges:
-
-- `mesa-vulkan-drivers.x86_64` and `.i686`;
-- `mesa-dri-drivers.x86_64` and `.i686`;
-- `vulkan-loader.x86_64` and `.i686`;
-- `vulkan-tools` for diagnostics.
-
-The GPU driver remains Fedora's kernel `xe` driver with Fedora Mesa/ANV. No `mesa-git`, COPR Mesa build, Intel GPU repository, `force_probe`, or custom gaming kernel belongs to the Golden contract.
-
-### Gaming helpers
-
-- GameMode — temporary per-game performance policy;
-- MangoHud — FPS/frametime/GPU/CPU telemetry;
-- GOverlay — graphical configuration for gaming overlays;
-- Gamescope — optional per-title micro-compositor;
-- `steam-devices` — udev permissions for supported controllers and Steam-related devices.
-
-None of these tools is injected globally into every game.
-
-## Launch policy
-
-Default launch option: none. Start with the game's normal Steam launch path and add helpers only when useful.
-
-Examples:
+Le projet provisionne explicitement les métadonnées requises, vérifie `/etc/yum.repos.d/rpmfusion-nonfree-steam.repo` et active ce dépôt uniquement pour la transaction d'installation Steam avec :
 
 ```text
-# GameMode only
+--enablerepo=rpmfusion-nonfree-steam
+```
+
+Aucun dépôt GPU tiers n'est ajouté.
+
+### Proton
+
+Ordre de compatibilité :
+
+1. Valve Proton géré par Steam ;
+2. Proton Experimental si un titre demande une couche Valve plus récente ;
+3. Proton-GE uniquement comme exception explicite par titre.
+
+Le profil Golden ne télécharge pas Proton-GE automatiquement, ne l'impose pas globalement et n'installe pas Wine système simplement parce que Steam est activé.
+
+### Vulkan et multilib 32 bits
+
+Steam/Proton nécessitent les bibliothèques graphiques x86_64 et i686. Le profil converge notamment :
+
+- `mesa-vulkan-drivers.x86_64` et `.i686` ;
+- `mesa-dri-drivers.x86_64` et `.i686` ;
+- `vulkan-loader.x86_64` et `.i686` ;
+- `vulkan-tools`.
+
+Le GPU reste sur le pilote kernel Fedora `xe` et Mesa/ANV Fedora. Aucun `mesa-git`, COPR Mesa, dépôt GPU Intel tiers, `force_probe` ou kernel gaming n'appartient au contrat Golden.
+
+### Helpers Gaming
+
+- GameMode — politique temporaire par jeu ;
+- MangoHud — FPS/frametime/GPU/CPU ;
+- GOverlay — configuration graphique des overlays ;
+- Gamescope — micro-compositeur optionnel par titre ;
+- `steam-devices` — règles udev pour périphériques/manettes supportés.
+
+Aucun de ces outils n'est injecté globalement dans tous les jeux.
+
+## Politique de lancement
+
+Option par défaut : **aucune**.
+
+Commencer avec le lancement Steam normal puis ajouter un helper seulement si utile :
+
+```text
 gamemoderun %command%
-
-# MangoHud only
 mangohud %command%
-
-# MangoHud + GameMode
 mangohud gamemoderun %command%
 ```
 
-Gamescope options are title/display specific and must not become a universal launch string.
+Les options Gamescope dépendent du titre et de l'affichage et ne doivent pas devenir une chaîne universelle.
 
-## CI versus bare-metal evidence
+## CI versus preuve bare-metal
 
-The Fedora 44 gaming pretest validates in a headless Fedora container:
+Le pretest Gaming Fedora 44 valide en conteneur headless :
 
-- Fedora/RPM Fusion package availability;
-- Fedora's `fedora-workstation-repositories` package and the dedicated `rpmfusion-nonfree-steam` repository definition;
-- Steam RPM installation and binary ownership without launching the Steam GUI;
-- Vulkan x86_64/i686 userspace payload;
-- GameMode, MangoHud, GOverlay, Gamescope and Steam Input packages/commands;
-- repository policy;
-- static project contracts.
+- disponibilité des paquets Fedora/RPM Fusion ;
+- définition du dépôt `rpmfusion-nonfree-steam` ;
+- installation/ownership du RPM Steam sans lancer la GUI ;
+- payload Vulkan x86_64/i686 ;
+- GameMode, MangoHud, GOverlay, Gamescope et Steam Input ;
+- politique de dépôts ;
+- contrats statiques du projet.
 
-CI does **not** claim GPU rendering, VRR, 240 Hz, or successful game launch.
+La CI **ne prouve pas** le rendu GPU, le VRR, le 240 Hz ou le lancement réel d'un jeu.
 
-On the physical workstation, `diagnostics/gaming-doctor` additionally checks the existing Arc/display/storage contracts:
+Sur la workstation physique, `diagnostics/gaming-doctor` vérifie en plus :
 
-- `/data/Jeux` on the compliant persistent second T705 and writable by the workstation user;
-- Intel Arc B580 bound to `xe`;
-- Intel Arc Vulkan renderer visible through `vulkaninfo`;
-- GNOME/Wayland;
-- 2560×1440 at the configured 240 Hz target;
-- VRR/adaptive-sync visibility when exposed by GNOME tooling;
-- Steam-managed Proton presence after Steam has initialized compatibility tools.
+- `/data/Jeux` sur le second T705 EXT4 conforme ;
+- Intel Arc B580 attachée à `xe` ;
+- renderer Vulkan Intel visible via `vulkaninfo` ;
+- GNOME/Wayland ;
+- 2560×1440 à la cible ~240 Hz ;
+- visibilité VRR/adaptive-sync lorsque l'outillage GNOME l'expose ;
+- présence de Proton géré par Steam après initialisation.
 
-A missing Proton payload on a fresh Steam installation is a warning, not a failure: Steam downloads compatibility tools on demand.
+Un Proton absent sur une installation Steam fraîche est un WARN, pas un KO : Steam télécharge les compatibility tools à la demande.
 
-## Certification workflow
+## Certification
 
-After the Gaming profile has been applied and the workstation rebooted, validate the dedicated stack on the physical machine:
+Après APPLY et reboot :
 
 ```bash
-./diagnostics/gaming-doctor
+./control.sh doctor data
+./control.sh doctor gaming
 ```
 
-Then run the normal Golden certification path. Because the canonical workstation has `GAMING_ENABLE=true`, `diagnostics/final-certification certify` invokes `gaming-doctor --quiet` as part of the normal certificate.
+Puis utiliser la chaîne Golden normale. `diagnostics/final-certification certify` exécute le Gaming doctor parce que `GAMING_ENABLE=true` fait partie du profil cible.
 
-The final Gaming proof therefore has two levels:
+La preuve Gaming possède donc deux niveaux :
 
-1. GitHub Actions proves repository provisioning, package resolution, native RPM ownership, multilib Vulkan payload and project contracts on Fedora 44;
-2. the physical workstation proves persistent games storage, Arc B580/`xe`, Vulkan renderer, GNOME/Wayland, 2560×1440/~240 Hz and the enabled Gaming payload.
+1. GitHub Actions prouve provisioning, résolution des paquets, RPM Steam, Vulkan multilib et contrats ;
+2. Gate 3 prouve stockage persistant, B580/`xe`, Vulkan, GNOME/Wayland, affichage et payload Gaming sur la vraie machine.
 
-A first real game launch remains an operator acceptance test rather than a CI assertion, because game binaries, Steam authentication, anti-cheat support and title-specific Proton compatibility are external runtime variables.
+Un premier lancement de jeu réel reste un test d'acceptation opérateur : authentification Steam, anti-cheat, DRM et compatibilité Proton d'un titre sont des variables externes.
 
-## What is deliberately excluded
+## Exclusions volontaires
 
-The Golden Gaming profile does not:
+La Golden Gaming ne :
 
-- replace Fedora's kernel with a gaming-tuned kernel;
-- add Mesa git/COPR or vendor GPU repositories;
-- apply persistent `sysctl`, scheduler or CPU-governor hacks globally;
-- force Gamescope or MangoHud for every title;
-- force Proton-GE globally;
-- install Heroic/Lutris/Wine in the initial Steam foundation.
+- remplace pas Fedora par un kernel gaming ;
+- ajoute pas Mesa git/COPR ni dépôt GPU tiers ;
+- applique pas de `sysctl`, scheduler ou governor hack global ;
+- force pas Gamescope ou MangoHud partout ;
+- force pas Proton-GE globalement ;
+- installe pas Heroic/Lutris/Wine dans le socle Steam initial.
 
-Heroic and Lutris can be evaluated later as optional launcher integrations after the Steam/Proton foundation is certified on bare metal.
+Heroic ou Lutris pourront être évalués plus tard comme intégrations optionnelles après certification de la base Steam/Proton sur bare-metal.

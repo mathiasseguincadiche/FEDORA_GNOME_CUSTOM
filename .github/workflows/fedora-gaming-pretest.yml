@@ -13,6 +13,7 @@ on:
       - 'docs/GAMING.md'
       - '.github/workflows/fedora-gaming-pretest.yml'
       - '.github/workflows/fedora-package-preflight.yml'
+      - 'scripts/ci/enable-rpmfusion.sh'
       - 'modules/system/04_package_sources.sh'
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - 'docs/GAMING.md'
       - '.github/workflows/fedora-gaming-pretest.yml'
       - '.github/workflows/fedora-package-preflight.yml'
+      - 'scripts/ci/enable-rpmfusion.sh'
       - 'modules/system/04_package_sources.sh'
 
 permissions:
@@ -42,11 +44,7 @@ jobs:
 
       - name: Enable RPM Fusion metadata
         shell: bash
-        run: |
-          set -Eeuo pipefail
-          dnf -y install \
-            https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm \
-            https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm
+        run: bash scripts/ci/enable-rpmfusion.sh
 
       - name: Install Fedora Steam repository definition
         shell: bash

@@ -51,6 +51,22 @@ if [[ "${1:-}" == doctor ]]; then
   esac
 fi
 
+# VM creation is explicit and parameterized. Route the remaining CLI arguments
+# directly to the hardened creation engines so documented media/hash options are
+# actually usable through the public Control Center entrypoint.
+if [[ "${1:-}" == kvm ]]; then
+  case "${2:-}" in
+    create-ubuntu)
+      shift 2
+      exec bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" "$@"
+      ;;
+    create-windows)
+      shift 2
+      exec bash "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" "$@"
+      ;;
+  esac
+fi
+
 # Transient logs/reports have an explicit retention policy. Golden state and
 # release evidence are excluded by the maintenance engine itself.
 if [[ "${1:-}" == logs ]]; then

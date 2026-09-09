@@ -33,6 +33,7 @@ jobs:
       - run: bash tests/test_backup_runtime_bundle_contract.sh
       - run: bash tests/test_config_schema_contract.sh
       - run: bash tests/test_ci_maturity_contract.sh
+      - run: bash tests/test_rpmfusion_ci_bootstrap_contract.sh
       - run: bash tests/test_release_workflow_contract.sh
       - run: bash tests/test_dash_to_dock_contract.sh
       - run: bash tests/test_desktop_ergonomics_contract.sh
@@ -61,4 +62,5 @@ jobs:
       - run: bash tests/test_golden_completeness_closure.sh
       - run: bash tests/test_gnome_desktop_integration_closure.sh
       - run: bash tests/test_documentation_contract.sh
+      - run: bash tests/test_documentation_code_alignment.sh
       - run: bash tests/test_github_presentation_contract.sh
