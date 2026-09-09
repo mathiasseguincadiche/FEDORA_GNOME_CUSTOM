@@ -95,18 +95,9 @@ valider → mesurer → sauvegarder → converger → qualifier → certifier �
 
 ## Architecture globale
 
-```mermaid
-flowchart TB
-    A[Fedora 44 + GNOME 50] --> B[Kernel Vanilla N / N-1]
-    B --> C[Drivers + firmware + hardware]
-    C --> D[Desktop + applications + gaming]
-    D --> E[KVM / Ubuntu / Windows]
-    D --> F[Stockage persistant /data]
-    E --> F
-    F --> G[Restic + restauration]
-    G --> H[Mises à jour + diagnostics]
-    H --> I[Gate 3 + Golden release]
-```
+<p align="center">
+  <img src="docs/assets/architecture-global.svg" alt="Architecture globale de Fedora 44 Golden Workstation : contrôle et gouvernance, socle HOST, couches d’usage, stockage persistant, résilience et certification" width="100%">
+</p>
 
 L'objectif n'est pas d'empiler des tweaks. Le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
 
