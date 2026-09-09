@@ -243,7 +243,9 @@ done
 [[ -r "$ROOT/.github/pull_request_template.md" ]]
 [[ -r "$ROOT/.github/release-manifest.env" ]]
 [[ -r "$ROOT/.github/workflows/release.yml" ]]
-grep -Fq 'RELEASE_TAG=v0.14.0-rc.1' "$ROOT/.github/release-manifest.env"
+# The hardening contract validates the prerelease shape instead of pinning one RC forever.
+grep -Eq '^RELEASE_TAG=v0\.14\.0-rc\.[0-9]+$' "$ROOT/.github/release-manifest.env"
+grep -Fxq 'RELEASE_PRERELEASE=true' "$ROOT/.github/release-manifest.env"
 [[ -x "$ROOT/scripts/development/check-main-protection.sh" || -r "$ROOT/scripts/development/check-main-protection.sh" ]]
 
 echo 'final hardening contract: PASS'
