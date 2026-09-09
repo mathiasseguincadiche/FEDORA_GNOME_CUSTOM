@@ -120,6 +120,84 @@ cc_storage_health() {
   "$REPO_ROOT/diagnostics/data-storage-doctor" --quiet
 }
 
+cc_kvm_create_ubuntu_interactive() {
+  local cloud_image=''
+  local ssh_key=''
+  local canonical_key=''
+  local -a args=()
+
+  read -r -p 'Image Ubuntu cloud (.img) : ' cloud_image
+  if [[ -z "$cloud_image" ]]; then
+    printf 'Chemin image obligatoire.\n'
+    cc_pause
+    return 0
+  fi
+  read -r -p 'Clé SSH publique [défaut ~/.ssh/id_ed25519.pub] : ' ssh_key
+  read -r -p 'Clé Canonical locale [optionnel] : ' canonical_key
+
+  args=(--cloud-image "$cloud_image")
+  [[ -n "$ssh_key" ]] && args+=(--ssh-key "$ssh_key")
+  [[ -n "$canonical_key" ]] && args+=(--canonical-key-file "$canonical_key")
+  cc_interactive_exec 'CRÉATION UBUNTU DEVOPS' "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" "${args[@]}"
+}
+
+cc_kvm_create_windows_interactive() {
+  local windows_iso=''
+  local virtio_iso=''
+  local windows_sha=''
+  local virtio_sha=''
+
+  read -r -p 'ISO Windows 11 : ' windows_iso
+  read -r -p 'ISO VirtIO : ' virtio_iso
+  read -r -p 'SHA-256 Windows de confiance : ' windows_sha
+  read -r -p 'SHA-256 VirtIO de confiance : ' virtio_sha
+
+  if [[ -z "$windows_iso" || -z "$virtio_iso" || -z "$windows_sha" || -z "$virtio_sha" ]]; then
+    printf 'Les deux ISO et les deux SHA-256 de confiance sont obligatoires.\n'
+    cc_pause
+    return 0
+  fi
+
+  cc_interactive_exec 'CRÉATION WINDOWS 11' "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" \
+    --windows-iso "$windows_iso" \
+    --virtio-iso "$virtio_iso" \
+    --windows-sha256 "$windows_sha" \
+    --virtio-sha256 "$virtio_sha"
+}
+
+cc_kvm_menu() {
+  local choice=''
+  while true; do
+    cc_clear
+    cc_header
+    cc_section '6 — KVM / MACHINES VIRTUELLES'
+    cc_option 1 'Virtualization doctor' 'KVM / libvirt / pool / réseau'
+    cc_option 2 'Contrôler guard réseau' 'fail-closed'
+    cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
+    cc_option 4 'Certification runtime KVM' 'Ubuntu + Windows + isolation'
+    cc_option 5 'Rafraîchir accès Nautilus aux VM'
+    cc_option 6 'Créer Ubuntu DevOps' 'image signée Canonical + cloud-init'
+    cc_option 7 'Créer Windows 11' 'ISO + VirtIO + 2 SHA-256 obligatoires'
+    cc_option 0 'Retour'
+    read -r -p 'Choix : ' choice
+    case "$choice" in
+      1) cc_interactive_exec 'VIRTUALIZATION DOCTOR' "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
+      2) cc_interactive_exec 'KVM NETWORK GUARD — CHECK' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" check ;;
+      3)
+        if cc_confirm 'Réconcilier les règles KVM fail-closed ?'; then
+          cc_interactive_exec 'KVM NETWORK GUARD — RECONCILE' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" reconcile
+        fi
+        ;;
+      4) cc_interactive_exec 'KVM RUNTIME CERTIFICATION' "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
+      5) cc_interactive_exec 'NAUTILUS VM ACCESS' "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
+      6) cc_kvm_create_ubuntu_interactive ;;
+      7) cc_kvm_create_windows_interactive ;;
+      0) return 0 ;;
+      *) printf 'Choix invalide.\n'; sleep 1 ;;
+    esac
+  done
+}
+
 cc_doctor_menu() {
   local choice=''
   while true; do
@@ -206,7 +284,9 @@ Usage:
   ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|kvm|backup
   ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
-  ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-ubuntu|create-windows
+  ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh
+  ./control.sh kvm create-ubuntu --cloud-image PATH [--ssh-key PATH] [--canonical-key-file PATH]
+  ./control.sh kvm create-windows --windows-iso PATH --virtio-iso PATH --windows-sha256 HASH --virtio-sha256 HASH
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
   ./control.sh cert archive DESTINATION PAYLOAD [PAYLOAD ...]
   ./control.sh logs list|tail|boot-failure|retention|prune

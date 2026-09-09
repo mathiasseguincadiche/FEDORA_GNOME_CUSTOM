@@ -1,6 +1,6 @@
 # KVM Quickstart — utilisation quotidienne
 
-Ce document est le point d'entrée KVM pour quelqu'un qui ne connaît pas encore libvirt. Pour comprendre l'architecture en détail, lire ensuite [`VIRTUALIZATION.md`](VIRTUALIZATION.md) et [`KVM_NETWORK.md`](KVM_NETWORK.md).
+Ce document est le parcours opérateur court pour KVM/libvirt. Pour l'architecture détaillée, lire ensuite [`VIRTUALIZATION.md`](VIRTUALIZATION.md). Pour le dépannage, utiliser [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md).
 
 ## Les quatre objets à retenir
 
@@ -14,79 +14,44 @@ HOST Fedora
     └── windows-11
 ```
 
-Une **VM** est appelée un *domaine* par libvirt. Un **pool** est un emplacement de stockage connu de libvirt. Un **réseau** fournit la connectivité privée des VM.
+Une VM est un *domaine* libvirt. Le pool pointe vers le second T705. Le réseau `devops-nat` autorise HOST↔VM, VM↔VM et VM→Internet, tout en bloquant le forwarding vers le LAN physique.
 
-## Vérifier que KVM est prêt
+## 1. Vérifier que le socle est prêt
 
 ```bash
+./control.sh doctor data
 ./diagnostics/virtualization-doctor
-```
-
-Avant de créer les VM, le résultat doit confirmer notamment :
-
-- `/dev/kvm` disponible ;
-- `kvm_amd` chargé ;
-- libvirt accessible sur `qemu:///system` ;
-- pool `devops-data` disponible ;
-- réseau `devops-nat` actif ;
-- SELinux Enforcing ;
-- firewalld actif ;
-- guard nftables chargé ;
-- OVMF et swtpm disponibles.
-
-Pour le second T705 :
-
-```bash
 ./diagnostics/kvm-io-doctor benchmark
 ```
 
-Le benchmark est filesystem-safe sur `/data` et sélectionne le backend I/O adapté aux nouvelles VM.
+Avant création des VM, attendre notamment : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, guard nftables, OVMF et swtpm.
 
-## Commandes quotidiennes
+Le benchmark I/O travaille sur le filesystem `/data`; il n'écrit jamais sur le block device brut.
 
-Lister les VM :
+## 2. Commandes quotidiennes
 
 ```bash
 virsh --connect qemu:///system list --all
-```
-
-Démarrer Ubuntu :
-
-```bash
-virsh --connect qemu:///system start ubuntu-devops
-```
-
-Arrêter proprement Ubuntu :
-
-```bash
-virsh --connect qemu:///system shutdown ubuntu-devops
-```
-
-Forcer l'arrêt avec `destroy` équivaut à couper brutalement l'alimentation virtuelle. Ne l'utiliser qu'en dépannage :
-
-```bash
-virsh --connect qemu:///system destroy ubuntu-devops
-```
-
-Afficher le réseau :
-
-```bash
-virsh --connect qemu:///system net-list --all
 virsh --connect qemu:///system net-info devops-nat
 virsh --connect qemu:///system net-dhcp-leases devops-nat
-```
-
-Afficher le stockage :
-
-```bash
-virsh --connect qemu:///system pool-list --all
 virsh --connect qemu:///system pool-info devops-data
 virsh --connect qemu:///system vol-list devops-data
 ```
 
-## Créer Ubuntu DevOps
+Démarrer/arrêter proprement :
 
-Télécharger depuis le répertoire de release officiel Canonical les trois fichiers correspondants :
+```bash
+virsh --connect qemu:///system start ubuntu-devops
+virsh --connect qemu:///system shutdown ubuntu-devops
+virsh --connect qemu:///system start windows-11
+virsh --connect qemu:///system shutdown windows-11
+```
+
+`virsh destroy` équivaut à une coupure d'alimentation virtuelle et reste un geste de dépannage.
+
+## 3. Créer Ubuntu DevOps
+
+Préparer ensemble depuis Canonical :
 
 ```text
 ubuntu-26.04-server-cloudimg-amd64.img
@@ -94,25 +59,16 @@ SHA256SUMS
 SHA256SUMS.gpg
 ```
 
-Les conserver dans le même dossier, puis :
+Puis :
 
 ```bash
 bash scripts/kvm/create_ubuntu_devops_vm.sh \
   --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
 ```
 
-Le script :
+Le script authentifie `SHA256SUMS`, vérifie le SHA-256 de l'image **avant** la création du disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart.
 
-1. authentifie `SHA256SUMS` avec la clé Canonical attendue ;
-2. vérifie le SHA-256 de l'image ;
-3. demande le mot de passe console/sudo sans l'afficher ;
-4. injecte la clé SSH ;
-5. génère cloud-init ;
-6. crée le disque qcow2 ;
-7. crée la VM sans autostart ;
-8. laisse le bootstrap DevOps s'exécuter au premier démarrage.
-
-Si la clé Canonical ne peut pas être récupérée depuis le keyserver, utiliser une copie locale préalablement obtenue et vérifiée :
+Si la clé Canonical doit être fournie localement :
 
 ```bash
 bash scripts/kvm/create_ubuntu_devops_vm.sh \
@@ -120,60 +76,37 @@ bash scripts/kvm/create_ubuntu_devops_vm.sh \
   --canonical-key-file /chemin/cle-canonical.asc
 ```
 
-## Se connecter à Ubuntu
-
-Trouver l'adresse IP :
+Accès :
 
 ```bash
 virsh --connect qemu:///system domifaddr ubuntu-devops --source agent
-```
-
-Si QEMU Guest Agent n'est pas encore prêt :
-
-```bash
-virsh --connect qemu:///system net-dhcp-leases devops-nat
-```
-
-Connexion :
-
-```bash
 ssh mathias@192.168.50.x
 ```
 
-SSH utilise la clé publique injectée. Le mot de passe créé pendant le provisioning sert à la console et à `sudo`, pas à l'authentification SSH.
-
-Dans Nautilus :
+Nautilus :
 
 ```text
 sftp://mathias@192.168.50.x/home/mathias
 ```
 
-Le helper peut créer/mettre à jour le favori automatiquement :
+Le helper peut maintenir le favori :
 
 ```bash
 bash scripts/kvm/configure_nautilus_vm_access.sh refresh
 ```
 
-## Créer Windows 11
+## 4. Créer Windows 11
 
-Préparer :
+Préparer depuis des sources de confiance :
 
 ```text
 Windows 11 ISO officiel Microsoft
-virtio-win.iso provenant de la source Fedora/Red Hat de confiance
+virtio-win.iso Fedora/Red Hat
+SHA-256 Windows obtenu depuis une source de confiance
+SHA-256 VirtIO obtenu depuis une source de confiance
 ```
 
-Création minimale :
-
-```bash
-bash scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso
-```
-
-Dans ce mode, le script affiche un avertissement : la provenance des deux médias reste la responsabilité explicite de l'opérateur.
-
-Lorsque vous disposez de SHA-256 **obtenus depuis une source de confiance indépendante**, les vérifier avant création du disque :
+Les **deux SHA-256 sont obligatoires**. Le script refuse toute création si l'un des deux manque.
 
 ```bash
 bash scripts/kvm/create_windows11_vm.sh \
@@ -183,51 +116,42 @@ bash scripts/kvm/create_windows11_vm.sh \
   --virtio-sha256 '<sha256-virtio-de-confiance>'
 ```
 
-Les deux hashes doivent être fournis ensemble. Le script vérifie les médias avant `qemu-img create`.
+Les médias sont vérifiés avant `qemu-img create`. Calculer soi-même le hash d'un fichier déjà téléchargé ne prouve que son intégrité locale, pas sa provenance.
 
-Calculer soi-même le SHA-256 d'un fichier déjà téléchargé puis réutiliser ce même hash vérifie seulement la stabilité locale du fichier ; cela **ne prouve pas sa provenance**.
-
-Après l'installation de Windows :
+Le script génère également `windows-guest-tools.iso`. Après installation :
 
 1. ouvrir le CD `FGC_TOOLS` ;
 2. lancer PowerShell en administrateur ;
 3. exécuter `Configure-GuestIntegration.ps1` ;
 4. exécuter `Configure-VMShare.ps1` uniquement si l'accès SMB depuis Nautilus est souhaité.
 
-`SPICE + virtio video` fournit une console de VM adaptée à l'administration, à la bureautique et aux tests. Cela ne remplace pas un GPU physique passé directement à Windows. Le projet interdit volontairement le passthrough de l'Arc B580.
+Windows utilise UEFI Secure Boot, TPM 2.0/swtpm, VirtIO, QEMU Guest Agent et `SPICE + virtio video`. L'Arc B580 reste réservée au HOST.
 
-## Interface graphique
-
-`virt-manager` reste disponible :
+## 5. Interface graphique
 
 ```bash
 virt-manager --connect qemu:///system
 ```
 
-La GUI est un complément. Les opérations essentielles doivent rester réalisables en CLI.
+La GUI est un complément. Le cycle de vie de référence reste réalisable en CLI.
 
-## Certifier les deux VM
+## 6. Certifier les VM
 
-Lorsque Ubuntu et Windows sont installés et démarrés :
+Quand Ubuntu et Windows sont installés et démarrés :
 
 ```bash
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification vérifie notamment QEMU Guest Agent, VirtIO, réseau, accès Ubuntu, Internet, stack DevOps, guard KVM et blocage du LAN physique lorsque la preuve live est possible.
+La certification contrôle notamment QEMU Guest Agent, VirtIO, Secure Boot/TPM Windows, réseau, stack DevOps Ubuntu, Internet et guard KVM.
 
-## Avant une sauvegarde des disques VM
+## 7. Sauvegarder les VM
 
-Arrêter les VM :
+Arrêter les deux domaines puis vérifier leur état :
 
 ```bash
 virsh --connect qemu:///system shutdown ubuntu-devops
 virsh --connect qemu:///system shutdown windows-11
-```
-
-Vérifier :
-
-```bash
 virsh --connect qemu:///system list --all
 ```
 
@@ -237,8 +161,12 @@ Puis :
 scripts/backup/backup-now.sh --include-vms
 ```
 
-Le projet refuse volontairement de sauvegarder un QCOW2 actif avec une simple copie de fichier.
+Le projet refuse la copie naïve d'un QCOW2 actif.
 
-## Si quelque chose ne fonctionne pas
+## 8. En cas de problème
 
-Lire [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md), section KVM/VM, avant de modifier firewalld, SELinux ou le XML libvirt.
+Ne pas désactiver SELinux, firewalld ou le guard pour contourner un symptôme.
+
+- KVM/libvirt/réseau/VM : [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) ;
+- second T705, `/data`, jeux : [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) ;
+- dépannage transversal : [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).

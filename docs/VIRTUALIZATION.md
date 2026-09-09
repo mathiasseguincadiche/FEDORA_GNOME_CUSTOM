@@ -1,50 +1,47 @@
 # Virtualisation — Fedora 44 / KVM / libvirt
 
-## Objectif
+## Rôle du document
 
-La workstation utilise **QEMU/KVM/libvirt** comme stack de virtualisation de référence. Elle est Fedora-native, compatible SELinux/firewalld et conçue autour de deux VM :
+Ce document décrit l'architecture KVM normative de la workstation. Pour l'utilisation quotidienne, commencer par [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md). Pour le dépannage, utiliser [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md).
 
-- `ubuntu-devops` pour les laboratoires DevOps/Ops ;
-- `windows-11` pour les besoins Windows et les tests multi-plateformes.
+La source exécutable des valeurs reste :
 
-Le projet est **CLI-first** : `virt-manager` et `virt-viewer` restent disponibles, mais aucune opération essentielle ne dépend de la GUI.
+- [`../config/virtualization.conf`](../config/virtualization.conf) ;
+- [`../config/vm-profiles.conf`](../config/vm-profiles.conf).
 
-Si KVM/libvirt est nouveau pour vous, lire d'abord [`GLOSSARY.md`](GLOSSARY.md) puis [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md).
+Une contradiction entre ces fichiers, les scripts et ce document est un bug.
 
-## Vue d'ensemble
+## Architecture de référence
 
 ```text
 Fedora 44 HOST
 │
-├── KVM / QEMU
-│   └── exécute les VM avec accélération AMD-V/SVM
-│
-├── libvirt : qemu:///system
+├── KVM / QEMU / libvirt : qemu:///system
 │   ├── domaine ubuntu-devops
 │   ├── domaine windows-11
-│   ├── pool devops-data
-│   └── réseau devops-nat
+│   ├── pool devops-data → /data/libvirt/images
+│   └── réseau devops-nat → virbr50 → 192.168.50.0/24
 │
-├── /data sur le second T705 (EXT4 persistant)
-│   ├── Documents/        données utilisateur
-│   ├── Projets/          projets utilisateur
-│   ├── ISO/              bibliothèque ISO utilisateur
-│   ├── Jeux/             bibliothèque de jeux utilisateur
+├── T705 #2 /data EXT4 persistant
+│   ├── Documents/
+│   ├── Projets/
+│   ├── ISO/
+│   ├── Jeux/
 │   └── libvirt/
-│       └── images/*.qcow2
+│       ├── images/
+│       ├── iso/
+│       ├── cloud-init/
+│       ├── nvram/
+│       ├── snapshots/
+│       └── exports/
 │
-└── virbr50 / 192.168.50.0/24
-    ├── VM ↔ HOST
-    ├── VM ↔ VM
-    ├── VM → Internet
-    └── VM ↔ LAN physique bloqué en forwarding
+└── Intel Arc B580
+    └── reste exclusivement attachée au HOST avec xe
 ```
 
-## Qui fait quoi ?
+## KVM, QEMU et libvirt
 
-### KVM
-
-KVM fournit l'accélération matérielle dans le noyau Linux. Sur cette plateforme :
+Sur le bare-metal :
 
 ```text
 AMD-V/SVM → obligatoire
@@ -52,82 +49,51 @@ AMD-V/SVM → obligatoire
 kvm_amd   → obligatoire
 ```
 
-Sans `/dev/kvm`, le profil bare-metal n'est pas considéré prêt.
+La connexion de référence est `qemu:///system`. Le projet privilégie les daemons modulaires Fedora (`virtqemud`, `virtnetworkd`, `virtstoraged`, `virtlogd`, `virtlockd`) avec fallback `libvirtd` seulement lorsque nécessaire.
 
-### QEMU
-
-QEMU représente la machine virtuelle : CPU virtuel, chipset Q35, disque VirtIO, réseau VirtIO, UEFI, TPM, console, etc.
-
-### libvirt
-
-Libvirt fournit une API et des outils cohérents pour gérer les VM. La connexion de référence est :
-
-```text
-qemu:///system
-```
-
-Cela signifie que les ressources KVM appartiennent à l'instance libvirt système du HOST.
-
-Le projet privilégie les daemons modulaires Fedora :
-
-```text
-virtqemud
-virtnetworkd
-virtstoraged
-virtlogd
-virtlockd
-```
-
-avec fallback `libvirtd` uniquement lorsque les unités modulaires ne sont pas disponibles.
+`virt-manager` et `virt-viewer` restent disponibles, mais aucune opération essentielle ne dépend de la GUI.
 
 ## GPU
 
-L'Intel Arc B580 reste attachée au HOST Fedora avec le pilote `xe`.
-
 ```text
-Fedora HOST → Arc B580 / xe
-VM          → périphérique vidéo virtuel uniquement
+Fedora HOST → Intel Arc B580 / xe
+VM          → périphérique vidéo virtuel
 ```
 
-Aucun VFIO/passthrough automatique n'est autorisé. Cette décision évite de fragiliser le bureau GNOME principal et le contrat graphique 1440p/240 Hz.
+Aucun VFIO/passthrough automatique n'est autorisé. Le contrat graphique HOST 2560×1440/~240 Hz reste prioritaire.
 
-Pour Windows, `SPICE + virtio video` fournit une console de VM adaptée à l'administration, aux tests et à la bureautique. Ce n'est pas l'équivalent d'une B580 directement attribuée au guest.
+Windows utilise `SPICE + virtio video` pour sa console. Ce n'est pas l'équivalent d'un GPU physique attribué au guest.
 
-## Second T705 : données persistantes + sous-arbre KVM
+## Second T705 et séparation SELinux
 
-Le deuxième Crucial T705 est monté manuellement sur :
+`/data` est un montage EXT4 préparé par l'opérateur. Le projet ne partitionne et ne formate jamais automatiquement le second T705.
 
-```text
-/data
-filesystem : EXT4
-```
-
-Le projet ne partitionne et ne formate jamais ce SSD automatiquement. Il est volontairement séparé du SSD système Btrfs afin qu'une réinstallation du HOST puisse conserver les données de travail, les ISO, les jeux et les VM.
-
-Arborescence Golden :
+Les racines utilisateur :
 
 ```text
-/data/
-├── Documents/          XDG Documents, données persistantes
-├── Projets/            projets de travail persistants
-├── ISO/                bibliothèque ISO utilisateur
-├── Jeux/               bibliothèque de jeux utilisateur persistante
-└── libvirt/
-    ├── images/         disques qcow2 des VM
-    ├── iso/            médias explicitement préparés pour libvirt
-    ├── cloud-init/     seeds Ubuntu
-    ├── nvram/          données UEFI si nécessaires
-    ├── snapshots/      espace réservé aux opérations de snapshot
-    └── exports/        exports/staging liés aux opérations KVM
+/data/Documents
+/data/Projets
+/data/ISO
+/data/Jeux
 ```
 
-Les quatre répertoires utilisateur sont créés en `0750`, appartiennent à l'utilisateur workstation et reçoivent un label SELinux de données utilisateur. `/data/libvirt` conserve au contraire son contexte libvirt dédié. Le projet ne mélange donc pas les permissions des données personnelles et celles des VM.
+sont privées (`0750`), appartiennent à l'utilisateur workstation et suivent la politique SELinux `user_home_t`.
 
-`/data/ISO` est une bibliothèque utilisateur persistante ; `/data/libvirt/iso` reste la zone explicitement préparée pour les médias que QEMU/libvirt doit consommer. Le projet ne donne pas automatiquement à libvirt accès à toute la bibliothèque utilisateur.
+Le sous-arbre `/data/libvirt` est séparé et conserve le contexte libvirt `virt_image_t`.
 
-`/data/Jeux` reste indépendant de libvirt et d'un launcher précis. Il peut servir de bibliothèque Steam/Lutris/Heroic ou autre lorsque le profil gaming est activé, sans que le socle de stockage dépende d'une plateforme particulière.
+`/data/ISO` est une bibliothèque utilisateur. Les médias explicitement consommés par libvirt sont préparés dans `/data/libvirt/iso` ; le projet n'expose pas automatiquement toute la bibliothèque utilisateur à QEMU.
 
-Pool libvirt :
+Avant les VM :
+
+```bash
+./control.sh doctor data
+./diagnostics/virtualization-doctor
+./diagnostics/kvm-io-doctor benchmark
+```
+
+Le benchmark ne touche pas au block device brut. Les nouvelles VM utilisent le profil I/O retenu avec `cache=none` et `discard=unmap`; `detect_zeroes` et IOThread ne sont ajoutés que si `virt-install` les supporte.
+
+## Pool libvirt
 
 ```text
 nom       devops-data
@@ -136,20 +102,7 @@ cible     /data/libvirt/images
 autostart oui
 ```
 
-SELinux reste actif. Le projet persiste le type `virt_image_t` sur le sous-arbre libvirt avec `semanage fcontext`, puis applique les labels avec `restorecon`.
-
-Avant de créer les VM :
-
-```bash
-./diagnostics/data-storage-doctor
-./diagnostics/kvm-io-doctor benchmark
-```
-
-Le benchmark compare les backends I/O supportés sur `/data` sans écrire sur le block device brut. Les nouvelles VM utilisent ensuite le profil retenu avec `cache=none` et `discard=unmap`; `detect_zeroes` et IOThread ne sont ajoutés que lorsque `virt-install` confirme leur support.
-
-## Réseau privé
-
-Le réseau principal est :
+## Réseau privé fail-closed
 
 ```text
 nom       devops-nat
@@ -173,11 +126,9 @@ LAN uplink → VM    bloqué en forwarding
 Internet → VM      aucun forwarding implicite
 ```
 
-Le NAT est fourni par libvirt. L'isolation supplémentaire du LAN est fournie par une table nftables propre au projet.
+Le guard redécouvre l'uplink IPv4. Lors d'un changement réseau, il passe d'abord en **mode d'urgence**, bloque le forwarding via `virbr50`, puis reconstruit les règles normales. Si le reconcile échoue, l'état restrictif reste actif.
 
-Le guard ne code pas en dur `enp...` ou `wlp...`. Il redécouvre l'uplink IPv4 courant. Lors d'un changement réseau, il entre d'abord en **mode d'urgence**, qui bloque le forwarding via `virbr50`, puis reconstruit les règles normales. Si la reconstruction échoue, l'état restrictif reste actif.
-
-Explication complète : [`KVM_NETWORK.md`](KVM_NETWORK.md).
+Voir [`KVM_NETWORK.md`](KVM_NETWORK.md).
 
 ## Profil `ubuntu-devops`
 
@@ -198,10 +149,6 @@ SSH                clé publique uniquement
 autostart          non
 ```
 
-### Provenance de l'image
-
-La création ne fait plus confiance à une image `.img` uniquement parce que son nom ressemble à une image Ubuntu.
-
 L'opérateur fournit ensemble :
 
 ```text
@@ -210,23 +157,16 @@ SHA256SUMS
 SHA256SUMS.gpg
 ```
 
-`create_ubuntu_devops_vm.sh` authentifie `SHA256SUMS` avec l'empreinte Canonical attendue puis compare le SHA-256 de l'image à cette liste signée **avant** de créer le disque de VM.
-
-Création :
+`create_ubuntu_devops_vm.sh` authentifie `SHA256SUMS` avec la clé Canonical attendue, puis vérifie le SHA-256 de l'image **avant** toute création de disque.
 
 ```bash
 bash scripts/kvm/create_ubuntu_devops_vm.sh \
   --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
 ```
 
-La clé publique SSH est injectée dans le guest. Le mot de passe saisi au terminal est réservé à la console et à `sudo`; SSH reste key-only.
+Le mot de passe demandé est réservé à la console et à `sudo`; SSH reste key-only.
 
-Le bootstrap exact du checkout HOST est encodé dans cloud-init et exécuté dans l'invité.
-
-Voir :
-
-- [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md) ;
-- [`UBUNTU_DEVOPS_PROVISIONING.md`](UBUNTU_DEVOPS_PROVISIONING.md).
+Voir [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md) et [`UBUNTU_DEVOPS_PROVISIONING.md`](UBUNTU_DEVOPS_PROVISIONING.md).
 
 ## Profil `windows-11`
 
@@ -247,21 +187,19 @@ graphique          SPICE + virtio video
 autostart          non
 ```
 
-Création :
+Windows et VirtIO sont fournis par l'opérateur depuis leurs sources de confiance. **Les deux SHA-256 de confiance sont obligatoires** : le script refuse de créer le disque si l'un manque.
 
 ```bash
 bash scripts/kvm/create_windows11_vm.sh \
   --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso
+  --virtio-iso /data/libvirt/iso/virtio-win.iso \
+  --windows-sha256 '<sha256-windows-de-confiance>' \
+  --virtio-sha256 '<sha256-virtio-de-confiance>'
 ```
 
-Le projet ne télécharge silencieusement ni Windows ni `virtio-win.iso`. Les médias sont fournis par l'opérateur depuis leurs sources de confiance.
+Les hashes sont vérifiés avant `qemu-img create`. Le script génère aussi `windows-guest-tools.iso` avec `Configure-GuestIntegration.ps1` et `Configure-VMShare.ps1`.
 
-Le script génère également `windows-guest-tools.iso` avec les helpers d'intégration. Après l'installation, `Configure-GuestIntegration.ps1` installe/valide les pilotes VirtIO et QEMU Guest Agent.
-
-## Accès aux fichiers
-
-Le projet évite un partage de répertoire HOST↔guest automatique.
+## Accès fichiers
 
 ```text
 Fedora / Nautilus
@@ -269,35 +207,16 @@ Fedora / Nautilus
 └── SMB      → windows-11   → C:\VM-Share
 ```
 
-Ubuntu :
-
-```bash
-ssh mathias@<ip-de-la-vm>
-sftp mathias@<ip-de-la-vm>
-```
-
-Nautilus :
-
-```text
-sftp://mathias@<ip-de-la-vm>/home/mathias
-```
-
-Windows peut exposer uniquement `C:\VM-Share` via le script prévu. Aucun accès invité/anonyme n'est configuré.
+Aucun partage HOST VirtioFS automatique n'appartient au profil Golden.
 
 Voir [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md).
 
-## Administration quotidienne
-
-Les commandes de base sont documentées dans [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md).
-
-La référence avancée (`virt-admin`, `virt-xml`, `qemu-nbd`, guestfs, virt-v2v, etc.) est séparée dans [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) afin de ne pas surcharger le parcours débutant.
-
 ## Validation
 
-Avant création des VM :
+Avant création :
 
 ```bash
-./diagnostics/data-storage-doctor
+./control.sh doctor data
 ./diagnostics/virtualization-doctor
 ./diagnostics/kvm-io-doctor benchmark
 ```
@@ -308,30 +227,11 @@ Après installation des deux VM :
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification vérifie notamment :
+La certification vérifie notamment domaines, QEMU Guest Agent, VirtIO RNG/balloon, Secure Boot+TPM Windows, réseau/disque VirtIO, guard KVM, IP guests, SSH Ubuntu, stack DevOps, DNS/HTTPS et isolement LAN.
 
-- existence des domaines ;
-- QEMU Guest Agent ;
-- VirtIO RNG et balloon ;
-- Secure Boot + TPM Windows ;
-- réseau/disque VirtIO ;
-- service et règles du guard KVM ;
-- retour du guard en mode normal après reconcile ;
-- couverture des CIDR uplink détectés ;
-- IP Ubuntu/Windows ;
-- SSH HOST → Ubuntu ;
-- stack DevOps Ubuntu ;
-- DNS/HTTPS Internet depuis Ubuntu ;
-- accès à la gateway KVM ;
-- blocage Ubuntu → gateway LAN lorsque le gateway est d'abord prouvé joignable depuis le HOST.
-
-Une preuve live `LAN → VM` complète nécessite un deuxième appareil du LAN ; elle est guidée dans [`KVM_NETWORK.md`](KVM_NETWORK.md).
+Une preuve live complète `LAN → VM` nécessite un deuxième appareil du LAN ; la procédure est documentée dans [`KVM_NETWORK.md`](KVM_NETWORK.md).
 
 ## Backup des VM
-
-Un QCOW2 actif ne doit pas être copié avec `cp`, `rsync` ou Restic en espérant obtenir une sauvegarde cohérente.
-
-Le contrat est :
 
 ```text
 VM arrêtée
@@ -343,15 +243,16 @@ qemu-img convert vers staging
 Restic
 ```
 
-Les données utilisateur `/data/Documents` et `/data/Projets` sont sauvegardées par le timer Restic quotidien, indépendamment du cycle de backup des VM. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut. Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
+`/data/Documents` et `/data/Projets` sont protégés automatiquement par Restic. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut.
+
+Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 ## Interdictions structurantes
 
 - aucun formatage/partitionnement automatique du second T705 ;
-- aucune suppression automatique de `/data/Documents`, `/data/Projets`, `/data/ISO` ou `/data/Jeux` ;
+- aucune suppression automatique des racines utilisateur `/data` ;
 - aucun `chmod 777` ;
-- aucun SELinux désactivé ;
-- aucun firewalld désactivé ;
+- aucun SELinux ou firewalld désactivé ;
 - aucun bridge physique automatique ;
 - aucun VFIO/passthrough de l'Arc B580 ;
 - aucune VM créée pendant `install.sh --apply` ;

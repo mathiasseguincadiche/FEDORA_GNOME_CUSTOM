@@ -52,7 +52,7 @@ if ! $policy_only; then
   if $certify; then
     if runtime_is_baremetal; then
       if "$REPO_ROOT/diagnostics/data-storage-doctor" --quiet; then
-        record OK 'Persistent data layout' '/data/Documents + /data/Projets + /data/ISO'
+        record OK 'Persistent data layout' '/data/Documents + /data/Projets + /data/ISO + /data/Jeux'
       else
         record KO 'Persistent data layout' 'second-T705 contract failed'
       fi

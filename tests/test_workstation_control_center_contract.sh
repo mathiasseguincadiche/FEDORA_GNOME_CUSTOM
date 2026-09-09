@@ -43,7 +43,7 @@ for expected in \
   grep -Fq "$expected" "$ROOT/lib/control_center.sh" || { echo "control center missing contract: $expected" >&2; exit 1; }
 done
 
-# The presentation layer must expose the current Golden vocabulary and mandatory pillars.
+# The presentation layer exposes the current Golden vocabulary and mandatory pillars.
 grep -Fq 'Politique N / N-1 · max 2' "$ROOT/lib/control_center_presentation.sh"
 grep -Fq "cc_option 5 'Kernel & boot' 'latest-stable / N-N-1 / recovery'" "$ROOT/lib/control_center_presentation.sh"
 grep -Fq 'Gaming / Steam / Vulkan' "$ROOT/lib/control_center_presentation.sh"
@@ -53,6 +53,23 @@ grep -Fq 'cc_data_state' "$ROOT/lib/control_center_presentation.sh"
 grep -Fq 'control_center_presentation.sh' "$ROOT/control.sh"
 grep -Fq 'diagnostics/data-storage-doctor' "$ROOT/control.sh"
 grep -Fq 'diagnostics/gaming-doctor' "$ROOT/control.sh"
+
+# KVM creation must be usable through both the interactive facade and the public
+# parameterized CLI. Windows media hashes are mandatory before the engine runs.
+grep -Fq 'cc_kvm_create_ubuntu_interactive' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'cc_kvm_create_windows_interactive' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq -- '--cloud-image "$cloud_image"' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq -- '--windows-sha256 "$windows_sha"' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq -- '--virtio-sha256 "$virtio_sha"' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'Les deux ISO et les deux SHA-256 de confiance sont obligatoires.' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq 'if [[ "${1:-}" == kvm ]]' "$ROOT/control.sh"
+grep -Fq 'create-ubuntu)' "$ROOT/control.sh"
+grep -Fq 'create-windows)' "$ROOT/control.sh"
+grep -Fq 'shift 2' "$ROOT/control.sh"
+grep -Fq 'create_ubuntu_devops_vm.sh" "$@"' "$ROOT/control.sh"
+grep -Fq 'create_windows11_vm.sh" "$@"' "$ROOT/control.sh"
+grep -Fq './control.sh kvm create-ubuntu --cloud-image PATH' "$ROOT/lib/control_center_presentation.sh"
+grep -Fq './control.sh kvm create-windows --windows-iso PATH --virtio-iso PATH --windows-sha256 HASH --virtio-sha256 HASH' "$ROOT/lib/control_center_presentation.sh"
 
 # Dashboard truth must be based on real runtime data, not marker presence alone.
 grep -Fq 'os_id' "$ROOT/lib/control_center.sh"
@@ -172,6 +189,13 @@ grep -Fq 'DNF5 offline' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kernel install-latest' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kernel rollback' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'N / N-1' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh doctor data' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh doctor gaming' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh kvm create-ubuntu' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh kvm create-windows' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq -- '--windows-sha256' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq -- '--virtio-sha256' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'Installation Fedora 44 bare-metal' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh logs retention' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh cert archive' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"

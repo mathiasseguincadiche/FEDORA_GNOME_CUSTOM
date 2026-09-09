@@ -22,7 +22,8 @@ La CI combine contrats statiques, intégration Fedora 44 et vraie VM Ubuntu 26.0
 - durcissement pré-1.0 ;
 - **fail-closed du guard KVM** ;
 - **authentification de l'image Ubuntu** ;
-- **cohérence documentation ↔ code/config**.
+- **cohérence documentation ↔ code/config** ;
+- **bootstrap RPM Fusion CI résilient et partagé**.
 
 ## Contrat documentaire
 
@@ -114,19 +115,27 @@ Tous les scripts suivis sont vérifiés par `bash -n` et ShellCheck.
 
 Les exemptions globales sont limitées afin que les variables inutilisées et fautes de noms ne soient pas masquées à l'échelle du dépôt.
 
+## Bootstrap RPM Fusion dans la CI
+
+Les workflows Fedora qui ont besoin de RPM Fusion utilisent tous `scripts/ci/enable-rpmfusion.sh` au lieu d'installer directement une URL unique.
+
+Le helper conserve une politique fail-closed : il tente d'abord les endpoints MirrorManager `mirrors.rpmfusion.org`, effectue des retries bornés, puis utilise `download1.rpmfusion.org` comme endpoint officiel direct de repli. Si Free ou Nonfree reste indisponible sur tous les endpoints, le workflow échoue ; aucun paquet ou dépôt n'est considéré validé par défaut.
+
+`tests/test_rpmfusion_ci_bootstrap_contract.sh` verrouille ce comportement et interdit le retour à un bootstrap mono-endpoint dans les workflows Package, Host et Gaming.
+
 ## Fedora 44 package preflight
 
 Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 50 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Ubuntu.
 
 Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed : DING review `74408`/version `95`, Show Desktop Plus review `70326`/version `8` et Resource Monitor review `70909`/version `28`. Le workflow contrôle les UUID, la compatibilité GNOME Shell 50 et les payloads attendus.
 
-Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit.
+Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit. Son activation RPM Fusion passe par le bootstrap partagé ci-dessus.
 
 ## Fedora 44 Gaming pretest
 
 `.github/workflows/fedora-gaming-pretest.yml` est le gate dédié au profil Gaming. Dans un conteneur Fedora 44, il :
 
-1. active les métadonnées RPM Fusion Fedora 44 ;
+1. active les métadonnées RPM Fusion Fedora 44 via le bootstrap résilient partagé ;
 2. résout et installe le manifeste Gaming Fedora natif ;
 3. vérifie la présence du dépôt `rpmfusion-nonfree-steam` ;
 4. résout et installe le RPM Steam depuis ce dépôt dédié ;
@@ -154,7 +163,7 @@ Ce workflow ne prétend pas mesurer le cold-start graphique réel ni la percepti
 
 ## Fedora 44 host integration pretest
 
-Dans un conteneur Fedora 44, installe réellement le contrat HOST/GNOME/KVM/backup, teste Bash UX et dock via un utilisateur normal, valide RPM Fusion, vendor RPM, Flathub et extensions.
+Dans un conteneur Fedora 44, installe réellement le contrat HOST/GNOME/KVM/backup, teste Bash UX et dock via un utilisateur normal, valide RPM Fusion, vendor RPM, Flathub et extensions. L'activation RPM Fusion utilise le même bootstrap résilient que Package et Gaming.
 
 Un utilisateur de test installe DING et Show Desktop Plus depuis leurs artefacts GNOME-reviewed, converge `~/Bureau` et les préférences, puis relit les GSettings et les marqueurs de provenance.
 

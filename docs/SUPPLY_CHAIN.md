@@ -49,18 +49,19 @@ Le projet ne télécharge silencieusement ni Windows 11 ni `virtio-win.iso`.
 Ils restent sous la responsabilité explicite de l'opérateur :
 
 - ISO Windows depuis Microsoft ;
-- VirtIO-Win depuis la source Fedora/Red Hat de confiance utilisée par l'opérateur.
+- VirtIO-Win depuis une source Fedora/Red Hat de confiance ;
+- SHA-256 attendus obtenus indépendamment depuis des sources de confiance.
 
-`create_windows11_vm.sh` accepte :
+`create_windows11_vm.sh` **exige** :
 
 ```text
 --windows-sha256 <hash-de-confiance>
 --virtio-sha256 <hash-de-confiance>
 ```
 
-Lorsque ces valeurs sont fournies, les deux fichiers sont vérifiés **avant** création du disque.
+Les deux valeurs sont obligatoires ensemble. Si l'une manque, la création est refusée. Les deux fichiers sont vérifiés **avant** `qemu-img create`.
 
-Important : calculer soi-même le SHA-256 d'un fichier compromis puis fournir ce même hash ne prouve rien. Le hash attendu doit provenir d'une source de confiance indépendante.
+Important : calculer soi-même le SHA-256 d'un fichier déjà compromis puis fournir ce même hash ne prouve rien. Le digest attendu doit provenir d'une source de confiance indépendante.
 
 ## Applications du HOST
 
@@ -84,7 +85,6 @@ Les prétests package Fedora, intégration host et Ubuntu VM sont rejoués péri
 - rupture de bootstrap.
 
 La CI complète la provenance et la reproductibilité ; elle ne remplace pas la validation du matériel physique ni la responsabilité de l'opérateur sur les médias Windows fournis manuellement.
-
 
 ## Extensions GNOME revues
 
