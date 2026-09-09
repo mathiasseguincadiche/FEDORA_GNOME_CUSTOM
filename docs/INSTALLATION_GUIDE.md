@@ -2,7 +2,56 @@
 
 Le portail documentaire est [`README.md`](README.md). Ce guide décrit le chemin **bare-metal de production** ; les validations WSL2/VirtualBox ne déverrouillent jamais l'APPLY réel.
 
+## Avant de commencer
+
+**Public :** opérateur qui prépare ou installe la workstation physique cible.
+
+**Objectif :** passer d'un matériel identifié à une Fedora installée, convergée, redémarrée puis certifiée par Gate 3, sans contourner les garde-fous Golden.
+
+### Préconditions
+
+Avant toute mutation réelle, vous devez disposer :
+
+- du matériel cible identifié ;
+- d'un média Fedora 44 authentifié ;
+- du dépôt sur un commit propre et audité ;
+- d'un second T705 identifié sans ambiguïté pour `/data` ;
+- d'une cible Restic externe/off-machine disponible pour le backup pré-APPLY ;
+- de Secure Boot désactivé et vérifiable comme tel.
+
+Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`LEARNING_PATH.md`](LEARNING_PATH.md).
+
+### Les cinq phases
+
+| Phase | Sections | Résultat attendu |
+|---|---|---|
+| **1. Préparer** | 1 à 4 | média, commit, stockage et configuration locale prêts |
+| **2. Qualifier** | 5 à 7 | baseline, dry-run et backup pré-APPLY valides |
+| **3. Converger** | 8 à 10 | APPLY terminé, reboot sur N et desktop diagnostiqué |
+| **4. Certifier** | 11 à 13 | Gate 3 et état Golden produits sur le matériel réel |
+| **5. Exploiter** | 14 à 17 | update, recovery et KVM opérables |
+
+### Règle d'arrêt
+
+**Ne continuez pas** lorsqu'une précondition ou un doctor obligatoire échoue. Le chemin est fail-closed : corriger la cause, puis relancer la validation correspondante.
+
+En particulier, ne pas poursuivre vers APPLY si :
+
+- le média n'est pas authentifié ;
+- `/data` pointe vers un disque ambigu ou incorrect ;
+- la baseline n'est pas valide ;
+- le dry-run est périmé ;
+- le backup pré-APPLY n'est plus vérifiable ;
+- Secure Boot est actif ou indéterminé ;
+- Git est dirty.
+
+Le résultat final recherché est explicite : **la workstation n'est `Golden runtime-certified` qu'après Gate 3 PASS sur la vraie machine**.
+
+---
+
 ## 1. Vérifier le média Fedora 44
+
+**But :** prouver que l'installation démarre depuis le média Fedora verrouillé par le projet.
 
 La source approuvée est versionnée dans :
 
@@ -21,6 +70,8 @@ installer/verify-fedora44-media.sh \
 
 La vérification exige la signature du CHECKSUM et le SHA-256 verrouillé. Ne pas installer depuis un ISO de même nom mais de hash différent.
 
+**Checkpoint :** ne passer à l'étape 2 que si le média exact est authentifié.
+
 ## 2. Générer le Kickstart depuis le commit exact
 
 ```bash
@@ -38,6 +89,8 @@ Le générateur :
 - laisse Secure Boot hors du contrat Golden ;
 - clone exactement le commit incorporé ;
 - ne lance jamais l'APPLY automatiquement.
+
+**Checkpoint :** le disque système et le SHA Git incorporé doivent être ceux que vous avez réellement audités.
 
 ## 3. Préparer le second T705 — stockage persistant + KVM
 
@@ -71,6 +124,8 @@ L'APPLY crée ou normalise ensuite cette structure **sans supprimer le contenu e
 
 `Documents`, `Projets`, `ISO` et `Jeux` restent des répertoires utilisateur séparés de `/data/libvirt`. Une réinstallation du premier T705 doit **réutiliser le second T705 sans le reformater**.
 
+**Checkpoint :** `findmnt` et `lsblk` doivent prouver que `/` et `/data` résident sur deux T705 physiques distincts avant de continuer.
+
 ## 4. Configuration locale
 
 ```bash
@@ -89,6 +144,8 @@ jusqu'à la fin des contrôles.
 La configuration effective inclut les fichiers versionnés **et `config/local.conf`**. Une modification de l'overlay local après le dry-run rend la preuve obsolète.
 
 ## 5. Baseline hardware
+
+**But :** démontrer que le matériel réel correspond au profil Golden avant toute convergence.
 
 ```bash
 ./diagnostics/baseline-doctor snapshot
@@ -121,6 +178,8 @@ Le profil EDID certifié est écrit dans :
 ~/.config/fedora-gnome-custom/display-certified.env
 ```
 
+**Checkpoint :** la baseline doit être certifiée. Un échec hardware est un critère d'arrêt.
+
 ## 6. Full dry-run
 
 ```bash
@@ -137,6 +196,8 @@ fingerprint hardware
 ```
 
 Toute modification d'un de ces éléments impose de refaire le dry-run.
+
+**Checkpoint :** la preuve doit correspondre au commit, à la configuration et au fingerprint qui seront utilisés pour APPLY.
 
 ## 7. Backup pré-APPLY
 
@@ -160,7 +221,11 @@ marker lié au même état que le dry-run
 
 Au moment de l'APPLY, le projet **rouvre réellement le repository Restic** et vérifie que le snapshot exact existe toujours avec le tag attendu. La seule présence du marker local ne suffit pas.
 
+**Checkpoint :** ne continuer que si le snapshot exact est encore accessible et restaurable.
+
 ## 8. APPLY protégé
+
+**Point de mutation principal :** cette étape modifie réellement la workstation.
 
 Après revue de la cible :
 
@@ -187,6 +252,8 @@ Le module kernel installe **directement le dernier Kernel Vanilla stable**, appl
 
 Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO` et `/data/Jeux`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
 
+**Checkpoint :** APPLY doit terminer sans garde-fou contourné. Un refus impose de corriger la précondition qui l'a déclenché.
+
 ## 9. Premier boot sur le Kernel Vanilla N
 
 Après APPLY :
@@ -212,6 +279,8 @@ Après démarrage sur N :
 ```
 
 Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les quatre répertoires persistants, leurs droits/labels et le mapping XDG Documents.
+
+**Checkpoint :** le runtime actif doit réellement être N et les doctors bare-metal doivent être conformes avant la certification finale.
 
 ## 10. Premier login GNOME
 
@@ -242,6 +311,8 @@ Effectuer cinq vrais cycles physiques. Après chaque reprise :
 
 Chaque preuve est unique et liée au fingerprint courant. Les erreurs critiques xe/PCIe/NVMe/xHCI après resume rendent le cycle invalide.
 
+**Checkpoint :** cinq preuves physiques distinctes et valides sont requises ; ne pas simuler ce résultat.
+
 ## 12. Certification Golden
 
 Quand toutes les preuves sont présentes :
@@ -261,6 +332,8 @@ Le diagnostic desktop bare-metal inclut le contrat de données persistantes ; un
 
 Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal. En revanche, une mise à jour kernel peut rendre l'ancienne Golden `STALE` jusqu'à une nouvelle certification.
 
+**Résultat attendu :** Gate 3 PASS et artefacts de certification liés au runtime physique courant.
+
 ## 13. Vérifier l'état certifié
 
 ```bash
@@ -270,6 +343,8 @@ Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal
 ```
 
 `diff` montre exactement ce qui a changé depuis la matrice known-good.
+
+À ce stade seulement, si Gate 3 a réellement réussi, la workstation peut être décrite comme **Golden runtime-certified**.
 
 ## 14. Mises à jour quotidiennes
 
@@ -366,3 +441,13 @@ Puis lire :
 4. [`VM_PROFILES.md`](VM_PROFILES.md).
 
 Ne désactiver ni SELinux, ni firewalld, ni le guard nftables pour contourner une erreur.
+
+---
+
+## Après ce guide
+
+- exploitation quotidienne : [`CONTROL_CENTER.md`](CONTROL_CENTER.md) ;
+- sauvegarde / restauration : [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) ;
+- symptômes : [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) ;
+- KVM : [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) ;
+- preuve et reproductibilité : [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md).
