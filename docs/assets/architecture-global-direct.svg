@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+<title id="title">Fedora 44 Golden Workstation — architecture directe</title>
+<desc id="desc">Vue directe du matériel cible, du système Fedora 44, du stockage persistant, des usages, de la sauvegarde, de la maintenance et de la certification.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#6d829d"/></marker>
+  <style>
+    text{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;fill:#0d1b44}
+    .title{font-size:42px;font-weight:800}
+    .subtitle{font-size:20px;font-weight:500;fill:#405779}
+    .section{font-size:25px;font-weight:800}
+    .card{font-size:18px;font-weight:800}
+    .small{font-size:15px;font-weight:500;fill:#334c6d}
+    .tiny{font-size:13px;font-weight:500;fill:#334c6d}
+  </style>
+</defs>
+<rect width="1440" height="900" fill="#fff"/>
+<text x="720" y="52" text-anchor="middle" class="title">Fedora 44 Golden Workstation</text>
+<text x="720" y="82" text-anchor="middle" class="subtitle">Une base stable. Tout ce qu’il faut. Rien de superflu.</text>
+<rect x="28" y="115" width="275" height="360" rx="18" fill="#f5f7fa" stroke="#c8d1dc"/>
+<text x="58" y="155" class="section">Matériel cible</text>
+<text x="58" y="205" class="card">MSI MAG B850M</text><text x="58" y="229" class="small">MORTAR WIFI</text>
+<text x="58" y="276" class="card">AMD Ryzen 7 7700</text>
+<text x="58" y="323" class="card">Intel Arc B580</text><text x="58" y="347" class="small">Battlemage · pilote xe</text>
+<text x="58" y="394" class="card">48 Gio DDR5</text>
+<text x="58" y="441" class="card">2 × Crucial T705</text><text x="58" y="465" class="small">PCIe 5.0</text>
+<rect x="335" y="115" width="670" height="290" rx="18" fill="#eaf4ff" stroke="#83b9e8"/>
+<text x="370" y="158" class="section">Système Fedora 44</text>
+<text x="370" y="184" class="subtitle">Socle stable et sécurisé</text>
+<rect x="370" y="215" width="185" height="90" rx="14" fill="#fff" stroke="#cbd9e7"/>
+<text x="390" y="250" class="card">GNOME 50</text><text x="390" y="277" class="small">Wayland</text>
+<rect x="575" y="215" width="195" height="90" rx="14" fill="#fff" stroke="#cbd9e7"/>
+<text x="595" y="250" class="card">Kernel Vanilla</text><text x="595" y="277" class="small">latest-stable · N/N-1</text>
+<rect x="790" y="215" width="180" height="90" rx="14" fill="#fff" stroke="#cbd9e7"/>
+<text x="810" y="250" class="card">Drivers</text><text x="810" y="277" class="small">xe · Mesa · firmware</text>
+<rect x="370" y="325" width="600" height="55" rx="14" fill="#fff" stroke="#cbd9e7"/>
+<text x="670" y="359" text-anchor="middle" class="card">SELinux Enforcing · firewalld · DNF5</text>
+<rect x="1037" y="115" width="375" height="360" rx="18" fill="#edf9f1" stroke="#7fc99b"/>
+<text x="1072" y="155" class="section">Stockage</text>
+<rect x="1072" y="190" width="145" height="130" rx="14" fill="#fff" stroke="#cce5d5"/>
+<text x="1092" y="225" class="card">T705 #1</text><text x="1092" y="255" class="small">Fedora / Btrfs</text><text x="1092" y="282" class="tiny">réinstallable</text>
+<rect x="1232" y="190" width="145" height="130" rx="14" fill="#fff" stroke="#cce5d5"/>
+<text x="1252" y="225" class="card">T705 #2</text><text x="1252" y="255" class="small">/data / EXT4</text><text x="1252" y="282" class="tiny">persistant</text>
+<text x="1072" y="365" class="card">/data</text>
+<text x="1072" y="395" class="small">Documents · Projets · ISO · Jeux</text>
+<text x="1072" y="424" class="small">libvirt / images VM</text>
+<line x1="303" y1="260" x2="327" y2="260" stroke="#6d829d" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1007" y1="260" x2="1029" y2="260" stroke="#42a56f" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="335" y="435" width="1077" height="210" rx="18" fill="#f2efff" stroke="#a89be8"/>
+<text x="370" y="478" class="section">Vos usages</text>
+<text x="370" y="504" class="subtitle">Tout sur un seul système, prêt à l’emploi</text>
+<rect x="370" y="530" width="230" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
+<text x="390" y="564" class="card">Bureau</text><text x="390" y="590" class="small">GNOME · Nautilus · Ptyxis</text>
+<rect x="615" y="530" width="230" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
+<text x="635" y="564" class="card">Gaming</text><text x="635" y="590" class="small">Steam · Proton · Vulkan</text>
+<rect x="860" y="530" width="250" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
+<text x="880" y="564" class="card">Virtualisation KVM</text><text x="880" y="590" class="small">Ubuntu DevOps · Windows 11</text>
+<rect x="1125" y="530" width="250" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
+<text x="1145" y="564" class="card">Applications</text><text x="1145" y="590" class="small">outils pro · Flatpak contrôlé</text>
+<line x1="670" y1="405" x2="670" y2="427" stroke="#6d829d" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="28" y="690" width="420" height="150" rx="18" fill="#fff4dc" stroke="#f0b34b"/>
+<text x="58" y="732" class="section">Sauvegarde</text>
+<text x="58" y="770" class="card">Restic chiffré</text>
+<text x="58" y="797" class="small">backup · vérification · restore canary</text>
+<rect x="510" y="690" width="420" height="150" rx="18" fill="#ffeceb" stroke="#ee8c86"/>
+<text x="540" y="732" class="section">Maintenance</text>
+<text x="540" y="770" class="card">DNF5 offline</text>
+<text x="540" y="797" class="small">updates · kernel stable · diagnostics</text>
+<rect x="992" y="690" width="420" height="150" rx="18" fill="#eaf9f1" stroke="#67c998"/>
+<text x="1022" y="732" class="section">Contrôle &amp; certification</text>
+<text x="1022" y="770" class="card">Control Center / CLI</text>
+<text x="1022" y="797" class="small">pré-contrôles · Gate 1 → 2 → 3 · preuves</text>
+<text x="720" y="878" text-anchor="middle" class="subtitle">Stable · sécurisé · performant · automatisé · reproductible</text>
+</svg>
