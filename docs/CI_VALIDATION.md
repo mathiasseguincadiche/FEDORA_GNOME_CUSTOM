@@ -136,7 +136,7 @@ Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture 
 Le contrat `tests/test_performance_runtime_contract.sh` verrouille la couche de performance :
 
 - AMD P-State/EPP et TuneD/tuned-ppd restent les mécanismes CPU/desktop ;
-- `scx-scheds` est installé comme capacité mais `sched_ext_enable_by_default=false` ;
+- `scx_rusty` est installé comme capacité mais `sched_ext_enable_by_default=false` ;
 - zram utilise `zram-generator-defaults` sans override de taille/swappiness ;
 - le benchmark T705 est limité à `none` et `mq-deadline`, sur fichier scratch, avec restauration du scheduler ;
 - GameMode n'autorise aucun overclock GPU ;

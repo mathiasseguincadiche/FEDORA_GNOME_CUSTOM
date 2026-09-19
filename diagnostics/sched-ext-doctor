@@ -10,7 +10,7 @@ emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((wa
 policy="$(performance_policy_get sched_ext_policy)"
 
 if [[ "$policy" == off ]]; then emit OK Policy 'sched_ext disabled by policy'; exit 0; fi
-if rpm -q scx-scheds >/dev/null 2>&1; then emit OK Package 'scx-scheds installed'; else emit WARN Package 'scx-scheds unavailable'; fi
+if rpm -q scx_rusty >/dev/null 2>&1; then emit OK Package 'scx_rusty installed'; else emit WARN Package 'scx_rusty unavailable'; fi
 if grep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' "/boot/config-$(uname -r)" 2>/dev/null || zgrep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' /proc/config.gz 2>/dev/null; then emit OK Kernel 'CONFIG_SCHED_CLASS_EXT=y'; else emit WARN Kernel 'CONFIG_SCHED_CLASS_EXT not proven'; fi
 if [[ -r /sys/kernel/btf/vmlinux ]]; then emit OK BTF '/sys/kernel/btf/vmlinux present'; else emit WARN BTF 'kernel BTF unavailable'; fi
 scheduler="$(command -v scx_rusty 2>/dev/null || command -v scx_lavd 2>/dev/null || true)"

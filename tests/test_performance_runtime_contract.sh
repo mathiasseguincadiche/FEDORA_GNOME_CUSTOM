@@ -35,7 +35,7 @@ for expected in \
   'gamemode_dynamic=true'; do
   grep -Fxq "$expected" "$policy" || fail "policy missing $expected"
 done
-for pkg in scx-scheds zram-generator-defaults gamemode; do grep -Fxq "$pkg" "$manifest" || fail "$pkg missing"; done
+for pkg in scx_rusty zram-generator-defaults gamemode; do grep -Fxq "$pkg" "$manifest" || fail "$pkg missing"; done
 for entry in \
   'performance.cpu_power|PERFORMANCE|desktop.lifecycle|modules/performance/50_cpu_power.sh' \
   'performance.sched_ext|PERFORMANCE|performance.cpu_power|modules/performance/51_sched_ext.sh' \
