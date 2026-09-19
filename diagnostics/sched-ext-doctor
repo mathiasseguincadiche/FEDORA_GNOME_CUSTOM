@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/performance_runtime.sh"
+quiet=false; smoke=false
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --smoke) smoke=true;; *) echo 'Usage: sched-ext-doctor [--quiet] [--smoke]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; warn=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+policy="$(performance_policy_get sched_ext_policy)"
+
+if [[ "$policy" == off ]]; then emit OK Policy 'sched_ext disabled by policy'; exit 0; fi
+if rpm -q scx_rusty >/dev/null 2>&1; then emit OK Package 'scx_rusty installed'; else emit WARN Package 'scx_rusty unavailable'; fi
+if grep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' "/boot/config-$(uname -r)" 2>/dev/null || zgrep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' /proc/config.gz 2>/dev/null; then emit OK Kernel 'CONFIG_SCHED_CLASS_EXT=y'; else emit WARN Kernel 'CONFIG_SCHED_CLASS_EXT not proven'; fi
+if [[ -r /sys/kernel/btf/vmlinux ]]; then emit OK BTF '/sys/kernel/btf/vmlinux present'; else emit WARN BTF 'kernel BTF unavailable'; fi
+scheduler="$(command -v scx_rusty 2>/dev/null || command -v scx_lavd 2>/dev/null || true)"
+if [[ -n "$scheduler" ]]; then emit OK Scheduler "$scheduler"; else emit WARN Scheduler 'no known scx scheduler binary found'; fi
+
+if $smoke; then
+  runtime_is_baremetal || emit KO Smoke 'bare-metal only'
+  [[ -n "$scheduler" ]] || emit KO Smoke 'scheduler binary unavailable'
+  if ((ko == 0)); then
+    seconds="$(performance_policy_get sched_ext_smoke_seconds)"
+    log="$REPORT_ROOT/$RUN_ID-sched-ext-smoke.log"
+    set +e
+    sudo timeout --signal=INT --kill-after=2s "${seconds}s" "$scheduler" 2>&1 | tee "$log" >/dev/null
+    rc=${PIPESTATUS[0]}
+    set -e
+    if ((rc == 124 || rc == 130 || rc == 0)); then
+      if grep -Eqi 'failed to load|BTF.*(invalid|error)|libbpf.*error|verifier.*reject|stall' "$log"; then emit KO Smoke "scheduler emitted a load/runtime failure; $log"; else emit OK Smoke "scheduler ran for ${seconds}s and was stopped safely; $log"; fi
+    else
+      emit KO Smoke "scheduler rc=$rc; $log"
+    fi
+  fi
+else
+  emit WARN Smoke 'not executed; run ./control.sh perf sched-smoke on bare-metal before enabling SCX for experiments'
+fi
+
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+if [[ "$policy" == required ]]; then ((ko == 0 && ok >= 4)); else ((ko == 0)); fi

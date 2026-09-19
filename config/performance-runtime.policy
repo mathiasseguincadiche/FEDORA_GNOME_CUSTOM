@@ -1,0 +1,23 @@
+# Fedora-Cachy runtime performance policy.
+# This policy intentionally lives outside *.conf so it can evolve independently
+# from machine-local configuration while remaining versioned and reviewable.
+schema=1
+mode_default=balanced
+tuned_enabled=true
+tuned_balanced_profile=balanced
+tuned_performance_profile=throughput-performance
+tuned_powersave_profile=powersave
+require_amd_pstate=true
+amd_pstate_mode=active
+epp_balanced=balance_performance
+epp_performance=performance
+epp_powersave=balance_power
+sched_ext_policy=auto
+sched_ext_enable_by_default=false
+sched_ext_smoke_seconds=3
+zram_policy=fedora-default
+nvme_policy=benchmark-only
+allow_experimental_io_scheduler=false
+gamemode_dynamic=true
+gamemode_desired_governor=performance
+frametime_log_required=false

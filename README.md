@@ -26,6 +26,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
   <a href="#architecture-globale">Architecture</a> ·
   <a href="#les-6-piliers-golden">6 piliers</a> ·
   <a href="#matériel-cible">Matériel</a> ·
+  <a href="#performance-fedora-cachy">Performance</a> ·
   <a href="#gaming">Gaming</a> ·
   <a href="#virtualisation">KVM</a> ·
   <a href="#sauvegarde-et-restauration">Backup</a> ·
@@ -198,6 +199,32 @@ Le retour vers les paquets kernel Fedora reste une procédure de récupération 
 
 ---
 
+## Performance Fedora-Cachy
+
+La Golden Workstation ajoute une couche de performance **mesurée, réversible et Fedora-native** :
+
+- AMD P-State/EPP observé et qualifié sur le Ryzen 7 7700 ;
+- TuneD/tuned-ppd comme pont avec les profils d'alimentation GNOME ;
+- `sched_ext`/SCX disponible en mode `auto`, mais jamais activé globalement sans smoke test bare-metal ;
+- zram conservé sur les defaults Fedora ;
+- NVMe T705 en politique `benchmark-only`, sans ADIOS/APST/ASPM forcé ;
+- GameMode dynamique par workload ;
+- analyse de frametimes MangoHud p50/p95/p99/p99.9 pour les comparaisons A/B à 240 Hz.
+
+```bash
+./control.sh perf status
+./control.sh perf balanced
+./control.sh perf performance
+./control.sh perf sched-status
+./control.sh perf sched-smoke
+./control.sh perf zram
+./control.sh perf nvme
+```
+
+Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas de kernel gaming tiers, pas d'overclock GPU automatique. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+
+---
+
 ## Gaming
 
 Gaming fait partie du **profil Golden canonique**.
@@ -322,6 +349,7 @@ Le README reste la **synthèse opérateur** ; les détails normatifs et runbooks
 | Installer | [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) · [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) |
 | Piloter | [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) |
 | Comprendre l'architecture | [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
+| Performance | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | Gaming | [`docs/GAMING.md`](docs/GAMING.md) |
 | KVM | [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) · [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) |
 | Backup / recovery | [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) |

@@ -1,0 +1,5 @@
+# Fedora-native, reversible performance tooling.
+# sched_ext remains capability-only until the bare-metal smoke test passes.
+scx_rusty
+zram-generator-defaults
+gamemode

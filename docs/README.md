@@ -19,6 +19,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 | **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
 | **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
 | **Utiliser KVM** | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
+| **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
 | **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |
 | **Sauvegarder / restaurer** | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) si échec |
 | **Dépanner** | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | runbook du domaine concerné |
@@ -95,6 +96,7 @@ Ces documents répondent à **« que dois-je lancer et quel résultat dois-je at
 
 - [`CONTROL_CENTER.md`](CONTROL_CENTER.md) — cockpit interactif et CLI ;
 - [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) — cycle de vie VM courant ;
+- [`PERFORMANCE.md`](PERFORMANCE.md) — AMD P-State/EPP, TuneD, sched_ext, zram, NVMe et frametimes ;
 - [`GAMING.md`](GAMING.md) — Steam/Vulkan/GameMode/`/data/Jeux` ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — Restic, restore et disaster recovery ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — maintenance desktop ;
