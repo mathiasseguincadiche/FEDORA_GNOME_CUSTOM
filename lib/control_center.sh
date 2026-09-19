@@ -691,6 +691,7 @@ Usage:
   ./control.sh update check|all|dnf|flatpak|firmware
   ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
+  ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|rollback
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-ubuntu|create-windows
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify

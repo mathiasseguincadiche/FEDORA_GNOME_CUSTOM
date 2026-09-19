@@ -165,6 +165,12 @@ VPN NetworkManager / GNOME :
 - tuned
 - tuned-ppd
 
+Performance runtime Fedora-Cachy :
+
+- scx-scheds — capacité sched_ext/SCX, désactivée par défaut jusqu'au smoke test bare-metal ;
+- zram-generator-defaults — swap-on-zram selon les defaults Fedora ;
+- gamemode — optimisation temporaire par workload, sans overclock GPU.
+
 Français / dictionnaires / polices :
 
 - glibc-langpack-fr

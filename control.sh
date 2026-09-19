@@ -51,6 +51,48 @@ if [[ "${1:-}" == doctor ]]; then
   esac
 fi
 
+# Fedora-Cachy performance controls are explicit. Read-only probes remain
+# available everywhere; mutations and bounded smoke tests enforce bare-metal
+# guards inside their dedicated engines.
+if [[ "${1:-}" == perf ]]; then
+  case "${2:-status}" in
+    status)
+      exec "$REPO_ROOT/diagnostics/performance-doctor"
+      ;;
+    balanced|performance|powersave)
+      exec bash "$REPO_ROOT/scripts/performance/profile.sh" "$2"
+      ;;
+    sched-status)
+      exec "$REPO_ROOT/diagnostics/sched-ext-doctor"
+      ;;
+    sched-smoke)
+      exec "$REPO_ROOT/diagnostics/sched-ext-doctor" --smoke
+      ;;
+    zram)
+      exec "$REPO_ROOT/diagnostics/zram-doctor"
+      ;;
+    nvme)
+      exec "$REPO_ROOT/diagnostics/nvme-scheduler-doctor"
+      ;;
+    nvme-benchmark)
+      exec bash "$REPO_ROOT/scripts/performance/nvme-scheduler-benchmark.sh"
+      ;;
+    frametime)
+      [[ -n "${3:-}" ]] || { echo 'Usage: ./control.sh perf frametime MANGOHUD.csv' >&2; exit "$EXIT_USAGE"; }
+      exec "$REPO_ROOT/diagnostics/frametime-doctor" "$3"
+      ;;
+    game)
+      shift 2
+      (($# > 0)) || { echo 'Usage: ./control.sh perf game COMMAND [ARG ...]' >&2; exit "$EXIT_USAGE"; }
+      exec bash "$REPO_ROOT/scripts/performance/game-performance.sh" "$@"
+      ;;
+    *)
+      echo 'Usage: ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...' >&2
+      exit "$EXIT_USAGE"
+      ;;
+  esac
+fi
+
 # VM creation is explicit and parameterized. Route the remaining CLI arguments
 # directly to the hardened creation engines so documented media/hash options are
 # actually usable through the public Control Center entrypoint.

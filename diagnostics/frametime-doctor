@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/performance_runtime.sh"
+log="${1:-}"
+if [[ -z "$log" ]]; then
+  echo 'Usage: frametime-doctor MANGOHUD.csv' >&2
+  [[ "$(performance_policy_get frametime_log_required)" == true ]] && exit "$EXIT_PRECHECK_FAILED"
+  exit 0
+fi
+[[ -r "$log" ]] || { ui_error "Frametime log not readable: $log"; exit "$EXIT_PRECHECK_FAILED"; }
+python3 - "$log" <<'PY'
+import csv, math, statistics, sys
+path=sys.argv[1]
+with open(path, newline='', encoding='utf-8-sig') as f:
+    rows=list(csv.DictReader(f))
+if not rows:
+    raise SystemExit('frametime-doctor: no CSV data rows')
+headers=rows[0].keys()
+key=next((h for h in headers if 'frametime' in h.lower().replace(' ', '_')), None)
+if not key:
+    raise SystemExit('frametime-doctor: no frametime column found')
+values=[]
+for row in rows:
+    try:
+        v=float(str(row.get(key,'')).strip())
+    except ValueError:
+        continue
+    if math.isfinite(v) and v>0:
+        values.append(v)
+if len(values)<10:
+    raise SystemExit('frametime-doctor: fewer than 10 valid samples')
+values.sort()
+def pct(p):
+    k=(len(values)-1)*p
+    lo=int(math.floor(k)); hi=int(math.ceil(k))
+    return values[lo] if lo==hi else values[lo]*(hi-k)+values[hi]*(k-lo)
+for label,p in [('p50',.50),('p95',.95),('p99',.99),('p99.9',.999)]:
+    ms=pct(p)
+    print(f'{label}_frametime_ms={ms:.3f}')
+    print(f'{label}_equivalent_fps={1000.0/ms:.2f}')
+print(f'samples={len(values)}')
+print(f'mean_frametime_ms={statistics.fmean(values):.3f}')
+PY

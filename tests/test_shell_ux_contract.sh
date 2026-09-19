@@ -8,7 +8,7 @@ for pkg in bash-completion fzf zoxide direnv; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-shell.txt"
 done
 
-grep -Fq 'desktop.shell_ux|DESKTOP|desktop.lifecycle|' "$ROOT/manifests/module-plan.conf"
+grep -Fq 'desktop.shell_ux|DESKTOP|performance.validation|' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'applications.gtk4|APPLICATIONS|desktop.shell_ux|' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'install-host-bash-ux.sh' "$ROOT/modules/desktop/28_shell_ux.sh"
 grep -Fq 'diagnostics/shell-doctor' "$ROOT/modules/desktop/28_shell_ux.sh"

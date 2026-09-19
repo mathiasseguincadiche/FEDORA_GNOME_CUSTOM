@@ -28,6 +28,7 @@ if "$REPO_ROOT/diagnostics/nautilus-integration-doctor" --quiet; then emit OK Na
 if "$REPO_ROOT/diagnostics/desktop-integration-doctor" --quiet; then emit OK Desktop 'secrets/print/VPN/power/language/remote'; else emit KO Desktop 'run desktop-integration-doctor'; fi
 if "$REPO_ROOT/diagnostics/portal-doctor" --quiet; then emit OK Portals 'ScreenCast/FileChooser/OpenURI/Notification'; else emit KO Portals 'run portal-doctor'; fi
 if "$REPO_ROOT/diagnostics/lifecycle-doctor" --quiet; then emit OK Lifecycle 'safe update timers'; else emit KO Lifecycle 'run lifecycle-doctor'; fi
+if "$REPO_ROOT/diagnostics/performance-doctor" --quiet; then emit OK Performance 'Fedora-Cachy runtime policy healthy'; else emit KO Performance 'run performance-doctor'; fi
 if "$REPO_ROOT/diagnostics/shell-doctor" --quiet; then emit OK 'Bash UX' 'prompt/history/completion/navigation'; else emit KO 'Bash UX' 'run shell-doctor'; fi
 if "$REPO_ROOT/diagnostics/ptyxis-doctor" --quiet; then emit OK Ptyxis 'native GNOME terminal + Bash contract'; else emit KO Ptyxis 'run ptyxis-doctor'; fi
 if "$REPO_ROOT/diagnostics/daily-backup-doctor" --quiet; then emit OK 'Daily backup' 'timer healthy'; else emit KO 'Daily backup' 'run daily-backup-doctor'; fi

@@ -131,6 +131,19 @@ Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed
 
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit. Son activation RPM Fusion passe par le bootstrap partagé ci-dessus.
 
+## Performance runtime Fedora-Cachy
+
+Le contrat `tests/test_performance_runtime_contract.sh` verrouille la couche de performance :
+
+- AMD P-State/EPP et TuneD/tuned-ppd restent les mécanismes CPU/desktop ;
+- `scx-scheds` est installé comme capacité mais `sched_ext_enable_by_default=false` ;
+- zram utilise `zram-generator-defaults` sans override de taille/swappiness ;
+- le benchmark T705 est limité à `none` et `mq-deadline`, sur fichier scratch, avec restauration du scheduler ;
+- GameMode n'autorise aucun overclock GPU ;
+- les tweaks globaux `sysctl -w`, `nohz_full`, ASPM/APST forcés et `force_probe` sont interdits.
+
+La CI vérifie la présence/résolution des paquets et les contrats statiques. Le smoke test SCX, les EPP réellement exposés, les schedulers NVMe et les frametimes restent des preuves bare-metal.
+
 ## Fedora 44 Gaming pretest
 
 `.github/workflows/fedora-gaming-pretest.yml` est le gate dédié au profil Gaming. Dans un conteneur Fedora 44, il :

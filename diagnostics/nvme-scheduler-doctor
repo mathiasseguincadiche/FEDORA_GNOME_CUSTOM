@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/performance_runtime.sh"
+quiet=false
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; *) echo 'Usage: nvme-scheduler-doctor [--quiet]' >&2; exit "$EXIT_USAGE";; esac; done
+ok=0; warn=0; ko=0
+emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+[[ "$(performance_policy_get nvme_policy)" == benchmark-only ]] || { emit KO Policy 'NVMe policy must remain benchmark-only'; exit 1; }
+while read -r dev model; do
+  [[ -n "$dev" ]] || continue
+  [[ "$model" == *CT1000T705SSD3* ]] || continue
+  sched="$(cat "/sys/block/$dev/queue/scheduler" 2>/dev/null || true)"
+  [[ -n "$sched" ]] && emit OK "$dev scheduler" "$sched" || emit WARN "$dev scheduler" unavailable
+  [[ -r "/sys/block/$dev/queue/read_ahead_kb" ]] && emit OK "$dev read-ahead" "$(cat "/sys/block/$dev/queue/read_ahead_kb") KiB"
+done < <(lsblk -dn -o NAME,MODEL 2>/dev/null)
+if ((ok == 0)); then emit WARN NVMe 'target T705 devices not visible in this runtime'; fi
+$quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
+((ko == 0))

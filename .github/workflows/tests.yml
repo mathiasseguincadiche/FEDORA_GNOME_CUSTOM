@@ -21,6 +21,7 @@ jobs:
       - run: bash tests/test_appimage_contract.sh
       - run: bash tests/test_multimedia_contract.sh
       - run: bash tests/test_gaming_contract.sh
+      - run: bash tests/test_performance_runtime_contract.sh
       - run: bash tests/test_virtualization_contract.sh
       - run: bash tests/test_kvm_network_fail_closed.sh
       - run: bash tests/test_vm_image_auth_contract.sh
