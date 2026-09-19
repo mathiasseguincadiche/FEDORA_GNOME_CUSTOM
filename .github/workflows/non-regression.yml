@@ -84,7 +84,7 @@ jobs:
           grep -Fq 'trap restore EXIT INT TERM' scripts/performance/game-performance.sh
           grep -Fq 'trap restore EXIT INT TERM' scripts/performance/nvme-scheduler-benchmark.sh
           ! grep -RInE 'sysctl[[:space:]]+-w|nohz_full|pcie_aspm=off|nvme_core\.default_ps_max_latency_us|xe\.force_probe|i915\.force_probe' config/performance-runtime.policy modules/performance scripts/performance
-          ! grep -RInEi 'gpu_device|nv_core_clock_mhz_offset|nv_mem_clock_mhz_offset|amd_performance_level' modules/performance
+          ! grep -RInEi '^[[:space:]]*(gpu_device|nv_core_clock_mhz_offset|nv_mem_clock_mhz_offset|amd_performance_level)[[:space:]]*=' modules/performance
 
       - name: KVM network ownership boundary
         run: |

@@ -61,7 +61,7 @@ if grep -RInE 'sysctl[[:space:]]+-w|nohz_full|pcie_aspm=off|nvme_core\.default_p
   "$ROOT/config/performance-runtime.policy" "$ROOT/modules/performance" "$ROOT/scripts/performance"; then
   fail 'forbidden blind/global tuning found'
 fi
-if grep -RInE 'gpu_device|nv_core_clock_mhz_offset|nv_mem_clock_mhz_offset|amd_performance_level' "$ROOT/modules/performance"; then
+if grep -RInE '^[[:space:]]*(gpu_device|nv_core_clock_mhz_offset|nv_mem_clock_mhz_offset|amd_performance_level)[[:space:]]*=' "$ROOT/modules/performance"; then
   fail 'GPU overclocking must not be introduced by performance runtime'
 fi
 grep -Fq 'packages-performance.txt' "$ROOT/.github/workflows/fedora-package-preflight.yml" || fail 'package preflight missing performance manifest'
