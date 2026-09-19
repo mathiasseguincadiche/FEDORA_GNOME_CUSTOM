@@ -14,7 +14,7 @@ base="$(lsblk -no PKNAME "$source_dev" 2>/dev/null | head -n1)"
 [[ -n "$base" ]] || base="$(basename "$source_dev")"
 sched_file="/sys/block/$base/queue/scheduler"
 [[ -r "$sched_file" ]] || { ui_error "Scheduler control unavailable: $sched_file"; exit "$EXIT_PRECHECK_FAILED"; }
-model="$(cat "/sys/block/$base/device/model" 2>/dev/null | xargs || true)"
+model="$(xargs < "/sys/block/$base/device/model" 2>/dev/null || true)"
 [[ "$model" == *CT1000T705SSD3* ]] || { ui_error "Refusing benchmark on non-target NVMe model: ${model:-unknown}"; exit "$EXIT_SECURITY_BLOCK"; }
 original="$(sed -nE 's/.*\[([^]]+)\].*/\1/p' "$sched_file")"
 [[ -n "$original" ]] || { ui_error 'Unable to resolve active scheduler'; exit "$EXIT_PRECHECK_FAILED"; }

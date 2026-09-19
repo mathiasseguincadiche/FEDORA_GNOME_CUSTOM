@@ -12,7 +12,11 @@ while read -r dev model; do
   [[ -n "$dev" ]] || continue
   [[ "$model" == *CT1000T705SSD3* ]] || continue
   sched="$(cat "/sys/block/$dev/queue/scheduler" 2>/dev/null || true)"
-  [[ -n "$sched" ]] && emit OK "$dev scheduler" "$sched" || emit WARN "$dev scheduler" unavailable
+  if [[ -n "$sched" ]]; then
+    emit OK "$dev scheduler" "$sched"
+  else
+    emit WARN "$dev scheduler" unavailable
+  fi
   [[ -r "/sys/block/$dev/queue/read_ahead_kb" ]] && emit OK "$dev read-ahead" "$(cat "/sys/block/$dev/queue/read_ahead_kb") KiB"
 done < <(lsblk -dn -o NAME,MODEL 2>/dev/null)
 if ((ok == 0)); then emit WARN NVMe 'target T705 devices not visible in this runtime'; fi

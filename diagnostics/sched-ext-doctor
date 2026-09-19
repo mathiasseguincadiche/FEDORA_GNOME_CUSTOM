@@ -23,8 +23,8 @@ if $smoke; then
     seconds="$(performance_policy_get sched_ext_smoke_seconds)"
     log="$REPORT_ROOT/$RUN_ID-sched-ext-smoke.log"
     set +e
-    sudo timeout --signal=INT --kill-after=2s "${seconds}s" "$scheduler" >"$log" 2>&1
-    rc=$?
+    sudo timeout --signal=INT --kill-after=2s "${seconds}s" "$scheduler" 2>&1 | tee "$log" >/dev/null
+    rc=${PIPESTATUS[0]}
     set -e
     if ((rc == 124 || rc == 130 || rc == 0)); then
       if grep -Eqi 'failed to load|BTF.*(invalid|error)|libbpf.*error|verifier.*reject|stall' "$log"; then emit KO Smoke "scheduler emitted a load/runtime failure; $log"; else emit OK Smoke "scheduler ran for ${seconds}s and was stopped safely; $log"; fi
