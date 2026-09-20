@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.0 — 2026-09-19
+
+- **Fedora-Cachy coherence closure** : promotion de la couche performance en socle opérateur de première classe, sans modifier les garde-fous Fedora/GNOME/SELinux/KVM.
+- Ajout d'un menu interactif **Performance Fedora-Cachy** au Workstation Control Center et d'un état performance visible dans le tableau de bord.
+- Le profil performance conserve AMD P-State/EPP, TuneD/tuned-ppd, zram Fedora, GameMode dynamique, SCX fail-safe et le benchmark T705 borné ; aucun tuning global expérimental n'est activé par défaut.
+- `performance-doctor --certify` exige le profil Golden normal avant une certification finale et conserve SCX en capacité optionnelle tant que le smoke test bare-metal n'a pas réussi.
+- La certification Gate 3 et son contrôle live intègrent désormais explicitement le contrat performance ; un drift performance invalide l'état runtime Golden.
+- Les cycles suspend/resume revalident le socle CPU/TuneD afin de détecter une dérive de politique d'alimentation après reprise.
+- Le bundle Golden embarque désormais `performance-runtime.policy`, son SHA-256 et un bloc `performance_runtime` dans `golden-release.json`.
+- Le tableau de bord valide également `effective_config_sha256` et `module_plan_sha256`, évitant d'afficher une ancienne certification comme valide après une modification de configuration ou de politique.
+- Documentation, Control Center, contrats CI, release manifest et version projet sont réalignés sur la même surface Fedora + finition workstation + performance mesurée.
+- Passage du projet à **0.15.0** et préparation de la prerelease `v0.15.0-rc.1`.
 ## 0.14.0 — 2026-09-03
 
 - **Final Hardening / Release Candidate** : fermeture des écarts pré-1.0 sans ajout d'un nouveau socle fonctionnel.

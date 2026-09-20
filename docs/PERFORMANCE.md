@@ -113,6 +113,27 @@ Pour l'écran 240 Hz, la moyenne FPS ne suffit pas. Le doctor sait analyser un C
 
 Il produit les percentiles de frametime p50/p95/p99/p99.9 et leur FPS équivalent. Ces mesures servent aux comparaisons A/B : baseline Fedora, profil balanced, profil performance et éventuellement SCX après smoke PASS.
 
+## Certification Golden
+
+La performance fait partie du contrat Gate 3, mais la certification ne transforme pas les expérimentations en réglages permanents.
+
+```bash
+./diagnostics/performance-doctor --certify
+```
+
+Ce mode exige notamment :
+
+- politique `performance-runtime.policy` valide ;
+- AMD P-State présent lorsque `require_amd_pstate=true`, avec mode `active`, boost CPU et EPP réellement exposé sur la cible Golden ;
+- TuneD **et tuned-ppd** actifs, avec retour sur le profil correspondant à `mode_default=balanced` et EPP cohérent ;
+- zram Fedora réellement instancié et actif comme swap ;
+- SCX fail-safe selon `sched_ext_policy` ;
+- politique NVMe toujours `benchmark-only` ;
+- GameMode disponible lorsque le profil Gaming canonique est actif.
+
+Une divergence EPP visible par rapport au profil TuneD est signalée pour diagnostic ; elle n'est pas masquée par une écriture forcée dans sysfs. Le smoke SCX et le benchmark NVMe restent des opérations explicites : ils ne sont pas déclenchés automatiquement par la certification.
+
+Le fichier `config/performance-runtime.policy` entre dans `effective_config_sha256`. Toute modification de cette politique invalide donc les preuves Golden liées à l'ancienne configuration. Le bundle Golden embarque aussi une copie exacte de cette policy et son SHA-256.
 ## Interdictions
 
 Cette couche ne doit pas introduire :

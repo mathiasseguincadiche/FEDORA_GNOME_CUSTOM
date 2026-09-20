@@ -61,10 +61,33 @@ cc_gaming_detail() {
   fi
 }
 
+cc_performance_state() {
+  if ! runtime_is_baremetal; then
+    printf 'EXPECTED'
+    return 0
+  fi
+  if "$REPO_ROOT/diagnostics/performance-doctor" --quiet --core; then
+    printf 'PASS'
+  else
+    printf 'WARN'
+  fi
+}
+
+cc_performance_detail() {
+  local active=''
+  if ! runtime_is_baremetal; then
+    printf 'preuve différée'
+    return 0
+  fi
+  if command_exists tuned-adm; then
+    active="$(tuned-adm active 2>/dev/null | sed -nE 's/^[Cc]urrent active profile:[[:space:]]*//p' | head -n1)"
+  fi
+  printf 'TuneD %s' "${active:-à vérifier}"
+}
 cc_header() {
   local version fedora runtime kernel sha gpu
   local git_state backup_state backup_detail cert_state kvm_state reboot_state
-  local data_state data_detail gaming_state gaming_detail
+  local data_state data_detail gaming_state gaming_detail performance_state performance_detail
 
   version="$(cc_version)"
   fedora="$(cc_fedora_version)"
@@ -82,6 +105,8 @@ cc_header() {
   data_detail="$(cc_data_detail)"
   gaming_state="$(cc_gaming_state)"
   gaming_detail="$(cc_gaming_detail)"
+  performance_state="$(cc_performance_state)"
+  performance_detail="$(cc_performance_detail)"
 
   printf '%s%s' "$CC_BLUE" "$CC_BOLD"
   cc_double_rule
@@ -100,6 +125,9 @@ cc_header() {
   printf ' %-24s Gaming   ' "$data_detail"
   cc_badge "$gaming_state"
   printf ' %s\n' "$gaming_detail"
+  printf '  Performance '
+  cc_badge "$performance_state"
+  printf ' %s\n' "$performance_detail"
   printf '  Backup      '
   cc_badge "$backup_state"
   printf ' %-24s Certif.  ' "$backup_detail"
@@ -213,9 +241,10 @@ cc_doctor_menu() {
     cc_option 7 'GNOME / Desktop' 'Wayland / extensions / portals'
     cc_option 8 'Applications' 'catalogue et runtime'
     cc_option 9 'Multimédia / codecs'
-    cc_option 10 'Gaming / Steam / Vulkan' 'profil Golden obligatoire'
-    cc_option 11 'Virtualisation / KVM'
-    cc_option 12 'Backup / recovery'
+    cc_option 10 'Performance Fedora-Cachy' 'P-State / TuneD / zram / SCX / NVMe'
+    cc_option 11 'Gaming / Steam / Vulkan' 'profil Golden obligatoire'
+    cc_option 12 'Virtualisation / KVM'
+    cc_option 13 'Backup / recovery'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
@@ -228,9 +257,10 @@ cc_doctor_menu() {
       7) cc_interactive_exec 'GNOME DOCTOR' "$REPO_ROOT/diagnostics/gnome-doctor" ;;
       8) cc_interactive_exec 'APPLICATIONS DOCTOR' "$REPO_ROOT/diagnostics/applications-doctor" ;;
       9) cc_interactive_exec 'MEDIA DOCTOR' "$REPO_ROOT/diagnostics/media-doctor" ;;
-      10) cc_interactive_exec 'GAMING DOCTOR' "$REPO_ROOT/diagnostics/gaming-doctor" ;;
-      11) cc_interactive_exec 'VIRTUALIZATION DOCTOR' "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
-      12) cc_interactive_exec 'BACKUP DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
+      10) cc_interactive_exec 'PERFORMANCE DOCTOR' "$REPO_ROOT/diagnostics/performance-doctor" ;;
+      11) cc_interactive_exec 'GAMING DOCTOR' "$REPO_ROOT/diagnostics/gaming-doctor" ;;
+      12) cc_interactive_exec 'VIRTUALIZATION DOCTOR' "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
+      13) cc_interactive_exec 'BACKUP DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -249,9 +279,10 @@ cc_main_menu() {
     cc_option 4 'Diagnostics & santé' 'hardware / desktop / gaming / data'
     cc_option 5 'Kernel & boot' 'latest-stable / N-N-1 / recovery'
     cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'
-    cc_option 7 'Maintenance' 'état et réparations ciblées'
-    cc_option 8 'Certification' 'baseline / preuves / Golden'
-    cc_option 9 'Logs & preuves' 'traçabilité opérateur'
+    cc_option 7 'Performance Fedora-Cachy' 'P-State / TuneD / SCX / zram / NVMe'
+    cc_option 8 'Maintenance' 'état et réparations ciblées'
+    cc_option 9 'Certification' 'baseline / preuves / Golden'
+    cc_option 10 'Logs & preuves' 'traçabilité opérateur'
     cc_option 0 'Quitter'
     printf '\n%sLes opérations critiques conservent leurs garde-fous natifs.%s\n' "$CC_DIM" "$CC_RESET"
     read -r -p 'Choix : ' choice
@@ -262,9 +293,10 @@ cc_main_menu() {
       4) cc_doctor_menu ;;
       5) cc_kernel_menu ;;
       6) cc_kvm_menu ;;
-      7) cc_maintenance_menu ;;
-      8) cc_cert_menu ;;
-      9) cc_logs_menu ;;
+      7) cc_performance_menu ;;
+      8) cc_maintenance_menu ;;
+      9) cc_cert_menu ;;
+      10) cc_logs_menu ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -283,6 +315,7 @@ Usage:
   ./control.sh update status|log|reboot|finalize
   ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|kvm|backup
+  ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh
   ./control.sh kvm create-ubuntu --cloud-image PATH [--ssh-key PATH] [--canonical-key-file PATH]

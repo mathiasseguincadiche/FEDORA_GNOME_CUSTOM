@@ -42,10 +42,13 @@ CHANGELOG.md
 README.md lorsque le contrat utilisateur change
 ```
 
-La release candidate 0.14.0 est décrite par `.github/release-manifest.env`. Le workflow `.github/workflows/release.yml`, déclenché uniquement après intégration de ce manifeste sur `main`, crée de façon idempotente la prerelease :
+La release candidate courante est décrite par `.github/release-manifest.env`. Le workflow `.github/workflows/release.yml`, déclenché uniquement après intégration de ce manifeste sur `main`, vérifie que la version de base du tag correspond exactement à `VERSION` puis crée la prerelease de façon idempotente.
+
+Pour la version courante :
 
 ```text
-v0.14.0-rc.1
+VERSION = 0.15.0
+tag     = v0.15.0-rc.1
 ```
 
 Le tag est créé sur le SHA exact du push `main` qui introduit le manifeste. Si une release du même nom existe déjà sur un autre SHA, le workflow échoue au lieu de déplacer silencieusement le tag.

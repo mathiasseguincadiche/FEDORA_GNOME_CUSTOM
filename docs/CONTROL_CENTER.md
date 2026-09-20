@@ -23,12 +23,13 @@ Le dashboard affiche :
 - état Git ;
 - second T705 `/data` EXT4 ;
 - profil Gaming / Steam / Vulkan ;
+- état Performance Fedora-Cachy et profil TuneD actif ;
 - backup Restic ;
 - certification Golden ;
 - KVM / `devops-nat` ;
 - besoin de reboot.
 
-Une certification dont le fingerprint runtime ne correspond plus est affichée `STALE`.
+Une certification dont le fingerprint runtime, la configuration effective ou le plan de modules ne correspond plus est affichée `STALE`. Le certificat doit également contenir le contrat performance Golden.
 
 ## Validation en trois gates
 
@@ -42,7 +43,7 @@ Gate 2 — Fedora 44 GNOME / VirtualBox
 Installation Fedora 44 bare-metal
         ↓
 Gate 3 — vraie workstation
-  hardware + runtime + KVM + Gaming + backup
+  hardware + runtime + Performance + KVM + Gaming + backup
         ↓
 final-certification PASS
 ```
@@ -184,6 +185,27 @@ La politique **Kernel Vanilla stable** est : latest stable direct, puis rétenti
 
 `doctor gaming` contrôle le profil Gaming canonique, `/data/Jeux`, Steam/Vulkan et les invariants Arc/Wayland/display disponibles sur bare-metal.
 
+## Performance Fedora-Cachy
+
+Le socle Performance est une surface opérateur de première classe du Control Center. Le mode Golden normal reste `balanced` ; les modes `performance` et `powersave` sont des bascules explicites et réversibles.
+
+```bash
+./control.sh perf status
+./control.sh perf balanced
+./control.sh perf performance
+./control.sh perf powersave
+./control.sh perf sched-status
+./control.sh perf sched-smoke
+./control.sh perf zram
+./control.sh perf nvme
+./control.sh perf nvme-benchmark
+./control.sh perf frametime /chemin/mangohud.csv
+./control.sh perf game COMMAND [ARG ...]
+```
+
+Le menu interactif **Performance Fedora-Cachy** expose les mêmes diagnostics et mutations sûres. Le smoke test SCX et le benchmark NVMe demandent une action explicite ; le benchmark restaure toujours le scheduler initial.
+
+La certification finale appelle `performance-doctor --certify` : TuneD doit être revenu sur le profil Golden normal, zram doit respecter le contrat Fedora, SCX reste fail-safe selon sa politique, le scheduler NVMe reste `benchmark-only` et GameMode doit être disponible lorsque Gaming est activé.
 ## KVM / machines virtuelles
 
 ### Diagnostic et réseau

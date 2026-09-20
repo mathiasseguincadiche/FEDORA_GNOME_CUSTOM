@@ -156,13 +156,19 @@ cc_backup_detail() {
 
 cc_cert_state() {
   local marker="$STATE_ROOT/final/certified.ok"
-  local expected=''
+  local expected='' expected_config='' expected_plan=''
   if [[ ! -s "$marker" ]]; then
     printf 'PENDING'
     return 0
   fi
   expected="$(workstation_runtime_fingerprint 2>/dev/null || true)"
-  if [[ -n "$expected" ]] && grep -Fxq "fingerprint=$expected" "$marker"; then
+  expected_config="$(effective_config_sha256 2>/dev/null || true)"
+  expected_plan="$(module_plan_sha256 2>/dev/null || true)"
+  if [[ -n "$expected" && -n "$expected_config" && -n "$expected_plan" ]] \
+    && grep -Fxq "fingerprint=$expected" "$marker" \
+    && grep -Fxq "effective_config_sha256=$expected_config" "$marker" \
+    && grep -Fxq "module_plan_sha256=$expected_plan" "$marker" \
+    && grep -Fxq 'performance_contract=PASS' "$marker"; then
     printf 'VALID'
   else
     printf 'STALE'
@@ -569,12 +575,60 @@ cc_kvm_menu() {
   done
 }
 
+cc_performance_menu() {
+  local choice=''
+  local frametime_log=''
+  while true; do
+    cc_clear
+    cc_header
+    cc_section '7 — PERFORMANCE FEDORA-CACHY'
+    cc_option 1 'État performance' 'AMD P-State / EPP / TuneD / zram / SCX'
+    cc_option 2 'Profil balanced' 'mode Golden normal'
+    cc_option 3 'Profil performance' 'temporaire'
+    cc_option 4 'Profil powersave' 'temporaire'
+    cc_option 5 'État sched_ext / SCX' 'read-only'
+    cc_option 6 'Smoke test SCX' 'borné, bare-metal'
+    cc_option 7 'État zram' 'defaults Fedora'
+    cc_option 8 'État scheduler NVMe' 'read-only'
+    cc_option 9 'Benchmark scheduler T705' 'none vs mq-deadline, restauration automatique'
+    cc_option 10 'Analyser frametimes MangoHud' 'CSV p50/p95/p99/p99.9'
+    cc_option 0 'Retour'
+    read -r -p 'Choix : ' choice
+    case "$choice" in
+      1) cc_interactive_exec 'PERFORMANCE DOCTOR' "$REPO_ROOT/diagnostics/performance-doctor" ;;
+      2) cc_interactive_exec 'PROFIL BALANCED' bash "$REPO_ROOT/scripts/performance/profile.sh" balanced ;;
+      3) cc_interactive_exec 'PROFIL PERFORMANCE' bash "$REPO_ROOT/scripts/performance/profile.sh" performance ;;
+      4) cc_interactive_exec 'PROFIL POWERSAVE' bash "$REPO_ROOT/scripts/performance/profile.sh" powersave ;;
+      5) cc_interactive_exec 'SCHED_EXT / SCX' "$REPO_ROOT/diagnostics/sched-ext-doctor" ;;
+      6)
+        if cc_confirm 'Lancer le smoke test SCX borné sur le noyau actif ?'; then
+          cc_interactive_exec 'SCX SMOKE TEST' "$REPO_ROOT/diagnostics/sched-ext-doctor" --smoke
+        fi
+        ;;
+      7) cc_interactive_exec 'ZRAM DOCTOR' "$REPO_ROOT/diagnostics/zram-doctor" ;;
+      8) cc_interactive_exec 'NVME SCHEDULER DOCTOR' "$REPO_ROOT/diagnostics/nvme-scheduler-doctor" ;;
+      9)
+        if cc_confirm 'Lancer le benchmark filesystem-safe sur le T705 /data ?'; then
+          cc_interactive_exec 'T705 SCHEDULER BENCHMARK' bash "$REPO_ROOT/scripts/performance/nvme-scheduler-benchmark.sh"
+        fi
+        ;;
+      10)
+        read -r -p 'CSV MangoHud : ' frametime_log
+        if [[ -n "$frametime_log" ]]; then
+          cc_interactive_exec 'ANALYSE FRAMETIMES' "$REPO_ROOT/diagnostics/frametime-doctor" "$frametime_log"
+        fi
+        ;;
+      0) return 0 ;;
+      *) printf 'Choix invalide.\n'; sleep 1 ;;
+    esac
+  done
+}
 cc_maintenance_menu() {
   local choice=''
   while true; do
     cc_clear
     cc_header
-    cc_section '7 — MAINTENANCE'
+    cc_section '8 — MAINTENANCE'
     cc_option 1 'État système rapide' 'charge / RAM / disques / services KO'
     cc_option 2 'Réparer affichage certifié'
     cc_option 3 'Mesurer cold-start Nautilus'
@@ -599,7 +653,7 @@ cc_cert_menu() {
   while true; do
     cc_clear
     cc_header
-    cc_section '8 — CERTIFICATION'
+    cc_section '9 — CERTIFICATION'
     cc_option 1 'Statut certification finale'
     cc_option 2 'Enregistrer cycle suspend'
     cc_option 3 'Certifier Golden Workstation'
@@ -628,7 +682,7 @@ cc_logs_menu() {
   while true; do
     cc_clear
     cc_header
-    cc_section '9 — LOGS & PREUVES'
+    cc_section '10 — LOGS & PREUVES'
     cc_option 1 'Lister logs / rapports / markers'
     cc_option 2 'Afficher dernier main.log'
     cc_option 3 'Collecter panne de boot'
@@ -658,9 +712,10 @@ cc_main_menu() {
     cc_option 4 'Diagnostics & santé' 'doctors par domaine'
     cc_option 5 'Kernel & boot' 'vanilla/stable + fallback Fedora'
     cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'
-    cc_option 7 'Maintenance' 'état et réparations ciblées'
-    cc_option 8 'Certification' 'baseline / suspend / Golden'
-    cc_option 9 'Logs & preuves' 'traçabilité opérateur'
+    cc_option 7 'Performance Fedora-Cachy' 'P-State / TuneD / SCX / zram / NVMe'
+    cc_option 8 'Maintenance' 'état et réparations ciblées'
+    cc_option 9 'Certification' 'baseline / suspend / Golden'
+    cc_option 10 'Logs & preuves' 'traçabilité opérateur'
     cc_option 0 'Quitter'
     printf '\n%sLes opérations critiques conservent leurs garde-fous natifs.%s\n' "$CC_DIM" "$CC_RESET"
     read -r -p 'Choix : ' choice
@@ -671,9 +726,10 @@ cc_main_menu() {
       4) cc_doctor_menu ;;
       5) cc_kernel_menu ;;
       6) cc_kvm_menu ;;
-      7) cc_maintenance_menu ;;
-      8) cc_cert_menu ;;
-      9) cc_logs_menu ;;
+      7) cc_performance_menu ;;
+      8) cc_maintenance_menu ;;
+      9) cc_cert_menu ;;
+      10) cc_logs_menu ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -689,7 +745,7 @@ Usage:
   ./control.sh status                  Tableau de bord read-only
   ./control.sh install dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
-  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune|prune
+  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|rollback

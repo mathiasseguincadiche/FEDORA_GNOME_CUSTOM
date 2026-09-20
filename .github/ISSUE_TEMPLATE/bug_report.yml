@@ -12,7 +12,7 @@ body:
     attributes:
       label: Commit / version
       description: SHA Git exact et version du fichier VERSION.
-      placeholder: d9f6a1ca… / 0.14.0
+      placeholder: d9f6a1ca… / 0.15.0
     validations:
       required: true
   - type: dropdown

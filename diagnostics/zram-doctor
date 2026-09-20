@@ -3,7 +3,14 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false
-for arg in "$@"; do case "$arg" in --quiet) quiet=true;; *) echo 'Usage: zram-doctor [--quiet]' >&2; exit "$EXIT_USAGE";; esac; done
+certify=false
+for arg in "$@"; do
+  case "$arg" in
+    --quiet) quiet=true ;;
+    --certify) certify=true ;;
+    *) echo 'Usage: zram-doctor [--quiet] [--certify]' >&2; exit "$EXIT_USAGE" ;;
+  esac
+done
 ok=0; warn=0; ko=0
 emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 
@@ -11,10 +18,22 @@ if rpm -q zram-generator-defaults >/dev/null 2>&1; then emit OK Package 'zram-ge
 zram_swap="$(swapon --noheadings --raw --show=NAME,TYPE,SIZE,USED,PRIO 2>/dev/null | awk '$1 ~ /\/dev\/zram/ {print; exit}')"
 if [[ -n "$zram_swap" ]]; then
   emit OK 'Swap-on-zram' "$zram_swap"
+elif $certify; then
+  emit KO 'Swap-on-zram' 'Golden certification requires active Fedora zram swap'
 else
   emit WARN 'Swap-on-zram' 'no active /dev/zram swap; a reboot may be required after first install'
 fi
-if [[ -r /sys/block/zram0/comp_algorithm ]]; then emit OK Compression "$(cat /sys/block/zram0/comp_algorithm)"; else emit WARN Compression 'zram0 is not instantiated'; fi
-if [[ -r /sys/block/zram0/disksize ]]; then emit OK Size "$(numfmt --to=iec "$(cat /sys/block/zram0/disksize)" 2>/dev/null || cat /sys/block/zram0/disksize)"; fi
+if [[ -r /sys/block/zram0/comp_algorithm ]]; then
+  emit OK Compression "$(cat /sys/block/zram0/comp_algorithm)"
+elif $certify; then
+  emit KO Compression 'zram0 is not instantiated'
+else
+  emit WARN Compression 'zram0 is not instantiated'
+fi
+if [[ -r /sys/block/zram0/disksize ]]; then
+  emit OK Size "$(numfmt --to=iec "$(cat /sys/block/zram0/disksize)" 2>/dev/null || cat /sys/block/zram0/disksize)"
+elif $certify; then
+  emit KO Size 'zram0 disksize is unavailable'
+fi
 $quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
 ((ko == 0))
