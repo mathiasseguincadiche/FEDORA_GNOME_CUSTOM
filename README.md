@@ -11,7 +11,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.14.0**
+**Golden Workstation 0.15.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -68,6 +68,7 @@ Routes opérateur essentielles :
 ./control.sh backup now
 ./control.sh doctor all
 ./control.sh doctor gaming
+./control.sh perf status
 ./control.sh kernel status
 ./control.sh cert status
 ```
@@ -79,10 +80,11 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.14.0      Fedora 44      Runtime BAREMETAL
+  Projet      0.15.0      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
+  Performance [PASS] TuneD balanced
   Backup      [PASS]                     Certif.  [PENDING]
 ══════════════════════════════════════════════════════════════════════════════════════
 
@@ -92,9 +94,10 @@ Routes opérateur essentielles :
   [4] Diagnostics & santé
   [5] Kernel & boot
   [6] KVM / machines virtuelles
-  [7] Maintenance
-  [8] Certification
-  [9] Logs & preuves
+  [7] Performance Fedora-Cachy
+  [8] Maintenance
+  [9] Certification
+  [10] Logs & preuves
 ```
 
 </details>
@@ -221,7 +224,7 @@ La Golden Workstation ajoute une couche de performance **mesurée, réversible e
 ./control.sh perf nvme
 ```
 
-Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas de kernel gaming tiers, pas d'overclock GPU automatique. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas de kernel gaming tiers, pas d'overclock GPU automatique. La Gate 3 exige aussi le contrat performance Golden dans son état normal avant de produire un PASS final. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 ---
 

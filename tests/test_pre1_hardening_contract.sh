@@ -3,8 +3,9 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(<"$ROOT/VERSION")" == '0.14.0' ]]
-grep -Fq '**Golden Workstation 0.14.0**' "$ROOT/README.md"
+version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+[[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
+grep -Fq "**Golden Workstation $version**" "$ROOT/README.md"
 grep -Fq 'docs/GOLDEN_RELEASE.md' "$ROOT/README.md"
 
 # Runtime identity must fail closed for virtualized and ambiguous environments.
@@ -19,6 +20,8 @@ grep -Fq 'FINAL_CERT_FINGERPRINT_PACKAGES=' "$ROOT/config/performance.conf"
 grep -Fq 'workstation_runtime_fingerprint' "$ROOT/lib/baseline.sh"
 grep -Fq 'workstation_runtime_fingerprint' "$ROOT/diagnostics/final-certification"
 grep -Fq 'diagnostics/virtualization-doctor' "$ROOT/diagnostics/final-certification"
+grep -Fq 'diagnostics/performance-doctor' "$ROOT/diagnostics/final-certification"
+grep -Fq 'performance_contract=PASS' "$ROOT/diagnostics/final-certification"
 
 for stale in BASELINE_NVME_TEST_SECONDS BASELINE_NVME_VERIFY_SECONDS DISPLAY_PRESERVE_VRR FINAL_CERT_REQUIRE_DISPLAY_REPAIR FINAL_CERT_REQUIRE_NAUTILUS_COLDSTART FINAL_CERT_REQUIRE_KERNEL ALLOW_EXPERIMENTAL_KERNEL_ARGS CHECK_VULKAN CHECK_VAAPI CHECK_DRM_ERRORS CHECK_GPU_RESETS CHECK_DISPLAY_MODE CHECK_VRR CHECK_HDR; do
   ! grep -RIn "^${stale}=" "$ROOT/config" >/dev/null || { echo "stale config key remains: $stale" >&2; exit 1; }

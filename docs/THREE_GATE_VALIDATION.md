@@ -344,6 +344,8 @@ Gate 3 certifie notamment :
 - PCIe 5.0 x4 ;
 - absence d'erreur AER/NVMe critique ;
 - GNOME/Nautilus/Ptyxis/portals ;
+- contrat Performance Fedora-Cachy : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
+- profil TuneD revenu au mode Golden normal `balanced` au moment de la certification ;
 - KVM/libvirt et isolation réseau fail-closed ;
 - Restic externe chiffré + restore canary ;
 - cold-start Nautilus ;
@@ -357,9 +359,10 @@ Enregistrer chaque cycle physique :
 
 ## 6. Certification finale
 
-Lorsque toutes les preuves sont présentes :
+Lorsque toutes les preuves sont présentes, vérifier au besoin l'état performance puis lancer la certification :
 
 ```bash
+./control.sh perf status
 ./control.sh validate gate3 certify
 ```
 

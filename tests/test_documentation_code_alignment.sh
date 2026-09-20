@@ -15,6 +15,8 @@ for file in \
   docs/VIRTUALIZATION.md \
   docs/VM_PROFILES.md \
   docs/CONTROL_CENTER.md \
+  docs/PERFORMANCE.md \
+  docs/GOLDEN_RELEASE.md \
   docs/SUPPLY_CHAIN.md; do
   require_file "$file"
 done
@@ -140,6 +142,13 @@ for doc in docs/VIRTUALIZATION.md docs/RUNBOOK_PERSISTENT_DATA_GAMING.md; do
     grep -Fq "$path" "$ROOT/$doc" || fail "$doc missing $path"
   done
 done
+
+# Performance is a first-class Golden runtime contract and must stay connected
+# across public controls, Gate 3 certification and release evidence.
+grep -Fq './control.sh perf status' "$ROOT/docs/CONTROL_CENTER.md" || fail 'Control Center missing performance route'
+grep -Fq 'performance_contract=PASS' "$ROOT/diagnostics/final-certification" || fail 'final certificate missing performance contract'
+grep -Fq 'performance-runtime.policy' "$ROOT/docs/GOLDEN_RELEASE.md" || fail 'Golden release docs missing performance policy evidence'
+grep -Fq 'performance-doctor --certify' "$ROOT/docs/PERFORMANCE.md" || fail 'performance docs missing certification contract'
 
 # Gaming is part of the canonical target and the runbook must not present it as
 # an optional Golden pillar.

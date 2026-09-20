@@ -134,6 +134,21 @@ Blur My Shell reste désactivé dans l'état Golden afin de réduire les variabl
 
 Le répertoire standard GNOME « Documents » pointe vers `/data/Documents`, de sorte que les applications et Nautilus utilisent directement le stockage persistant sans symlink bricolé dans le HOME.
 
+## Performance Fedora-Cachy
+
+Le profil Golden conserve Fedora comme socle et ajoute une couche de performance mesurée et réversible :
+
+- AMD P-State/EPP observé sur le Ryzen 7 7700 ;
+- TuneD/tuned-ppd comme intégration des profils GNOME/Fedora ;
+- zram selon les defaults Fedora ;
+- GameMode uniquement par workload ;
+- SCX/sched_ext en capacité `auto`, jamais imposé globalement sans smoke test bare-metal ;
+- T705 en politique `benchmark-only` ;
+- frametimes MangoHud p50/p95/p99/p99.9 pour comparer les profils.
+
+Le mode normal certifiable reste `balanced`. La Gate 3 exécute `performance-doctor --certify` et enregistre `performance_contract=PASS` dans le certificat final. Une modification de `performance-runtime.policy` change la configuration effective et invalide les preuves anciennes.
+
+Voir [`PERFORMANCE.md`](PERFORMANCE.md).
 ## KVM
 
 Le socle KVM fait partie de la certification finale lorsqu'il est activé :

@@ -15,6 +15,7 @@ runtime-stack.tsv
 enabled-repositories.txt
 hardware-ids.txt
 fedora44-media.lock
+performance-runtime.policy
 gate1-proof.json
 gate2-proof.json
 MANIFEST.sha256
@@ -48,6 +49,7 @@ Une preuve WSL2 ou VirtualBox ne devient donc jamais une preuve matérielle : el
 - version et commit du projet ;
 - `effective_config_sha256` ;
 - hash du plan de modules ;
+- bloc `performance_runtime` avec `contract=PASS`, policy SHA-256 et politiques CPU/SCX/zram/NVMe ;
 - `validation_gates.chain=PASS` ;
 - SHA-256 de la preuve Gate 1 ;
 - SHA-256 de la preuve Gate 2 ;
@@ -82,6 +84,7 @@ T705 SMART/PCIe = valide
 kernel courant = N
 GRUB default = N
 kernel-core installés <= 2
+performance-doctor --certify = PASS
 ```
 
 Le fallback Fedora permanent n'est plus une condition Golden. Le retour aux paquets Fedora reste une procédure de récupération explicite hors politique normale N/N-1.

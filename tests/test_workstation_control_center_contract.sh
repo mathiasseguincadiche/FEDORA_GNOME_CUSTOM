@@ -4,7 +4,9 @@ set -Eeuo pipefail
 trap 'echo "workstation control center contract failed at line $LINENO" >&2' ERR
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(tr -d '[:space:]' < "$ROOT/VERSION")" == "0.14.0" ]] || { echo 'VERSION must be 0.14.0' >&2; exit 1; }
+version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+[[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || { echo 'VERSION must be semantic x.y.z' >&2; exit 1; }
+grep -Fq "**Golden Workstation $version**" "$ROOT/README.md"
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center_presentation.sh" ]] || { echo 'control center presentation layer missing' >&2; exit 1; }
@@ -27,7 +29,7 @@ bash -n "$ROOT/scripts/kernel/kernel-lifecycle.sh"
 grep -Fq "exec \"\$REPO_ROOT/control.sh\" \"\$@\"" "$ROOT/menu.sh"
 [[ "$(wc -l < "$ROOT/menu.sh")" -le 10 ]] || { echo 'menu.sh should remain a thin alias' >&2; exit 1; }
 
-# Operator surface: nine clear functional pillars plus non-interactive CLI.
+# Operator surface: ten clear functional pillars plus non-interactive CLI.
 for expected in \
   'INSTALLATION & CONVERGENCE' \
   'MISES À JOUR' \
@@ -35,6 +37,7 @@ for expected in \
   'DIAGNOSTICS & SANTÉ' \
   'KERNEL & BOOT' \
   'KVM / MACHINES VIRTUELLES' \
+  'PERFORMANCE FEDORA-CACHY' \
   'MAINTENANCE' \
   'CERTIFICATION' \
   'LOGS & PREUVES' \
@@ -179,6 +182,7 @@ grep -Fq 'Runtime' "$status_file"
 grep -Fq 'Politique N / N-1 · max 2' "$status_file"
 grep -Fq 'Data' "$status_file"
 grep -Fq 'Gaming' "$status_file"
+grep -Fq 'Performance' "$status_file"
 
 # Documentation must explain both interactive and CLI use and the no-auto-flash rule.
 grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"
@@ -191,6 +195,8 @@ grep -Fq './control.sh kernel rollback' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'N / N-1' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh doctor data' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh doctor gaming' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh perf status' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh perf sched-smoke' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kvm create-ubuntu' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kvm create-windows' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq -- '--windows-sha256' "$ROOT/docs/CONTROL_CENTER.md"

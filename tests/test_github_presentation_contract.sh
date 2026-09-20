@@ -23,8 +23,10 @@ grep -Fq 'Apache License' "$ROOT/LICENSE" || fail 'Apache-2.0 license title miss
 grep -Fq 'Version 2.0' "$ROOT/LICENSE" || fail 'Apache-2.0 version missing'
 
 # Landing page: identity, live CI badges, quick start and honest project status.
+version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+[[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail 'VERSION is not semantic x.y.z'
 grep -Fq '# Fedora 44 Golden Workstation' "$ROOT/README.md" || fail 'landing title missing'
-grep -Fq '**Golden Workstation 0.14.0**' "$ROOT/README.md" || fail 'version identity missing'
+grep -Fq "**Golden Workstation $version**" "$ROOT/README.md" || fail 'version identity missing'
 grep -Fq 'actions/workflows/tests.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Tests badge missing'
 grep -Fq 'actions/workflows/shell-quality.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Shell quality badge missing'
 grep -Fq 'actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora package badge missing'
@@ -77,6 +79,8 @@ grep -Fq 'Évolution / amélioration' "$ROOT/.github/ISSUE_TEMPLATE/feature_requ
 grep -Fq 'Politique N / N-1 · max 2' "$ROOT/lib/control_center_presentation.sh" || fail 'current kernel presentation missing'
 grep -Fq 'Data' "$ROOT/lib/control_center_presentation.sh" || fail 'data dashboard missing'
 grep -Fq 'Gaming' "$ROOT/lib/control_center_presentation.sh" || fail 'gaming dashboard missing'
+grep -Fq 'Performance' "$ROOT/lib/control_center_presentation.sh" || fail 'performance dashboard missing'
+grep -Fq "cc_option 7 'Performance Fedora-Cachy'" "$ROOT/lib/control_center_presentation.sh" || fail 'performance main-menu pillar missing'
 if grep -Eq 'dnf5?[[:space:]].*upgrade|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center_presentation.sh"; then
   fail 'business logic must not leak into presentation layer'
 fi

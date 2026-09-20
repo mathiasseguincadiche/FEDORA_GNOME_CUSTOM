@@ -5,9 +5,10 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-[[ "$(tr -d '[:space:]' < "$ROOT/VERSION")" == 0.14.0 ]]
-grep -Fq '**Golden Workstation 0.14.0**' "$ROOT/README.md"
-grep -Fq '## 0.14.0 — 2026-09-03' "$ROOT/CHANGELOG.md"
+version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+[[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
+grep -Fq "**Golden Workstation $version**" "$ROOT/README.md"
+grep -Fq "## $version —" "$ROOT/CHANGELOG.md"
 
 # User-decided HOST policy.
 grep -Fq 'services --enabled=NetworkManager,firewalld --disabled=sshd' "$ROOT/installer/generate-fedora44-kickstart.sh"
@@ -244,7 +245,8 @@ done
 [[ -r "$ROOT/.github/release-manifest.env" ]]
 [[ -r "$ROOT/.github/workflows/release.yml" ]]
 # The hardening contract validates the prerelease shape instead of pinning one RC forever.
-grep -Eq '^RELEASE_TAG=v0\.14\.0-rc\.[0-9]+$' "$ROOT/.github/release-manifest.env"
+version_regex="${version//./\\.}"
+grep -Eq "^RELEASE_TAG=v${version_regex}-rc[.][0-9]+$" "$ROOT/.github/release-manifest.env"
 grep -Fxq 'RELEASE_PRERELEASE=true' "$ROOT/.github/release-manifest.env"
 [[ -x "$ROOT/scripts/development/check-main-protection.sh" || -r "$ROOT/scripts/development/check-main-protection.sh" ]]
 

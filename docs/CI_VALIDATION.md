@@ -140,7 +140,10 @@ Le contrat `tests/test_performance_runtime_contract.sh` verrouille la couche de 
 - zram utilise `zram-generator-defaults` sans override de taille/swappiness ;
 - le benchmark T705 est limité à `none` et `mq-deadline`, sur fichier scratch, avec restauration du scheduler ;
 - GameMode n'autorise aucun overclock GPU ;
-- les tweaks globaux `sysctl -w`, `nohz_full`, ASPM/APST forcés et `force_probe` sont interdits.
+- les tweaks globaux `sysctl -w`, `nohz_full`, ASPM/APST forcés et `force_probe` sont interdits ;
+- le Control Center expose la surface `perf` en CLI et dans le menu interactif ;
+- la certification finale exige `performance_contract=PASS` et le profil Golden normal ;
+- le bundle Golden capture `performance-runtime.policy` et son SHA-256.
 
 La CI vérifie la présence/résolution des paquets et les contrats statiques. Le smoke test SCX, les EPP réellement exposés, les schedulers NVMe et les frametimes restent des preuves bare-metal.
 
