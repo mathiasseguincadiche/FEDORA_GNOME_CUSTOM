@@ -24,6 +24,12 @@ chmod +x "$sentinel"
   [[ "$(wc -l < "$tmp/mutations.log")" -eq 1 ]]
 )
 
+mkdir -p "$tmp/lib"
+cat > "$tmp/lib/bootstrap.sh" <<'SH'
+engine_bootstrap() { :; }
+ui_check() { :; }
+SH
+export MODULE_LOG="$tmp/modules.log"
 # Dynamic proof that module-local helpers cannot leak into the next convergence module.
 cat > "$tmp/a.sh" <<'SH'
 a_module_precheck() { :; }
@@ -51,12 +57,11 @@ SH
   RUN_ID='isolation-test'
   RUNTIME_ENVIRONMENT='ci'
   DRY_RUN=true
-  EXIT_CONFIG_FAILED=12
+  export EXIT_CONFIG_FAILED=12
   mkdir -p "$LOG_DIR" "$REPORT_ROOT"
   declare -a CATALOG_IDS=(a.module b.module)
   declare -A CATALOG_PATH=( [a.module]='a.sh' [b.module]='b.sh' )
   declare -A CATALOG_SCOPE=( [a.module]='TEST' [b.module]='TEST' )
-  ui_check() { :; }
   is_true() { [[ "${1,,}" == true ]]; }
   repo_commit() { printf 'test-commit\n'; }
   source "$ROOT/lib/orchestrator.sh"

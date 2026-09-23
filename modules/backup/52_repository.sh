@@ -7,4 +7,4 @@ backup_repository_precheck() {
 }
 backup_repository_plan() { echo 'Restic repository is selected/proven at runtime; local pre-APPLY repositories must resolve to an external USB/removable/hotplug filesystem.'; }
 backup_repository_apply() { :; }
-backup_repository_postcheck() { command_exists restic || return "$EXIT_POSTCHECK_FAILED"; }
+backup_repository_postcheck() { is_true "${DRY_RUN:-true}" && return 0; command_exists restic || return "$EXIT_POSTCHECK_FAILED"; }

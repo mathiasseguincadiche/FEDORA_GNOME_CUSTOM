@@ -82,6 +82,12 @@ chmod +x "$tmp/systemd-detect-virt"
   ! runtime_is_baremetal
 )
 
+mkdir -p "$tmp/lib"
+cat > "$tmp/lib/bootstrap.sh" <<'SH'
+engine_bootstrap() { :; }
+ui_check() { :; }
+SH
+export MODULE_LOG EXIT_CONFIG_FAILED
 # A catalog module missing its apply function must fail rather than becoming OK.
 cat > "$tmp/fake.sh" <<'SH'
 fake_module_precheck() { :; }
@@ -94,9 +100,6 @@ SH
   EXIT_CONFIG_FAILED=12
   declare -A CATALOG_PATH=( [fake.module]='fake.sh' )
   declare -A CATALOG_SCOPE=( [fake.module]='TEST' )
-  ui_check() { :; }
-  is_true() { [[ "${1,,}" == true ]]; }
-  repo_commit() { printf unknown; }
   source "$ROOT/lib/orchestrator.sh"
   if orchestrator_run_module fake.module; then
     echo 'missing module apply function was accepted' >&2
@@ -122,7 +125,6 @@ SH
   declare -a CATALOG_IDS=(fail.module)
   declare -A CATALOG_PATH=( [fail.module]='fail.sh' )
   declare -A CATALOG_SCOPE=( [fail.module]='TEST' )
-  ui_check() { :; }
   is_true() { [[ "${1,,}" == true ]]; }
   repo_commit() { printf test-commit; }
   source "$ROOT/lib/orchestrator.sh"

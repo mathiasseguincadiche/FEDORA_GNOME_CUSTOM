@@ -48,7 +48,7 @@ else
 fi
 
 if command_exists gnome-extensions && gnome-extensions list 2>/dev/null | grep -Fxq "$uuid" \
-  && gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+  && gnome_extension_active "$uuid"; then
   emit OK 'Resource Monitor state' enabled
 elif [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
   emit KO 'Resource Monitor state' 'not visible/enabled in current GNOME session'

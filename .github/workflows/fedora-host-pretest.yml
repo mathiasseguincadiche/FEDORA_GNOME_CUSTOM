@@ -21,6 +21,12 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Exercise the production base installer in the fresh container
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          dnf -y install sudo git python3
+          bash scripts/ci/test-fresh-fedora-system.sh
       - name: Install Fedora-native base contract
         shell: bash
         run: |

@@ -24,7 +24,7 @@ kernel_lifecycle_max_installed() {
 
 kernel_lifecycle_release_is_stable() {
   local release="${1,,}"
-  [[ -n "$release" ]] || return 1
+  [[ "$release" =~ ^[0-9]+([.][0-9]+)+-[A-Za-z0-9._+~-]+$ ]] || return 1
   [[ "$release" != *linux-next* && "$release" != *mainline* && ! "$release" =~ (^|[-._])rc[0-9]*($|[-._]) ]]
 }
 
@@ -148,8 +148,8 @@ kernel_lifecycle_dnf_limit() {
 
 kernel_lifecycle_ensure_tooling_and_repo() {
   command_exists dnf5 || { ui_error 'dnf5 is required for Kernel Vanilla management'; return "$EXIT_PRECHECK_FAILED"; }
-  sudo dnf5 -y install dnf5-plugins mokutil grubby grub2-tools-minimal
-  sudo dnf5 -y copr enable "${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}"
+  sudo dnf5 -y install dnf5-plugins mokutil grubby grub2-tools-minimal || return $?
+  sudo dnf5 -y copr enable "${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}" || return $?
   kernel_lifecycle_vanilla_repo_id >/dev/null || { ui_error 'Unable to identify exactly one enabled Kernel Vanilla stable repository'; return "$EXIT_POSTCHECK_FAILED"; }
 }
 
@@ -157,7 +157,7 @@ kernel_lifecycle_ensure_dnf_retention() {
   local limit current
   limit="$(kernel_lifecycle_max_installed)"
   (( limit == 2 )) || { ui_error "Golden N/N-1 policy requires max_installed_kernels=2, got $limit"; return "$EXIT_CONFIG_FAILED"; }
-  sudo dnf5 config-manager setopt "installonly_limit=$limit"
+  sudo dnf5 config-manager setopt "installonly_limit=$limit" || return $?
   current="$(kernel_lifecycle_dnf_limit)"
   [[ "$current" == "$limit" ]] || { ui_error "DNF installonly_limit mismatch: expected=$limit actual=${current:-unknown}"; return "$EXIT_POSTCHECK_FAILED"; }
   ui_check OK 'Kernel retention' "DNF installonly_limit=$limit"
@@ -174,9 +174,9 @@ kernel_lifecycle_resolve_latest_stable() {
 }
 
 kernel_lifecycle_prepare_rolling_update() {
-  kernel_lifecycle_require_host_gate || return $?
-  kernel_lifecycle_ensure_tooling_and_repo || return $?
-  kernel_lifecycle_ensure_dnf_retention || return $?
+  kernel_lifecycle_require_host_gate >&2 || return $?
+  kernel_lifecycle_ensure_tooling_and_repo >&2 || return $?
+  kernel_lifecycle_ensure_dnf_retention >&2 || return $?
   kernel_lifecycle_resolve_latest_stable
 }
 

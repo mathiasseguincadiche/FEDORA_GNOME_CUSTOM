@@ -47,7 +47,7 @@ check_source_marker() {
 check_extension_state() {
   local label="$1" uuid="$2"
   if gnome-extensions list 2>/dev/null | grep -Fxq "$uuid" \
-    && gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+    && gnome_extension_active "$uuid"; then
     emit OK "$label state" enabled
   else
     emit KO "$label state" 'not visible/enabled in current GNOME Shell session'

@@ -45,6 +45,8 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 | **Certification physique** | **PENDING** — Gate 3 bare-metal |
 | **Golden runtime-certified** | Non, tant que `gate3 certify` n'a pas réussi sur la machine cible |
 
+**Suivi de fiabilité :** [corrections, preuves et parcours restant](docs/RELIABILITY_QUALIFICATION.md).
+
 Les badges ci-dessus donnent l'état live des principaux workflows. La CI prouve les contrats logiciels ; **elle ne remplace jamais la preuve physique Gate 3**.
 
 ---

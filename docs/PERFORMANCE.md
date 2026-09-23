@@ -148,3 +148,28 @@ Cette couche ne doit pas introduire :
 - recompilation globale Fedora en `znver4`.
 
 Les optimisations CPU spécifiques peuvent être utilisées dans des workloads ou builds dédiés, jamais comme macro globale du système Fedora.
+
+## Mesures reproductibles après qualification
+
+Après un certificat Gate 3 valide, mesurer un workload identique au moins cinq
+fois avec la même version des sources et les mêmes données :
+
+```bash
+./scripts/performance/measure-workload.sh balanced 5 -- /chemin/absolu/workload-reproductible.sh
+```
+
+Le wrapper ne change aucun profil : il conserve commit, empreintes configuration
+et runtime, noyau, commande exacte, sorties brutes, durées et dispersion dans
+`reports/`. Une commande en échec ne produit jamais une mesure PASS. Le PASS
+signifie uniquement que toutes les répétitions ont réussi.
+
+Pour chaque comparaison A/B, conserver BIOS, fréquence RAM, version Mesa,
+résolution, données, protocole de cache et charge d'arrière-plan identiques.
+Changer un seul paramètre, alterner A/B pour limiter les effets de chauffe et
+requalifier si l'identité certifiée change. Comparer médiane **et dispersion** ;
+un écart inférieur à la variabilité ne prouve pas un gain. Pour le gaming,
+ajouter les p95/p99/p99.9 des frametimes, les températures et la consommation.
+Une mesure de durée de compilation ne prouve pas une baisse de latence GNOME.
+
+Aucun gain CachyOS ni avantage du noyau Vanilla n'est acquis sans ces mesures.
+Les tests CI de ce dépôt ne comparent pas les performances de la machine cible.

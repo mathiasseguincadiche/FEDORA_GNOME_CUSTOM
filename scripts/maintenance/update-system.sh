@@ -54,6 +54,8 @@ write_update_state() {
   [[ -n "$kernel_previous" ]] || kernel_previous="$(update_state_value kernel_previous)"
   [[ -n "$kernel_target" ]] || kernel_target=none
   [[ -n "$kernel_previous" ]] || kernel_previous=none
+  [[ "$kernel_target" == none ]] || kernel_lifecycle_release_is_stable "$kernel_target" || { ui_error 'Invalid kernel target in update state'; return "$EXIT_CONFIG_FAILED"; }
+  [[ "$kernel_previous" == none ]] || kernel_lifecycle_release_is_stable "$kernel_previous" || { ui_error 'Invalid previous kernel in update state'; return "$EXIT_CONFIG_FAILED"; }
   {
     printf 'schema=2\n'
     printf 'utc=%s\n' "$(date -u +%FT%TZ)"
@@ -76,6 +78,9 @@ require_current_update_state() {
   [[ -s "$UPDATE_STATE_FILE" ]] || { ui_error 'No project-owned offline update state exists'; return "$EXIT_PRECHECK_FAILED"; }
   [[ "$(update_state_value commit)" == "$(repo_commit)" ]] || { ui_error 'Update state belongs to another Git commit'; return "$EXIT_SECURITY_BLOCK"; }
   [[ "$(update_state_value effective_config_sha256)" == "$(effective_config_sha256)" ]] || { ui_error 'Update state belongs to another effective configuration'; return "$EXIT_SECURITY_BLOCK"; }
+  local target
+  target="$(update_state_value kernel_target)"
+  [[ "$target" == none ]] || kernel_lifecycle_release_is_stable "$target" || { ui_error 'Invalid recorded kernel target'; return "$EXIT_CONFIG_FAILED"; }
   phase="$(update_state_value phase)"; mode="$(update_state_value mode)"
   [[ "$phase" == prepared || "$phase" == reboot-requested ]] || { ui_error "Offline update state is not pending: phase=${phase:-unknown}"; return "$EXIT_PRECHECK_FAILED"; }
   [[ "$mode" == full || "$mode" == dnf-only ]] || { ui_error "Invalid offline update mode: ${mode:-unknown}"; return "$EXIT_PRECHECK_FAILED"; }

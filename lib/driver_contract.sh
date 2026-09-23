@@ -56,8 +56,9 @@ driver_contract_nvme_expected_bound() {
 
 driver_contract_lspci_block_uses() {
   local pattern="$1" driver="$2"
-  lspci -Dnnk 2>/dev/null | awk -v RS='' -v pattern="$pattern" -v driver="$driver" '
-    $0 ~ pattern && $0 ~ ("Kernel driver in use:[[:space:]]*" driver "([[:space:]]|$)") { found=1 }
+  LC_ALL=C lspci -Dnnk 2>/dev/null | awk -v pattern="$pattern" -v driver="$driver" '
+    /^[[:xdigit:]]{4}:/ { selected=($0 ~ pattern) }
+    selected && $0 ~ ("Kernel driver in use:[[:space:]]*" driver "([[:space:]]|$)") { found=1 }
     END { exit !found }
   '
 }
