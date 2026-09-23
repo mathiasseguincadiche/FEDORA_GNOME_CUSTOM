@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install real Restic integration-test dependency
+        run: sudo apt-get update && sudo apt-get install -y restic jq
+      - run: bash tests/test_reliability_regressions.sh
+      - run: bash tests/test_nvme_probe_behavior.sh
+      - run: bash tests/test_display_and_vm_state_behavior.sh
+      - run: bash tests/test_restic_roundtrip.sh
       - run: bash tests/test_structure.sh
       - run: bash tests/test_policy.sh
       - run: bash tests/test_baseline_contract.sh

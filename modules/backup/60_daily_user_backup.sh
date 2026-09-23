@@ -6,7 +6,7 @@ backup_daily_runtime_base() {
 }
 
 backup_daily_runtime_dir() {
-  printf '%s/%s\n' "$(backup_daily_runtime_base)" "$1"
+  printf '%s/%s-%s\n' "$(backup_daily_runtime_base)" "$1" "$(backup_daily_config_sha256)"
 }
 
 backup_daily_precheck() {
@@ -24,23 +24,34 @@ backup_daily_precheck() {
 }
 
 backup_daily_plan() {
-  echo 'Install a content-verified backup runtime bundle under ~/.local/lib/fedora-gnome-custom/backup-runtime/<applied-sha>, bind daily and weekly-retention systemd user units to that immutable bundle, and keep timer execution independent from the mutable Git checkout.'
+  echo 'Install a content-verified backup runtime bundle under ~/.local/lib/fedora-gnome-custom/backup-runtime/<applied-sha>-<config-sha256>, bind daily and weekly-retention systemd user units to that immutable bundle, and keep timer execution independent from the mutable Git checkout.'
 }
 
-backup_daily_write_config_snapshot() {
-  local output="$1" var
-  install -m 0600 /dev/null "$output"
+backup_daily_config_payload() {
+  local var
   while IFS= read -r var; do
+    [[ -v "$var" ]] || continue
     case "$var" in
-      BACKUP_*|RESTIC_*|DAILY_*) printf '%s=%q\n' "$var" "${!var}" >> "$output" ;;
+      BACKUP_*|RESTIC_*|DAILY_*) printf '%s=%q\n' "$var" "${!var}" ;;
     esac
-  done < <(compgen -v | sort -u)
+  # Snapshot only declared configuration keys; never ambient RESTIC_PASSWORD,
+  # RESTIC_PASSWORD_COMMAND or credentials injected by the caller's environment.
+  done < <(sed -nE 's/^((BACKUP|RESTIC|DAILY)_[A-Z0-9_]+)=.*/\1/p' "$REPO_ROOT/config/backup.conf" | sort -u)
+}
+
+backup_daily_config_sha256() { backup_daily_config_payload | sha256sum | awk '{print $1}'; }
+
+backup_daily_write_config_snapshot() {
+  local output="$1"
+  install -m 0600 /dev/null "$output" || return $?
+  backup_daily_config_payload > "$output"
 }
 
 backup_daily_existing_runtime_valid() {
   local runtime_dir="$1" applied_sha="$2"
   [[ -d "$runtime_dir" && -r "$runtime_dir/runtime/APPLIED_SHA" && -r "$runtime_dir/MANIFEST.sha256" ]] || return 1
   [[ "$(<"$runtime_dir/runtime/APPLIED_SHA")" == "$applied_sha" ]] || return 1
+  [[ "$(sha256sum "$runtime_dir/runtime/backup-runtime.conf" | awk '{print $1}')" == "$(backup_daily_config_sha256)" ]] || return 1
   (cd "$runtime_dir" && sha256sum --check --status MANIFEST.sha256)
 }
 
@@ -49,7 +60,7 @@ backup_daily_install_runtime() {
   base="$(backup_daily_runtime_base)"
   runtime_dir="$(backup_daily_runtime_dir "$applied_sha")"
 
-  # A SHA-named runtime is immutable. Re-APPLY of the exact same commit reuses
+  # A commit-and-configuration-named runtime is immutable. Re-APPLY of the exact same commit reuses
   # a verified bundle; a corrupted/pre-existing bundle is never silently
   # overwritten because that would destroy evidence and can race a running timer.
   if [[ -e "$runtime_dir" ]]; then
@@ -61,9 +72,8 @@ backup_daily_install_runtime() {
     return "$EXIT_APPLY_FAILED"
   fi
 
-  install -d -m 0755 "$base"
-  tmp="$base/.${applied_sha}.tmp.$$"
-  rm -rf "$tmp"
+  install -d -m 0755 "$base" || return $?
+  tmp="$(mktemp -d "$base/.${applied_sha}.XXXXXX")" || return $?
   install -d -m 0755 "$tmp/bin" "$tmp/lib" "$tmp/runtime" || rc=$?
   if (( rc == 0 )); then install -m 0755 "$REPO_ROOT/scripts/backup/daily-user-backup.sh" "$tmp/bin/daily-user-backup" || rc=$?; fi
   if (( rc == 0 )); then install -m 0755 "$REPO_ROOT/scripts/backup/restic-retention.sh" "$tmp/bin/restic-retention" || rc=$?; fi
@@ -74,8 +84,8 @@ backup_daily_install_runtime() {
   if (( rc == 0 )); then printf '%s\n' "$applied_sha" > "$tmp/runtime/APPLIED_SHA" || rc=$?; fi
   if (( rc == 0 )); then
     (
-      cd "$tmp"
-      find bin lib runtime -type f -print0 | sort -z | xargs -0 sha256sum > MANIFEST.sha256
+      cd "$tmp" || exit $?
+      find bin lib runtime -type f -print0 | sort -z | xargs -0 sha256sum > MANIFEST.sha256 || exit $?
       sha256sum --check --status MANIFEST.sha256
     ) || rc=$?
   fi
@@ -97,12 +107,15 @@ backup_daily_install_runtime() {
 }
 
 backup_daily_write_units() {
-  local runtime_dir="$1" service retention_service retention_timer
-  install -d -m 0755 "$HOME/.config/systemd/user"
-  install -m 0644 "$REPO_ROOT/systemd/user/fedora-gnome-daily-backup.timer" "$HOME/.config/systemd/user/fedora-gnome-daily-backup.timer"
+  local runtime_dir="$1" service retention_service retention_timer unit_tmp
+  install -d -m 0755 "$HOME/.config/systemd/user" || return $?
+  unit_tmp="$(mktemp "$HOME/.config/systemd/user/.fgc-unit.XXXXXX")" || return $?
+  install -m 0644 "$REPO_ROOT/systemd/user/fedora-gnome-daily-backup.timer" "$unit_tmp" || return $?
+  mv -f "$unit_tmp" "$HOME/.config/systemd/user/fedora-gnome-daily-backup.timer" || return $?
 
   service="$HOME/.config/systemd/user/fedora-gnome-daily-backup.service"
-  cat > "$service" <<EOF
+  unit_tmp="$(mktemp "$HOME/.config/systemd/user/.fgc-unit.XXXXXX")" || return $?
+  cat > "$unit_tmp" <<EOF || return $?
 [Unit]
 Description=Encrypted daily Fedora workstation user backup
 After=network-online.target
@@ -112,10 +125,12 @@ Type=oneshot
 Environment="FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=$runtime_dir"
 ExecStart=$runtime_dir/bin/daily-user-backup
 EOF
-  chmod 0644 "$service"
+  chmod 0644 "$unit_tmp" || return $?
+  mv -f "$unit_tmp" "$service" || return $?
 
   retention_service="$HOME/.config/systemd/user/fedora-gnome-restic-retention.service"
-  cat > "$retention_service" <<EOF
+  unit_tmp="$(mktemp "$HOME/.config/systemd/user/.fgc-unit.XXXXXX")" || return $?
+  cat > "$unit_tmp" <<EOF || return $?
 [Unit]
 Description=FEDORA_GNOME_CUSTOM periodic Restic retention
 After=network-online.target
@@ -125,10 +140,12 @@ Type=oneshot
 Environment="FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=$runtime_dir"
 ExecStart=$runtime_dir/bin/restic-retention
 EOF
-  chmod 0644 "$retention_service"
+  chmod 0644 "$unit_tmp" || return $?
+  mv -f "$unit_tmp" "$retention_service" || return $?
 
   retention_timer="$HOME/.config/systemd/user/fedora-gnome-restic-retention.timer"
-  cat > "$retention_timer" <<EOF
+  unit_tmp="$(mktemp "$HOME/.config/systemd/user/.fgc-unit.XXXXXX")" || return $?
+  cat > "$unit_tmp" <<EOF || return $?
 [Unit]
 Description=Weekly FEDORA_GNOME_CUSTOM Restic retention
 
@@ -140,7 +157,8 @@ RandomizedDelaySec=${RESTIC_RETENTION_RANDOMIZED_DELAY_SEC:-1800}
 [Install]
 WantedBy=timers.target
 EOF
-  chmod 0644 "$retention_timer"
+  chmod 0644 "$unit_tmp" || return $?
+  mv -f "$unit_tmp" "$retention_timer" || return $?
 }
 
 backup_daily_apply() {

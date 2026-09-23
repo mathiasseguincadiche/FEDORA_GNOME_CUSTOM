@@ -2,15 +2,16 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/modules/backup/60_daily_user_backup.sh"
 quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 
 runtime_root="$(systemctl --user cat fedora-gnome-daily-backup.service 2>/dev/null | sed -n 's/^Environment="FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=\(.*\)"$/\1/p' | tail -n1)"
-if [[ -n "$runtime_root" && -r "$runtime_root/MANIFEST.sha256" ]] && (cd "$runtime_root" && sha256sum --check --status MANIFEST.sha256); then
+if [[ -n "$runtime_root" ]] && backup_daily_existing_runtime_valid "$runtime_root" "$(repo_commit)"; then
   emit OK 'Backup runtime bundle' "$(basename "$runtime_root") integrity PASS"
 else
-  emit KO 'Backup runtime bundle' 'missing or integrity failure'
+  emit KO 'Backup runtime bundle' 'missing, integrity failure or stale source/configuration'
 fi
 
 if systemctl --user is-enabled --quiet fedora-gnome-daily-backup.timer; then

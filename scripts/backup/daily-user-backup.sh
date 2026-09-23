@@ -85,7 +85,7 @@ if [[ -n "$configured_xdg" ]]; then
   done
 fi
 
-configured_extra="${DAILY_BACKUP_EXTRA_PATHS:-${DAILY_BACKUP_PATHS:-/data/Projets Development .config .ssh .gnupg}}"
+configured_extra="${DAILY_BACKUP_EXTRA_PATHS:-${DAILY_BACKUP_PATHS:-/data/Projets Development .config .ssh .gnupg .mozilla .var/app .local/share}}"
 read -r -a configured_paths <<<"$configured_extra"
 for entry in "${configured_paths[@]}"; do
   if [[ "$entry" == /* ]]; then

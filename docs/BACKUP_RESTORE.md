@@ -54,7 +54,7 @@ La capture contient notamment : inventaire RPM/Flatpak, services activés, stock
 Lors de l'APPLY, `modules/backup/60_daily_user_backup.sh` construit un bundle dédié sous :
 
 ```text
-~/.local/lib/fedora-gnome-custom/backup-runtime/<SHA-appliqué>/
+~/.local/lib/fedora-gnome-custom/backup-runtime/<SHA-appliqué>-<SHA256-configuration>/
 ├── bin/
 │   ├── daily-user-backup
 │   └── restic-retention
@@ -201,3 +201,46 @@ Le script vérifie le repository et le dernier snapshot puis génère dans `stat
 ## Règle QCOW2
 
 Ne jamais copier un disque QCOW2 actif avec `cp`, `rsync` ou Restic en espérant obtenir une sauvegarde cohérente. Ce projet choisit volontairement le contrat simple et robuste : **VM arrêtée → qemu-img check → qemu-img convert → Restic**.
+
+## Qualification après l'audit de fiabilité
+
+Un nouvel APPLY au même commit avec une autre configuration de sauvegarde crée
+un nouveau bundle immuable. Le doctor compare aussi sa configuration avec celle
+du dépôt. Les variables d'environnement telles que `RESTIC_PASSWORD` ne sont
+jamais sérialisées dans ce bundle.
+
+Les profils Firefox, données Flatpak et données applicatives utilisateur sont
+inclus via `.mozilla`, `.var/app` et `.local/share`. Ces répertoires peuvent être
+volumineux : dimensionner et vérifier le support externe. La passphrase Restic
+reste exclue des sources utilisateur ; conserver sa copie de récupération hors machine.
+
+`backup-now.sh --include-vms` exige toutes les VM arrêtées et inclut les disques
+qcow2, les variables UEFI (NVRAM) et l'état swtpm, avec un inventaire JSON par VM.
+Un disque ou backend TPM non pris en charge bloque la sauvegarde au lieu d'être
+ignoré. Empêcher tout démarrage automatique ou manuel des VM pendant cette
+opération. Une vérification de l'état avant/après ne constitue pas un verrou
+contre un autre administrateur.
+
+Pour un exercice réel, sélectionner un identifiant de snapshot exact :
+
+```bash
+./scripts/backup/restore.sh list
+./scripts/backup/restore.sh verify
+./scripts/backup/restore.sh restore ID_SNAPSHOT /chemin/vers/staging-vide
+```
+
+`verify` lit désormais toutes les données du dépôt ; `restore` active le contrôle
+Restic des fichiers restaurés (`--verify`). Comparer ensuite les documents,
+permissions et liens attendus. Une restauration de fichiers réussie ne prouve
+pas le redémarrage de Fedora ou de Windows.
+
+Pour les VM : inspecter le plan JSON, extraire l'archive d'état persistant dans
+un second staging, puis remettre disque, NVRAM et swtpm ensemble, VM arrêtée,
+avec son UUID d'origine et les bons propriétaires/labels SELinux. Démarrer une
+copie de récupération isolée du réseau et de la VM originale. Vérifier Windows,
+le TPM et l'accès aux données avant de déclarer la reprise opérationnelle.
+
+Le test `tests/test_restic_roundtrip.sh` exerce un vrai dépôt Restic chiffré,
+la sauvegarde quotidienne et le script de restauration. Il vérifie contenu,
+permissions, lien symbolique, exclusion du secret et refus d'écraser un staging
+existant. Son disque externe est simulé : ce test n'émet aucune preuve Gate 3.

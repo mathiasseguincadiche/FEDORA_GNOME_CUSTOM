@@ -3,6 +3,7 @@
 # shellcheck disable=SC2153
 
 engine_bootstrap() {
+  export LC_ALL=C
   source "$REPO_ROOT/lib/constants.sh"
   source "$REPO_ROOT/lib/common.sh"
   source "$REPO_ROOT/lib/logging.sh"

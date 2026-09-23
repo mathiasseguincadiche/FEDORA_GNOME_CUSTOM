@@ -25,50 +25,10 @@ orchestrator_run_module() {
   status_file="$(mktemp "$status_root/.orchestrator-${id//[^A-Za-z0-9_.-]/_}.XXXXXX")"
   start_ms="$(orchestrator_now_ms)"
 
-  if (
-    local inner_rc=0 inner_phase fn
-    if source "$path"; then
-      :
-    else
-      inner_rc=$?
-      printf 'KO|source|%s|source rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-
-    for inner_phase in precheck plan apply postcheck; do
-      fn="${prefix}_${inner_phase}"
-      if ! declare -F "$fn" >/dev/null; then
-        inner_rc="${EXIT_CONFIG_FAILED:-12}"
-        printf 'KO|contract|%s|contract missing %s\n' "$inner_rc" "$fn" > "$status_file"
-        exit "$inner_rc"
-      fi
-    done
-
-    ui_check INFO "$id" "${CATALOG_SCOPE[$id]}"
-
-    if "${prefix}_precheck"; then :; else
-      inner_rc=$?
-      printf 'KO|precheck|%s|precheck rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-    if "${prefix}_plan" >> "$MODULE_LOG" 2>&1; then :; else
-      inner_rc=$?
-      printf 'KO|plan|%s|plan rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-    if "${prefix}_apply" >> "$MODULE_LOG" 2>&1; then :; else
-      inner_rc=$?
-      printf 'KO|apply|%s|apply rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-    if "${prefix}_postcheck" >> "$MODULE_LOG" 2>&1; then :; else
-      inner_rc=$?
-      printf 'KO|postcheck|%s|postcheck rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-
-    printf 'OK|complete|0|complete\n' > "$status_file"
-  ); then
+  # A fresh Bash process is essential: a function/subshell in an `if` or
+  # `||` list inherits Bash's ignored-errexit context, even after `set -e`.
+  if bash "${BASH_SOURCE[0]%/*}/module-runner.sh" "$REPO_ROOT" "$path" \
+    "$prefix" "$id" "${CATALOG_SCOPE[$id]}" "$status_file" "${DRY_RUN:-true}"; then
     rc=0
   else
     rc=$?
@@ -81,6 +41,8 @@ orchestrator_run_module() {
   else
     state='KO'; phase='internal'; detail="orchestrator subprocess rc=$rc"
   fi
+  # Explicit exit(0) during a phase must not become a successful installation.
+  if [[ "$state" != OK && "$rc" == 0 ]]; then rc="${EXIT_POSTCHECK_FAILED:-40}"; fi
   rm -f "$status_file"
 
   ORCH_RESULTS+=("$state|$id|$phase|$rc|$duration_ms|$detail")

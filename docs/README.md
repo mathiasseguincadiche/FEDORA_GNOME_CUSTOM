@@ -236,3 +236,5 @@ document historique / release note
 ```
 
 Une contradiction active entre code, configuration et documentation est un bug.
+
+- [Qualification de fiabilité après audit](RELIABILITY_QUALIFICATION.md) : correctifs, preuves et parcours restant.

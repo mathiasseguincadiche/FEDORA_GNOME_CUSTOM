@@ -53,19 +53,20 @@ network_cert(){
   local kind="$1" type iface ipv4 route wifi_link ipv6
   case "$kind" in lan) type=ethernet;; wifi) type=wifi;; *) echo 'network requires lan|wifi' >&2; exit "$EXIT_USAGE";; esac
   systemctl is-active --quiet NetworkManager || { ui_error 'NetworkManager is not active'; exit "$EXIT_POSTCHECK_FAILED"; }
-  iface="$(nmcli -t -f DEVICE,TYPE,STATE device status | awk -F: -v type="$type" '$2==type && $3=="connected" {print $1; exit}')"
+  iface="$(LC_ALL=C nmcli -t -f DEVICE,TYPE,STATE device status | awk -F: -v type="$type" '$2==type && $3=="connected" {print $1; exit}')"
   [[ -n "$iface" ]] || { ui_error "No connected NetworkManager $type interface"; exit "$EXIT_POSTCHECK_FAILED"; }
   ipv4="$(ip -4 -o addr show dev "$iface" scope global | awk 'NR==1 {print $4}')"; [[ -n "$ipv4" ]] || { ui_error "$iface has no global IPv4 address"; exit "$EXIT_POSTCHECK_FAILED"; }
   route="$(ip -4 route show default dev "$iface" | head -n1)"; [[ -n "$route" ]] || { ui_error "$iface has no IPv4 default route"; exit "$EXIT_POSTCHECK_FAILED"; }
-  getent ahostsv4 example.com >/dev/null || { ui_error 'IPv4 DNS resolution failed'; exit "$EXIT_POSTCHECK_FAILED"; }
-  curl -4 -fsS --max-time 15 https://example.com/ >/dev/null || { ui_error 'IPv4 HTTPS connectivity failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  resolvectl query --interface="$iface" --protocol=dns --type=A example.com >/dev/null || { ui_error 'IPv4 DNS resolution failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  curl -4 --interface "$iface" --noproxy '*' -fsS --max-time 15 https://example.com/ >/dev/null || { ui_error 'IPv4 HTTPS connectivity failed'; exit "$EXIT_POSTCHECK_FAILED"; }
   if [[ "$kind" == wifi ]]; then
     wifi_link="$(iw dev "$iface" link 2>/dev/null || true)"; grep -Fq 'Connected to' <<<"$wifi_link" || { ui_error 'Wi-Fi interface is not associated'; exit "$EXIT_POSTCHECK_FAILED"; }
   fi
   ipv6="$(ip -6 -o addr show dev "$iface" scope global | awk 'NR==1 {print $4}')"
   if [[ -n "$ipv6" ]]; then
     ip -6 route show default dev "$iface" | grep -q '^default' || { ui_error "$iface has global IPv6 but no IPv6 default route"; exit "$EXIT_POSTCHECK_FAILED"; }
-    getent ahostsv6 example.com >/dev/null || { ui_error 'IPv6 DNS resolution failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+    resolvectl query --interface="$iface" --protocol=dns --type=AAAA example.com >/dev/null || { ui_error 'IPv6 DNS resolution failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+    curl -6 --interface "$iface" --noproxy '*' -fsS --max-time 15 https://example.com/ >/dev/null || { ui_error 'IPv6 HTTPS connectivity failed'; exit "$EXIT_POSTCHECK_FAILED"; }
   fi
   physical_runtime_write_evidence "network-$kind" "interface=$iface ipv4=$ipv4 ipv6=${ipv6:-none} nm=true dns=true https=true associated=$([[ $kind == wifi ]] && echo true || echo n/a)"
   ui_check OK "Network $kind" "$iface DHCP/IP + route + DNS + HTTPS PASS"

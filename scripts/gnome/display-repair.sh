@@ -2,6 +2,12 @@
 set -Eeuo pipefail
 
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom"
+mkdir -p "$state_root"
+action="${1:---check}"
+case "$action" in --check|--snapshot|--restore|--reset-certified) ;; *) echo 'Usage: display-repair [--check|--snapshot|--restore|--reset-certified]' >&2; exit 2;; esac
+[[ "$action" != --snapshot ]] || rm -f "$state_root/display-before-suspend.json"
+policy="$state_root/display-policy.env"
+[[ ! -r "$policy" ]] || source "$policy"
 profile="$state_root/display-profile.env"
 [[ -r "$profile" ]] || { echo "Certified display profile missing: $profile" >&2; exit 1; }
 
@@ -47,6 +53,28 @@ done
 (( ${#matches[@]} == 1 )) || { echo "Expected exactly one connected B580 connector matching certified EDID; found ${#matches[@]}." >&2; exit 1; }
 connector_path="${matches[0]}"
 connector="$(basename "$connector_path" | sed -E 's/^card[0-9]+-//')"
+
+if [[ "$action" == --check ]]; then
+  gdctl show --verbose
+  exit 0
+fi
+if [[ "$action" == --snapshot || "$action" == --restore ]]; then
+  helper="$(dirname "${BASH_SOURCE[0]}")/fedora-gnome-display-state.py"
+  [[ -r "$helper" ]] || helper="$(dirname "${BASH_SOURCE[0]}")/display-state.py"
+  python3 "$helper" "${action#--}" "$state_root/display-before-suspend.json"
+  if [[ "$action" == --restore ]]; then
+    tmp="$(mktemp "$state_root/.display-repair.XXXXXX")"
+    printf 'utc=%s\nbdf=%s\nconnector=%s\nedid_sha256=%s\naction=restore-preserved-layout\n' "$(date -u +%FT%TZ)" "$bdf" "$connector" "$expected_edid" > "$tmp"
+    mv -f "$tmp" "$state_root/display-repair-last.txt"
+  fi
+  exit 0
+fi
+# The factory profile is an explicit manual action, limited to a single display.
+connected=0
+for status in /sys/class/drm/card*-*/status; do
+  [[ -r "$status" && "$(<"$status")" == connected ]] && ((connected+=1))
+done
+(( connected == 1 )) || { echo 'Certified-profile reset refuses a multi-monitor layout.' >&2; exit 1; }
 
 width="${DISPLAY_TARGET_WIDTH:-2560}"
 height="${DISPLAY_TARGET_HEIGHT:-1440}"

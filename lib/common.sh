@@ -128,3 +128,11 @@ drm_render_node_for_pci_id() {
   done
   return 1
 }
+
+# GNOME Shell 50 distinguishes enabled preference from ACTIVE runtime state.
+# Upstream: gnome-shell/50.0/subprojects/extensions-tool/src/main.c.
+gnome_extension_active() {
+  local info
+  info="$(LC_ALL=C gnome-extensions info "$1" 2>/dev/null)" || return 1
+  grep -Eq '^[[:space:]]*State:[[:space:]]+ACTIVE[[:space:]]*$' <<< "$info"
+}

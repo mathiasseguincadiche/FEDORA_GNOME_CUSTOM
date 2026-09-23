@@ -185,7 +185,7 @@ gnome_telemetry_postcheck() {
   [[ -r "$extension_dir/metadata.json" ]] || return "$EXIT_POSTCHECK_FAILED"
   grep -Fxq "source_url=${RESOURCE_MONITOR_SOURCE_URL:-}" "$extension_dir/.fedora-gnome-custom-source" || return "$EXIT_POSTCHECK_FAILED"
   grep -Fxq "review_id=${RESOURCE_MONITOR_REVIEW_ID:-}" "$extension_dir/.fedora-gnome-custom-source" || return "$EXIT_POSTCHECK_FAILED"
-  gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+  gnome_extension_active "$uuid" || return "$EXIT_POSTCHECK_FAILED"
   [[ "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
   [[ "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
   [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"

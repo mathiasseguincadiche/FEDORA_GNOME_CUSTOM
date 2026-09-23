@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 backup_runtime_bundle_init() {
+  export LC_ALL=C
   local runtime_root="${FEDORA_GNOME_CUSTOM_RUNTIME_ROOT:-}"
   EXIT_CONFIG_FAILED="${EXIT_CONFIG_FAILED:-60}"
   EXIT_PRECHECK_FAILED="${EXIT_PRECHECK_FAILED:-20}"

@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 lock="$REPO_ROOT/installer/fedora44-media.lock"
 [[ -r "$lock" ]] || { echo "Missing Fedora media lock: $lock" >&2; exit 2; }
 # shellcheck disable=SC1090
 source "$lock"
-usage(){ echo "Usage: $0 --disk /dev/nvmeXnY [--username mathias] [--hostname fedora-gnome-devops] [--output fedora44.ks]" >&2; }
+usage(){ echo "Usage: $0 --disk /dev/disk/by-id/nvme-... [--username mathias] [--hostname fedora-gnome-devops] [--output fedora44.ks]" >&2; }
 disk=""; username="mathias"; hostname="fedora-gnome-devops"; output="fedora44-golden-workstation.ks"
 while (($#)); do case "$1" in --disk) disk="${2:-}"; shift 2;; --username) username="${2:-}"; shift 2;; --hostname) hostname="${2:-}"; shift 2;; --output) output="${2:-}"; shift 2;; *) usage; exit 2;; esac; done
 [[ -b "$disk" ]] || { usage; echo 'Target disk must be an existing block device.' >&2; exit 2; }
-[[ "$disk" == /dev/nvme*n* ]] || { echo 'Refusing non-NVMe target for this hardware profile.' >&2; exit 2; }
+[[ "$disk" =~ ^/dev/disk/by-id/nvme-[A-Za-z0-9_.:+-]+$ && "$disk" != *-part[0-9]* ]] || { echo 'Use a stable whole-disk /dev/disk/by-id/nvme-* identity.' >&2; exit 2; }
+resolved="$(readlink -f -- "$disk")"
+[[ "$resolved" =~ ^/dev/nvme[0-9]+n[0-9]+$ ]] || { echo 'Target is not an NVMe namespace.' >&2; exit 2; }
+serial="$(lsblk -dn -o SERIAL "$disk" | xargs)"
+[[ "$serial" =~ ^[A-Za-z0-9_.:+-]+$ ]] || { echo 'Cannot bind installation to a safe hardware serial.' >&2; exit 2; }
+[[ "$username" =~ ^[a-z_][a-z0-9_-]{0,31}$ && "$hostname" =~ ^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$ ]] || { echo 'Invalid user or host name.' >&2; exit 2; }
 repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"; [[ "$repo_sha" =~ ^[0-9a-f]{40,64}$ ]] || { echo 'Repository HEAD SHA cannot be resolved; generate Kickstart from a Git checkout.' >&2; exit 2; }
 disk_name="${disk#/dev/}"
 echo 'TARGET DISK:'; lsblk -d -o NAME,MODEL,SERIAL,SIZE,TRAN "$disk"
@@ -41,6 +47,14 @@ ignoredisk --only-use=${disk_name}
 clearpart --all --initlabel --drives=${disk_name}
 autopart --type=btrfs
 reboot
+
+# Verify the stable ID again on the installation machine, before partitioning.
+%pre --interpreter=/usr/bin/bash --erroronfail --log=/tmp/fgc-disk-identity.log
+set -Eeuo pipefail
+[[ -b '${disk}' ]]
+[[ "\$(readlink -f -- '${disk}')" =~ ^/dev/nvme[0-9]+n[0-9]+$ ]]
+[[ "\$(lsblk -dn -o SERIAL '${disk}' | xargs)" == '${serial}' ]]
+%end
 
 %packages
 @^workstation-product-environment

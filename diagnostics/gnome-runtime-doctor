@@ -26,7 +26,11 @@ check_extension_error(){
   [[ -n "$uuid" ]] || return 0
   info="$(gnome-extensions info "$uuid" 2>/dev/null || true)"
   if [[ -z "$info" ]]; then emit KO "$label" 'extension is not visible to GNOME Shell'; return; fi
-  if grep -Eq 'State:[[:space:]]+(ERROR|OUT_OF_DATE)' <<<"$info"; then emit KO "$label" 'extension state ERROR/OUT_OF_DATE'; else emit OK "$label" 'extension runtime state healthy'; fi
+  if gnome_extension_active "$uuid"; then
+    emit OK "$label" 'extension runtime state ACTIVE'
+  else
+    emit KO "$label" 'extension is not ACTIVE (inactive, incompatible or failed)'
+  fi
 }
 if ! command -v gnome-extensions >/dev/null 2>&1; then emit KO Extensions 'gnome-extensions command missing'; fi
 if is_true "${ENABLE_DASH_TO_DOCK:-false}"; then check_extension_error 'Dash to Dock' "${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"; fi

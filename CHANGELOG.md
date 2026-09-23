@@ -1,5 +1,13 @@
 # Changelog
 
+## Non publié — fiabilité après audit
+
+- Correction des faux PASS du moteur, prérequis manquants, sorties noyau et preuves périmées.
+- Sauvegarde liée à la configuration, restauration vérifiée et couverture NVRAM/TPM.
+- Identification PCI, fio non privilégié, réseau par interface et disque Kickstart stable.
+- Reprise écran préservant la disposition et HDR ; nouveaux tests comportementaux et Restic réel.
+- Parcours d’installation vierge et qualification physique explicitement distincts des preuves CI.
+
 ## 0.15.0 — 2026-09-19
 
 - **Fedora-Cachy coherence closure** : promotion de la couche performance en socle opérateur de première classe, sans modifier les garde-fous Fedora/GNOME/SELinux/KVM.

@@ -17,7 +17,7 @@ case "$cmd" in
     restic snapshots
     ;;
   verify)
-    restic check --read-data-subset=1/20
+    restic check --read-data
     ;;
   restore)
     snapshot="${2:-latest}"
@@ -33,9 +33,9 @@ case "$cmd" in
     fi
     mkdir -p "$target"
     if [[ -n "$include" ]]; then
-      restic restore "$snapshot" --target "$target" --include "$include"
+      restic restore "$snapshot" --verify --target "$target" --include "$include"
     else
-      restic restore "$snapshot" --target "$target"
+      restic restore "$snapshot" --verify --target "$target"
     fi
     printf 'Restored into staging only: %s\nReview content before any manual recovery.\n' "$target"
     ;;

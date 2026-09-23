@@ -29,7 +29,7 @@ Latest snapshot: $latest
 6. Review fedora-system-config.tar.gz, inventory/ and libvirt XML before applying anything manually.
 7. Recreate libvirt network/pool definitions from reviewed XML; never overwrite conflicting live definitions blindly.
 8. Restore qcow2 images only while the affected VM is undefined/shut off, then run qemu-img check and restorecon.
-9. Recreate cloud-init/Windows media as needed; proprietary ISO files are not assumed to be backed up.
+9. Recover the matching NVRAM and swtpm archive with the original domain UUID, ownership and SELinux labels; boot an isolated recovery VM before declaring recovery successful. Recreate cloud-init/Windows media as needed; proprietary ISO files are not assumed to be backed up.
 10. Run diagnostics/gnome-doctor, diagnostics/virtualization-doctor, diagnostics/backup-doctor and KVM runtime certification.
 11. Only after all postchecks pass, resume normal workstation use.
 
