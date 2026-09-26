@@ -37,7 +37,7 @@ professional_apps_validate_provenance() {
   done
 }
 
-professional_apps_precheck() {
+applications_professional_precheck() {
   is_true "${ENABLE_PROFESSIONAL_APPLICATIONS:-true}" || return 0
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/manifests/packages-applications-professional-fedora.txt" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -53,7 +53,7 @@ professional_apps_precheck() {
   fi
 }
 
-professional_apps_plan() { cat <<'EOF'
+applications_professional_plan() { cat <<'EOF'
 PROFESSIONAL APPLICATIONS:
 - keep GNOME Text Editor as the native GTK4/libadwaita text editor
 - install VLC, LibreOffice and FileZilla from Fedora repositories
@@ -66,7 +66,7 @@ PROFESSIONAL APPLICATIONS:
 EOF
 }
 
-professional_apps_apply() {
+applications_professional_apply() {
   local app
   is_true "${ENABLE_PROFESSIONAL_APPLICATIONS:-true}" || return 0
   install_manifest_packages APPLICATIONS "$REPO_ROOT/manifests/packages-applications-professional-fedora.txt" || return "$EXIT_APPLY_FAILED"
@@ -78,7 +78,7 @@ professional_apps_apply() {
   if is_true "${ENABLE_PROFESSIONAL_FLATPAKS:-true}"; then while IFS= read -r app; do [[ -z "$app" || "$app" == \#* ]] && continue; run_mutating APPLICATIONS flatpak install -y flathub "$app" || return "$EXIT_APPLY_FAILED"; done < "$REPO_ROOT/manifests/flatpaks-applications-professional.txt"; fi
 }
 
-professional_apps_postcheck() {
+applications_professional_postcheck() {
   local pkg app
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_PROFESSIONAL_APPLICATIONS:-true}" || return 0

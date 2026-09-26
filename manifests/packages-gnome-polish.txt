@@ -1,0 +1,3 @@
+# Ubuntu-grade polish layer (ADR 0013) — official Fedora packages only.
+# libadwaita look for legacy GTK3 applications.
+adw-gtk3-theme

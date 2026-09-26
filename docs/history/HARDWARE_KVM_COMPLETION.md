@@ -1,6 +1,6 @@
 # Hardware & KVM Completion
 
-Ce document récapitule les choix de complétion hardware/KVM intégrés au contrat courant. La version applicable est celle de [`../VERSION`](../VERSION).
+Ce document récapitule les choix de complétion hardware/KVM intégrés au contrat courant. La version applicable est celle de [`../VERSION`](../../VERSION).
 
 ## Firmware et microcode
 
@@ -141,7 +141,7 @@ normal guard si succès
 
 Si la reconstruction échoue, le mode d'urgence reste actif et coupe le forwarding externe via `virbr50` au lieu de conserver un ancien LAN potentiellement obsolète.
 
-Voir [`KVM_NETWORK.md`](KVM_NETWORK.md).
+Voir [`KVM_NETWORK.md`](../KVM_NETWORK.md).
 
 ## Guest integration
 

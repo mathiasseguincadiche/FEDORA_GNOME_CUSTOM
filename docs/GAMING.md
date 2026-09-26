@@ -65,7 +65,7 @@ Steam/Proton nécessitent les bibliothèques graphiques x86_64 et i686. Le profi
 - `vulkan-loader.x86_64` et `.i686` ;
 - `vulkan-tools`.
 
-Le GPU reste sur le pilote kernel Fedora `xe` et Mesa/ANV Fedora. Aucun `mesa-git`, COPR Mesa, dépôt GPU Intel tiers, `force_probe` ou kernel gaming n'appartient au contrat Golden.
+Le GPU reste sur le pilote kernel Fedora `xe` et Mesa/ANV Fedora. Aucun `mesa-git`, COPR Mesa, dépôt GPU Intel tiers ou `force_probe` n'appartient au contrat Golden. Le noyau CachyOS du canal `KERNEL_CHANNEL="cachyos"` est un choix de réactivité desktop documenté par l'ADR 0012 ; il ne remplace ni Mesa ni le pilote `xe`.
 
 ### Helpers Gaming
 

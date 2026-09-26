@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Read-only check of the Ubuntu-grade polish layer (ADR 0013).
+# Reuses the module's desired-state table so the doctor and APPLY never disagree.
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/modules/gnome/24c_ubuntu_polish.sh"
+quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+ok=0; warn=0; ko=0
+emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
+
+if ! is_true "${GNOME_POLISH_ENABLED:-true}"; then
+  emit WARN 'Polish' 'GNOME_POLISH_ENABLED=false; layer intentionally disabled'
+elif ! command_exists gsettings || [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* ]]; then
+  emit WARN 'Polish' 'no active GNOME session; run from a logged-in GNOME terminal'
+else
+  while IFS='|' read -r schema key value; do
+    [[ -n "$schema" ]] || continue
+    actual="$(gsettings get "$schema" "$key" 2>/dev/null || printf 'unavailable')"
+    if [[ "$actual" == "$value" ]]; then emit OK "$key" "$actual"; else emit KO "$key" "expected=$value actual=$actual"; fi
+  done < <(gnome_polish_desired_settings)
+
+  if is_true "${POLISH_GTK3_ADWAITA_LOOK:-true}"; then
+    if rpm -q adw-gtk3-theme >/dev/null 2>&1; then emit OK 'adw-gtk3' 'installed'; else emit KO 'adw-gtk3' 'adw-gtk3-theme missing'; fi
+    scheme="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || printf 'default')"
+    expected="$(bash "$REPO_ROOT/scripts/gnome/gtk3-theme-follow.sh" theme-for "$scheme")"
+    actual="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || true)"
+    if [[ "$actual" == "'$expected'" ]]; then emit OK 'GTK3 theme' "$expected follows $scheme"; else emit KO 'GTK3 theme' "expected=$expected actual=$actual"; fi
+    if systemctl --user is-active --quiet fedora-gnome-gtk3-theme-follow.service; then emit OK 'Light/dark sync' 'watcher active'; else emit KO 'Light/dark sync' 'fedora-gnome-gtk3-theme-follow.service inactive'; fi
+  fi
+  if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
+    if gnome-extensions info "${TILING_ASSISTANT_UUID:-}" 2>/dev/null | grep -Fq 'State: ENABLED'; then emit OK 'Tiling Assistant' 'enabled'; else emit KO 'Tiling Assistant' 'not enabled'; fi
+    src="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/${TILING_ASSISTANT_UUID:-}/.fedora-gnome-custom-source"
+    if [[ -r "$src" ]] && grep -Fxq "sha256=${TILING_ASSISTANT_SHA256:-}" "$src"; then emit OK 'Tiling Assistant source' 'pinned release SHA-256 recorded'; else emit KO 'Tiling Assistant source' 'provenance marker missing or different'; fi
+  fi
+fi
+if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
+(( ko == 0 ))

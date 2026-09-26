@@ -12,6 +12,39 @@ mesurer → activer temporairement → observer → restaurer → certifier
 
 Le matériel cible est le Ryzen 7 7700, l'Intel Arc B580 et les deux Crucial T705 du profil Golden. Les optimisations restent donc compatibles avec GNOME/Wayland, SELinux, KVM/libvirt et les outils DevOps.
 
+## Noyau CachyOS (BORE)
+
+Depuis la 0.16, la réactivité ne repose plus seulement sur des réglages : le projet installe le **vrai noyau CachyOS pour Fedora** (`kernel-cachyos`, COPR officiel `bieszczaders/kernel-cachyos`). Voir l'[ADR 0012](adr/0012-kernel-channel-cachyos.md).
+
+Ce que ce noyau apporte :
+
+- **BORE** : l'ordonnanceur CPU donne la priorité aux tâches « en rafale » (clic, frappe, rendu d'image) plutôt qu'aux tâches de fond. C'est la principale source de la sensation de fluidité de CachyOS ;
+- **sched_ext** activé, ce qui rend les schedulers SCX de ce document réellement utilisables ;
+- une compilation optimisée `x86-64-v3` (vérifiée sur le Ryzen 7 7700 avant installation).
+
+Le canal se choisit dans `config/kernel.conf` :
+
+```bash
+KERNEL_CHANNEL="cachyos"   # défaut Golden
+KERNEL_CHANNEL="vanilla"   # noyau upstream sans patch
+```
+
+Sécurité du changement :
+
+```text
+précheck  → CPU x86-64-v3 prouvé + accord SELinux explicite
+APPLY     → sauvegarde Restic obligatoire → installation CachyOS N → défaut GRUB vérifié
+GRUB      → CachyOS N, CachyOS N-1, + kernel-core Fedora comme secours
+```
+
+Contrôle :
+
+```bash
+./diagnostics/kernel-doctor
+```
+
+Le reste de ce document (TuneD, EPP, zram, GameMode) s'applique **par-dessus** le noyau choisi.
+
 ## Politique versionnée
 
 La source de vérité est `config/performance-runtime.policy`.

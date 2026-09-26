@@ -26,7 +26,8 @@ for token in \
 done
 
 grep -Fq 'gnome.telemetry|GNOME|gnome.extensions|modules/gnome/24b_resource_monitor.sh' "$PLAN"
-grep -Fq 'gnome.display_repair|GNOME|gnome.telemetry|modules/gnome/25_display_repair.sh' "$PLAN"
+grep -Fq 'gnome.polish|GNOME|gnome.telemetry|modules/gnome/24c_ubuntu_polish.sh' "$ROOT/manifests/module-plan.conf"
+grep -Fq 'gnome.display_repair|GNOME|gnome.polish|modules/gnome/25_display_repair.sh' "$PLAN"
 
 for token in \
   'https://extensions.gnome.org/review/download/70909.shell-extension.zip' \

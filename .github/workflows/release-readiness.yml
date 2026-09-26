@@ -1,0 +1,31 @@
+name: Fedora next-release readiness
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/development/release-readiness.sh'
+      - 'tests/test_release_readiness_behavior.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Behavioral test
+        run: bash tests/test_release_readiness_behavior.sh
+      - name: Weekly report (Fedora 45 / GNOME 51)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          {
+            echo '## Fedora 45 / GNOME 51 readiness'
+            echo '```text'
+            bash scripts/development/release-readiness.sh --report-only
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

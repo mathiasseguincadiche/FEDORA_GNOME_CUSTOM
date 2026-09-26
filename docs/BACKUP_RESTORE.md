@@ -16,6 +16,16 @@ Le projet utilise **Restic chiffré** et applique un modèle fail-closed. Une sa
 - runtime des timers installé dans un bundle immutable versionné par SHA et contrôlé par `MANIFEST.sha256` ;
 - rétention Restic périodique versionnée : 7 daily / 4 weekly / 6 monthly sur les tags `full` et `daily`, groupée par `host,tags`.
 
+## Disque de sauvegarde de la machine cible
+
+La fiche matérielle prévoit un troisième support de ~1,8 To, le **XS1000**, en plus des deux T705. C'est la cible naturelle du dépôt Restic local, à condition de respecter le contrat du projet :
+
+- il doit être **externe** (USB / amovible) : le projet refuse un dépôt sur le disque système ou sur `/data` ;
+- il doit être formaté en **ext4** (`BACKUP_PREAPPLY_REQUIRED_FSTYPE`). Un XS1000 neuf est souvent livré en exFAT : il faut le reformater une fois (cela **efface** son contenu) ;
+- il doit être **seul** support externe monté lors du pré-APPLY, sinon la détection automatique s'arrête par sécurité. Dans ce cas, renseigner `BACKUP_REPOSITORY` dans `config/local.conf`.
+
+Le dépôt Restic est chiffré : perdre le disque n'expose pas les données, mais perdre la passphrase les rend irrécupérables (voir *Secret de récupération*).
+
 ## Deux niveaux de protection des données
 
 Le second T705 monté sur `/data` fournit une première protection contre la perte ou la réinstallation du **SSD système Btrfs**. Il contient :

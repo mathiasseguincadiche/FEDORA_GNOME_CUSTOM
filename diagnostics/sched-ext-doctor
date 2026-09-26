@@ -11,7 +11,11 @@ policy="$(performance_policy_get sched_ext_policy)"
 
 if [[ "$policy" == off ]]; then emit OK Policy 'sched_ext disabled by policy'; exit 0; fi
 if rpm -q scx_rusty >/dev/null 2>&1; then emit OK Package 'scx_rusty installed'; else emit WARN Package 'scx_rusty unavailable'; fi
-if grep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' "/boot/config-$(uname -r)" 2>/dev/null || zgrep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' /proc/config.gz 2>/dev/null; then emit OK Kernel 'CONFIG_SCHED_CLASS_EXT=y'; else emit WARN Kernel 'CONFIG_SCHED_CLASS_EXT not proven'; fi
+# /boot/config-* (Fedora, Kernel Vanilla), /lib/modules/*/config (kernel-cachyos)
+# and /sys/kernel/sched_ext (runtime proof) are all accepted.
+if [[ -d /sys/kernel/sched_ext ]] \
+  || grep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' "/boot/config-$(uname -r)" "/lib/modules/$(uname -r)/config" 2>/dev/null \
+  || zgrep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' /proc/config.gz 2>/dev/null; then emit OK Kernel 'CONFIG_SCHED_CLASS_EXT=y'; else emit WARN Kernel 'CONFIG_SCHED_CLASS_EXT not proven'; fi
 if [[ -r /sys/kernel/btf/vmlinux ]]; then emit OK BTF '/sys/kernel/btf/vmlinux present'; else emit WARN BTF 'kernel BTF unavailable'; fi
 scheduler="$(command -v scx_rusty 2>/dev/null || command -v scx_lavd 2>/dev/null || true)"
 if [[ -n "$scheduler" ]]; then emit OK Scheduler "$scheduler"; else emit WARN Scheduler 'no known scx scheduler binary found'; fi

@@ -5,16 +5,20 @@
 cc_show_kernel_inventory() {
   printf 'Kernel actif : %s\n\n' "$(uname -r)"
   if command_exists rpm; then
-    rpm -q --qf 'kernel-core\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null | sort -V || true
+    rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core kernel-cachyos-core 2>/dev/null | grep -v 'is not installed' | sort -V || true
   else
     printf 'rpm indisponible dans cet environnement.\n'
   fi
   printf '\nPolitique versionnée :\n'
-  printf '  Source             kernel-vanilla/stable\n'
+  printf '  Canal              %s (%s)\n' "${KERNEL_CHANNEL:-vanilla}" "$(kernel_channel_copr 2>/dev/null || echo 'non résolu')"
   printf '  Cible              latest stable direct\n'
   printf '  Minimum actuel     %s\n' "${KERNEL_MIN_VERSION:-non défini}"
   printf '  Rétention          N / N-1, maximum 2\n'
-  printf '  Fedora fallback    non permanent (recovery explicite)\n'
+  if [[ "${KERNEL_CHANNEL:-vanilla}" == cachyos ]]; then
+    printf '  Secours            kernel-core (Fedora/Vanilla) conservé dans GRUB\n'
+  else
+    printf '  Fedora fallback    non permanent (recovery explicite)\n'
+  fi
 }
 
 cc_kernel_menu() {
