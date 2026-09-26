@@ -19,6 +19,8 @@ La version active est celle de [`../VERSION`](../VERSION).
 | **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
 | **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
 | **Utiliser KVM** | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
+| **Comprendre la finition du bureau** | [`GNOME_POLISH.md`](GNOME_POLISH.md) | [`adr/0013-ubuntu-grade-gnome-polish.md`](adr/0013-ubuntu-grade-gnome-polish.md) |
+| **Comprendre le noyau CachyOS** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-cachyos-bore) | [`adr/0012-kernel-channel-cachyos.md`](adr/0012-kernel-channel-cachyos.md) |
 | **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
 | **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |
 | **Sauvegarder / restaurer** | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) si échec |

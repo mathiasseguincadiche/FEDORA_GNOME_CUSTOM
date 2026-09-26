@@ -11,7 +11,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.15.0**
+**Golden Workstation 0.16.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -27,6 +27,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
   <a href="#les-6-piliers-golden">6 piliers</a> ·
   <a href="#matériel-cible">Matériel</a> ·
   <a href="#performance-fedora-cachy">Performance</a> ·
+  <a href="#finition-du-bureau-ubuntu-grade">Finition</a> ·
   <a href="#gaming">Gaming</a> ·
   <a href="#virtualisation">KVM</a> ·
   <a href="#sauvegarde-et-restauration">Backup</a> ·
@@ -80,7 +81,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.15.0      Fedora 44      Runtime BAREMETAL
+  Projet      0.16.0      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
@@ -181,24 +182,32 @@ Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstalla
 
 ## Kernel et boot
 
-Politique Golden :
+Le noyau se choisit par **canal** dans `config/kernel.conf` ([ADR 0012](docs/adr/0012-kernel-channel-cachyos.md)) :
+
+| Canal | Source | Rôle |
+|---|---|---|
+| `cachyos` (**défaut**) | `bieszczaders/kernel-cachyos` | réactivité desktop : ordonnanceur BORE, sched_ext, build x86-64-v3 |
+| `vanilla` | `@kernel-vanilla/stable` | noyau upstream sans patch |
+
+Politique Golden, identique pour les deux canaux :
 
 ```text
-N   = dernier stable installé, défaut GRUB
-N-1 = noyau immédiatement précédent, rollback
-max = 2 versions kernel-core
+N       = dernier stable du canal, défaut GRUB
+N-1     = noyau précédent du canal, rollback
+secours = kernel-core Fedora (canal cachyos), toujours démarrable
 ```
+
+Avant d'installer CachyOS, le projet **prouve** que le CPU supporte `x86-64-v3` et exige l'accord explicite `KERNEL_CACHYOS_SELINUX_MODULE_LOAD="true"` pour le réglage SELinux documenté par CachyOS.
 
 Commandes ciblées :
 
 ```bash
+./diagnostics/kernel-doctor
 ./control.sh kernel install-latest
 ./control.sh kernel prune
 ./control.sh kernel rollback
 ./control.sh kernel rollback-fedora   # récupération d'urgence uniquement
 ```
-
-Le retour vers les paquets kernel Fedora reste une procédure de récupération explicite ; il n'existe pas de troisième fallback Fedora permanent dans le profil normal.
 
 ---
 
@@ -224,7 +233,25 @@ La Golden Workstation ajoute une couche de performance **mesurée, réversible e
 ./control.sh perf nvme
 ```
 
-Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas de kernel gaming tiers, pas d'overclock GPU automatique. La Gate 3 exige aussi le contrat performance Golden dans son état normal avant de produire un PASS final. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas d'overclock GPU automatique. Le noyau CachyOS est la seule exception assumée, décidée et outillée par l'ADR 0012. La Gate 3 exige aussi le contrat performance Golden dans son état normal avant de produire un PASS final. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+
+---
+
+## Finition du bureau « Ubuntu-grade »
+
+Fedora livre GNOME brut ; Ubuntu y ajoute une finition. Le module `gnome.polish` apporte **la même finition sur Fedora** ([`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md), [ADR 0013](docs/adr/0013-ubuntu-grade-gnome-polish.md)) :
+
+- dock toujours visible à gauche, clic = focus / réduire / aperçus ;
+- session ouverte directement sur le bureau ;
+- **Tiling Assistant** (l'« Enhanced Tiling » d'Ubuntu), épinglé par SHA-256 ;
+- couleur d'accent, jour dans l'horloge, fenêtres centrées ;
+- applications GTK3 au look libadwaita, qui suivent le mode clair/sombre.
+
+```bash
+./control.sh doctor polish
+```
+
+Tout est réglable dans `config/local.conf`, sans toucher au code.
 
 ---
 
@@ -234,7 +261,7 @@ Gaming fait partie du **profil Golden canonique**.
 
 Le socle couvre Steam RPM, Proton géré par Steam, Mesa/Vulkan x86_64+i686, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et la bibliothèque persistante `/data/Jeux`.
 
-Le projet conserve la pile Fedora : pas de kernel gaming tiers, pas de Mesa git/COPR, pas de `force_probe`, pas de Proton-GE imposé globalement.
+Le projet conserve la pile graphique Fedora : pas de Mesa git/COPR, pas de `force_probe`, pas de Proton-GE imposé globalement. Le noyau CachyOS (ADR 0012) sert la réactivité du bureau, pas un pilote graphique alternatif.
 
 ```bash
 ./control.sh doctor gaming
@@ -352,7 +379,8 @@ Le README reste la **synthèse opérateur** ; les détails normatifs et runbooks
 | Installer | [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) · [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) |
 | Piloter | [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) |
 | Comprendre l'architecture | [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
-| Performance | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
+| Performance / noyau CachyOS | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) · [`docs/adr/0012-kernel-channel-cachyos.md`](docs/adr/0012-kernel-channel-cachyos.md) |
+| Finition du bureau | [`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md) |
 | Gaming | [`docs/GAMING.md`](docs/GAMING.md) |
 | KVM | [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) · [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) |
 | Backup / recovery | [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) |

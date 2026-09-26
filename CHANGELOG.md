@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.16.0 — 2026-09-26
+
+- **Vrai noyau CachyOS** : nouveau canal `KERNEL_CHANNEL="cachyos"` (défaut Golden) basé sur le COPR officiel `bieszczaders/kernel-cachyos` (BORE, sched_ext, x86-64-v3). Le canal `vanilla` reste disponible. Jusqu'ici la couche « Fedora-Cachy » ne faisait que du réglage runtime : le noyau restait Kernel Vanilla (ADR 0012).
+- Garde-fous CachyOS avant toute mutation : CPU `x86-64-v3` prouvé par le chargeur dynamique, accord explicite `KERNEL_CACHYOS_SELINUX_MODULE_LOAD` pour `domain_kernel_load_modules`, motif de dépôt excluant `-addons`/`-lto`/`-lts`/`-rc`.
+- Le `kernel-core` Fedora reste installé comme entrée de secours ; `rollback-to-fedora.sh` désactive aussi le COPR CachyOS et remet un noyau Fedora par défaut.
+- kernel-doctor, politique GRUB, Control Center et état `rolling.env` indiquent le canal actif. Correction du défaut affiché `Fedora fallback true` alors que la politique est `false`.
+- **Finition « Ubuntu-grade »** : nouveau module `gnome.polish` et `config/gnome-polish.conf` — dock Ubuntu (gauche, pleine hauteur, focus/réduire/aperçus), démarrage sur le bureau, accent, jour dans l'horloge, fenêtres centrées, `adw-gtk3` avec suivi clair/sombre automatique, Tiling Assistant v55 épinglé par URL GitHub et SHA-256 (ADR 0013).
+- Nouveau `diagnostics/polish-doctor`, intégré au workstation doctor et à `./control.sh doctor polish` ; APPLY, postcheck et doctor partagent une seule table d'état désiré.
+- **Tests comportementaux** : `test_kernel_channel_behavior.sh` et `test_gnome_polish_behavior.sh` exécutent le vrai code contre de faux `dnf5`/`rpm`/`gsettings` au lieu de chercher du texte. Ils ont révélé un bug réel : la détection `x86-64-v3` pouvait échouer aléatoirement (`grep -q` + `pipefail` → SIGPIPE).
+- Garde-fou CI : tout `tests/test_*.sh` doit être exécuté par un workflow.
+- Schéma de configuration : énumérations ajoutées pour le canal noyau, l'accent, la position et le clic du dock.
+- Passage du projet à **0.16.0** et préparation de la prerelease `v0.16.0-rc.1`.
+
 ## 0.15.0 — 2026-09-19
 
 - **Fedora-Cachy coherence closure** : promotion de la couche performance en socle opérateur de première classe, sans modifier les garde-fous Fedora/GNOME/SELinux/KVM.

@@ -48,6 +48,9 @@ if [[ "${1:-}" == doctor ]]; then
     gaming)
       exec "$REPO_ROOT/diagnostics/gaming-doctor"
       ;;
+    polish)
+      exec "$REPO_ROOT/diagnostics/polish-doctor"
+      ;;
   esac
 fi
 
