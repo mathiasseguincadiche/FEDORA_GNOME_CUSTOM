@@ -26,7 +26,7 @@ dock_launcher_exists() {
   return 1
 }
 
-dock_favorites_precheck() {
+applications_dock_favorites_precheck() {
   local app
   local -a apps=()
   is_true "${GNOME_DOCK_FAVORITES_ENABLED:-true}" || return 0
@@ -44,16 +44,16 @@ dock_favorites_precheck() {
   fi
 }
 
-dock_favorites_plan() {
+applications_dock_favorites_plan() {
   printf 'GNOME curated dock: %s\n' "${GNOME_DOCK_FAVORITES:-disabled}"
 }
 
-dock_favorites_apply() {
+applications_dock_favorites_apply() {
   is_true "${GNOME_DOCK_FAVORITES_ENABLED:-true}" || return 0
   run_mutating APPLICATIONS "$REPO_ROOT/scripts/gnome/configure-dock-favorites.sh" "${GNOME_DOCK_FAVORITES:-}" || return "$EXIT_APPLY_FAILED"
 }
 
-dock_favorites_postcheck() {
+applications_dock_favorites_postcheck() {
   local expected actual app
   local -a apps=()
   is_true "${DRY_RUN:-true}" && return 0

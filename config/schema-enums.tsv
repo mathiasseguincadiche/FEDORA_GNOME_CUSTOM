@@ -8,3 +8,4 @@ POLISH_ACCENT_COLOR	blue|teal|green|yellow|orange|red|pink|purple|slate
 POLISH_DOCK_POSITION	LEFT|BOTTOM|RIGHT
 POLISH_DOCK_CLICK_ACTION	focus-minimize-or-previews|focus-or-previews|focus-or-appspread|minimize-or-previews|previews|cycle-windows
 POLISH_DOCK_RUNNING_INDICATOR	DOTS|DASHES|SEGMENTED|SQUARES|CILIORA|DEFAULT
+POLISH_COLOR_SCHEME	prefer-dark|default|prefer-light

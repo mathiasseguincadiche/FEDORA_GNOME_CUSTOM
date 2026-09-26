@@ -60,6 +60,7 @@ jobs:
       - run: bash tests/test_kvm_xml_policy_behavior.sh
       - run: bash tests/test_kernel_channel_behavior.sh
       - run: bash tests/test_gnome_polish_behavior.sh
+      - run: bash tests/test_module_catalog_behavior.sh
       - run: bash tests/test_application_runtime_behavior.sh
       - run: bash tests/test_stack_certification_contract.sh
       - run: bash tests/test_golden_completeness_closure.sh

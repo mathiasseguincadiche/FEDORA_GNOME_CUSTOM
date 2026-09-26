@@ -11,6 +11,9 @@
 - **Tests comportementaux** : `test_kernel_channel_behavior.sh` et `test_gnome_polish_behavior.sh` exécutent le vrai code contre de faux `dnf5`/`rpm`/`gsettings` au lieu de chercher du texte. Ils ont révélé un bug réel : la détection `x86-64-v3` pouvait échouer aléatoirement (`grep -q` + `pipefail` → SIGPIPE).
 - Garde-fou CI : tout `tests/test_*.sh` doit être exécuté par un workflow.
 - Schéma de configuration : énumérations ajoutées pour le canal noyau, l'accent, la position et le clic du dock.
+- **Correctif critique** : trois modules applicatifs (`applications.professional`, `applications.appimage`, `applications.dock_favorites`) définissaient des fonctions dont le nom ne correspondait pas au contrat de l'orchestrateur ; le premier APPLY réel se serait arrêté sur « contract missing ». Nouveau test `test_module_catalog_behavior.sh` qui source chaque module du catalogue réel.
+- **Soin de l'écran QD-OLED** (fiche matérielle) : dock en *intellihide*, style sombre appliqué une seule fois (le choix clair/sombre de l'utilisateur n'est jamais réimposé ni signalé comme dérive), assombrissement puis veille écran à 5 min ; lissage de police en niveaux de gris confirmé.
+- Documentation du disque de sauvegarde XS1000 comme cible Restic externe (ext4 requis).
 - Passage du projet à **0.16.0** et préparation de la prerelease `v0.16.0-rc.1`.
 
 ## 0.15.0 — 2026-09-19

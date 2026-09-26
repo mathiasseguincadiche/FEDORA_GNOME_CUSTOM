@@ -8,13 +8,26 @@ Fedora livre GNOME **tel quel** ; Ubuntu ajoute une couche de finition. Ce modul
 
 | Avant (Fedora pur) | Après (Golden) | Pourquoi |
 |---|---|---|
-| Le dock n'apparaît que dans la vue Activités | Dock **toujours visible à gauche**, pleine hauteur | on lance et bascule d'une app en un clic, comme sur Ubuntu |
+| Le dock n'apparaît que dans la vue Activités | Dock **à gauche, pleine hauteur**, visible sur le bureau et masqué dès qu'une fenêtre le recouvre (*intellihide*) | on lance et bascule d'une app en un clic, comme sur Ubuntu, sans marquer l'écran OLED |
 | La session s'ouvre sur la vue Activités | La session s'ouvre **sur le bureau** | on retrouve tout de suite ses icônes et la Corbeille |
 | Clic sur une app ouverte = rien de plus | Clic = **focus**, re-clic = **réduire**, plusieurs fenêtres = **aperçus** | comportement attendu d'une barre de tâches |
 | Tuilage gauche/droite seulement | **Tiling Assistant** : quarts d'écran, popup de remplissage, groupes | c'est l'« Enhanced Tiling » d'Ubuntu |
 | Accent bleu | Accent **orange** (configurable) | identité visuelle proche d'Ubuntu |
 | LibreOffice, FileZilla, Remmina ont un look « ancien » | Même look que les apps GNOME modernes (**adw-gtk3**), clair **et** sombre | cohérence visuelle |
 | Horloge sans jour | Jour de la semaine affiché, nouvelles fenêtres centrées | petits détails de confort |
+
+## Soin de l'écran QD-OLED
+
+Ton écran (ROG Strix XG27AQDMES) est un **QD-OLED** : chaque pixel produit sa propre lumière. Une image claire et **fixe** affichée des heures peut laisser une trace (le « burn-in »). La finition en tient compte :
+
+| Réglage | Valeur | Effet |
+|---|---|---|
+| Dock *intellihide* | activé | le dock ne reste pas affiché en permanence |
+| Style | **sombre** au premier APPLY | moins de pixels allumés ; tu peux repasser en clair dans Paramètres, le projet ne l'imposera plus |
+| Assombrissement | activé | l'écran baisse d'abord en inactivité |
+| Mise en veille de l'écran | **5 min** | l'écran s'éteint ensuite |
+
+Le lissage des polices reste en **niveaux de gris** (défaut GNOME) : c'est le bon choix sur QD-OLED, dont les sous-pixels ne sont pas alignés comme sur un LCD. Garde aussi activées les protections intégrées à l'écran (*Pixel Shift*, *Panel Care*).
 
 ## Comment ça marche
 
@@ -49,6 +62,8 @@ POLISH_ACCENT_COLOR="blue"            # blue teal green yellow orange red pink p
 POLISH_DOCK_POSITION="BOTTOM"         # LEFT BOTTOM RIGHT
 POLISH_DOCK_ICON_SIZE="40"            # 16 à 128
 POLISH_START_ON_DESKTOP="false"       # revenir à la vue Activités au démarrage
+POLISH_DOCK_FIXED="true"              # dock toujours visible (déconseillé sur OLED)
+POLISH_IDLE_DELAY_SECONDS="600"       # veille de l'écran après 10 min
 ENABLE_TILING_ASSISTANT="false"       # garder le tuilage GNOME natif
 ```
 

@@ -7,6 +7,8 @@ set -Eeuo pipefail
 POLISH_DOCK_SCHEMA='org.gnome.shell.extensions.dash-to-dock'
 POLISH_INTERFACE_SCHEMA='org.gnome.desktop.interface'
 POLISH_MUTTER_SCHEMA='org.gnome.mutter'
+POLISH_SESSION_SCHEMA='org.gnome.desktop.session'
+POLISH_POWER_SCHEMA='org.gnome.settings-daemon.plugins.power'
 
 # Desired state as "schema|key|gvariant" lines. Used by apply AND postcheck, so
 # what is written and what is verified can never drift apart.
@@ -15,7 +17,8 @@ gnome_polish_desired_settings() {
     printf '%s|%s|%s\n' \
       "$POLISH_DOCK_SCHEMA" dock-position "'${POLISH_DOCK_POSITION:-LEFT}'" \
       "$POLISH_DOCK_SCHEMA" extend-height "${POLISH_DOCK_EXTEND_HEIGHT:-true}" \
-      "$POLISH_DOCK_SCHEMA" dock-fixed "${POLISH_DOCK_FIXED:-true}" \
+      "$POLISH_DOCK_SCHEMA" dock-fixed "${POLISH_DOCK_FIXED:-false}" \
+      "$POLISH_DOCK_SCHEMA" intellihide "${POLISH_DOCK_INTELLIHIDE:-true}" \
       "$POLISH_DOCK_SCHEMA" dash-max-icon-size "${POLISH_DOCK_ICON_SIZE:-48}" \
       "$POLISH_DOCK_SCHEMA" click-action "'${POLISH_DOCK_CLICK_ACTION:-focus-minimize-or-previews}'" \
       "$POLISH_DOCK_SCHEMA" running-indicator-style "'${POLISH_DOCK_RUNNING_INDICATOR:-DOTS}'" \
@@ -27,6 +30,11 @@ gnome_polish_desired_settings() {
     "$POLISH_INTERFACE_SCHEMA" accent-color "'${POLISH_ACCENT_COLOR:-orange}'" \
     "$POLISH_INTERFACE_SCHEMA" clock-show-weekday "${POLISH_CLOCK_SHOW_WEEKDAY:-true}" \
     "$POLISH_MUTTER_SCHEMA" center-new-windows "${POLISH_CENTER_NEW_WINDOWS:-true}"
+  if is_true "${POLISH_OLED_CARE:-true}"; then
+    printf '%s|%s|%s\n' \
+      "$POLISH_SESSION_SCHEMA" idle-delay "uint32 ${POLISH_IDLE_DELAY_SECONDS:-300}" \
+      "$POLISH_POWER_SCHEMA" idle-dim "${POLISH_IDLE_DIM:-true}"
+  fi
 }
 
 gnome_polish_precheck() {
@@ -42,6 +50,15 @@ gnome_polish_precheck() {
     log_error GNOME "Dock icon size must be between 16 and 128, got $icon_size"
     return "$EXIT_CONFIG_FAILED"
   fi
+  case "${POLISH_COLOR_SCHEME:-prefer-dark}" in
+    prefer-dark|default|prefer-light) ;;
+    *) log_error GNOME "Unsupported color scheme: ${POLISH_COLOR_SCHEME:-}"; return "$EXIT_CONFIG_FAILED" ;;
+  esac
+  local idle="${POLISH_IDLE_DELAY_SECONDS:-300}"
+  if [[ ! "$idle" =~ ^[0-9]+$ ]] || (( 10#$idle > 3600 )); then
+    log_error GNOME "Idle delay must be 0..3600 seconds, got $idle"
+    return "$EXIT_CONFIG_FAILED"
+  fi
   if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
     [[ "${TILING_ASSISTANT_UUID:-}" == 'tiling-assistant@leleat-on-github' ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${TILING_ASSISTANT_SOURCE_URL:-}" == https://github.com/Leleat/Tiling-Assistant/releases/download/v55/* ]] || return "$EXIT_PRECHECK_FAILED"
@@ -53,7 +70,8 @@ gnome_polish_precheck() {
 gnome_polish_plan() {
   cat <<EOF
 UBUNTU-GRADE POLISH PLAN:
-- Dock: ${POLISH_DOCK_POSITION:-LEFT}, full height, always visible, ${POLISH_DOCK_ICON_SIZE:-48}px icons, click = ${POLISH_DOCK_CLICK_ACTION:-focus-minimize-or-previews}
+- Dock: ${POLISH_DOCK_POSITION:-LEFT}, full height, intellihide=${POLISH_DOCK_INTELLIHIDE:-true} (OLED-safe), ${POLISH_DOCK_ICON_SIZE:-48}px icons, click = ${POLISH_DOCK_CLICK_ACTION:-focus-minimize-or-previews}
+- OLED care: style ${POLISH_COLOR_SCHEME:-prefer-dark}, dim then blank after ${POLISH_IDLE_DELAY_SECONDS:-300}s
 - Session opens on the desktop instead of the Activities overview: ${POLISH_START_ON_DESKTOP:-true}
 - Accent color ${POLISH_ACCENT_COLOR:-orange}, weekday in the clock, new windows centered
 - Legacy GTK3 apps use adw-gtk3 and follow the light/dark switch automatically
@@ -77,6 +95,17 @@ gnome_polish_apply() {
     [[ -n "$schema" ]] || continue
     run_mutating GNOME gsettings set "$schema" "$key" "$value" || return "$EXIT_APPLY_FAILED"
   done < <(gnome_polish_desired_settings)
+
+  # The light/dark style is an initial default only: the user keeps the
+  # GNOME Settings toggle, and the GTK3 watcher follows it. Never re-imposed.
+  if is_true "${POLISH_OLED_CARE:-true}" && ! is_true "${DRY_RUN:-true}"; then
+    local marker="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom/polish-color-scheme.applied"
+    if [[ ! -e "$marker" ]]; then
+      gsettings set "$POLISH_INTERFACE_SCHEMA" color-scheme "'${POLISH_COLOR_SCHEME:-prefer-dark}'" || return "$EXIT_APPLY_FAILED"
+      install -d -m 0755 "$(dirname "$marker")"
+      printf '%s\n' "${POLISH_COLOR_SCHEME:-prefer-dark}" > "$marker"
+    fi
+  fi
 
   is_true "${DRY_RUN:-true}" && return 0
 

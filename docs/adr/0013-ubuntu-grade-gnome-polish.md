@@ -12,7 +12,8 @@ Un module dédié, `gnome.polish` (`modules/gnome/24c_ubuntu_polish.sh`), pilot�
 
 | Élément Ubuntu | Mise en œuvre Fedora |
 |---|---|
-| Ubuntu Dock | Dash to Dock (RPM Fedora) : à gauche, pleine hauteur, fixe, 48 px, clic = focus/réduire/aperçus |
+| Ubuntu Dock | Dash to Dock (RPM Fedora) : à gauche, pleine hauteur, *intellihide* (écran OLED), 48 px, clic = focus/réduire/aperçus |
+| Soin OLED | style sombre au premier APPLY (jamais réimposé), assombrissement puis veille écran à 5 min |
 | Arrivée sur le bureau | `disable-overview-on-startup` |
 | Enhanced Tiling | Tiling Assistant v55 (le projet qu'Ubuntu embarque), épinglé par URL GitHub + SHA-256 |
 | Couleur d'accent | accent GNOME natif (`orange` par défaut) |

@@ -18,7 +18,7 @@ case "\$op" in
   set)
     value="\$4"
     # Mimic GVariant parsing: a bare word that is not a bool/number is a string.
-    if [[ ! "\$value" =~ ^(true|false|[0-9]+|\'.*\')\$ ]]; then value="'\$value'"; fi
+    if [[ ! "\$value" =~ ^(true|false|[0-9]+|(u?int(32|64)|double)\ [0-9.]+|\'.*\')\$ ]]; then value="'\$value'"; fi
     printf '%s\n' "\$value" > "\$file"; printf '%s %s\n' "\$schema" "\$key" >> "$tmp/set.log" ;;
   *) exit 1 ;;
 esac
@@ -76,16 +76,22 @@ grep -Fq 'tiling-assistant@leleat-on-github' "$tmp/tiling-install.args" || fail 
 [[ "$(cat "$store/org.gnome.shell.extensions.dash-to-dock.dock-position")" == "'LEFT'" ]] || fail 'dock not moved left'
 [[ "$(cat "$store/org.gnome.shell.extensions.dash-to-dock.disable-overview-on-startup")" == true ]] || fail 'session still opens on overview'
 [[ "$(cat "$store/org.gnome.desktop.interface.accent-color")" == "'orange'" ]] || fail 'accent color'
-[[ "$(cat "$store/org.gnome.desktop.interface.gtk-theme")" == "'adw-gtk3'" ]] || fail 'GTK3 theme not aligned with light style'
+[[ "$(cat "$store/org.gnome.desktop.interface.color-scheme")" == "'prefer-dark'" ]] || fail 'OLED dark default not applied'
+[[ "$(cat "$store/org.gnome.desktop.interface.gtk-theme")" == "'adw-gtk3-dark'" ]] || fail 'GTK3 theme not aligned with dark style'
+[[ "$(cat "$store/org.gnome.shell.extensions.dash-to-dock.intellihide")" == true ]] || fail 'OLED-safe dock intellihide missing'
+[[ "$(cat "$store/org.gnome.desktop.session.idle-delay")" == 'uint32 300' ]] || fail 'OLED idle blank missing'
 [[ -x "$tmp/home/.local/libexec/fedora-gnome-gtk3-theme-follow" ]] || fail 'light/dark watcher not installed'
 [[ -e "$tmp/enabled" ]] || fail 'Tiling Assistant not enabled'
 run_module postcheck DRY_RUN=false || fail 'postcheck rejected a converged desktop'
 
-# 4. Dark style switch is mirrored to GTK3.
-echo "'prefer-dark'" > "$store/org.gnome.desktop.interface.color-scheme"
+# 4. The user switches to light in GNOME Settings: GTK3 follows, it is NOT drift,
+#    and a later APPLY does not force dark mode back.
+echo "'default'" > "$store/org.gnome.desktop.interface.color-scheme"
 PATH="$tmp/bin:$PATH" bash "$tmp/home/.local/libexec/fedora-gnome-gtk3-theme-follow" once
-[[ "$(cat "$store/org.gnome.desktop.interface.gtk-theme")" == "'adw-gtk3-dark'" ]] || fail 'dark style not mirrored'
-run_module postcheck DRY_RUN=false || fail 'postcheck rejected dark style'
+[[ "$(cat "$store/org.gnome.desktop.interface.gtk-theme")" == "'adw-gtk3'" ]] || fail 'light style not mirrored'
+run_module postcheck DRY_RUN=false || fail 'postcheck treated the user light/dark choice as drift'
+run_module apply DRY_RUN=false
+[[ "$(cat "$store/org.gnome.desktop.interface.color-scheme")" == "'default'" ]] || fail 'APPLY overwrote the user light/dark choice'
 
 # 5. Drift is detected.
 echo "'BOTTOM'" > "$store/org.gnome.shell.extensions.dash-to-dock.dock-position"
