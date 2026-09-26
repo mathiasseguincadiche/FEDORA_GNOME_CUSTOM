@@ -1,0 +1,13 @@
+[Unit]
+Description=Keep GTK3 applications in sync with the GNOME light/dark style
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/libexec/fedora-gnome-gtk3-theme-follow watch
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

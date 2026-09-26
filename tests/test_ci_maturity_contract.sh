@@ -93,4 +93,11 @@ done < <(find "$ROOT/.github/workflows" -maxdepth 1 -type f -name '*.yml' -print
 
 if grep -RInE 'uses:[[:space:]]+[^[:space:]#]+@v[0-9]+' "$ROOT/.github/workflows"; then echo 'mutable major-version GitHub Action reference found' >&2; exit 1; fi
 
+# Every test file must actually be executed by a workflow; a test that CI
+# never runs gives false confidence.
+for test_file in "$ROOT"/tests/test_*.sh; do
+  rel="tests/$(basename "$test_file")"
+  grep -RqF "$rel" "$ROOT/.github/workflows" || { echo "test never executed by CI: $rel" >&2; exit 1; }
+done
+
 echo 'CI maturity contract: PASS'

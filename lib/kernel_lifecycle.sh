@@ -100,7 +100,10 @@ kernel_lifecycle_ldso_help() {
 }
 
 kernel_lifecycle_cpu_supports_x86_64_v3() {
-  kernel_lifecycle_ldso_help | grep -Eq 'x86-64-v3[[:space:]]+\(supported, searched\)'
+  # Capture first: `producer | grep -q` can fail under pipefail (SIGPIPE).
+  local help
+  help="$(kernel_lifecycle_ldso_help)" || return 1
+  grep -Eq 'x86-64-v3[[:space:]]+\(supported, searched\)' <<<"$help"
 }
 
 kernel_lifecycle_selinux_module_boolean() {
