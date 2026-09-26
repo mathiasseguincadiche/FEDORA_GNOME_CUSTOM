@@ -1,6 +1,6 @@
 # Industrial Readiness — Golden Workstation
 
-La version applicable est celle de [`../VERSION`](../VERSION).
+La version applicable est celle de [`../VERSION`](../../VERSION).
 
 ## Chaîne de confiance
 

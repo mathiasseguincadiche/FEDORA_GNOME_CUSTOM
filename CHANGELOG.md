@@ -14,6 +14,8 @@
 - **Correctif critique** : trois modules applicatifs (`applications.professional`, `applications.appimage`, `applications.dock_favorites`) définissaient des fonctions dont le nom ne correspondait pas au contrat de l'orchestrateur ; le premier APPLY réel se serait arrêté sur « contract missing ». Nouveau test `test_module_catalog_behavior.sh` qui source chaque module du catalogue réel.
 - **Soin de l'écran QD-OLED** (fiche matérielle) : dock en *intellihide*, style sombre appliqué une seule fois (le choix clair/sombre de l'utilisateur n'est jamais réimposé ni signalé comme dérive), assombrissement puis veille écran à 5 min ; lissage de police en niveaux de gris confirmé.
 - Documentation du disque de sauvegarde XS1000 comme cible Restic externe (ext4 requis).
+- **Préparation Fedora 45 / GNOME 51** : nouvel outil lecture seule `scripts/development/release-readiness.sh` (COPR noyaux, extensions GNOME, Tiling Assistant, paquets Fedora ; `--pin` produit les lignes SHA-256 prêtes à copier), rapport CI hebdomadaire, test comportemental et runbook `docs/UPGRADE_FEDORA_45.md`. Aucune bascule tant que Fedora 45 n'est pas finale et que tous les composants ne sont pas `READY`.
+- Documentation : les comptes rendus d'étapes passées (`PRE1_HARDENING`, `INDUSTRIAL_READINESS`, `HARDWARE_KVM_COMPLETION`) sont rangés dans `docs/history/`, non normatifs.
 - Passage du projet à **0.16.0** et préparation de la prerelease `v0.16.0-rc.1`.
 
 ## 0.15.0 — 2026-09-19

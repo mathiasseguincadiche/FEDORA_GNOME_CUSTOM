@@ -194,10 +194,10 @@ done
 for file in \
   docs/GOLDEN_WORKSTATION.md \
   docs/HARDWARE_BASELINE_CERTIFICATION.md \
-  docs/HARDWARE_KVM_COMPLETION.md \
+  docs/history/HARDWARE_KVM_COMPLETION.md \
   docs/HARDWARE_STABILITY.md \
   docs/HOST_BASH_UX.md \
-  docs/INDUSTRIAL_READINESS.md \
+  docs/history/INDUSTRIAL_READINESS.md \
   docs/GNOME_INTEGRATION.md \
   docs/GNOME_PROFILE.md \
   docs/GNOME_EXTENSIONS.md \
