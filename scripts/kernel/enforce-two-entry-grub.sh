@@ -49,6 +49,9 @@ mapfile -t remaining_rescue < <(rescue_entries)
 }
 
 count="$(kernel_lifecycle_installed_count)"
-(( count <= 2 )) || { ui_error "More than two kernel-core versions are installed: $count"; exit "$EXIT_POSTCHECK_FAILED"; }
+core="$(kernel_channel_core_package)" || { ui_error "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}"; exit "$EXIT_CONFIG_FAILED"; }
+(( count <= 2 )) || { ui_error "More than two $core versions are installed: $count"; exit "$EXIT_POSTCHECK_FAILED"; }
 
-ui_check OK 'GRUB N/N-1 surface' "rescue disabled; normal kernel-core versions=$count max=2"
+# With the cachyos channel, kernel-core (Fedora/Vanilla) is the rescue track and
+# is bounded separately by DNF installonly_limit; it is reported, not counted.
+ui_check OK 'GRUB N/N-1 surface' "rescue image disabled; managed $core versions=$count max=2"

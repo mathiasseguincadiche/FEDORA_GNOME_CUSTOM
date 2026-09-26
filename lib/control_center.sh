@@ -252,7 +252,7 @@ cc_header() {
   cc_double_rule
   printf '%s' "$CC_RESET"
   printf '  Projet      %-10s  SHA %-10s  Fedora %-6s  Runtime %-10s\n' "$version" "$sha" "$fedora" "$runtime"
-  printf '  Kernel      %-32s Politique vanilla/stable latest-stable\n' "$kernel"
+  printf '  Kernel      %-32s Canal %s latest-stable\n' "$kernel" "${KERNEL_CHANNEL:-vanilla}"
   printf '  GPU         %-32s Git      ' "$gpu"
   cc_badge "$git_state"
   printf '\n'
@@ -328,10 +328,10 @@ cc_show_kernel_inventory() {
     printf 'rpm indisponible dans cet environnement.\n'
   fi
   printf '\nPolitique versionnée :\n'
-  printf '  Golden             kernel-vanilla/stable\n'
+  printf '  Golden             canal %s\n' "${KERNEL_CHANNEL:-vanilla}"
   printf '  Cible              latest stable upstream\n'
   printf '  Minimum actuel     %s\n' "${KERNEL_MIN_VERSION:-non défini}"
-  printf '  Fedora fallback    %s\n' "${KERNEL_KEEP_FEDORA_FALLBACK:-true}"
+  printf '  Fedora fallback    %s\n' "${KERNEL_KEEP_FEDORA_FALLBACK:-false}"
 }
 
 cc_show_logs() {
@@ -520,7 +520,7 @@ cc_kernel_menu() {
     cc_header
     cc_section '5 — KERNEL & BOOT'
     cc_option 1 'Inventaire kernels' 'actif + paquets installés'
-    cc_option 2 'Kernel doctor' 'Golden vanilla/stable'
+    cc_option 2 'Kernel doctor' "Golden canal ${KERNEL_CHANNEL:-vanilla}"
     cc_option 3 'Vérifier mises à jour kernel' 'via DNF check'
     cc_option 4 'Rollback noyau Fedora' 'fallback de récupération'
     cc_option 5 'Collecter panne de boot'
@@ -710,7 +710,7 @@ cc_main_menu() {
     cc_option 2 'Mises à jour' 'Fedora / Flatpak / kernel / firmware check'
     cc_option 3 'Sauvegarde & restauration' 'Restic / staging / DR'
     cc_option 4 'Diagnostics & santé' 'doctors par domaine'
-    cc_option 5 'Kernel & boot' 'vanilla/stable + fallback Fedora'
+    cc_option 5 'Kernel & boot' "canal ${KERNEL_CHANNEL:-vanilla} N/N-1 + recovery"
     cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'
     cc_option 7 'Performance Fedora-Cachy' 'P-State / TuneD / SCX / zram / NVMe'
     cc_option 8 'Maintenance' 'état et réparations ciblées'

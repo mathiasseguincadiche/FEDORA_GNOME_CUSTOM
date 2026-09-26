@@ -3,3 +3,4 @@ BACKUP_ENGINE	restic
 INTEL_MEDIA_DRIVER_POLICY	auto|fedora-free|rpmfusion-full
 KVM_DATA_FSTYPE	ext4
 HOST_OS	fedora
+KERNEL_CHANNEL	cachyos|vanilla

@@ -30,7 +30,8 @@ grep -Fxq 'post_update_recertification=true' "$policy"
 grep -Fxq 'required_suspend_cycles=5' "$policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$conf"
 grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="false"' "$conf"
-grep -Fq 'latest stable Kernel Vanilla release directly' "$conf"
+grep -Fq 'latest stable release of the selected channel directly' "$conf"
+grep -Fxq 'KERNEL_CHANNEL	cachyos|vanilla' "$ROOT/config/schema-enums.tsv"
 
 grep -Fq 'kernel_lifecycle_max_installed' "$lib"
 grep -Fq 'kernel_lifecycle_prepare_rolling_update' "$lib"
@@ -52,7 +53,7 @@ grep -Fq 'enforce-two-entry-grub.sh" --check' "$module"
 grep -Fq 'dnf5 -y remove dracut-config-rescue' "$rescue"
 grep -Fq 'grubby --remove-kernel="$kernel"' "$rescue"
 grep -Fq 'vmlinuz-0-rescue-' "$rescue"
-grep -Fq 'More than two kernel-core versions are installed' "$rescue"
+grep -Fq 'More than two $core versions are installed' "$rescue"
 if grep -Eq 'rm[[:space:]].*/boot|unlink[[:space:]].*/boot' "$rescue"; then
   echo 'rescue cleanup must use bootloader/package tooling, not direct /boot deletion' >&2
   exit 1
