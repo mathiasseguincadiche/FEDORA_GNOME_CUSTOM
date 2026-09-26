@@ -50,4 +50,9 @@ grep -Eq 'READY +Tiling Assistant +v56 declares GNOME Shell 51' <<<"$out" || fai
 rc=0
 PATH="$tmp/bin:$PATH" bash "$ROOT/scripts/development/release-readiness.sh" --report-only >/dev/null 2>&1 || rc=$?
 [[ "$rc" -eq 0 ]] || fail '--report-only must never fail the CI report'
+# Everything ready (and dnf5 absent, as on the CI runner): exit 0, no abort.
+sed -i -e 's|\*extension-info/\*uuid=Resource_Monitor\*) exit 22 ;;|*extension-info/*uuid=Resource_Monitor*) respond "{\\"version\\": 29, \\"version_tag\\": 80003}" ;;|' \
+       -e 's|"fedora-44-x86_64": "x"}}|"fedora-44-x86_64": "x", "fedora-45-x86_64": "z"}}|' "$tmp/bin/curl"
+out="$(PATH="$tmp/bin:$PATH" bash "$ROOT/scripts/development/release-readiness.sh" 2>&1)" || fail "all-ready run failed: $out"
+grep -Fq 'READY=6 BLOCKED=0' <<<"$out" || fail "all-ready summary: $(tail -3 <<<"$out")"
 echo 'release readiness behavior: PASS'

@@ -35,7 +35,9 @@ ready=0; blocked=0
 report() {
   local state="$1" component="$2" detail="$3"
   printf '%-8s %-26s %s\n' "$state" "$component" "$detail"
-  case "$state" in READY) ((ready+=1)) ;; *) ((blocked+=1)) ;; esac
+  # Plain assignments: ((x+=1)) / ((x-=1)) return 1 when the result is 0,
+  # which aborts the script under `set -e`.
+  case "$state" in READY) ready=$((ready + 1)) ;; SKIPPED) ;; *) blocked=$((blocked + 1)) ;; esac
 }
 
 fetch() { curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 30 "$@"; }
@@ -114,7 +116,7 @@ check_fedora_package() {
   local label="$1" package="$2" found
   if ! command -v dnf5 >/dev/null 2>&1; then
     report SKIPPED "$label" 'dnf5 unavailable (run on the Fedora host)'
-    ((blocked-=1)); return 0
+    return 0
   fi
   found="$(dnf5 -q --releasever="$target_fedora" repoquery --latest-limit 1 --qf '%{VERSION}-%{RELEASE}\n' "$package" 2>/dev/null | head -n1 || true)"
   if [[ -n "$found" ]]; then report READY "$label" "$package $found in Fedora $target_fedora"
