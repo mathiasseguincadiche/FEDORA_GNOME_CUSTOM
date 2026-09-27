@@ -58,7 +58,7 @@ SH
   RUN_ID='isolation-test'
   RUNTIME_ENVIRONMENT='ci'
   DRY_RUN=true
-  EXIT_CONFIG_FAILED=12
+  export EXIT_CONFIG_FAILED=12
   mkdir -p "$LOG_DIR" "$REPORT_ROOT"
   declare -a CATALOG_IDS=(a.module b.module)
   declare -A CATALOG_PATH=( [a.module]='a.sh' [b.module]='b.sh' )

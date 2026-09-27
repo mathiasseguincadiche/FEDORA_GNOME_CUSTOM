@@ -91,7 +91,11 @@ hardware_platform_validate_cpu_power() {
 }
 
 hardware_platform_wifi_block() {
-  lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /Network controller|Wireless/ {print; exit}'
+  # lspci -nnk has no blank separator. Only a PCI header starts a device.
+  LC_ALL=C lspci -Dnnk 2>/dev/null | awk '
+    /^[[:xdigit:]]{4}:/ { if (selected) exit; selected=($0 ~ /Network controller|Wireless/) }
+    selected {print}
+  '
 }
 
 hardware_platform_wifi_identity() {

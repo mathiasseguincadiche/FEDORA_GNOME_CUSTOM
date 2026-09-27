@@ -44,6 +44,8 @@ orchestrator_run_module() {
   else
     state='KO'; phase='internal'; detail="orchestrator subprocess rc=$rc"
   fi
+  # Explicit exit(0) during a phase must not become a successful installation.
+  if [[ "$state" != OK && "$rc" == 0 ]]; then rc="${EXIT_POSTCHECK_FAILED:-40}"; fi
   rm -f "$status_file"
 
   ORCH_RESULTS+=("$state|$id|$phase|$rc|$duration_ms|$detail")

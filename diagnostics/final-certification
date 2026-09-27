@@ -85,9 +85,7 @@ status(){
   validation_require_chain && ui_check OK 'Gate 1 → Gate 2 chain' PASS || ui_check WARN 'Gate 1 → Gate 2 chain' 'missing/stale for current source'
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet && ui_meta 'HOST policy' 'Secure Boot OFF / disk encryption forbidden' || ui_meta 'HOST policy' 'NON-COMPLIANT'
   ui_meta 'Unique suspend PASS cycles' "$(suspend_count) / ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5}"; valid_coldstart && ui_check OK 'Nautilus cold-start' PASS || ui_check WARN 'Nautilus cold-start' missing
-  if [[ -s "$cert" ]] && grep -Fxq 'verdict=PASS' "$cert" && grep -Fxq "fingerprint=$(final_fingerprint)" "$cert" && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" && grep -Fxq "module_plan_sha256=$(module_plan_sha256)" "$cert" && grep -Fxq 'validation_chain=PASS' "$cert" && grep -Fxq 'driver_contract=PASS' "$cert" && grep -Fxq 'application_runtime_contract=PASS' "$cert" && grep -Fxq 'backup_runtime_contract=PASS' "$cert" && grep -Fxq 'physical_runtime_contract=PASS' "$cert" && grep -Fxq 'performance_contract=PASS' "$cert" && grep -Fxq 'gaming_contract=PASS' "$cert" && grep -Fxq 'gaming_profile=true' "$cert"; then
-    if ! is_true "${ENABLE_KVM:-true}" || { grep -Fxq 'kvm_domain_contract=PASS' "$cert" && grep -Fxq 'kvm_runtime_contract=PASS' "$cert" && grep -Fxq 'windows_guest_contract=PASS' "$cert"; }; then marker_valid=true; fi
-  fi
+  validation_final_certificate_valid && marker_valid=true
   runtime_stack_valid && runtime_valid=true
   if [[ "$marker_valid" == true && "$runtime_valid" == true ]]; then ui_check OK Certification 'valid and live runtime contracts still match'; elif [[ "$marker_valid" == true ]]; then ui_check WARN Certification 'STALE: live driver/application/backup/physical/performance/gaming/KVM contract drifted'; else ui_check WARN Certification 'not yet certified for current runtime/configuration/validation stack'; fi
 }

@@ -19,5 +19,13 @@ hardware_cpu_memory_postcheck() {
   (( mem_kib >= min_kib )) || return "$EXIT_POSTCHECK_FAILED"
   local configured
   configured="$(sudo dmidecode --type 17 2>/dev/null | awk -F: '/Configured Memory Speed:/ {gsub(/^[ \t]+/,"",$2); print $2}' | sort -u | paste -sd, -)" || true
-  [[ -n "$configured" ]] && log_info HARDWARE "configured-memory-speed=$configured (kit specification: ${EXPECTED_RAM_MT_S} MT/s)"
+  # Informational only: an unreadable DMI table must not fail the postcheck
+  # (a trailing `[[ ]] && ...` would make the function return 1).
+  if [[ -z "$configured" ]]; then
+    log_warn HARDWARE 'configured memory speed unavailable (dmidecode)'
+  elif [[ "$configured" == *"${EXPECTED_RAM_MT_S:-6000} MT/s"* ]]; then
+    log_info HARDWARE "configured-memory-speed=$configured (kit specification reached: ${EXPECTED_RAM_MT_S:-6000} MT/s)"
+  else
+    log_warn HARDWARE "configured-memory-speed=$configured below kit specification ${EXPECTED_RAM_MT_S:-6000} MT/s (EXPO/XMP profile disabled?)"
+  fi
 }

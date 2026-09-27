@@ -18,11 +18,13 @@ dnf5-plugins
 mokutil
 grubby
 stress-ng
+dmidecode
 fio
 drm_info
 
 # Python workstation toolchain
 python3
 python3-pip
+python3-gobject
 python3-devel
 pipx

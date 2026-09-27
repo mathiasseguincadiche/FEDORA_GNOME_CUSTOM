@@ -2,6 +2,9 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$REPO_ROOT/lib/install_lock.sh"
+# `status` is read-only; every other action mutates the boot chain.
+if [[ "${1:-status}" != status ]]; then install_lock_acquire || exit $?; fi
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 source "$REPO_ROOT/lib/kernel_lifecycle.sh"

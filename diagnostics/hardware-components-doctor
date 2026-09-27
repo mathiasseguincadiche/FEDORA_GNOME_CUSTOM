@@ -50,7 +50,7 @@ grep -Eqi 'ALC4080|Realtek.*USB|USB.*Audio' <<<"$audio" && emit OK 'ALC4080/USB 
 command_exists wpctl && wpctl status 2>/dev/null | grep -q Audio && emit OK PipeWire 'audio graph available' || emit KO PipeWire 'audio graph unavailable'
 lsmod | grep -q '^snd_usb_audio' && emit OK snd_usb_audio loaded || emit WARN snd_usb_audio 'module not currently loaded'
 
-xhci="$(lspci -Dnnk 2>/dev/null | awk 'BEGIN{RS=""} /USB controller/ && /xhci_hcd/ {count++} END{print count+0}')"; (( xhci > 0 )) && emit OK xHCI "$xhci controller(s) bound to xhci_hcd" || emit KO xHCI 'no USB controller bound to xhci_hcd'
+xhci="$(LC_ALL=C lspci -Dnnk 2>/dev/null | awk '/^[[:xdigit:]]{4}:/ {usb=($0 ~ /USB controller/)} usb && /Kernel driver in use:[[:space:]]*xhci_hcd/ {count++} END{print count+0}')"; (( xhci > 0 )) && emit OK xHCI "$xhci controller(s) bound to xhci_hcd" || emit KO xHCI 'no USB controller bound to xhci_hcd'
 if hardware_platform_validate_hwmon; then emit OK 'NCT6687D hwmon' "$(hardware_platform_hwmon_counts | tr '\n' ' ')"; else emit KO 'NCT6687D hwmon' 'Fedora in-tree nct6683 must expose live temperature/fan telemetry'; fi
 physical_cooling_lock_valid && emit OK 'Cooling channels' 'pump + CPU fan + system fan enrolled and live' || emit KO 'Cooling channels' 'run baseline-doctor list-cooling then enroll-cooling <pump> <cpu> <system>'
 

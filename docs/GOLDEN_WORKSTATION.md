@@ -207,3 +207,18 @@ mesurer → reproduire → corriger → recertifier
 ```
 
 Il n'ajoute pas globalement `xe.force_probe`, `i915.force_probe`, `pcie_aspm=off`, des changements APST/C-State ou `mem_sleep_default` sans preuve matérielle spécifique.
+
+## Reprise écran : préserver le choix utilisateur
+
+Le watcher capture la disposition complète avant la veille et la rétablit de
+façon temporaire après reprise seulement si les mêmes écrans et modes existent.
+Échelle, position, écran principal, HDR et plage RGB sont conservés. Une
+configuration déjà identique ne produit aucune écriture. Le snapshot est consommé
+une seule fois et appartient au démarrage courant.
+
+Les événements Mutter/DRM sont observés sans réimposer un profil ; les trois
+options `DISPLAY_REPAIR_ON_*` contrôlent réellement les watchers installés.
+L'action manuelle `~/.local/libexec/fedora-gnome-display-repair --reset-certified`
+réimpose le profil 1440p/240 Hz configuré et refuse une disposition multi-écrans.
+La reprise automatique est à qualifier dans GNOME sur le matériel réel : les
+tests de transformation D-Bus ne constituent pas une preuve de veille physique.

@@ -16,7 +16,7 @@ report_extension() {
   fi
 
   if command_exists gnome-extensions && gnome-extensions list 2>/dev/null | grep -Fxq "$uuid"; then
-    if gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+    if gnome_extension_active "$uuid"; then
       if ! $quiet; then ui_check OK "$label" 'enabled in GNOME Shell'; fi
     else
       if ! $quiet; then ui_check KO "$label" 'installed but not enabled'; fi
@@ -47,7 +47,7 @@ report_local_extension() {
   fi
 
   if command_exists gnome-extensions && gnome-extensions list 2>/dev/null | grep -Fxq "$uuid"; then
-    if gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+    if gnome_extension_active "$uuid"; then
       if ! $quiet; then ui_check OK "$label state" 'enabled in GNOME Shell'; fi
     else
       if ! $quiet; then ui_check KO "$label state" 'installed but not enabled'; fi

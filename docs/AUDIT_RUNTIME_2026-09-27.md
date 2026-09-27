@@ -41,6 +41,24 @@ conservés. Le PASS du job signifie « parcours de diagnostic vérifié », jama
 « installation matérielle réussie ». Les tests de comportement restent nécessaires
 pour exercer les branches APPLY qui ne sont pas exécutées en dry-run.
 
+## Consolidation et contre-relecture (0.17.0)
+
+Les PR #69 et #71 ont été relues ligne par ligne puis intégrées ensemble. Les deux
+avaient trouvé indépendamment le défaut `if fonction` / `set -e` : c'est la
+confirmation la plus forte de sa réalité. La relecture a ajouté :
+
+| Constat | Correction et preuve |
+| --- | --- |
+| CI de #71 rouge : clés du lock encore cherchées dans `gnome.conf` | `non-regression.yml` pointe sur le lock ; toutes ses étapes rejouées localement (0 échec). |
+| CI de #71 rouge : Git refusé dans le conteneur Fedora | Reproduit avec un checkout appartenant à un autre UID ; `safe.directory` ajouté au job. |
+| Deux lanceurs de modules concurrents (#69 et #71) | Lanceur #71 conservé : #69 relançait `engine_bootstrap` pour chacun des 72 modules (72 identifiants de journaux). |
+| Le confinement des restaurations (#71) cassait le test Restic réel (#69) | Le test restaure dans la zone de staging ; aller-retour réel vérifié. |
+| Verrou limité à `install.sh` | Étendu aux entrées qui modifient le système ; réentrance réservée aux descendants réels (test avec PID forgé). |
+| Postchecks mémoire/veille terminant par `[[ … ]] && log` | Structure `if` : une donnée facultative illisible n'est plus un échec ; vitesse RAM comparée au kit 6000 MT/s. |
+
+État après consolidation : 69 scripts de tests verts, ShellCheck (paramètres CI)
+sans aucun signalement sur 294 fichiers.
+
 ## Exigences utilisateur encore non satisfaites
 
 - **Aucun chiffrement, sauvegardes comprises** : confirmé explicitement le 27/09.
