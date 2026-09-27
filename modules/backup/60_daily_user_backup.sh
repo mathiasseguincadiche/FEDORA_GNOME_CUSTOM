@@ -165,7 +165,10 @@ backup_daily_apply() {
   local applied_sha runtime_dir
   is_true "${DAILY_BACKUP_ENABLED:-true}" || return 0
   applied_sha="$(repo_commit)"
-  [[ "$applied_sha" =~ ^[0-9a-fA-F]{40}$ ]] || return "$EXIT_APPLY_FAILED"
+  [[ "$applied_sha" =~ ^[0-9a-fA-F]{40}$ ]] || {
+    log_error BACKUP "Cannot pin the autonomous backup runtime: repository commit is '$applied_sha' (not a Git checkout, or Git refused the directory)"
+    return "$EXIT_APPLY_FAILED"
+  }
 
   if is_true "${DRY_RUN:-true}"; then
     log_info BACKUP "Would install autonomous backup runtime for SHA $applied_sha and daily/retention user timers"

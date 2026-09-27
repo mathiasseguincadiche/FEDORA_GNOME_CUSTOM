@@ -11,14 +11,23 @@ jobs:
     container: fedora:44
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # Git must exist BEFORE actions/checkout: without it, checkout silently
+      # falls back to a REST API tarball with no .git directory, `git rev-parse`
+      # then fails and backup.daily (which pins the applied commit) fails.
       - name: Install audit dependencies
         run: dnf -y install python3 git util-linux procps-ng pciutils systemd jq
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Trust the checkout inside the container
         # The workspace is owned by the runner user, not by root in the
-        # container: without this, every git call fails ("dubious ownership")
-        # and modules that pin the applied commit (backup.daily) fail in apply.
+        # container: without this, every git call fails ("dubious ownership").
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Prove this is a real Git checkout
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          commit="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" || { echo '::error title=installer audit::workspace is not a usable Git checkout'; exit 1; }
+          [[ "$commit" == "$GITHUB_SHA" || -n "${GITHUB_HEAD_REF:-}" ]] || { echo "::error title=installer audit::HEAD $commit differs from $GITHUB_SHA"; exit 1; }
+          echo "Git checkout OK: $commit"
       - name: Exercise all catalog entries without certifying this container
         shell: bash
         run: |
