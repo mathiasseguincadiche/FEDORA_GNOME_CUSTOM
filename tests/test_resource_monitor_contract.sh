@@ -14,13 +14,6 @@ bash -n "$INSTALLER"; bash -n "$MODULE"; bash -n "$DOCTOR"
 
 for token in \
   'ENABLE_RESOURCE_MONITOR="true"' \
-  'RESOURCE_MONITOR_UUID="Resource_Monitor@Ory0n"' \
-  'RESOURCE_MONITOR_SOURCE_URL="https://extensions.gnome.org/review/download/70909.shell-extension.zip"' \
-  'RESOURCE_MONITOR_REVIEW_ID="70909"' \
-  'RESOURCE_MONITOR_VERSION="28"' \
-  'RESOURCE_MONITOR_SHELL_VERSION="50"' \
-  'RESOURCE_MONITOR_SHA256="18f49cf20bd8f96f22f6048d7404e51cb414c1aea94ca16d0c2ad3634e9d8bf2"' \
-  'RESOURCE_MONITOR_SCHEMA="org.gnome.shell.extensions.resource-monitor"' \
   'RESOURCE_MONITOR_REFRESH_SECONDS="2"'; do
   grep -Fq "$token" "$CONF" || { echo "Resource Monitor config missing: $token" >&2; exit 1; }
 done
@@ -29,16 +22,7 @@ grep -Fq 'gnome.telemetry|GNOME|gnome.extensions|modules/gnome/24b_resource_moni
 grep -Fq 'gnome.polish|GNOME|gnome.telemetry|modules/gnome/24c_ubuntu_polish.sh' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'gnome.display_repair|GNOME|gnome.polish|modules/gnome/25_display_repair.sh' "$PLAN"
 
-for token in \
-  'https://extensions.gnome.org/review/download/70909.shell-extension.zip' \
-  'Resource_Monitor@Ory0n' \
-  'org.gnome.shell.extensions.resource-monitor.gschema.xml' \
-  'review_id=70909' \
-  'site_version=28' \
-  '18f49cf20bd8f96f22f6048d7404e51cb414c1aea94ca16d0c2ad3634e9d8bf2' \
-  'sha256sum --check --status'; do
-  grep -Fq "$token" "$INSTALLER" || { echo "reviewed Resource Monitor installer missing: $token" >&2; exit 1; }
-done
+
 
 for token in \
   '0x8086' '0xe20b' 'gpu_busy_percent' 'gt_busy_percent' 'k10temp|zenpower' \

@@ -2,6 +2,7 @@
 # REPO_ROOT is intentionally injected by the repository entrypoints before this library is sourced.
 # shellcheck disable=SC2153
 
+ORCHESTRATOR_RUNNER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/scripts/engine/run-module.sh"
 declare -ag ORCH_RESULTS=()
 
 module_prefix() { printf '%s' "${1//./_}"; }
@@ -25,50 +26,12 @@ orchestrator_run_module() {
   status_file="$(mktemp "$status_root/.orchestrator-${id//[^A-Za-z0-9_.-]/_}.XXXXXX")"
   start_ms="$(orchestrator_now_ms)"
 
-  if (
-    local inner_rc=0 inner_phase fn
-    if source "$path"; then
-      :
-    else
-      inner_rc=$?
-      printf 'KO|source|%s|source rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-
-    for inner_phase in precheck plan apply postcheck; do
-      fn="${prefix}_${inner_phase}"
-      if ! declare -F "$fn" >/dev/null; then
-        inner_rc="${EXIT_CONFIG_FAILED:-12}"
-        printf 'KO|contract|%s|contract missing %s\n' "$inner_rc" "$fn" > "$status_file"
-        exit "$inner_rc"
-      fi
-    done
-
-    ui_check INFO "$id" "${CATALOG_SCOPE[$id]}"
-
-    if "${prefix}_precheck"; then :; else
-      inner_rc=$?
-      printf 'KO|precheck|%s|precheck rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-    if "${prefix}_plan" >> "$MODULE_LOG" 2>&1; then :; else
-      inner_rc=$?
-      printf 'KO|plan|%s|plan rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-    if "${prefix}_apply" >> "$MODULE_LOG" 2>&1; then :; else
-      inner_rc=$?
-      printf 'KO|apply|%s|apply rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-    if "${prefix}_postcheck" >> "$MODULE_LOG" 2>&1; then :; else
-      inner_rc=$?
-      printf 'KO|postcheck|%s|postcheck rc=%s\n' "$inner_rc" "$inner_rc" > "$status_file"
-      exit "$inner_rc"
-    fi
-
-    printf 'OK|complete|0|complete\n' > "$status_file"
-  ); then
+  # A separate Bash process is essential: calling a function/subshell in an
+  # if/|| condition disables errexit throughout its body, even with set -e.
+  if REPO_ROOT="$REPO_ROOT" DRY_RUN="${DRY_RUN:-true}" \
+      RUNTIME_ENVIRONMENT="${RUNTIME_ENVIRONMENT:-unknown}" \
+      MODULE_LOG="$MODULE_LOG" bash "$ORCHESTRATOR_RUNNER" \
+      "$path" "$prefix" "$status_file" "$id" "${CATALOG_SCOPE[$id]}"; then
     rc=0
   else
     rc=$?
@@ -88,11 +51,19 @@ orchestrator_run_module() {
 }
 
 orchestrator_run_all() {
-  local id
+  local id rc=0 module_rc
+  [[ "${ORCH_COLLECT_ALL:-false}" != true || "${DRY_RUN:-true}" == true ]] || return "${EXIT_SECURITY_BLOCK:-50}"
   ORCH_RESULTS=()
   for id in "${CATALOG_IDS[@]}"; do
-    orchestrator_run_module "$id" || return $?
+    if orchestrator_run_module "$id"; then
+      :
+    else
+      module_rc=$?
+      (( rc != 0 )) || rc=$module_rc
+      [[ "${ORCH_COLLECT_ALL:-false}" == true ]] || return "$rc"
+    fi
   done
+  return "$rc"
 }
 
 orchestrator_report() {
@@ -101,7 +72,11 @@ orchestrator_report() {
   is_true "${DRY_RUN:-true}" && mode='dry-run'
   declare -F effective_config_sha256 >/dev/null && config_hash="$(effective_config_sha256)"
   declare -F module_plan_sha256 >/dev/null && plan_hash="$(module_plan_sha256)"
-  printf '%s\n' "${ORCH_RESULTS[@]}" | grep -q '^KO|' && overall='FAIL'
+  local result
+  for result in "${ORCH_RESULTS[@]}"; do
+    [[ "$result" != KO\|* ]] || overall='FAIL'
+  done
+  (( ${#ORCH_RESULTS[@]} == ${#CATALOG_IDS[@]} )) || overall='FAIL'
 
   mkdir -p "$REPORT_ROOT"
   report_tmp="$(mktemp "$REPORT_ROOT/.run-$RUN_ID.txt.XXXXXX")"

@@ -3,7 +3,7 @@
 # shellcheck disable=SC2153
 
 logging_init() {
-  RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+  RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
   LOG_ROOT="$REPO_ROOT/logs"
   REPORT_ROOT="$REPO_ROOT/reports"
   STATE_ROOT="$REPO_ROOT/state"

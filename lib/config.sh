@@ -16,6 +16,8 @@ config_load() {
   # failures remain actionable on stderr.
   bash "$validator" "$REPO_ROOT/config" >/dev/null || return $?
 
+  source "$REPO_ROOT/config/gnome-extensions.lock"
+
   for f in "$REPO_ROOT"/config/*.conf; do
     [[ -r "$f" ]] || continue
     [[ "$f" == "$local_override" ]] && continue

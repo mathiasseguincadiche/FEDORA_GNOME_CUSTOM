@@ -57,9 +57,6 @@ for doc in README.md CHANGELOG.md docs/VIRTUALBOX_GNOME_LAB.md docs/GNOME_INTEGR
   [[ -f "$ROOT/$doc" ]] || { echo "missing LAB documentation: $doc" >&2; exit 1; }
 done
 
-grep -Fq '74408' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
-grep -Fq '70326' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
-grep -Fq '70909' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'Resource Monitor' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"

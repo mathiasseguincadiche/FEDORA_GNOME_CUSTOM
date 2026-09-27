@@ -24,6 +24,11 @@ chmod +x "$sentinel"
   [[ "$(wc -l < "$tmp/mutations.log")" -eq 1 ]]
 )
 
+# The subprocess runner loads the same libraries/config as production.
+cp -a "$ROOT/lib" "$ROOT/config" "$tmp/"
+mkdir -p "$tmp/scripts"
+cp -a "$ROOT/scripts/config" "$tmp/scripts/"
+
 # Dynamic proof that module-local helpers cannot leak into the next convergence module.
 cat > "$tmp/a.sh" <<'SH'
 a_module_precheck() { :; }
@@ -47,6 +52,8 @@ SH
   REPO_ROOT="$tmp"
   LOG_DIR="$tmp/logs"
   MODULE_LOG="$tmp/modules.log"
+  MAIN_LOG="$tmp/main.log"
+  export LOG_DIR MODULE_LOG MAIN_LOG RUN_ID REPORT_ROOT
   REPORT_ROOT="$tmp/reports"
   RUN_ID='isolation-test'
   RUNTIME_ENVIRONMENT='ci'
@@ -56,7 +63,6 @@ SH
   declare -a CATALOG_IDS=(a.module b.module)
   declare -A CATALOG_PATH=( [a.module]='a.sh' [b.module]='b.sh' )
   declare -A CATALOG_SCOPE=( [a.module]='TEST' [b.module]='TEST' )
-  ui_check() { :; }
   is_true() { [[ "${1,,}" == true ]]; }
   repo_commit() { printf 'test-commit\n'; }
   source "$ROOT/lib/orchestrator.sh"

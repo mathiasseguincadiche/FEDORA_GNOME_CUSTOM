@@ -1,5 +1,11 @@
 # Extensions GNOME 50 — politique Golden Workstation
 
+Les références exécutables des quatre extensions téléchargées sont centralisées dans
+[`config/gnome-extensions.lock`](../config/gnome-extensions.lock). Les numéros cités
+ci-dessous décrivent la version 0.16.0 ; le lock reste la référence à mettre à jour.
+Les clés de ce fichier sont des constantes vérifiées, pas des options `local.conf`.
+
+
 Référence : Fedora Linux 44 Workstation + GNOME 50 + Wayland.
 
 Le projet distingue les extensions **fonctionnelles** des extensions purement cosmétiques. L'objectif est de conserver un bureau proche de l'upstream, stable à 240 Hz et simple à diagnostiquer après une mise à jour ou un suspend/resume.

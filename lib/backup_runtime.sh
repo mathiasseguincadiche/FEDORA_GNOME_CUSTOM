@@ -154,3 +154,16 @@ backup_runtime_validate_preapply_marker() {
 data=json.load(sys.stdin)
 raise SystemExit(0 if "fedora-gnome-custom-preapply" in (data.get("tags") or []) else 1)' <<<"$json"
 }
+
+# A restore is restricted to the configured staging tree, including when the
+# caller supplies an explicit target. Canonicalization also rejects symlink
+# escapes and ../ paths before any files are created.
+backup_runtime_restore_target_valid() {
+  local target root
+  root="$(readlink -m -- "${BACKUP_RESTORE_STAGING_ROOT:-$HOME/Restores/fedora-gnome-custom}")" || return 1
+  target="$(readlink -m -- "$1")" || return 1
+  case "$root" in
+    /|/etc|/etc/*|/boot|/boot/*|/usr|/usr/*|/var|/var/*|/home|"$HOME"|/data|"${KVM_POOL_PATH:-/data/libvirt/images}"|"${KVM_POOL_PATH:-/data/libvirt/images}"/*) return 1 ;;
+  esac
+  [[ "$target" == "$root" || "$target" == "$root/"* ]]
+}

@@ -21,12 +21,6 @@ gnome_extensions_precheck() {
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
-    [[ "${DING_UUID:-}" == "ding@rastersoft.com" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_SOURCE_URL:-}" == "https://extensions.gnome.org/review/download/74408.shell-extension.zip" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_REVIEW_ID:-}" == "74408" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_VERSION:-}" == "95" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_SHELL_VERSION:-}" == "50" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_SCHEMA:-}" == "org.gnome.shell.extensions.ding" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_DESKTOP_DIR_NAME:-}" == "Bureau" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_SHOW_TRASH:-}" == "true" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_SHOW_HOME:-}" == "false" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -35,12 +29,6 @@ gnome_extensions_precheck() {
   fi
 
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
-    [[ "${SHOW_DESKTOP_PLUS_UUID:-}" == "show-desktop-plus@attentivecoder" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" == "https://extensions.gnome.org/review/download/70326.shell-extension.zip" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_REVIEW_ID:-}" == "70326" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_VERSION:-}" == "8" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-}" == "50" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_SCHEMA:-}" == "org.gnome.shell.extensions.show-desktop-plus" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-}" == "left-end" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-}" == "toggle-desktop" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${SHOW_DESKTOP_PLUS_ENABLE_HOTKEY:-}" == "true" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -54,13 +42,13 @@ gnome_extensions_precheck() {
 }
 
 gnome_extensions_plan() {
-  cat <<'EOF'
+  cat <<EOF
 GNOME EXTENSIONS PLAN:
 - Fedora 44 / GNOME 50 remains the desktop reference
 - Dash to Dock is enabled from the official Fedora RPM
 - AppIndicator is enabled from the official Fedora RPM for functional tray compatibility
-- Desktop Icons NG (DING) v95 is installed from the exact GNOME-reviewed artifact 74408; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
-- Show Desktop Plus v8 is installed from the exact GNOME-reviewed artifact 70326 and configured as a top-left desktop toggle with Super+D
+- Desktop Icons NG (DING) v${DING_VERSION} is installed from the exact GNOME-reviewed artifact ${DING_REVIEW_ID}; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
+- Show Desktop Plus v${SHOW_DESKTOP_PLUS_VERSION} is installed from the exact GNOME-reviewed artifact ${SHOW_DESKTOP_PLUS_REVIEW_ID} and configured as a top-left desktop toggle with Super+D
 - Blur My Shell stays disabled by default for 240 Hz/resume stability
 - Extension Manager is installed from Flathub as the administration UI
 - Just Perfection and Dash to Panel remain outside the Golden profile

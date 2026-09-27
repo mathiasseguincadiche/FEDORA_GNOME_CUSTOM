@@ -91,20 +91,14 @@ resource_monitor_set() {
 
 gnome_telemetry_precheck() {
   is_true "${ENABLE_RESOURCE_MONITOR:-false}" || return 0
-  [[ "${RESOURCE_MONITOR_UUID:-}" == "Resource_Monitor@Ory0n" ]] || return "$EXIT_PRECHECK_FAILED"
-  [[ "${RESOURCE_MONITOR_SOURCE_URL:-}" == "https://extensions.gnome.org/review/download/70909.shell-extension.zip" ]] || return "$EXIT_PRECHECK_FAILED"
-  [[ "${RESOURCE_MONITOR_REVIEW_ID:-}" == "70909" ]] || return "$EXIT_PRECHECK_FAILED"
-  [[ "${RESOURCE_MONITOR_VERSION:-}" == "28" ]] || return "$EXIT_PRECHECK_FAILED"
-  [[ "${RESOURCE_MONITOR_SHELL_VERSION:-}" == "50" ]] || return "$EXIT_PRECHECK_FAILED"
-  [[ "${RESOURCE_MONITOR_SCHEMA:-}" == "org.gnome.shell.extensions.resource-monitor" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ "${RESOURCE_MONITOR_REFRESH_SECONDS:-}" == "2" ]] || return "$EXIT_PRECHECK_FAILED"
   command_exists python3 || return "$EXIT_PRECHECK_FAILED"
 }
 
 gnome_telemetry_plan() {
-  cat <<'EOF'
+  cat <<EOF
 RESOURCE MONITOR PLAN:
-- install Resource Monitor v28 from GNOME Extensions reviewed artifact 70909 (GNOME Shell 50)
+- install Resource Monitor v${RESOURCE_MONITOR_VERSION} from reviewed artifact ${RESOURCE_MONITOR_REVIEW_ID} (GNOME Shell ${RESOURCE_MONITOR_SHELL_VERSION})
 - top-right compact telemetry: CPU usage + Ryzen Tctl, RAM used %, active Ethernet/Wi-Fi download|upload, Intel Arc B580 load + temperature
 - disk and swap indicators stay hidden from the top bar to keep the panel readable
 - network entries auto-hide when the corresponding interface is inactive

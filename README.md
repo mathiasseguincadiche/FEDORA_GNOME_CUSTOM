@@ -1,5 +1,9 @@
 <div align="center">
 
+> État de qualification : voir [l'audit du moteur et les exigences restantes](docs/AUDIT_RUNTIME_2026-09-27.md).
+> La sauvegarde actuelle reste chiffrée via Restic : elle ne satisfait pas encore le besoin de sauvegarde sans chiffrement. Un PASS CI ne certifie pas le poste physique.
+
+
 # Fedora 44 Golden Workstation
 
 **Production-oriented · Reproductible · Récupérable · CI-gated**

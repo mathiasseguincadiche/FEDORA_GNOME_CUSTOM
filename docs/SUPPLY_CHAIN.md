@@ -1,5 +1,11 @@
 # Supply-chain et provenance
 
+Les références exécutables des quatre extensions téléchargées sont centralisées dans
+[`config/gnome-extensions.lock`](../config/gnome-extensions.lock). Les numéros cités
+ci-dessous décrivent la version 0.16.0 ; le lock reste la référence à mettre à jour.
+Les clés de ce fichier sont des constantes vérifiées, pas des options `local.conf`.
+
+
 ## Principes
 
 - préférer Fedora/Ubuntu officiels et des dépôts éditeurs signés ;

@@ -26,7 +26,7 @@ effective_config_payload() {
   done < <(
     {
       find "$REPO_ROOT/config" -type f \
-        \( -name '*.conf' -o -name '*.policy' -o -name '*.repo' -o -name 'schema.digest' -o -name 'schema-enums.tsv' \) -print
+        \( -name '*.conf' -o -name '*.lock' -o -name '*.policy' -o -name '*.repo' -o -name 'schema.digest' -o -name 'schema-enums.tsv' \) -print
       find "$REPO_ROOT/manifests" -maxdepth 1 -type f \
         \( -name '*.txt' -o -name '*.tsv' -o -name 'module-plan.conf' \) -print
       find "$REPO_ROOT/virtualization/xml" -type f -name '*.xml' -print 2>/dev/null || true

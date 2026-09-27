@@ -1,0 +1,36 @@
+name: Fedora 44 installer audit
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installer-audit:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install audit dependencies
+        run: dnf -y install python3 git util-linux procps-ng pciutils systemd jq
+      - name: Exercise all catalog entries without certifying this container
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export RUN_ID=ci-installer-audit
+          rc=0
+          bash install.sh --dry-run --collect-all > installer-audit.log 2>&1 || rc=$?
+          cat installer-audit.log
+          python3 scripts/ci/check-installer-audit.py "$rc"
+      - name: Preserve audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installer-audit-${{ github.run_id }}
+          path: |
+            installer-audit.log
+            reports/run-ci-installer-audit.*
+            logs/ci-installer-audit/
+          if-no-files-found: error
+          retention-days: 14

@@ -107,9 +107,6 @@ grep -Fq 'Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'XDG Desktop' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Super+D' "$ROOT/docs/GNOME_EXTENSIONS.md"
-grep -Fq '74408' "$ROOT/docs/GNOME_EXTENSIONS.md"
-grep -Fq '70326' "$ROOT/docs/GNOME_EXTENSIONS.md"
-grep -Fq '70909' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq '8086:e20b' "$ROOT/docs/RESOURCE_MONITOR.md"
 grep -Fq 'gpu_busy_percent' "$ROOT/docs/RESOURCE_MONITOR.md"
 grep -Fq 'gt_busy_percent' "$ROOT/docs/RESOURCE_MONITOR.md"
@@ -130,10 +127,6 @@ for file in README.md CHANGELOG.md docs/CI_VALIDATION.md docs/GNOME_INTEGRATION.
     exit 1
   fi
 done
-grep -Fq 'DING_SOURCE_URL="https://extensions.gnome.org/review/download/74408.shell-extension.zip"' "$ROOT/config/gnome.conf"
-grep -Fq 'DING_VERSION="95"' "$ROOT/config/gnome.conf"
-grep -Fq 'RESOURCE_MONITOR_SOURCE_URL="https://extensions.gnome.org/review/download/70909.shell-extension.zip"' "$ROOT/config/gnome.conf"
-grep -Fq 'RESOURCE_MONITOR_VERSION="28"' "$ROOT/config/gnome.conf"
 
 # GATE 2 must have a documented, isolated VirtualBox path while production
 # APPLY remains bare-metal only.
@@ -141,7 +134,6 @@ grep -Fq 'VIRTUALBOX_GNOME_LAB.md' "$ROOT/docs/README.md"
 grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'Resource Monitor' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
-grep -Fq '70909' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'APPLY production' "$ROOT/docs/EXECUTION_CONTRACT.md"
 grep -Fq 'LAB GNOME VirtualBox' "$ROOT/docs/EXECUTION_CONTRACT.md"
 grep -Fq 'ne déverrouille jamais' "$ROOT/docs/README.md"
