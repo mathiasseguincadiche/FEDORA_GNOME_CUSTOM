@@ -27,7 +27,10 @@ jobs:
           rc=0
           bash install.sh --dry-run --collect-all > installer-audit.log 2>&1 || rc=$?
           cat installer-audit.log
-          python3 scripts/ci/check-installer-audit.py "$rc"
+          if ! python3 scripts/ci/check-installer-audit.py "$rc"; then
+            tail -n 8 installer-audit.log | sed 's/^/::error title=audit log tail::/'
+            exit 1
+          fi
       - name: Preserve audit evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
