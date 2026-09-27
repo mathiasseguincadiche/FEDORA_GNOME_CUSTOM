@@ -84,57 +84,20 @@ jobs:
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json
-      - name: Verify GNOME-reviewed DING artifact
+      - name: Verify reviewed extension artifacts from the canonical lock
         shell: bash
         run: |
-          set -euo pipefail
-          dnf -y install curl unzip glib2
-          zip=/tmp/ding-v95.zip
-          dir=/tmp/ding-v95
-          curl --fail --location --proto '=https' --tlsv1.2 \
-            https://extensions.gnome.org/review/download/74408.shell-extension.zip \
-            --output "$zip"
-          unzip -p "$zip" metadata.json > /tmp/ding-metadata.json
-          grep -Fq '"uuid": "ding@rastersoft.com"' /tmp/ding-metadata.json
-          grep -Eq '"50"|50' /tmp/ding-metadata.json
-          mkdir -p "$dir"
-          unzip -q "$zip" -d "$dir"
-          test -r "$dir/schemas/org.gnome.shell.extensions.ding.gschema.xml"
-          glib-compile-schemas "$dir/schemas"
-      - name: Verify GNOME-reviewed Show Desktop Plus artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          dnf -y install curl unzip glib2
-          zip=/tmp/show-desktop-plus-v8.zip
-          dir=/tmp/show-desktop-plus-v8
-          curl --fail --location --proto '=https' --tlsv1.2 \
-            https://extensions.gnome.org/review/download/70326.shell-extension.zip \
-            --output "$zip"
-          unzip -p "$zip" metadata.json > /tmp/show-desktop-plus-metadata.json
-          grep -Fq '"uuid": "show-desktop-plus@attentivecoder"' /tmp/show-desktop-plus-metadata.json
-          grep -Eq '"50"|50' /tmp/show-desktop-plus-metadata.json
-          mkdir -p "$dir"
-          unzip -q "$zip" -d "$dir"
-          test -r "$dir/schemas/org.gnome.shell.extensions.show-desktop-plus.gschema.xml"
-          glib-compile-schemas "$dir/schemas"
-      - name: Verify GNOME-reviewed Resource Monitor artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          dnf -y install curl unzip glib2
-          zip=/tmp/resource-monitor-v28.zip
-          dir=/tmp/resource-monitor-v28
-          curl --fail --location --proto '=https' --tlsv1.2 \
-            https://extensions.gnome.org/review/download/70909.shell-extension.zip \
-            --output "$zip"
-          unzip -p "$zip" metadata.json > /tmp/resource-monitor-metadata.json
-          grep -Fq '"uuid": "Resource_Monitor@Ory0n"' /tmp/resource-monitor-metadata.json
-          grep -Eq '"50"|50' /tmp/resource-monitor-metadata.json
-          mkdir -p "$dir"
-          unzip -q "$zip" -d "$dir"
-          test -r "$dir/schemas/org.gnome.shell.extensions.resource-monitor.gschema.xml"
-          grep -Fq 'gpu_busy_percent' "$dir/services/runtime.js"
-          grep -Fq 'gt_busy_percent' "$dir/services/runtime.js"
-          grep -Fq '0x8086' "$dir/services/runtime.js"
-          glib-compile-schemas "$dir/schemas"
+          set -Eeuo pipefail
+          dnf -y install curl unzip glib2 python3
+          source config/gnome-extensions.lock
+          for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
+            url_key="${prefix}_SOURCE_URL"; sha_key="${prefix}_SHA256"
+            uuid_key="${prefix}_UUID"; shell_key="${prefix}_SHELL_VERSION"
+            dir="$(mktemp -d)"
+            curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 "${!url_key}" --output "$dir/extension.zip"
+            printf '%s  %s\n' "${!sha_key}" "$dir/extension.zip" | sha256sum --check --status
+            unzip -p "$dir/extension.zip" metadata.json > "$dir/metadata.json"
+            python3 scripts/gnome/validate-extension-metadata.py "$dir/metadata.json" "${!uuid_key}" "${!shell_key}"
+            unzip -q "$dir/extension.zip" -d "$dir/extension"
+            glib-compile-schemas "$dir/extension/schemas"
+          done

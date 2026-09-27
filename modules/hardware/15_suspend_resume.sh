@@ -9,5 +9,5 @@ hardware_suspend_apply() {
 hardware_suspend_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   [[ -x /usr/lib/systemd/system-sleep/fedora-gnome-custom ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ -r /sys/power/mem_sleep ]] && log_info HARDWARE "mem_sleep=$(cat /sys/power/mem_sleep)"
+  if [[ -r /sys/power/mem_sleep ]]; then log_info HARDWARE "mem_sleep=$(cat /sys/power/mem_sleep)"; fi
 }

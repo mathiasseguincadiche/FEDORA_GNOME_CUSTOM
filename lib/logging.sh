@@ -3,7 +3,7 @@
 # shellcheck disable=SC2153
 
 logging_init() {
-  RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+  RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%S%NZ)-$$}"
   LOG_ROOT="$REPO_ROOT/logs"
   REPORT_ROOT="$REPO_ROOT/reports"
   STATE_ROOT="$REPO_ROOT/state"
@@ -11,8 +11,8 @@ logging_init() {
   mkdir -p "$LOG_DIR" "$REPORT_ROOT" "$STATE_ROOT" "$STATE_ROOT/releases"
   MAIN_LOG="$LOG_DIR/main.log"
   MODULE_LOG="$LOG_DIR/modules.log"
-  : > "$MAIN_LOG"
-  : > "$MODULE_LOG"
+  : >> "$MAIN_LOG"
+  : >> "$MODULE_LOG"
   export RUN_ID LOG_ROOT REPORT_ROOT STATE_ROOT LOG_DIR MAIN_LOG MODULE_LOG
 }
 

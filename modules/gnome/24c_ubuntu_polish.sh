@@ -59,12 +59,6 @@ gnome_polish_precheck() {
     log_error GNOME "Idle delay must be 0..3600 seconds, got $idle"
     return "$EXIT_CONFIG_FAILED"
   fi
-  if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
-    [[ "${TILING_ASSISTANT_UUID:-}" == 'tiling-assistant@leleat-on-github' ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${TILING_ASSISTANT_SOURCE_URL:-}" == https://github.com/Leleat/Tiling-Assistant/releases/download/v55/* ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${TILING_ASSISTANT_SHELL_VERSION:-}" == '50' ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${TILING_ASSISTANT_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] || return "$EXIT_PRECHECK_FAILED"
-  fi
 }
 
 gnome_polish_plan() {

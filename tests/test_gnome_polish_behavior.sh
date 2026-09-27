@@ -51,7 +51,7 @@ run_module() {
     log_info() { :; }; log_warn() { :; }; log_error() { printf '%s\n' "$*" >> "$tmp/errors.log"; }
     source "$ROOT/lib/mutations.sh"
     # shellcheck disable=SC1091
-    source "$ROOT/config/gnome.conf"; source "$ROOT/config/gnome-polish.conf"
+    source "$ROOT/config/gnome-extensions.lock"; source "$ROOT/config/gnome.conf"; source "$ROOT/config/gnome-polish.conf"
     for override in "${@:2}"; do eval "$override"; done
     source "$ROOT/modules/gnome/24c_ubuntu_polish.sh"
     "gnome_polish_$1"

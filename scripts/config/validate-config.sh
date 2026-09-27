@@ -117,11 +117,14 @@ schema_digest() {
   printf '%s\n' "${type_keys[$type]:-}" | sed '/^$/d' | sort -u | sha256sum | awk '{print $1}'
 }
 
-declare -A canonical_type=() canonical_value=() type_keys=() seen=()
+declare -A canonical_type=() canonical_value=() type_keys=() seen=() locked_keys=()
 declare -a all_keys=()
 shopt -s nullglob
-for file in "$config_dir"/*.conf; do
+for file in "$config_dir"/*.conf "$config_dir"/gnome-extensions.lock; do
+  [[ -r "$file" ]] || { echo "Missing canonical config: $file" >&2; exit 60; }
   [[ "$(basename "$file")" == local.conf ]] && continue
+  lock_file=false
+  [[ "$file" != */gnome-extensions.lock ]] || lock_file=true
   lineno=0
   while IFS= read -r line || [[ -n "$line" ]]; do
     ((lineno+=1))
@@ -133,6 +136,7 @@ for file in "$config_dir"/*.conf; do
     value="$(decode_value "$raw")" || { echo "$file:$lineno: unsafe value syntax for $key" >&2; exit 60; }
     type="$(classify_value "$key" "$value")"
     seen[$key]=1; canonical_type[$key]="$type"; canonical_value[$key]="$value"; all_keys+=("$key")
+    if $lock_file; then locked_keys[$key]=1; fi
     type_keys[$type]+="$key"$'\n'
   done < "$file"
 done
@@ -186,6 +190,7 @@ validate_overlay() {
     [[ -z "$stripped" || "$stripped" == \#* ]] && continue
     [[ "$stripped" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] || { echo "$file:$lineno: only KEY=VALUE assignments are allowed" >&2; return 60; }
     key="${BASH_REMATCH[1]}"; raw="${BASH_REMATCH[2]}"
+    [[ -z "${locked_keys[$key]:-}" ]] || { echo "$file:$lineno: immutable extension key: $key (edit gnome-extensions.lock)" >&2; return 60; }
     [[ -n "${canonical_type[$key]:-}" ]] || { echo "$file:$lineno: unknown config key: $key" >&2; return 60; }
     [[ -z "${local_seen[$key]:-}" ]] || { echo "$file:$lineno: duplicate override key: $key" >&2; return 60; }
     value="$(decode_value "$raw")" || { echo "$file:$lineno: unsafe value syntax for $key" >&2; return 60; }

@@ -82,6 +82,10 @@ chmod +x "$tmp/systemd-detect-virt"
   ! runtime_is_baremetal
 )
 
+cp -a "$ROOT/lib" "$ROOT/config" "$tmp/"
+mkdir -p "$tmp/scripts"
+cp -a "$ROOT/scripts/config" "$tmp/scripts/"
+
 # A catalog module missing its apply function must fail rather than becoming OK.
 cat > "$tmp/fake.sh" <<'SH'
 fake_module_precheck() { :; }
@@ -91,12 +95,8 @@ SH
 (
   REPO_ROOT="$tmp"
   MODULE_LOG="$tmp/module.log"
-  EXIT_CONFIG_FAILED=12
   declare -A CATALOG_PATH=( [fake.module]='fake.sh' )
   declare -A CATALOG_SCOPE=( [fake.module]='TEST' )
-  ui_check() { :; }
-  is_true() { [[ "${1,,}" == true ]]; }
-  repo_commit() { printf unknown; }
   source "$ROOT/lib/orchestrator.sh"
   if orchestrator_run_module fake.module; then
     echo 'missing module apply function was accepted' >&2
@@ -122,7 +122,6 @@ SH
   declare -a CATALOG_IDS=(fail.module)
   declare -A CATALOG_PATH=( [fail.module]='fail.sh' )
   declare -A CATALOG_SCOPE=( [fail.module]='TEST' )
-  ui_check() { :; }
   is_true() { [[ "${1,,}" == true ]]; }
   repo_commit() { printf test-commit; }
   source "$ROOT/lib/orchestrator.sh"
@@ -153,12 +152,7 @@ printf '0xe20b\n' > "$tmp/drm/renderD129/device/device"
 )
 
 # Reviewed GNOME artifacts are content-pinned.
-for installer in install-ding.sh install-show-desktop-plus.sh install-resource-monitor.sh; do
-  grep -Fq 'sha256sum --check --status' "$ROOT/scripts/gnome/$installer"
-done
-grep -Fq '48175f0b5c1f8a1a724d761198c91d6994e91e28aec685605ae6a240b0a95aae' "$ROOT/docs/SUPPLY_CHAIN.md"
-grep -Fq '9ceab00be63b93c4eade16cf804bf4edd587632750aa89b78e317673fd6016a9' "$ROOT/docs/SUPPLY_CHAIN.md"
-grep -Fq '18f49cf20bd8f96f22f6048d7404e51cb414c1aea94ca16d0c2ad3634e9d8bf2' "$ROOT/docs/SUPPLY_CHAIN.md"
+grep -Fq 'sha256sum --check --status' "$ROOT/scripts/gnome/install-pinned-extension.sh"
 
 # Backup runtime is autonomous and retention is periodic for both snapshot classes.
 grep -Fq 'BACKUP_PRUNE_AUTOMATICALLY="true"' "$ROOT/config/backup.conf"

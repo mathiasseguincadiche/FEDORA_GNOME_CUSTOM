@@ -9,6 +9,7 @@ declare -Ag CATALOG_SCOPE=() CATALOG_DEPS=() CATALOG_PATH=()
 module_catalog_load() {
   local file="$1" id scope deps path
   CATALOG_IDS=()
+  CATALOG_SCOPE=(); CATALOG_DEPS=(); CATALOG_PATH=()
   while IFS='|' read -r id scope deps path; do
     [[ -z "$id" || "$id" == \#* ]] && continue
     CATALOG_IDS+=("$id")
@@ -21,7 +22,9 @@ module_catalog_load() {
 module_catalog_validate() {
   local id dep
   declare -A seen=()
+  ((${#CATALOG_IDS[@]} > 0)) || { log_error ENGINE "empty module catalog"; return "$EXIT_CONFIG_FAILED"; }
   for id in "${CATALOG_IDS[@]}"; do
+    [[ "$id" =~ ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$ && -z "${seen[$id]:-}" ]] || { log_error ENGINE "invalid/duplicate module id: $id"; return "$EXIT_CONFIG_FAILED"; }
     [[ -r "$REPO_ROOT/${CATALOG_PATH[$id]}" ]] || { log_error ENGINE "missing module: ${CATALOG_PATH[$id]}"; return "$EXIT_CONFIG_FAILED"; }
     for dep in ${CATALOG_DEPS[$id]}; do
       [[ -n "${seen[$dep]:-}" ]] || { log_error ENGINE "dependency $dep must appear before $id"; return "$EXIT_CONFIG_FAILED"; }

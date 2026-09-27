@@ -64,9 +64,9 @@ jobs:
       - name: Resource Monitor telemetry invariants
         run: |
           grep -Fq 'ENABLE_RESOURCE_MONITOR="true"' config/gnome.conf
-          grep -Fq 'RESOURCE_MONITOR_REVIEW_ID="70909"' config/gnome.conf
-          grep -Fq 'RESOURCE_MONITOR_VERSION="28"' config/gnome.conf
-          grep -Fq 'Resource_Monitor@Ory0n' config/gnome.conf
+          grep -Fq 'RESOURCE_MONITOR_REVIEW_ID="70909"' config/gnome-extensions.lock
+          grep -Fq 'RESOURCE_MONITOR_VERSION="28"' config/gnome-extensions.lock
+          grep -Fq 'Resource_Monitor@Ory0n' config/gnome-extensions.lock
           grep -Fq 'gnome.telemetry|GNOME|gnome.extensions|modules/gnome/24b_resource_monitor.sh' manifests/module-plan.conf
           grep -Fq '0xe20b' modules/gnome/24b_resource_monitor.sh
           grep -Fq 'gpu_busy_percent' modules/gnome/24b_resource_monitor.sh

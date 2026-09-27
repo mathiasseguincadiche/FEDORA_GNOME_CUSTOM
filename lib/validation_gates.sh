@@ -255,22 +255,36 @@ validation_gate_state() {
   fi
 }
 
+# Read-only certificate identity check shared by the dashboard and doctor.
+# This checks recorded evidence; certify is responsible for live exercises.
+validation_final_certificate_valid() {
+  local cert="$STATE_ROOT/final/certified.ok" contract
+  runtime_is_baremetal || return 1
+  validation_require_chain || return 1
+  [[ -s "$cert" ]] || return 1
+  for contract in verdict validation_chain driver_contract application_runtime_contract backup_runtime_contract physical_runtime_contract performance_contract gaming_contract; do
+    grep -Fxq "$contract=PASS" "$cert" || return 1
+  done
+  grep -Fxq 'gaming_profile=true' "$cert" || return 1
+  grep -Fxq "fingerprint=$(workstation_runtime_fingerprint)" "$cert" || return 1
+  grep -Fxq "hardware_fingerprint=$(baseline_fingerprint)" "$cert" || return 1
+  grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$cert" || return 1
+  grep -Fxq "module_plan_sha256=$(module_plan_sha256)" "$cert" || return 1
+  grep -Fxq "gate1_proof_sha256=$(validation_file_sha256 "$(validation_imported_proof_path 1)")" "$cert" || return 1
+  grep -Fxq "gate2_proof_sha256=$(validation_file_sha256 "$(validation_imported_proof_path 2)")" "$cert" || return 1
+  if is_true "${ENABLE_KVM:-true}"; then
+    for contract in kvm_domain_contract kvm_runtime_contract windows_guest_contract; do
+      grep -Fxq "$contract=PASS" "$cert" || return 1
+    done
+  fi
+}
+
 validation_pipeline_status() {
-  local gate1 gate2 chain='PENDING' final='PENDING' cert gate1_hash gate2_hash
+  local gate1 gate2 chain='PENDING' final='PENDING'
   gate1="$(validation_gate_state 1)"
   gate2="$(validation_gate_state 2)"
   if validation_require_chain; then chain='PASS'; fi
-  cert="$STATE_ROOT/final/certified.ok"
-  if [[ "$chain" == PASS && -s "$cert" ]]; then
-    gate1_hash="$(validation_file_sha256 "$(validation_imported_proof_path 1)")"
-    gate2_hash="$(validation_file_sha256 "$(validation_imported_proof_path 2)")"
-    if grep -Fxq 'verdict=PASS' "$cert" \
-      && grep -Fxq 'validation_chain=PASS' "$cert" \
-      && grep -Fxq "gate1_proof_sha256=$gate1_hash" "$cert" \
-      && grep -Fxq "gate2_proof_sha256=$gate2_hash" "$cert"; then
-      final='PASS'
-    fi
-  fi
+  if validation_final_certificate_valid; then final='PASS'; fi
   printf 'runtime=%s\n' "$(runtime_environment)"
   printf 'project_commit=%s\n' "$(repo_commit)"
   printf 'gate1=%s\n' "$gate1"

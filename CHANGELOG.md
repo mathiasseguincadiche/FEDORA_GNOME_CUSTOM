@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.17.0 — 2026-09-27 (audit croisé Claude + ChatGPT)
+
+Version de consolidation : intègre les PR #69 et #71 (ChatGPT), corrige leurs échecs de CI et leurs interactions, et ajoute une relecture indépendante. Détail et preuves : `docs/AUDIT_RUNTIME_2026-09-27.md`.
+
+Moteur (PR #71, relu et conservé) :
+
+- **Correctif critique** : une phase de module appelée dans un `if` désactivait `set -e` ; une commande pouvait échouer en plein APPLY sans faire échouer le module. Chaque module tourne désormais dans son propre processus Bash strict (`scripts/engine/run-module.sh`) ; un `exit 0` prématuré est un échec.
+- Verrou d'installation par utilisateur ; `--dry-run --collect-all` visite les 72 modules sans jamais émettre de preuve d'APPLY ; CI « Fedora 44 installer audit ».
+- Références des extensions GNOME centralisées dans `config/gnome-extensions.lock` (constantes non surchargeables dans `local.conf`) et installateur unique ; compatibilité GNOME validée sur le champ `shell-version` réel (plus de faux positif « 50 n'importe où »).
+- Lecture complète des journaux noyau avant recherche d'erreurs CPU/NVMe (plus de faux « aucune erreur » par SIGPIPE ou journal illisible) ; manifestes de paquets manquants refusés ; restaurations confinées à la zone de staging.
+
+Consolidation et relecture (Claude) :
+
+- CI de la PR #71 réparée : `non-regression.yml` cherchait encore des clés déplacées dans le lock ; le conteneur Fedora refusait Git (*dubious ownership*), ce qui faisait échouer `backup.daily` — reproduit puis corrigé (`safe.directory`).
+- Fusion de la PR #69 : 8 conflits résolus. Lanceur de #71 conservé (celui de #69 relançait tout le démarrage pour chaque module et dispersait les journaux) ; protections d'erreur de #69 intégrées au canal noyau CachyOS.
+- Interaction corrigée : le confinement des restaurations (#71) cassait le test Restic réel de #69.
+- Verrou étendu à la mise à jour, au cycle de vie noyau (sauf `status`), au pré-APPLY et aux sauvegardes ; réentrance réservée aux vrais descendants du détenteur (un PID copié ou forgé est refusé).
+- Postchecks mémoire et veille : ne renvoient plus un échec quand une information facultative est illisible. La vitesse RAM configurée est comparée aux **6000 MT/s** du kit (avertissement si le profil EXPO/XMP est désactivé).
+
+PR #69 — fiabilité après audit :
+
+- Correction des faux PASS du moteur, prérequis manquants, sorties noyau et preuves périmées.
+- Sauvegarde liée à la configuration, restauration vérifiée et couverture NVRAM/TPM.
+- Identification PCI, fio non privilégié, réseau par interface et disque Kickstart stable.
+- Reprise écran préservant la disposition et HDR ; nouveaux tests comportementaux et Restic réel.
+- Parcours d’installation vierge et qualification physique explicitement distincts des preuves CI.
+
 ## 0.16.0 — 2026-09-26
 
 - **Vrai noyau CachyOS** : nouveau canal `KERNEL_CHANNEL="cachyos"` (défaut Golden) basé sur le COPR officiel `bieszczaders/kernel-cachyos` (BORE, sched_ext, x86-64-v3). Le canal `vanilla` reste disponible. Jusqu'ici la couche « Fedora-Cachy » ne faisait que du réglage runtime : le noyau restait Kernel Vanilla (ADR 0012).

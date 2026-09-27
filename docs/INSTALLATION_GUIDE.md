@@ -75,7 +75,9 @@ La vérification exige la signature du CHECKSUM et le SHA-256 verrouillé. Ne pa
 ## 2. Générer le Kickstart depuis le commit exact
 
 ```bash
-installer/generate-fedora44-kickstart.sh --disk /dev/nvme0n1
+ls -l /dev/disk/by-id/nvme-*
+# Choisir l'identifiant du T705 système, vérifié par son numéro de série.
+installer/generate-fedora44-kickstart.sh --disk /dev/disk/by-id/nvme-IDENTIFIANT_SYSTEME
 ```
 
 Le générateur :
@@ -148,6 +150,11 @@ La configuration effective inclut les fichiers versionnés **et `config/local.co
 **But :** démontrer que le matériel réel correspond au profil Golden avant toute convergence.
 
 ```bash
+./diagnostics/baseline-doctor enroll-wifi
+./diagnostics/baseline-doctor enroll-bluetooth
+./diagnostics/baseline-doctor list-cooling
+# Identifier physiquement pompe, ventilateur CPU et ventilateur boîtier.
+./diagnostics/baseline-doctor enroll-cooling fanN fanM fanP
 ./diagnostics/baseline-doctor snapshot
 ./diagnostics/baseline-doctor run-memory-test 5600
 ```
@@ -156,6 +163,7 @@ Configurer ensuite 6000 MT/s dans le BIOS, redémarrer et lancer :
 
 ```bash
 ./diagnostics/baseline-doctor run-memory-test 6000
+./diagnostics/baseline-doctor run-cpu-soak
 ./diagnostics/baseline-doctor run-nvme-test root
 ./diagnostics/baseline-doctor run-nvme-test data
 ./diagnostics/baseline-doctor certify
@@ -175,7 +183,7 @@ La certification vérifie notamment :
 Le profil EDID certifié est écrit dans :
 
 ```text
-~/.config/fedora-gnome-custom/display-certified.env
+~/.local/state/fedora-gnome-custom/display-profile.env
 ```
 
 **Checkpoint :** la baseline doit être certifiée. Un échec hardware est un critère d'arrêt.

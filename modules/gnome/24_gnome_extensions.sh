@@ -21,12 +21,6 @@ gnome_extensions_precheck() {
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
-    [[ "${DING_UUID:-}" == "ding@rastersoft.com" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_SOURCE_URL:-}" == "https://extensions.gnome.org/review/download/74408.shell-extension.zip" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_REVIEW_ID:-}" == "74408" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_VERSION:-}" == "95" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_SHELL_VERSION:-}" == "50" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${DING_SCHEMA:-}" == "org.gnome.shell.extensions.ding" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_DESKTOP_DIR_NAME:-}" == "Bureau" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_SHOW_TRASH:-}" == "true" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${DING_SHOW_HOME:-}" == "false" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -35,12 +29,6 @@ gnome_extensions_precheck() {
   fi
 
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
-    [[ "${SHOW_DESKTOP_PLUS_UUID:-}" == "show-desktop-plus@attentivecoder" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" == "https://extensions.gnome.org/review/download/70326.shell-extension.zip" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_REVIEW_ID:-}" == "70326" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_VERSION:-}" == "8" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-}" == "50" ]] || return "$EXIT_PRECHECK_FAILED"
-    [[ "${SHOW_DESKTOP_PLUS_SCHEMA:-}" == "org.gnome.shell.extensions.show-desktop-plus" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-}" == "left-end" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-}" == "toggle-desktop" ]] || return "$EXIT_PRECHECK_FAILED"
     [[ "${SHOW_DESKTOP_PLUS_ENABLE_HOTKEY:-}" == "true" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -54,13 +42,13 @@ gnome_extensions_precheck() {
 }
 
 gnome_extensions_plan() {
-  cat <<'EOF'
+  cat <<EOF
 GNOME EXTENSIONS PLAN:
 - Fedora 44 / GNOME 50 remains the desktop reference
 - Dash to Dock is enabled from the official Fedora RPM
 - AppIndicator is enabled from the official Fedora RPM for functional tray compatibility
-- Desktop Icons NG (DING) v95 is installed from the exact GNOME-reviewed artifact 74408; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
-- Show Desktop Plus v8 is installed from the exact GNOME-reviewed artifact 70326 and configured as a top-left desktop toggle with Super+D
+- Desktop Icons NG (DING) v${DING_VERSION} is installed from the exact GNOME-reviewed artifact ${DING_REVIEW_ID}; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
+- Show Desktop Plus v${SHOW_DESKTOP_PLUS_VERSION} is installed from the exact GNOME-reviewed artifact ${SHOW_DESKTOP_PLUS_REVIEW_ID} and configured as a top-left desktop toggle with Super+D
 - Blur My Shell stays disabled by default for 240 Hz/resume stability
 - Extension Manager is installed from Flathub as the administration UI
 - Just Perfection and Dash to Panel remain outside the Golden profile
@@ -74,7 +62,7 @@ gnome_extension_enable_checked() {
     log_error GNOME "$label is installed but the running GNOME session does not see it; log out/in and rerun APPLY"
     return "$EXIT_APPLY_FAILED"
   fi
-  if ! gnome-extensions info "$uuid" 2>/dev/null | grep -Fq 'State: ENABLED'; then
+  if ! gnome_extension_active "$uuid"; then
     run_mutating GNOME gnome-extensions enable "$uuid" || return "$EXIT_APPLY_FAILED"
   fi
 }
@@ -188,24 +176,24 @@ gnome_extensions_postcheck() {
 
   if is_true "${ENABLE_DASH_TO_DOCK:-false}"; then
     rpm -q "${DASH_TO_DOCK_PACKAGE:-gnome-shell-extension-dash-to-dock}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-    gnome-extensions info "$dash_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+    gnome_extension_active "$dash_uuid" || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if is_true "${ENABLE_BLUR_MY_SHELL:-false}"; then
     rpm -q "${BLUR_MY_SHELL_PACKAGE:-gnome-shell-extension-blur-my-shell}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-    gnome-extensions info "$blur_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+    gnome_extension_active "$blur_uuid" || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if is_true "${ENABLE_APPINDICATOR:-false}"; then
     rpm -q "${APPINDICATOR_PACKAGE:-gnome-shell-extension-appindicator}" >/dev/null || return "$EXIT_POSTCHECK_FAILED"
-    gnome-extensions info "$indicator_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+    gnome_extension_active "$indicator_uuid" || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
     local ding_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$ding_uuid"
     [[ -r "$ding_dir/metadata.json" ]] || return "$EXIT_POSTCHECK_FAILED"
     grep -Fxq "source_url=${DING_SOURCE_URL:-}" "$ding_dir/.fedora-gnome-custom-source" || return "$EXIT_POSTCHECK_FAILED"
-    gnome-extensions info "$ding_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+    gnome_extension_active "$ding_uuid" || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(xdg-user-dir DESKTOP)" == "$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-trash)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-home)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
@@ -215,7 +203,7 @@ gnome_extensions_postcheck() {
 
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
     [[ -r "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$show_desktop_uuid/metadata.json" ]] || return "$EXIT_POSTCHECK_FAILED"
-    gnome-extensions info "$show_desktop_uuid" 2>/dev/null | grep -Fq 'State: ENABLED' || return "$EXIT_POSTCHECK_FAILED"
+    gnome_extension_active "$show_desktop_uuid" || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position)" == "'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action)" == "'${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-toggle-desktop}'" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"

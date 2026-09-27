@@ -2,7 +2,8 @@
 # REPO_ROOT is intentionally assigned by each public entrypoint before this library is sourced.
 # shellcheck disable=SC2153
 
-engine_bootstrap() {
+engine_load_libraries() {
+  export LC_ALL=C
   source "$REPO_ROOT/lib/constants.sh"
   source "$REPO_ROOT/lib/common.sh"
   source "$REPO_ROOT/lib/logging.sh"
@@ -22,6 +23,10 @@ engine_bootstrap() {
   source "$REPO_ROOT/lib/backup_runtime.sh"
   source "$REPO_ROOT/lib/physical_certification.sh"
   source "$REPO_ROOT/lib/apply_gate.sh"
+}
+
+engine_bootstrap() {
+  engine_load_libraries
   logging_init
   config_load
   RUNTIME_ENVIRONMENT="$(runtime_environment_detect)"

@@ -17,13 +17,16 @@ case "$cmd" in
     restic snapshots
     ;;
   verify)
-    restic check --read-data-subset=1/20
+    restic check --read-data
     ;;
   restore)
     snapshot="${2:-latest}"
     target="${3:-${BACKUP_RESTORE_STAGING_ROOT:-$HOME/Restores/fedora-gnome-custom}/$snapshot}"
     include="${4:-}"
     target="$(readlink -m -- "$target")"
+    backup_runtime_restore_target_valid "$target" || {
+      echo "Restore target must stay inside the configured staging root: $target" >&2; exit 30
+    }
     case "$target" in
       /|/etc|/boot|/home|"$HOME"|/data|"${KVM_POOL_PATH:-/data/libvirt/images}"|"${KVM_POOL_PATH:-/data/libvirt/images}"/*)
         echo "Refusing in-place/live restore target: $target" >&2; exit 30 ;;
@@ -33,9 +36,9 @@ case "$cmd" in
     fi
     mkdir -p "$target"
     if [[ -n "$include" ]]; then
-      restic restore "$snapshot" --target "$target" --include "$include"
+      restic restore "$snapshot" --verify --target "$target" --include "$include"
     else
-      restic restore "$snapshot" --target "$target"
+      restic restore "$snapshot" --verify --target "$target"
     fi
     printf 'Restored into staging only: %s\nReview content before any manual recovery.\n' "$target"
     ;;

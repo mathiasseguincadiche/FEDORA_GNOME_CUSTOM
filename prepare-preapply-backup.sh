@@ -2,6 +2,8 @@
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$REPO_ROOT/lib/install_lock.sh"
+install_lock_acquire || exit $?
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 
 fail() { printf 'BACKUP BLOCKED: %s\n' "$*" >&2; exit 20; }
