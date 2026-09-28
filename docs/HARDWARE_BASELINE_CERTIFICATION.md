@@ -71,7 +71,7 @@ hardware health PASS
         +
 dry-run même commit
         +
-backup Restic même commit
+backup Borg même commit
         +
 confirmation opérateur
         =

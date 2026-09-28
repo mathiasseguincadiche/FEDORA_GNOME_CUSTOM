@@ -84,7 +84,7 @@ VIRTUALBOX GNOME LAB SCOPE
 OUT OF SCOPE
 - Production install.sh --apply and its bare-metal gate.
 - Kernel, firmware, microcode, physical GPU/xe telemetry, storage/NVMe, KVM/libvirt, firewalld.
-- Restic production backup/restore and bare-metal certification.
+- Borg production backup/restore and bare-metal certification.
 PLAN
 }
 

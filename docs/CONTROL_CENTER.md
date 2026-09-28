@@ -1,6 +1,6 @@
 # Workstation Control Center
 
-`./control.sh` est la façade opérateur de **FEDORA_GNOME_CUSTOM**. Elle reste mince : installation, Restic, DNF5, kernel lifecycle, KVM et diagnostics restent implémentés dans leurs moteurs dédiés.
+`./control.sh` est la façade opérateur de **FEDORA_GNOME_CUSTOM**. Elle reste mince : installation, Borg, DNF5, kernel lifecycle, KVM et diagnostics restent implémentés dans leurs moteurs dédiés.
 
 ```bash
 ./control.sh
@@ -24,7 +24,7 @@ Le dashboard affiche :
 - second T705 `/data` EXT4 ;
 - profil Gaming / Steam / Vulkan ;
 - état Performance Fedora-Cachy et profil TuneD actif ;
-- backup Restic ;
+- backup Borg ;
 - certification Golden ;
 - KVM / `devops-nat` ;
 - besoin de reboot.
@@ -103,7 +103,7 @@ prepare-preapply-backup.sh
 install.sh --apply
 ```
 
-Le chemin APPLY conserve ses protections : bare-metal, Git propre, baseline, cohérence dry-run/configuration/plan, **backup complet Restic** relu depuis le repository et confirmation opérateur.
+Le chemin APPLY conserve ses protections : bare-metal, Git propre, baseline, cohérence dry-run/configuration/plan, **backup complet Borg** relu depuis le dépôt et confirmation opérateur.
 
 ## Mises à jour
 
@@ -119,10 +119,10 @@ Le chemin APPLY conserve ses protections : bare-metal, Git propre, baseline, coh
 ./control.sh update finalize
 ```
 
-`update all` et `update dnf` préparent une transaction **DNF5 offline** après backup complet Restic.
+`update all` et `update dnf` préparent une transaction **DNF5 offline** après backup complet Borg.
 
 ```text
-backup complet Restic
+backup complet Borg
         ↓
 résolution latest-stable Kernel Vanilla
         ↓

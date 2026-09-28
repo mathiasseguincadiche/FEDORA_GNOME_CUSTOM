@@ -20,11 +20,11 @@ else
   emit KO 'Daily backup timer' disabled
 fi
 
-if is_true "${RESTIC_RETENTION_TIMER_ENABLED:-true}" && is_true "${BACKUP_PRUNE_AUTOMATICALLY:-true}"; then
-  if systemctl --user is-enabled --quiet fedora-gnome-restic-retention.timer; then
-    emit OK 'Restic retention timer' "${RESTIC_RETENTION_ON_CALENDAR:-weekly}"
+if is_true "${BACKUP_RETENTION_TIMER_ENABLED:-true}" && is_true "${BACKUP_PRUNE_AUTOMATICALLY:-true}"; then
+  if systemctl --user is-enabled --quiet fedora-gnome-backup-retention.timer; then
+    emit OK 'Borg retention timer' "${BACKUP_RETENTION_ON_CALENDAR:-weekly}"
   else
-    emit KO 'Restic retention timer' disabled
+    emit KO 'Borg retention timer' disabled
   fi
 fi
 
@@ -39,17 +39,17 @@ if [[ -s "$state" ]]; then
     emit WARN 'Last daily backup' "${age_h}h old"
   fi
 elif [[ -s "$runtime_state/last-daily-backup-skipped" ]]; then
-  emit WARN 'Last daily backup' 'target/password unavailable; timer remains healthy'
+  emit WARN 'Last daily backup' 'external disk / repository unavailable; timer remains healthy'
 else
   emit WARN 'Last daily backup' 'timer installed; no run recorded yet'
 fi
 
 if [[ -s "$runtime_state/last-retention.ok" ]]; then
-  emit OK 'Last Restic retention' recorded
+  emit OK 'Last Borg retention' recorded
 elif [[ -s "$runtime_state/last-retention-skipped" ]]; then
-  emit WARN 'Last Restic retention' 'repository unavailable during scheduled window'
+  emit WARN 'Last Borg retention' 'repository unavailable during scheduled window'
 else
-  emit WARN 'Last Restic retention' 'timer installed; no run recorded yet'
+  emit WARN 'Last Borg retention' 'timer installed; no run recorded yet'
 fi
 
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi

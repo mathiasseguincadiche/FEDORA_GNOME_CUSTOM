@@ -101,7 +101,7 @@ Ces documents répondent à **« que dois-je lancer et quel résultat dois-je at
 - [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) — cycle de vie VM courant ;
 - [`PERFORMANCE.md`](PERFORMANCE.md) — AMD P-State/EPP, TuneD, sched_ext, zram, NVMe et frametimes ;
 - [`GAMING.md`](GAMING.md) — Steam/Vulkan/GameMode/`/data/Jeux` ;
-- [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — Restic, restore et disaster recovery ;
+- [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — Borg (non chiffré), restore et disaster recovery ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — maintenance desktop ;
 - [`DOCK_FAVORITES.md`](DOCK_FAVORITES.md) — favoris GNOME ;
 - [`APPIMAGE.md`](APPIMAGE.md) — politique AppImage lorsque nécessaire.
@@ -159,7 +159,7 @@ Puis choisir le domaine :
 - [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — triage transversal ;
 - [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — BIOS, P-State, ReBAR, PCIe, NVMe, EDID, kernel, offline update ;
 - [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Ubuntu, Windows, QGA, TPM, sauvegarde VM ;
-- [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) — `/data`, EXT4, ownership, SELinux, XDG Documents, Restic, Steam/Vulkan ;
+- [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) — `/data`, EXT4, ownership, SELinux, XDG Documents, Borg, Steam/Vulkan ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — restauration et DR ;
 - [`KVM_NETWORK.md`](KVM_NETWORK.md) — détails d'isolation réseau.
 

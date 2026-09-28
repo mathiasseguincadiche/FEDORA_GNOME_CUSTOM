@@ -30,7 +30,7 @@ Steam est installé en RPM natif : aucune permission filesystem Flatpak n'est n�
 
 Le projet ne génère et ne réécrit pas `libraryfolders.vdf`. Après le premier lancement, enregistrer `/data/Jeux` depuis **Steam → Settings → Storage**. Le contrat Golden reste ainsi indépendant du format privé de Steam et le même répertoire peut être utilisé ultérieurement par d'autres launchers.
 
-`/data/Jeux` est exclu des backups Restic daily/full automatiques par défaut, car les jeux installés sont volumineux et généralement retéléchargeables. Toute donnée non reproductible stockée directement sous `/data/Jeux` nécessite une politique de backup explicite.
+`/data/Jeux` est exclu des backups Borg daily/full automatiques par défaut, car les jeux installés sont volumineux et généralement retéléchargeables. Toute donnée non reproductible stockée directement sous `/data/Jeux` nécessite une politique de backup explicite.
 
 ## Stack Golden
 

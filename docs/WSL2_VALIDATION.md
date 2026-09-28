@@ -33,7 +33,7 @@ Le protocole complet est défini dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VA
 - comportement dry-run et suppression des mutations ;
 - logique fail-closed ;
 - logique Kernel Vanilla candidat/certifié ;
-- logique APPLY/Restic/KVM ;
+- logique APPLY/Borg/KVM ;
 - contrats/fixtures B580, T705 et EDID sans prétendre observer le matériel réel ;
 - blocage du REAL APPLY et de la certification bare-metal.
 

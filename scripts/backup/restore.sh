@@ -6,22 +6,26 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO_ROOT/lib/backup_runtime.sh"
 
+backup_engine_require || exit 20
 repo="$(backup_runtime_resolve_repository)" || { echo 'Cannot resolve backup repository.' >&2; exit 20; }
-password_file="$(backup_runtime_require_password)" || { echo 'Secure Restic password file is required.' >&2; exit 20; }
-backup_runtime_export_env "$repo" "$password_file"
-restic cat config >/dev/null || { echo 'Restic repository is not reachable.' >&2; exit 20; }
+backup_engine_env "$repo"
+backup_engine_repo_ready || { echo 'Borg repository is not reachable (or is encrypted).' >&2; exit 20; }
 
 cmd="${1:-list}"
 case "$cmd" in
   list)
-    restic snapshots
+    borg list --format '{archive:<48} {time} {id}{NL}'
     ;;
   verify)
-    restic check --read-data
+    borg check --verify-data
     ;;
   restore)
-    snapshot="${2:-latest}"
-    target="${3:-${BACKUP_RESTORE_STAGING_ROOT:-$HOME/Restores/fedora-gnome-custom}/$snapshot}"
+    archive="${2:-latest}"
+    if [[ "$archive" == latest ]]; then
+      read -r archive _ < <(backup_engine_latest) || { echo 'No archive in the repository.' >&2; exit 30; }
+    fi
+    [[ "$archive" =~ ^fgc-(preapply|full|daily)-[0-9TZ.]+$ ]] || { echo "Unknown archive name: $archive (see: restore.sh list)" >&2; exit 30; }
+    target="${3:-${BACKUP_RESTORE_STAGING_ROOT:-$HOME/Restores/fedora-gnome-custom}/$archive}"
     include="${4:-}"
     target="$(readlink -m -- "$target")"
     backup_runtime_restore_target_valid "$target" || {
@@ -35,15 +39,16 @@ case "$cmd" in
       echo "Restore staging target must be empty: $target" >&2; exit 30
     fi
     mkdir -p "$target"
+    # Borg verifies every chunk against its hash while extracting.
     if [[ -n "$include" ]]; then
-      restic restore "$snapshot" --verify --target "$target" --include "$include"
+      backup_engine_extract "$archive" "$target" "$include"
     else
-      restic restore "$snapshot" --verify --target "$target"
+      backup_engine_extract "$archive" "$target"
     fi
     printf 'Restored into staging only: %s\nReview content before any manual recovery.\n' "$target"
     ;;
   *)
-    echo 'Usage: restore.sh [list|verify|restore SNAPSHOT [EMPTY_TARGET [INCLUDE_GLOB]]]' >&2
+    echo 'Usage: restore.sh [list|verify|restore ARCHIVE|latest [EMPTY_TARGET [ABSOLUTE_PATH]]]' >&2
     exit 2
     ;;
 esac

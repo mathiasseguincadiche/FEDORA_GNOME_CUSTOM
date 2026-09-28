@@ -102,7 +102,7 @@ Le LAB ne charge ni n'applique :
 - pilote Arc/`xe` ou configuration/télémétrie GPU physique ;
 - partitionnement, montage `/data`, SMART ou benchmark T705 ;
 - KVM/libvirt, `devops-nat`, nftables ou firewalld ;
-- sauvegarde Restic de production ;
+- sauvegarde Borg de production ;
 - baseline hardware ;
 - orchestrateur complet ;
 - `apply_gate_open` ;

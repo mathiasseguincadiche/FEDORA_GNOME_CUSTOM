@@ -16,7 +16,7 @@ Avant toute mutation réelle, vous devez disposer :
 - d'un média Fedora 44 authentifié ;
 - du dépôt sur un commit propre et audité ;
 - d'un second T705 identifié sans ambiguïté pour `/data` ;
-- d'une cible Restic externe/off-machine disponible pour le backup pré-APPLY ;
+- d'une cible Borg externe/off-machine disponible pour le backup pré-APPLY (ext4, non chiffrée) ;
 - de Secure Boot désactivé et vérifiable comme tel.
 
 Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`LEARNING_PATH.md`](LEARNING_PATH.md).
@@ -218,16 +218,16 @@ Le chemin est fail-closed :
 ```text
 cible externe/off-machine
       ↓
-Restic snapshot
+archive Borg fgc-preapply-…
       ↓
-restic check
+borg check --verify-data
       ↓
 restore canary
       ↓
 marker lié au même état que le dry-run
 ```
 
-Au moment de l'APPLY, le projet **rouvre réellement le repository Restic** et vérifie que le snapshot exact existe toujours avec le tag attendu. La seule présence du marker local ne suffit pas.
+Au moment de l'APPLY, le projet **rouvre réellement le dépôt Borg** et vérifie que l'archive exacte (nom et identifiant) existe toujours avec le type pré-APPLY attendu. La seule présence du marker local ne suffit pas.
 
 **Checkpoint :** ne continuer que si le snapshot exact est encore accessible et restaurable.
 
@@ -394,9 +394,9 @@ Aucun firmware n'est flashé automatiquement.
 
 ## 15. Backup et récupération des données persistantes
 
-La sauvegarde quotidienne Restic protège les dossiers XDG habituels ; `DOCUMENTS` se résout désormais vers `/data/Documents`. `/data/Projets` est également ajouté explicitement aux sources quotidiennes. `/data/ISO` et `/data/Jeux` ne sont pas sauvegardés automatiquement par défaut afin d'éviter de dupliquer de gros payloads reproductibles ou retéléchargeables.
+La sauvegarde quotidienne Borg protège les dossiers XDG habituels ; `DOCUMENTS` se résout désormais vers `/data/Documents`. `/data/Projets` est également ajouté explicitement aux sources quotidiennes. `/data/ISO` et `/data/Jeux` ne sont pas sauvegardés automatiquement par défaut afin d'éviter de dupliquer de gros payloads reproductibles ou retéléchargeables.
 
-Le second T705 protège contre la perte/réinstallation du **disque système**, mais il ne remplace pas un backup externe : une panne physique du second T705 reste possible. Les données importantes conservent donc la protection Restic externe.
+Le second T705 protège contre la perte/réinstallation du **disque système**, mais il ne remplace pas un backup externe : une panne physique du second T705 reste possible. Les données importantes conservent donc la protection Borg externe.
 
 ## 16. Recovery
 

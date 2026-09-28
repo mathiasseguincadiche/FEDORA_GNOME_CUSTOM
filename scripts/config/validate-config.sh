@@ -75,7 +75,7 @@ classify_value() {
   local key="$1" value="$2" ip prefix
   case "$key" in
     BACKUP_REPOSITORY) printf 'repository\n'; return 0 ;;
-    BACKUP_PASSWORD_FILE|DATA_MOUNT) printf 'optional_path\n'; return 0 ;;
+    DATA_MOUNT) printf 'optional_path\n'; return 0 ;;
     VAAPI_DRM_DEVICE) printf 'device_or_auto\n'; return 0 ;;
   esac
   case "$value" in true|false) printf 'bool\n'; return 0 ;; esac

@@ -25,7 +25,7 @@ Il n'existe pas de profil `luks2`, de bascule d'activation, ni de chemin d'insta
 
 Cette interdiction concerne **Fedora Golden HOST et ses périphériques bloc locaux**. Elle ne doit pas être confondue avec :
 
-- le chiffrement du dépôt de sauvegarde Restic, qui reste requis pour protéger les sauvegardes externes/remote ;
+- les sauvegardes : depuis l'ADR 0014, le dépôt Borg externe/remote n'est **pas** chiffré non plus ;
 - GNOME Keyring ou d'autres coffres applicatifs destinés aux secrets ;
 - les besoins propres d'un système invité dans une VM. Une VM n'est pas le firmware ni le stockage bloc du HOST.
 

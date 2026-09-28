@@ -61,13 +61,14 @@ sans aucun signalement sur 294 fichiers.
 
 ## Exigences utilisateur encore non satisfaites
 
-- **Aucun chiffrement, sauvegardes comprises** : confirmé explicitement le 27/09.
-  La version actuelle utilise encore Restic, donc elle n'est pas conforme à ce
-  besoin. Un mot de passe vide ne supprime pas le chiffrement Restic. La migration
-  vers un moteur non chiffré doit couvrir ensemble pré-APPLY, sauvegarde quotidienne,
-  rétention, restauration, runtime systemd autonome et vérification des preuves.
-  Borg 1.x `--encryption=none` est une option, pas une migration déjà réalisée.
-  Ne pas désactiver simplement les garde-fous pour rendre l'installation verte.
+- **Aucun chiffrement, sauvegardes comprises** : *satisfait en 0.18.0.* Le moteur
+  devient Borg 1.x avec un dépôt `--encryption=none` (ADR 0014). La migration couvre
+  ensemble pré-APPLY, sauvegarde quotidienne, rétention, sauvegarde complète,
+  restauration, reprise après sinistre, runtime systemd autonome et vérification
+  des preuves. Aucun garde-fou n'a été désactivé : un dépôt chiffré est désormais
+  refusé, l'archive pré-APPLY est relue intégralement (`--verify-data`) et
+  revérifiée par nom, identifiant et type au moment de l'APPLY. Preuve : test
+  `tests/test_borg_roundtrip.sh` avec un vrai Borg.
 - **BIOS 1.A66 minimum, versions ultérieures admises** : aucune égalité stricte
   n'est à imposer. Le code actuel inventorie version/date mais ne démontre pas le
   respect du minimum. Éviter un tri lexical improvisé des versions MSI ; définir

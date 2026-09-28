@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+# Borg 1.x remote repositories: ssh://user@host[:port]/path or user@host:path.
 backup_runtime_is_remote_repository() {
   local repo="$1"
-  [[ "$repo" =~ ^(sftp:|rest:|rest\+|s3:|b2:|azure:|gs:|rclone:) ]]
+  [[ "$repo" =~ ^ssh:// || "$repo" =~ ^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+: ]]
 }
 
 backup_runtime_local_source_is_external() {
@@ -63,40 +64,132 @@ backup_runtime_resolve_repository() {
   (( ${#mounts[@]} == 1 )) || return 1
   mount="${mounts[0]}"
   backup_runtime_validate_local_target "$mount" || return 1
-  subdir="${BACKUP_PREAPPLY_REPOSITORY_SUBDIR:-Backup-Fedora/restic}"
+  subdir="${BACKUP_PREAPPLY_REPOSITORY_SUBDIR:-Backup-Fedora/borg}"
   [[ -n "$subdir" && "$subdir" != /* && "/$subdir/" != *'/../'* ]] || return 1
   printf '%s/%s\n' "${mount%/}" "$subdir"
 }
 
-backup_runtime_password_path() {
-  if [[ -n "${BACKUP_PASSWORD_FILE:-}" ]]; then printf '%s\n' "$BACKUP_PASSWORD_FILE"; else printf '%s/%s\n' "$HOME" "${BACKUP_PREAPPLY_PASSWORD_FILE_RELATIVE:-.config/fedora-gnome-custom/secrets/restic-password}"; fi
+# --- Borg engine (ADR 0014: unencrypted Borg 1.x repository) -----------------
+# Every Borg call goes through these helpers, so the engine, the archive naming
+# and the "no encryption" policy live in exactly one place.
+# Archives are named fgc-<kind>-<UTC stamp>; kinds: preapply, full, daily.
+
+BACKUP_ARCHIVE_PREFIX='fgc'
+
+backup_engine_env() {
+  export BORG_REPO="$1"
+  # Unencrypted by explicit owner decision: there is no passphrase at all.
+  # An explicitly empty passphrase also guarantees that an *encrypted*
+  # repository fails immediately instead of waiting for a password prompt.
+  unset BORG_PASSCOMMAND BORG_PASSPHRASE_FD BORG_NEW_PASSPHRASE
+  export BORG_PASSPHRASE=
+  # Non-interactive runs (timers, pre-APPLY) must not stop on Borg prompts:
+  # an unencrypted repository, or the external disk mounted at a new path.
+  export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+  export BORG_EXIT_CODES="${BORG_EXIT_CODES:-legacy}"
 }
 
-backup_runtime_prepare_password() {
-  local file first second mode
-  file="$(backup_runtime_password_path)"
-  if [[ ! -s "$file" ]]; then
-    [[ -t 0 ]] || return 1
-    mkdir -p "$(dirname "$file")"; chmod 0700 "$(dirname "$file")"
-    read -r -s -p 'Passphrase Restic (16 caractères minimum): ' first; printf '\n' >&2
-    read -r -s -p 'Confirmer la passphrase Restic: ' second; printf '\n' >&2
-    [[ "$first" == "$second" && ${#first} -ge 16 ]] || return 1
-    printf '%s\n' "$first" > "$file"; chmod 0600 "$file"; unset first second
-  fi
-  [[ -r "$file" ]] || return 1
-  mode="$(stat -c '%a' "$file")"; (( (8#$mode & 077) == 0 )) || return 1
-  printf '%s\n' "$file"
+backup_engine_require() {
+  local version
+  command -v borg >/dev/null 2>&1 || { echo 'borg (borgbackup) is required.' >&2; return 1; }
+  version="$(BORG_PASSPHRASE='' borg --version 2>/dev/null)" || return 1
+  [[ "$version" =~ ^borg[[:space:]]+1\.(2|3|4)\. ]] || { echo "Unsupported Borg version: $version (Borg 1.2-1.4 required)." >&2; return 1; }
 }
 
-backup_runtime_require_password() {
-  local file mode
-  file="$(backup_runtime_password_path)"
-  [[ -s "$file" && -r "$file" ]] || return 1
-  mode="$(stat -c '%a' "$file")"; (( (8#$mode & 077) == 0 )) || return 1
-  printf '%s\n' "$file"
+backup_engine_kind_valid() { [[ "$1" =~ ^(preapply|full|daily)$ ]]; }
+
+# Reachable repository whose encryption mode is exactly "none".
+backup_engine_repo_ready() {
+  local json
+  json="$(borg info --json 2>/dev/null)" || return 1
+  python3 -c 'import json,sys
+d=json.load(sys.stdin)
+raise SystemExit(0 if (d.get("encryption") or {}).get("mode") == "none" else 3)' <<<"$json"
 }
 
-backup_runtime_export_env() { export RESTIC_REPOSITORY="$1" RESTIC_PASSWORD_FILE="$2"; }
+backup_engine_init() {
+  borg init --encryption=none --make-parent-dirs
+}
+
+# backup_engine_create KIND [--exclude PATTERN]... -- SOURCE...
+# Prints "<archive name> <archive id>" of the archive that was just written.
+backup_engine_create() {
+  local kind="$1" name json
+  shift
+  backup_engine_kind_valid "$kind" || return 2
+  local -a opts=()
+  while (($#)) && [[ "$1" != -- ]]; do
+    [[ "$1" == --exclude && -n "${2:-}" ]] || return 2
+    opts+=(--exclude "$2"); shift 2
+  done
+  [[ "${1:-}" == -- ]] || return 2
+  shift
+  (($# > 0)) || return 2
+  name="${BACKUP_ARCHIVE_PREFIX}-${kind}-$(date -u +%Y%m%dT%H%M%S.%NZ)"
+  # Legacy exit codes: 0 = OK, 1 = warning (e.g. a file changed while being
+  # read; the archive IS written), 2+ = error. Warnings are reported, not fatal.
+  local rc=0
+  json="$(borg create --json --compression zstd,3 --exclude-caches "${opts[@]}" "::$name" "$@")" || rc=$?
+  (( rc <= 1 )) || return "$rc"
+  (( rc == 0 )) || echo "Borg reported warnings while creating $name (archive written)." >&2
+  python3 -c 'import json,sys
+a=json.load(sys.stdin)["archive"]
+name, aid = a.get("name",""), a.get("id","")
+assert name == sys.argv[1] and len(aid) == 64 and all(c in "0123456789abcdef" for c in aid.lower())
+print(name, aid)' "$name" <<<"$json"
+}
+
+# Prints "<archive name> <archive id>" of the newest archive of KIND (or of any kind).
+backup_engine_latest() {
+  local kind="${1:-}" pattern json
+  if [[ -n "$kind" ]]; then backup_engine_kind_valid "$kind" || return 2; pattern="${BACKUP_ARCHIVE_PREFIX}-${kind}-*"; else pattern="${BACKUP_ARCHIVE_PREFIX}-*"; fi
+  json="$(borg list --json --glob-archives "$pattern" --last 1)" || return $?
+  python3 -c 'import json,sys
+arch=json.load(sys.stdin).get("archives") or []
+if not arch: raise SystemExit(1)
+print(arch[-1]["name"], arch[-1]["id"])' <<<"$json"
+}
+
+# True when archive NAME exists with exactly id ID and belongs to KIND.
+backup_engine_archive_matches() {
+  local name="$1" id="$2" kind="$3" json
+  backup_engine_kind_valid "$kind" || return 1
+  [[ "$name" == "${BACKUP_ARCHIVE_PREFIX}-${kind}-"* && "$id" =~ ^[0-9a-f]{64}$ ]] || return 1
+  json="$(borg info --json "::$name" 2>/dev/null)" || return 1
+  python3 -c 'import json,sys
+arch=json.load(sys.stdin).get("archives") or [{}]
+raise SystemExit(0 if arch[0].get("id") == sys.argv[1] else 1)' "$id" <<<"$json"
+}
+
+# Full repository + archive metadata check; with KIND, also re-reads and
+# verifies the data of the newest archive of that kind (--verify-data).
+backup_engine_check() {
+  local kind="${1:-}"
+  if [[ -z "$kind" ]]; then borg check; return $?; fi
+  backup_engine_kind_valid "$kind" || return 2
+  borg check --verify-data --glob-archives "${BACKUP_ARCHIVE_PREFIX}-${kind}-*" --last 1
+}
+
+# backup_engine_extract ARCHIVE TARGET_DIR [ABSOLUTE_PATH...]
+# Borg stores /a/b as a/b: extraction recreates TARGET_DIR/a/b.
+backup_engine_extract() {
+  local archive="$1" target="$2" path
+  shift 2
+  local -a paths=()
+  for path in "$@"; do paths+=("${path#/}"); done
+  ( cd "$target" && borg extract "::$archive" "${paths[@]}" )
+}
+
+backup_engine_prune() {
+  local kind="$1"
+  backup_engine_kind_valid "$kind" || return 2
+  borg prune --glob-archives "${BACKUP_ARCHIVE_PREFIX}-${kind}-*" \
+    --keep-daily "${BACKUP_KEEP_DAILY:-7}" \
+    --keep-weekly "${BACKUP_KEEP_WEEKLY:-4}" \
+    --keep-monthly "${BACKUP_KEEP_MONTHLY:-6}"
+}
+
+backup_engine_compact() { borg compact; }
 
 backup_runtime_capture_inventory() {
   local out="$1"; mkdir -p "$out"
@@ -141,21 +234,17 @@ backup_runtime_require_free_space() {
 }
 
 backup_runtime_validate_preapply_marker() {
-  local marker="$1" snapshot repo password_file json
-  command -v restic >/dev/null 2>&1 || return 1
+  local marker="$1" snapshot archive repo
+  backup_engine_require >/dev/null 2>&1 || return 1
   command -v python3 >/dev/null 2>&1 || return 1
   snapshot="$(evidence_marker_value "$marker" snapshot 2>/dev/null || true)"
+  archive="$(evidence_marker_value "$marker" archive 2>/dev/null || true)"
   repo="$(evidence_marker_value "$marker" repository 2>/dev/null || true)"
-  password_file="$(evidence_marker_value "$marker" password_file 2>/dev/null || true)"
-  [[ "$snapshot" =~ ^[0-9a-fA-F]{64}$ && -n "$repo" && -s "$password_file" ]] || return 1
+  [[ "$snapshot" =~ ^[0-9a-f]{64}$ && -n "$archive" && -n "$repo" ]] || return 1
   if ! backup_runtime_is_remote_repository "$repo"; then backup_runtime_validate_local_target "$repo" || return 1; fi
-  local mode; mode="$(stat -c '%a' "$password_file" 2>/dev/null || true)"; [[ "$mode" =~ ^[0-7]+$ ]] || return 1; (( (8#$mode & 077) == 0 )) || return 1
-  backup_runtime_export_env "$repo" "$password_file"
-  restic cat config >/dev/null 2>&1 || return 1
-  json="$(restic cat snapshot "$snapshot" --json 2>/dev/null)" || return 1
-  python3 -c 'import json,sys
-data=json.load(sys.stdin)
-raise SystemExit(0 if "fedora-gnome-custom-preapply" in (data.get("tags") or []) else 1)' <<<"$json"
+  backup_engine_env "$repo"
+  backup_engine_repo_ready || return 1
+  backup_engine_archive_matches "$archive" "$snapshot" preapply
 }
 
 # A restore is restricted to the configured staging tree, including when the

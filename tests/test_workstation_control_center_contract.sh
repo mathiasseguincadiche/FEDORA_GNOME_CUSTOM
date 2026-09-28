@@ -82,11 +82,11 @@ grep -Fq "fingerprint=\$expected" "$ROOT/lib/control_center.sh"
 grep -Fq 'STALE' "$ROOT/lib/control_center.sh"
 
 # Thin facade: dangerous business logic must stay in the dedicated engines.
-if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|flatpak[[:space:]]+update|restic[[:space:]]+backup|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh" "$ROOT/lib/control_center_presentation.sh"; then
+if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|flatpak[[:space:]]+update|borg[[:space:]]+(create|prune|compact|delete)|nft[[:space:]]+-f' "$ROOT/lib/control_center.sh" "$ROOT/lib/control_center_presentation.sh"; then
   echo 'business logic leaked into Control Center UI' >&2
   exit 1
 fi
-if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|restic[[:space:]]+backup' "$ROOT/control.sh"; then
+if grep -Eq 'apply_gate_open|dnf5?[[:space:]].*upgrade|borg[[:space:]]+(create|prune|compact|delete)' "$ROOT/control.sh"; then
   echo 'business logic leaked into control.sh' >&2
   exit 1
 fi

@@ -35,7 +35,7 @@ Les répertoires utilisateur utilisent un mode `0750` et un contexte SELinux per
 
 La séparation physique protège contre la perte ou la réinstallation du **T705 système**, mais ne protège pas contre la panne du second T705.
 
-Le backup Restic quotidien et le backup full incluent donc :
+Le backup Borg quotidien et le backup full incluent donc :
 
 - `/data/Documents` via XDG `DOCUMENTS` ;
 - `/data/Projets` explicitement.

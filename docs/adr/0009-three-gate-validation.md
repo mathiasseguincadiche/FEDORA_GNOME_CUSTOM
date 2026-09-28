@@ -31,7 +31,7 @@ Les preuves Gate 1 et Gate 2 sont des JSON portables liés au commit Git et au `
 - Fedora 44 / GNOME 50 / Wayland ;
 - Secure Boot OFF ;
 - aucun LUKS local ;
-- Restic externe chiffré ;
+- Borg externe non chiffré (ADR 0014) ;
 - Arc B580 host-only ;
 - Kernel Vanilla rolling N / N-1, maximum deux versions ;
 - récupération Fedora explicite, sans fallback Fedora permanent ;

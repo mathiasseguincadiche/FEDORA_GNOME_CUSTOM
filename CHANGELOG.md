@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.0 — 2026-09-27
+
+- **Sauvegardes sans chiffrement, par décision du propriétaire** (ADR 0014) : Restic chiffre toujours ses dépôts et ne pouvait pas respecter cette exigence. Le moteur devient **Borg 1.x** (`borgbackup`, 1.4 sur Fedora 44) avec un dépôt `--encryption=none`. Un dépôt chiffré est désormais **refusé** par la politique.
+- Moteur centralisé : tous les appels Borg passent par `backup_engine_*` dans `lib/backup_runtime.sh` (environnement, création, dernière archive, correspondance exacte, contrôle, extraction, rétention, compactage). Archives `fgc-preapply-*`, `fgc-full-*`, `fgc-daily-*`.
+- Pré-APPLY : création confirmée du dépôt, archive relue intégralement (`borg check --verify-data`), canary réellement extrait et comparé ; le marker enregistre nom **et** identifiant de l'archive, revérifiés avec le type attendu au moment de l'APPLY.
+- Rétention `borg prune` par classe (`full`, `daily`) puis un seul `borg compact` ; les archives pré-APPLY ne sont jamais supprimées automatiquement. Timer renommé `fedora-gnome-backup-retention` ; les anciennes unités Restic sont désactivées et supprimées par l'APPLY.
+- Correctif trouvé en testant : sur un dépôt chiffré, Borg attendait indéfiniment une passphrase. Une passphrase vide explicite le fait échouer immédiatement ; une `BORG_PASSPHRASE` ambiante n'atteint jamais Borg.
+- Avertissements Borg (code 1, fichier modifié pendant la lecture) signalés sans invalider l'archive ; codes ≥ 2 = échec.
+- Configuration : `BACKUP_ENGINE="borg"`, `BACKUP_ENCRYPTION="none"`, clés `BACKUP_KEEP_*` et `BACKUP_RETENTION_*` ; plus aucun fichier de passphrase. Restauration par nom d'archive (ou `latest`), nom malformé refusé.
+- Nouveau test réel `tests/test_borg_roundtrip.sh` (runtime installé, `--verify-data`, permissions, lien symbolique, exclusion des secrets, rétention, preuve pré-APPLY exacte, refus d'un dépôt chiffré) ; garde-fous de tests adaptés à Borg.
+- Documentation : ADR 0014, guide de sauvegarde réécrit, une vingtaine de documents alignés ; ADR 0002/0009/0011/0012 annotées.
+
 ## 0.17.0 — 2026-09-27 (audit croisé Claude + ChatGPT)
 
 Version de consolidation : intègre les PR #69 et #71 (ChatGPT), corrige leurs échecs de CI et leurs interactions, et ajoute une relecture indépendante. Détail et preuves : `docs/AUDIT_RUNTIME_2026-09-27.md`.

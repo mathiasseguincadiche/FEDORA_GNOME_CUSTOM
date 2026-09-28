@@ -62,7 +62,7 @@ EXPLICITLY DEFERRED TO GATE 3
 - Physical EDID/HDR/VRR/display recovery.
 - BIOS/UEFI, firmware/microcode and physical suspend/resume.
 - Live Nautilus access to production KVM Ubuntu SFTP + Windows SMB.
-- Production Restic/final Golden certification.
+- Production Borg backup/final Golden certification.
 EOF
 }
 

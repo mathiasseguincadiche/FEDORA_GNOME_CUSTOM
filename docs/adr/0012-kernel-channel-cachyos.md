@@ -17,7 +17,7 @@ Le projet gère désormais un **canal noyau** choisi par `KERNEL_CHANNEL` dans `
 | `cachyos` (défaut Golden) | `bieszczaders/kernel-cachyos` | `kernel-cachyos-core` | réactivité desktop |
 | `vanilla` | `@kernel-vanilla/stable` | `kernel-core` | noyau upstream sans patch |
 
-Invariants communs (hérités d'ADR 0010) : dernier stable installé directement, N/N-1 maximum, aucun `-rc`/mainline, défaut GRUB vérifié, sauvegarde Restic obligatoire avant installation, Secure Boot désactivé.
+Invariants communs (hérités d'ADR 0010) : dernier stable installé directement, N/N-1 maximum, aucun `-rc`/mainline, défaut GRUB vérifié, sauvegarde Borg obligatoire avant installation, Secure Boot désactivé.
 
 Garde-fous propres au canal `cachyos`, vérifiés **avant** toute mutation :
 

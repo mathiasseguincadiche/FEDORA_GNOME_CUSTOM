@@ -212,11 +212,11 @@ Le repair ne doit jamais appliquer 1440p/240 Hz à un écran arbitraire. Si l'é
 
 La capture initiale du profil Golden exige un écran cible non ambigu. Déconnecter temporairement les écrans secondaires pendant la certification initiale ou faire évoluer explicitement la politique multi-écran avant de recertifier.
 
-## Backup marker présent mais snapshot Restic absent
+## Backup marker présent mais archive Borg absente
 
 ```bash
 ./prepare-preapply-backup.sh
-restic snapshots --tag fedora-gnome-custom-preapply
+borg list --glob-archives 'fgc-preapply-*' "$BACKUP_REPOSITORY"
 ```
 
 L'APPLY doit rester bloqué. La présence de `state/preapply-backup.ok` ne suffit plus : le snapshot exact doit être lisible dans le repository configuré.

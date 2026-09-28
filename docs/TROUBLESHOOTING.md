@@ -44,7 +44,7 @@ REAL_MACHINE_APPROVED=true
 - dépôt Git modifié ;
 - dry-run absent ou lié à un autre commit ;
 - baseline RAM/NVMe incomplète ;
-- backup Restic absent/invalide ;
+- backup Borg absent/invalide ;
 - Secure Boot actif alors que Kernel Vanilla est demandé ;
 - approbation réelle non activée ;
 - confirmation interactive incorrecte.
@@ -632,13 +632,13 @@ git rev-parse HEAD
 Le backup pré-APPLY exige notamment :
 
 - dry-run réussi du même commit ;
-- cible Restic externe/remote prouvée ;
-- passphrase protégée ;
+- cible Borg externe/remote prouvée ;
+- dépôt non chiffré conforme à la politique (un dépôt chiffré est refusé) ;
 - espace disponible ;
-- intégrité Restic ;
+- intégrité Borg (`borg check --verify-data`) ;
 - restauration réelle du canary.
 
-Un simple `restic backup` terminé ne suffit pas à produire le marker de confiance.
+Un simple `borg create` terminé ne suffit pas à produire le marker de confiance.
 
 ---
 

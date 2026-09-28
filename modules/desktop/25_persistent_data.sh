@@ -27,7 +27,7 @@ PERSISTENT DATA LAYOUT ON SECOND T705:
 - keep /data/libvirt reserved for KVM/libvirt
 - make /data/Documents the XDG Documents directory
 - apply persistent SELinux user_home_t labels to the four user-data roots
-- daily/full Restic protects Documents and Projets; ISO and Jeux remain excluded by default
+- daily/full Borg archives protect Documents and Projets; ISO and Jeux remain excluded by default
 EOF
 }
 
