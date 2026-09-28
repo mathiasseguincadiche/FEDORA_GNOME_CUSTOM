@@ -46,12 +46,12 @@ Le projet ne crée aucun timer/service d'installation Flatpak silencieuse.
 
 ## Sauvegarde quotidienne
 
-Le timer Restic sauvegarde les données utilisateur uniquement lorsque le repository et la passphrase sécurisée sont accessibles.
+Le timer Borg sauvegarde les données utilisateur uniquement lorsque le disque externe (ou le dépôt distant) est accessible.
 
 Contrat :
 
-- chiffrement obligatoire ;
-- passphrase exclue du backup ;
+- dépôt non chiffré par décision du propriétaire (ADR 0014) ;
+- dossier `secrets` exclu des archives ;
 - pas de prune automatique ;
 - absence du disque externe = skip propre ;
 - backup pré-APPLY indépendant et fail-closed.

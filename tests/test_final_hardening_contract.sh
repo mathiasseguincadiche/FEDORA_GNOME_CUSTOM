@@ -156,15 +156,15 @@ grep -Fq 'sha256sum --check --status' "$ROOT/scripts/gnome/install-pinned-extens
 
 # Backup runtime is autonomous and retention is periodic for both snapshot classes.
 grep -Fq 'BACKUP_PRUNE_AUTOMATICALLY="true"' "$ROOT/config/backup.conf"
-grep -Fq 'RESTIC_RETENTION_TIMER_ENABLED="true"' "$ROOT/config/backup.conf"
-grep -Fq 'fedora-gnome-custom-full fedora-gnome-custom-daily' "$ROOT/scripts/backup/restic-retention.sh"
+grep -Fq 'BACKUP_RETENTION_TIMER_ENABLED="true"' "$ROOT/config/backup.conf"
+grep -Fq 'for kind in full daily; do' "$ROOT/scripts/backup/backup-retention.sh"
 grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq 'MANIFEST.sha256' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'fedora-gnome-restic-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq "cc_option 9 'Appliquer rétention Restic'" "$ROOT/lib/control_center.sh"
+grep -Fq 'fedora-gnome-backup-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
+grep -Fq "cc_option 9 'Appliquer rétention Borg'" "$ROOT/lib/control_center.sh"
 grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
-grep -Fq 'copie de récupération hors machine' "$ROOT/docs/BACKUP_RESTORE.md"
+grep -Fq 'aucun secret à conserver' "$ROOT/docs/BACKUP_RESTORE.md"
 
 # KVM protects explicit main-table and policy-routed IPv4 HOST networks while preserving the Internet default route.
 grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"

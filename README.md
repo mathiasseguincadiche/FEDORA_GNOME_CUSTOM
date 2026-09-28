@@ -1,7 +1,7 @@
 <div align="center">
 
 > État de qualification : voir [l'audit du moteur et les exigences restantes](docs/AUDIT_RUNTIME_2026-09-27.md).
-> La sauvegarde actuelle reste chiffrée via Restic : elle ne satisfait pas encore le besoin de sauvegarde sans chiffrement. Un PASS CI ne certifie pas le poste physique.
+> Les sauvegardes utilisent Borg **sans chiffrement**, par décision du propriétaire (ADR 0014). Un PASS CI ne certifie pas le poste physique.
 
 
 # Fedora 44 Golden Workstation
@@ -15,7 +15,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.17.0**
+**Golden Workstation 0.18.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -87,7 +87,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.17.0      Fedora 44      Runtime BAREMETAL
+  Projet      0.18.0      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
@@ -121,7 +121,7 @@ Routes opérateur essentielles :
   <img src="docs/assets/architecture-global-direct.svg" alt="Architecture globale directe de Fedora 44 Golden Workstation : matériel cible, système Fedora, stockage, usages, sauvegarde, maintenance et certification" width="100%">
 </p>
 
-**En une phrase :** Fedora 44 constitue le HOST, `/data` porte la persistance, Gaming et KVM sont les workloads, Restic assure la résilience et les Gates prouvent l'état obtenu.
+**En une phrase :** Fedora 44 constitue le HOST, `/data` porte la persistance, Gaming et KVM sont les workloads, Borg assure la résilience et les Gates prouvent l'état obtenu.
 
 L'objectif n'est pas d'empiler des tweaks : le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
 
@@ -133,7 +133,7 @@ L'objectif n'est pas d'empiler des tweaks : le profil cherche une machine **stab
 |---|---|
 | **HOST** | Fedora Linux 44 Workstation · GNOME 50 · Wayland · SELinux Enforcing · firewalld |
 | **Kernel & hardware** | Kernel Vanilla latest-stable · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
-| **Données & recovery** | T705 système Btrfs · T705 `/data` EXT4 · Restic chiffré · restauration staging-first |
+| **Données & recovery** | T705 système Btrfs · T705 `/data` EXT4 · Borg non chiffré (ADR 0014) · restauration staging-first |
 | **Workloads** | Desktop GNOME · applications pro · Steam/Proton · bibliothèque `/data/Jeux` · QEMU/KVM/libvirt |
 | **Opérations** | dry-run avant mutation · DNF5 offline · diagnostics · rollback kernel · firmware en consultation |
 | **Preuves & gouvernance** | CI obligatoire · logs/reports/fingerprints · Gate 1/2/3 · Golden release manifest |
@@ -182,7 +182,7 @@ Crucial T705 #2
 
 Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstallation doit remonter `/data` et réutiliser son contenu existant.
 
-`Documents` et `Projets` sont protégés par Restic. `ISO` et `Jeux` restent hors backup automatique par défaut pour éviter de dupliquer de gros payloads reproductibles.
+`Documents` et `Projets` sont protégés par Borg. `ISO` et `Jeux` restent hors backup automatique par défaut pour éviter de dupliquer de gros payloads reproductibles.
 
 ---
 
@@ -312,7 +312,7 @@ Voir [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) et [`docs/VIRTUALIZATION
 La maintenance suit une chaîne protégée :
 
 <p align="center">
-  <img src="docs/assets/update-cycle-direct.svg" alt="Cycle de mise à jour : backup Restic, préparation, DNF5 offline, redémarrage et finalisation, diagnostics" width="100%">
+  <img src="docs/assets/update-cycle-direct.svg" alt="Cycle de mise à jour : backup Borg, préparation, DNF5 offline, redémarrage et finalisation, diagnostics" width="100%">
 </p>
 
 ```bash
@@ -329,7 +329,7 @@ La maintenance suit une chaîne protégée :
 
 ## Sauvegarde et restauration
 
-Restic fournit la deuxième couche de résilience :
+Borg fournit la deuxième couche de résilience :
 
 ```text
 T705 système perdu
@@ -337,7 +337,7 @@ T705 système perdu
     → /data conservé
 
 T705 données perdu
-    → Restic externe chiffré
+    → Borg externe (non chiffré, ADR 0014)
     → restauration staging-first
 ```
 
@@ -364,7 +364,7 @@ Les invariants principaux sont explicites :
 - firewalld actif ;
 - Secure Boot **désactivé** par politique ;
 - aucun LUKS/dm-crypt sur les disques locaux du HOST ;
-- Restic reste chiffré pour les sauvegardes externes ;
+- les sauvegardes Borg externes ne sont pas chiffrées non plus (ADR 0014) : le disque de sauvegarde se range comme un document sensible ;
 - aucun formatage automatique du second T705 ;
 - aucun flash firmware automatique ;
 - aucun GPU passthrough de la B580 ;

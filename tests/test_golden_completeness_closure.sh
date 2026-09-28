@@ -37,8 +37,8 @@ while IFS= read -r pkg; do
 done < "$ROOT/manifests/packages-applications-gtk4.txt"
 
 grep -Fq -- '--certify-status' "$ROOT/diagnostics/backup-doctor" || fail 'backup drift status missing'
-grep -Fq 'last-full-backup.ok' "$ROOT/diagnostics/backup-doctor" || fail 'current full Restic marker not required'
-grep -Fq 'read-data-subset=1/20' "$ROOT/diagnostics/backup-doctor" || fail 'deep Restic integrity check missing'
+grep -Fq 'last-full-backup.ok' "$ROOT/diagnostics/backup-doctor" || fail 'current full backup marker not required'
+grep -Fq 'borg check --verify-data' "$ROOT/diagnostics/backup-doctor" || fail 'deep Borg integrity check missing'
 
 for f in "$ROOT/lib/physical_certification.sh" "$ROOT/diagnostics/physical-runtime-doctor" "$ROOT/diagnostics/windows-guest-doctor" "$ROOT/diagnostics/final-certification" "$ROOT/diagnostics/baseline-doctor"; do bash -n "$f"; done
 echo 'golden completeness closure: PASS'

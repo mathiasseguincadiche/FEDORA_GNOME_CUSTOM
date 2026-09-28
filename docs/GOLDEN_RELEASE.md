@@ -132,6 +132,6 @@ Après une certification finale `PASS`, le projet fournit un helper opt-in :
 
 Le helper **ne télécharge rien automatiquement**. Cette limite est volontaire : les médias Windows/VirtIO et les snapshots de dépôts/caches doivent provenir d'une source de confiance choisie par l'opérateur. Pour les RPM/Flatpak, on peut fournir un cache ou miroir offline préalablement constitué ; l'archive scellée conserve ensuite exactement ce qui lui a été remis.
 
-L'archive doit être stockée hors machine ou sur un stockage dédié. Elle complète Restic et le bundle Golden ; elle ne remplace ni le backup courant ni la certification runtime.
+L'archive doit être stockée hors machine ou sur un stockage dédié. Elle complète Borg et le bundle Golden ; elle ne remplace ni le backup courant ni la certification runtime.
 
 Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) pour le protocole complet.

@@ -165,7 +165,7 @@ Puis :
 scripts/backup/backup-now.sh --include-vms
 ```
 
-Le chemin attendu est : VM arrêtée → `qemu-img check` → conversion staging → Restic.
+Le chemin attendu est : VM arrêtée → `qemu-img check` → conversion staging → Borg.
 
 ## Certification KVM échoue
 

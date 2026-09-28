@@ -442,32 +442,32 @@ cc_backup_menu() {
     cc_clear
     cc_header
     cc_section '3 — SAUVEGARDE & RESTAURATION'
-    cc_option 1 'Backup complet HOST' 'Restic + intégrité'
+    cc_option 1 'Backup complet HOST' 'Borg + intégrité'
     cc_option 2 'Backup complet + VM arrêtées'
     cc_option 3 'Backup utilisateur XDG' 'Bureau/Documents/Images/Vidéos/Musique'
-    cc_option 4 'Lister les snapshots Restic'
-    cc_option 5 'Vérifier repository Restic' 'doctor'
-    cc_option 6 'Vérification profonde Restic'
+    cc_option 4 'Lister les archives Borg'
+    cc_option 5 'Vérifier le dépôt Borg' 'doctor'
+    cc_option 6 'Vérification profonde Borg'
     cc_option 7 'Restaurer vers staging' 'non destructif'
     cc_option 8 'Plan Disaster Recovery'
-    cc_option 9 'Appliquer rétention Restic' 'manuel: full + daily'
+    cc_option 9 'Appliquer rétention Borg' 'manuel: full + daily'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
       1) cc_interactive_exec 'BACKUP COMPLET HOST' "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
       2) cc_interactive_exec 'BACKUP COMPLET + VM' "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms ;;
       3) cc_interactive_exec 'BACKUP UTILISATEUR XDG' env FEDORA_GNOME_CUSTOM_REPO="$REPO_ROOT" "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
-      4) cc_interactive_exec 'SNAPSHOTS RESTIC' "$REPO_ROOT/scripts/backup/restore.sh" list ;;
+      4) cc_interactive_exec 'ARCHIVES BORG' "$REPO_ROOT/scripts/backup/restore.sh" list ;;
       5) cc_interactive_exec 'BACKUP / RECOVERY DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
-      6) cc_interactive_exec 'VÉRIFICATION PROFONDE RESTIC' "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
+      6) cc_interactive_exec 'VÉRIFICATION PROFONDE BORG' "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
       7)
         read -r -p 'Snapshot [latest] : ' snap
         cc_interactive_exec 'RESTAURATION VERS STAGING' "$REPO_ROOT/scripts/backup/restore.sh" restore "${snap:-latest}"
         ;;
       8) cc_interactive_exec 'PLAN DISASTER RECOVERY' "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
       9)
-        if cc_confirm 'Créer un backup complet puis appliquer la rétention Restic full + daily ?'; then
-          cc_interactive_exec 'RÉTENTION RESTIC MANUELLE' "$REPO_ROOT/scripts/backup/backup-now.sh" --prune
+        if cc_confirm 'Créer un backup complet puis appliquer la rétention Borg full + daily ?'; then
+          cc_interactive_exec 'RÉTENTION BORG MANUELLE' "$REPO_ROOT/scripts/backup/backup-now.sh" --prune
         fi
         ;;
       0) return 0 ;;
@@ -708,7 +708,7 @@ cc_main_menu() {
     cc_section 'SOCLES OPÉRATEUR'
     cc_option 1 'Installation & convergence' 'préflight / backup / APPLY'
     cc_option 2 'Mises à jour' 'Fedora / Flatpak / kernel / firmware check'
-    cc_option 3 'Sauvegarde & restauration' 'Restic / staging / DR'
+    cc_option 3 'Sauvegarde & restauration' 'Borg / staging / DR'
     cc_option 4 'Diagnostics & santé' 'doctors par domaine'
     cc_option 5 'Kernel & boot' "canal ${KERNEL_CHANNEL:-vanilla} N/N-1 + recovery"
     cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'

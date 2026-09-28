@@ -33,7 +33,7 @@ Sécurité du changement :
 
 ```text
 précheck  → CPU x86-64-v3 prouvé + accord SELinux explicite
-APPLY     → sauvegarde Restic obligatoire → installation CachyOS N → défaut GRUB vérifié
+APPLY     → sauvegarde Borg obligatoire → installation CachyOS N → défaut GRUB vérifié
 GRUB      → CachyOS N, CachyOS N-1, + kernel-core Fedora comme secours
 ```
 

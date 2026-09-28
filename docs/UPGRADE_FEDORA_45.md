@@ -40,7 +40,7 @@ Le même rapport tourne **chaque lundi** dans la CI (workflow *Fedora next-relea
 Deux chemins possibles :
 
 - **Installation neuve (recommandée tant que la Gate 3 n'a jamais été passée)** : Kickstart Fedora 45, baseline, sauvegarde, APPLY. On certifie directement la version finale.
-- **Mise à niveau d'une Fedora 44 déjà certifiée** : sauvegarde Restic complète, puis `sudo dnf system-upgrade download --releasever=45`, `sudo dnf offline reboot`, puis un APPLY pour reconverger.
+- **Mise à niveau d'une Fedora 44 déjà certifiée** : sauvegarde Borg complète, puis `sudo dnf system-upgrade download --releasever=45`, `sudo dnf offline reboot`, puis un APPLY pour reconverger.
 
 Dans les deux cas, terminer par :
 

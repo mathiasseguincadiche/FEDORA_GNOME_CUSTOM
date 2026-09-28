@@ -61,7 +61,7 @@ apply_gate_open() {
   apply_gate_require_clean_git || { ui_error 'Git working tree must be clean'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_dryrun || { ui_error 'dry-run proof is missing/stale for the current commit, effective configuration, module plan or hardware fingerprint'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_baseline || { ui_error 'hardware baseline certification missing or invalid for the current hardware/BIOS fingerprint'; return "$EXIT_SECURITY_BLOCK"; }
-  apply_gate_require_backup || { ui_error 'pre-APPLY Restic snapshot is missing, stale, no longer readable, or does not match current commit/config/hardware'; return "$EXIT_SECURITY_BLOCK"; }
+  apply_gate_require_backup || { ui_error 'pre-APPLY Borg archive is missing, stale, no longer readable, or does not match current commit/config/hardware'; return "$EXIT_SECURITY_BLOCK"; }
   local answer
   printf 'Type exactly "%s": ' "$APPLY_CONFIRMATION"
   read -r answer

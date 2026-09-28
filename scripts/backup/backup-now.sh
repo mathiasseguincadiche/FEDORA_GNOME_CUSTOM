@@ -17,16 +17,16 @@ while (($#)); do
     --include-vms) include_vms=true; shift ;;
     --prune) prune=true; shift ;;
     -h|--help)
-      echo 'Usage: backup-now.sh [--include-vms] [--prune]'; echo '  --prune applies the versioned retention policy to full and daily snapshots, then runs restic prune.'; exit 0 ;;
+      echo 'Usage: backup-now.sh [--include-vms] [--prune]'; echo '  --prune applies the versioned retention policy to full and daily archives, then compacts the Borg repository.'; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
-for cmd in restic jq git tar rpm; do command -v "$cmd" >/dev/null 2>&1 || { echo "Missing command: $cmd" >&2; exit 20; }; done
+for cmd in borg jq git tar rpm; do command -v "$cmd" >/dev/null 2>&1 || { echo "Missing command: $cmd" >&2; exit 20; }; done
+backup_engine_require || exit 20
 repo="$(backup_runtime_resolve_repository)" || { echo 'Cannot resolve backup repository.' >&2; exit 20; }
-password_file="$(backup_runtime_require_password)" || { echo 'Secure Restic password file is required.' >&2; exit 20; }
-backup_runtime_export_env "$repo" "$password_file"
-restic cat config >/dev/null || { echo 'Restic repository is not initialized/reachable.' >&2; exit 20; }
+backup_engine_env "$repo"
+backup_engine_repo_ready || { echo 'Borg repository is not initialized/reachable, or is encrypted (policy: unencrypted).' >&2; exit 20; }
 
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$STATE_ROOT/backup-staging"
@@ -88,15 +88,14 @@ if runtime_is_baremetal; then
   [[ -d "$(persistent_data_projects)" ]] && sources+=("$(persistent_data_projects)")
 fi
 while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(git -C "$REPO_ROOT" ls-files -z)
-restic backup --tag fedora-gnome-custom-full --exclude "$HOME/.config/fedora-gnome-custom/secrets" "${sources[@]}"
-snap="$(restic snapshots --tag fedora-gnome-custom-full --latest 1 --json | jq -r '.[0].id // empty')"
-[[ "$snap" =~ ^[0-9a-fA-F]{64}$ ]] || { echo 'Invalid snapshot id.' >&2; exit 40; }
-restic check --read-data-subset=1/20
+read -r archive snap < <(backup_engine_create full --exclude "$HOME/.config/fedora-gnome-custom/secrets" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
+[[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid archive id.' >&2; exit 40; }
+backup_engine_check full || { echo 'Borg integrity check failed.' >&2; exit 40; }
 
 if $prune; then
-  "$REPO_ROOT/scripts/backup/restic-retention.sh" --strict
+  "$REPO_ROOT/scripts/backup/backup-retention.sh" --strict
 fi
-printf 'snapshot=%s\ncommit=%s\nutc=%s\ninclude_vms=%s\nintegrity_check=PASS\n' \
-  "$snap" "$(repo_commit)" "$(date -u +%FT%TZ)" "$include_vms" > "$STATE_ROOT/last-full-backup.ok"
+printf 'snapshot=%s\narchive=%s\ncommit=%s\nutc=%s\ninclude_vms=%s\nintegrity_check=PASS\n' \
+  "$snap" "$archive" "$(repo_commit)" "$(date -u +%FT%TZ)" "$include_vms" > "$STATE_ROOT/last-full-backup.ok"
 chmod 0600 "$STATE_ROOT/last-full-backup.ok"
-printf 'Backup completed: %s\n' "$snap"
+printf 'Backup completed: %s (%s)\n' "$archive" "$snap"

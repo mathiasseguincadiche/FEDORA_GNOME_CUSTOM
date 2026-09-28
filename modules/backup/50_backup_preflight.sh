@@ -8,7 +8,7 @@ backup_preflight_precheck() {
 backup_preflight_plan() {
   cat <<'EOF'
 BACKUP / RECOVERY PRECHECK:
-- Restic is the only managed backup engine and encryption is mandatory
+- Borg 1.x is the only managed backup engine; the repository is unencrypted by owner decision (ADR 0014)
 - pre-APPLY backup must live on a proven external target, never on the protected system disk
 - repository/password are injected at runtime; no secret is committed
 - backup marker is bound to the exact Git commit used for APPLY
@@ -20,10 +20,10 @@ EOF
 }
 
 backup_preflight_apply() {
-  run_mutating BACKUP sudo dnf -y install restic jq acl tar gzip findutils || return "$EXIT_APPLY_FAILED"
+  run_mutating BACKUP sudo dnf -y install borgbackup jq acl tar gzip findutils || return "$EXIT_APPLY_FAILED"
 }
 
 backup_preflight_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
-  command_exists restic && command_exists jq && command_exists getfacl
+  command_exists borg && command_exists jq && command_exists getfacl
 }

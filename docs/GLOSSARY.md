@@ -128,7 +128,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 ## Backup
 
-**Restic** — outil de sauvegarde chiffrée et dédupliquée utilisé par le projet.
+**Borg (BorgBackup)** — outil de sauvegarde dédupliquée et compressée utilisé par le projet, ici avec un dépôt **non chiffré** (ADR 0014).
 
 **Canary restore** — petit fichier réellement restauré puis comparé afin de prouver qu'un backup n'est pas seulement lisible mais restaurable.
 

@@ -14,7 +14,7 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - générateur Kickstart ciblant uniquement le NVMe explicitement choisi ;
 - aucun choix destructif automatique de disque ;
 - SELinux Enforcing et firewalld actifs ;
-- dry-run non-mutant + baseline + backup Restic avant APPLY ;
+- dry-run non-mutant + baseline + backup Borg avant APPLY ;
 - rollback kernel disponible vers N-1 ;
 - récupération explicite vers les paquets kernel Fedora disponible en cas d'urgence ;
 - aucune confiance implicite dans une image Ubuntu fournie uniquement par son nom : checksum signé Canonical requis avant création de `ubuntu-devops`.
@@ -49,7 +49,7 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - `Documents` XDG pointe vers `/data/Documents` ;
 - répertoires utilisateur en mode `0750`, propriétaire workstation et labels SELinux persistants adaptés aux données utilisateur ;
 - `/data/libvirt` reste un sous-arbre séparé avec son propre contexte SELinux ;
-- `/data/Documents` et `/data/Projets` sont protégés par la sauvegarde quotidienne Restic externe ;
+- `/data/Documents` et `/data/Projets` sont protégés par la sauvegarde quotidienne Borg externe ;
 - `/data/ISO` et `/data/Jeux` restent persistants mais hors backup automatique par défaut ;
 - le second T705 protège contre la perte/réinstallation du disque système, mais ne remplace jamais la sauvegarde off-machine.
 
@@ -89,9 +89,9 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 
 ## P1 — backup et recovery
 
-- Restic chiffré ;
+- Borg, dépôt non chiffré (ADR 0014) ;
 - backup pré-APPLY lié au commit ;
-- `restic check` et restore-canary ;
+- `borg check --verify-data` et restore-canary ;
 - sauvegarde quotidienne de `/data/Documents` et `/data/Projets` en plus des données utilisateur configurées ;
 - `/data/ISO` et `/data/Jeux` hors backup automatique par défaut pour éviter de dupliquer des payloads volumineux reproductibles ;
 - sauvegarde QCOW2 uniquement VM arrêtée ;

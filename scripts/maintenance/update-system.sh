@@ -140,7 +140,7 @@ show_offline_status() {
 }
 
 mandatory_preupdate_backup() {
-  ui_banner 'FEDORA WORKSTATION UPDATE' 'MANDATORY PRE-UPDATE RESTIC BACKUP'
+  ui_banner 'FEDORA WORKSTATION UPDATE' 'MANDATORY PRE-UPDATE BORG BACKUP'
   "$REPO_ROOT/scripts/backup/backup-now.sh"
   ui_check PASS 'Pre-update backup' 'full snapshot + integrity check completed'
 }

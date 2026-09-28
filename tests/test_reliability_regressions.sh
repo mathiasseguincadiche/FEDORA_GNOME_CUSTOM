@@ -111,13 +111,13 @@ PCI
   REPO_ROOT="$ROOT"; HOME="$tmp/home"
   EXIT_APPLY_FAILED=30
   source "$ROOT/modules/backup/60_daily_user_backup.sh"
-  BACKUP_REPOSITORY=sftp:first
-  RESTIC_PASSWORD='must-never-be-serialized'
+  BACKUP_REPOSITORY=ssh://backup@nas.example/./first
+  BORG_PASSPHRASE='must-never-be-serialized'; export BORG_PASSPHRASE
   sha=0123456789abcdef0123456789abcdef01234567
   first="$(backup_daily_install_runtime "$sha")"
   [[ "$(backup_daily_install_runtime "$sha")" == "$first" ]]
   assert_fails grep -q 'must-never-be-serialized' "$first/runtime/backup-runtime.conf"
-  BACKUP_REPOSITORY=sftp:second
+  BACKUP_REPOSITORY=ssh://backup@nas.example/./second
   second="$(backup_daily_install_runtime "$sha")"
   [[ "$second" != "$first" ]]
   assert_fails backup_daily_existing_runtime_valid "$first" "$sha"

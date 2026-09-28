@@ -11,13 +11,13 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
   par le succès d'une commande suivante. Les rapports conservent phase et code retour.
 - Installation du manifeste système par le module de production, y compris
   Python/pip/pipx, dmidecode et les bindings Python GNOME.
-- Dry-run sans Restic/virsh déjà installés ; le contrôle réel reste obligatoire après APPLY.
+- Dry-run sans Borg/virsh déjà installés ; le contrôle réel reste obligatoire après APPLY.
 - Sortie noyau sans messages parasites et validation du format enregistré.
 - Lecture PCI par périphérique ; absence d'association du pilote d'un autre contrôleur.
 - Journaux conservés lors des appels imbriqués et certificats invalidés par les
   identités configuration/matériel/runtime/chaîne de validation.
 - Bundles de sauvegarde identifiés par commit et configuration, jamais par le seul commit.
-- Restauration contrôlée par Restic, couverture NVRAM/swtpm et données applicatives.
+- Restauration contrôlée par Borg, couverture NVRAM/swtpm et données applicatives.
 - Test fio sur fichier temporaire unique, même pour la racine non inscriptible
   par l'utilisateur ; aucune écriture sur le périphérique brut.
 - Preuves réseau liées à l'interface testée (DNS et HTTPS), sorties analysées en locale C.
@@ -31,7 +31,7 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 |---|---|---|
 | Code | Tests comportementaux + ShellCheck + syntaxe | Ne démontre pas un démarrage |
 | Installation vierge | Fedora 44 GNOME 50 neuve, APPLY, reboot, diagnostics et second APPLY | Le prétest Fedora exécute le module système réel en conteneur ; pas l'installation complète |
-| Restauration fichiers | Snapshot exact, lecture complète, restauration `--verify`, contenu/permissions | Le roundtrip CI utilise un vrai Restic et un disque externe simulé |
+| Restauration fichiers | Archive exacte, `borg check --verify-data`, extraction vérifiée, contenu/permissions | Le roundtrip CI utilise un vrai Borg et un disque externe simulé |
 | Reprise OS/VM | Démarrage de Fedora et d'une VM récupérée isolée, données accessibles | Non démontrable par un test de fichiers |
 | Matériel | Gate 3 sur le Ryzen 7700 / B580 / B850M / T705 | Aucun résultat matériel issu d'un conteneur |
 | Performance | Répétitions A/B, dispersion, frametimes, thermique | Aucun gain revendiqué avant mesure |

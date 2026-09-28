@@ -6,8 +6,8 @@
 # après revue de la cible, dry-run, baseline et backup pré-APPLY du même commit.
 REAL_MACHINE_APPROVED="false"
 
-BACKUP_REPOSITORY="/chemin/vers/ssd-externe/restic/fedora-gnome-custom"
-BACKUP_PASSWORD_FILE="$HOME/.config/fedora-gnome-custom/restic-password"
+# Dépôt Borg NON chiffré (ADR 0014) : chemin sur le disque externe, ou ssh://user@hote/chemin
+BACKUP_REPOSITORY="/run/media/$USER/XS1000/Backup-Fedora/borg"
 
 # Optionnel : si le second T705 est monté comme volume DATA.
 # DATA_MOUNT="/data"

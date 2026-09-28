@@ -14,14 +14,13 @@ source "$helper"
 backup_runtime_bundle_init
 
 repo="$(backup_runtime_resolve_repository 2>/dev/null || true)"
-password_file="$(backup_runtime_require_password 2>/dev/null || true)"
-if [[ -z "$repo" || -z "$password_file" ]]; then
-  printf 'utc=%s\nreason=repository-or-password-unavailable\n' "$(date -u +%FT%TZ)" > "$STATE_ROOT/last-daily-backup-skipped"
+if [[ -z "$repo" ]] || ! backup_engine_require >/dev/null 2>&1; then
+  printf 'utc=%s\nreason=repository-or-borg-unavailable\n' "$(date -u +%FT%TZ)" > "$STATE_ROOT/last-daily-backup-skipped"
   exit 0
 fi
 
-backup_runtime_export_env "$repo" "$password_file"
-if ! restic cat config >/dev/null 2>&1; then
+backup_engine_env "$repo"
+if ! backup_engine_repo_ready; then
   printf 'utc=%s\nreason=repository-unreachable\n' "$(date -u +%FT%TZ)" > "$STATE_ROOT/last-daily-backup-skipped"
   exit 0
 fi
@@ -108,12 +107,12 @@ done
 }
 
 exclude_secrets="$HOME/.config/fedora-gnome-custom/secrets"
-restic backup --tag fedora-gnome-custom-daily --exclude "$exclude_secrets" "${sources[@]}"
-snap="$(restic snapshots --tag fedora-gnome-custom-daily --latest 1 --json | jq -r '.[0].id // empty')"
-[[ "$snap" =~ ^[0-9a-fA-F]{64}$ ]] || { echo 'Invalid daily snapshot id.' >&2; exit 40; }
+read -r archive snap < <(backup_engine_create daily --exclude "$exclude_secrets" -- "${sources[@]}") || { echo 'Borg daily archive creation failed.' >&2; exit 40; }
+[[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid daily archive id.' >&2; exit 40; }
 
 {
   printf 'snapshot=%s\n' "$snap"
+  printf 'archive=%s\n' "$archive"
   printf 'runtime_sha=%s\n' "$FEDORA_GNOME_CUSTOM_RUNTIME_SHA"
   printf 'utc=%s\n' "$(date -u +%FT%TZ)"
   printf 'repository=%s\n' "$repo"
@@ -124,5 +123,5 @@ chmod 0600 "$STATE_ROOT/last-daily-backup.ok"
 rm -f "$STATE_ROOT/last-daily-backup-skipped"
 
 if command -v notify-send >/dev/null 2>&1; then
-  notify-send 'Sauvegarde Fedora' 'Sauvegarde quotidienne chiffrée terminée.' >/dev/null 2>&1 || true
+  notify-send 'Sauvegarde Fedora' 'Sauvegarde quotidienne terminée.' >/dev/null 2>&1 || true
 fi

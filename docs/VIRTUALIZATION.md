@@ -240,10 +240,10 @@ qemu-img check
    ↓
 qemu-img convert vers staging
    ↓
-Restic
+Borg
 ```
 
-`/data/Documents` et `/data/Projets` sont protégés automatiquement par Restic. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut.
+`/data/Documents` et `/data/Projets` sont protégés automatiquement par Borg. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut.
 
 Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 

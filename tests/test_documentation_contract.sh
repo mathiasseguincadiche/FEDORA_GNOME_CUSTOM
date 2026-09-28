@@ -87,7 +87,7 @@ grep -Fq './control.sh' "$ROOT/README.md"
 grep -Fq 'CONTROL_CENTER.md' "$ROOT/README.md"
 grep -Fq './control.sh' "$ROOT/docs/README.md"
 grep -Fq 'install.sh --apply' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'backup complet Restic' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'backup complet Borg' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'Kernel Vanilla stable' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
 

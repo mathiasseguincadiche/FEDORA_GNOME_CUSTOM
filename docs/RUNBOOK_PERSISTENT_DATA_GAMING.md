@@ -102,8 +102,8 @@ Les sauvegardes Documents/Projets échouent volontairement si `/data` n'est pas 
 Par défaut :
 
 ```text
-/data/Documents  → Restic
-/data/Projets    → Restic
+/data/Documents  → Borg
+/data/Projets    → Borg
 /data/ISO        → pas de backup automatique
 /data/Jeux       → pas de backup automatique
 ```

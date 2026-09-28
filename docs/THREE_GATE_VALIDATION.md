@@ -77,7 +77,7 @@ Gate 1 valide le **code de validation**, la cohérence système et les décision
 - logique dry-run / mutation ;
 - guards runtime ;
 - logique Kernel Vanilla rolling N / N-1 ;
-- logique Restic et APPLY gates ;
+- logique Borg et APPLY gates ;
 - logique KVM fail-closed ;
 - logique B580/T705/EDID via les contrats et fixtures du dépôt.
 
@@ -347,7 +347,7 @@ Gate 3 certifie notamment :
 - contrat Performance Fedora-Cachy : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
 - profil TuneD revenu au mode Golden normal `balanced` au moment de la certification ;
 - KVM/libvirt et isolation réseau fail-closed ;
-- Restic externe chiffré + restore canary ;
+- Borg externe non chiffré (ADR 0014) + restore canary ;
 - cold-start Nautilus ;
 - cinq cycles physiques suspend/resume uniques.
 

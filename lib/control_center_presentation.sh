@@ -275,7 +275,7 @@ cc_main_menu() {
     cc_section 'SOCLES OPÉRATEUR'
     cc_option 1 'Installation & convergence' 'préflight / backup / APPLY'
     cc_option 2 'Mises à jour' 'Fedora / Flatpak / kernel / firmware'
-    cc_option 3 'Sauvegarde & restauration' 'Restic / staging / DR'
+    cc_option 3 'Sauvegarde & restauration' 'Borg / staging / DR'
     cc_option 4 'Diagnostics & santé' 'hardware / desktop / gaming / data'
     cc_option 5 'Kernel & boot' 'latest-stable / N-N-1 / recovery'
     cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'
