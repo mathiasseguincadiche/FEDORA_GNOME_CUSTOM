@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.1 — 2026-09-27
+
+- **Porte d'APPLY testée par son comportement** : nouveau `tests/test_apply_gate_behavior.sh`, exécuté dans un vrai pseudo-terminal. Chaque condition bloque seule, avec son propre message (runtime non bare-metal, fonction désactivée, machine non approuvée, Git modifié, baseline absente, archive Borg pré-APPLY absente, absence de terminal). La preuve de dry-run est vérifiée avec la vraie bibliothèque de preuves : un changement de commit, de configuration ou de matériel la rend caduque. Seule la phrase exacte ouvre la porte.
+- Qualité du test prouvée par mutation : supprimer la vérification du terminal, celle de la sauvegarde, celle de la phrase de confirmation ou celle de l'empreinte de configuration fait échouer le test.
+
 ## 0.18.0 — 2026-09-27
 
 - **Sauvegardes sans chiffrement, par décision du propriétaire** (ADR 0014) : Restic chiffre toujours ses dépôts et ne pouvait pas respecter cette exigence. Le moteur devient **Borg 1.x** (`borgbackup`, 1.4 sur Fedora 44) avec un dépôt `--encryption=none`. Un dépôt chiffré est désormais **refusé** par la politique.

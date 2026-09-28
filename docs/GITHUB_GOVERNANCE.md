@@ -47,8 +47,8 @@ La release candidate courante est décrite par `.github/release-manifest.env`. L
 Pour la version courante :
 
 ```text
-VERSION = 0.18.0
-tag     = v0.18.0-rc.1
+VERSION = 0.18.1
+tag     = v0.18.1-rc.1
 ```
 
 Le tag est créé sur le SHA exact du push `main` qui introduit le manifeste. Si une release du même nom existe déjà sur un autre SHA, le workflow échoue au lieu de déplacer silencieusement le tag.
