@@ -10,7 +10,7 @@ backup_engine_require || exit 20
 repo="$(backup_runtime_resolve_repository)" || { echo 'Cannot resolve backup repository.' >&2; exit 20; }
 backup_engine_env "$repo"
 backup_engine_repo_ready || { echo 'Borg repository is not reachable (or is encrypted).' >&2; exit 20; }
-read -r latest latest_id < <(backup_engine_latest) || { echo 'No usable recovery archive.' >&2; exit 30; }
+read -r latest latest_id < <(backup_engine_latest '') || { echo 'No usable recovery archive.' >&2; exit 30; }
 [[ "$latest_id" =~ ^[0-9a-f]{64}$ ]] || { echo 'No usable recovery archive.' >&2; exit 30; }
 
 mkdir -p "$STATE_ROOT"

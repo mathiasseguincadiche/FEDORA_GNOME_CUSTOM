@@ -22,7 +22,7 @@ case "$cmd" in
   restore)
     archive="${2:-latest}"
     if [[ "$archive" == latest ]]; then
-      read -r archive _ < <(backup_engine_latest) || { echo 'No archive in the repository.' >&2; exit 30; }
+      read -r archive _ < <(backup_engine_latest '') || { echo 'No archive in the repository.' >&2; exit 30; }
     fi
     [[ "$archive" =~ ^fgc-(preapply|full|daily)-[0-9TZ.]+$ ]] || { echo "Unknown archive name: $archive (see: restore.sh list)" >&2; exit 30; }
     target="${3:-${BACKUP_RESTORE_STAGING_ROOT:-$HOME/Restores/fedora-gnome-custom}/$archive}"
