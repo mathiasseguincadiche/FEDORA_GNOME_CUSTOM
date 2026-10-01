@@ -76,7 +76,7 @@ Gate 1 valide le **code de validation**, la cohérence système et les décision
 - totalité de la suite de contrats déclarée dans `.github/workflows/tests.yml` ;
 - logique dry-run / mutation ;
 - guards runtime ;
-- logique Kernel Vanilla rolling N / N-1 ;
+- logique des canaux de noyau, CachyOS BORE par défaut, rolling N / N-1 ;
 - logique Borg et APPLY gates ;
 - logique KVM fail-closed ;
 - logique B580/T705/EDID via les contrats et fixtures du dépôt.
@@ -274,7 +274,7 @@ LUKS local            interdit
 SELinux               enforcing
 firewalld             actif
 Arc B580              host-only
-Kernel Vanilla        rolling N / N-1, max 2
+Kernel CachyOS BORE   canal cachyos, rolling N / N-1, max 2 par canal
 Firmware              aucun flash automatique
 ```
 
@@ -303,7 +303,9 @@ Gate 2 est rejetée si elle ne référence pas exactement la preuve Gate 1 impor
 
 ## 4. Convergence bare-metal
 
-Exécuter la séquence Golden habituelle :
+Exécuter la séquence Golden habituelle. La sauvegarde pré-APPLY protège le HOST ;
+la sauvegarde complète avec disques VM est ensuite nécessaire à la certification
+quand `ENABLE_KVM=true` et `BACKUP_VM_DISKS=true` :
 
 ```bash
 ./control.sh install dry-run
@@ -311,7 +313,11 @@ Exécuter la séquence Golden habituelle :
 ./control.sh install apply
 ```
 
-Le module kernel installe directement le dernier Kernel Vanilla stable comme N, le sélectionne comme défaut GRUB et conserve au maximum N-1. Redémarrer normalement puis contrôler :
+Le canal courant est `KERNEL_CHANNEL="cachyos"` dans `config/kernel.conf` :
+le module installe le dernier CachyOS BORE stable comme N, le sélectionne par
+défaut dans GRUB et conserve N-1. Le canal `kernel-core` reste disponible comme
+entrée de secours ; la rétention est de deux versions par canal. Un choix
+explicite `vanilla` suit le même cycle N/N-1. Redémarrer puis contrôler :
 
 ```bash
 sudo reboot
@@ -357,7 +363,23 @@ Enregistrer chaque cycle physique :
 ./control.sh validate gate3 record-suspend
 ```
 
-## 6. Certification finale
+## 6. Sauvegarde et restauration avant certification
+
+Après convergence et avant la certification finale :
+
+```bash
+scripts/backup/backup-now.sh --include-vms --staging-root /chemin/absolu/backup-staging
+./diagnostics/backup-doctor
+```
+
+Le staging et le support externe doivent disposer de la capacité requise. Le
+nom/id de l'archive exacte, sa couverture des domaines et son canary restauré
+sont contrôlés. Une sauvegarde XML seule ne couvre pas les disques VM. Suivre
+le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) pour exercer une
+restauration sans toucher aux disques originaux ; la vérification Borg seule
+ne prouve pas le démarrage du système récupéré.
+
+## 7. Certification finale
 
 Lorsque toutes les preuves sont présentes, vérifier au besoin l'état performance puis lancer la certification :
 
@@ -422,3 +444,11 @@ gate3_final=PASS
 | Gate 3 / bare-metal | Golden Workstation matériel + logiciel certifiée | — |
 
 Cette séparation empêche une preuve virtuelle de devenir silencieusement une preuve matérielle.
+
+## Prétest GitHub complémentaire
+
+Le [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md) démarre une VM QEMU
+jetable, contrôle GNOME/Wayland, redémarre et restaure une copie à froid avec
+UEFI et TPM logiciel. Ses résultats restent des prétests CI : aucune preuve
+WSL2, aucune signature visuelle VirtualBox et aucune certification bare-metal
+ne sont produites. Les trois gates restent à exécuter sur le même commit.

@@ -10,3 +10,4 @@ config/local.conf
 *.tmp
 .env
 .env.*
+.fedora-gnome-lab/

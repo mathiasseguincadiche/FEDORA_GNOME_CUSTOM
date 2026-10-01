@@ -7,14 +7,15 @@ permissions:
   contents: read
 
 jobs:
-  # This mandatory context cannot succeed if either Fedora job fails/skips.
+  # This mandatory context cannot succeed if any Fedora job fails/skips.
   contracts:
-    needs: [installer-audit, borg-fedora]
+    needs: [installer-audit, borg-fedora, fedora-gnome-vm]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install real Borg integration-test dependency
         run: sudo apt-get update && sudo apt-get install -y borgbackup jq
+      - run: bash tests/test_fedora_lab_evidence.sh
       - run: bash tests/test_backup_certification_behavior.sh
       - run: bash tests/test_ci_gates_behavior.sh
       - run: bash tests/test_kernel_journal_behavior.sh
@@ -150,3 +151,8 @@ jobs:
       - run: bash tests/test_borg_roundtrip.sh
       - run: bash tests/test_backup_certification_behavior.sh
       - run: bash tests/test_kernel_journal_behavior.sh
+
+  fedora-gnome-vm:
+    uses: ./.github/workflows/fedora-gnome-vm.yml
+    permissions:
+      contents: read

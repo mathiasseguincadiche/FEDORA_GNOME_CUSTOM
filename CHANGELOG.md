@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.1 — 2026-10-01
+
+- Laboratoire Fedora 44/GNOME 50 sur runner GitHub : image signée et verrouillée, session Wayland réelle, extensions épinglées, Nautilus/Ptyxis et redémarrage avec identifiant de boot distinct.
+- Reprise isolée d'une VM QEMU sauvegardée à froid par le vrai Borg non chiffré : disque autonome, NVRAM et état swtpm comparés, démarrage en réseau restrict=on et canary TPM NV persistant.
+- Reconstruction depuis une seconde image Fedora neuve avec réinstallation GNOME, extraction de l'archive de fichiers exacte en staging et contrôle contenu/modes/liens.
+- Le contexte obligatoire contracts attend le laboratoire ; les rapports conservent journaux et états DEFERRED pour les gates officielles, APPLY de production, CachyOS et Windows.
+- Guides alignés sur CachyOS BORE, couverture des disques VM et runbook de reprise isolée. La qualification visuelle VirtualBox et matérielle reste à exécuter.
+
 ## 0.19.0 — 2026-10-01
 
 - Journaux noyau : lecture complète avant recherche ; erreur de lecture, journal vide et erreur de recherche bloquent les PASS CPU/NVMe/GPU/veille/USB.
