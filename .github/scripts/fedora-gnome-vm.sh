@@ -35,7 +35,7 @@ guest_action() {
   # shellcheck disable=SC2029
   guest "sudo bash /opt/fgc-lab/repo/.github/scripts/fedora-gnome-guest.sh $1 $COMMIT"
 }
-mark() { python3 "$REPORTER" "$REPORT" pass "$1"; }
+mark() { python3 "$REPORTER" "$REPORT" pass "$1"; printf 'PASS: %s\n' "$1"; }
 evidence() { python3 "$REPORTER" "$REPORT" evidence "$1" "$2"; }
 collect() {
   # Evidence reads/transfers are mandatory on a successful path.
@@ -63,7 +63,7 @@ trap 'exit 143' TERM
 trap 'exit 130' INT
 sudo apt-get update
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  qemu-system-x86 qemu-utils cloud-image-utils ovmf swtpm openssh-client \
+  qemu-system-x86 qemu-utils cloud-image-utils ovmf swtpm swtpm-tools openssh-client \
   curl ca-certificates gnupg borgbackup jq python3
 cd "$LAB"
 curl --fail --location --proto '=https' --proto-redir '=https' --retry 4 \
@@ -206,6 +206,23 @@ shutdown_vm() {
     if ! kill -0 "$VM_PID" 2>/dev/null; then
       wait "$VM_PID"
       VM_PID=''
+      # Unix control/data descriptors may not trigger --terminate on their own.
+      # Allow automatic exit, otherwise request a graceful TPM shutdown.
+      for _ in {1..10}; do
+        kill -0 "$TPM_PID" 2>/dev/null || break
+        sleep 1
+      done
+      if kill -0 "$TPM_PID" 2>/dev/null; then
+        timeout 10s swtpm_ioctl --unix "$LAB/swtpm.sock" -s
+      fi
+      for _ in {1..30}; do
+        kill -0 "$TPM_PID" 2>/dev/null || break
+        sleep 1
+      done
+      if kill -0 "$TPM_PID" 2>/dev/null; then
+        echo "TPM did not stop cleanly; refusing a live state archive." >&2
+        return 1
+      fi
       wait "$TPM_PID"
       TPM_PID=''
       return 0
