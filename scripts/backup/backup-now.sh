@@ -46,6 +46,7 @@ sudo tar -C / --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-sy
 sudo chown "$(id -u):$(id -g)" "$staging/fedora-system-config.tar.gz"
 
 vm_count=0
+vm_names=()
 if $include_vms; then
   for cmd in virsh qemu-img python3; do command -v "$cmd" >/dev/null || { echo "Missing VM backup command: $cmd" >&2; exit 20; }; done
   uri="${LIBVIRT_URI:-qemu:///system}"
@@ -57,6 +58,7 @@ if $include_vms; then
     [[ "$state" == 'shut off' ]] || { echo "VM must be shut off before disk backup: $dom ($state)" >&2; exit 30; }
     backup_runtime_virsh_capture "$uri" "$staging/libvirt/domains/$dom.xml" dumpxml --inactive "$dom"
     ((vm_count+=1))
+    vm_names+=("$dom")
     plan="$staging/libvirt/domains/$dom-backup-plan.json"
     python3 "$REPO_ROOT/scripts/backup/vm-backup-plan.py" "$staging/libvirt/domains/$dom.xml" > "$plan"
     while IFS= read -r disk; do
@@ -102,10 +104,13 @@ if runtime_is_baremetal; then
 fi
 while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(git -C "$REPO_ROOT" ls-files -z)
 backup_runtime_require_source_capacity "$repo" "${sources[@]}" || { echo 'Insufficient repository capacity for full backup.' >&2; exit 40; }
+vm_names_json="$(printf '%s\n' "${vm_names[@]}" | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')"
+vm_names_sha256="$(printf '%s' "$vm_names_json" | sha256sum | awk '{print $1}')"
 manifest="$(jq -cn --arg commit "$(repo_commit)" --arg config "$(effective_config_sha256)" --arg plan "$(module_plan_sha256)" \
   --arg hardware "$(evidence_hardware_fingerprint)" --arg canary "${staging#/}/restore-canary.txt" \
   --arg digest "$(sha256sum "$staging/restore-canary.txt" | awk '{print $1}')" --argjson vms "$include_vms" --argjson count "$vm_count" \
-  '{schema:1,kind:"full",engine:"borg",encryption:"none",commit:$commit,effective_config_sha256:$config,module_plan_sha256:$plan,hardware_fingerprint:$hardware,canary_path:$canary,canary_sha256:$digest,include_vms:$vms,vm_count:$count}')"
+  --argjson names "$vm_names_json" --arg names_digest "$vm_names_sha256" \
+  '{schema:1,kind:"full",engine:"borg",encryption:"none",commit:$commit,effective_config_sha256:$config,module_plan_sha256:$plan,hardware_fingerprint:$hardware,canary_path:$canary,canary_sha256:$digest,include_vms:$vms,vm_count:$count,vm_names:$names,vm_names_sha256:$names_digest}')"
 printf '%s\n' "$manifest" > "$staging/recovery-manifest.json"
 read -r archive snap < <(backup_engine_create full --comment "$manifest" --exclude "$HOME/.config/fedora-gnome-custom/secrets" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid archive id.' >&2; exit 40; }
@@ -122,6 +127,7 @@ marker="$STATE_ROOT/last-full-backup.ok"
   printf 'verdict=PASS\nengine=borg\nencryption=none\nintegrity_check=PASS\nrestore_test=PASS\n'
   printf 'snapshot=%s\narchive=%s\nrepository=%s\ncommit=%s\nutc=%s\ninclude_vms=%s\nvm_count=%s\n' \
     "$snap" "$archive" "$repo" "$(repo_commit)" "$(date -u +%FT%TZ)" "$include_vms" "$vm_count"
+  printf 'vm_names_sha256=%s\n' "$vm_names_sha256"
   printf 'effective_config_sha256=%s\nmodule_plan_sha256=%s\nhardware_fingerprint=%s\n' \
     "$(effective_config_sha256)" "$(module_plan_sha256)" "$(evidence_hardware_fingerprint)"
 } | evidence_atomic_write "$marker" 0600

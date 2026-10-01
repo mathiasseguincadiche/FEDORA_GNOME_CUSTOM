@@ -324,7 +324,7 @@ backup_runtime_recovery_manifest() {
   local archive="$1" json
   [[ "$archive" == fgc-full-* && "$archive" =~ ^[A-Za-z0-9_.-]+$ ]] || return 1
   json="$(borg info --json "::$archive")" || return 1
-  python3 -c 'import json,re,sys
+  python3 -c 'import hashlib,json,re,sys
 a=json.load(sys.stdin)["archives"]
 assert len(a)==1 and a[0]["name"]==sys.argv[1]
 m=json.loads(a[0]["comment"])
@@ -334,6 +334,12 @@ for k in ("effective_config_sha256","module_plan_sha256","canary_sha256"):
     assert re.fullmatch(r"[0-9a-f]{64}",m[k])
 assert type(m["include_vms"]) is bool and type(m["vm_count"]) is int and m["vm_count"]>=0
 assert m["include_vms"] or m["vm_count"]==0
+assert isinstance(m["vm_names"],list) and len(m["vm_names"])==m["vm_count"]
+assert all(isinstance(n,str) and re.fullmatch(r"[A-Za-z0-9_.-]+",n) for n in m["vm_names"])
+assert len(set(m["vm_names"]))==len(m["vm_names"])
+assert re.fullmatch(r"[0-9a-f]{64}",m["vm_names_sha256"])
+assert m["vm_names"]==sorted(m["vm_names"])
+assert hashlib.sha256(json.dumps(m["vm_names"],separators=(",",":")).encode()).hexdigest()==m["vm_names_sha256"]
 assert m["canary_path"].endswith("/restore-canary.txt") and not m["canary_path"].startswith("/")
 assert ".." not in m["canary_path"].split("/")
 print(json.dumps(m,sort_keys=True))' "$archive" <<<"$json"
@@ -352,7 +358,7 @@ backup_runtime_validate_full_marker() {
   backup_engine_require && backup_engine_env "$repo" && backup_engine_repo_ready || return 1
   backup_engine_archive_matches "$archive" "$snapshot" full || return 1
   manifest="$(backup_runtime_recovery_manifest "$archive")" || return 1
-  for key in commit effective_config_sha256 module_plan_sha256 hardware_fingerprint include_vms vm_count; do
+  for key in commit effective_config_sha256 module_plan_sha256 hardware_fingerprint include_vms vm_count vm_names_sha256; do
     actual="$(jq -r --arg k "$key" '.[$k] | tostring' <<<"$manifest")" || return 1
     [[ "$actual" == "$(evidence_marker_value "$marker" "$key")" ]] || return 1
   done
@@ -376,4 +382,20 @@ backup_runtime_atomic_write() {
     rm -f "$temporary"
     return 1
   fi
+}
+
+# Gate 3 must honor the configured VM-disk policy, not merely an optional
+# command-line flag. Compare the current domain set with the archived set.
+backup_runtime_full_vm_coverage_valid() {
+  local marker="$1" count names canonical digest
+  if ! is_true "${ENABLE_KVM:-true}" || ! is_true "${BACKUP_VM_DISKS:-true}"; then return 0; fi
+  [[ "$(evidence_marker_value "$marker" include_vms)" == true ]] || return 1
+  count="$(evidence_marker_value "$marker" vm_count)" || return 1
+  [[ "$count" =~ ^[0-9]+$ ]] || return 1
+  command -v virsh >/dev/null 2>&1 || return 1
+  names="$(sudo -n virsh -c "${LIBVIRT_URI:-qemu:///system}" list --all --name)" || return 1
+  canonical="$(printf '%s\n' "$names" | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')" || return 1
+  [[ "$(jq 'length' <<<"$canonical")" == "$count" ]] || return 1
+  digest="$(printf '%s' "$canonical" | sha256sum | awk '{print $1}')" || return 1
+  [[ "$digest" == "$(evidence_marker_value "$marker" vm_names_sha256)" ]]
 }

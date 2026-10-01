@@ -302,3 +302,10 @@ code de création 0 permet la promotion vers `fgc-full-*`, `fgc-daily-*` ou
 écrite avec avertissement reste inspectable dans `fgc-pending-*` et ne peut
 devenir automatiquement une base de récupération. Ces archives sont exclues
 de la rétention automatique ; leur inspection/nettoyage reste une action opérateur.
+
+Pour Gate 3, la politique `BACKUP_VM_DISKS=true` avec KVM actif impose un backup
+`--include-vms`. La certification compare le nombre et l'empreinte de la liste
+triée des domaines sauvegardés avec la liste actuelle de libvirt, accessible
+avec les droits sudo déjà disponibles. Une sauvegarde de métadonnées seule ou
+une liste de VM modifiée bloque la certification ; la commande de backup HOST
+sans disques VM reste disponible pour les sauvegardes intermédiaires.

@@ -70,6 +70,20 @@ snapshot="$(evidence_marker_value "$marker" snapshot)"
 manifest="$(backup_runtime_recovery_manifest "$archive")"
 [[ "$(jq -r '.include_vms' <<<"$manifest")" == false ]]
 [[ "$(jq -r '.vm_count' <<<"$manifest")" == 0 ]]
+# Certification honors the VM-disk policy and the current domain set.
+if ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$marker"; then
+  echo 'Metadata-only backup accepted for VM policy' >&2; exit 1
+fi
+ENABLE_KVM=false backup_runtime_full_vm_coverage_valid "$marker"
+coverage="$tmp/vm-coverage.ok"
+printf 'include_vms=true\nvm_count=1\nvm_names_sha256=%s\n' "$(printf '["demo"]' | sha256sum | awk '{print $1}')" > "$coverage"
+virsh() { echo "${TEST_DOMAIN_NAME:-demo}"; }
+sudo() { [[ "${1:-}" != -n ]] || shift; "$@"; }
+ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$coverage"
+if TEST_DOMAIN_NAME=added ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$coverage"; then
+  echo 'Changed VM set accepted' >&2; exit 1
+fi
+unset -f virsh sudo
 # A newer daily archive never becomes an OS recovery base.
 read -r daily _ < <(backup_engine_create daily -- "$HOME/.config")
 read -r selected selected_id < <(backup_engine_latest full)

@@ -65,6 +65,7 @@ if ! $policy_only; then
     full="$STATE_ROOT/last-full-backup.ok"; max_h="${DAILY_BACKUP_MAX_AGE_HOURS:-36}"
     if [[ -s "$full" ]]; then
       backup_runtime_validate_full_marker "$full" && record OK 'Full backup exact archive' 'current identity, repository, manifest and restored canary verified' || record KO 'Full backup exact archive' 'missing/stale archive, repository, identity or recovery proof'
+      backup_runtime_full_vm_coverage_valid "$full" && record OK 'Full backup VM coverage' 'configured policy and current domain set match' || record KO 'Full backup VM coverage' 'run backup-now.sh --include-vms with all current VMs shut off'
       age_h=$(( ( $(date +%s) - $(stat -c %Y "$full") ) / 3600 ))
       snap="$(awk -F= '$1=="snapshot" {print $2; exit}' "$full")"; commit="$(awk -F= '$1=="commit" {print $2; exit}' "$full")"; integrity="$(awk -F= '$1=="integrity_check" {print $2; exit}' "$full")"
       [[ "$snap" =~ ^[0-9a-fA-F]{64}$ ]] && record OK 'Full backup snapshot' "$snap" || record KO 'Full backup snapshot' invalid
