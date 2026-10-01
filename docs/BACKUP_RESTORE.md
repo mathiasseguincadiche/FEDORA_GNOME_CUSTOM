@@ -293,3 +293,10 @@ mesurée localement ; une erreur Borg y reste bloquante.
 La qualification réelle suit [le parcours de fiabilité](RELIABILITY_QUALIFICATION.md).
 Aucun conteneur ne certifie le démarrage Fedora, la session GNOME, le TPM d'une VM
 récupérée ou le matériel physique.
+
+Les créations commencent dans le namespace `fgc-pending-<type>-*`. Seul un
+code de création 0 permet la promotion vers `fgc-full-*`, `fgc-daily-*` ou
+`fgc-preapply-*`, avec relecture de l'identifiant après renommage. Une archive
+écrite avec avertissement reste inspectable dans `fgc-pending-*` et ne peut
+devenir automatiquement une base de récupération. Ces archives sont exclues
+de la rétention automatique ; leur inspection/nettoyage reste une action opérateur.

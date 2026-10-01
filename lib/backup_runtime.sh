@@ -114,7 +114,7 @@ backup_engine_init() {
 # backup_engine_create KIND [--exclude PATTERN]... -- SOURCE...
 # Prints "<archive name> <archive id>" of the archive that was just written.
 backup_engine_create() {
-  local kind="$1" name json comment
+  local kind="$1" name pending json comment identity
   shift
   backup_engine_kind_valid "$kind" || return 2
   local -a opts=()
@@ -134,28 +134,48 @@ backup_engine_create() {
   shift
   (($# > 0)) || return 2
   name="${BACKUP_ARCHIVE_PREFIX}-${kind}-$(date -u +%Y%m%dT%H%M%S.%NZ)"
+  pending="${BACKUP_ARCHIVE_PREFIX}-pending-${kind}-${name#"${BACKUP_ARCHIVE_PREFIX}-${kind}-"}"
   # A warning can mean unreadable/omitted files. Only rc=0 proves creation
   # succeeded; an archive written with warnings never produces a success marker.
   local rc=0
-  json="$(borg create --json --compression zstd,3 --exclude-caches "${opts[@]}" "::$name" "$@")" || rc=$?
+  json="$(borg create --json --compression zstd,3 --exclude-caches "${opts[@]}" "::$pending" "$@")" || rc=$?
   if (( rc != 0 )); then
     echo "Borg creation refused certification for $name (rc=$rc; warnings may omit files)." >&2
     return "$rc"
   fi
-  python3 -c 'import json,sys
+  identity="$(python3 -c 'import json,sys
 a=json.load(sys.stdin)["archive"]
 name, aid = a.get("name",""), a.get("id","")
 assert name == sys.argv[1] and len(aid) == 64 and all(c in "0123456789abcdef" for c in aid.lower())
-print(name, aid)' "$name" <<<"$json"
+print(name, aid)' "$pending" <<<"$json")" || return 2
+  [[ -n "$identity" ]] || return 2
+  # Warning archives remain inspectable under fgc-pending-* and are excluded
+  # from every daily/full/preapply selector and automatic retention policy.
+  borg rename "::$pending" "$name" || return $?
+  # Rename changes archive metadata and its id: re-read the promoted identity.
+  json="$(borg info --json "::$name")" || return $?
+  python3 -c 'import json,sys
+a=json.load(sys.stdin)["archives"]
+assert len(a)==1 and a[0]["name"]==sys.argv[1]
+aid=a[0]["id"]
+assert len(aid)==64 and all(c in "0123456789abcdef" for c in aid)
+print(a[0]["name"],aid)' "$name" <<<"$json"
 }
 
 # Prints "<archive name> <archive id>" of the newest archive of KIND (or of any kind).
 backup_engine_latest() {
   local kind="${1:-}" pattern json
-  if [[ -n "$kind" ]]; then backup_engine_kind_valid "$kind" || return 2; pattern="${BACKUP_ARCHIVE_PREFIX}-${kind}-*"; else pattern="${BACKUP_ARCHIVE_PREFIX}-*"; fi
-  json="$(borg list --json --glob-archives "$pattern" --last 1)" || return $?
-  python3 -c 'import json,sys
-arch=json.load(sys.stdin).get("archives") or []
+  local -a limit=()
+  if [[ -n "$kind" ]]; then
+    backup_engine_kind_valid "$kind" || return 2
+    pattern="${BACKUP_ARCHIVE_PREFIX}-${kind}-*"; limit=(--last 1)
+  else
+    pattern="${BACKUP_ARCHIVE_PREFIX}-*"
+  fi
+  json="$(borg list --json --glob-archives "$pattern" --sort-by timestamp "${limit[@]}")" || return $?
+  python3 -c 'import json,re,sys
+arch=[a for a in (json.load(sys.stdin).get("archives") or [])
+      if re.match(r"^fgc-(preapply|full|daily)-",a.get("name",""))]
 if not arch: raise SystemExit(1)
 print(arch[-1]["name"], arch[-1]["id"])' <<<"$json"
 }
@@ -172,7 +192,7 @@ raise SystemExit(0 if arch[0].get("id") == sys.argv[1] else 1)' "$id" <<<"$json"
 }
 
 # Full repository + archive metadata check; with KIND, also re-reads and
-# verifies the data of the newest archive of that kind (--verify-data).
+# verifies the data of the explicitly selected archive (--verify-data).
 backup_engine_check() {
   local kind="${1:-}" archive="${2:-}"
   if [[ -z "$kind" ]]; then borg check; return $?; fi
@@ -338,6 +358,14 @@ backup_runtime_validate_full_marker() {
   done
   expected="$(jq -r '.canary_sha256' <<<"$manifest")" || return 1
   actual="$(borg extract --stdout "::$archive" "$(jq -r '.canary_path' <<<"$manifest")" | sha256sum | awk '{print $1}')" || return 1
+  [[ "$actual" == "$expected" ]]
+}
+
+backup_runtime_recovery_canary_valid() {
+  local archive="$1" manifest="$2" expected actual path
+  expected="$(jq -r '.canary_sha256' <<<"$manifest")" || return 1
+  path="$(jq -r '.canary_path' <<<"$manifest")" || return 1
+  actual="$(borg extract --stdout "::$archive" "$path" | sha256sum | awk '{print $1}')" || return 1
   [[ "$actual" == "$expected" ]]
 }
 

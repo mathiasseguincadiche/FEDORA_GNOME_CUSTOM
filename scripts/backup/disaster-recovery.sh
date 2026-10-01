@@ -16,6 +16,7 @@ read -r latest latest_id < <(backup_engine_latest full) || { echo 'No usable rec
 backup_engine_archive_matches "$latest" "$latest_id" full || exit 30
 manifest="$(backup_runtime_recovery_manifest "$latest")" || { echo 'Full archive has no valid recovery manifest; create a new full backup.' >&2; exit 30; }
 backup_engine_check full "$latest" || { echo 'Full recovery archive integrity check failed.' >&2; exit 30; }
+backup_runtime_recovery_canary_valid "$latest" "$manifest" || { echo 'Recovery canary extraction failed or mismatched.' >&2; exit 30; }
 recovery_commit="$(jq -r '.commit' <<<"$manifest")"
 vm_coverage="$(jq -r 'if .include_vms then "requested; VM count=" + (.vm_count|tostring) else "NO VM DISKS; metadata only" end' <<<"$manifest")"
 

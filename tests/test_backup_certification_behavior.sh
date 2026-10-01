@@ -74,6 +74,24 @@ manifest="$(backup_runtime_recovery_manifest "$archive")"
 read -r daily _ < <(backup_engine_create daily -- "$HOME/.config")
 read -r selected selected_id < <(backup_engine_latest full)
 [[ "$selected" == "$archive" && "$selected_id" == "$snapshot" && "$daily" != "$selected" ]]
+# A real archive written by a warning must stay outside the recovery namespace.
+real_borg="$(command -v borg)"
+borg() {
+  if [[ "$1" == create ]]; then
+    "$real_borg" "$@" || return $?
+    return 1
+  fi
+  "$real_borg" "$@"
+}
+rc=0
+out="$(backup_engine_create full --comment "$manifest" -- "$HOME/.config")" || rc=$?
+[[ "$rc" == 1 && -z "$out" ]]
+read -r selected selected_id < <(backup_engine_latest full)
+[[ "$selected" == "$archive" && "$selected_id" == "$snapshot" ]]
+[[ -n "$(command borg list --glob-archives 'fgc-pending-full-*' --short)" ]]
+unset -f borg
+read -r selected _ < <(backup_engine_latest '')
+[[ "$selected" != fgc-pending-* ]]
 cp "$marker" "$tmp/good-marker"
 sed -i 's/^integrity_check=PASS/integrity_check=FAIL/' "$marker"
 if backup_runtime_validate_full_marker "$marker"; then echo 'Failed integrity accepted' >&2; exit 1; fi
