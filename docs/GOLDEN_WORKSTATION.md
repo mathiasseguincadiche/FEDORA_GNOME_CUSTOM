@@ -27,7 +27,7 @@ APPLY protégé
 second T705 persistant /data
   Documents + Projets + ISO + Jeux + libvirt
       ↓
-reboot sur Kernel Vanilla N
+reboot sur CachyOS BORE N
       ↓
 certification hardware / desktop / KVM / backup
       ↓
@@ -38,7 +38,9 @@ matrice known-good
 
 ## Kernel
 
-Le profil installe directement le dernier kernel stable disponible via Fedora Kernel Vanilla `@kernel-vanilla/stable`, avec plancher 7.2.2.
+Le profil installe le dernier noyau stable du canal `cachyos` via
+`bieszczaders/kernel-cachyos`, avec le plancher de `config/kernel.conf`.
+Le canal `vanilla` reste disponible comme choix explicite (ADR 0012).
 
 La politique est rolling **N / N-1** :
 
@@ -48,7 +50,9 @@ N-1 = version immédiatement précédente, rollback
 max = 2 versions kernel-core
 ```
 
-Les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly`. Un kernel Fedora supplémentaire n'est plus conservé en permanence ; le retour vers les paquets Fedora reste un chemin de récupération explicite.
+Les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly`. Avec CachyOS, le canal `kernel-core` reste installé comme entrée de secours.
+La limite DNF s'applique par nom de paquet : jusqu'à deux CachyOS et deux
+`kernel-core` peuvent être présents (ADR 0012).
 
 Secure Boot actif bloque ce chemin par défaut. Le projet ne désactive pas Secure Boot automatiquement et ne génère/importera pas une clé MOK sans décision opérateur explicite.
 

@@ -59,7 +59,7 @@ Une preuve WSL2 ou VirtualBox ne devient donc jamais une preuve matérielle : el
 - kernel N ;
 - kernel N-1 ou `none` lors d'une première installation ;
 - défaut GRUB ;
-- nombre de versions `kernel-core` installées et limite maximale `2` ;
+- nombre de versions du canal configuré installées et limite maximale `2` par canal ;
 - BIOS et microcode AMD ;
 - Arc B580 `8086:e20b`, `xe`, ReBAR, PCIe x8 et EDID certifié ;
 - Fedora release/compose/ISO/SHA-256 ;
@@ -83,11 +83,14 @@ B580 PCIe/ReBAR = valide
 T705 SMART/PCIe = valide
 kernel courant = N
 GRUB default = N
-kernel-core installés <= 2
+noyaux du canal configuré <= 2 ; kernel-core de secours <= 2
 performance-doctor --certify = PASS
 ```
 
-Le fallback Fedora permanent n'est plus une condition Golden. Le retour aux paquets Fedora reste une procédure de récupération explicite hors politique normale N/N-1.
+Le défaut Golden est le canal CachyOS BORE. Le canal `kernel-core` reste
+installé comme entrée de secours avec sa propre rétention de deux versions.
+Aucun fallback Fedora supplémentaire épinglé n'est exigé ; la procédure de
+retour aux paquets Fedora reste disponible en récupération (ADR 0012).
 
 La certification finale ajoute en plus les doctors, le cold-start Nautilus, les cycles suspend/resume et les autres preuves Golden.
 

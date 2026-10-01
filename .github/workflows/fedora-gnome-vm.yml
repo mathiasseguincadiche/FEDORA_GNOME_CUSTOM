@@ -1,0 +1,30 @@
+name: Fedora 44 GNOME boot and recovery lab
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Boot GNOME, reboot, recover VM and rebuild Fedora
+        shell: bash
+        run: timeout --signal=TERM --kill-after=60s 80m bash .github/scripts/fedora-gnome-vm.sh
+      - name: Preserve pretest evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fedora-gnome-boot-recovery-${{ github.run_id }}
+          path: |
+            .fedora-gnome-lab/report.json
+            .fedora-gnome-lab/evidence/
+          if-no-files-found: error
+          retention-days: 14

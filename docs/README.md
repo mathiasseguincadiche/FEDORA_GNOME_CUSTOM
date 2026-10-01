@@ -176,6 +176,9 @@ Ne pas désactiver SELinux, firewalld ou les garde-fous fail-closed pour masquer
 # 6. Certification, CI et gouvernance
 
 - [`CI_VALIDATION.md`](CI_VALIDATION.md) — validation automatisée ;
+- [`FEDORA_GNOME_CI_LAB.md`](FEDORA_GNOME_CI_LAB.md) — démarrage GNOME et récupération QEMU sur GitHub ;
+- [`ISOLATED_RECOVERY_RUNBOOK.md`](ISOLATED_RECOVERY_RUNBOOK.md) — reprise fichiers/OS/VM hors production ;
+- [`QUALIFICATION_EVIDENCE_TEMPLATE.md`](QUALIFICATION_EVIDENCE_TEMPLATE.md) — fiche de preuves à remplir pendant les essais ;
 - [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — bundle Golden et archivage ;
 - [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md) — gouvernance du dépôt ;
 - [`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md) — règles de cohérence documentation ↔ code ;

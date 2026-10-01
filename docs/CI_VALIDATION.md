@@ -1,6 +1,6 @@
 # CI et validation bout-en-bout
 
-La CI combine contrats statiques, intégration Fedora 44 et vraie VM Ubuntu 26.04. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
+La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNOME et vraie VM Ubuntu 26.04. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
 
 ## Tests de contrats
 
@@ -264,3 +264,18 @@ Il tourne périodiquement afin de surveiller les dépôts externes et signatures
 - second-host LAN → VM.
 
 Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`GAMING.md`](GAMING.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
+
+## Fedora/GNOME : boot et reprise isolée
+
+Le job réutilisable `fedora-gnome-vm.yml`, appelé par `Tests`, exerce de vrais
+boots QEMU Fedora 44/GNOME 50, le reboot, Borg et une restauration à froid
+UEFI/TPM logiciel suivie d'une reconstruction sur image neuve. `contracts` dépend
+de ce job : un échec ou un skip bloque le contexte obligatoire et la publication.
+Voir [la portée exacte et les rapports](FEDORA_GNOME_CI_LAB.md).
+Les gates WSL2/VirtualBox/bare-metal, la validation visuelle et le démarrage
+CachyOS restent à qualifier sur leurs environnements réels.
+
+Le check agrégé `contracts` s'exécute même après un échec grâce à `always()`
+et refuse explicitement une dépendance échouée, annulée ou sautée. La suite
+rapide `logic-contracts` démarre indépendamment du laboratoire pour exposer
+les régressions de code sans attendre les boots VM.

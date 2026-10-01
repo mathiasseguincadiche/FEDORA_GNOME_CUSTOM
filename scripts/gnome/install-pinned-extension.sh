@@ -20,7 +20,13 @@ done
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 zip="$work/extension.zip"; metadata="$work/metadata.json"
+cache="${FGC_EXTENSION_ARTIFACT_CACHE:-}"
+if [[ -n "$cache" ]]; then
+  [[ "$cache" == /* && -r "$cache/$prefix.zip" ]] || { echo 'Reviewed artifact cache is missing or not absolute' >&2; exit 1; }
+  cp -- "$cache/$prefix.zip" "$zip"
+else
 curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 "$url" --output "$zip"
+fi
 printf '%s  %s\n' "$expected_sha256" "$zip" | sha256sum --check --status || { echo 'Extension SHA-256 mismatch' >&2; exit 1; }
 unzip -p "$zip" metadata.json > "$metadata"
 python3 "$root/scripts/gnome/validate-extension-metadata.py" "$metadata" "$uuid" "$shell_version"

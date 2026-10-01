@@ -18,7 +18,7 @@ Le dashboard affiche :
 
 - version et SHA Git ;
 - Fedora / environnement runtime ;
-- kernel courant et politique **N / N-1 · max 2** ;
+- kernel courant et politique **N / N-1 · max 2 par canal** ;
 - Intel Arc B580 / `xe` ;
 - état Git ;
 - second T705 `/data` EXT4 ;
@@ -124,7 +124,7 @@ Le chemin APPLY conserve ses protections : bare-metal, Git propre, baseline, coh
 ```text
 backup complet Borg
         ↓
-résolution latest-stable Kernel Vanilla
+résolution latest-stable du canal configuré
         ↓
 installonly_limit = 2
         ↓
@@ -144,12 +144,12 @@ Pour le firmware : **aucun flash automatique**. `fwupdmgr` reste une surface d'i
 
 ## Kernel — N / N-1
 
-La politique **Kernel Vanilla stable** est : latest stable direct, puis rétention N / N-1.
+La politique **CachyOS BORE stable** (canal `cachyos` par défaut) est : latest stable direct, puis rétention N / N-1.
 
 - `N` : dernier stable installé et défaut GRUB ;
 - `N-1` : rollback ;
-- maximum deux versions `kernel-core` ;
-- aucun fallback Fedora permanent ;
+- maximum deux versions par canal (`kernel-cachyos-core` et `kernel-core`) ;
+- le canal `kernel-core` reste une entrée de secours quand CachyOS est choisi ;
 - recovery Fedora explicite uniquement.
 
 ```bash
