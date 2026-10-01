@@ -182,6 +182,7 @@ wait_session() {
     if guest_action ready >/dev/null 2>&1; then return 0; fi
     sleep 5
   done
+  guest_action ready
   return 1
 }
 provision() {

@@ -15,6 +15,19 @@ source "$REPO/lib/backup_runtime.sh"
 # shellcheck source=config/gnome-extensions.lock
 source "$REPO/config/gnome-extensions.lock"
 
+failure() {
+  local rc=$?
+  trap - ERR
+  echo "Guest action ${1:-unknown} failed (exit=$rc); collecting diagnostics." >&2
+  systemctl --failed --no-pager >&2 || true
+  journalctl --no-pager -b -u gdm -u "user@$LAB_UID.service" -n 120 >&2 || true
+  for log in /tmp/fgc-critical.log /tmp/fgc-coredumps.log /tmp/fgc-failed-units.log /tmp/fgc-user-failed-units.log; do
+    [[ ! -f "$log" ]] || cat "$log" >&2
+  done
+  exit "$rc"
+}
+trap 'failure "${1:-unknown}"' ERR
+
 as_user() {
   sudo -u "$LAB_USER" env HOME="$LAB_HOME" XDG_RUNTIME_DIR="/run/user/$LAB_UID" \
     DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$LAB_UID/bus" "$@"
@@ -66,7 +79,7 @@ case "${1:-}" in
     done
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
-      tpm2-tools firewalld python3 curl gjs
+      tpm2-tools firewalld python3 curl gjs dbus-daemon
     passwd -d "$LAB_USER"
     systemctl enable --now firewalld
     mkdir -p /var/lib/fgc-lab
