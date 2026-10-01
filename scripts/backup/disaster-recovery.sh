@@ -6,6 +6,9 @@ source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO_ROOT/lib/backup_runtime.sh"
 
+for cmd in borg jq python3 sha256sum; do
+  command -v "$cmd" >/dev/null 2>&1 || { echo "Missing recovery command: $cmd" >&2; exit 20; }
+done
 backup_engine_require || exit 20
 repo="$(backup_runtime_resolve_repository)" || { echo 'Cannot resolve backup repository.' >&2; exit 20; }
 backup_engine_env "$repo"

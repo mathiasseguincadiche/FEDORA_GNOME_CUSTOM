@@ -205,6 +205,8 @@ Le dépôt n'étant pas chiffré, il n'y a **aucun secret à conserver** : sur u
 scripts/backup/disaster-recovery.sh
 ```
 
+Ce générateur de plan exige `borgbackup`, `jq` et Python 3.
+
 Le script sélectionne uniquement la dernière archive **full**, valide son manifeste de récupération, puis relit ses données (`borg check --verify-data`) puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
 
 ## Règle QCOW2

@@ -35,7 +35,11 @@ if ! $policy_only; then
   if [[ -s "$marker" ]]; then
     marker_commit="$(awk -F= '$1=="commit" {print $2; exit}' "$marker")"; marker_snapshot="$(awk -F= '$1=="snapshot" {print $2; exit}' "$marker")"
     [[ "$marker_commit" == "$(repo_commit)" ]] && record OK preapply-commit "$marker_commit" || strict_or_warn preapply-commit "${marker_commit:-missing}"
-    [[ "$marker_snapshot" =~ ^[0-9a-f]{64}$ ]] && record OK preapply-archive valid || strict_or_warn preapply-archive missing-or-invalid
+    if [[ "$marker_snapshot" =~ ^[0-9a-f]{64}$ ]] && evidence_require_current_identity "$marker" && backup_runtime_validate_preapply_marker "$marker"; then
+      record OK preapply-archive 'exact archive and current identity verified'
+    else
+      strict_or_warn preapply-archive 'archive unavailable, invalid or stale identity'
+    fi
   else strict_or_warn preapply-marker 'not created yet'; fi
 
   if backup_engine_require >/dev/null 2>&1; then
