@@ -31,6 +31,8 @@ def finalize(report):
             raise ValueError("archive/disk identity missing: " + key)
     if e["recovery_network"] != "restrict=on" or e["encryption"] != "none":
         raise ValueError("isolated recovery and unencrypted Borg required")
+    if e["session_shutdown"] != "gnome-logout":
+        raise ValueError("qualified orderly GNOME shutdown required")
     if e["tpm_canary"] != "PASS":
         raise ValueError("TPM persistent canary required")
     if report["deferred"] != {k: "DEFERRED" for k in DEFERRED}:

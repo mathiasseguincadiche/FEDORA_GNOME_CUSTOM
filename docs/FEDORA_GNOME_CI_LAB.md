@@ -35,11 +35,19 @@ réelle. L'autologin et les réglages empêchant la veille sont propres à cette
 image éphémère. Avant chaque arrêt/redémarrage, le laboratoire attend que
 GNOME retire lui-même son marqueur de protection d'initialisation (environ
 une minute), puis revérifie session, réglages persistants et extensions actives.
+La session se ferme par `gnome-session-quit --logout --no-prompt`, puis GDM
+s'arrête avant le redémarrage/arrêt système. Le rapport exige
+`session_shutdown=gnome-logout`.
 Il ne supprime jamais ce marqueur et ne réactive pas les extensions pour
 faire réussir un redémarrage. Le journal persistant permet aussi de refuser
 un crash ou une erreur critique sur le boot précédent, y compris à l'arrêt.
 Ce scénario ne qualifie pas un redémarrage précipité pendant la première
-minute d'initialisation. SELinux reste enforcing et firewalld actif. Les trois extensions
+minute d'initialisation, ni un reboot direct avec `systemctl` pendant que
+le bureau est ouvert. Ce dernier chemin a produit des timeouts d'arrêt de
+GNOME Shell et SIGABRT dans le laboratoire ; le contrôle du boot précédent
+les a rendus bloquants. Il reste à qualifier sur les autres environnements.
+Aucun timeout de GNOME, mécanisme de protection ni contrôle des coredumps
+n'est affaibli pour faire réussir ce parcours. SELinux reste enforcing et firewalld actif. Les trois extensions
 DING, Show Desktop Plus et Resource Monitor utilisent l'installateur de
 production et les artefacts/hash du verrou existant. Les ZIP sont téléchargés
 avec TLS strict par le runner, vérifiés puis transférés dans la VM ; le même
@@ -72,7 +80,7 @@ Les originaux de production restent conservés selon le runbook opérateur.
 L'artefact `fedora-gnome-boot-recovery-<run_id>` conserve 14 jours :
 
 - `report.json` : commit du code exact, étapes, quatre identifiants de boot,
-  archive/id, hash du disque et de la NVRAM, chiffrement et isolation ;
+  archive/id, hash du disque et de la NVRAM, chiffrement, isolation et méthode de fermeture de session ;
 - consoles QEMU, sorties installation/restauration et signature du média ;
 - journaux complets du boot et des boots précédents, du noyau et de l'utilisateur, unités en échec,
   inventaire des paquets et sessions pour chaque étape.

@@ -20,6 +20,7 @@ r["evidence"] = {
     "files_archive_id": "a" * 64, "cold_archive_id": "b" * 64,
     "disk_sha256": "c" * 64, "nvram_sha256": "d" * 64,
     "recovery_network": "restrict=on", "encryption": "none", "tpm_canary": "PASS",
+    "session_shutdown": "gnome-logout",
 }
 assert lab.finalize(copy.deepcopy(r))["verdict"] == "PASS"
 def rejected(changed):
@@ -39,7 +40,8 @@ for key, value in (("reboot_id", r["evidence"]["boot_id"]),
                    ("cold_archive_id", "latest"),
                    ("encryption", "repokey"),
                    ("recovery_network", "off"),
-                   ("tpm_canary", "DEFERRED")):
+                   ("tpm_canary", "DEFERRED"),
+                   ("session_shutdown", "direct-systemctl")):
     changed = copy.deepcopy(r)
     changed["evidence"][key] = value
     rejected(changed)

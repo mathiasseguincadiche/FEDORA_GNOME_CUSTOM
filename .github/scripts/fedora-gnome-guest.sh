@@ -83,6 +83,20 @@ check_extensions() {
     grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"
   done
 }
+settle_session() {
+  require_session
+  check_extensions
+  # GNOME clears its startup protection marker itself after 60 seconds.
+  # Never delete the marker or turn protection off to force a PASS.
+  for _ in {1..90}; do
+    [[ -e "/run/user/$LAB_UID/gnome-shell-disable-extensions" ]] || break
+    sleep 1
+  done
+  [[ ! -e "/run/user/$LAB_UID/gnome-shell-disable-extensions" ]]
+  require_session
+  check_extensions
+
+}
 check_tpm() {
   tpm2_nvread 0x1500016 -C o -s 32 -o /tmp/fgc-tpm-read
   cmp /var/lib/fgc-lab/tpm-canary /tmp/fgc-tpm-read
@@ -150,17 +164,21 @@ CONF
     systemctl start gdm
     ;;
   settled)
-    require_session
-    check_extensions
-    # GNOME clears its startup protection marker itself after 60 seconds.
-    # Never delete the marker or turn protection off to force a PASS.
+    settle_session
+    ;;
+  end-session)
+    settle_session
+    # Close GNOME through its supported logout API before stopping system buses.
+    as_user gnome-session-quit --logout --no-prompt
     for _ in {1..90}; do
-      [[ -e "/run/user/$LAB_UID/gnome-shell-disable-extensions" ]] || break
+      pgrep -u "$LAB_UID" -x gnome-shell >/dev/null || break
       sleep 1
     done
-    [[ ! -e "/run/user/$LAB_UID/gnome-shell-disable-extensions" ]]
-    require_session
-    check_extensions
+    if pgrep -u "$LAB_UID" -x gnome-shell >/dev/null; then
+      echo "GNOME did not log out cleanly." >&2; exit 1
+    fi
+    systemctl stop gdm
+    journalctl --sync
     ;;
   session)
     require_session

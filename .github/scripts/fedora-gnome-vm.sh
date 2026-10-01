@@ -137,6 +137,7 @@ if [[ -e /dev/kvm ]]; then
   [[ -r /dev/kvm && -w /dev/kvm ]] && { ACCEL=kvm; CPU=host; }
 fi
 evidence accelerator "$ACCEL"
+evidence session_shutdown gnome-logout
 new_bundle() {
   backup_runtime_require_staging_space "$LAB" "$DISK_BYTES" 2147483648
   mkdir -p "$1/tpm"
@@ -200,7 +201,7 @@ provision() {
   wait_session
 }
 shutdown_vm() {
-  guest_action settled
+  guest_action end-session
   # Connection may close before systemctl's reply. The actual process exit is required.
   guest 'sudo systemctl poweroff' || true
   for _ in {1..90}; do
@@ -252,7 +253,7 @@ collect
 
 PHASE=reboot
 old_boot="$(boot_id)"
-guest_action settled
+guest_action end-session
 guest 'sudo systemctl reboot' || true
 # Require a changed kernel boot ID, not just an SSH reconnection.
 for _ in {1..180}; do
@@ -326,7 +327,7 @@ scp "${SCP_OPTS[@]}" files-recovery.tar.gz lab@127.0.0.1:/tmp/fgc-files-recovery
 guest_action rebuild 2>&1 | tee "$LAB/evidence/rebuilt.log"
 guest_action session
 rebuilt_initial="$(boot_id)"
-guest_action settled
+guest_action end-session
 guest 'sudo systemctl reboot' || true
 for _ in {1..180}; do
   current="$(boot_id 2>/dev/null || true)"

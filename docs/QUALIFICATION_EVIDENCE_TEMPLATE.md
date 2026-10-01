@@ -30,6 +30,7 @@ documenter tout remplacement ; une ancienne fiche matérielle ne suffit pas.
 | Fedora reconstruit | NON EXÉCUTÉ | Support cible distinct, boot, GNOME, données, diagnostics puis convergence répétée |
 | VM Ubuntu récupérée | NON EXÉCUTÉ | Membres correspondants, boot, documents/services, redémarrage et isolation |
 | VM Windows récupérée | NON EXÉCUTÉ | Disque/NVRAM/swtpm/UUID, boot, TPM, documents et isolation |
+| Arrêt/reboot GNOME | NON EXÉCUTÉ | Fermeture normale, reboot direct avec bureau ouvert et reboot précoce : aucune désactivation d'extensions ni crash dans le journal du boot précédent |
 | APPLY réel et noyau | NON EXÉCUTÉ | Baseline + dry-run + backup + APPLY, démarrage CachyOS BORE, entrée N-1 disponible |
 
 Suivre [les gates](THREE_GATE_VALIDATION.md) et
