@@ -55,6 +55,9 @@ check_data() {
   cmp /var/lib/fgc-lab/data-canary "$LAB_HOME/Documents/Lab/document.txt"
 }
 case "${1:-}" in
+  ready)
+    require_session
+    ;;
   install)
     grep -Eq '^VERSION_ID="?44"?$' /etc/os-release
     [[ "$(getenforce)" == Enforcing ]]
@@ -86,6 +89,7 @@ CONF
     as_user dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay 0
     as_user dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled false
     as_user dbus-run-session -- gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
+    dnf clean all
     systemctl set-default graphical.target
     systemctl start gdm
     ;;
@@ -176,6 +180,13 @@ PY
     check_data
     [[ "$(getenforce)" == Enforcing ]]
     ;;
+  rebuilt-check)
+    require_session
+    check_extensions
+    check_data
+    [[ "$(getenforce)" == Enforcing ]]
+    systemctl is-active --quiet firewalld
+    ;;
   collect)
     # Keep complete reads and preserve stderr; no piped grep hides read errors.
     mkdir -p /tmp/fgc-evidence
@@ -183,6 +194,7 @@ PY
     journalctl --no-pager -k -b > /tmp/fgc-evidence/kernel-journal.log
     journalctl --no-pager -b _UID="$LAB_UID" > /tmp/fgc-evidence/user-journal.log
     systemctl --failed --no-pager > /tmp/fgc-evidence/failed-units.txt
+    as_user systemctl --user --failed --no-pager > /tmp/fgc-evidence/user-failed-units.txt
     rpm -qa | sort > /tmp/fgc-evidence/packages.txt
     loginctl list-sessions > /tmp/fgc-evidence/sessions.txt
     lsblk -f > /tmp/fgc-evidence/lsblk.txt
@@ -195,6 +207,10 @@ PY
     [[ ! -s /tmp/fgc-critical.log ]]
     journalctl --quiet --no-pager -b -t systemd-coredump -o json > /tmp/fgc-coredumps.log
     [[ ! -s /tmp/fgc-coredumps.log ]]
+    systemctl --failed --no-legend --no-pager > /tmp/fgc-failed-units.log
+    [[ ! -s /tmp/fgc-failed-units.log ]]
+    as_user systemctl --user --failed --no-legend --no-pager > /tmp/fgc-user-failed-units.log
+    [[ ! -s /tmp/fgc-user-failed-units.log ]]
     ;;
   *) exit 2 ;;
 esac

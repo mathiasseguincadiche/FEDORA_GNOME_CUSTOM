@@ -59,8 +59,8 @@ L'artefact `fedora-gnome-boot-recovery-<run_id>` conserve 14 jours :
 - journaux complets du boot, du noyau et de l'utilisateur, unités en échec,
   inventaire des paquets et sessions pour chaque étape.
 
-Un crash enregistré par systemd-coredump ou un message journal de priorité
-critique bloque le test. Les autres messages restent disponibles pour analyse.
+Un crash enregistré par systemd-coredump, un message journal de priorité
+critique ou une unité système/utilisateur en échec bloque le test. Les autres messages restent disponibles pour analyse.
 Une lecture de journal en échec reste un échec. Aucun PASS n'est écrit si une
 étape manque ou si un redémarrage conserve le même identifiant de boot.
 Les clés SSH, user-data, disques et dépôts Borg ne sont pas publiés en artefact.

@@ -24,7 +24,7 @@ def finalize(report):
         raise ValueError("all exercises must pass")
     e = report["evidence"]
     ids = [e[k] for k in ("boot_id", "reboot_id", "restored_boot_id", "rebuilt_boot_id")]
-    if any(not re.fullmatch(r"[0-9a-f-]{36}", x) for x in ids) or len(set(ids)) != 4:
+    if any(not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", x) for x in ids) or len(set(ids)) != 4:
         raise ValueError("four distinct kernel boot identities required")
     for key in ("files_archive_id", "cold_archive_id", "disk_sha256", "nvram_sha256"):
         if not re.fullmatch(r"[0-9a-f]{64}", e[key]):

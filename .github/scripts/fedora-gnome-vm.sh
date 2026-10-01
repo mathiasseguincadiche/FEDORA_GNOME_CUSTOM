@@ -159,7 +159,7 @@ wait_ssh() {
 }
 wait_session() {
   for _ in {1..90}; do
-    if guest 'systemctl is-active --quiet gdm && pgrep -u lab -x gnome-shell >/dev/null' >/dev/null 2>&1; then return 0; fi
+    if guest_action ready >/dev/null 2>&1; then return 0; fi
     sleep 5
   done
   return 1
@@ -274,6 +274,17 @@ start_vm "$LAB/rebuilt" off
 provision 2>&1 | tee "$LAB/evidence/rebuild-install.log"
 scp "${SCP_OPTS[@]}" files-recovery.tar.gz lab@127.0.0.1:/tmp/fgc-files-recovery.tar.gz
 guest_action rebuild 2>&1 | tee "$LAB/evidence/rebuilt.log"
+guest_action session
+rebuilt_initial="$(boot_id)"
+guest 'sudo systemctl reboot' || true
+for _ in {1..180}; do
+  current="$(boot_id 2>/dev/null || true)"
+  [[ -n "$current" && "$current" != "$rebuilt_initial" ]] && break
+  sleep 5
+done
+[[ -n "$current" && "$current" != "$rebuilt_initial" ]]
+wait_session
+guest_action rebuilt-check
 guest_action session
 guest_action health
 evidence rebuilt_boot_id "$(boot_id)"
