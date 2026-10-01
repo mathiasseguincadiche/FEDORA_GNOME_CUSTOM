@@ -26,6 +26,8 @@ SCP_OPTS=(-i "$SSH_KEY" -P "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking
 VM_PID=''
 TPM_PID=''
 PHASE=initial
+# Fixed lab commands intentionally expand here before being sent over SSH.
+# shellcheck disable=SC2029
 guest() { ssh "${SSH_OPTS[@]}" lab@127.0.0.1 "$@"; }
 # COMMIT is validated by initialize(), and the command is fixed in this file.
 guest_action() {
@@ -57,6 +59,8 @@ cleanup() {
   exit "$rc"
 }
 trap cleanup EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 sudo apt-get update
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   qemu-system-x86 qemu-utils cloud-image-utils ovmf swtpm openssh-client \
@@ -87,6 +91,19 @@ printf '%s  %s\n' "$FEDORA_CLOUD_SHA256" "$FEDORA_CLOUD_IMAGE" | sha256sum --che
 qemu-img check "$FEDORA_CLOUD_IMAGE"
 mark image
 evidence image_sha256 "$FEDORA_CLOUD_SHA256"
+# Fetch reviewed bytes on the runner and transfer them to the guest. Both
+# sides enforce the lock hashes; guest TLS verification is never disabled.
+# shellcheck source=config/gnome-extensions.lock
+source "$ROOT/config/gnome-extensions.lock"
+mkdir extensions
+for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+  url_key="${prefix}_SOURCE_URL"
+  sha_key="${prefix}_SHA256"
+  curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 \
+    "${!url_key}" -o "extensions/$prefix.zip"
+  printf '%s  %s\n' "${!sha_key}" "extensions/$prefix.zip" | sha256sum --check
+done
+tar -czf extensions.tar.gz extensions
 git -C "$ROOT" archive "$COMMIT" | gzip > repo.tar.gz
 ssh-keygen -q -t ed25519 -N '' -f "$SSH_KEY"
 PUBKEY="$(cat "$SSH_KEY.pub")"
@@ -176,6 +193,8 @@ provision() {
   guest 'sudo mkdir -p /opt/fgc-lab/repo && sudo tar -C /opt/fgc-lab/repo -xzf /tmp/repo.tar.gz'
   # shellcheck disable=SC2029
   guest "printf '%s\n' '$COMMIT' | sudo tee /opt/fgc-lab/repo/CI_COMMIT >/dev/null"
+  scp "${SCP_OPTS[@]}" extensions.tar.gz lab@127.0.0.1:/tmp/
+  guest 'sudo tar -C /opt/fgc-lab -xzf /tmp/extensions.tar.gz'
   guest_action install
   wait_session
 }

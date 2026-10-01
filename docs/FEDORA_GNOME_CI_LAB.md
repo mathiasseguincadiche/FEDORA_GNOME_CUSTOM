@@ -3,8 +3,8 @@
 Ce prétest fonctionne exclusivement sur un runner GitHub jetable. Il ne lance
 aucune commande sur le PC de l'opérateur. Le job réutilisable
 `.github/workflows/fedora-gnome-vm.yml` est appelé par `Tests` à chaque push/PR.
-Le contexte obligatoire `contracts` attend sa réussite, ainsi que les deux
-jobs Fedora existants. La publication attend donc aussi ce laboratoire.
+Le contexte obligatoire `contracts` attend sa réussite, celle de la suite
+rapide `logic-contracts` et des deux jobs Fedora existants. La publication attend donc aussi ce laboratoire.
 
 ## Image et démarrage
 
@@ -28,7 +28,10 @@ GNOME 50 est installé sur Fedora Cloud, puis lancé par GDM en session Wayland
 réelle. L'autologin et les réglages empêchant la veille sont propres à cette
 image éphémère. SELinux reste enforcing et firewalld actif. Les trois extensions
 DING, Show Desktop Plus et Resource Monitor utilisent l'installateur de
-production et les artefacts/hash du verrou existant.
+production et les artefacts/hash du verrou existant. Les ZIP sont téléchargés
+avec TLS strict par le runner, vérifiés puis transférés dans la VM ; le même
+installateur revérifie leur hash et leurs métadonnées depuis ce cache absolu.
+Aucun téléchargement non authentifié ni option curl insecure n'est utilisé.
 
 ## Exercices et critères
 
@@ -84,3 +87,9 @@ pas la restauration de tous les paquets, jeux ou services de la workstation.
 Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et
 [les trois gates](THREE_GATE_VALIDATION.md) définissent les essais opérateur
 restants sur le même commit. Un PASS CI conserve toutes ces limites.
+
+Le check obligatoire `contracts` s'exécute avec `always()` puis contrôle
+explicitement que chacun des quatre jobs a conclu `success`. Un job dépendant
+simplement sauté peut être accepté comme check requis par GitHub ; ici tout
+`skipped`, `failure` ou `cancelled` produit un véritable échec du check agrégé.
+Voir [les conditions GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions).

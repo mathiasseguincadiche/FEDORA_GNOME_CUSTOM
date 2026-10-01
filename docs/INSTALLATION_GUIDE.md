@@ -256,13 +256,13 @@ L'APPLY refuse notamment :
 - un snapshot pré-APPLY absent/inaccessible ;
 - Secure Boot actif ou indéterminé.
 
-Le module kernel installe **directement le dernier Kernel Vanilla stable**, applique `DNF installonly_limit=2`, définit ce noyau comme défaut GRUB et conserve au maximum le noyau immédiatement précédent.
+Le module kernel installe **directement le dernier noyau stable du canal configuré (`cachyos` par défaut)**, applique `DNF installonly_limit=2`, définit ce noyau comme défaut GRUB et conserve au maximum le noyau immédiatement précédent.
 
 Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO` et `/data/Jeux`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
 
 **Checkpoint :** APPLY doit terminer sans garde-fou contourné. Un refus impose de corriger la précondition qui l'a déclenché.
 
-## 9. Premier boot sur le Kernel Vanilla N
+## 9. Premier boot sur le CachyOS BORE N
 
 Après APPLY :
 
@@ -362,7 +362,7 @@ Préparer une mise à jour complète :
 ./control.sh update all
 ```
 
-Le chemin complet effectue le backup, résout le dernier Kernel Vanilla stable, impose `installonly_limit=2` et prépare la transaction RPM DNF5 offline. Vérifier l'état puis déclencher le reboot offline :
+Le chemin complet effectue le backup, résout le dernier noyau stable du canal configuré (`cachyos` par défaut), impose `installonly_limit=2` et prépare la transaction RPM DNF5 offline. Vérifier l'état puis déclencher le reboot offline :
 
 ```bash
 ./control.sh update status
@@ -375,7 +375,8 @@ Après le redémarrage :
 ./control.sh update finalize
 ```
 
-La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, vérifie que le nouveau kernel N est installé, démarré et défaut GRUB, puis exécute `dnf5 remove --oldinstallonly --limit=2`. Il ne reste donc que N et N-1. Ensuite viennent Flatpak en mode complet, consultation firmware et diagnostic global.
+La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, vérifie que le nouveau kernel N est installé, démarré et défaut GRUB, puis exécute `dnf5 remove --oldinstallonly --limit=2`. Il ne reste donc que N et N-1 par canal. Avec CachyOS, le canal
+`kernel-core` reste disponible comme secours avec sa propre rétention. Ensuite viennent Flatpak en mode complet, consultation firmware et diagnostic global.
 
 Exemple :
 
@@ -428,7 +429,9 @@ Retour d'urgence aux paquets Fedora :
 scripts/kernel/rollback-to-fedora.sh
 ```
 
-Ce dernier chemin est une récupération explicite, pas un fallback Fedora conservé en permanence.
+Ce dernier chemin désactive les COPR noyau et remet les paquets Fedora par
+défaut. Avec CachyOS, une entrée de secours `kernel-core` reste également
+présente dans GRUB ; la limite de deux versions s'applique par canal.
 
 Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) avant toute restauration et [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant tout contournement.
 

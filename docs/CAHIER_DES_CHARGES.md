@@ -32,14 +32,14 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 
 ## P0 — kernel
 
-- Fedora Kernel Vanilla stable ;
+- CachyOS BORE stable (canal `cachyos`, défaut Golden) ;
 - minimum 7.2.2 ;
 - dernier stable installé directement comme N lors de la convergence et des mises à jour Fedora complètes ;
 - N devient le défaut GRUB normal ;
 - N-1 reste installé comme rollback ;
-- maximum deux versions `kernel-core` installées (`installonly_limit=2`) ;
+- maximum deux versions par canal (`kernel-cachyos-core` et `kernel-core`) installées (`installonly_limit=2`) ;
 - les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly` ;
-- aucun fallback Fedora permanent obligatoire ;
+- le canal `kernel-core` reste une entrée de secours quand CachyOS est choisi ;
 - Secure Boot actif bloque ce chemin tant qu'un workflow de confiance/signature explicite n'est pas mis en œuvre ;
 - une évolution kernel peut rendre la certification Golden `STALE`, mais n'attend pas une promotion préalable avant le premier boot.
 

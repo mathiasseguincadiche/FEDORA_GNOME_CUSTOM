@@ -274,3 +274,8 @@ de ce job : un échec ou un skip bloque le contexte obligatoire et la publicatio
 Voir [la portée exacte et les rapports](FEDORA_GNOME_CI_LAB.md).
 Les gates WSL2/VirtualBox/bare-metal, la validation visuelle et le démarrage
 CachyOS restent à qualifier sur leurs environnements réels.
+
+Le check agrégé `contracts` s'exécute même après un échec grâce à `always()`
+et refuse explicitement une dépendance échouée, annulée ou sautée. La suite
+rapide `logic-contracts` démarre indépendamment du laboratoire pour exposer
+les régressions de code sans attendre les boots VM.

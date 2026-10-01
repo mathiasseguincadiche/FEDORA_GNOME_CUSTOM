@@ -1,4 +1,6 @@
-# Versioned rolling Kernel Vanilla policy.
+# Versioned rolling policy for the configured kernel channel (ADR 0012).
+# max_installed_kernels applies per package/channel; kernel-core rescue remains
+# installed alongside CachyOS. keep_fedora_fallback means no additional pinned fallback.
 # This file is declarative policy metadata and is intentionally outside *.conf
 # so the canonical runtime config schema/keyset remains stable.
 mode=rolling-n-nminus1

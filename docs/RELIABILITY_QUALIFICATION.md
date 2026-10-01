@@ -86,3 +86,7 @@ conclure à un PASS. Il ne couvre pas l'APPLY de production, Anaconda/Kickstart,
 le démarrage CachyOS, Windows ni les trois gates officielles. Les exercices
 opérateur du tableau restent requis sur la vraie configuration selon le
 [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md).
+
+Utiliser la [fiche de preuves opérateur](QUALIFICATION_EVIDENCE_TEMPLATE.md)
+pour suivre les essais de reprise, GNOME et composants sans confondre un
+prétest GitHub avec un résultat matériel. Tous ses résultats commencent non exécutés.
