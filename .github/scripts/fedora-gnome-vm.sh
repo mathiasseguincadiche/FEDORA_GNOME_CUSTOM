@@ -195,7 +195,7 @@ provision() {
   # shellcheck disable=SC2029
   guest "printf '%s\n' '$COMMIT' | sudo tee /opt/fgc-lab/repo/CI_COMMIT >/dev/null"
   scp "${SCP_OPTS[@]}" extensions.tar.gz lab@127.0.0.1:/tmp/
-  guest 'sudo tar -C /opt/fgc-lab -xzf /tmp/extensions.tar.gz'
+  guest 'sudo tar -C /opt/fgc-lab -xzf /tmp/extensions.tar.gz && sudo chown -R lab:lab /opt/fgc-lab/extensions'
   guest_action install
   wait_session
 }

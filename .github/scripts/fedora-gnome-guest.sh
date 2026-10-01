@@ -61,6 +61,9 @@ case "${1:-}" in
   install)
     grep -Eq '^VERSION_ID="?44"?$' /etc/os-release
     [[ "$(getenforce)" == Enforcing ]]
+    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+      as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
+    done
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
       tpm2-tools firewalld python3 curl gjs
