@@ -17,8 +17,15 @@ errors = []
 # a module, phase and exit code; plan/apply/source/internal failures always fail.
 EXPECTED_BLOCKERS = {
     ("system.preflight", "precheck", 20): "container runs as root",
-    ("system.kernel", "precheck", 20): "Secure Boot cannot be proven",
-    ("gnome.settings", "precheck", 20): "no GNOME settings schemas/session",
+    ("system.kernel", "precheck", 50): "Secure Boot cannot be proven",
+    ("baseline.preflight", "precheck", 20): "container has no UEFI firmware",
+    ("baseline.memory", "postcheck", 40): "runner has less than the target 48 GiB",
+    ("baseline.cpu_stability", "postcheck", 40): "runner is not a Ryzen 7700 with AMD-V",
+    ("baseline.nvme_health", "postcheck", 40): "runner does not expose the two T705",
+    ("baseline.gpu", "postcheck", 40): "runner does not expose an Arc B580 on xe",
+    ("hardware.graphics", "precheck", 1): "runner does not expose an Arc B580 on xe",
+    ("kvm.preflight", "precheck", 20): "container has no target AMD-V/KVM/Arc runtime",
+    ("kvm.network", "precheck", 20): "container has no running host firewall/network isolation guard",
     ("kvm.stack", "precheck", 20): "no real operator in root container",
     ("kvm.storage", "precheck", 20): "no dedicated /data mount",
 }

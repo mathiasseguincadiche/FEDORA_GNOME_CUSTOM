@@ -114,13 +114,21 @@ backup_engine_init() {
 # backup_engine_create KIND [--exclude PATTERN]... -- SOURCE...
 # Prints "<archive name> <archive id>" of the archive that was just written.
 backup_engine_create() {
-  local kind="$1" name json
+  local kind="$1" name json comment
   shift
   backup_engine_kind_valid "$kind" || return 2
   local -a opts=()
   while (($#)) && [[ "$1" != -- ]]; do
     [[ ( "$1" == --exclude || "$1" == --comment ) && -n "${2:-}" ]] || return 2
-    opts+=("$1" "$2"); shift 2
+    if [[ "$1" == --comment ]]; then
+      # Borg formats placeholders in --comment; escape JSON braces so the
+      # stored recovery manifest is literal JSON.
+      comment="$(python3 -c 'import sys; print(sys.argv[1].replace("{","{{").replace("}","}}"))' "$2")" || return 2
+      opts+=(--comment "$comment")
+    else
+      opts+=(--exclude "$2")
+    fi
+    shift 2
   done
   [[ "${1:-}" == -- ]] || return 2
   shift
@@ -312,7 +320,7 @@ print(json.dumps(m,sort_keys=True))' "$archive" <<<"$json"
 }
 
 backup_runtime_validate_full_marker() {
-  local marker="$1" repo archive snapshot manifest expected actual
+  local marker="$1" repo archive snapshot manifest expected actual key
   evidence_require_current_identity "$marker" || return 1
   for key in verdict integrity_check restore_test; do
     [[ "$(evidence_marker_value "$marker" "$key")" == PASS ]] || return 1

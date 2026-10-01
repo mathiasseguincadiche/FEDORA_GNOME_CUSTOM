@@ -21,7 +21,12 @@ cat > "$REPO_ROOT/lib/persistent_data.sh" <<'MOCK'
 # No real persistent-data mount in this fixture.
 MOCK
 cat > "$REPO_ROOT/lib/bootstrap.sh" <<'MOCK'
-engine_bootstrap() { source "$REPO_ROOT/lib/evidence.sh"; }
+engine_bootstrap() {
+  source "$REPO_ROOT/lib/evidence.sh"
+  effective_config_sha256() { printf '%064d\n' "${TEST_CONFIG:-1}"; }
+  module_plan_sha256() { printf '%064d\n' 2; }
+  evidence_hardware_fingerprint() { echo deferred:container; }
+}
 repo_commit() { printf '%040d\n' 1; }
 effective_config_sha256() { printf '%064d\n' "${TEST_CONFIG:-1}"; }
 module_plan_sha256() { printf '%064d\n' 2; }
