@@ -1,6 +1,6 @@
 # Backup, Restore et Disaster Recovery
 
-Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)) et applique un modèle fail-closed. Une sauvegarde n'est pas considérée valide parce qu'une commande `backup` a simplement terminé : le dépôt exige une preuve d'intégrité et, pour le pré-APPLY, un test réel de restauration d'un canary.
+Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)) et applique un modèle fail-closed. Une sauvegarde n'est pas considérée valide parce qu'une commande `backup` a simplement terminé : le dépôt exige une preuve d'intégrité et, pour le pré-APPLY et le backup complet, un test réel de restauration d'un canary.
 
 ## Contrat
 
@@ -205,7 +205,9 @@ Le dépôt n'étant pas chiffré, il n'y a **aucun secret à conserver** : sur u
 scripts/backup/disaster-recovery.sh
 ```
 
-Le script vérifie le dépôt (`borg check`) et la dernière archive puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
+Ce générateur de plan exige `borgbackup`, `jq` et Python 3.
+
+Le script sélectionne uniquement la dernière archive **full**, valide son manifeste de récupération, puis relit ses données (`borg check --verify-data`) puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
 
 ## Règle QCOW2
 
@@ -254,3 +256,56 @@ le runtime quotidien installé, la rétention et le script de restauration. Il
 vérifie contenu, permissions, lien symbolique, exclusion du dossier secrets,
 refus d'écraser un staging existant, refus d'un nom d'archive malformé, preuve
 pré-APPLY exacte (nom, identifiant, type) et refus d'un dépôt chiffré. Son disque externe est simulé : ce test n'émet aucune preuve Gate 3.
+
+## Certification et capacité depuis 0.19
+
+Seul un code de création Borg **0** permet d'enregistrer un succès. Un code 1
+peut correspondre à des fichiers illisibles/omis ; la tentative échoue même si
+Borg a écrit une archive. Le timer conserve un état d'échec, détecté par le
+doctor quotidien. Un disque absent reste un état `skipped`, distinct du succès.
+
+Le backup complet restaure et compare un canary, puis écrit atomiquement un
+marker contenant dépôt, nom/id, commit, empreintes configuration/plan/matériel,
+contrôle d'intégrité, restauration et couverture VM. Le doctor de certification
+réouvre cette **archive exacte**, contrôle son manifeste et extrait son canary.
+Une archive supprimée, un dépôt différent ou une configuration modifiée invalide
+la preuve. Les anciens markers complets doivent être régénérés.
+
+Le manifeste de récupération est inclus dans le staging et dans le commentaire
+Borg de l'archive complète. Le plan précise le commit à récupérer et si les
+disques VM ont été inclus, avec le nombre de domaines. Sans `--include-vms`,
+les XML seuls ne prouvent jamais une récupération VM. Une archive quotidienne,
+même plus récente, reste réservée à la récupération des fichiers utilisateur.
+
+Le staging par défaut reste sous `state/backup-staging`. Pour choisir un autre
+espace de travail :
+
+```bash
+scripts/backup/backup-now.sh --include-vms --staging-root /chemin/absolu/backup-staging
+```
+
+Avant la capture système et chaque copie VM, l'espace disponible doit couvrir
+la taille estimée et conserver 1 Gio de réserve. Les disques VM sont dimensionnés
+avec `qemu-img measure`. Avant l'archivage local, la taille des sources et la
+réserve configurée (20 Gio par défaut) doivent tenir sur le support externe.
+Cette estimation est conservatrice : compression et déduplication ne permettent
+pas de contourner le contrôle. La capacité d'un dépôt distant ne peut pas être
+mesurée localement ; une erreur Borg y reste bloquante.
+
+La qualification réelle suit [le parcours de fiabilité](RELIABILITY_QUALIFICATION.md).
+Aucun conteneur ne certifie le démarrage Fedora, la session GNOME, le TPM d'une VM
+récupérée ou le matériel physique.
+
+Les créations commencent dans le namespace `fgc-pending-<type>-*`. Seul un
+code de création 0 permet la promotion vers `fgc-full-*`, `fgc-daily-*` ou
+`fgc-preapply-*`, avec relecture de l'identifiant après renommage. Une archive
+écrite avec avertissement reste inspectable dans `fgc-pending-*` et ne peut
+devenir automatiquement une base de récupération. Ces archives sont exclues
+de la rétention automatique ; leur inspection/nettoyage reste une action opérateur.
+
+Pour Gate 3, la politique `BACKUP_VM_DISKS=true` avec KVM actif impose un backup
+`--include-vms`. La certification compare le nombre et l'empreinte de la liste
+triée des domaines sauvegardés avec la liste actuelle de libvirt, accessible
+avec les droits sudo déjà disponibles. Une sauvegarde de métadonnées seule ou
+une liste de VM modifiée bloque la certification ; la commande de backup HOST
+sans disques VM reste disponible pour les sauvegardes intermédiaires.

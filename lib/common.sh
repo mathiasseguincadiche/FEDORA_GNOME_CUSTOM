@@ -8,6 +8,38 @@ is_true() {
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# Read the complete journal before searching. Failed/empty reads are not health
+# proofs; grep never closes a live journalctl pipe early (SIGPIPE).
+journal_require_clean() {
+  local pattern="$1" journal error_file rc=0
+  shift
+  error_file="$(mktemp)" || return 2
+  if ! journal="$(journalctl --no-pager "$@" 2>"$error_file")" || [[ -z "$journal" || -s "$error_file" ]]; then
+    rm -f "$error_file"
+    printf 'Journal unavailable or incomplete; refusing a health PASS.\n' >&2
+    return 2
+  fi
+  rm -f "$error_file"
+  # A whole-boot read without any records cannot prove health. A bounded
+  # --since window may legitimately contain no new records.
+  if [[ "$journal" == '-- No entries --' && " $* " != *' --since '* ]]; then
+    printf 'Journal has no records; refusing a health PASS.\n' >&2
+    return 2
+  fi
+  grep -Ei -- "$pattern" <<<"$journal" >/dev/null || rc=$?
+  case "$rc" in
+    1) return 0 ;;
+    0) printf 'Critical kernel journal signature detected.\n' >&2; return 1 ;;
+    *) printf 'Kernel journal search failed.\n' >&2; return 2 ;;
+  esac
+}
+
+kernel_journal_require_clean() {
+  local pattern="$1"
+  shift
+  journal_require_clean "$pattern" -k -b "$@"
+}
+
 normalize_hex() {
   local value="${1,,}"
   printf '%s\n' "${value#0x}"

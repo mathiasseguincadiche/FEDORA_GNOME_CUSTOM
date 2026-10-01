@@ -42,6 +42,9 @@ backup_engine_repo_ready || fail 'repository unreachable, or encrypted: the Gold
 staging="$STATE_ROOT/preapply-staging/$RUN_ID"
 rm -rf "$staging"
 mkdir -p "$staging/inventory" "$staging/libvirt"
+trap 'rm -rf "$staging"' EXIT
+system_bytes="$(sudo du -scB1 /etc /boot | awk 'END {print $1}')"
+backup_runtime_require_staging_space "$staging" "$system_bytes" || fail 'insufficient staging capacity for /etc and /boot'
 backup_runtime_capture_inventory "$staging/inventory"
 printf 'fedora-gnome-custom restore canary\ncommit=%s\neffective_config_sha256=%s\n' \
   "$(repo_commit)" "$(effective_config_sha256)" > "$staging/restore-canary.txt"
@@ -56,12 +59,13 @@ sources=("$staging")
 [[ -d "$HOME/.local/share/gnome-shell" ]] && sources+=("$HOME/.local/share/gnome-shell")
 while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(git -C "$REPO_ROOT" ls-files -z)
 
+backup_runtime_require_source_capacity "$repo" "${sources[@]}" || fail 'insufficient repository capacity for source data'
 printf 'Creating pre-APPLY archive (unencrypted Borg)...\n'
 read -r archive snap < <(backup_engine_create preapply -- "${sources[@]}") || fail 'Borg archive creation failed'
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || fail 'Borg did not return one valid archive id'
 
 printf 'Running Borg repository check and full data verification of this archive...\n'
-backup_engine_check preapply || fail 'Borg integrity check failed'
+backup_engine_check preapply "$archive" || fail 'Borg integrity check failed'
 
 printf 'Running restore-canary proof...\n'
 restore_test="$(mktemp -d)"

@@ -91,13 +91,37 @@ borg list --short | grep -Fxq "$pre"
   backup_engine_env "$BACKUP_REPOSITORY"
   read -r pre_name pre_id < <(backup_engine_latest preapply)
   marker="$tmp/preapply-backup.ok"
-  printf 'snapshot=%s\narchive=%s\nrepository=%s\n' "$pre_id" "$pre_name" "$BACKUP_REPOSITORY" > "$marker"
+  printf 'verdict=PASS\nintegrity_check=PASS\nrestore_test=PASS\nsnapshot=%s\narchive=%s\nrepository=%s\n' "$pre_id" "$pre_name" "$BACKUP_REPOSITORY" > "$marker"
   backup_runtime_validate_preapply_marker "$marker"
   printf 'snapshot=%s\narchive=%s\nrepository=%s\n' "$archive_id" "$archive" "$BACKUP_REPOSITORY" > "$marker"
   if backup_runtime_validate_preapply_marker "$marker"; then echo 'daily archive accepted as pre-APPLY proof' >&2; exit 1; fi
   printf 'snapshot=%s\narchive=%s\nrepository=%s\n' "$(printf '%064d' 0)" "$pre_name" "$BACKUP_REPOSITORY" > "$marker"
   if backup_runtime_validate_preapply_marker "$marker"; then echo 'forged archive id accepted' >&2; exit 1; fi
 )
+
+# An attempted backup with a warning cannot retain yesterday's success marker.
+FGC_REAL_BORG="$(command -v borg)"
+export FGC_REAL_BORG
+cat > "$tmp/bin/borg" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == create ]]; then
+  printf '{"archive":{"name":"ignored","id":"%064d"}}\n' 1
+  exit "${FGC_CREATE_RC:-1}"
+fi
+exec "$FGC_REAL_BORG" "$@"
+MOCK
+chmod +x "$tmp/bin/borg"
+for FGC_CREATE_RC in 1 2; do
+  export FGC_CREATE_RC
+  rc=0
+  FEDORA_GNOME_CUSTOM_RUNTIME_ROOT="$runtime" bash "$runtime/bin/daily-user-backup" >/dev/null 2>&1 || rc=$?
+  [[ "$rc" == 40 && ! -e "$XDG_STATE_HOME/fedora-gnome-custom/last-daily-backup.ok" ]]
+  [[ -s "$XDG_STATE_HOME/fedora-gnome-custom/last-daily-backup.failed" ]]
+done
+rm "$tmp/bin/borg"
+FEDORA_GNOME_CUSTOM_RUNTIME_ROOT="$runtime" bash "$runtime/bin/daily-user-backup"
+[[ -s "$XDG_STATE_HOME/fedora-gnome-custom/last-daily-backup.ok" ]]
+[[ ! -e "$XDG_STATE_HOME/fedora-gnome-custom/last-daily-backup.failed" ]]
 
 # 6. An encrypted repository is refused by policy (and never prompts).
 enc="$tmp/encrypted"

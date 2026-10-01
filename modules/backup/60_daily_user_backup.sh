@@ -117,7 +117,7 @@ backup_daily_write_units() {
   unit_tmp="$(mktemp "$HOME/.config/systemd/user/.fgc-unit.XXXXXX")" || return $?
   cat > "$unit_tmp" <<EOF || return $?
 [Unit]
-Description=Encrypted daily Fedora workstation user backup
+Description=Unencrypted Borg daily Fedora workstation user backup
 After=network-online.target
 
 [Service]

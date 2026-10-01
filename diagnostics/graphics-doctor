@@ -18,7 +18,6 @@ if command_exists vainfo; then
   if [[ -n "$node" ]] && vainfo --display drm --device "$node" >/dev/null 2>&1; then check OK VA-API "$node media acceleration visible"; else check WARN VA-API 'B580 render-node probe unavailable'; fi
 else check WARN VA-API 'vainfo unavailable'; fi
 if [[ "${XDG_SESSION_TYPE:-unknown}" == wayland ]]; then check OK Wayland 'current session'; else check WARN Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
-errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|PCIe Bus Error: severity=Uncorrected' | tail -n 20 || true)"
-if [[ -z "$errors" ]]; then check OK 'xe/DRM/PCIe journal' clean; else check KO 'xe/DRM/PCIe journal' 'critical reset/hang/fault/uncorrected PCIe event found'; fi
+if kernel_journal_require_clean '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|PCIe Bus Error: severity=Uncorrected'; then check OK 'xe/DRM/PCIe journal' clean; else check KO 'xe/DRM/PCIe journal' 'journal unavailable or critical GPU/display/PCIe signature found'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

@@ -40,7 +40,7 @@ gpu_soak(){
     [[ "$rc" == 124 || "$rc" == 0 ]] || bad=1
   done
   (( bad == 0 )) || { ui_error "Vulkan soak process failed; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
-  if journalctl -k -b --since "$start" --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(gpu hang|wedged|reset failed|fault|error)|PCIe Bus Error: severity=Uncorrected|AER:.*Uncorrected'; then
+  if ! kernel_journal_require_clean '\bxe\b.*(gpu hang|wedged|reset failed|fault|error)|PCIe Bus Error: severity=Uncorrected|AER:.*Uncorrected' --since "$start"; then
     ui_error 'Critical xe/PCIe/AER signal during Vulkan soak'; exit "$EXIT_POSTCHECK_FAILED"
   fi
   "$REPO_ROOT/diagnostics/graphics-doctor" --quiet

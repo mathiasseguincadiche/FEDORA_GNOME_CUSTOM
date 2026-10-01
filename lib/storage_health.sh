@@ -84,8 +84,7 @@ storage_nvme_validate_controller() {
 }
 
 storage_nvme_kernel_health() {
-  ! journalctl -k -b --no-pager 2>/dev/null | grep -Eqi \
-    'nvme.*(I/O error|reset controller|controller is down|device not ready|timeout)|PCIe Bus Error: severity=Uncorrected|AER:.*Uncorrected'
+  kernel_journal_require_clean 'nvme.*(I/O error|reset controller|controller is down|device not ready|timeout)|PCIe Bus Error: severity=Uncorrected|AER:.*Uncorrected'
 }
 
 storage_nvme_validate_all_expected() {

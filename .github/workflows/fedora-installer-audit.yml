@@ -15,7 +15,9 @@ jobs:
       # falls back to a REST API tarball with no .git directory, `git rev-parse`
       # then fails and backup.daily (which pins the applied commit) fails.
       - name: Install audit dependencies
-        run: dnf -y install python3 git util-linux procps-ng pciutils systemd jq
+        run: dnf -y install python3 git util-linux procps-ng pciutils systemd jq gsettings-desktop-schemas gnome-shell flatpak iproute firewalld nftables
+      - name: Configure the real Flatpak remote for provenance prechecks
+        run: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Trust the checkout inside the container
         # The workspace is owned by the runner user, not by root in the
@@ -36,6 +38,7 @@ jobs:
           rc=0
           bash install.sh --dry-run --collect-all > installer-audit.log 2>&1 || rc=$?
           cat installer-audit.log
+          cat reports/run-ci-installer-audit.json
           if ! python3 scripts/ci/check-installer-audit.py "$rc"; then
             tail -n 8 installer-audit.log | sed 's/^/::error title=audit log tail::/'
             exit 1

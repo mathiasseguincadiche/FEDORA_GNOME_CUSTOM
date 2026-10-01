@@ -12,6 +12,15 @@ fi
 # shellcheck disable=SC1090
 source "$helper"
 backup_runtime_bundle_init
+# A previous success cannot stand in for this attempt.
+rm -f "$STATE_ROOT/last-daily-backup.ok"
+daily_finish() {
+  local rc=$?
+  if (( rc != 0 )); then
+    printf 'utc=%s\nrc=%s\nreason=backup-failed\n' "$(date -u +%FT%TZ)" "$rc" > "$STATE_ROOT/last-daily-backup.failed"
+  fi
+}
+trap daily_finish EXIT
 
 repo="$(backup_runtime_resolve_repository 2>/dev/null || true)"
 if [[ -z "$repo" ]] || ! backup_engine_require >/dev/null 2>&1; then
@@ -111,6 +120,7 @@ read -r archive snap < <(backup_engine_create daily --exclude "$exclude_secrets"
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid daily archive id.' >&2; exit 40; }
 
 {
+  printf 'verdict=PASS\nengine=borg\nencryption=none\ncreation_rc=0\n'
   printf 'snapshot=%s\n' "$snap"
   printf 'archive=%s\n' "$archive"
   printf 'runtime_sha=%s\n' "$FEDORA_GNOME_CUSTOM_RUNTIME_SHA"
@@ -118,9 +128,8 @@ read -r archive snap < <(backup_engine_create daily --exclude "$exclude_secrets"
   printf 'repository=%s\n' "$repo"
   printf 'source_count=%s\n' "${#sources[@]}"
   for source in "${sources[@]}"; do printf 'source=%s\n' "$source"; done
-} > "$STATE_ROOT/last-daily-backup.ok"
-chmod 0600 "$STATE_ROOT/last-daily-backup.ok"
-rm -f "$STATE_ROOT/last-daily-backup-skipped"
+} | backup_runtime_atomic_write "$STATE_ROOT/last-daily-backup.ok"
+rm -f "$STATE_ROOT/last-daily-backup-skipped" "$STATE_ROOT/last-daily-backup.failed"
 
 if command -v notify-send >/dev/null 2>&1; then
   notify-send 'Sauvegarde Fedora' 'Sauvegarde quotidienne terminée.' >/dev/null 2>&1 || true

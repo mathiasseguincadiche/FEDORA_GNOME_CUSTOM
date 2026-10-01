@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: release-candidate
@@ -18,6 +19,7 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -40,6 +42,24 @@ jobs:
           [[ "$(grep -c '^RELEASE_NAME=' "$manifest")" -eq 1 ]]
           [[ "$(grep -c '^RELEASE_PRERELEASE=' "$manifest")" -eq 1 ]]
           printf 'tag=%s\nname=%s\n' "$tag" "$name" >> "$GITHUB_OUTPUT"
+      - name: Require successful workflows on this exact main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ready=false
+          for attempt in {1..80}; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&event=push&per_page=100" > /tmp/release-runs.json
+            rc=0
+            python3 scripts/ci/check-release-gate.py "$GITHUB_SHA" "$GITHUB_REPOSITORY" < /tmp/release-runs.json || rc=$?
+            if (( rc == 0 )); then ready=true; break; fi
+            (( rc == 3 )) || exit "$rc"
+            sleep 15
+          done
+          $ready || { echo 'Release blocked: exact commit checks did not all succeed.' >&2; exit 1; }
+          live_main="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          [[ "$live_main" == "$GITHUB_SHA" ]] || { echo 'Release blocked: main advanced during validation.' >&2; exit 1; }
       - name: Publish idempotent GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}

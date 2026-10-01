@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/lib/common.sh"
 source "$ROOT/modules/baseline/03_cpu_stability.sh"
 source "$ROOT/modules/baseline/04_nvme_health.sh"
 EXIT_POSTCHECK_FAILED=40
