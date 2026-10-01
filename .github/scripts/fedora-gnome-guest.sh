@@ -20,6 +20,11 @@ failure() {
   trap - ERR
   echo "Guest action ${1:-unknown} failed (exit=$rc); collecting diagnostics." >&2
   systemctl --failed --no-pager >&2 || true
+  for key in enabled-extensions disabled-extensions disable-user-extensions; do
+    printf 'GNOME setting %s: ' "$key" >&2
+    as_user gsettings get org.gnome.shell "$key" >&2 || true
+  done
+  journalctl --no-pager -b _COMM=gnome-shell -n 100 >&2 || true
   journalctl --no-pager -b -u gdm -u "user@$LAB_UID.service" -n 120 >&2 || true
   for log in /tmp/fgc-critical.log /tmp/fgc-coredumps.log /tmp/fgc-failed-units.log /tmp/fgc-user-failed-units.log; do
     [[ ! -f "$log" ]] || cat "$log" >&2
@@ -49,7 +54,19 @@ require_session() {
   as_user gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell \
     --method org.freedesktop.DBus.Peer.Ping
 }
+extension_settings() {
+  for key in enabled-extensions disabled-extensions disable-user-extensions; do
+    printf '%s=' "$key"
+    as_user gsettings get org.gnome.shell "$key"
+  done
+}
+check_extension_settings() {
+  extension_settings > /tmp/fgc-extension-settings.actual
+  cmp /var/lib/fgc-lab/extension-settings.expected /tmp/fgc-extension-settings.actual
+}
+
 check_extensions() {
+  check_extension_settings
   local uuid output
   for uuid in "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID"; do
     # Shell activation is asynchronous. Observe it; never repair a reboot here.
@@ -87,7 +104,7 @@ case "${1:-}" in
     done
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
-      tpm2-tools firewalld python3 curl gjs dbus-daemon
+      tpm2-tools firewalld python3 curl gjs
     passwd -d "$LAB_USER"
     systemctl enable --now firewalld
     mkdir -p /var/lib/fgc-lab
@@ -111,14 +128,17 @@ CONF
       as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
         bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
     done
-    as_user dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay 0
-    as_user dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled false
-    as_user dbus-run-session -- gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
+    # Use the persistent user bus: multiple private dconf daemons can race.
+    as_user systemctl --user daemon-reload
+    as_user gsettings set org.gnome.desktop.session idle-delay 0
+    as_user gsettings set org.gnome.desktop.screensaver lock-enabled false
+    as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
     # Persist the selected extensions before the first GDM session.
     # Reboot/recovery checks only observe these settings and active states.
-    as_user dbus-run-session -- gsettings set org.gnome.shell enabled-extensions \
+    as_user gsettings set org.gnome.shell enabled-extensions \
       "['$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID']"
-    as_user dbus-run-session -- gsettings set org.gnome.shell disable-user-extensions false
+    as_user gsettings set org.gnome.shell disable-user-extensions false
+    extension_settings > /var/lib/fgc-lab/extension-settings.expected
     dnf clean all
     systemctl set-default graphical.target
     systemctl start gdm
