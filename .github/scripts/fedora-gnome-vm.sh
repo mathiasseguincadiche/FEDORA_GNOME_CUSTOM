@@ -36,6 +36,7 @@ mark() { python3 "$REPORTER" "$REPORT" pass "$1"; }
 evidence() { python3 "$REPORTER" "$REPORT" evidence "$1" "$2"; }
 collect() {
   if guest true >/dev/null 2>&1; then
+    guest 'sudo journalctl --no-pager -b' > "$LAB/evidence/$PHASE-early-journal.log" 2> "$LAB/evidence/$PHASE-early-journal.err" || true
     if guest_action collect; then
       scp "${SCP_OPTS[@]}" lab@127.0.0.1:/tmp/fgc-evidence.tar.gz \
         "$LAB/evidence/$PHASE.tar.gz" || true
@@ -100,6 +101,7 @@ users:
       - $PUBKEY
 ssh_pwauth: false
 disable_root: true
+preserve_hostname: true
 write_files:
   - path: /etc/fgc-ci-lab
     content: disposable GitHub Actions VM
@@ -167,6 +169,9 @@ wait_session() {
 provision() {
   wait_ssh
   guest 'sudo cloud-init status --wait --long'
+  # Set the disposable hostname after cloud-init; no hostnamed service is needed.
+  guest "sudo python3 -c 'import socket; socket.sethostname(b\"fgc-fedora-ci\")'"
+  guest "printf '%s\\n' fgc-fedora-ci | sudo tee /etc/hostname >/dev/null"
   scp "${SCP_OPTS[@]}" repo.tar.gz lab@127.0.0.1:/tmp/
   guest 'sudo mkdir -p /opt/fgc-lab/repo && sudo tar -C /opt/fgc-lab/repo -xzf /tmp/repo.tar.gz'
   # shellcheck disable=SC2029
