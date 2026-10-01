@@ -47,9 +47,13 @@ La release candidate courante est décrite par `.github/release-manifest.env`. L
 Pour la version courante :
 
 ```text
-VERSION = 0.18.1
-tag     = v0.18.1-rc.1
+VERSION = 0.19.0
+tag     = v0.19.0-rc.1
 ```
+
+Le check obligatoire `contracts` dépend des jobs `installer-audit` et `borg-fedora` du workflow Tests. Leur échec ou absence empêche donc le check obligatoire de réussir, avec le ruleset existant : aucune nouvelle permission d'administration n'est nécessaire pour rendre ces essais bloquants.
+
+Avant toute publication, le workflow attend le succès des sept workflows suivants sur le **même SHA**, avec un événement `push` sur `main` du dépôt source : Tests (incluant Fedora/Borg), Shell quality, Architecture non-regression, Fedora package preflight, Fedora host integration, Fedora desktop integration et Fedora installer audit. Une erreur, annulation, étape ignorée ou expiration du délai bloque la publication. Un succès sur une PR ou un autre commit ne suffit pas. Le SHA de `main` est revérifié avant publication.
 
 Le tag est créé sur le SHA exact du push `main` qui introduit le manifeste. Si une release du même nom existe déjà sur un autre SHA, le workflow échoue au lieu de déplacer silencieusement le tag.
 

@@ -13,6 +13,17 @@ root = pathlib.Path(__file__).resolve().parents[2]
 run_id = os.environ.get('RUN_ID', 'ci-installer-audit')
 errors = []
 
+# Only documented container limitations may fail. Each exception is scoped to
+# a module, phase and exit code; plan/apply/source/internal failures always fail.
+EXPECTED_BLOCKERS = {
+    ("system.preflight", "precheck", 20): "container runs as root",
+    ("system.kernel", "precheck", 20): "Secure Boot cannot be proven",
+    ("gnome.settings", "precheck", 20): "no GNOME settings schemas/session",
+    ("kvm.stack", "precheck", 20): "no real operator in root container",
+    ("kvm.storage", "precheck", 20): "no dedicated /data mount",
+}
+
+
 
 def fail(message):
     errors.append(message)
@@ -33,8 +44,13 @@ else:
         missing = [m for m in plan if m not in visited]
         fail(f'catalog not fully visited ({len(visited)}/{len(plan)}); first missing: {missing[:3]}')
     for row in report.get('modules', []):
-        if row['phase'] not in {'precheck', 'postcheck', 'complete'}:
+        if row.get('state') == 'OK' and row.get('phase') == 'complete' and row.get('rc') == 0:
+            continue
+        blocker = (row.get('module'), row.get('phase'), row.get('rc'))
+        if row.get('state') != 'KO' or blocker not in EXPECTED_BLOCKERS:
             fail(f"{row['module']}: unexpected {row['phase']} failure rc={row['rc']} ({row['detail']})")
+        else:
+            print(f"EXPECTED BLOCK: {blocker}: {EXPECTED_BLOCKERS[blocker]}")
     if int(sys.argv[1]) == 0 or report.get('overall') != 'FAIL':
         fail('a container must not certify the physical workstation')
 if list((root / 'state').glob('dryrun-*.ok')):

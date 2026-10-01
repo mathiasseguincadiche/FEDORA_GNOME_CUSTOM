@@ -7,12 +7,17 @@ permissions:
   contents: read
 
 jobs:
+  # This mandatory context cannot succeed if either Fedora job fails/skips.
   contracts:
+    needs: [installer-audit, borg-fedora]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install real Borg integration-test dependency
         run: sudo apt-get update && sudo apt-get install -y borgbackup jq
+      - run: bash tests/test_backup_certification_behavior.sh
+      - run: bash tests/test_ci_gates_behavior.sh
+      - run: bash tests/test_kernel_journal_behavior.sh
       - run: bash tests/test_reliability_regressions.sh
       - run: bash tests/test_nvme_probe_behavior.sh
       - run: bash tests/test_display_and_vm_state_behavior.sh
@@ -83,3 +88,63 @@ jobs:
       - run: bash tests/test_documentation_contract.sh
       - run: bash tests/test_documentation_code_alignment.sh
       - run: bash tests/test_github_presentation_contract.sh
+
+  installer-audit:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 20
+    steps:
+      # Git must exist BEFORE actions/checkout: without it, checkout silently
+      # falls back to a REST API tarball with no .git directory, `git rev-parse`
+      # then fails and backup.daily (which pins the applied commit) fails.
+      - name: Install audit dependencies
+        run: dnf -y install python3 git util-linux procps-ng pciutils systemd jq
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Trust the checkout inside the container
+        # The workspace is owned by the runner user, not by root in the
+        # container: without this, every git call fails ("dubious ownership").
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Prove this is a real Git checkout
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          commit="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" || { echo '::error title=installer audit::workspace is not a usable Git checkout'; exit 1; }
+          [[ "$commit" == "$GITHUB_SHA" || -n "${GITHUB_HEAD_REF:-}" ]] || { echo "::error title=installer audit::HEAD $commit differs from $GITHUB_SHA"; exit 1; }
+          echo "Git checkout OK: $commit"
+      - name: Exercise all catalog entries without certifying this container
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export RUN_ID=ci-installer-audit
+          rc=0
+          bash install.sh --dry-run --collect-all > installer-audit.log 2>&1 || rc=$?
+          cat installer-audit.log
+          cat reports/run-ci-installer-audit.json
+          if ! python3 scripts/ci/check-installer-audit.py "$rc"; then
+            tail -n 8 installer-audit.log | sed 's/^/::error title=audit log tail::/'
+            exit 1
+          fi
+      - name: Preserve audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installer-audit-${{ github.run_id }}
+          path: |
+            installer-audit.log
+            reports/run-ci-installer-audit.*
+            logs/ci-installer-audit/
+          if-no-files-found: error
+          retention-days: 14
+
+  borg-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 15
+    steps:
+      - name: Install Fedora Borg and test dependencies
+        run: dnf -y install borgbackup jq python3 git util-linux coreutils findutils diffutils
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: bash tests/test_borg_roundtrip.sh
+      - run: bash tests/test_backup_certification_behavior.sh
+      - run: bash tests/test_kernel_journal_behavior.sh

@@ -27,7 +27,7 @@ run_cpu_soak(){
   wait "$pid" || rc=$?; (( rc == 0 )) || { ui_error "CPU soak failed rc=$rc; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
   temp="$(physical_cpu_temp_millic 2>/dev/null || echo 0)"; [[ "$temp" =~ ^[0-9]+$ ]] && (( temp > max_temp )) && max_temp="$temp"
   (( max_temp > 0 && max_temp < max_allowed )) || { ui_error "CPU temperature evidence invalid/too high: ${max_temp}m°C (limit ${max_allowed})"; exit "$EXIT_POSTCHECK_FAILED"; }
-  if journalctl -k -b --since "$start" --no-pager 2>/dev/null | grep -Eqi 'MCE:.*Hardware Error|Machine Check|EDAC.*(UE|uncorrected)|thermal.*critical|watchdog.*hard LOCKUP'; then ui_error 'MCE/EDAC/thermal/watchdog error during CPU soak'; exit "$EXIT_POSTCHECK_FAILED"; fi
+  if ! kernel_journal_require_clean 'MCE:.*Hardware Error|Machine Check|EDAC.*(UE|uncorrected)|thermal.*critical|watchdog.*hard LOCKUP' --since "$start"; then ui_error 'MCE/EDAC/thermal/watchdog error during CPU soak'; exit "$EXIT_POSTCHECK_FAILED"; fi
   hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost postcheck failed'; exit "$EXIT_POSTCHECK_FAILED"; }
   sha="$(sha256sum "$log" | awk '{print $1}')"; baseline_write_evidence cpu-soak PASS "automated=true tool=stress-ng seconds=$seconds max_temp_millic=$max_temp sha256=$sha log=$log"; ui_check OK 'Ryzen CPU soak' "${seconds}s max=${max_temp}m°C sha256=$sha"
 }

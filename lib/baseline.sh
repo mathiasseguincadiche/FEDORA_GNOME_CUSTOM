@@ -47,13 +47,12 @@ baseline_automatic_health_check(){
   hardware_platform_validate_hwmon || { log_error BASELINE 'NCT6687D hwmon validation failed'; return 1; }
   physical_cooling_lock_valid || { log_error BASELINE 'pump/CPU/system fan channel lock missing/stale'; return 1; }
   driver_contract_validate || { log_error BASELINE 'critical kernel driver binding/provenance contract failed'; return 1; }
-  local gpu driver severe=0
+  local gpu driver
   gpu="$(baseline_find_expected_gpu)" || return 1; driver="${gpu#*|}"; [[ "$driver" == "${EXPECTED_GPU_KERNEL_DRIVER:-xe}" ]] || return 1
   (( $(baseline_nvme_model_count) >= ${EXPECTED_NVME_COUNT:-2} )) || return 1
   hardware_b580_pcie_validate || { log_error BASELINE 'Arc B580 PCIe x8 / ReBAR validation failed'; return 1; }
   storage_nvme_validate_all_expected || { log_error BASELINE 'strict T705 SMART/PCIe health validation failed'; return 1; }
-  severe="$(journalctl -k -b --no-pager 2>/dev/null | grep -Eic 'kernel panic|Oops:|watchdog.*hard LOCKUP|MCE:.*Hardware Error|Machine Check|EDAC.*(UE|uncorrected)|xe.*(wedged|reset failed)|PCIe Bus Error: severity=Uncorrected|nvme.*(I/O error|reset controller)' || true)"
-  (( severe == 0 ))
+  kernel_journal_require_clean 'kernel panic|Oops:|watchdog.*hard LOCKUP|MCE:.*Hardware Error|Machine Check|EDAC.*(UE|uncorrected)|xe.*(wedged|reset failed)|PCIe Bus Error: severity=Uncorrected|nvme.*(I/O error|reset controller)'
 }
 
 baseline_certify(){

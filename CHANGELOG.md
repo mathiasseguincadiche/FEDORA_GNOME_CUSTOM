@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.0 — 2026-10-01
+
+- Journaux noyau : lecture complète avant recherche ; erreur de lecture, journal vide et erreur de recherche bloquent les PASS CPU/NVMe/GPU/veille/USB.
+- Borg reste sans chiffrement. Tout avertissement de création bloque le succès ; une tentative quotidienne échouée invalide le précédent marker et expose son échec au diagnostic.
+- Pré-APPLY et backup complet vérifient l'archive exacte. Le backup complet restaure son canary et enregistre une preuve atomique liée au commit, à la configuration, au matériel et au dépôt. La certification réouvre l'archive et son manifeste.
+- Reprise OS/VM basée exclusivement sur une archive complète avec manifeste de récupération, commit et couverture VM explicites. Contrôle d'espace avant la capture système, les disques VM et l'écriture au dépôt ; option `--staging-root`.
+- Le check obligatoire `contracts` dépend désormais de l'audit Fedora et du roundtrip Borg Fedora 44. L'audit refuse les blocages inattendus ; la publication attend les workflows réussis du SHA exact sur main.
+- Nouveaux tests de journaux, certification/restauration/capacité et portes CI ; documentation de la qualification GNOME, récupération isolée et matériel encore à réaliser sur machine.
+
+
 ## 0.18.1 — 2026-09-27
 
 - **Porte d'APPLY testée par son comportement** : nouveau `tests/test_apply_gate_behavior.sh`, exécuté dans un vrai pseudo-terminal. Chaque condition bloque seule, avec son propre message (runtime non bare-metal, fonction désactivée, machine non approuvée, Git modifié, baseline absente, archive Borg pré-APPLY absente, absence de terminal). La preuve de dry-run est vérifiée avec la vraie bibliothèque de preuves : un changement de commit, de configuration ou de matériel la rend caduque. Seule la phrase exacte ouvre la porte.

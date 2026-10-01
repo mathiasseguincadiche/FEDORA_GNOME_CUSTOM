@@ -15,7 +15,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.18.1**
+**Golden Workstation 0.19.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -87,7 +87,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.18.1      Fedora 44      Runtime BAREMETAL
+  Projet      0.19.0      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
@@ -132,7 +132,7 @@ L'objectif n'est pas d'empiler des tweaks : le profil cherche une machine **stab
 | Pilier | Contrat |
 |---|---|
 | **HOST** | Fedora Linux 44 Workstation · GNOME 50 · Wayland · SELinux Enforcing · firewalld |
-| **Kernel & hardware** | Kernel Vanilla latest-stable · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
+| **Kernel & hardware** | Kernel CachyOS BORE par défaut (canal Fedora configurable) · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
 | **Données & recovery** | T705 système Btrfs · T705 `/data` EXT4 · Borg non chiffré (ADR 0014) · restauration staging-first |
 | **Workloads** | Desktop GNOME · applications pro · Steam/Proton · bibliothèque `/data/Jeux` · QEMU/KVM/libvirt |
 | **Opérations** | dry-run avant mutation · DNF5 offline · diagnostics · rollback kernel · firmware en consultation |
@@ -469,7 +469,7 @@ baseline hardware
       ↓
 ./control.sh install apply
       ↓
-reboot sur Kernel Vanilla N
+reboot sur le noyau N du canal choisi (CachyOS BORE par défaut)
 ```
 
 ## Gate 3 — certification physique

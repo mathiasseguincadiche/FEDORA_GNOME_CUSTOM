@@ -12,6 +12,15 @@ fi
 # shellcheck disable=SC1090
 source "$helper"
 backup_runtime_bundle_init
+# A previous success cannot stand in for this attempt.
+rm -f "$STATE_ROOT/last-daily-backup.ok"
+daily_finish() {
+  local rc=$?
+  if (( rc != 0 )); then
+    printf 'utc=%s\nrc=%s\nreason=backup-failed\n' "$(date -u +%FT%TZ)" "$rc" > "$STATE_ROOT/last-daily-backup.failed"
+  fi
+}
+trap daily_finish EXIT
 
 repo="$(backup_runtime_resolve_repository 2>/dev/null || true)"
 if [[ -z "$repo" ]] || ! backup_engine_require >/dev/null 2>&1; then
@@ -120,7 +129,7 @@ read -r archive snap < <(backup_engine_create daily --exclude "$exclude_secrets"
   for source in "${sources[@]}"; do printf 'source=%s\n' "$source"; done
 } > "$STATE_ROOT/last-daily-backup.ok"
 chmod 0600 "$STATE_ROOT/last-daily-backup.ok"
-rm -f "$STATE_ROOT/last-daily-backup-skipped"
+rm -f "$STATE_ROOT/last-daily-backup-skipped" "$STATE_ROOT/last-daily-backup.failed"
 
 if command -v notify-send >/dev/null 2>&1; then
   notify-send 'Sauvegarde Fedora' 'Sauvegarde quotidienne terminée.' >/dev/null 2>&1 || true

@@ -46,7 +46,7 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
    configuration. Réaliser l'APPLY, redémarrer, lancer les diagnostics. Archiver
    rapports et journaux. Rejouer la convergence pour vérifier l'idempotence.
 3. Effectuer une [restauration](BACKUP_RESTORE.md) vers un staging vide et le test
-   de reprise OS/VM isolé. Garder les clés de récupération hors de la machine.
+   de reprise OS/VM isolé. Conserver le support de sauvegarde et l'identité de l'archive hors de la machine ; Borg est sans chiffrement et ne demande aucune clé de récupération.
 4. Qualifier les pilotes et usages : B580/xe, écran 240 Hz, HDR/VRR si utilisés,
    plusieurs veilles/reprises, WCN785x/Wi-Fi, Bluetooth réel, RTL8126/5 GbE,
    ALC4080 lecture/capture, USB/webcam, températures et les deux SSD.
@@ -56,3 +56,22 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 Les politiques de noyau et de Secure Boot existantes ne sont pas changées par
 ce correctif. Leur choix n'est pas une preuve de performance ou d'équivalence
 avec la politique de sécurité du noyau Fedora officiel.
+
+## Qualification à exécuter après la reprise 0.19
+
+Ces étapes restent **non exécutées** tant qu'un opérateur ne dispose pas de la
+machine Fedora ou d'un laboratoire isolé. Les rapports GitHub ne les remplacent pas.
+
+| Exercice | Critère d'acceptation | Preuves à conserver |
+|---|---|---|
+| Installation GNOME neuve | Fedora 44 / GNOME 50 / Wayland démarre après APPLY et reboot ; second APPLY convergent | SHA, ISO vérifiée, rapports des trois gates, journaux |
+| Session GNOME réelle | Extensions ACTIVE, Nautilus/Ptyxis, changement d'écran et reprise sans perte de réglages | Diagnostics avant/après, observations de session |
+| Restauration fichiers isolée | Archive exacte et données identiques, modes/liens conservés | Nom/id/dépôt, vérification intégrale et comparaison |
+| Reprise Fedora isolée | Système reconstruit et données accessibles sans toucher aux disques originaux | SHA de récupération, étapes et journal de démarrage |
+| Reprise VM isolée | Disque + NVRAM + swtpm correspondants, démarrage et données accessibles | Manifeste VM, UUID, réseau isolé, résultats |
+| Matériel cible | Ryzen 7700, Arc B580, deux T705, écran 240 Hz, réseau/audio/USB et plusieurs veilles stables | Durées, températures, SMART, erreurs noyau, résultats par composant |
+
+Pour le staging des disques VM, choisir un espace de travail disponible avec
+`backup-now.sh --include-vms --staging-root /chemin/absolu`. La capacité est
+contrôlée avant chaque copie ; elle ne prouve pas la santé physique du SSD.
+Le profil conserve le choix de noyau existant et les protections SELinux/firewalld.

@@ -8,6 +8,23 @@ is_true() {
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# Read the complete journal before searching. Failed/empty reads are not health
+# proofs; grep never closes a live journalctl pipe early (SIGPIPE).
+kernel_journal_require_clean() {
+  local pattern="$1" journal rc=0
+  shift
+  if ! journal="$(journalctl -k -b --no-pager "$@" 2>/dev/null)" || [[ -z "$journal" ]]; then
+    printf 'Kernel journal unavailable; refusing a health PASS.\n' >&2
+    return 1
+  fi
+  grep -Ei -- "$pattern" <<<"$journal" >/dev/null || rc=$?
+  case "$rc" in
+    1) return 0 ;;
+    0) printf 'Critical kernel journal signature detected.\n' >&2; return 1 ;;
+    *) printf 'Kernel journal search failed.\n' >&2; return 1 ;;
+  esac
+}
+
 normalize_hex() {
   local value="${1,,}"
   printf '%s\n' "${value#0x}"

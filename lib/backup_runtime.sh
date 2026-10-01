@@ -86,7 +86,7 @@ backup_engine_env() {
   # Non-interactive runs (timers, pre-APPLY) must not stop on Borg prompts:
   # an unencrypted repository, or the external disk mounted at a new path.
   export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
-  export BORG_EXIT_CODES="${BORG_EXIT_CODES:-legacy}"
+  export BORG_EXIT_CODES=legacy
 }
 
 backup_engine_require() {
@@ -119,19 +119,21 @@ backup_engine_create() {
   backup_engine_kind_valid "$kind" || return 2
   local -a opts=()
   while (($#)) && [[ "$1" != -- ]]; do
-    [[ "$1" == --exclude && -n "${2:-}" ]] || return 2
-    opts+=(--exclude "$2"); shift 2
+    [[ ( "$1" == --exclude || "$1" == --comment ) && -n "${2:-}" ]] || return 2
+    opts+=("$1" "$2"); shift 2
   done
   [[ "${1:-}" == -- ]] || return 2
   shift
   (($# > 0)) || return 2
   name="${BACKUP_ARCHIVE_PREFIX}-${kind}-$(date -u +%Y%m%dT%H%M%S.%NZ)"
-  # Legacy exit codes: 0 = OK, 1 = warning (e.g. a file changed while being
-  # read; the archive IS written), 2+ = error. Warnings are reported, not fatal.
+  # A warning can mean unreadable/omitted files. Only rc=0 proves creation
+  # succeeded; an archive written with warnings never produces a success marker.
   local rc=0
   json="$(borg create --json --compression zstd,3 --exclude-caches "${opts[@]}" "::$name" "$@")" || rc=$?
-  (( rc <= 1 )) || return "$rc"
-  (( rc == 0 )) || echo "Borg reported warnings while creating $name (archive written)." >&2
+  if (( rc != 0 )); then
+    echo "Borg creation refused certification for $name (rc=$rc; warnings may omit files)." >&2
+    return "$rc"
+  fi
   python3 -c 'import json,sys
 a=json.load(sys.stdin)["archive"]
 name, aid = a.get("name",""), a.get("id","")
@@ -164,10 +166,11 @@ raise SystemExit(0 if arch[0].get("id") == sys.argv[1] else 1)' "$id" <<<"$json"
 # Full repository + archive metadata check; with KIND, also re-reads and
 # verifies the data of the newest archive of that kind (--verify-data).
 backup_engine_check() {
-  local kind="${1:-}"
+  local kind="${1:-}" archive="${2:-}"
   if [[ -z "$kind" ]]; then borg check; return $?; fi
   backup_engine_kind_valid "$kind" || return 2
-  borg check --verify-data --glob-archives "${BACKUP_ARCHIVE_PREFIX}-${kind}-*" --last 1
+  [[ "$archive" == "${BACKUP_ARCHIVE_PREFIX}-${kind}-"* && "$archive" =~ ^[A-Za-z0-9_.-]+$ ]] || return 2
+  borg check --verify-data --glob-archives "$archive"
 }
 
 # backup_engine_extract ARCHIVE TARGET_DIR [ABSOLUTE_PATH...]
@@ -241,6 +244,10 @@ backup_runtime_validate_preapply_marker() {
   archive="$(evidence_marker_value "$marker" archive 2>/dev/null || true)"
   repo="$(evidence_marker_value "$marker" repository 2>/dev/null || true)"
   [[ "$snapshot" =~ ^[0-9a-f]{64}$ && -n "$archive" && -n "$repo" ]] || return 1
+  [[ "$(evidence_marker_value "$marker" verdict)" == PASS &&
+     "$(evidence_marker_value "$marker" integrity_check)" == PASS &&
+     "$(evidence_marker_value "$marker" restore_test)" == PASS ]] || return 1
+  [[ "$repo" == "$(backup_runtime_resolve_repository)" ]] || return 1
   if ! backup_runtime_is_remote_repository "$repo"; then backup_runtime_validate_local_target "$repo" || return 1; fi
   backup_engine_env "$repo"
   backup_engine_repo_ready || return 1
@@ -258,4 +265,70 @@ backup_runtime_restore_target_valid() {
     /|/etc|/etc/*|/boot|/boot/*|/usr|/usr/*|/var|/var/*|/home|"$HOME"|/data|"${KVM_POOL_PATH:-/data/libvirt/images}"|"${KVM_POOL_PATH:-/data/libvirt/images}"/*) return 1 ;;
   esac
   [[ "$target" == "$root" || "$target" == "$root/"* ]]
+}
+
+# Local capacity is checked before writing. Preserve 1 GiB on the staging
+# filesystem; repository checks preserve the configured minimum reserve.
+backup_runtime_require_staging_space() {
+  local path="$1" required="$2" reserve="${3:-1073741824}" available
+  [[ "$required" =~ ^[0-9]+$ && "$reserve" =~ ^[0-9]+$ ]] || return 1
+  available="$(df -B1 --output=avail "$path" | awk 'NR==2 {print $1}')" || return 1
+  [[ "$available" =~ ^[0-9]+$ ]] || return 1
+  (( required <= available && reserve <= available - required ))
+}
+
+backup_runtime_require_source_capacity() {
+  local repository="$1" bytes reserve
+  if backup_runtime_is_remote_repository "$repository"; then
+    echo 'Remote repository capacity cannot be measured locally; Borg errors remain fatal.' >&2
+    return 0
+  fi
+  shift
+  bytes="$(du -scB1 -- "$@" | awk 'END {print $1}')" || return 1
+  [[ "${BACKUP_PREAPPLY_MIN_FREE_GIB:-20}" =~ ^[0-9]+$ ]] || return 1
+  reserve=$(( ${BACKUP_PREAPPLY_MIN_FREE_GIB:-20} * 1024 * 1024 * 1024 ))
+  backup_runtime_require_staging_space "$repository" "$bytes" "$reserve"
+}
+
+# A recovery manifest lives in the exact full archive's Borg comment.
+# Older full archives without this manifest are deliberately not certified.
+backup_runtime_recovery_manifest() {
+  local archive="$1" json
+  [[ "$archive" == fgc-full-* && "$archive" =~ ^[A-Za-z0-9_.-]+$ ]] || return 1
+  json="$(borg info --json "::$archive")" || return 1
+  python3 -c 'import json,re,sys
+a=json.load(sys.stdin)["archives"]
+assert len(a)==1 and a[0]["name"]==sys.argv[1]
+m=json.loads(a[0]["comment"])
+assert m["schema"]==1 and m["kind"]=="full" and m["engine"]=="borg" and m["encryption"]=="none"
+assert re.fullmatch(r"[0-9a-f]{40}",m["commit"])
+for k in ("effective_config_sha256","module_plan_sha256","canary_sha256"):
+    assert re.fullmatch(r"[0-9a-f]{64}",m[k])
+assert type(m["include_vms"]) is bool and type(m["vm_count"]) is int and m["vm_count"]>=0
+assert m["include_vms"] or m["vm_count"]==0
+assert m["canary_path"].endswith("/restore-canary.txt") and not m["canary_path"].startswith("/")
+assert ".." not in m["canary_path"].split("/")
+print(json.dumps(m,sort_keys=True))' "$archive" <<<"$json"
+}
+
+backup_runtime_validate_full_marker() {
+  local marker="$1" repo archive snapshot manifest expected actual
+  evidence_require_current_identity "$marker" || return 1
+  for key in verdict integrity_check restore_test; do
+    [[ "$(evidence_marker_value "$marker" "$key")" == PASS ]] || return 1
+  done
+  repo="$(backup_runtime_resolve_repository)" || return 1
+  [[ "$repo" == "$(evidence_marker_value "$marker" repository)" ]] || return 1
+  archive="$(evidence_marker_value "$marker" archive)" || return 1
+  snapshot="$(evidence_marker_value "$marker" snapshot)" || return 1
+  backup_engine_require && backup_engine_env "$repo" && backup_engine_repo_ready || return 1
+  backup_engine_archive_matches "$archive" "$snapshot" full || return 1
+  manifest="$(backup_runtime_recovery_manifest "$archive")" || return 1
+  for key in commit effective_config_sha256 module_plan_sha256 hardware_fingerprint include_vms vm_count; do
+    actual="$(jq -r --arg k "$key" '.[$k] | tostring' <<<"$manifest")" || return 1
+    [[ "$actual" == "$(evidence_marker_value "$marker" "$key")" ]] || return 1
+  done
+  expected="$(jq -r '.canary_sha256' <<<"$manifest")" || return 1
+  actual="$(borg extract --stdout "::$archive" "$(jq -r '.canary_path' <<<"$manifest")" | sha256sum | awk '{print $1}')" || return 1
+  [[ "$actual" == "$expected" ]]
 }
