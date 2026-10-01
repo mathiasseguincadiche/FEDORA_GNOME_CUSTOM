@@ -38,13 +38,12 @@ guest_action() {
 mark() { python3 "$REPORTER" "$REPORT" pass "$1"; }
 evidence() { python3 "$REPORTER" "$REPORT" evidence "$1" "$2"; }
 collect() {
-  if guest true >/dev/null 2>&1; then
-    guest 'sudo journalctl --no-pager -b' > "$LAB/evidence/$PHASE-early-journal.log" 2> "$LAB/evidence/$PHASE-early-journal.err" || true
-    if guest_action collect; then
-      scp "${SCP_OPTS[@]}" lab@127.0.0.1:/tmp/fgc-evidence.tar.gz \
-        "$LAB/evidence/$PHASE.tar.gz" || true
-    fi
-  fi
+  # Evidence reads/transfers are mandatory on a successful path.
+  # Only cleanup() explicitly tolerates collection failure after a prior error.
+  guest 'sudo journalctl --no-pager -b' > "$LAB/evidence/$PHASE-early-journal.log" 2> "$LAB/evidence/$PHASE-early-journal.err"
+  guest_action collect
+  scp "${SCP_OPTS[@]}" lab@127.0.0.1:/tmp/fgc-evidence.tar.gz \
+    "$LAB/evidence/$PHASE.tar.gz"
 }
 cleanup() {
   local rc=$?

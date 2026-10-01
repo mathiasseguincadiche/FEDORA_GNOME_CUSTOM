@@ -26,7 +26,8 @@ failure() {
   done
   exit "$rc"
 }
-trap 'failure "${1:-unknown}"' ERR
+ACTION="${1:-unknown}"
+trap 'failure "$ACTION"' ERR
 
 as_user() {
   sudo -u "$LAB_USER" env HOME="$LAB_HOME" XDG_RUNTIME_DIR="/run/user/$LAB_UID" \
@@ -51,9 +52,16 @@ require_session() {
 check_extensions() {
   local uuid output
   for uuid in "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID"; do
-    as_user gnome-extensions enable "$uuid"
-    output="$(as_user gnome-extensions info "$uuid")"
+    # Shell activation is asynchronous. Observe it; never repair a reboot here.
+    for _ in {1..60}; do
+      output="$(as_user gnome-extensions info "$uuid")"
+      if grep -Eq 'State:[[:space:]]+ERROR([[:space:]]|$)' <<<"$output"; then break; fi
+      if grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output" &&
+         grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"; then break; fi
+      sleep 1
+    done
     printf '%s\n' "$output"
+    grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output"
     grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"
   done
 }
@@ -106,6 +114,11 @@ CONF
     as_user dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay 0
     as_user dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled false
     as_user dbus-run-session -- gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
+    # Persist the selected extensions before the first GDM session.
+    # Reboot/recovery checks only observe these settings and active states.
+    as_user dbus-run-session -- gsettings set org.gnome.shell enabled-extensions \
+      "['$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID']"
+    as_user dbus-run-session -- gsettings set org.gnome.shell disable-user-extensions false
     dnf clean all
     systemctl set-default graphical.target
     systemctl start gdm
