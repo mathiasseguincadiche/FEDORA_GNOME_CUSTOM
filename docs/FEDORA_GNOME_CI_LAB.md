@@ -32,7 +32,14 @@ Le laboratoire ne nécessite aucun runner installé chez l'utilisateur.
 
 GNOME 50 est installé sur Fedora Cloud, puis lancé par GDM en session Wayland
 réelle. L'autologin et les réglages empêchant la veille sont propres à cette
-image éphémère. SELinux reste enforcing et firewalld actif. Les trois extensions
+image éphémère. Avant chaque arrêt/redémarrage, le laboratoire attend que
+GNOME retire lui-même son marqueur de protection d'initialisation (environ
+une minute), puis revérifie session, réglages persistants et extensions actives.
+Il ne supprime jamais ce marqueur et ne réactive pas les extensions pour
+faire réussir un redémarrage. Le journal persistant permet aussi de refuser
+un crash ou une erreur critique sur le boot précédent, y compris à l'arrêt.
+Ce scénario ne qualifie pas un redémarrage précipité pendant la première
+minute d'initialisation. SELinux reste enforcing et firewalld actif. Les trois extensions
 DING, Show Desktop Plus et Resource Monitor utilisent l'installateur de
 production et les artefacts/hash du verrou existant. Les ZIP sont téléchargés
 avec TLS strict par le runner, vérifiés puis transférés dans la VM ; le même
@@ -67,7 +74,7 @@ L'artefact `fedora-gnome-boot-recovery-<run_id>` conserve 14 jours :
 - `report.json` : commit du code exact, étapes, quatre identifiants de boot,
   archive/id, hash du disque et de la NVRAM, chiffrement et isolation ;
 - consoles QEMU, sorties installation/restauration et signature du média ;
-- journaux complets du boot, du noyau et de l'utilisateur, unités en échec,
+- journaux complets du boot et des boots précédents, du noyau et de l'utilisateur, unités en échec,
   inventaire des paquets et sessions pour chaque étape.
 
 Un crash enregistré par systemd-coredump, un message journal de priorité

@@ -25,6 +25,7 @@ failure() {
     as_user gsettings get org.gnome.shell "$key" >&2 || true
   done
   journalctl --no-pager -b _COMM=gnome-shell -n 100 >&2 || true
+  journalctl --no-pager -b -1 -u "user@$LAB_UID.service" -n 200 >&2 || true
   journalctl --no-pager -b -u gdm -u "user@$LAB_UID.service" -n 120 >&2 || true
   for log in /tmp/fgc-critical.log /tmp/fgc-coredumps.log /tmp/fgc-failed-units.log /tmp/fgc-user-failed-units.log; do
     [[ ! -f "$log" ]] || cat "$log" >&2
@@ -99,6 +100,11 @@ case "${1:-}" in
   install)
     grep -Eq '^VERSION_ID="?44"?$' /etc/os-release
     [[ "$(getenforce)" == Enforcing ]]
+    mkdir -p /etc/systemd/journald.conf.d /var/log/journal
+    printf '[Journal]\nStorage=persistent\nSystemMaxUse=128M\n' > /etc/systemd/journald.conf.d/90-fgc-lab.conf
+    systemd-tmpfiles --create --prefix /var/log/journal
+    systemctl restart systemd-journald
+    journalctl --flush
     for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
       as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
     done
@@ -142,6 +148,19 @@ CONF
     dnf clean all
     systemctl set-default graphical.target
     systemctl start gdm
+    ;;
+  settled)
+    require_session
+    check_extensions
+    # GNOME clears its startup protection marker itself after 60 seconds.
+    # Never delete the marker or turn protection off to force a PASS.
+    for _ in {1..90}; do
+      [[ -e "/run/user/$LAB_UID/gnome-shell-disable-extensions" ]] || break
+      sleep 1
+    done
+    [[ ! -e "/run/user/$LAB_UID/gnome-shell-disable-extensions" ]]
+    require_session
+    check_extensions
     ;;
   session)
     require_session
@@ -242,6 +261,7 @@ PY
     mkdir -p /tmp/fgc-evidence
     journalctl --no-pager -b > /tmp/fgc-evidence/boot-journal.log 2> /tmp/fgc-evidence/journal-read.err
     journalctl --no-pager -k -b > /tmp/fgc-evidence/kernel-journal.log
+    journalctl --no-pager > /tmp/fgc-evidence/all-boots-journal.log
     journalctl --no-pager -b _UID="$LAB_UID" > /tmp/fgc-evidence/user-journal.log
     systemctl --failed --no-pager > /tmp/fgc-evidence/failed-units.txt
     as_user systemctl --user --failed --no-pager > /tmp/fgc-evidence/user-failed-units.txt
@@ -251,11 +271,13 @@ PY
     tar -C /tmp/fgc-evidence -czf /tmp/fgc-evidence.tar.gz .
     chown "$LAB_USER:$LAB_USER" /tmp/fgc-evidence.tar.gz
     ;;
-  health)
+  health|previous-health)
+    journal_boot=0
+    [[ "$ACTION" != previous-health ]] || journal_boot=-1
     # Actual crashes / kernel errors are fatal. Other messages remain evidence.
-    journalctl --quiet --no-pager -b -p emerg..crit > /tmp/fgc-critical.log
+    journalctl --quiet --no-pager -b "$journal_boot" -p emerg..crit > /tmp/fgc-critical.log
     [[ ! -s /tmp/fgc-critical.log ]]
-    journalctl --quiet --no-pager -b -t systemd-coredump -o json > /tmp/fgc-coredumps.log
+    journalctl --quiet --no-pager -b "$journal_boot" -t systemd-coredump -o json > /tmp/fgc-coredumps.log
     [[ ! -s /tmp/fgc-coredumps.log ]]
     systemctl --failed --no-legend --no-pager > /tmp/fgc-failed-units.log
     [[ ! -s /tmp/fgc-failed-units.log ]]

@@ -200,6 +200,7 @@ provision() {
   wait_session
 }
 shutdown_vm() {
+  guest_action settled
   # Connection may close before systemctl's reply. The actual process exit is required.
   guest 'sudo systemctl poweroff' || true
   for _ in {1..90}; do
@@ -251,6 +252,7 @@ collect
 
 PHASE=reboot
 old_boot="$(boot_id)"
+guest_action settled
 guest 'sudo systemctl reboot' || true
 # Require a changed kernel boot ID, not just an SSH reconnection.
 for _ in {1..180}; do
@@ -260,6 +262,7 @@ for _ in {1..180}; do
 done
 [[ -n "$current" && "$current" != "$old_boot" ]]
 wait_session
+guest_action previous-health
 guest_action persistent 2>&1 | tee "$LAB/evidence/reboot.log"
 evidence reboot_id "$current"
 guest_action health
@@ -302,6 +305,7 @@ PHASE=restored
 start_vm "$LAB/recovered/original" on
 wait_ssh
 wait_session
+guest_action previous-health
 guest_action recovered 2>&1 | tee "$LAB/evidence/restored.log"
 guest_action health
 evidence restored_boot_id "$(boot_id)"
@@ -322,6 +326,7 @@ scp "${SCP_OPTS[@]}" files-recovery.tar.gz lab@127.0.0.1:/tmp/fgc-files-recovery
 guest_action rebuild 2>&1 | tee "$LAB/evidence/rebuilt.log"
 guest_action session
 rebuilt_initial="$(boot_id)"
+guest_action settled
 guest 'sudo systemctl reboot' || true
 for _ in {1..180}; do
   current="$(boot_id 2>/dev/null || true)"
@@ -330,6 +335,7 @@ for _ in {1..180}; do
 done
 [[ -n "$current" && "$current" != "$rebuilt_initial" ]]
 wait_session
+guest_action previous-health
 guest_action rebuilt-check
 guest_action session
 guest_action health
