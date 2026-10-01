@@ -41,6 +41,7 @@ backup_runtime_export_libvirt() { mkdir -p "$1/domains"; }
 MOCK
 cat > "$tmp/bin/sudo" <<'MOCK'
 #!/usr/bin/env bash
+[[ "${1:-}" != -n ]] || shift
 if [[ "$1" == du && "$*" == *'/etc /boot'* ]]; then echo '4096 total'; exit; fi
 if [[ "$1" == tar ]]; then
   while (($#)); do
@@ -77,13 +78,16 @@ fi
 ENABLE_KVM=false backup_runtime_full_vm_coverage_valid "$marker"
 coverage="$tmp/vm-coverage.ok"
 printf 'include_vms=true\nvm_count=1\nvm_names_sha256=%s\n' "$(printf '["demo"]' | sha256sum | awk '{print $1}')" > "$coverage"
-virsh() { echo "${TEST_DOMAIN_NAME:-demo}"; }
-sudo() { [[ "${1:-}" != -n ]] || shift; "$@"; }
+cat > "$tmp/bin/virsh" <<'MOCK'
+#!/usr/bin/env bash
+echo "${TEST_DOMAIN_NAME:-demo}"
+MOCK
+chmod +x "$tmp/bin/virsh"
 ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$coverage"
 if TEST_DOMAIN_NAME=added ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$coverage"; then
   echo 'Changed VM set accepted' >&2; exit 1
 fi
-unset -f virsh sudo
+rm "$tmp/bin/virsh"
 # A newer daily archive never becomes an OS recovery base.
 read -r daily _ < <(backup_engine_create daily -- "$HOME/.config")
 read -r selected selected_id < <(backup_engine_latest full)
@@ -102,7 +106,7 @@ out="$(backup_engine_create full --comment "$manifest" -- "$HOME/.config")" || r
 [[ "$rc" == 1 && -z "$out" ]]
 read -r selected selected_id < <(backup_engine_latest full)
 [[ "$selected" == "$archive" && "$selected_id" == "$snapshot" ]]
-[[ -n "$(command borg list --glob-archives 'fgc-pending-full-*' --short)" ]]
+[[ -n "$("$real_borg" list --glob-archives 'fgc-pending-full-*' --short)" ]]
 unset -f borg
 read -r selected _ < <(backup_engine_latest '')
 [[ "$selected" != fgc-pending-* ]]
@@ -114,7 +118,7 @@ if TEST_CONFIG=3 backup_runtime_validate_full_marker "$marker"; then echo 'Stale
 sed -i "s|^repository=.*|repository=$tmp/wrong-repository|" "$marker"
 if backup_runtime_validate_full_marker "$marker"; then echo 'Different repository accepted' >&2; exit 1; fi
 cp "$tmp/good-marker" "$marker"
-command borg delete "::$archive"
+"$real_borg" delete "::$archive"
 if backup_runtime_validate_full_marker "$marker"; then echo 'Deleted exact archive accepted' >&2; exit 1; fi
 if backup_runtime_recovery_manifest "$daily"; then echo 'Daily recovery manifest accepted' >&2; exit 1; fi
 read -r legacy _ < <(backup_engine_create full -- "$HOME/.config")
