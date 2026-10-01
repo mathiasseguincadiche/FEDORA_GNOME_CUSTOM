@@ -39,11 +39,10 @@ if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then check_extension_error DING 
 if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then check_extension_error 'Show Desktop Plus' "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"; fi
 if is_true "${ENABLE_RESOURCE_MONITOR:-false}"; then check_extension_error 'Resource Monitor' "${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"; fi
 
-journal="$(journalctl --user -b --no-pager -o cat 2>/dev/null || true)"
-if grep -Eqi '(gnome-shell|mutter|gjs).*(segmentation fault|segfault|core dumped|fatal error|JS ERROR:)|xdg-desktop-portal.*(segmentation fault|segfault|core dumped)' <<<"$journal"; then
-  emit KO 'GNOME journal' 'critical Shell/Mutter/GJS/portal crash signature in current boot'
-else
+if journal_require_clean '(gnome-shell|mutter|gjs).*(segmentation fault|segfault|core dumped|fatal error|JS ERROR:)|xdg-desktop-portal.*(segmentation fault|segfault|core dumped)' --user -b -o cat; then
   emit OK 'GNOME journal' 'no critical Shell/Mutter/GJS/portal crash signature in current boot'
+else
+  emit KO 'GNOME journal' 'journal unavailable or critical Shell/Mutter/GJS/portal crash signature'
 fi
 
 $quiet || { ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }

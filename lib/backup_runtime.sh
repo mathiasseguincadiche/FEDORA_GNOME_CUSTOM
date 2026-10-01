@@ -164,7 +164,7 @@ print(arch[-1]["name"], arch[-1]["id"])' <<<"$json"
 backup_engine_archive_matches() {
   local name="$1" id="$2" kind="$3" json
   backup_engine_kind_valid "$kind" || return 1
-  [[ "$name" == "${BACKUP_ARCHIVE_PREFIX}-${kind}-"* && "$id" =~ ^[0-9a-f]{64}$ ]] || return 1
+  [[ "$name" == "${BACKUP_ARCHIVE_PREFIX}-${kind}-"* && "$name" =~ ^[A-Za-z0-9_.-]+$ && "$id" =~ ^[0-9a-f]{64}$ ]] || return 1
   json="$(borg info --json "::$name" 2>/dev/null)" || return 1
   python3 -c 'import json,sys
 arch=json.load(sys.stdin).get("archives") or [{}]
@@ -339,4 +339,13 @@ backup_runtime_validate_full_marker() {
   expected="$(jq -r '.canary_sha256' <<<"$manifest")" || return 1
   actual="$(borg extract --stdout "::$archive" "$(jq -r '.canary_path' <<<"$manifest")" | sha256sum | awk '{print $1}')" || return 1
   [[ "$actual" == "$expected" ]]
+}
+
+backup_runtime_atomic_write() {
+  local path="$1" temporary
+  temporary="$(mktemp "$(dirname "$path")/.backup-evidence.XXXXXX")" || return 1
+  if ! cat > "$temporary" || ! chmod 0600 "$temporary" || ! mv -f "$temporary" "$path"; then
+    rm -f "$temporary"
+    return 1
+  fi
 }

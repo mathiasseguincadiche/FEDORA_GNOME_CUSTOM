@@ -100,7 +100,8 @@ borg list --short | grep -Fxq "$pre"
 )
 
 # An attempted backup with a warning cannot retain yesterday's success marker.
-export FGC_REAL_BORG="$(command -v borg)"
+FGC_REAL_BORG="$(command -v borg)"
+export FGC_REAL_BORG
 cat > "$tmp/bin/borg" <<'MOCK'
 #!/usr/bin/env bash
 if [[ "$1" == create ]]; then

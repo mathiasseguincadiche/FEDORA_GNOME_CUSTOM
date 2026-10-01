@@ -8,12 +8,5 @@ baseline_nvme_health_postcheck() {
   count="$(baseline_nvme_model_count)"
   (( count >= ${EXPECTED_NVME_COUNT:-2} )) || return "$EXIT_POSTCHECK_FAILED"
   log_info BASELINE "expected-nvme-count=$count"
-  # Drain the producer before matching: grep -q in a pipe can SIGPIPE
-  # journalctl and make a real error look absent under pipefail + negation.
-  local kernel_log
-  command_exists journalctl || return "$EXIT_POSTCHECK_FAILED"
-  kernel_log="$(journalctl -k -b --no-pager 2>/dev/null)" || return "$EXIT_POSTCHECK_FAILED"
-  if grep -Eqi 'nvme.*(I/O error|reset controller|device not ready)|PCIe Bus Error: severity=Uncorrected' <<< "$kernel_log"; then
-    return "$EXIT_POSTCHECK_FAILED"
-  fi
+  kernel_journal_require_clean 'nvme.*(I/O error|reset controller|device not ready)|PCIe Bus Error: severity=Uncorrected' || return "$EXIT_POSTCHECK_FAILED"
 }

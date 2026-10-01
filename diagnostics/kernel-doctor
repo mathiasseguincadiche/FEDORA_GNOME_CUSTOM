@@ -73,6 +73,6 @@ fi
 
 if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then emit OK 'Arc B580' 'xe bound'; else emit KO 'Arc B580' 'xe not bound'; fi
 case "$(kernel_lifecycle_secure_boot_state)" in disabled) emit OK 'Secure Boot' disabled;; enabled) emit KO 'Secure Boot' 'enabled against Golden HOST policy';; *) emit KO 'Secure Boot' 'state unknown on Golden HOST';; esac
-if journalctl -k -b --no-pager 2>/dev/null | grep -Eqi '\bxe\b.*(wedged|reset failed|gpu hang)|kernel panic|Oops:'; then emit KO Journal 'critical kernel/xe signature found'; else emit OK Journal 'no critical kernel/xe signature'; fi
+if kernel_journal_require_clean '\bxe\b.*(wedged|reset failed|gpu hang)|kernel panic|Oops:'; then emit OK Journal 'no critical kernel/xe signature'; else emit KO Journal 'journal unavailable or critical kernel/xe signature found'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))

@@ -82,7 +82,7 @@ if TEST_CONFIG=3 backup_runtime_validate_full_marker "$marker"; then echo 'Stale
 sed -i "s|^repository=.*|repository=$tmp/wrong-repository|" "$marker"
 if backup_runtime_validate_full_marker "$marker"; then echo 'Different repository accepted' >&2; exit 1; fi
 cp "$tmp/good-marker" "$marker"
-borg delete "::$archive"
+command borg delete "::$archive"
 if backup_runtime_validate_full_marker "$marker"; then echo 'Deleted exact archive accepted' >&2; exit 1; fi
 if backup_runtime_recovery_manifest "$daily"; then echo 'Daily recovery manifest accepted' >&2; exit 1; fi
 read -r legacy _ < <(backup_engine_create full -- "$HOME/.config")

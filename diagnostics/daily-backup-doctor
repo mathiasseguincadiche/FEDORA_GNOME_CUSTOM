@@ -33,6 +33,28 @@ state="$runtime_state/last-daily-backup.ok"
 if [[ -s "$runtime_state/last-daily-backup.failed" && ( ! -e "$runtime_state/last-daily-backup-skipped" || "$runtime_state/last-daily-backup.failed" -nt "$runtime_state/last-daily-backup-skipped" ) ]]; then
   emit KO 'Last daily backup' 'latest attempt failed; previous success cannot certify it'
 elif [[ -s "$state" ]]; then
+  marker_valid=true
+  for field in verdict creation_rc; do
+    value="$(evidence_marker_value "$state" "$field")"
+    [[ ( "$field" == verdict && "$value" == PASS ) || ( "$field" == creation_rc && "$value" == 0 ) ]] || marker_valid=false
+  done
+  archive="$(evidence_marker_value "$state" archive)"
+  snapshot="$(evidence_marker_value "$state" snapshot)"
+  [[ "$snapshot" =~ ^[0-9a-f]{64}$ && "$archive" == fgc-daily-* ]] || marker_valid=false
+  if ! $marker_valid; then emit KO 'Daily backup evidence' 'invalid success marker'; fi
+  repository="$(backup_runtime_resolve_repository 2>/dev/null || true)"
+  if [[ -z "$repository" ]]; then
+    emit WARN 'Daily archive availability' 'repository unavailable; exact archive not verified'
+  elif [[ "$repository" != "$(evidence_marker_value "$state" repository)" ]]; then
+    emit KO 'Daily archive availability' 'repository differs from success marker'
+  else
+    backup_engine_env "$repository"
+    if backup_engine_require && backup_engine_repo_ready && backup_engine_archive_matches "$archive" "$snapshot" daily; then
+      emit OK 'Daily archive availability' 'exact name/id verified'
+    else
+      emit KO 'Daily archive availability' 'archive missing or repository invalid'
+    fi
+  fi
   ts="$(stat -c %Y "$state")"
   age_h=$(( ( $(date +%s) - ts ) / 3600 ))
   if (( age_h >= 0 && age_h <= ${DAILY_BACKUP_MAX_AGE_HOURS:-36} )); then

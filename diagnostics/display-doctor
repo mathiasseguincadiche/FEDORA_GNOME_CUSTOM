@@ -34,8 +34,11 @@ else
 fi
 
 if command_exists drm_info; then drm_info > "$REPORT_ROOT/$RUN_ID-drm-info.txt" 2>&1 || true; emit OK DRM 'drm_info captured'; else emit WARN DRM 'drm_info missing'; fi
-errors="$(journalctl -k -b --no-pager 2>/dev/null | grep -Ei '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|link.*(fail|bad)|AER:|PCIe Bus Error' | tail -n 30 || true)"
-if [[ -z "$errors" ]]; then emit OK 'DRM/xe journal' clean; else emit WARN 'DRM/xe journal' 'matching display/GPU/PCIe signals found'; fi
+if kernel_journal_require_clean '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|link.*(fail|bad)|AER:|PCIe Bus Error'; then emit OK 'DRM/xe journal' clean; else
+  rc=$?
+  if (( rc == 1 )); then emit WARN 'DRM/xe journal' 'matching display/GPU/PCIe signals found'
+  else emit KO 'DRM/xe journal' 'journal unavailable or incomplete'; fi
+fi
 marker="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom/display-repair-last.txt"
 if [[ -s "$marker" ]] && grep -Fxq "edid_sha256=$(hardware_b580_expected_edid_sha256)" "$marker"; then emit OK Repair 'display repair marker matches certified EDID'; else emit WARN Repair 'no current certified-EDID display repair marker yet'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
