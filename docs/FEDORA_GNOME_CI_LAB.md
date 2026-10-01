@@ -2,7 +2,7 @@
 
 Ce prétest fonctionne exclusivement sur un runner GitHub jetable. Il ne lance
 aucune commande sur le PC de l'opérateur. Le job réutilisable
-`.github/workflows/fedora-gnome-vm.yml` est appelé par `Tests` à chaque push/PR.
+`.github/workflows/fedora-gnome-vm.yml` est appelé par `Tests` sur les push vers `main` et les pull requests.
 Le contexte obligatoire `contracts` attend sa réussite, celle de la suite
 rapide `logic-contracts` et des deux jobs Fedora existants. La publication attend donc aussi ce laboratoire.
 
@@ -19,7 +19,13 @@ Sources officielles :
 
 QEMU démarre un disque autonome, UEFI OVMF, TPM logiciel swtpm et un GPU virtio.
 L'accélération disponible est enregistrée ; TCG permet l'émulation lorsque
-KVM est absent. Les limites de temps restent bloquantes. GitHub indique que
+KVM est absent. Les limites de temps restent bloquantes. Le disque virtuel du
+fixture est limité à 10 Gio ; sa capacité maximale plus 2 Gio de réserve doit
+tenir sur le runner avant chaque création. Les captures à froid dimensionnent
+l'espace d'après les tailles logiques des membres. L'original CI est supprimé
+après vérification Borg avant extraction, puis la copie et le dépôt jetables
+sont supprimés après le boot récupéré, avant reconstruction. Ces contrôles
+évitent de retenir plusieurs générations de disques jusqu'au pic de stockage. GitHub indique que
 la virtualisation imbriquée est techniquement possible mais non officiellement
 prise en charge : [documentation des runners](https://docs.github.com/en/actions/concepts/runners/github-hosted-runners).
 Le laboratoire ne nécessite aucun runner installé chez l'utilisateur.
@@ -50,7 +56,9 @@ Le réseau de récupération utilise `restrict=on` avec un seul port SSH sur
 127.0.0.1. QEMU interdit les connexions sortantes et conserve ce canal de
 contrôle explicite : [documentation réseau QEMU](https://www.qemu.org/docs/master/system/invocation.html).
 Le test refuse une connexion sortante réussie. La VM originale est arrêtée et
-son dossier déplacé avant de démarrer la copie récupérée.
+son dossier jetable supprimé après vérification de l'archive et avant de démarrer
+la copie récupérée. Cette suppression concerne uniquement les données de test CI.
+Les originaux de production restent conservés selon le runbook opérateur.
 
 ## Rapports
 

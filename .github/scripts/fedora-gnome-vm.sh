@@ -19,6 +19,7 @@ source "$ROOT/.github/fedora44-cloud.lock"
 source "$ROOT/lib/backup_runtime.sh"
 SSH_KEY="$LAB/id_ed25519"
 SSH_PORT=2223
+DISK_BYTES=10737418240  # 10 GiB virtual disk; enough for the GNOME-only fixture.
 SSH_OPTS=(-i "$SSH_KEY" -p "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o ServerAliveInterval=10 -o ServerAliveCountMax=3)
 SCP_OPTS=(-i "$SSH_KEY" -P "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no
@@ -125,7 +126,6 @@ write_files:
 EOF
 cat > meta-data <<'EOF'
 instance-id: fgc-fedora-ci
-local-hostname: fgc-fedora-ci
 EOF
 cloud-localds seed.img user-data meta-data
 OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd
@@ -139,9 +139,10 @@ if [[ -e /dev/kvm ]]; then
 fi
 evidence accelerator "$ACCEL"
 new_bundle() {
+  backup_runtime_require_staging_space "$LAB" "$DISK_BYTES" 2147483648
   mkdir -p "$1/tpm"
   cp --sparse=always "$FEDORA_CLOUD_IMAGE" "$1/disk.qcow2"
-  qemu-img resize "$1/disk.qcow2" 36G
+  qemu-img resize "$1/disk.qcow2" 10G
   cp "$OVMF_VARS" "$1/nvram.fd"
 }
 start_vm() {
@@ -253,11 +254,12 @@ PHASE=cold-archive
 qemu-img check original/disk.qcow2
 # All members are offline: qcow2 + UEFI vars + TPM state, with no backing chain.
 qemu-img info --output=json original/disk.qcow2 | jq -e '."backing-filename" == null'
-sha256sum original/disk.qcow2 original/nvram.fd > "$LAB/evidence/cold-members.sha256"
+find original -type f -print0 | sort -z | xargs -0 sha256sum > "$LAB/evidence/cold-members.sha256"
 evidence disk_sha256 "$(sha256sum original/disk.qcow2 | awk '{print $1}')"
 evidence nvram_sha256 "$(sha256sum original/nvram.fd | awk '{print $1}')"
-du -scB1 original | awk 'END {print $1}' > required-bytes.txt
-backup_runtime_require_staging_space "$LAB" "$(cat required-bytes.txt)" 2147483648
+# Logical bytes bound the archive and extraction, including sparse members.
+required="$(find original -type f -printf '%s\n' | awk '{n+=$1} END {printf "%.0f",n}')"
+backup_runtime_require_staging_space "$LAB" "$required" 2147483648
 backup_engine_require
 backup_engine_env "$LAB/cold-repository"
 backup_engine_init
@@ -269,13 +271,14 @@ backup_engine_check full "$archive"
 evidence cold_archive "$archive"
 evidence cold_archive_id "$aid"
 evidence encryption none
+# Remove only this throwaway CI source after the archive has been verified.
+# No original disk/state is then available to accidentally boot or compare.
+rm -rf -- "$LAB/original"
+backup_runtime_require_staging_space "$LAB" "$required" 2147483648
 mkdir recovered
 backup_engine_extract "$archive" "$LAB/recovered"
 (cd recovered && sha256sum --check "$LAB/evidence/cold-members.sha256")
-diff -r original/tpm recovered/original/tpm
 qemu-img check recovered/original/disk.qcow2
-# Make originals unavailable to boot: the next QEMU command uses extracted files.
-mv original original-offline
 mark cold_archive
 
 PHASE=restored
@@ -290,6 +293,8 @@ evidence tpm_canary PASS
 collect
 mark restored_vm
 shutdown_vm
+# Boot and TPM/data checks are complete; retain evidence, free disposable images.
+rm -rf -- "$LAB/recovered" "$LAB/cold-repository"
 
 PHASE=rebuilt
 new_bundle "$LAB/rebuilt"
