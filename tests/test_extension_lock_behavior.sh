@@ -36,6 +36,7 @@ sed -i "s/^DING_SHA256=.*/DING_SHA256=\"$fixture_sha\"/" "$tmp/config/gnome-exte
 cat > "$tmp/bin/curl" <<'SH'
 #!/usr/bin/env bash
 set -Eeuo pipefail
+[[ -z "${FGC_TEST_CURL_TRACE:-}" ]] || touch "$FGC_TEST_CURL_TRACE"
 cp "$FGC_TEST_ZIP" "${!#}"
 SH
 cat > "$tmp/bin/gnome-extensions" <<'SH'
@@ -57,6 +58,20 @@ marker="$tmp/data/gnome-shell/extensions/$DING_UUID/.fedora-gnome-custom-source"
 [[ -s "$marker" ]]
 grep -Fxq "sha256=$fixture_sha" "$marker"
 rm -rf "$tmp/data/gnome-shell"
+# A cache is accepted only after the exact same pinned digest/metadata checks.
+mkdir "$tmp/cache"
+cp "$FGC_TEST_ZIP" "$tmp/cache/DING.zip"
+export FGC_TEST_CURL_TRACE="$tmp/curl-called"
+FGC_EXTENSION_ARTIFACT_CACHE="$tmp/cache" bash "$tmp/scripts/gnome/install-ding.sh"
+[[ -s "$marker" && ! -e "$FGC_TEST_CURL_TRACE" ]]
+grep -Fxq "sha256=$fixture_sha" "$marker"
+rm -rf "$tmp/data/gnome-shell"
+printf tampered > "$tmp/cache/DING.zip"
+if FGC_EXTENSION_ARTIFACT_CACHE="$tmp/cache" bash "$tmp/scripts/gnome/install-ding.sh" >/dev/null 2>&1; then exit 1; fi
+[[ ! -e "$marker" && ! -e "$FGC_TEST_CURL_TRACE" ]]
+for cache in relative/path "$tmp/missing"; do
+  if FGC_EXTENSION_ARTIFACT_CACHE="$cache" bash "$tmp/scripts/gnome/install-ding.sh" >/dev/null 2>&1; then exit 1; fi
+done
 printf 'corrupted download' > "$FGC_TEST_ZIP"
 if bash "$tmp/scripts/gnome/install-ding.sh" >/dev/null 2>&1; then exit 1; fi
 [[ ! -e "$marker" ]]

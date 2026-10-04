@@ -62,9 +62,12 @@ sans `--encrypted`, sans `cryptsetup`, sans LUKS.
 
 Le contrat `tests/test_host_security_policy_contract.sh` empêche l'ajout futur d'un chemin de chiffrement bloc dans les scripts d'installation/convergence.
 
-## Secure Boot et Kernel Vanilla
+## Secure Boot et canaux de noyau
 
-Le lifecycle kernel est déjà fail-closed : un candidat Kernel Vanilla ne peut pas être staged si Secure Boot est actif ou si son état ne peut pas être établi. La certification finale ajoute maintenant la même règle au niveau de la workstation entière.
+Le lifecycle du canal configuré (CachyOS BORE par défaut, Vanilla en choix
+explicite) bloque l'installation si Secure Boot est actif ou si son état ne
+peut pas être établi. Le cycle est rolling N/N-1 ; aucune promotion de candidat
+n'est requise. La certification finale ajoute maintenant la même règle au niveau de la workstation entière.
 
 ## Changement de politique
 

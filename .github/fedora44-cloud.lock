@@ -1,0 +1,7 @@
+# Fedora Project cloud/download and security, verified 2026-10-01.
+# This is a CI seed, separate from the locked Workstation installation ISO.
+FEDORA_CLOUD_IMAGE=Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2
+FEDORA_CLOUD_SHA256=28680fe5b371a5a82ebf43a31926e086a168e59949d03969c5093e7071f90b7f
+FEDORA_CLOUD_CHECKSUM=Fedora-Cloud-44-1.7-x86_64-CHECKSUM
+FEDORA_CLOUD_URL=https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images
+FEDORA_SIGNING_FINGERPRINT=36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6

@@ -75,3 +75,18 @@ Pour le staging des disques VM, choisir un espace de travail disponible avec
 `backup-now.sh --include-vms --staging-root /chemin/absolu`. La capacité est
 contrôlée avant chaque copie ; elle ne prouve pas la santé physique du SSD.
 Le profil conserve le choix de noyau existant et les protections SELinux/firewalld.
+
+## Prétest de démarrage et reprise sur GitHub
+
+Le [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md) exerce une session GDM
+Wayland, un reboot, le moteur Borg, une restauration de VM à froid avec UEFI/TPM
+logiciel et une reconstruction depuis une seconde image Cloud neuve. Son rapport
+est propre à chaque commit/run ; consulter son verdict et les journaux avant de
+conclure à un PASS. Il ne couvre pas l'APPLY de production, Anaconda/Kickstart,
+le démarrage CachyOS, Windows ni les trois gates officielles. Les exercices
+opérateur du tableau restent requis sur la vraie configuration selon le
+[runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md).
+
+Utiliser la [fiche de preuves opérateur](QUALIFICATION_EVIDENCE_TEMPLATE.md)
+pour suivre les essais de reprise, GNOME et composants sans confondre un
+prétest GitHub avec un résultat matériel. Tous ses résultats commencent non exécutés.

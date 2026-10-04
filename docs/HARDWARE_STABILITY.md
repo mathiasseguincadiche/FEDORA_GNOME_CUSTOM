@@ -18,14 +18,14 @@ Les contrôles couvrent Vulkan, VA-API, firmware, journal xe/DRM et état Waylan
 
 ## Kernel
 
-Le profil utilise Fedora Kernel Vanilla stable avec plancher 7.2.2 et une politique **rolling N / N-1**.
+Le profil utilise CachyOS BORE stable (canal `cachyos`, défaut Golden) avec plancher 7.2.2 et une politique **rolling N / N-1**.
 
 - le dernier stable disponible devient N ;
 - N est le défaut GRUB normal ;
 - le kernel précédent reste N-1 pour rollback ;
-- `installonly_limit=2` impose au maximum deux versions `kernel-core` ;
+- `installonly_limit=2` impose au maximum deux versions par canal (`kernel-cachyos-core` et `kernel-core`) ;
 - les versions plus anciennes sont purgées via DNF5 `oldinstallonly` ;
-- un kernel Fedora permanent n'est plus conservé comme troisième fallback.
+- le canal `kernel-core` reste installé comme secours, avec sa propre limite de deux versions.
 
 Secure Boot actif bloque ce chemin par défaut tant qu'un workflow de confiance/signature n'a pas été choisi explicitement.
 

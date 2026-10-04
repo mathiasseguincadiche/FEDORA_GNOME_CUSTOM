@@ -1,20 +1,25 @@
 name: Tests
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # This mandatory context cannot succeed if either Fedora job fails/skips.
-  contracts:
-    needs: [installer-audit, borg-fedora]
+  # Run the fast suite immediately; contracts below remains the mandatory gate.
+  logic-contracts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install real Borg integration-test dependency
         run: sudo apt-get update && sudo apt-get install -y borgbackup jq
+      - run: bash tests/test_fedora_lab_evidence.sh
       - run: bash tests/test_backup_certification_behavior.sh
       - run: bash tests/test_ci_gates_behavior.sh
       - run: bash tests/test_kernel_journal_behavior.sh
@@ -150,3 +155,22 @@ jobs:
       - run: bash tests/test_borg_roundtrip.sh
       - run: bash tests/test_backup_certification_behavior.sh
       - run: bash tests/test_kernel_journal_behavior.sh
+
+  fedora-gnome-vm:
+    uses: ./.github/workflows/fedora-gnome-vm.yml
+    permissions:
+      contents: read
+
+  # A default skipped job can satisfy a required check on GitHub. Always run
+  # this aggregate, and explicitly FAIL for failed/cancelled/skipped dependencies.
+  contracts:
+    if: ${{ always() }}
+    needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Require every dependency to succeed
+        env:
+          DEPENDENCY_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 .github/scripts/require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm <<< "$DEPENDENCY_RESULTS"
