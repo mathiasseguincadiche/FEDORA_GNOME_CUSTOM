@@ -47,6 +47,8 @@ Le contrôle des erreurs critiques reste intégral : [événements QEMU](https:/
 Il ne supprime jamais ce marqueur et ne réactive pas les extensions pour
 faire réussir un redémarrage. Le journal persistant permet aussi de refuser
 un crash ou une erreur critique sur le boot précédent, y compris à l'arrêt.
+La fermeture de session contrôle aussi immédiatement ces erreurs après l’arrêt
+de GDM, y compris pour la dernière VM qui ne sera pas redémarrée.
 Ce scénario ne qualifie pas un redémarrage précipité pendant la première
 minute d'initialisation, ni un reboot direct avec `systemctl` pendant que
 le bureau est ouvert. Ce dernier chemin a produit des timeouts d'arrêt de

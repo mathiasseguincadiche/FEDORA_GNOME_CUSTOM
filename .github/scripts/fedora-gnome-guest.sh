@@ -32,6 +32,16 @@ failure() {
   done
   exit "$rc"
 }
+journal_health() {
+  local journal_boot="$1"
+  journalctl --quiet --no-pager -b "$journal_boot" -p emerg..crit > /tmp/fgc-critical.log
+  [[ ! -s /tmp/fgc-critical.log ]]
+  journalctl --quiet --no-pager -b "$journal_boot" -t systemd-coredump -o json > /tmp/fgc-coredumps.log
+  [[ ! -s /tmp/fgc-coredumps.log ]]
+  systemctl --failed --no-legend --no-pager > /tmp/fgc-failed-units.log
+  [[ ! -s /tmp/fgc-failed-units.log ]]
+}
+
 ACTION="${1:-unknown}"
 trap 'failure "$ACTION"' ERR
 
@@ -179,6 +189,8 @@ CONF
     fi
     systemctl stop gdm
     journalctl --sync
+    # Check logout errors now, including the last VM shutdown with no next boot.
+    journal_health 0
     ;;
   session)
     require_session
@@ -293,12 +305,7 @@ PY
     journal_boot=0
     [[ "$ACTION" != previous-health ]] || journal_boot=-1
     # Actual crashes / kernel errors are fatal. Other messages remain evidence.
-    journalctl --quiet --no-pager -b "$journal_boot" -p emerg..crit > /tmp/fgc-critical.log
-    [[ ! -s /tmp/fgc-critical.log ]]
-    journalctl --quiet --no-pager -b "$journal_boot" -t systemd-coredump -o json > /tmp/fgc-coredumps.log
-    [[ ! -s /tmp/fgc-coredumps.log ]]
-    systemctl --failed --no-legend --no-pager > /tmp/fgc-failed-units.log
-    [[ ! -s /tmp/fgc-failed-units.log ]]
+    journal_health "$journal_boot"
     as_user systemctl --user --failed --no-legend --no-pager > /tmp/fgc-user-failed-units.log
     [[ ! -s /tmp/fgc-user-failed-units.log ]]
     ;;
