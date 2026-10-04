@@ -38,6 +38,12 @@ une minute), puis revérifie session, réglages persistants et extensions active
 La session se ferme par `gnome-session-quit --logout --no-prompt`, puis GDM
 s'arrête avant le redémarrage/arrêt système. Le rapport exige
 `session_shutdown=gnome-logout`.
+Le runner s’abonne au moniteur QMP avant la demande de reboot du système,
+puis attend un événement `RESET` émis par l’invité avant de retenter SSH.
+Il ne force aucune remise à zéro depuis l’hôte. L’identifiant du boot doit
+également changer. Cette attente évite de provoquer des refus PAM critiques
+en interrogeant SSH pendant que Fedora bloque les connexions à l’arrêt.
+Le contrôle des erreurs critiques reste intégral : [événements QEMU](https://www.qemu.org/docs/master/interop/qemu-qmp-ref.html#event-reset).
 Il ne supprime jamais ce marqueur et ne réactive pas les extensions pour
 faire réussir un redémarrage. Le journal persistant permet aussi de refuser
 un crash ou une erreur critique sur le boot précédent, y compris à l'arrêt.

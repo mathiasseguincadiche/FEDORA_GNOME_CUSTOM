@@ -148,7 +148,7 @@ new_bundle() {
 start_vm() {
   local bundle="$1" restricted="$2"
   [[ -z "$VM_PID" && -z "$TPM_PID" ]]
-  rm -f "$LAB/swtpm.sock"
+  rm -f "$LAB/swtpm.sock" "$LAB/qmp.sock"
   swtpm socket --tpm2 --tpmstate "dir=$bundle/tpm" \
     --ctrl "type=unixio,path=$LAB/swtpm.sock" --flags not-need-init --terminate \
     > "$LAB/evidence/$PHASE-swtpm.log" 2>&1 &
@@ -165,6 +165,7 @@ start_vm() {
     -netdev "user,id=net0,restrict=$restricted,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22" \
     -chardev "socket,id=chrtpm,path=$LAB/swtpm.sock" \
     -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0 \
+    -qmp "unix:$LAB/qmp.sock,server=on,wait=off" \
     -display none -serial "file:$LAB/evidence/$PHASE-console.log" \
     > "$LAB/evidence/$PHASE-qemu.log" 2>&1 &
   VM_PID=$!
@@ -235,6 +236,13 @@ shutdown_vm() {
   return 1
 }
 boot_id() { guest cat /proc/sys/kernel/random/boot_id; }
+reboot_vm() {
+  guest_action end-session
+  # Subscribe before requesting a normal OS reboot; never poll SSH on shutdown.
+  python3 "$ROOT/.github/scripts/fedora-qmp-reboot.py" "$LAB/qmp.sock" \
+    ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemctl reboot'
+  wait_ssh
+}
 
 PHASE=initial
 new_bundle "$LAB/original"
@@ -253,14 +261,9 @@ collect
 
 PHASE=reboot
 old_boot="$(boot_id)"
-guest_action end-session
-guest 'sudo systemctl reboot' || true
-# Require a changed kernel boot ID, not just an SSH reconnection.
-for _ in {1..180}; do
-  current="$(boot_id 2>/dev/null || true)"
-  [[ -n "$current" && "$current" != "$old_boot" ]] && break
-  sleep 5
-done
+reboot_vm
+# A guest-originated QMP reset and a changed kernel boot ID are both mandatory.
+current="$(boot_id)"
 [[ -n "$current" && "$current" != "$old_boot" ]]
 wait_session
 guest_action previous-health
@@ -327,13 +330,8 @@ scp "${SCP_OPTS[@]}" files-recovery.tar.gz lab@127.0.0.1:/tmp/fgc-files-recovery
 guest_action rebuild 2>&1 | tee "$LAB/evidence/rebuilt.log"
 guest_action session
 rebuilt_initial="$(boot_id)"
-guest_action end-session
-guest 'sudo systemctl reboot' || true
-for _ in {1..180}; do
-  current="$(boot_id 2>/dev/null || true)"
-  [[ -n "$current" && "$current" != "$rebuilt_initial" ]] && break
-  sleep 5
-done
+reboot_vm
+current="$(boot_id)"
 [[ -n "$current" && "$current" != "$rebuilt_initial" ]]
 wait_session
 guest_action previous-health

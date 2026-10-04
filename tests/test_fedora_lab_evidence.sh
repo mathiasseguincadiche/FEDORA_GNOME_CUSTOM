@@ -75,5 +75,15 @@ for name in required:
         broken[name]["result"] = result
         assert not jobs.successful(broken, required)
 assert not jobs.successful({}, required)
+# Host resets, shutdown and untrusted boolean values are not OS reboot proof.
+spec = importlib.util.spec_from_file_location("qmp", root / ".github/scripts/fedora-qmp-reboot.py")
+qmp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(qmp)
+assert qmp.guest_reset({"event": "RESET", "data": {"guest": True, "reason": "guest-reset"}})
+for event in ({}, {"event": "SHUTDOWN", "data": {"guest": True, "reason": "guest-shutdown"}},
+              {"event": "RESET", "data": {"guest": False, "reason": "host-qmp-system-reset"}},
+              {"event": "RESET", "data": {"guest": "true", "reason": "guest-reset"}},
+              {"event": "RESET", "data": {"guest": True, "reason": "guest-panic"}}):
+    assert not qmp.guest_reset(event)
 print("Fedora lab evidence: PASS (missing exercises, stale boots, archive identity, isolation, encryption, deferred gates)")
 PY
