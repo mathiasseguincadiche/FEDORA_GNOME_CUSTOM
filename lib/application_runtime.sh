@@ -3,7 +3,8 @@
 application_runtime_contract_path() { printf '%s/manifests/application-runtime-contract.tsv\n' "$REPO_ROOT"; }
 application_runtime_provenance_path() { printf '%s/manifests/application-provenance.tsv\n' "$REPO_ROOT"; }
 application_runtime_unverified_allowed(){ local id="$1"; [[ " ${UNVERIFIED_FLATHUB_ALLOWLIST:-} " == *" $id "* ]]; }
-application_runtime_provenance_matches(){ local id="$1" delivery="$2" trust="$3" provenance; [[ "$delivery" == fedora-rpm ]] && return 0; provenance="$(application_runtime_provenance_path)"; awk -F '\t' -v id="$id" -v delivery="$delivery" -v trust="$trust" '$1==id && $2==delivery && $3==trust {found=1} END {exit !found}' "$provenance"; }
+application_runtime_provenance_matches(){ local id="$1" delivery="$2" trust="$3" provenance;
+  [[ "$delivery" != flatpak ]] || delivery=flathub; [[ "$delivery" == fedora-rpm ]] && return 0; provenance="$(application_runtime_provenance_path)"; awk -F '\t' -v id="$id" -v delivery="$delivery" -v trust="$trust" '$1==id && ($2==delivery || (delivery=="flathub" && $2=="flatpak")) && $3==trust {found=1} END {exit !found}' "$provenance"; }
 application_runtime_vendor_repo_exact(){ local id="$1" source installed repo_dir; repo_dir="${APPLICATION_RUNTIME_REPO_ROOT:-/etc/yum.repos.d}"; case "$id" in code) source="$REPO_ROOT/config/repos/vscode.repo"; installed="$repo_dir/vscode.repo";; brave-browser) source="$REPO_ROOT/config/repos/brave-browser.repo"; installed="$repo_dir/brave-browser.repo";; *) return 1;; esac; [[ -r "$source" && -r "$installed" ]] && cmp -s "$source" "$installed"; }
 
 application_runtime_desktop_file(){ local package="$1" f; while IFS= read -r f; do [[ "$f" == /usr/share/applications/*.desktop && -r "$f" ]] || continue; grep -Eq '^Type=Application[[:space:]]*$' "$f" || continue; grep -Eqi '^(NoDisplay|Hidden)=true[[:space:]]*$' "$f" && continue; printf '%s\n' "$f"; return 0; done < <(rpm -ql "$package" 2>/dev/null); return 1; }

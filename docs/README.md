@@ -255,3 +255,5 @@ Les comptes rendus d'étapes passées (non normatifs) sont rangés dans [`histor
 
 - [Linux amont officiel et N/N-1](UPSTREAM_LINUX.md)
 - [Préparation Fedora 45 / GNOME 51 et mise à niveau](UPGRADE_FEDORA_45.md)
+
+- [Complétion desktop, applications et périphériques](DESKTOP_COMPLETION.md) — maintenance GNOME, flux réels, Brio/ALC4080 et afficheur LD240 facultatif.

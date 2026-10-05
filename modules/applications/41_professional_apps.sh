@@ -59,7 +59,7 @@ PROFESSIONAL APPLICATIONS:
 - install VLC, LibreOffice and FileZilla from Fedora repositories
 - install Visual Studio Code from Microsoft's signed RPM repository
 - install Brave from Brave Software's signed RPM repository
-- install Bitwarden, Slack, ONLYOFFICE, MarkText and draw.io from Flathub
+- install Bitwarden, Slack, ONLYOFFICE, MarkText, draw.io and Flatseal from Flathub
 - community-unverified Flathub packages require an explicit versioned allowlist entry
 - application provenance/trust class is documented in manifests/application-provenance.tsv
 - professional applications are an explicit functional exception to the GTK4-only general desktop rule

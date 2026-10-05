@@ -4,3 +4,4 @@ com.slack.Slack
 org.onlyoffice.desktopeditors
 com.github.marktext.marktext
 com.jgraph.drawio.desktop
+com.github.tchx84.Flatseal

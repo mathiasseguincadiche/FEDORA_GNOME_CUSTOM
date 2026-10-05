@@ -96,7 +96,7 @@ evidence image_sha256 "$FEDORA_CLOUD_SHA256"
 # shellcheck source=config/gnome-extensions.lock
 source "$ROOT/config/gnome-extensions.lock"
 mkdir extensions
-for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
   url_key="${prefix}_SOURCE_URL"
   sha_key="${prefix}_SHA256"
   curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 \

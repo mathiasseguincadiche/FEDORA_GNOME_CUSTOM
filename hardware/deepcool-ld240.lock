@@ -1,0 +1,7 @@
+# Community implementation; alpha release, optional and never enabled by APPLY.
+# Asset digest supplied by GitHub Releases, 2026-10-05; CI rechecks actual bytes.
+DEEPCOOL_VERSION="v0.11.0-alpha"
+DEEPCOOL_URL="https://github.com/Nortank12/deepcool-digital-linux/releases/download/v0.11.0-alpha/deepcool-digital-linux"
+DEEPCOOL_SHA256="9365c604831738a5a30128084b7821e01cea16c96ca2f5cbed51b9c0336dabce"
+DEEPCOOL_USB_VENDOR="3633"
+DEEPCOOL_USB_PRODUCT="000a"

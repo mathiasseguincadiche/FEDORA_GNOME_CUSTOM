@@ -17,6 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Peripheral identity and portal cancellation regressions
+        run: |
+          bash tests/test_peripheral_identity_behavior.sh
+          python3 tests/test_portal_stream_behavior.py
+
       - name: Install real Borg integration-test dependency
         run: sudo apt-get update && sudo apt-get install -y borgbackup jq
       - name: Exercise actual Docker probe and cleanup on the GitHub runner

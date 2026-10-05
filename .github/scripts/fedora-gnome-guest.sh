@@ -16,6 +16,8 @@ source "$REPO/lib/backup_runtime.sh"
 source "$REPO/.github/scripts/fedora-greeter-ready.sh"
 # shellcheck source=config/gnome-extensions.lock
 source "$REPO/config/gnome-extensions.lock"
+# shellcheck source=config/gnome.conf
+source "$REPO/config/gnome.conf"
 
 failure() {
   local rc=$?
@@ -81,7 +83,7 @@ check_extension_settings() {
 check_extensions() {
   check_extension_settings
   local uuid output
-  for uuid in "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID"; do
+  for uuid in "$DASH_TO_DOCK_UUID" "$APPINDICATOR_UUID" "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID" "$TILING_ASSISTANT_UUID"; do
     # Shell activation is asynchronous. Observe it; never repair a reboot here.
     for _ in {1..60}; do
       output="$(as_user gnome-extensions info "$uuid")"
@@ -131,12 +133,21 @@ case "${1:-}" in
     systemd-tmpfiles --create --prefix /var/log/journal
     systemctl restart systemd-journald
     journalctl --flush
-    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
     done
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
-      tpm2-tools firewalld python3 curl gjs
+      tpm2-tools firewalld python3 curl gjs gnome-shell-extension-dash-to-dock \
+      gnome-shell-extension-appindicator gnome-text-editor libreoffice poppler-utils gnome-software dconf
+    # Exercise the production lifecycle writer in this disposable Fedora only.
+    (
+      # shellcheck source=modules/desktop/27_lifecycle.sh
+      source "$REPO/modules/desktop/27_lifecycle.sh"
+      run_mutating(){ shift; "$@"; }
+      is_true(){ [[ "$1" == true ]]; }
+      desktop_lifecycle_apply
+    )
     passwd -d "$LAB_USER"
     systemctl enable --now firewalld
     mkdir -p /var/lib/fgc-lab
@@ -156,7 +167,7 @@ CONF
     touch "$LAB_HOME/.config/gnome-initial-setup-done"
     chown -R "$LAB_USER:$LAB_USER" "$LAB_HOME/.config"
     # Use the reviewed production artifact installer, without loosening gates.
-    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
         bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
     done
@@ -168,7 +179,7 @@ CONF
     # Persist the selected extensions before the first GDM session.
     # Reboot/recovery checks only observe these settings and active states.
     as_user gsettings set org.gnome.shell enabled-extensions \
-      "['$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID']"
+      "['$DASH_TO_DOCK_UUID', '$APPINDICATOR_UUID', '$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID', '$TILING_ASSISTANT_UUID']"
     as_user gsettings set org.gnome.shell disable-user-extensions false
     extension_settings > /var/lib/fgc-lab/extension-settings.expected
     dnf clean all
@@ -200,6 +211,10 @@ CONF
   session)
     require_session
     check_extensions
+    for key in download-updates allow-updates; do
+      [[ "$(as_user gsettings get org.gnome.software "$key")" == false ]]
+      [[ "$(as_user gsettings writable org.gnome.software "$key")" == false ]]
+    done
     as_user systemd-run --user --collect --unit=fgc-lab-nautilus \
       nautilus --new-window "$LAB_HOME"
     as_user systemd-run --user --collect --unit=fgc-lab-ptyxis \
@@ -209,6 +224,7 @@ CONF
     pgrep -u "$LAB_UID" -x nautilus >/dev/null
     pgrep -u "$LAB_UID" -x ptyxis >/dev/null
     as_user systemctl --user is-active --quiet xdg-desktop-portal.service
+    as_user bash "$REPO/.github/scripts/desktop-document-smoke.sh"
     ;;
   seed)
     mkdir -p "$LAB_HOME/.config/fgc-lab" "$LAB_HOME/Documents/Lab" /var/lib/fgc-lab

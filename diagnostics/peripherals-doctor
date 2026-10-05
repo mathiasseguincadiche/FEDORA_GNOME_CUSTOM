@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+usage(){ echo 'Usage: peripherals-doctor list | enroll audio cardN | enroll camera videoN | test-camera | test-audio hw:CARD,DEV'; }
+case "${1:-list}" in
+  list)
+    aplay -l; arecord -l; v4l2-ctl --list-devices
+    for kind in audio camera; do
+      if endpoint="$(peripheral_resolve "$kind")"; then ui_check OK "$kind" "$endpoint"; else ui_check WARN "$kind" 'not enrolled/resolved'; fi
+    done;;
+  enroll)
+    [[ $# -eq 3 ]] || { usage; exit "$EXIT_USAGE"; }
+    peripheral_enroll "$2" "$3" || { ui_error 'Enrollment refused: inspect board, USB identity and selected endpoint'; exit "$EXIT_PRECHECK_FAILED"; }
+    ui_check OK "$2" "$(peripheral_lock_path "$2")";;
+  test-camera)
+    runtime_is_baremetal || exit "$EXIT_SECURITY_BLOCK"
+    node="$(peripheral_resolve camera)" || exit "$EXIT_PRECHECK_FAILED"
+    timeout --signal=TERM --kill-after=3 20 v4l2-ctl -d "/dev/$node" \
+      --set-fmt-video=width=1920,height=1080,pixelformat=MJPG \
+      --set-parm=30 --stream-mmap --stream-count=60 --stream-to=/dev/null
+    v4l2-ctl -d "/dev/$node" --get-fmt-video | grep -Eq '1920/1080'
+    ui_check OK Camera '1080p capture completed; visual/WebRTC and resume tests remain required';;
+  test-audio)
+    runtime_is_baremetal || exit "$EXIT_SECURITY_BLOCK"
+    [[ $# -eq 2 && "$2" =~ ^hw:([0-9]+),([0-9]+)$ ]] || { usage; exit "$EXIT_USAGE"; }
+    selected_card="card${BASH_REMATCH[1]}"
+    card="$(peripheral_resolve audio)" || exit "$EXIT_PRECHECK_FAILED"
+    [[ "$card" == "$selected_card" ]] || { ui_error 'Select the enrolled motherboard card, not another microphone'; exit "$EXIT_PRECHECK_FAILED"; }
+    timeout --signal=TERM --kill-after=3 15 speaker-test -D "$2" -t sine -c 2 -l 1
+    ui_check INFO Audio 'Playback command completed; confirm left/right sound in the physical checklist';;
+  *) usage; exit "$EXIT_USAGE";;
+esac

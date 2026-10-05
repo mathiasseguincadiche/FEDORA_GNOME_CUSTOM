@@ -32,7 +32,7 @@ if [[ -n "$wifi_pci" ]]; then
   wifi_header="$(head -n1 <<<"$wifi_pci")"; wifi_bdf="${wifi_header%% *}"; wifi_id="$(hardware_platform_wifi_identity_value pci_id 2>/dev/null || true)"; wifi_driver="$(hardware_platform_wifi_identity_value driver 2>/dev/null || true)"
   [[ -n "$wifi_driver" ]] && emit OK 'Wi-Fi identity' "bdf=$wifi_bdf pci=${wifi_id:-unknown} driver=$wifi_driver" || emit KO 'Wi-Fi identity' 'controller unbound'
   hardware_platform_wifi_lock_valid && emit OK 'Wi-Fi identity lock' "pci=$wifi_id driver=$wifi_driver" || emit KO 'Wi-Fi identity lock' 'run baseline-doctor enroll-wifi on bare metal'
-  if command_exists iw && iw phy 2>/dev/null | grep -q Wiphy; then emit OK 'Wi-Fi PHY' detected; iw_report="$(iw phy 2>/dev/null || true)"; grep -Eqi 'EHT|802\.11be' <<<"$iw_report" && emit OK 'Wi-Fi 7 capability' 'EHT/802.11be advertised' || emit WARN 'Wi-Fi 7 capability' 'EHT marker not exposed'; grep -Eq '59[0-9]{2} MHz|6[0-9]{3} MHz' <<<"$iw_report" && emit OK 'Wi-Fi 6 GHz' advertised || emit WARN 'Wi-Fi 6 GHz' '6 GHz channels not visible'; else emit KO 'Wi-Fi PHY' 'iw cannot enumerate a PHY'; fi
+  if command_exists iw && iw phy 2>/dev/null | grep -q Wiphy; then emit OK 'Wi-Fi PHY' detected; iw_report="$(iw phy 2>/dev/null || true)"; grep -Eqi 'EHT|802\.11be' <<<"$iw_report" && emit OK 'Wi-Fi 7 capability' 'EHT/802.11be advertised' || { if is_true "${HARDWARE_REQUIRE_WIFI7_CAPABILITY:-true}"; then emit KO 'Wi-Fi 7 capability' 'BLOCKED: EHT marker not exposed; inspect firmware/iw output'; else emit WARN 'Wi-Fi 7 capability' 'not required; EHT not exposed'; fi; }; grep -Eq '59[0-9]{2} MHz|6[0-9]{3} MHz' <<<"$iw_report" && emit OK 'Wi-Fi 6 GHz' advertised || { if is_true "${HARDWARE_REQUIRE_6GHZ_CAPABILITY:-true}"; then emit KO 'Wi-Fi 6 GHz' 'BLOCKED: channels not visible; inspect regulatory domain and firmware'; else emit WARN 'Wi-Fi 6 GHz' 'not required; channels not visible'; fi; }; else emit KO 'Wi-Fi PHY' 'iw cannot enumerate a PHY'; fi
 else emit KO Wi-Fi 'PCI network controller not found'; fi
 
 if command_exists bluetoothctl; then
@@ -45,8 +45,12 @@ if command_exists bluetoothctl; then
   fi
 else emit KO Bluetooth 'bluetoothctl missing'; fi
 
-audio="$(aplay -l 2>/dev/null || true)"; audio_usb="$(lsusb 2>/dev/null | grep -Ei 'Audio|Realtek|ALC4080' | head -n1 || true)"
-grep -Eqi 'ALC4080|Realtek.*USB|USB.*Audio' <<<"$audio" && emit OK 'ALC4080/USB audio' "${audio_usb:-detected by ALSA}" || emit KO 'ALC4080/USB audio' 'Realtek USB audio device not detected by ALSA'
+if audio_card="$(peripheral_resolve audio)"; then
+  emit OK 'ALC4080/USB audio' "enrolled Realtek endpoint=$audio_card"
+else emit KO 'ALC4080/USB audio' 'specific endpoint unresolved; run peripherals-doctor enroll audio cardN'; fi
+if camera_node="$(peripheral_resolve camera)"; then
+  emit OK 'Brio 100 camera' "enrolled Logitech UVC endpoint=$camera_node"
+else emit KO 'Brio 100 camera' 'specific endpoint unresolved; run peripherals-doctor enroll camera videoN'; fi
 command_exists wpctl && wpctl status 2>/dev/null | grep -q Audio && emit OK PipeWire 'audio graph available' || emit KO PipeWire 'audio graph unavailable'
 lsmod | grep -q '^snd_usb_audio' && emit OK snd_usb_audio loaded || emit WARN snd_usb_audio 'module not currently loaded'
 

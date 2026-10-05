@@ -138,6 +138,10 @@ physical_cpu_temp_millic() {
 
 physical_runtime_evidence_dir() { printf '%s/final/evidence\n' "$STATE_ROOT"; }
 physical_runtime_fingerprint_payload() {
+  local endpoint
+  for endpoint in audio camera; do
+    printf '%s_endpoint=%s\n' "$endpoint" "$(sha256sum "$(peripheral_lock_path "$endpoint")" 2>/dev/null | awk '{print $1}' || true)"
+  done
   printf 'hardware=%s\n' "$(baseline_fingerprint)"
   printf 'kernel=%s\n' "$(uname -r)"
   printf 'drivers=%s\n' "$(driver_contract_fingerprint)"
@@ -161,6 +165,12 @@ physical_runtime_evidence_valid() {
   runtime_is_baremetal || return 1
   local name="$1" path
   path="$(physical_runtime_evidence_path "$name")"; [[ -s "$path" ]] || return 1
+  if [[ "$name" == audio ]]; then
+    grep -Eq '^detail=endpoint_policy=2 .*brio_microphone=card[0-9]+ ' "$path" || return 1
+  fi
+  if [[ "$name" == portal-functional ]]; then
+    grep -Fq 'stream_policy=2 ' "$path" && grep -Fq 'Camera=PASS' "$path" || return 1
+  fi
   if [[ "$name" == gpu-soak ]]; then
     physical_soak_evidence_detail_valid gpu "$(sed -n 's/^detail=//p' "$path")" || return 1
   fi

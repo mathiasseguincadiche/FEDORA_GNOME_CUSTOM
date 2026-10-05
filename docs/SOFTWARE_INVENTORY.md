@@ -204,6 +204,13 @@ Intel Arc compute :
 - intel-opencl
 - clinfo
 
+Gestion des disques et diagnostics des flux :
+
+- gnome-disk-utility
+- dconf
+- python3-gobject
+- gstreamer1-plugin-pipewire
+
 Lifecycle :
 
 - dnf5-plugin-automatic
@@ -253,6 +260,7 @@ Dépôts éditeurs signés :
 - org.onlyoffice.desktopeditors
 - com.github.marktext.marktext
 - com.jgraph.drawio.desktop
+- com.github.tchx84.Flatseal — manifeste maintenu en amont ; badge éditeur non supposé
 
 ### 1.12 Multimédia / codecs
 
@@ -490,3 +498,5 @@ Après installation, ces sorties peuvent être archivées comme inventaire runti
 Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
 
 Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
+
+L’afficheur LD240 est une option communautaire épinglée, inactive par défaut et indépendante des réglages de ventilation. Voir [DESKTOP_COMPLETION.md](DESKTOP_COMPLETION.md).

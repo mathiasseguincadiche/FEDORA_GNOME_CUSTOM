@@ -27,7 +27,7 @@ while IFS=$'\t' read -r delivery id executable smoke_arg trust; do
     fi
   } >> "$report"
   if application_runtime_validate_entry "$delivery" "$id" "$executable" "$smoke_arg" "$trust"; then
-    emit OK "$id" "$delivery / $trust runtime validated"
+    emit OK "$id" "$delivery / $trust package/sandbox smoke validated; usage qualification is separate"
   else
     emit KO "$id" "$delivery / $trust runtime contract failed"
   fi

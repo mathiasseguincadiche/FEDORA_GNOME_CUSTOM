@@ -19,6 +19,22 @@ if [[ "${LIFECYCLE_FLATPAK_UPDATE_POLICY:-manual}" == manual ]]; then emit OK Fl
 if systemctl list-unit-files 'fedora-gnome-custom-flatpak-update.*' --no-legend 2>/dev/null | grep -q .; then emit KO Flatpak 'unexpected project-owned unattended Flatpak updater exists'; fi
 if is_true "${LIFECYCLE_ENABLE_FSTRIM:-true}"; then if systemctl is-enabled --quiet fstrim.timer; then emit OK fstrim enabled; else emit KO fstrim disabled; fi; fi
 if is_true "${LIFECYCLE_ENABLE_FWUPD_REFRESH:-true}" && systemctl list-unit-files fwupd-refresh.timer --no-legend 2>/dev/null | grep -q '^fwupd-refresh.timer'; then if systemctl is-enabled --quiet fwupd-refresh.timer; then emit OK fwupd 'metadata refresh enabled'; else emit KO fwupd 'refresh timer disabled'; fi; fi
+if [[ -s /etc/dconf/db/fgc && -r /etc/dconf/db/fgc.d/00-updates ]] &&
+   grep -Fxq 'system-db:fgc' /etc/dconf/profile/user &&
+   grep -Fxq 'download-updates=false' /etc/dconf/db/fgc.d/00-updates &&
+   grep -Fxq 'allow-updates=false' /etc/dconf/db/fgc.d/00-updates &&
+   grep -Fxq '/org/gnome/software/download-updates' /etc/dconf/db/fgc.d/locks/updates &&
+   grep -Fxq '/org/gnome/software/allow-updates' /etc/dconf/db/fgc.d/locks/updates; then
+  emit OK 'GNOME Software policy' 'catalogue enabled; unattended updates locked off'
+else emit KO 'GNOME Software policy' 'managed dconf values/locks/database/profile missing'; fi
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* && -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  for key in download-updates allow-updates; do
+    if [[ "$(gsettings get org.gnome.software "$key" 2>/dev/null)" == false &&
+          "$(gsettings writable org.gnome.software "$key" 2>/dev/null)" == false ]]; then
+      emit OK "GNOME Software $key" 'effective value=false and locked'
+    else emit KO "GNOME Software $key" 'policy not effective; log out/in and recheck'; fi
+  done
+fi
 if dnf5 needs-restarting -r >/dev/null 2>&1; then emit OK Reboot 'no reboot requirement reported'; else emit WARN Reboot 'dnf5 reports a reboot may be required'; fi
 if dnf5 system-upgrade --help >/dev/null 2>&1; then emit OK 'Major upgrade' 'dnf5 system-upgrade available'; else emit WARN 'Major upgrade' 'system-upgrade command not exposed'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
