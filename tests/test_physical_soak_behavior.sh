@@ -33,9 +33,35 @@ if physical_cpu_sample_checked 96000 >/dev/null 2>&1; then exit 1; fi
 physical_cpu_temp_millic() { return 1; }
 if physical_cpu_sample_checked 95000 >/dev/null 2>&1; then exit 1; fi
 
+# Cover the startup race where setsid has not created a group yet.
+sleep 60 & startup_pid=$!
+physical_stop_process_group "$startup_pid"
+if kill -0 "$startup_pid" 2>/dev/null; then echo 'startup process was not stopped' >&2; exit 1; fi
+
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/lib" "$tmp/diagnostics" "$tmp/bin" "$tmp/reports"
+# Existing markers without complete timing must become stale too.
+source "$ROOT/lib/baseline.sh"
+STATE_ROOT="$tmp/state"
+runtime_is_baremetal() { :; }
+baseline_fingerprint() { echo fixture; }
+physical_runtime_fingerprint() { echo fixture; }
+effective_config_sha256() { echo fixture; }
+mkdir -p "$(baseline_evidence_dir)" "$(physical_runtime_evidence_dir)"
+digest="$(printf 'a%.0s' {1..64})"
+for kind in cpu memory gpu; do
+  case "$kind" in
+    cpu) name=cpu-soak; minimum=1800; path="$(baseline_evidence_dir)/$name.ok";;
+    memory) name=memory-5600; minimum=3600; path="$(baseline_evidence_dir)/$name.ok";;
+    gpu) name=gpu-soak; minimum=900; path="$(physical_runtime_evidence_path "$name")";;
+  esac
+  printf 'status=PASS\nfingerprint=fixture\neffective_config_sha256=fixture\ndetail=automated=true sha256=%s seconds=%s instances=1\n' "$digest" "$minimum" >"$path"
+  if [[ "$kind" == gpu ]]; then check=physical_runtime_evidence_valid; else check=baseline_evidence_valid; fi
+  if "$check" "$name"; then echo 'old marker accepted without policy/elapsed proof' >&2; exit 1; fi
+  sed -i "s/detail=/detail=qualification_policy=2 elapsed_seconds=$minimum /" "$path"
+  "$check" "$name"
+done
 cp "$ROOT/diagnostics/baseline-doctor" "$ROOT/diagnostics/physical-runtime-doctor" "$tmp/diagnostics/"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$tmp/diagnostics/graphics-doctor"
 chmod +x "$tmp/diagnostics/graphics-doctor"

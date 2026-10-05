@@ -196,11 +196,13 @@ physical_stop_process_group() {
   local pid="${1:-}" attempt
   [[ "$pid" =~ ^[1-9][0-9]{0,8}$ ]] || return 0
   kill -TERM -- "-$pid" 2>/dev/null || true
+  kill -TERM "$pid" 2>/dev/null || true
   for ((attempt=0; attempt<30; attempt++)); do
-    kill -0 -- "-$pid" 2>/dev/null || break
+    kill -0 -- "-$pid" 2>/dev/null || kill -0 "$pid" 2>/dev/null || break
     sleep 0.1
   done
   kill -KILL -- "-$pid" 2>/dev/null || true
+  kill -KILL "$pid" 2>/dev/null || true
   wait "$pid" 2>/dev/null || true
 }
 
