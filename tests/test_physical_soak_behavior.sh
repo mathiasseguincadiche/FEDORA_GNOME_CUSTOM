@@ -62,6 +62,22 @@ for kind in cpu memory gpu; do
   sed -i "s/detail=/detail=qualification_policy=2 elapsed_seconds=$minimum /" "$path"
   "$check" "$name"
 done
+# A previously certified baseline must also recheck both RAM proofs.
+hardware_platform_wifi_lock_valid() { :; }
+physical_bluetooth_lock_valid() { :; }
+physical_cooling_lock_valid() { :; }
+driver_contract_validate() { :; }
+hardware_b580_expected_edid_sha256() { echo fixture; }
+evidence_marker_value() { awk -F= -v key="$2" '$1==key {print $2; exit}' "$1"; }
+marker="$(baseline_certification_path)"
+mkdir -p "$(dirname "$marker")"
+for field in verdict=PASS dmi_platform=PASS amd_pstate=PASS cpu_boost=PASS wifi_identity_lock=PASS bluetooth_identity_lock=PASS nct6687_hwmon=PASS cooling_channels=PASS driver_contract=PASS cpu_soak=PASS fingerprint=fixture display_edid_sha256=fixture; do echo "$field"; done >"$marker"
+if baseline_certification_valid; then echo 'certified baseline accepted missing RAM proof' >&2; exit 1; fi
+cp "$(baseline_evidence_dir)/memory-5600.ok" "$(baseline_evidence_dir)/memory-6000.ok"
+baseline_certification_valid
+sed -i 's/qualification_policy=2/qualification_policy=1/' "$(baseline_evidence_dir)/memory-6000.ok"
+if baseline_certification_valid; then echo 'certified baseline accepted old RAM policy' >&2; exit 1; fi
+
 cp "$ROOT/diagnostics/baseline-doctor" "$ROOT/diagnostics/physical-runtime-doctor" "$tmp/diagnostics/"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$tmp/diagnostics/graphics-doctor"
 chmod +x "$tmp/diagnostics/graphics-doctor"

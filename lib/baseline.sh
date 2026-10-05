@@ -95,6 +95,8 @@ baseline_certification_valid(){
   physical_bluetooth_lock_valid || return 1
   physical_cooling_lock_valid || return 1
   baseline_evidence_valid cpu-soak || return 1
+  baseline_evidence_valid memory-5600 || return 1
+  baseline_evidence_valid memory-6000 || return 1
   driver_contract_validate || return 1
   [[ "$(evidence_marker_value "$marker" display_edid_sha256 2>/dev/null || true)" == "$(hardware_b580_expected_edid_sha256)" ]]
 }
