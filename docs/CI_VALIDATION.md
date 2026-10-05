@@ -279,3 +279,7 @@ Le check agrégé `contracts` s'exécute même après un échec grâce à `alway
 et refuse explicitement une dépendance échouée, annulée ou sautée. La suite
 rapide `logic-contracts` démarre indépendamment du laboratoire pour exposer
 les régressions de code sans attendre les boots VM.
+
+## Linux amont officiel
+
+Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 44 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.

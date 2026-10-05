@@ -150,6 +150,10 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_release_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_fedora_media_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_fedora_upgrade_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_kernel_channel_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_gnome_polish_behavior.sh
@@ -234,6 +238,11 @@ jobs:
       - run: bash tests/test_backup_certification_behavior.sh
       - run: bash tests/test_kernel_journal_behavior.sh
 
+  upstream-kernel:
+    uses: ./.github/workflows/upstream-kernel.yml
+    permissions:
+      contents: read
+
   fedora-gnome-vm:
     uses: ./.github/workflows/fedora-gnome-vm.yml
     permissions:
@@ -243,7 +252,7 @@ jobs:
   # this aggregate, and explicitly FAIL for failed/cancelled/skipped dependencies.
   contracts:
     if: ${{ always() }}
-    needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm]
+    needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, upstream-kernel]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -251,4 +260,4 @@ jobs:
         env:
           DEPENDENCY_RESULTS: ${{ toJSON(needs) }}
         run: |
-          python3 .github/scripts/require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm <<< "$DEPENDENCY_RESULTS"
+          python3 .github/scripts/require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm upstream-kernel <<< "$DEPENDENCY_RESULTS"

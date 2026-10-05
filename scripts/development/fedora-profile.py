@@ -36,6 +36,20 @@ def validate(root, release):
         if hashlib.sha256(path.read_bytes()).hexdigest() != profile.get(key):
             raise ValueError("reviewed profile digest mismatch: " + key)
     media = assignments(media_path)
+    expected_keys = set(assignments(root / "installer/fedora44-media.lock"))
+    if set(media) != expected_keys:
+        raise ValueError("media lock contains unknown or missing keys")
+    compose = media.get("FEDORA_COMPOSE", "")
+    if not re.fullmatch(r"[0-9]+[.][0-9]+", compose):
+        raise ValueError("missing final compose")
+    if media.get("ISO_FILENAME") != "Fedora-Workstation-Live-45-" + compose + ".x86_64.iso":
+        raise ValueError("media name/compose mismatch")
+    if media.get("CHECKSUM_FILENAME") != "Fedora-Workstation-45-" + compose + "-x86_64-CHECKSUM":
+        raise ValueError("CHECKSUM name/compose mismatch")
+    if not media.get("SOURCE_URL", "").startswith(("https://fedoraproject.org/", "https://download.fedoraproject.org/")):
+        raise ValueError("unapproved Fedora source")
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]+Z", media.get("VERIFIED_UTC", "")):
+        raise ValueError("media verification date missing")
     if media.get("FEDORA_RELEASE") != "45" or media.get("RELEASE_STATUS") != "final":
         raise ValueError("a Fedora 45 final media lock is required")
     if not re.fullmatch(r"Fedora-Workstation-Live-45-[0-9]+\.[0-9]+\.x86_64\.iso", media.get("ISO_FILENAME", "")):
@@ -57,6 +71,12 @@ def validate(root, release):
             raise ValueError("unported GNOME extension: " + prefix)
         if not re.fullmatch(r"[0-9a-f]{64}", lock.get(prefix + "_SHA256", "")):
             raise ValueError("missing extension digest")
+        if not re.fullmatch(r"[1-9][0-9]*", lock.get(prefix + "_VERSION", "")):
+            raise ValueError("extension version missing")
+        if prefix != "TILING_ASSISTANT":
+            review = lock.get(prefix + "_REVIEW_ID", "")
+            if not re.fullmatch(r"[1-9][0-9]*", review) or lock[prefix + "_SOURCE_URL"] != "https://extensions.gnome.org/review/download/" + review + ".shell-extension.zip":
+                raise ValueError("extension URL/review mismatch")
         if not lock.get(prefix + "_SOURCE_URL", "").startswith(("https://extensions.gnome.org/review/download/", "https://github.com/Leleat/Tiling-Assistant/releases/download/")):
             raise ValueError("unreviewed extension source")
     if not re.fullmatch(r"[0-9a-f]{40}", profile.get("qualification_commit", "")):

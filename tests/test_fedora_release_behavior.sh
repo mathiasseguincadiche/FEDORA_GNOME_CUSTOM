@@ -27,10 +27,11 @@ packages=work/"profiles/fedora45/packages-nautilus.txt"
 packages.write_bytes((root/"profiles/fedora45/packages-nautilus.txt").read_bytes())
 canonical=(root/"config/gnome-extensions.lock").read_text()
 (work/"config/gnome-extensions.lock").write_text(canonical)
+(work/"installer/fedora44-media.lock").write_bytes((root/"installer/fedora44-media.lock").read_bytes())
 extensions=work/"profiles/fedora45/gnome-extensions.lock"
 extensions.write_text(canonical.replace('_SHELL_VERSION="50"','_SHELL_VERSION="51"'))
 media=work/"installer/fedora45-media.lock"
-media.write_text('FEDORA_RELEASE=45\nRELEASE_STATUS=final\nISO_FILENAME=Fedora-Workstation-Live-45-1.1.x86_64.iso\nISO_SHA256='+ "a"*64+'\nSIGNING_FINGERPRINT=4F50A6114CD5C6976A7F1179655A4B02F577861E\n')
+media.write_text('FEDORA_RELEASE=45\nFEDORA_COMPOSE=1.1\nCHECKSUM_FILENAME=Fedora-Workstation-45-1.1-x86_64-CHECKSUM\nSOURCE_URL=https://fedoraproject.org/workstation/download/\nVERIFIED_UTC=2026-10-20T00:00:00Z\nRELEASE_STATUS=final\nISO_FILENAME=Fedora-Workstation-Live-45-1.1.x86_64.iso\nISO_SHA256='+ "a"*64+'\nSIGNING_FINGERPRINT=4F50A6114CD5C6976A7F1179655A4B02F577861E\n')
 manifest=work/"profiles/fedora45/profile.json"
 def seal():
     manifest.write_text(json.dumps({"schema":1,"release":45,"gnome_major":51,"status":"ready",

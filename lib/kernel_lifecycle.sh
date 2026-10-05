@@ -118,7 +118,7 @@ kernel_lifecycle_channel_repo_id() {
   pattern="$(kernel_channel_repo_pattern)" || return 1
   mapfile -t repos < <(
     dnf5 -q repo list --enabled 2>/dev/null \
-      | awk 'NR>1 {print $1}' \
+      | awk '{print $1}' \
       | grep -Ei -- "$pattern" \
       | sort -u
   )
@@ -139,7 +139,7 @@ kernel_lifecycle_query_dnf() {
 kernel_lifecycle_repo_ids() {
   kernel_lifecycle_channel_repo_id >/dev/null || return 1
   dnf5 -q repo list --enabled 2>/dev/null \
-    | awk 'NR>1 {print $1}' \
+    | awk '{print $1}' \
     | grep -E '(^|:)group_kernel-vanilla:(stable|fedora)$' | sort -u
 }
 kernel_lifecycle_repo_args() {
