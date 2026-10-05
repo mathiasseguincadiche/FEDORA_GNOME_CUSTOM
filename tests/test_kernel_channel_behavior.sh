@@ -44,6 +44,9 @@ export FAKE_CANDIDATE=7.2.8-200.vanilla.fc44.x86_64
 if kernel_lifecycle_resolve_latest_stable; then exit 1; fi
 export FAKE_CANDIDATE=7.3.0-0.rc6.vanilla.fc44.x86_64
 if kernel_lifecycle_resolve_latest_stable; then exit 1; fi
+kernel_lifecycle_upstream_latest() { printf '7.3\n'; }
+export FAKE_CANDIDATE=7.3.0-200.vanilla.fc44.x86_64
+[[ "$(kernel_lifecycle_resolve_latest_stable)" == "$FAKE_CANDIDATE" ]]
 KERNEL_VANILLA_COPR=@kernel-vanilla/mainline
 if kernel_channel_require_platform; then exit 1; fi
 python3 - "$ROOT" <<'PY'

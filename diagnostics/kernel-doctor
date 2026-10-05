@@ -55,9 +55,9 @@ upstream="$(kernel_lifecycle_upstream_latest 2>/dev/null || true)"
 available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
 if [[ -z "$upstream" ]]; then
   emit KO 'Latest stable' 'kernel.org unavailable; current latest stable cannot be verified'
-elif [[ "${latest%%-*}" != "$upstream" ]]; then
+elif ! kernel_lifecycle_version_matches_upstream "$latest" "$upstream"; then
   emit WARN 'Latest stable' "kernel.org=$upstream installed=${latest:-none}; run a complete system update"
-elif [[ "${available%%-*}" != "$upstream" ]]; then
+elif ! kernel_lifecycle_version_matches_upstream "$available" "$upstream"; then
   emit WARN 'Latest stable' "installed latest upstream=$upstream; RPM publication unresolved or behind"
 else
   emit OK 'Latest stable' "kernel.org=$upstream, RPM and installed N agree"

@@ -346,7 +346,7 @@ Gate 3 certifie notamment :
 - PCIe 5.0 x4 ;
 - absence d'erreur AER/NVMe critique ;
 - GNOME/Nautilus/Ptyxis/portals ;
-- contrat Performance Fedora-Cachy : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
+- contrat Performance Fedora Linux : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
 - profil TuneD revenu au mode Golden normal `balanced` au moment de la certification ;
 - KVM/libvirt et isolation réseau fail-closed ;
 - Borg externe non chiffré (ADR 0014) + restore canary ;

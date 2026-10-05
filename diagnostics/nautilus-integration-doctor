@@ -16,7 +16,8 @@ emit() {
   esac
 }
 
-required=(nautilus gvfs gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus)
+required=(nautilus gvfs gvfs-gphoto2 gvfs-fuse gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus)
+[[ "${HOST_RELEASE:-44}" != 44 ]] || required+=(gvfs-archive)
 is_true "${NAUTILUS_ENABLE_SMB:-true}" && required+=(gvfs-smb)
 is_true "${NAUTILUS_ENABLE_MTP:-true}" && required+=(gvfs-mtp)
 

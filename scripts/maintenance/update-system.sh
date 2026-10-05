@@ -71,6 +71,7 @@ write_update_state() {
     printf 'kernel_policy=rolling-n-nminus1\n'
     printf 'kernel_target=%s\n' "$kernel_target"
     printf 'kernel_previous=%s\n' "$kernel_previous"
+    printf 'kernel_lock_sha256=%s\n' "$(kernel_lifecycle_lock_hash)"
     printf 'kernel_max_installed=%s\n' "$(kernel_lifecycle_max_installed)"
   } | evidence_atomic_write "$UPDATE_STATE_FILE" 0600
 }
@@ -83,6 +84,10 @@ require_current_update_state() {
   local target
   target="$(update_state_value kernel_target)"
   [[ "$target" == none ]] || kernel_lifecycle_release_is_stable "$target" || { ui_error 'Invalid recorded kernel target'; return "$EXIT_CONFIG_FAILED"; }
+  [[ "$(update_state_value kernel_lock_sha256)" == "$(kernel_lifecycle_lock_hash)" ]] || {
+    ui_error 'The exact kernel transaction lock changed after preparation.'
+    return "$EXIT_SECURITY_BLOCK"
+  }
   phase="$(update_state_value phase)"; mode="$(update_state_value mode)"
   [[ "$phase" == prepared || "$phase" == reboot-requested ]] || { ui_error "Offline update state is not pending: phase=${phase:-unknown}"; return "$EXIT_PRECHECK_FAILED"; }
   [[ "$mode" == full || "$mode" == dnf-only ]] || { ui_error "Invalid offline update mode: ${mode:-unknown}"; return "$EXIT_PRECHECK_FAILED"; }
@@ -153,6 +158,7 @@ prepare_kernel_rolling_target() {
   fi
   UPDATE_KERNEL_PREVIOUS="$(kernel_lifecycle_latest_installed)"
   UPDATE_KERNEL_TARGET="$(kernel_lifecycle_prepare_rolling_update)" || return $?
+  kernel_lifecycle_pin_target "$UPDATE_KERNEL_TARGET" || return $?
   ui_check PASS 'Kernel update target' "N=$UPDATE_KERNEL_TARGET; current=${UPDATE_KERNEL_PREVIOUS:-none}; retention=$(kernel_lifecycle_max_installed)"
 }
 

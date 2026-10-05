@@ -8,7 +8,7 @@ release="${HOST_RELEASE:-44}"
 # The child installer must select the same lock as the parent engine.
 if [[ -r "$root/config/local.conf" ]]; then
   bash "$root/scripts/config/validate-config.sh" "$root/config" >/dev/null
-  configured="$(awk -F= '$1=="HOST_RELEASE" {gsub(/"/,"",$2); print $2}' "$root/config/local.conf")"
+  configured="$(awk -F= '$1 ~ /^[[:space:]]*HOST_RELEASE$/ {gsub(/"/,"",$2); print $2}' "$root/config/local.conf")"
   [[ -z "$configured" ]] || release="$configured"
 fi
 case "$release" in

@@ -21,11 +21,15 @@ Une même PR doit fournir et faire examiner :
 
 1. `installer/fedora45-media.lock` : Workstation **final**, compose exact, nom de l'ISO et du CHECKSUM, URL officielle et SHA256 réel. L'empreinte Fedora 45 est `4F50A6114CD5C6976A7F1179655A4B02F577861E`. Vérifier cryptographiquement le CHECKSUM signé et le couple exact nom/hash avant d'accepter ce verrou.
 2. `profiles/fedora45/gnome-extensions.lock` : mêmes UUID et schémas que le verrou actuel, mais archives réellement compatibles GNOME 51. URL, version, review, major GNOME et SHA changent ensemble. Télécharger, contrôler les métadonnées, compiler les schémas et tester la session réelle ; un simple tag API ne suffit pas.
-3. `profiles/fedora45/profile.json` : `schema=1`, `release=45`, `gnome_major=51`, `status=ready`, SHA256 des deux fichiers ci-dessus et `qualification_commit` réel. Les preuves CI doivent porter sur ce commit et ces fichiers, avant la promotion.
+3. `profiles/fedora45/profile.json` : `schema=1`, `release=45`, `gnome_major=51`, `status=ready`, SHA256 des deux fichiers ci-dessus et `packages_lock_sha256` pour le manifeste Nautilus 45 et `qualification_commit` réel. Les preuves CI doivent porter sur ce commit et ces fichiers, avant la promotion.
 4. Un laboratoire Fedora 45 signé et épinglé, puis démarrage, redémarrage, journaux/coredumps, extensions actives et restauration isolée. Le laboratoire Fedora 44 existant reste la référence précédente, pas une preuve Fedora 45.
 5. Une mise à jour des tests de promotion : le test qui exige actuellement un profil pending doit devenir un contrôle du profil réellement promu. Préserver les tests négatifs Beta, GNOME 50, clés inattendues, archive altérée et identité obsolète.
 
 Le validateur rejette un statut pending, un média Beta, une empreinte incorrecte, des clés d'extension supplémentaires, un UUID modifié, un major 50, un hash manquant ou un verrou changé après qualification. Il vérifie la structure et l'identité du profil examiné ; il ne fabrique pas une preuve de téléchargement signé ni une qualification matérielle.
+
+## Différence Nautilus/GVfs déjà traitée
+
+Fedora 45 ne fournit plus `gvfs-archive`. `profiles/fedora45/packages-nautilus.txt` conserve Nautilus, GVfs et les backends pris en charge, Sushi et File Roller, puis ajoute explicitement File Roller. Le moteur et le doctor sélectionnent cette liste uniquement sur un profil 45 promu. L'ouverture et l'extraction restent disponibles ; le montage des archives par GIO n'est plus promis.
 
 ## Installation neuve directement en Fedora 45
 

@@ -165,7 +165,7 @@ VPN NetworkManager / GNOME :
 - tuned
 - tuned-ppd
 
-Performance runtime Fedora-Cachy :
+Performance runtime Fedora Linux :
 
 - scx_rusty — capacité sched_ext/SCX, désactivée par défaut jusqu'au smoke test bare-metal ;
 - zram-generator-defaults — swap-on-zram selon les defaults Fedora ;
@@ -486,3 +486,5 @@ dpkg-query -W -f='${binary:Package}\n' | sort
 ```
 
 Après installation, ces sorties peuvent être archivées comme inventaire runtime ; elles complètent le contrat versionné de ce document.
+
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).

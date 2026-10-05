@@ -135,3 +135,5 @@ Le helper **ne télécharge rien automatiquement**. Cette limite est volontaire 
 L'archive doit être stockée hors machine ou sur un stockage dédié. Elle complète Borg et le bundle Golden ; elle ne remplace ni le backup courant ni la certification runtime.
 
 Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) pour le protocole complet.
+
+Le manifeste conserve `fedora-media.lock` pour la release sélectionnée et promue ; il ne copie jamais le média Fedora 44 comme preuve d'une Fedora 45.

@@ -39,6 +39,9 @@ jobs:
           # Availability failures become explicit readiness blockers below.
           RPMFUSION_FEDORA_RELEASE=45 bash scripts/ci/enable-rpmfusion.sh || true
           dnf5 -y copr enable @kernel-vanilla/stable || true
+          install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
+          install -m 0644 config/repos/brave-browser.repo /etc/yum.repos.d/brave-browser.repo
+          dnf5 -y makecache --refresh || true
       - name: Collect preview blockers and candidate extension locks
         shell: bash
         run: |

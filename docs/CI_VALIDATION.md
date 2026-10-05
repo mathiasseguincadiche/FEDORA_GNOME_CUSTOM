@@ -131,7 +131,7 @@ Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed
 
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit. Son activation RPM Fusion passe par le bootstrap partagé ci-dessus.
 
-## Performance runtime Fedora-Cachy
+## Performance runtime Fedora Linux
 
 Le contrat `tests/test_performance_runtime_contract.sh` verrouille la couche de performance :
 

@@ -15,7 +15,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.19.1**
+**Golden Workstation 0.20.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -30,7 +30,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
   <a href="#architecture-globale">Architecture</a> ·
   <a href="#les-6-piliers-golden">6 piliers</a> ·
   <a href="#matériel-cible">Matériel</a> ·
-  <a href="#performance-fedora-cachy">Performance</a> ·
+  <a href="#performance-fedora-linux">Performance</a> ·
   <a href="#finition-du-bureau-ubuntu-grade">Finition</a> ·
   <a href="#gaming">Gaming</a> ·
   <a href="#virtualisation">KVM</a> ·
@@ -101,7 +101,7 @@ Routes opérateur essentielles :
   [4] Diagnostics & santé
   [5] Kernel & boot
   [6] KVM / machines virtuelles
-  [7] Performance Fedora-Cachy
+  [7] Performance Fedora Linux
   [8] Maintenance
   [9] Certification
   [10] Logs & preuves
@@ -223,7 +223,7 @@ Commandes ciblées :
 
 ---
 
-## Performance Fedora-Cachy
+## Performance Fedora Linux
 
 La Golden Workstation ajoute une couche de performance **mesurée, réversible et Fedora-native** :
 

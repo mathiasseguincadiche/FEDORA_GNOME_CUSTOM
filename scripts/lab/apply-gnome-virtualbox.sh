@@ -44,7 +44,7 @@ lab_require_virtualbox() {
 
 lab_require_fedora44() {
   if ! grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || ! fedora_require_selected; then
-    ui_error 'VIRTUALBOX GNOME LAB requires Fedora Linux 44'
+    ui_error 'VIRTUALBOX GNOME LAB requires the selected promoted Fedora release'
     return "$EXIT_PRECHECK_FAILED"
   fi
 }

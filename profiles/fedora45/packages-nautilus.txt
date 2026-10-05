@@ -1,0 +1,12 @@
+# Fedora 45: GVfs archive backend removed upstream; File Roller remains.
+nautilus
+localsearch
+gvfs
+gvfs-gphoto2
+gvfs-fuse
+gvfs-afc
+gvfs-goa
+gvfs-nfs
+sushi
+file-roller-nautilus
+file-roller

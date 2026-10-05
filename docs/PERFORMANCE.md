@@ -1,4 +1,4 @@
-# Performance runtime — profil « Fedora-Cachy »
+# Performance runtime — profil « Fedora Linux »
 
 ## Objectif
 

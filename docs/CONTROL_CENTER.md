@@ -23,7 +23,7 @@ Le dashboard affiche :
 - état Git ;
 - second T705 `/data` EXT4 ;
 - profil Gaming / Steam / Vulkan ;
-- état Performance Fedora-Cachy et profil TuneD actif ;
+- état Performance Fedora Linux et profil TuneD actif ;
 - backup Borg ;
 - certification Golden ;
 - KVM / `devops-nat` ;
@@ -187,7 +187,7 @@ Les mises à niveau majeures ont un parcours séparé : `./control.sh upgrade pl
 
 `doctor gaming` contrôle le profil Gaming canonique, `/data/Jeux`, Steam/Vulkan et les invariants Arc/Wayland/display disponibles sur bare-metal.
 
-## Performance Fedora-Cachy
+## Performance Fedora Linux
 
 Le socle Performance est une surface opérateur de première classe du Control Center. Le mode Golden normal reste `balanced` ; les modes `performance` et `powersave` sont des bascules explicites et réversibles.
 
@@ -205,7 +205,7 @@ Le socle Performance est une surface opérateur de première classe du Control C
 ./control.sh perf game COMMAND [ARG ...]
 ```
 
-Le menu interactif **Performance Fedora-Cachy** expose les mêmes diagnostics et mutations sûres. Le smoke test SCX et le benchmark NVMe demandent une action explicite ; le benchmark restaure toujours le scheduler initial.
+Le menu interactif **Performance Fedora Linux** expose les mêmes diagnostics et mutations sûres. Le smoke test SCX et le benchmark NVMe demandent une action explicite ; le benchmark restaure toujours le scheduler initial.
 
 La certification finale appelle `performance-doctor --certify` : TuneD doit être revenu sur le profil Golden normal, zram doit respecter le contrat Fedora, SCX reste fail-safe selon sa politique, le scheduler NVMe reste `benchmark-only` et GameMode doit être disponible lorsque Gaming est activé.
 ## KVM / machines virtuelles

@@ -29,6 +29,9 @@ def validate(root, release):
         raise ValueError("Fedora 45 profile is pending; final media/extensions/CI not promoted")
     media_path = root / "installer/fedora45-media.lock"
     extensions_path = root / "profiles/fedora45/gnome-extensions.lock"
+    packages_path = root / "profiles/fedora45/packages-nautilus.txt"
+    if hashlib.sha256(packages_path.read_bytes()).hexdigest() != profile.get("packages_lock_sha256"):
+        raise ValueError("reviewed Fedora 45 package manifest digest mismatch")
     for key, path in (("media_lock_sha256", media_path), ("extensions_lock_sha256", extensions_path)):
         if hashlib.sha256(path.read_bytes()).hexdigest() != profile.get(key):
             raise ValueError("reviewed profile digest mismatch: " + key)

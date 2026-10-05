@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fedora-Cachy performance runtime helpers.
+# Fedora Linux performance runtime helpers.
 # REPO_ROOT is provided by the repository bootstrap before this file is sourced.
 
 performance_policy_path() { printf '%s/config/performance-runtime.policy\n' "$REPO_ROOT"; }

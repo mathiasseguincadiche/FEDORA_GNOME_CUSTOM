@@ -132,7 +132,7 @@ Blur My Shell reste désactivé dans l'état Golden afin de réduire les variabl
 
 Le répertoire standard GNOME « Documents » pointe vers `/data/Documents`, de sorte que les applications et Nautilus utilisent directement le stockage persistant sans symlink bricolé dans le HOME.
 
-## Performance Fedora-Cachy
+## Performance Fedora Linux
 
 Le profil Golden conserve Fedora comme socle et ajoute une couche de performance mesurée et réversible :
 

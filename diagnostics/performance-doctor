@@ -29,7 +29,7 @@ emit(){
 }
 
 performance_runtime_validate_policy || { emit KO Policy 'invalid performance-runtime.policy'; exit 1; }
-emit OK Policy 'Fedora-Cachy runtime policy valid'
+emit OK Policy 'Fedora Linux runtime policy valid'
 
 driver="$(performance_cpu_scaling_driver || true)"
 pstate="$(performance_amd_pstate_status || true)"

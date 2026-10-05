@@ -23,6 +23,8 @@ root, work=map(pathlib.Path,sys.argv[1:])
 spec=importlib.util.spec_from_file_location("profile",root/"scripts/development/fedora-profile.py")
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 for directory in ("profiles/fedora45","installer","config"): (work/directory).mkdir(parents=True,exist_ok=True)
+packages=work/"profiles/fedora45/packages-nautilus.txt"
+packages.write_bytes((root/"profiles/fedora45/packages-nautilus.txt").read_bytes())
 canonical=(root/"config/gnome-extensions.lock").read_text()
 (work/"config/gnome-extensions.lock").write_text(canonical)
 extensions=work/"profiles/fedora45/gnome-extensions.lock"
@@ -34,6 +36,7 @@ def seal():
     manifest.write_text(json.dumps({"schema":1,"release":45,"gnome_major":51,"status":"ready",
         "media_lock_sha256":hashlib.sha256(media.read_bytes()).hexdigest(),
         "extensions_lock_sha256":hashlib.sha256(extensions.read_bytes()).hexdigest(),
+        "packages_lock_sha256":hashlib.sha256(packages.read_bytes()).hexdigest(),
         "qualification_commit":"b"*40}))
 seal(); m.validate(work,45)
 def rejected():

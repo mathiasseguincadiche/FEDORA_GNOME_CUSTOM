@@ -146,6 +146,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_kvm_xml_policy_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_upstream_transaction_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_release_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_kernel_channel_behavior.sh

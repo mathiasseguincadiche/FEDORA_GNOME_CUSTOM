@@ -284,6 +284,13 @@ kernel_lifecycle_ensure_dnf_retention() {
   ui_check OK 'Kernel retention' "DNF installonly_limit=$limit"
 }
 
+# RPMs may encode the first final series release as X.Y.0, kernel.org as X.Y.
+kernel_lifecycle_version_matches_upstream() {
+  local version="${1%%-*}" upstream="$2"
+  [[ "$version" == "$upstream" ]] && return 0
+  [[ "$upstream" =~ ^[0-9]+[.][0-9]+$ && "$version" == "$upstream.0" ]]
+}
+
 kernel_lifecycle_resolve_latest_stable() {
   local available upstream
   kernel_channel_require_platform || return $?
@@ -293,13 +300,13 @@ kernel_lifecycle_resolve_latest_stable() {
   }
   available="$(kernel_lifecycle_latest_available)" || return "$EXIT_POSTCHECK_FAILED"
   [[ -n "$available" ]] || { ui_error 'No upstream RPM candidate available'; return "$EXIT_POSTCHECK_FAILED"; }
-  kernel_lifecycle_release_is_stable "$available" &&
-    kernel_lifecycle_version_at_least "$available" &&
-    kernel_channel_release_matches "$available" || {
+  if ! kernel_lifecycle_release_is_stable "$available" ||
+     ! kernel_lifecycle_version_at_least "$available" ||
+     ! kernel_channel_release_matches "$available"; then
       ui_error "Refusing unstable, custom or unsupported kernel: $available"
       return "$EXIT_SECURITY_BLOCK"
-    }
-  [[ "${available%%-*}" == "$upstream" ]] || {
+  fi
+  kernel_lifecycle_version_matches_upstream "$available" "$upstream" || {
     ui_error "kernel.org stable=$upstream; RPM candidate=$available. Packaging is pending; no older kernel is called latest."
     return "$EXIT_PRECHECK_FAILED"
   }
@@ -368,8 +375,9 @@ kernel_lifecycle_install_latest() {
   available="$(kernel_lifecycle_resolve_latest_stable)" || return $?
   mapfile -t exact_nevras < <(kernel_lifecycle_latest_nevras "$available")
   (( ${#exact_nevras[@]} >= $(kernel_lifecycle_expected_nevra_count) )) || { ui_error "Incomplete exact $(kernel_channel_label) NEVRA set"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_pin_target "$available" || return $?
   is_true "${KERNEL_VENDOR_CHANGE_ALLOWED:-true}" && install_args+=(--setopt=allow_vendor_change=1)
-  sudo dnf5 -y "${install_args[@]}" install "${exact_nevras[@]}"
+  sudo dnf5 -y "${install_args[@]}" install "${exact_nevras[@]}" || return $?
 
   installed="$(kernel_lifecycle_latest_installed)"
   [[ "$installed" == "$available" ]] || { ui_error "Kernel install mismatch: installed=${installed:-missing} available=$available"; return "$EXIT_POSTCHECK_FAILED"; }
@@ -436,4 +444,12 @@ kernel_lifecycle_status() {
   printf 'installed_count=%s\n' "$count"
   printf 'max_installed=%s\n' "$limit"
   printf 'dnf_installonly_limit=%s\n' "${dnf_limit:-unknown}"
+}
+
+kernel_lifecycle_pin_target() {
+  kernel_channel_release_matches "$1" || return "$EXIT_CONFIG_FAILED"
+  sudo python3 "$REPO_ROOT/scripts/kernel/pin-upstream-target.py" "$1"
+}
+kernel_lifecycle_lock_hash() {
+  sudo sha256sum /etc/dnf/versionlock.toml | awk '{print $1}'
 }

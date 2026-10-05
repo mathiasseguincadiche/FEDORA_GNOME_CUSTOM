@@ -17,6 +17,7 @@ write_state() {
     printf 'schema=1\nphase=%s\nsource_release=44\ntarget_release=45\n' "$phase"
     printf 'commit=%s\neffective_config_sha256=%s\n' "$(repo_commit)" "$(effective_config_sha256)"
     printf 'source_boot_id=%s\nkernel_target=%s\n' "$boot" "$target"
+    printf 'kernel_lock_sha256=%s\n' "$(kernel_lifecycle_lock_hash)"
     printf 'backup_snapshot=%s\n' "$(evidence_marker_value "$STATE_ROOT/last-full-backup.ok" snapshot)"
   } | evidence_atomic_write "$marker" 0600
 }
@@ -26,6 +27,7 @@ require_identity() {
     ui_error 'Upgrade state is absent or belongs to another commit/configuration.'
     return "$EXIT_SECURITY_BLOCK"
   }
+  [[ "$(value kernel_lock_sha256)" == "$(kernel_lifecycle_lock_hash)" ]] || return "$EXIT_SECURITY_BLOCK"
   apply_gate_require_clean_git || return "$EXIT_SECURITY_BLOCK"
 }
 require_host() {
@@ -63,6 +65,7 @@ case "$action" in
     # Includes disks, XML, NVRAM and swtpm; refuses live VMs and insufficient staging.
     "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms
     "$REPO_ROOT/diagnostics/backup-doctor" --certify
+    kernel_lifecycle_pin_target "$target"
     # No --allowerasing, --skip-unavailable or automatic reboot.
     sudo dnf5 --refresh --setopt=allow_vendor_change=1 system-upgrade download --releasever=45 -y
     sudo dnf5 offline status
@@ -97,7 +100,7 @@ case "$action" in
     # Preserve every existing local override; only HOST_RELEASE changes.
     overlay="$REPO_ROOT/config/local.conf"
     tmp="$(mktemp "$REPO_ROOT/config/.release-overlay.XXXXXX")"
-    if [[ -r "$overlay" ]]; then awk '!/^HOST_RELEASE=/' "$overlay" > "$tmp"; fi
+    if [[ -r "$overlay" ]]; then awk '!/^[[:space:]]*HOST_RELEASE=/' "$overlay" > "$tmp"; fi
     printf 'HOST_RELEASE="45"\n' >> "$tmp"
     chmod 0600 "$tmp"
     mv -f "$tmp" "$overlay"

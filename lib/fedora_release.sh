@@ -35,3 +35,13 @@ fedora_load_profile_extensions() {
     source "$REPO_ROOT/profiles/fedora45/gnome-extensions.lock"
   }
 }
+
+fedora_manifest_path() {
+  local manifest="$1"
+  if [[ "${HOST_RELEASE:-44}" == 45 && "$manifest" == "$REPO_ROOT/manifests/packages-nautilus.txt" ]]; then
+    fedora_require_profile 45 || return 60
+    printf '%s\n' "$REPO_ROOT/profiles/fedora45/packages-nautilus.txt"
+  else
+    printf '%s\n' "$manifest"
+  fi
+}

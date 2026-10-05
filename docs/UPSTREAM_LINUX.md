@@ -4,7 +4,7 @@ Le projet retire le noyau personnalisé et suit uniquement Linux publié par ker
 
 ## Version et provenance
 
-À chaque installation ou préparation d'une mise à jour, le projet lit [le flux officiel](https://www.kernel.org/releases.json). La candidate RPM doit correspondre exactement à `latest_stable`, être une version numérique finale et porter la provenance Vanilla. Une nouvelle version finale peut encore être classée « mainline » par kernel.org ; elle est acceptée uniquement si elle est aussi la `latest_stable` officielle. Les RC et linux-next sont toujours refusés.
+À chaque installation ou préparation d'une mise à jour, le projet lit [le flux officiel](https://www.kernel.org/releases.json). La candidate RPM doit correspondre exactement à `latest_stable`, être une version numérique finale et porter la provenance Vanilla. Une nouvelle version finale peut encore être classée « mainline » par kernel.org ; elle est acceptée uniquement si elle est aussi la `latest_stable` officielle. Les RC et linux-next sont toujours refusés. L'encodage RPM `X.Y.0` est reconnu comme la même version finale que `X.Y` sur kernel.org.
 
 Au contrôle du 4 octobre 2026, la stable est **7.2.9** ; **7.3-rc6** est une préversion. Le projet passera automatiquement à 7.3 lorsqu'elle sera publiée comme finale. Le minimum 7.2.9 est un plancher de sécurité, pas une version figée.
 
@@ -26,6 +26,12 @@ bash scripts/kernel/download-upstream-stable.sh --output /chemin/absolu/linux-st
 Le répertoire doit être nouveau. Le script récupère la dernière archive amont et sa signature détachée, puis vérifie la signature sur le tar décompressé avec les empreintes publiées de Greg Kroah-Hartman et Linus Torvalds. Il conserve le résultat de signature et le SHA256.
 
 **Ce téléchargement ne compile ni n'installe le noyau.** Le chemin installé et testé par le projet reste celui des RPM Vanilla. Compiler immédiatement depuis les sources sans attendre les RPM demanderait un autre parcours de packaging, de signature et de rétention ; il n'est pas déclaré qualifié ici.
+
+## Transaction RPM
+
+Le moteur conserve un bloc DNF5 versionlock pour les cinq paquets du noyau amont exact. Il le renouvelle à chaque nouveau N ; les règles administrateur sur d'autres paquets sont conservées. Une règle externe qui couvre les mêmes paquets bloque le changement plutôt que d'être supprimée. Les mises à jour complètes et la migration contrôlent aussi le hash du verrou avant le reboot, pour que la transaction reste liée au noyau préparé.
+
+Le retour aux RPM Fedora retire uniquement ce bloc géré. Un administrateur qui passe par DNF directement doit tenir compte du verrou ; utiliser les commandes du projet pour renouveler le noyau selon kernel.org.
 
 ## N et N-1
 

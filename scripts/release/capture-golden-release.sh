@@ -39,7 +39,7 @@ ext_file="$staging/gnome-extensions.tsv"
 runtime_file="$staging/runtime-stack.tsv"
 repos_file="$staging/enabled-repositories.txt"
 hardware_file="$staging/hardware-ids.txt"
-media_file="$staging/fedora44-media.lock"
+media_file="$staging/fedora-media.lock"
 gate1_file="$staging/gate1-proof.json"
 gate2_file="$staging/gate2-proof.json"
 performance_policy_file="$staging/performance-runtime.policy"
@@ -144,14 +144,15 @@ fi
   printf '\n[drm-edid]\n'; baseline_edid_hashes
 } > "$hardware_file"
 
-cp "$REPO_ROOT/installer/fedora44-media.lock" "$media_file"
+fedora_require_selected || exit "$EXIT_PRECHECK_FAILED"
+cp "$REPO_ROOT/installer/fedora${HOST_RELEASE:-44}-media.lock" "$media_file"
 cp "$(validation_imported_proof_path 1)" "$gate1_file"
 cp "$(validation_imported_proof_path 2)" "$gate2_file"
 cp "$REPO_ROOT/config/performance-runtime.policy" "$performance_policy_file"
 
 (
   cd "$staging"
-  sha256sum rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora44-media.lock performance-runtime.policy gate1-proof.json gate2-proof.json > MANIFEST.sha256
+  sha256sum rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora-media.lock performance-runtime.policy gate1-proof.json gate2-proof.json > MANIFEST.sha256
 )
 
 media_value() {

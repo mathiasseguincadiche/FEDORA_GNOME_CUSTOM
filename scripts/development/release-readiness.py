@@ -23,8 +23,8 @@ spec.loader.exec_module(profile)
 
 
 def fetch(url):
-    if not url.startswith(("https://extensions.gnome.org/", "https://api.github.com/",
-                           "https://github.com/Leleat/", "https://copr.fedorainfracloud.org/")):
+    if not url.lower().startswith(("https://extensions.gnome.org/", "https://api.github.com/",
+                           "https://github.com/leleat/", "https://copr.fedorainfracloud.org/")):
         raise ValueError("unapproved source URL")
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "FEDORA_GNOME_CUSTOM-readiness"}), timeout=30) as response:
         if not response.url.startswith("https://"):
@@ -71,8 +71,8 @@ def tiling_candidate(uuid, shell, transport=fetch):
         raise ValueError("no final Tiling Assistant release")
     name = uuid + ".shell-extension.zip"
     assets = [a["browser_download_url"] for a in answer.get("assets", []) if a.get("name") == name]
-    if len(assets) != 1 or not assets[0].startswith("https://github.com/Leleat/Tiling-Assistant/releases/download/" + tag + "/"):
-        raise ValueError("unexpected Tiling Assistant asset")
+    if len(assets) != 1 or not assets[0].lower().startswith("https://github.com/leleat/tiling-assistant/releases/download/" + tag.lower() + "/"):
+        raise ValueError("unexpected Tiling Assistant asset: " + repr(answer.get("assets", [])))
     digest = inspect_zip(transport(assets[0]), uuid, shell)
     return {"SOURCE_URL": assets[0], "VERSION": tag[1:],
             "SHELL_VERSION": str(shell), "SHA256": digest}
@@ -114,7 +114,8 @@ def main():
         actual = subprocess.check_output(["rpm", "-E", "%fedora"], text=True).strip()
         if actual != str(args.fedora):
             raise ValueError("must inspect packages inside actual Fedora 45")
-        paths = sorted(ROOT.glob("manifests/packages-*.txt"))
+        paths = [p for p in sorted(ROOT.glob("manifests/packages-*.txt")) if p.name != "packages-nautilus.txt"]
+        paths.append(ROOT / "profiles/fedora45/packages-nautilus.txt")
         names = sorted({line.strip() for path in paths for line in path.read_text().splitlines()
                         if line.strip() and not line.lstrip().startswith("#")})
         missing = []
@@ -145,8 +146,8 @@ def main():
         result = subprocess.check_output(["dnf5", "-q", "--refresh",
             "--repo=*group_kernel-vanilla:stable", "--repo=*group_kernel-vanilla:fedora",
             "repoquery", "--available", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}", "kernel-core"], text=True)
-        if not any(re.fullmatch(re.escape(upstream) + r"-[0-9.]+[.]vanilla[.]fc45[.]x86_64", v) for v in result.splitlines()):
-            raise ValueError("latest kernel.org stable RPM not available for Fedora 45")
+        if not any(re.fullmatch(re.escape(upstream) + (r"(?:[.]0)?" if upstream.count(".") == 1 else "") + r"-[0-9.]+[.]vanilla[.]fc45[.]x86_64", v) for v in result.splitlines()):
+            raise ValueError("kernel.org=" + upstream + "; Fedora 45 RPM candidates=" + result.strip())
         return "actual upstream RPM = kernel.org " + upstream
     check("Upstream Linux45", kernel)
     check("Final production profile", lambda: profile.validate(ROOT, 45)["qualification_commit"])

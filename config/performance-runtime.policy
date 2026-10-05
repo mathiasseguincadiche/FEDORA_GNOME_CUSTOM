@@ -1,4 +1,4 @@
-# Fedora-Cachy runtime performance policy.
+# Fedora Linux runtime performance policy.
 # This policy intentionally lives outside *.conf so it can evolve independently
 # from machine-local configuration while remaining versioned and reviewable.
 schema=1
