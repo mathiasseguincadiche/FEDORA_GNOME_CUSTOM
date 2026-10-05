@@ -186,8 +186,25 @@ for _ in $(seq 1 120); do
   sleep 5
 done
 ((ready == 1)) || { report 'FAIL: restored Rocky VM/data/toolchain qualification failed'; exit 25; }
+# Prove outbound isolation from inside the restored guest, beyond QEMU flags.
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'python3 - <<'\''PY'\''
+import socket
+for host in ("1.1.1.1", "10.0.2.2"):
+    try:
+        with socket.create_connection((host, 443), timeout=3):
+            raise SystemExit("restored Rocky guest network is not isolated")
+    except OSError:
+        pass
+PY'
 report 'restored_vm=PASS data=PASS toolchain=PASS network=restrict-on'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo systemctl --failed --no-legend; sudo journalctl -b -p err --no-pager; sudo cat /var/lib/fedora-gnome-custom/rocky-devops-packages.txt' | tee "$LAB/guest-health.log"
 # Unexpected failed units make the qualification fail; raw errors are retained.
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'test -z "$(systemctl --failed --no-legend)"'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo bash -se' <<'HEALTH'
+test -z "$(systemctl --failed --no-legend)"
+journalctl --quiet --no-pager -b -p emerg..crit >/tmp/rocky-critical.log
+journalctl --quiet --no-pager -b -t systemd-coredump >/tmp/rocky-coredumps.log
+cat /tmp/rocky-critical.log /tmp/rocky-coredumps.log
+test ! -s /tmp/rocky-critical.log
+test ! -s /tmp/rocky-coredumps.log
+HEALTH
 report 'VERDICT: REAL ROCKY LINUX 10.2 READY-TO-WORK DEVOPS VM PRE-TEST PASS'

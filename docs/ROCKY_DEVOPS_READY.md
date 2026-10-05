@@ -43,7 +43,7 @@ Cela évite qu'une image locale soit considérée fiable uniquement parce qu'ell
 ## Stack prête après le premier bootstrap
 
 - Git/Git LFS, `gh`, `glab` ;
-- Docker CE, Compose v2, Buildx, containerd ;
+- Docker CE, Compose (plugin officiel), Buildx, containerd ;
 - kubectl **v1.37.x**, Helm, kind **v0.33.0**, Minikube **v1.38.1** avec driver Docker, K9s, kubectx/kubens, yq v4 ;
 - Terraform, Ansible ;
 - AWS CLI v2, Azure CLI ;
