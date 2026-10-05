@@ -21,6 +21,7 @@ r["evidence"] = {
     "disk_sha256": "c" * 64, "nvram_sha256": "d" * 64,
     "recovery_network": "restrict=on", "encryption": "none", "tpm_canary": "PASS",
     "session_shutdown": "gnome-logout",
+    "fedora_release": "44", "gnome_major": "50", "extension_mode": "curated", "curated_extensions": "six-active",
 }
 assert lab.finalize(copy.deepcopy(r))["verdict"] == "PASS"
 def rejected(changed):
@@ -45,6 +46,12 @@ for key, value in (("reboot_id", r["evidence"]["boot_id"]),
     changed = copy.deepcopy(r)
     changed["evidence"][key] = value
     rejected(changed)
+preview = copy.deepcopy(r)
+preview.update(release=45, gnome_major=51, extension_mode="native")
+preview["evidence"].update(fedora_release="45", gnome_major="51", extension_mode="native", curated_extensions="DEFERRED")
+assert lab.finalize(copy.deepcopy(preview))["verdict"] == "PASS"
+preview["evidence"]["curated_extensions"] = "six-active"
+rejected(preview)
 for gate in lab.DEFERRED:
     changed = copy.deepcopy(r)
     changed["deferred"][gate] = "PASS"

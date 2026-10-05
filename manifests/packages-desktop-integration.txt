@@ -57,3 +57,10 @@ clinfo
 # Safe lifecycle automation: download only, never unattended install/reboot
 dnf5-plugin-automatic
 dnf5-plugins
+
+# Explicit disk-management and real portal stream diagnostics
+gnome-disk-utility
+dconf
+python3-gobject
+pipewire-gstreamer
+gstreamer1-plugins-base

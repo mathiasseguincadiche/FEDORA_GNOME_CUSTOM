@@ -183,3 +183,33 @@ jobs:
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
           grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json
+
+      - name: Verify pinned optional LD240 artifact without hardware
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          source hardware/deepcool-ld240.lock
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 "$DEEPCOOL_URL" -o "$tmp/display"
+          printf '%s  %s\n' "$DEEPCOOL_SHA256" "$tmp/display" | sha256sum --check
+          chmod 0755 "$tmp/display"
+          timeout 10 "$tmp/display" --version
+          echo 'Artifact/version validated; LD240 visual/USB qualification remains pending.'
+
+      - name: Verify actual portal capture bindings and elements
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import gi
+          gi.require_version("Gst", "1.0")
+          gi.require_version("Gio", "2.0")
+          from gi.repository import Gst, Gio
+          Gst.init(None)
+          source = Gst.ElementFactory.make("pipewiresrc")
+          sink = Gst.ElementFactory.make("appsink")
+          assert source is not None and sink is not None
+          assert source.find_property("fd") and source.find_property("path")
+          assert hasattr(Gio.DBusConnection, "call_with_unix_fd_list_sync")
+          print("Portal capture dependencies/API: PASS; interactive stream test remains required")
+          PY

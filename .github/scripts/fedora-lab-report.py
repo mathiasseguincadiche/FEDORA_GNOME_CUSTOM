@@ -11,10 +11,12 @@ DEFERRED = ("gate1_wsl2", "gate2_visual", "gate3_hardware",
             "production_apply", "windows_vm", "upstream_kernel_boot")
 
 
-def initialize(commit):
+def initialize(commit, release=44, extension_mode="curated"):
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("exact Git commit required")
-    return dict(schema=1, scope="fedora-gnome-qemu-pretest", commit=commit,
+    if (release, extension_mode) not in ((44, "curated"), (45, "native")):
+        raise ValueError("unsupported laboratory target")
+    return dict(schema=2, release=release, gnome_major=release+6, extension_mode=extension_mode, scope="fedora-gnome-qemu-pretest", commit=commit,
                 verdict="PENDING", checks={k: "PENDING" for k in REQUIRED},
                 deferred={k: "DEFERRED" for k in DEFERRED}, evidence={})
 
@@ -23,6 +25,14 @@ def finalize(report):
     if report["checks"] != {k: "PASS" for k in REQUIRED}:
         raise ValueError("all exercises must pass")
     e = report["evidence"]
+    target = (report["release"], report["extension_mode"])
+    if target not in ((44, "curated"), (45, "native")) or report["gnome_major"] != report["release"] + 6:
+        raise ValueError("invalid laboratory target")
+    if (e.get("fedora_release"), e.get("gnome_major"), e.get("extension_mode")) != (str(report["release"]), str(report["gnome_major"]), report["extension_mode"]):
+        raise ValueError("guest target evidence missing")
+    expected_extensions = "six-active" if report["extension_mode"] == "curated" else "DEFERRED"
+    if e.get("curated_extensions") != expected_extensions:
+        raise ValueError("native preview cannot certify curated extensions")
     ids = [e[k] for k in ("boot_id", "reboot_id", "restored_boot_id", "rebuilt_boot_id")]
     if any(not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", x) for x in ids) or len(set(ids)) != 4:
         raise ValueError("four distinct kernel boot identities required")
@@ -50,7 +60,11 @@ def main():
     parser.add_argument("key", nargs="?")
     parser.add_argument("value", nargs="?")
     a = parser.parse_args()
-    r = initialize(a.key) if a.action == "init" else json.loads(a.path.read_text())
+    if a.action == "init":
+        release, mode = (a.value or "44:curated").split(":")
+        r = initialize(a.key, int(release), mode)
+    else:
+        r = json.loads(a.path.read_text())
     if a.action == "pass":
         if a.key not in REQUIRED:
             raise ValueError("unknown exercise")

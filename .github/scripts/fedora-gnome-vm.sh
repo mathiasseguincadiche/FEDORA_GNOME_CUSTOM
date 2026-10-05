@@ -6,15 +6,26 @@ umask 077
   echo 'This disposable laboratory requires a GitHub Actions runner.' >&2; exit 50;
 }
 ROOT="$GITHUB_WORKSPACE"
+bash -n "$ROOT/.github/scripts/fedora-gnome-guest.sh"
+LAB_RELEASE="${FGC_LAB_RELEASE:-44}"
+LAB_EXTENSION_MODE="${FGC_LAB_EXTENSION_MODE:-curated}"
+case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) echo 'Unsupported lab profile' >&2; exit 50;; esac
+
 LAB="$ROOT/.fedora-gnome-lab"
 [[ ! -e "$LAB" ]] || { echo 'Refusing to reuse an existing lab directory.' >&2; exit 50; }
 mkdir -p "$LAB/evidence"
 REPORT="$LAB/report.json"
 REPORTER="$ROOT/.github/scripts/fedora-lab-report.py"
 COMMIT="$(git -C "$ROOT" rev-parse HEAD)"
-python3 "$REPORTER" "$REPORT" init "$COMMIT"
+python3 "$REPORTER" "$REPORT" init "$COMMIT" "$LAB_RELEASE:$LAB_EXTENSION_MODE"
 # shellcheck source=.github/fedora44-cloud.lock
-source "$ROOT/.github/fedora44-cloud.lock"
+if [[ "$LAB_RELEASE" == 44 ]]; then
+  source "$ROOT/.github/fedora44-cloud.lock"
+else
+  # Created only from the verified, independently pinned signed Beta CHECKSUM.
+  # shellcheck disable=SC1091
+  source "$ROOT/.fedora45-preview/fedora45-cloud.lock"
+fi
 # shellcheck source=lib/backup_runtime.sh
 source "$ROOT/lib/backup_runtime.sh"
 SSH_KEY="$LAB/id_ed25519"
@@ -33,7 +44,7 @@ guest() { ssh "${SSH_OPTS[@]}" lab@127.0.0.1 "$@"; }
 # COMMIT is validated by initialize(), and the command is fixed in this file.
 guest_action() {
   # shellcheck disable=SC2029
-  guest "sudo bash /opt/fgc-lab/repo/.github/scripts/fedora-gnome-guest.sh $1 $COMMIT"
+  guest "sudo bash /opt/fgc-lab/repo/.github/scripts/fedora-gnome-guest.sh $1 $COMMIT $LAB_RELEASE $LAB_EXTENSION_MODE"
 }
 mark() { python3 "$REPORTER" "$REPORT" pass "$1"; printf 'PASS: %s\n' "$1"; }
 evidence() { python3 "$REPORTER" "$REPORT" evidence "$1" "$2"; }
@@ -90,19 +101,25 @@ PY
 printf '%s  %s\n' "$FEDORA_CLOUD_SHA256" "$FEDORA_CLOUD_IMAGE" | sha256sum --check
 qemu-img check "$FEDORA_CLOUD_IMAGE"
 mark image
+evidence fedora_release "$LAB_RELEASE"
+evidence gnome_major "$((LAB_RELEASE+6))"
+evidence extension_mode "$LAB_EXTENSION_MODE"
+if [[ "$LAB_EXTENSION_MODE" == native ]]; then evidence curated_extensions DEFERRED; else evidence curated_extensions six-active; fi
 evidence image_sha256 "$FEDORA_CLOUD_SHA256"
 # Fetch reviewed bytes on the runner and transfer them to the guest. Both
 # sides enforce the lock hashes; guest TLS verification is never disabled.
 # shellcheck source=config/gnome-extensions.lock
 source "$ROOT/config/gnome-extensions.lock"
 mkdir extensions
-for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
+for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
   url_key="${prefix}_SOURCE_URL"
   sha_key="${prefix}_SHA256"
   curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 \
     "${!url_key}" -o "extensions/$prefix.zip"
   printf '%s  %s\n' "${!sha_key}" "extensions/$prefix.zip" | sha256sum --check
 done
+fi
 tar -czf extensions.tar.gz extensions
 git -C "$ROOT" archive "$COMMIT" | gzip > repo.tar.gz
 ssh-keygen -q -t ed25519 -N '' -f "$SSH_KEY"
@@ -198,6 +215,20 @@ provision() {
   guest "printf '%s\n' '$COMMIT' | sudo tee /opt/fgc-lab/repo/CI_COMMIT >/dev/null"
   scp "${SCP_OPTS[@]}" extensions.tar.gz lab@127.0.0.1:/tmp/
   guest 'sudo tar -C /opt/fgc-lab -xzf /tmp/extensions.tar.gz && sudo chown -R lab:lab /opt/fgc-lab/extensions'
+  if [[ "$LAB_RELEASE" == 45 ]]; then
+    guest_action prepare-base
+    local maintenance_boot maintenance_after
+    maintenance_boot="$(boot_id)"
+    guest 'sudo journalctl --no-pager -b' > "$LAB/evidence/$PHASE-maintenance-journal.log"
+    # No graphical session exists yet. Observe a normal QMP reboot, then prove
+    # both a new boot identity and the updated Fedora kernel in install().
+    python3 "$ROOT/.github/scripts/fedora-qmp-reboot.py" "$LAB/qmp.sock" \
+      ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemctl reboot'
+    wait_ssh
+    maintenance_after="$(boot_id)"
+    [[ -n "$maintenance_after" && "$maintenance_after" != "$maintenance_boot" ]]
+    printf 'PASS: base maintenance reboot %s -> %s\n' "$maintenance_boot" "$maintenance_after"
+  fi
   guest_action install
   wait_session
 }

@@ -25,6 +25,13 @@ if runtime_is_baremetal && ! $preflight; then
   if (( cycles >= ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} )); then
     if physical_runtime_evidence_valid portal-functional; then emit OK 'Portal Gate 3 evidence' current; else emit KO 'Portal Gate 3 evidence' 'missing/stale; run portal-functional-doctor --interactive --gate3'; fi
     if is_true "${ENABLE_KVM:-true}"; then if physical_runtime_evidence_valid nautilus-vm-live; then emit OK 'Nautilus VM live evidence' current; else emit KO 'Nautilus VM live evidence' 'missing/stale; run nautilus-vm-live-doctor --certify'; fi; fi
+    usage="$STATE_ROOT/validation/application-usage-gate3.ok"
+    if [[ -s "$usage" ]] && grep -Fxq 'status=PASS' "$usage" &&
+       grep -Fxq "commit=$(repo_commit)" "$usage" &&
+       grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$usage" &&
+       grep -Fxq "application_fingerprint=$(application_runtime_fingerprint)" "$usage"; then
+      emit OK 'Application usage' current
+    else emit KO 'Application usage' 'missing/stale; run application-usage-doctor --interactive'; fi
     if gnome_ux_marker_valid; then emit OK 'GNOME UX Gate 3 evidence' current; else emit KO 'GNOME UX Gate 3 evidence' 'missing/stale; run scripts/validation/gnome-ux-matrix.sh gate3'; fi
   else emit WARN 'GNOME UX Gate 3 evidence' "deferred until ${FINAL_CERT_MIN_SUSPEND_CYCLES:-5} current-fingerprint suspend cycles (now $cycles)"; fi
 fi

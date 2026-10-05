@@ -1,5 +1,16 @@
 # Changelog
 
+## Intégration desktop — changements après RC2
+
+- Politique GNOME Logiciels verrouillée et vérifiée, cohérente avec les mises à jour système sauvegardées et les Flatpak manuels.
+- GNOME Disques et Flatseal explicites ; distinction entre smoke de paquets et qualification des usages réels.
+- Six extensions actives exercées dans le laboratoire Wayland Fedora 44 ; aller-retour documentaire LibreOffice.
+- Laboratoire Fedora 45/GNOME 51 natif sur média Beta signé et épinglé, avec reboot/restauration ; extensions personnalisées explicitement différées, profil de production toujours pending.
+- Identités distinctes pour audio Realtek de la carte mère et Brio 100, résolution après reboot, capture 1080p et microphone explicite ; exigences Wi-Fi vérifiées sur le contrôleur enrôlé.
+- ScreenCast/Camera : autorisation et images PipeWire réelles exigées, annulation refusée, flux fermés et aucune image conservée.
+- Afficheur LD240 communautaire en option, artefact épinglé, service utilisateur et permissions USB limitées ; aucun réglage de pompe/ventilateur modifié.
+- Documentation et fiche physique actualisées ; aucune validation matérielle fictive.
+
 ## 0.21.0 — Rocky Linux 10.2 DevOps
 
 ### RC2 — Qualification réseau et garde-fous physiques

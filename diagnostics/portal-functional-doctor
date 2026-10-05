@@ -3,6 +3,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; interactive=false; scope=''
+screen_stream=false; camera_stream=false
 for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --interactive) interactive=true;; --gate2) scope=gate2;; --gate3) scope=gate3;; *) echo 'Usage: portal-functional-doctor [--quiet] [--interactive] [--gate2|--gate3]' >&2; exit "$EXIT_USAGE";; esac; done
 ok=0; ko=0
 emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
@@ -16,14 +17,15 @@ for iface in FileChooser OpenURI Notification ScreenCast; do
   if grep -Fq "org.freedesktop.portal.$iface" <<<"$interfaces"; then emit OK "$iface" exposed; else emit KO "$iface" missing; fi
 done
 
-sc_token="fgc_sc_${RANDOM}_$$"; sc_session="fgc_session_${RANDOM}_$$"
-if portal_call org.freedesktop.portal.ScreenCast.CreateSession "{'handle_token': <'$sc_token'>, 'session_handle_token': <'$sc_session'>}" >/dev/null 2>&1; then
-  emit OK ScreenCast 'CreateSession request accepted by portal'
-else
-  emit KO ScreenCast 'CreateSession request failed'
-fi
+# CreateSession/SelectSources/Start and actual streams are tested by the interactive probe.
 
 if $interactive; then
+  # A failed rerun must not leave a previous successful stream certificate.
+  case "$scope" in
+    gate2) rm -f "$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok";;
+    gate3) rm -f "$(physical_runtime_evidence_path portal-functional)" "$STATE_ROOT/final/certified.ok";;
+  esac
+
   if [[ ! -t 0 || ! -t 1 ]]; then emit KO Interactive 'TTY required'; exit "$EXIT_PRECHECK_FAILED"; fi
   nid="fgc-portal-${RANDOM}-$$"
   if portal_call org.freedesktop.portal.Notification.AddNotification "$nid" "{'title': <'Fedora GNOME Golden'>, 'body': <'Portal notification smoke test'>}" >/dev/null 2>&1; then
@@ -39,22 +41,28 @@ if $interactive; then
     if confirm 'Le sélecteur de fichiers GNOME doit être visible; sélectionnez ou annulez puis confirmez.' JE_CONFIRME_FILECHOOSER; then emit OK FileChooser 'functional smoke PASS'; else emit KO FileChooser 'visual confirmation refused'; fi
   else emit KO FileChooser 'portal OpenFile failed'; fi
 
-  if confirm "Confirmez que ScreenCast est disponible dans le sélecteur de partage d’écran d’une application compatible; annulez sans partager si souhaité." JE_CONFIRME_SCREENCAST; then
-    emit OK ScreenCast 'manual chooser validation PASS'
-  else
-    emit KO ScreenCast 'manual chooser validation refused'
+  # Select an actual display and authorize sharing; cancellation cannot certify.
+  if python3 "$REPO_ROOT/scripts/validation/portal-stream-probe.py" screen &&
+     confirm "Confirmez que le partage réel s'est effectué, puis arrêté normalement." JE_CONFIRME_SCREENCAST; then
+    screen_stream=true; emit OK ScreenCast '10 actual PipeWire frames consumed; stream closed'
+  else emit KO ScreenCast 'sharing cancelled, denied or unusable'; fi
+  if [[ "$scope" == gate3 ]]; then
+    if python3 "$REPO_ROOT/scripts/validation/portal-stream-probe.py" camera; then
+      camera_stream=true; emit OK Camera '10 actual portal-authorized camera frames consumed'
+    else emit KO Camera 'camera permission/stream unusable'; fi
   fi
 fi
 
-if (( ko == 0 )) && $interactive; then
+if (( ko == 0 )) && $interactive && $screen_stream; then
   case "$scope" in
     gate2)
       marker="$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok"; mkdir -p "$(dirname "$marker")"
-      { printf 'schema=1\nstatus=PASS\ncommit=%s\neffective_config_sha256=%s\nutc=%s\n' "$(repo_commit)" "$(effective_config_sha256)" "$(date -u +%FT%TZ)"; } | evidence_atomic_write "$marker" 0600
+      { printf 'schema=2\nstream_policy=2\nstatus=PASS\ncommit=%s\neffective_config_sha256=%s\nutc=%s\n' "$(repo_commit)" "$(effective_config_sha256)" "$(date -u +%FT%TZ)"; } | evidence_atomic_write "$marker" 0600
       ;;
     gate3)
       if ! runtime_is_baremetal; then emit KO Gate3 'bare-metal required'; exit "$EXIT_SECURITY_BLOCK"; fi
-      physical_runtime_write_evidence portal-functional 'FileChooser=PASS OpenURI=PASS Notification=PASS ScreenCast=PASS'
+      $camera_stream || exit "$EXIT_POSTCHECK_FAILED"
+      physical_runtime_write_evidence portal-functional 'stream_policy=2 FileChooser=PASS OpenURI=PASS Notification=PASS ScreenCast=PASS Camera=PASS'
       ;;
   esac
 fi

@@ -6,3 +6,4 @@ com.slack.Slack	flathub	community-unverified	Community-maintained Flathub packag
 org.onlyoffice.desktopeditors	flathub	verified-publisher	Flathub publisher identity is verified by ONLYOFFICE
 com.github.marktext.marktext	flathub	community-unverified	Community-maintained Flathub package; not verified/affiliated with MarkText
 com.jgraph.drawio.desktop	flathub	community-unverified	Community-maintained Flathub package; not verified/affiliated with JGraph
+com.github.tchx84.Flatseal	flathub	upstream-maintained	Flathub manifest redirects contributions to the upstream Flatseal project; no verified-publisher badge assumed.

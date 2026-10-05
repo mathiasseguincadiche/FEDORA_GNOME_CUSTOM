@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Explicit, interactive use tests; package/sandbox presence alone is insufficient.
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+[[ "${1:-}" == --interactive && -t 0 && "${XDG_CURRENT_DESKTOP:-}" == *GNOME* &&
+   "${XDG_SESSION_TYPE:-}" == wayland ]] || {
+  echo 'Usage: application-usage-doctor --interactive (GNOME Wayland session)' >&2; exit "$EXIT_USAGE";
+}
+scope=gate2
+if runtime_is_baremetal; then scope=gate3; fi
+marker="$STATE_ROOT/validation/application-usage-$scope.ok"
+mkdir -p "$(dirname "$marker")"
+rm -f "$marker" "$STATE_ROOT/final/certified.ok"
+work="$(mktemp -d "${XDG_RUNTIME_DIR:?}/fgc-app-usage.XXXXXX")"
+trap 'rm -rf "$work"' EXIT
+printf 'Fedora GNOME document test %s\n' "$(repo_commit)" > "$work/document.txt"
+original_sha="$(sha256sum "$work/document.txt" | cut -d\  -f1)"
+confirm(){ local phrase="$1" answer; printf 'Tapez %s : ' "$phrase"; read -r answer; [[ "$answer" == "$phrase" ]]; }
+echo "Ouvrir, modifier et enregistrer le document dans LibreOffice. Exporter aussi un PDF dans : $work"
+libreoffice --writer "$work/document.txt" >/dev/null 2>&1 &
+if ! confirm JE_CONFIRME_DOCUMENT ||
+   [[ ! -s "$work/document.txt" || ! -s "$work/document.pdf" || "$(sha256sum "$work/document.txt" | cut -d\  -f1)" == "$original_sha" ]]; then
+  ui_error 'Document/save/PDF test incomplete'; exit "$EXIT_POSTCHECK_FAILED";
+fi
+for id in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors com.github.tchx84.Flatseal; do
+  flatpak info "$id" >/dev/null
+  echo "Vérifiez dans $id : interface utilisable, ouverture de fichier si applicable, puis fermez l'application."
+  flatpak run "$id" >/dev/null 2>&1 &
+  started=false
+  for _ in {1..30}; do
+    if flatpak ps --columns=application | grep -Fxq "$id"; then started=true; break; fi
+    sleep 1
+  done
+  $started || { ui_error "$id failed to start"; exit "$EXIT_POSTCHECK_FAILED"; }
+  if ! confirm JE_CONFIRME_APPLICATION; then ui_error "$id usage refused"; exit "$EXIT_POSTCHECK_FAILED"; fi
+done
+echo 'Vérifiez Slack : notification et partage réel; Brio 100 : image et micro dans une application WebRTC.'
+confirm JE_CONFIRME_COMMUNICATION || exit "$EXIT_POSTCHECK_FAILED"
+echo "Vérifiez VS Code : connexion Remote SSH à Rocky et ouverture/enregistrement d'un fichier dans la VM."
+confirm JE_CONFIRME_CODE_ROCKY || exit "$EXIT_POSTCHECK_FAILED"
+{
+  printf 'schema=1\nstatus=PASS\nscope=%s\ncommit=%s\neffective_config_sha256=%s\napplication_fingerprint=%s\nutc=%s\n' \
+    "$scope" "$(repo_commit)" "$(effective_config_sha256)" "$(application_runtime_fingerprint)" "$(date -u +%FT%TZ)"
+  printf 'document=PASS\nflatpak_ui=PASS\ncommunication=PASS\ncode_rocky=PASS\n'
+} | evidence_atomic_write "$marker" 0600
+ui_check OK 'Application usage' "$marker (human confirmation; hardware tests remain separate)"

@@ -27,3 +27,5 @@ flatpak	com.slack.Slack	-	-	community-unverified
 flatpak	org.onlyoffice.desktopeditors	-	-	verified-publisher
 flatpak	com.github.marktext.marktext	-	-	community-unverified
 flatpak	com.jgraph.drawio.desktop	-	-	community-unverified
+fedora-rpm	gnome-disk-utility	-	__desktop__	fedora-repository
+flatpak	com.github.tchx84.Flatseal	-	-	upstream-maintained

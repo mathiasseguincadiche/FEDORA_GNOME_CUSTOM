@@ -25,6 +25,10 @@ Ne pas lancer ces essais depuis un runner GitHub public ou une VM en prétendant
 ## Baseline avant APPLY
 
 ~~~bash
+./diagnostics/peripherals-doctor list
+# Remplacer cardN/videoN après inspection :
+./diagnostics/peripherals-doctor enroll audio cardN
+./diagnostics/peripherals-doctor enroll camera videoN
 ./diagnostics/baseline-doctor enroll-wifi
 ./diagnostics/baseline-doctor enroll-bluetooth
 ./diagnostics/baseline-doctor list-cooling
@@ -51,6 +55,7 @@ Exécuter dans la vraie session GNOME/Wayland, avec l'écran et les périphériq
 
 ~~~bash
 ./diagnostics/kernel-doctor
+./diagnostics/peripherals-doctor test-camera
 ./diagnostics/hardware-components-doctor
 ./diagnostics/graphics-doctor
 ./diagnostics/arc-compute-doctor
@@ -72,6 +77,17 @@ Faire ensuite cinq cycles physiques distincts veille/réveil et les enregistrer 
 ~~~bash
 ./control.sh validate gate3 record-suspend
 ~~~
+
+Après les cycles, refaire la capture Brio, l'écoute/capture audio et le partage réel :
+
+~~~bash
+./diagnostics/peripherals-doctor test-camera
+./diagnostics/physical-runtime-doctor audio
+./diagnostics/portal-functional-doctor --interactive --gate3
+./diagnostics/application-usage-doctor --interactive
+~~~
+
+Voir [DESKTOP_COMPLETION.md](DESKTOP_COMPLETION.md) pour les identités, les blocages Wi-Fi et l'afficheur LD240 facultatif.
 
 Conserver une sauvegarde Borg contenant les disques/NVRAM des VM et exercer la [restauration isolée](ISOLATED_RECOVERY_RUNBOOK.md) avant le verdict final.
 

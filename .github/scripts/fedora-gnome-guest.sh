@@ -2,26 +2,35 @@
 # Disposable QEMU guest only; never runs install.sh --apply or signs a gate.
 set -Eeuo pipefail
 export LC_ALL=C
-[[ "$EUID" == 0 && "$(hostname)" == fgc-fedora-ci && -e /etc/fgc-ci-lab ]] || exit 50
-case "$(systemd-detect-virt)" in kvm|qemu) ;; *) exit 50 ;; esac
+[[ "$EUID" == 0 && "$(hostname)" == fgc-fedora-ci && -e /etc/fgc-ci-lab ]] || { echo "Guest guard failed: euid=$EUID hostname=$(hostname) lab_marker=$(test -e /etc/fgc-ci-lab && echo present || echo missing)" >&2; exit 50; }
+virt="$(systemd-detect-virt)"
+case "$virt" in kvm|qemu) ;; *) echo "Guest virtualization guard failed: $virt" >&2; exit 50 ;; esac
 REPO=/opt/fgc-lab/repo
 LAB_USER=lab
 LAB_HOME=/home/lab
 LAB_UID="$(id -u "$LAB_USER")"
 EXPECTED_COMMIT="${2:-}"
-[[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || exit 50
+LAB_RELEASE="${3:-44}"
+LAB_EXTENSION_MODE="${4:-curated}"
+printf 'Guest profile release=%s extensions=%s action=%s\n' "$LAB_RELEASE" "$LAB_EXTENSION_MODE" "${1:-missing}"
+case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) echo 'Unsupported guest profile' >&2; exit 50;; esac
+EXPECTED_GNOME_MAJOR="$((LAB_RELEASE+6))"
+[[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || { echo "Guest commit guard failed: expected=$EXPECTED_COMMIT actual=$(cat "$REPO/CI_COMMIT")" >&2; exit 50; }
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO/lib/backup_runtime.sh"
 # shellcheck source=.github/scripts/fedora-greeter-ready.sh
 source "$REPO/.github/scripts/fedora-greeter-ready.sh"
 # shellcheck source=config/gnome-extensions.lock
 source "$REPO/config/gnome-extensions.lock"
+# shellcheck source=config/gnome.conf
+source "$REPO/config/gnome.conf"
 
 failure() {
   local rc=$?
   trap - ERR
   echo "Guest action ${1:-unknown} failed (exit=$rc); collecting diagnostics." >&2
   systemctl --failed --no-pager >&2 || true
+  journalctl --no-pager -b -u systemd-binfmt.service -u systemd-modules-load.service -n 100 >&2 || true
   for key in enabled-extensions disabled-extensions disable-user-extensions; do
     printf 'GNOME setting %s: ' "$key" >&2
     as_user gsettings get org.gnome.shell "$key" >&2 || true
@@ -54,7 +63,7 @@ as_user() {
 require_session() {
   local sid
   systemctl is-active --quiet gdm
-  gnome-shell --version | grep -Eq '^GNOME Shell 50([.]|$)'
+  gnome-shell --version | grep -Eq "^GNOME Shell $EXPECTED_GNOME_MAJOR([.]|$)"
   pgrep -u "$LAB_UID" -x gnome-shell >/dev/null
   sid="$(loginctl list-sessions --no-legend | awk -v u="$LAB_USER" '$3==u {print $1}')"
   local found=false candidate
@@ -80,8 +89,9 @@ check_extension_settings() {
 
 check_extensions() {
   check_extension_settings
+  [[ "$LAB_EXTENSION_MODE" == curated ]] || { echo 'DEFERRED: six curated extensions; Fedora 45 native GNOME preview only'; return 0; }
   local uuid output
-  for uuid in "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID"; do
+  for uuid in "$DASH_TO_DOCK_UUID" "$APPINDICATOR_UUID" "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID" "$TILING_ASSISTANT_UUID"; do
     # Shell activation is asynchronous. Observe it; never repair a reboot here.
     for _ in {1..60}; do
       output="$(as_user gnome-extensions info "$uuid")"
@@ -123,20 +133,52 @@ case "${1:-}" in
   ready)
     require_session
     ;;
+  prepare-base)
+    [[ "$LAB_RELEASE" == 45 ]]
+    grep -Eq '^VERSION_ID="?45"?$' /etc/os-release
+    [[ "$(getenforce)" == Enforcing ]]
+    # A Beta seed can predate its current GNOME/systemd/kernel packages.
+    # Upgrade the official base and boot that transaction before installing
+    # a desktop that may require newly installed kernel modules and schemas.
+    dnf -y upgrade --refresh
+    mkdir -p /var/lib/fgc-lab
+    rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core |
+      sort -V | tail -n1 > /var/lib/fgc-lab/maintenance-kernel
+    [[ -s /var/lib/fgc-lab/maintenance-kernel ]]
+    ;;
   install)
-    grep -Eq '^VERSION_ID="?44"?$' /etc/os-release
+    if [[ "$LAB_RELEASE" == 45 ]]; then
+      [[ "$(uname -r)" == "$(cat /var/lib/fgc-lab/maintenance-kernel)" ]]
+      printf 'PASS: updated Fedora base booted kernel=%s\n' "$(uname -r)"
+    fi
+    grep -Eq "^VERSION_ID=\"?$LAB_RELEASE\"?$" /etc/os-release
     [[ "$(getenforce)" == Enforcing ]]
     mkdir -p /etc/systemd/journald.conf.d /var/log/journal
     printf '[Journal]\nStorage=persistent\nSystemMaxUse=128M\n' > /etc/systemd/journald.conf.d/90-fgc-lab.conf
     systemd-tmpfiles --create --prefix /var/log/journal
     systemctl restart systemd-journald
     journalctl --flush
-    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+    if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
+    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
     done
+    fi
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
-      tpm2-tools firewalld python3 curl gjs
+      tpm2-tools firewalld python3 curl gjs gnome-shell-extension-dash-to-dock \
+      gnome-shell-extension-appindicator gnome-text-editor libreoffice poppler-utils gnome-software dconf
+    if [[ "$LAB_RELEASE" == 45 ]]; then
+      rpm -q gsettings-desktop-schemas gnome-shell mutter
+      gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fxq custom-accel-config
+    fi
+    # Exercise the production lifecycle writer in this disposable Fedora only.
+    (
+      # shellcheck source=modules/desktop/27_lifecycle.sh
+      source "$REPO/modules/desktop/27_lifecycle.sh"
+      run_mutating(){ shift; "$@"; }
+      is_true(){ [[ "$1" == true ]]; }
+      desktop_lifecycle_apply
+    )
     passwd -d "$LAB_USER"
     systemctl enable --now firewalld
     mkdir -p /var/lib/fgc-lab
@@ -156,10 +198,12 @@ CONF
     touch "$LAB_HOME/.config/gnome-initial-setup-done"
     chown -R "$LAB_USER:$LAB_USER" "$LAB_HOME/.config"
     # Use the reviewed production artifact installer, without loosening gates.
-    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR; do
+    if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
+    for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
         bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
     done
+    fi
     # Use the persistent user bus: multiple private dconf daemons can race.
     as_user systemctl --user daemon-reload
     as_user gsettings set org.gnome.desktop.session idle-delay 0
@@ -167,8 +211,10 @@ CONF
     as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
     # Persist the selected extensions before the first GDM session.
     # Reboot/recovery checks only observe these settings and active states.
+    if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
     as_user gsettings set org.gnome.shell enabled-extensions \
-      "['$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID']"
+      "['$DASH_TO_DOCK_UUID', '$APPINDICATOR_UUID', '$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID', '$TILING_ASSISTANT_UUID']"
+    else as_user gsettings set org.gnome.shell enabled-extensions '[]'; fi
     as_user gsettings set org.gnome.shell disable-user-extensions false
     extension_settings > /var/lib/fgc-lab/extension-settings.expected
     dnf clean all
@@ -200,6 +246,10 @@ CONF
   session)
     require_session
     check_extensions
+    for key in download-updates allow-updates; do
+      [[ "$(as_user gsettings get org.gnome.software "$key")" == false ]]
+      [[ "$(as_user gsettings writable org.gnome.software "$key")" == false ]]
+    done
     as_user systemd-run --user --collect --unit=fgc-lab-nautilus \
       nautilus --new-window "$LAB_HOME"
     as_user systemd-run --user --collect --unit=fgc-lab-ptyxis \
@@ -209,6 +259,7 @@ CONF
     pgrep -u "$LAB_UID" -x nautilus >/dev/null
     pgrep -u "$LAB_UID" -x ptyxis >/dev/null
     as_user systemctl --user is-active --quiet xdg-desktop-portal.service
+    as_user bash "$REPO/.github/scripts/desktop-document-smoke.sh"
     ;;
   seed)
     mkdir -p "$LAB_HOME/.config/fgc-lab" "$LAB_HOME/Documents/Lab" /var/lib/fgc-lab

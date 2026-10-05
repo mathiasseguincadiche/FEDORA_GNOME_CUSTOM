@@ -23,6 +23,7 @@ engine_load_libraries() {
   source "$REPO_ROOT/lib/storage_health.sh"
   source "$REPO_ROOT/lib/backup_runtime.sh"
   source "$REPO_ROOT/lib/physical_certification.sh"
+  source "$REPO_ROOT/lib/peripheral_identity.sh"
   source "$REPO_ROOT/lib/apply_gate.sh"
 }
 

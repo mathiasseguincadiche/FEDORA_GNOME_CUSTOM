@@ -89,22 +89,35 @@ network_cert(){
   ui_check OK "Network $kind" "$iface DHCP/IP + route + DNS + HTTPS PASS"
 }
 
-audio_cert(){
+audio_cert() (
   require_baremetal
-  command -v wpctl >/dev/null && command -v speaker-test >/dev/null && command -v arecord >/dev/null || { ui_error 'wpctl, speaker-test and arecord are required'; exit "$EXIT_PRECHECK_FAILED"; }
-  wpctl status 2>/dev/null | grep -q 'Audio' || { ui_error 'PipeWire audio graph unavailable'; exit "$EXIT_POSTCHECK_FAILED"; }
-  local wav="$REPORT_ROOT/$RUN_ID-audio-capture.wav" rc=0 answer
-  timeout 20 speaker-test -c 2 -t sine -l 1 >/dev/null 2>&1 || rc=$?
-  (( rc == 0 )) || { ui_error "speaker-test failed rc=$rc"; exit "$EXIT_POSTCHECK_FAILED"; }
-  timeout 12 arecord -d 3 -f S16_LE -r 48000 -c 1 "$wav" >/dev/null 2>&1 || { ui_error '3-second audio capture failed'; exit "$EXIT_POSTCHECK_FAILED"; }
-  [[ -s "$wav" && "$(stat -c %s "$wav")" -gt 1000 ]] || { ui_error 'Captured WAV is empty'; exit "$EXIT_POSTCHECK_FAILED"; }
-  [[ -t 0 ]] || { ui_error 'Audio certification requires an interactive physical confirmation'; exit "$EXIT_PRECHECK_FAILED"; }
-  printf 'Confirmez que le son a été entendu et que le micro a capturé un signal. Tapez JE_CONFIRME_AUDIO_GATE3 : '
+  [[ -t 0 ]] || { ui_error 'Audio certification requires physical confirmation'; exit "$EXIT_PRECHECK_FAILED"; }
+  local card mic work wav answer
+  rm -f "$(physical_runtime_evidence_path audio)" "$STATE_ROOT/final/certified.ok"
+  card="$(peripheral_resolve audio)" || { ui_error 'Enroll the motherboard audio endpoint first'; exit "$EXIT_PRECHECK_FAILED"; }
+  mic="$(peripheral_resolve_camera_mic)" || { ui_error 'Enroll the Brio camera and inspect its microphone first'; exit "$EXIT_PRECHECK_FAILED"; }
+  work="$(mktemp -d "${XDG_RUNTIME_DIR:?}/fgc-audio.XXXXXX")"; trap 'rm -rf "$work"' EXIT
+  wpctl status | grep -q Audio
+  timeout 20 speaker-test -D "plughw:${card#card},0" -c 2 -t sine -l 1
+  echo 'Parlez dans le micro Brio 100 pendant la capture de trois secondes.'
+  wav="$work/brio.wav"
+  timeout 12 arecord -D "plughw:${mic#card},0" -d 3 -f S16_LE -r 48000 -c 1 "$wav"
+  python3 - "$wav" <<'PY'
+import array, sys, wave
+with wave.open(sys.argv[1]) as audio:
+    if audio.getnframes() < 48000 or audio.getsampwidth() != 2:
+        raise SystemExit("Invalid microphone capture")
+    samples = array.array("h", audio.readframes(audio.getnframes()))
+    if not samples or max(abs(x) for x in samples) < 100:
+        raise SystemExit("No meaningful microphone signal; repeat while speaking")
+PY
+  timeout 12 aplay -D "plughw:${card#card},0" "$wav"
+  printf 'Confirmez gauche/droite et votre voix enregistrée sur la Brio. Tapez JE_CONFIRME_AUDIO_GATE3 : '
   read -r answer
-  [[ "$answer" == JE_CONFIRME_AUDIO_GATE3 ]] || { ui_error 'Audio confirmation refused'; exit "$EXIT_PRECHECK_FAILED"; }
-  physical_runtime_write_evidence audio "pipewire=true playback=true capture=true wav=$wav manual=true"
-  ui_check OK Audio 'playback + capture + manual confirmation PASS'
-}
+  [[ "$answer" == JE_CONFIRME_AUDIO_GATE3 ]] || exit "$EXIT_PRECHECK_FAILED"
+  physical_runtime_write_evidence audio "endpoint_policy=2 motherboard=$card brio_microphone=$mic playback=true capture=true manual=true media_saved=false"
+  ui_check OK Audio 'Enrolled motherboard playback + Brio microphone PASS; recording deleted'
+)
 
 hdr_edid_capable(){
   local edid="$1"
