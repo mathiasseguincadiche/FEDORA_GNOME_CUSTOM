@@ -14,6 +14,18 @@ K9S_VERSION="${K9S_VERSION:-v0.51.0}"
 K9S_LINUX_AMD64_SHA256="${K9S_LINUX_AMD64_SHA256:-c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7}"
 AWS_CLI_PGP_FINGERPRINT="${AWS_CLI_PGP_FINGERPRINT:-FB5DB77FD5C118B80511ADA8A6310ACC4672475C}"
 
+# Preserve the real service failure before a disposable guest is destroyed.
+diagnose_failure() {
+  local rc=$?
+  trap - ERR
+  printf '[rocky-devops] bootstrap failed (exit=%s), running kernel=%s\n' "$rc" "$(uname -r)" >&2
+  rpm -q kernel-core kernel-modules kernel-modules-extra >&2 || true
+  systemctl --failed --no-pager >&2 || true
+  journalctl -b -u docker -u containerd --no-pager -n 120 >&2 || true
+  exit "$rc"
+}
+trap diagnose_failure ERR
+
 log() { printf '[rocky-devops] %s\n' "$*"; }
 fail() { printf '[rocky-devops] ERROR: %s\n' "$*" >&2; exit 1; }
 
