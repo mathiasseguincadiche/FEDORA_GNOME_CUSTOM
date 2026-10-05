@@ -283,3 +283,5 @@ les régressions de code sans attendre les boots VM.
 ## Linux amont officiel
 
 Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 44 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.
+
+Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connexion après la déconnexion. Un essai a identifié une course entre la création de ce scope et l'arrêt immédiat de GDM (`Result=resources`, PID disparu avant rattachement). L'attente observe l'état réel ; les unités échouées, journaux et coredumps restent bloquants, sans remise à zéro.
