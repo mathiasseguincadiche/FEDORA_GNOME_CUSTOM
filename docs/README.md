@@ -136,12 +136,12 @@ Les références répondent à **« comment ce contrat est-il implémenté ? »*
 ## Virtualisation
 
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — architecture KVM/libvirt ;
-- [`VM_PROFILES.md`](VM_PROFILES.md) — profils exécutables Ubuntu/Windows ;
+- [`VM_PROFILES.md`](VM_PROFILES.md) — profils exécutables Rocky Linux/Windows ;
 - [`KVM_NETWORK.md`](KVM_NETWORK.md) — réseau `devops-nat` fail-closed ;
 - [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) — accès fichiers ;
 - [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — référence CLI avancée ;
-- [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md) — état attendu du guest Ubuntu ;
-- [`UBUNTU_DEVOPS_PROVISIONING.md`](UBUNTU_DEVOPS_PROVISIONING.md) — provisioning Ubuntu.
+- [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md) — état attendu du guest Rocky ;
+- [`ROCKY_DEVOPS_PROVISIONING.md`](ROCKY_DEVOPS_PROVISIONING.md) — provisioning Rocky.
 
 ---
 
@@ -158,7 +158,7 @@ Puis choisir le domaine :
 
 - [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — triage transversal ;
 - [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — BIOS, P-State, ReBAR, PCIe, NVMe, EDID, kernel, offline update ;
-- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Ubuntu, Windows, QGA, TPM, sauvegarde VM ;
+- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Rocky Linux, Windows, QGA, TPM, sauvegarde VM ;
 - [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) — `/data`, EXT4, ownership, SELinux, XDG Documents, Borg, Steam/Vulkan ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — restauration et DR ;
 - [`KVM_NETWORK.md`](KVM_NETWORK.md) — détails d'isolation réseau.

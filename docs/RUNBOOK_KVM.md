@@ -59,21 +59,21 @@ systemctl status fedora-gnome-custom-kvm-guard.service
 
 L'état attendu après réparation est `guard_mode=normal`. Si le reconcile échoue, conserver le mode d'urgence et diagnostiquer ; ne pas supprimer la table nftables pour récupérer Internet.
 
-## Ubuntu DevOps ne démarre pas
+## Rocky DevOps ne démarre pas
 
 ```bash
-virsh --connect qemu:///system dominfo ubuntu-devops
-virsh --connect qemu:///system domblklist ubuntu-devops
-virsh --connect qemu:///system dumpxml ubuntu-devops
+virsh --connect qemu:///system dominfo rocky-devops
+virsh --connect qemu:///system domblklist rocky-devops
+virsh --connect qemu:///system dumpxml rocky-devops
 journalctl -u virtqemud -b --no-pager 2>/dev/null || true
 ```
 
-Vérifier le disque `/data/libvirt/images/ubuntu-devops.qcow2`, le seed cloud-init et le réseau `devops-nat`.
+Vérifier le disque `/data/libvirt/images/rocky-devops.qcow2`, le seed cloud-init et le réseau `devops-nat`.
 
-## Ubuntu inaccessible en SSH
+## Rocky Linux inaccessible en SSH
 
 ```bash
-virsh --connect qemu:///system domifaddr ubuntu-devops --source agent
+virsh --connect qemu:///system domifaddr rocky-devops --source agent
 virsh --connect qemu:///system net-dhcp-leases devops-nat
 ssh -v mathias@192.168.50.x
 ```
@@ -87,7 +87,7 @@ sudo systemctl status qemu-guest-agent
 sudo /usr/local/sbin/devops-verify.sh
 ```
 
-## Cloud-init / bootstrap Ubuntu incomplet
+## Cloud-init / bootstrap Rocky Linux incomplet
 
 Dans le guest :
 
@@ -99,15 +99,15 @@ sudo /usr/local/sbin/devops-verify.sh
 
 Ne recréer la VM qu'après avoir conservé les données utiles et compris l'échec.
 
-## Image Ubuntu refusée
+## Image Rocky Linux refusée
 
-La création exige l'image, `SHA256SUMS` et `SHA256SUMS.gpg` authentifiés.
+La création exige l'image, `CHECKSUM` et `CHECKSUM.asc` authentifiés.
 
 ```bash
-bash scripts/kvm/verify_ubuntu_cloud_image.sh --help
+bash scripts/kvm/verify_rocky_cloud_image.sh --help
 ```
 
-Ne contourner ni la signature Canonical ni la comparaison SHA-256.
+Ne contourner ni la signature Rocky Linux ni la comparaison SHA-256.
 
 ## Windows 11 : création refusée avant le disque
 

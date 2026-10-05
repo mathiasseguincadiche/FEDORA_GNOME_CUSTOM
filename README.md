@@ -15,7 +15,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.20.0**
+**Golden Workstation 0.21.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -300,12 +300,12 @@ réseau devops-nat
 
 Profils prévus :
 
-- **Ubuntu DevOps 26.04** — Q35, host-passthrough, VirtIO, cloud image authentifiée ;
+- **Rocky Linux 10.2 DevOps** — Q35, host-passthrough, VirtIO, cloud image authentifiée ;
 - **Windows 11** — Q35, TPM 2.0, UEFI Secure Boot, VirtIO, QEMU Guest Agent.
 
 ```bash
 ./control.sh kvm status
-./control.sh kvm create-ubuntu
+./control.sh kvm create-rocky
 ./control.sh kvm create-windows
 ```
 

@@ -1,6 +1,6 @@
 # CI et validation bout-en-bout
 
-La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNOME et vraie VM Ubuntu 26.04. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
+La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNOME et vraie VM Rocky Linux 10.2. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
 
 ## Tests de contrats
 
@@ -10,7 +10,7 @@ La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNO
 - applications et multimédia ;
 - **Gaming Golden Steam/Proton/Vulkan sans couplage KVM** ;
 - KVM/libvirt ;
-- bootstrap Ubuntu ;
+- bootstrap Rocky Linux ;
 - accès VM ;
 - backup/recovery ;
 - gouvernance CI ;
@@ -21,7 +21,7 @@ La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNO
 - **LAB GNOME VirtualBox fail-closed** ;
 - durcissement pré-1.0 ;
 - **fail-closed du guard KVM** ;
-- **authentification de l'image Ubuntu** ;
+- **authentification de l'image Rocky** ;
 - **cohérence documentation ↔ code/config** ;
 - **bootstrap RPM Fusion CI résilient et partagé**.
 
@@ -125,7 +125,7 @@ Le helper conserve une politique fail-closed : il tente d'abord les endpoints Mi
 
 ## Fedora 44 package preflight
 
-Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 50 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Ubuntu.
+Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 50 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Rocky.
 
 Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed : DING review `74408`/version `95`, Show Desktop Plus review `70326`/version `8` et Resource Monitor review `70909`/version `28`. Le workflow contrôle les UUID, la compatibilité GNOME Shell 50 et les payloads attendus.
 
@@ -221,22 +221,22 @@ Le dispatcher NetworkManager ne doit plus masquer un échec de reload avec `|| t
 
 La preuve runtime finale reste bare-metal.
 
-## Authentification image Ubuntu
+## Authentification image Rocky
 
 Le contrat exige :
 
-- empreinte Canonical épinglée ;
-- signature GPG de `SHA256SUMS` ;
+- empreinte Rocky Linux épinglée ;
+- signature GPG de `CHECKSUM` ;
 - SHA-256 de l'image ;
 - appel du verifier par le script de création ;
 - politique activée dans `vm-profiles.conf`.
 
-## Ubuntu 26.04 real VM pretest
+## Rocky Linux 10.2 real VM pretest
 
 Le workflow :
 
-1. télécharge l'image Canonical ;
-2. télécharge `SHA256SUMS` et sa signature ;
+1. télécharge l'image Rocky Linux ;
+2. télécharge `CHECKSUM` et sa signature ;
 3. authentifie la liste ;
 4. vérifie l'image ;
 5. démarre une vraie VM QEMU (KVM si disponible, TCG sinon) ;
@@ -285,3 +285,7 @@ les régressions de code sans attendre les boots VM.
 Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 44 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.
 
 Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connexion après la déconnexion. Un essai a identifié une course entre la création de ce scope et l'arrêt immédiat de GDM (`Result=resources`, PID disparu avant rattachement). L'attente observe l'état réel ; les unités échouées, journaux et coredumps restent bloquants, sans remise à zéro.
+
+### Reprise Rocky Linux 10.2
+
+Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts : un échec ou un job ignoré bloque la fusion et la publication. Le laboratoire contrôle Q35/UEFI, l'OS réel, SELinux, le bootstrap exact, un changement de boot ID, puis une restauration Borg à froid sans chiffrement (disque, NVRAM et seed, SHA-256 et fichiers témoins). Les sources sont supprimées avant extraction. Les logs, l'inventaire RPM et les erreurs du démarrage sont conservés. Les privilèges du compte CI servent seulement à cette VM jetable ; le profil de production garde sudo avec mot de passe.

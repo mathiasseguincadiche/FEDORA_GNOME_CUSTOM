@@ -60,7 +60,7 @@ Le doctor fonctionnel valide FileChooser, OpenURI, Notification et ScreenCast. L
 
 En Gate 3, `nautilus-vm-live-doctor --certify` effectue un véritable aller-retour GIO :
 
-- Ubuntu DevOps via SFTP ;
+- Rocky DevOps via SFTP ;
 - Windows 11 via SMB.
 
 Pour chacun : listing, écriture d'un canari, relecture puis suppression. Le doctor rafraîchit ensuite les bookmarks Nautilus gérés.

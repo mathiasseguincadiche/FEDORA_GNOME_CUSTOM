@@ -165,8 +165,8 @@ grep -Fq 'KVM_GATEWAY="192.168.50.254"' "$ROOT/config/virtualization.conf"
 
 grep -Fq "mode d'urgence" "$ROOT/docs/KVM_NETWORK.md"
 grep -Fq 'guard_mode=normal' "$ROOT/docs/KVM_NETWORK.md"
-grep -Fq 'SHA256SUMS.gpg' "$ROOT/docs/VIRTUALIZATION.md"
-grep -Fq 'verify_ubuntu_cloud_image.sh' "$ROOT/docs/TROUBLESHOOTING.md"
+grep -Fq 'CHECKSUM.asc' "$ROOT/docs/VIRTUALIZATION.md"
+grep -Fq 'verify_rocky_cloud_image.sh' "$ROOT/docs/TROUBLESHOOTING.md"
 
 # Troubleshooting must cover the main operational surfaces, not only graphics.
 for expected in \
@@ -197,7 +197,7 @@ for file in \
   docs/VIRTUALBOX_GNOME_LAB.md \
   docs/DOCK_FAVORITES.md \
   docs/DESKTOP_LIFECYCLE.md \
-  docs/UBUNTU_DEVOPS_READY.md; do
+  docs/ROCKY_DEVOPS_READY.md; do
   if grep -Eq '0\.(8|9)(\.[0-9]+)?' "$ROOT/$file"; then
     echo "stale pre-0.10 release number found in normative doc: $file" >&2
     exit 1

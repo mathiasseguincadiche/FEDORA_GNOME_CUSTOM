@@ -8,44 +8,44 @@ Les clés de ce fichier sont des constantes vérifiées, pas des options `local.
 
 ## Principes
 
-- préférer Fedora/Ubuntu officiels et des dépôts éditeurs signés ;
+- préférer Fedora/Rocky Linux officiels et des dépôts éditeurs signés ;
 - ne jamais utiliser `curl | bash` / `wget | sh` ;
 - épingler par version et checksum/signature les binaires téléchargés directement ;
 - épingler les GitHub Actions à un SHA immuable ;
 - distinguer **intégrité** (le fichier correspond au hash attendu) et **provenance** (le hash/signature vient bien de la source de confiance) ;
 - exécuter périodiquement les prétests dépendant de services externes afin de détecter une rupture sans attendre un commit.
 
-## Image Ubuntu Cloud
+## Image Rocky Linux Cloud
 
-La création de `ubuntu-devops` n'accepte plus une image locale sur son seul nom.
+La création de `rocky-devops` n'accepte plus une image locale sur son seul nom.
 
 L'opérateur conserve ensemble :
 
 ```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 ```
 
-`scripts/kvm/verify_ubuntu_cloud_image.sh` :
+`scripts/kvm/verify_rocky_cloud_image.sh` :
 
-1. utilise l'empreinte Canonical cloud-image attendue, épinglée dans le script ;
-2. importe une clé locale fournie explicitement ou récupère cette clé depuis le keyserver Ubuntu ;
+1. utilise l'empreinte Rocky Linux cloud-image attendue, épinglée dans le script ;
+2. importe une clé locale fournie explicitement ou récupère cette clé par HTTPS sur dl.rockylinux.org ;
 3. vérifie que l'empreinte importée est exactement celle attendue ;
-4. vérifie la signature GPG de `SHA256SUMS` ;
-5. vérifie le SHA-256 de l'image.
+4. vérifie la signature GPG de `CHECKSUM` liée à la clé de production Rocky 10 (une sous-clé de signature valide est acceptée) ;
+5. exige une seule ligne associant le nom versionné au SHA-256 et compare le hash de l'image.
 
-`create_ubuntu_devops_vm.sh` appelle ce contrôle avant toute création de disque.
+`create_rocky_devops_vm.sh` appelle ce contrôle avant toute création de disque.
 
-Le vrai prétest Ubuntu CI utilise lui aussi une liste SHA-256 signée Canonical.
+Le vrai prétest Rocky Linux CI utilise lui aussi une liste SHA-256 signée Rocky Linux.
 
-## VM Ubuntu DevOps — bootstrap
+## VM Rocky DevOps — bootstrap
 
 - Kubernetes est limité à la génération `v1.37.x` ; les patchs restent fournis par `pkgs.k8s.io` ;
 - kind est épinglé à `v0.33.0` et vérifié avec le checksum publié ;
 - Minikube est épinglé à `v1.38.1` et vérifié avec son SHA-256 publié ;
 - yq `v4.53.3` et K9s `v0.51.0` ont des SHA-256 attendus versionnés ;
-- Helm vérifie l'empreinte de la clé du dépôt ;
+- Helm v4.3.0 utilise l'archive officielle get.helm.sh et son SHA-256 publié ;
 - AWS CLI v2 est téléchargé sous forme de ZIP + signature détachée, puis la signature est vérifiée avec la clé AWS et l'empreinte attendue versionnée.
 
 ## Médias Windows / VirtIO
@@ -82,7 +82,7 @@ Les paquets Flathub communautaires ne sont pas présentés comme des paquets off
 
 ## CI
 
-Les prétests package Fedora, intégration host et Ubuntu VM sont rejoués périodiquement afin de détecter :
+Les prétests package Fedora, intégration host et Rocky Linux VM sont rejoués périodiquement afin de détecter :
 
 - disparition d'un dépôt ;
 - changement de clé/signature ;
@@ -107,3 +107,5 @@ Un changement de contenu derrière une URL review existante est refusé **avant*
 ## Exceptions Flathub communautaires
 
 Les entrées classées `community-unverified` dans `manifests/application-provenance.tsv` ne sont installables que si leur App ID figure aussi dans `UNVERIFIED_FLATHUB_ALLOWLIST`. Cette allowlist transforme l'exception de confiance en décision versionnée et testable au lieu d'une simple note documentaire.
+
+Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.

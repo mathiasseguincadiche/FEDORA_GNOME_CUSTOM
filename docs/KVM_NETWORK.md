@@ -35,7 +35,7 @@ Internet → VM       aucun port-forward implicite
 ## Vue simple
 
 ```text
-ubuntu-devops / windows-11
+rocky-devops / windows-11
           │
           │ VirtIO
           ▼
@@ -233,7 +233,7 @@ La certification recharge le guard via systemd, exige son retour en mode normal 
 
 ## Preuve VM → LAN
 
-Lorsque la passerelle physique répond au ping depuis Fedora, `runtime_certification.sh` établit d'abord qu'elle est réellement joignable depuis le HOST. Il exige ensuite que le même ping lancé depuis `ubuntu-devops` échoue.
+Lorsque la passerelle physique répond au ping depuis Fedora, `runtime_certification.sh` établit d'abord qu'elle est réellement joignable depuis le HOST. Il exige ensuite que le même ping lancé depuis `rocky-devops` échoue.
 
 Cela évite le faux positif suivant :
 
@@ -247,7 +247,7 @@ qui serait insuffisant si le gateway refusait déjà le ping depuis toutes les m
 
 La certification host vérifie la règle nftables correspondante. Une preuve réseau réellement externe nécessite cependant un **deuxième appareil du LAN**.
 
-Sur un autre ordinateur du LAN, pendant qu'Ubuntu est démarré :
+Sur un autre ordinateur du LAN, pendant qu'Rocky Linux est démarré :
 
 ```text
 1. récupérer l'IP 192.168.50.x de la VM depuis Fedora ;
@@ -274,7 +274,7 @@ et refuse l'activation tant qu'un guard dual-stack équivalent n'est pas implém
 
 Le projet ne configure aucun port forward automatique depuis le LAN ou Internet vers les invités.
 
-L'administration Ubuntu se fait depuis le HOST :
+L'administration Rocky Linux se fait depuis le HOST :
 
 ```bash
 ssh mathias@192.168.50.x

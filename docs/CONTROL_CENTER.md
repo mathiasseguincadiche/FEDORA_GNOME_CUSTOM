@@ -222,18 +222,18 @@ La certification finale appelle `performance-doctor --certify` : TuneD doit êtr
 
 Le guard reste fail-closed. `guard-reconcile` passe d'abord par un état restrictif avant de reconstruire les règles normales.
 
-### Création Ubuntu DevOps
+### Création Rocky DevOps
 
-Dans le menu interactif, **KVM → Créer Ubuntu DevOps** demande le chemin de l'image cloud et permet de préciser une clé SSH ou une clé Canonical locale.
+Dans le menu interactif, **KVM → Créer Rocky DevOps** demande le chemin de l'image cloud et permet de préciser une clé SSH ou une clé Rocky Linux locale.
 
 CLI :
 
 ```bash
-./control.sh kvm create-ubuntu \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+./control.sh kvm create-rocky \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-`SHA256SUMS` et `SHA256SUMS.gpg` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.
+`CHECKSUM` et `CHECKSUM.asc` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.
 
 ### Création Windows 11
 

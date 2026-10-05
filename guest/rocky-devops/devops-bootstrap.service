@@ -1,0 +1,19 @@
+[Unit]
+Description=Provision Rocky Linux DevOps toolchain
+Wants=network-online.target
+After=network-online.target cloud-final.service
+ConditionPathExists=!/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/fgc-devops-bootstrap.env
+ExecStart=/usr/local/sbin/devops-bootstrap.sh
+# 75 means packages are prepared but the new Rocky kernel must boot first.
+SuccessExitStatus=75
+ExecStartPost=/bin/sh -c 'if test -s /var/lib/fedora-gnome-custom/rocky-devops-reboot-required; then systemctl reboot --no-block; fi'
+StandardOutput=append:/var/log/devops-bootstrap.log
+StandardError=inherit
+TimeoutStartSec=45min
+
+[Install]
+WantedBy=cloud-init.target

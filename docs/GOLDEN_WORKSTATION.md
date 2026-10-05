@@ -156,7 +156,7 @@ qemu:///system
 /data EXT4 persistant
 /data/libvirt/images = pool devops-data
 network devops-nat
-Ubuntu Server 26.04
+Rocky Linux 10.2
 Windows 11
 ```
 
@@ -164,7 +164,7 @@ Le réseau KVM est IPv4-only tant qu'une isolation dual-stack équivalente n'est
 
 Le guard `fedora_gnome_custom_kvm` est fail-closed lors d'un changement d'uplink : il installe d'abord un blocage d'urgence du forwarding via `virbr50`, puis repasse en mode normal uniquement après redécouverte/validation du LAN.
 
-L'image Ubuntu doit être authentifiée à partir de `SHA256SUMS` signé par Canonical avant création du disque.
+L'image Rocky doit être authentifiée à partir de `CHECKSUM` signé par Rocky Linux avant création du disque.
 
 Voir [`KVM_NETWORK.md`](KVM_NETWORK.md) et [`VIRTUALIZATION.md`](VIRTUALIZATION.md).
 

@@ -4,7 +4,7 @@ La workstation maintient **exactement deux profils invités de référence**. Il
 
 La version applicable est celle de [`../VERSION`](../VERSION). Les valeurs exécutables viennent de [`../config/vm-profiles.conf`](../config/vm-profiles.conf) et [`../config/virtualization.conf`](../config/virtualization.conf). La connexion libvirt canonique est `qemu:///system`.
 
-## Ubuntu Server 26.04 LTS — `ubuntu-devops`
+## Rocky Linux 10.2 — `rocky-devops`
 
 ```text
 vCPU               6
@@ -26,25 +26,25 @@ autostart          non
 ### Entrées obligatoires
 
 ```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 clé SSH publique
 pool devops-data actif
 réseau devops-nat actif
 /data EXT4 monté
 ```
 
-La liste SHA-256 est authentifiée avec la clé Canonical attendue avant toute création de disque.
+La liste SHA-256 est authentifiée avec la clé Rocky Linux attendue avant toute création de disque.
 
 ### Création
 
 ```bash
-bash scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+bash scripts/kvm/create_rocky_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-Le script vérifie l'image Canonical, demande le mot de passe console/sudo, construit le seed cloud-init, embarque les scripts de bootstrap/validation du checkout, crée le disque qcow2 puis la VM avec VirtIO/QGA/RNG/balloon, sans autostart.
+Le script vérifie l'image Rocky Linux, demande le mot de passe console/sudo, construit le seed cloud-init, embarque les scripts de bootstrap/validation du checkout, crée le disque qcow2 puis la VM avec VirtIO/QGA/RNG/balloon, sans autostart.
 
 Vérification dans le guest :
 
@@ -109,7 +109,7 @@ Le script crée aussi `windows-guest-tools.iso` avec les helpers du projet. Apr�
 Le HOST de référence dispose de 8 cœurs / 16 threads et 48 Gio de RAM.
 
 ```text
-Ubuntu             6 vCPU / 16 Gio
+Rocky Linux             6 vCPU / 16 Gio
 Windows            4 vCPU / 12 Gio
 RAM VM totale               28 Gio
 HOST restant                ~20 Gio avant consommation dynamique
@@ -134,14 +134,14 @@ Voir [`KVM_NETWORK.md`](KVM_NETWORK.md).
 Démarrer :
 
 ```bash
-virsh --connect qemu:///system start ubuntu-devops
+virsh --connect qemu:///system start rocky-devops
 virsh --connect qemu:///system start windows-11
 ```
 
 Arrêter proprement :
 
 ```bash
-virsh --connect qemu:///system shutdown ubuntu-devops
+virsh --connect qemu:///system shutdown rocky-devops
 virsh --connect qemu:///system shutdown windows-11
 ```
 
@@ -170,5 +170,5 @@ Pour reconstruire un guest, conserver les données utiles et la sauvegarde, reti
 - aucun média OS téléchargé automatiquement ;
 - aucun mot de passe en clair dans Git ;
 - aucun partage HOST VirtioFS automatique ;
-- accès Ubuntu via SSH/SFTP ;
+- accès Rocky Linux via SSH/SFTP ;
 - accès fichiers Windows via partage SMB limité lorsque l'opérateur l'active.

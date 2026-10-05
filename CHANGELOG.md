@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0 — Rocky Linux 10.2 DevOps
+
+- Remplacement du profil Ubuntu par rocky-devops (Rocky Linux 10.2 x86_64), commandes, diagnostics et documentation alignés.
+- Image GenericCloud versionnée, signature de production Rocky 10 épinglée, checksum unique et authentifié avant création.
+- Bootstrap RPM/DNF natif EL10 : CRB/EPEL, Docker, GitHub, HashiCorp, Microsoft, Kubernetes ; SELinux Enforcing et SSH par clé.
+- Chaîne DevOps conservée, Node ≥22, OpenJDK 21, Python/venv/pipx, Helm v4.3.0 ; aucun repli Debian ou EL9.
+- Laboratoire Rocky obligatoire : Q35/UEFI, vrai redémarrage, sauvegarde Borg sans chiffrement à froid, suppression des sources et démarrage restauré.
+- Ancienne VM préservée : remplacement par création séparée et transfert des données, aucune conversion destructive.
+
+
 ## 0.20.0 — Linux amont et préparation Fedora 45
 
 - Retrait du noyau personnalisé et de ses réglages CPU/SELinux : canal Vanilla unique, dernière stable comparée à kernel.org, RC/linux-next/RPM obsolètes refusés.

@@ -43,12 +43,12 @@ done
 # Profile identity/resources must match config/vm-profiles.conf exactly in the
 # two normative VM references.
 for doc in docs/VIRTUALIZATION.md docs/VM_PROFILES.md; do
-  grep -Fq "$UBUNTU_SERVER_NAME" "$ROOT/$doc" || fail "$doc missing Ubuntu domain name"
-  grep -Fq "$UBUNTU_SERVER_RELEASE" "$ROOT/$doc" || fail "$doc missing Ubuntu release"
+  grep -Fq "$ROCKY_SERVER_NAME" "$ROOT/$doc" || fail "$doc missing Rocky domain name"
+  grep -Fq "$ROCKY_SERVER_RELEASE" "$ROOT/$doc" || fail "$doc missing Rocky release"
   grep -Fq "$WINDOWS11_NAME" "$ROOT/$doc" || fail "$doc missing Windows domain name"
-  grep -Fq "vCPU               $UBUNTU_SERVER_VCPU" "$ROOT/$doc" || fail "$doc Ubuntu vCPU drift"
-  grep -Fq 'RAM                16 Gio' "$ROOT/$doc" || fail "$doc Ubuntu RAM drift"
-  grep -Fq "disque             $UBUNTU_SERVER_DISK_GB Gio qcow2" "$ROOT/$doc" || fail "$doc Ubuntu disk drift"
+  grep -Fq "vCPU               $ROCKY_SERVER_VCPU" "$ROOT/$doc" || fail "$doc Rocky vCPU drift"
+  grep -Fq 'RAM                16 Gio' "$ROOT/$doc" || fail "$doc Rocky RAM drift"
+  grep -Fq "disque             $ROCKY_SERVER_DISK_GB Gio qcow2" "$ROOT/$doc" || fail "$doc Rocky disk drift"
   grep -Fq "vCPU               $WINDOWS11_VCPU" "$ROOT/$doc" || fail "$doc Windows vCPU drift"
   grep -Fq 'RAM                12 Gio' "$ROOT/$doc" || fail "$doc Windows RAM drift"
   grep -Fq "disque             $WINDOWS11_DISK_GB Gio qcow2" "$ROOT/$doc" || fail "$doc Windows disk drift"
@@ -115,7 +115,7 @@ fi
 # Public KVM creation routes must actually forward all remaining arguments to
 # the hardened engines.
 grep -Fq 'if [[ "${1:-}" == kvm ]]' "$ROOT/control.sh" || fail 'public KVM argument routing missing'
-grep -Fq 'create_ubuntu_devops_vm.sh" "$@"' "$ROOT/control.sh" || fail 'Ubuntu public route does not forward arguments'
+grep -Fq 'create_rocky_devops_vm.sh" "$@"' "$ROOT/control.sh" || fail 'Rocky public route does not forward arguments'
 grep -Fq 'create_windows11_vm.sh" "$@"' "$ROOT/control.sh" || fail 'Windows public route does not forward arguments'
 
 # KVM runbook uses the public Control Center routes, which themselves map to the

@@ -553,7 +553,7 @@ cc_kvm_menu() {
     cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
     cc_option 4 'Certification runtime KVM'
     cc_option 5 'Rafraîchir accès Nautilus aux VM'
-    cc_option 6 'Créer Ubuntu DevOps'
+    cc_option 6 'Créer Rocky DevOps'
     cc_option 7 'Créer Windows 11'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
@@ -567,7 +567,7 @@ cc_kvm_menu() {
         ;;
       4) cc_interactive_exec 'KVM RUNTIME CERTIFICATION' "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
       5) cc_interactive_exec 'NAUTILUS VM ACCESS' "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
-      6) cc_interactive_exec 'CRÉATION UBUNTU DEVOPS' "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" ;;
+      6) cc_interactive_exec 'CRÉATION ROCKY DEVOPS' "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" ;;
       7) cc_interactive_exec 'CRÉATION WINDOWS 11' "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
@@ -749,7 +749,7 @@ Usage:
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|rollback
-  ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-ubuntu|create-windows
+  ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-rocky|create-windows
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
   ./control.sh logs list|tail|boot-failure
 
@@ -827,7 +827,7 @@ cc_cli_dispatch() {
         guard-reconcile) sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" reconcile ;;
         certify) "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
         nautilus-refresh) "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
-        create-ubuntu) "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" ;;
+        create-rocky) "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" ;;
         create-windows) "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" ;;
         *) cc_help; return "$EXIT_USAGE" ;;
       esac

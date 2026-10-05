@@ -42,10 +42,10 @@ PY
 kvm_contract_validate_guest_file() {
   local profile="$1" xml="$2" expected_io="${3:-$(kvm_contract_expected_io)}"
   [[ -s "$xml" ]] || return 1
-  python3 - "$profile" "$xml" "${KVM_NETWORK_NAME:-devops-nat}" "${KVM_POOL_PATH:-/data/libvirt/images}" "$expected_io" "${UBUNTU_SERVER_NAME:-ubuntu-devops}" "${UBUNTU_SERVER_VCPU:-6}" "${UBUNTU_SERVER_RAM_MB:-16384}" "${WINDOWS11_NAME:-windows-11}" "${WINDOWS11_VCPU:-4}" "${WINDOWS11_RAM_MB:-12288}" <<'PY'
+  python3 - "$profile" "$xml" "${KVM_NETWORK_NAME:-devops-nat}" "${KVM_POOL_PATH:-/data/libvirt/images}" "$expected_io" "${ROCKY_SERVER_NAME:-rocky-devops}" "${ROCKY_SERVER_VCPU:-6}" "${ROCKY_SERVER_RAM_MB:-16384}" "${WINDOWS11_NAME:-windows-11}" "${WINDOWS11_VCPU:-4}" "${WINDOWS11_RAM_MB:-12288}" <<'PY'
 import sys
 import xml.etree.ElementTree as ET
-(profile, path, network, pool_path, expected_io, ubuntu_name, ubuntu_vcpu, ubuntu_ram, windows_name, windows_vcpu, windows_ram) = sys.argv[1:]
+(profile, path, network, pool_path, expected_io, rocky_name, rocky_vcpu, rocky_ram, windows_name, windows_vcpu, windows_ram) = sys.argv[1:]
 root = ET.parse(path).getroot()
 def fail(msg):
     print(msg, file=sys.stderr); raise SystemExit(1)
@@ -56,7 +56,7 @@ def memory_mib(node):
     return round(value*factors.get(unit,1/1024))
 if root.tag != 'domain': fail('unexpected domain XML')
 name=(root.findtext('name') or '').strip()
-if profile=='ubuntu': expected_name, expected_vcpu, expected_ram=ubuntu_name,int(ubuntu_vcpu),int(ubuntu_ram)
+if profile=='rocky': expected_name, expected_vcpu, expected_ram=rocky_name,int(rocky_vcpu),int(rocky_ram)
 elif profile=='windows': expected_name, expected_vcpu, expected_ram=windows_name,int(windows_vcpu),int(windows_ram)
 else: fail('unknown profile')
 if name != expected_name: fail(f'domain name mismatch: {name}')
@@ -84,8 +84,8 @@ if not any(c.find('target') is not None and c.find('target').get('name')=='org.q
 if not any((r.get('model') or '')=='virtio' for r in root.findall('./devices/rng')): fail('VirtIO RNG missing')
 balloon=root.find('./devices/memballoon')
 if balloon is None or balloon.get('model')!='virtio': fail('VirtIO balloon missing')
-if profile=='ubuntu':
-    if root.find('./devices/graphics') is not None: fail('Ubuntu DevOps must remain headless')
+if profile=='rocky':
+    if root.find('./devices/graphics') is not None: fail('Rocky DevOps must remain headless')
 else:
     tpm=root.find('./devices/tpm'); backend=tpm.find('backend') if tpm is not None else None
     if tpm is None or tpm.get('model')!='tpm-crb' or backend is None or backend.get('type')!='emulator' or backend.get('version')!='2.0': fail('Windows TPM 2.0 CRB emulator mismatch')
@@ -115,7 +115,7 @@ kvm_contract_fingerprint_payload() {
   if ! command -v virsh >/dev/null 2>&1 || ! virsh --connect "$uri" list --all >/dev/null 2>&1; then printf 'libvirt=unavailable\n'; return; fi
   printf 'network=%s\n' "$(kvm_contract_xml_sha256 "$uri" network "${KVM_NETWORK_NAME:-devops-nat}")"
   printf 'pool=%s\n' "$(kvm_contract_xml_sha256 "$uri" pool "${KVM_POOL_NAME:-devops-data}")"
-  printf 'ubuntu=%s\n' "$(kvm_contract_xml_sha256 "$uri" domain "${UBUNTU_SERVER_NAME:-ubuntu-devops}")"
+  printf 'rocky=%s\n' "$(kvm_contract_xml_sha256 "$uri" domain "${ROCKY_SERVER_NAME:-rocky-devops}")"
   printf 'windows=%s\n' "$(kvm_contract_xml_sha256 "$uri" domain "${WINDOWS11_NAME:-windows-11}")"
 }
 

@@ -10,7 +10,7 @@ HOST Fedora
 ├── pool stockage     : devops-data → /data/libvirt/images
 ├── réseau            : devops-nat  → virbr50 → 192.168.50.0/24
 └── VM
-    ├── ubuntu-devops
+    ├── rocky-devops
     └── windows-11
 ```
 
@@ -41,45 +41,45 @@ virsh --connect qemu:///system vol-list devops-data
 Démarrer/arrêter proprement :
 
 ```bash
-virsh --connect qemu:///system start ubuntu-devops
-virsh --connect qemu:///system shutdown ubuntu-devops
+virsh --connect qemu:///system start rocky-devops
+virsh --connect qemu:///system shutdown rocky-devops
 virsh --connect qemu:///system start windows-11
 virsh --connect qemu:///system shutdown windows-11
 ```
 
 `virsh destroy` équivaut à une coupure d'alimentation virtuelle et reste un geste de dépannage.
 
-## 3. Créer Ubuntu DevOps
+## 3. Créer Rocky DevOps
 
-Préparer ensemble depuis Canonical :
+Préparer ensemble depuis Rocky Linux :
 
 ```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 ```
 
 Puis :
 
 ```bash
-bash scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+bash scripts/kvm/create_rocky_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-Le script authentifie `SHA256SUMS`, vérifie le SHA-256 de l'image **avant** la création du disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart.
+Le script authentifie `CHECKSUM`, vérifie le SHA-256 de l'image **avant** la création du disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart.
 
-Si la clé Canonical doit être fournie localement :
+Si la clé Rocky Linux doit être fournie localement :
 
 ```bash
-bash scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img \
-  --canonical-key-file /chemin/cle-canonical.asc
+bash scripts/kvm/create_rocky_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
+  --rocky-key-file /chemin/RPM-GPG-KEY-Rocky-10
 ```
 
 Accès :
 
 ```bash
-virsh --connect qemu:///system domifaddr ubuntu-devops --source agent
+virsh --connect qemu:///system domifaddr rocky-devops --source agent
 ssh mathias@192.168.50.x
 ```
 
@@ -137,20 +137,20 @@ La GUI est un complément. Le cycle de vie de référence reste réalisable en C
 
 ## 6. Certifier les VM
 
-Quand Ubuntu et Windows sont installés et démarrés :
+Quand Rocky Linux et Windows sont installés et démarrés :
 
 ```bash
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification contrôle notamment QEMU Guest Agent, VirtIO, Secure Boot/TPM Windows, réseau, stack DevOps Ubuntu, Internet et guard KVM.
+La certification contrôle notamment QEMU Guest Agent, VirtIO, Secure Boot/TPM Windows, réseau, stack DevOps Rocky Linux, Internet et guard KVM.
 
 ## 7. Sauvegarder les VM
 
 Arrêter les deux domaines puis vérifier leur état :
 
 ```bash
-virsh --connect qemu:///system shutdown ubuntu-devops
+virsh --connect qemu:///system shutdown rocky-devops
 virsh --connect qemu:///system shutdown windows-11
 virsh --connect qemu:///system list --all
 ```

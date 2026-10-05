@@ -6,7 +6,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **HOST** — la machine Fedora physique. Ici, il s'agit de la workstation principale.
 
-**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, par exemple `ubuntu-devops` ou `windows-11`.
+**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, par exemple `rocky-devops` ou `windows-11`.
 
 **Bare-metal** — système exécuté directement sur le matériel physique, et non dans une VM, un conteneur ou WSL2.
 
@@ -100,7 +100,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 ## Provisionnement VM
 
-**Cloud image** — image disque préinstallée destinée à être personnalisée au démarrage. `ubuntu-devops` part d'une image Ubuntu Server 26.04 Canonical.
+**Cloud image** — image disque préinstallée destinée à être personnalisée au démarrage. `rocky-devops` part d'une image officielle Rocky Linux 10.2.
 
 **cloud-init** — système de configuration initiale d'une image cloud : utilisateur, clé SSH, fichiers, commandes de premier démarrage, etc.
 
@@ -108,7 +108,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **SHA-256** — fonction de hachage utilisée pour vérifier qu'un fichier correspond exactement au contenu attendu.
 
-**Signature GPG** — mécanisme permettant de vérifier qu'une liste de checksums a été signée par la clé attendue. Le workflow Ubuntu authentifie `SHA256SUMS` avant de faire confiance au SHA-256 de l'image.
+**Signature GPG** — mécanisme permettant de vérifier qu'une liste de checksums a été signée par la clé attendue. Le workflow Rocky Linux authentifie `CHECKSUM` avant de faire confiance au SHA-256 de l'image.
 
 ## Bureau GNOME
 

@@ -59,14 +59,14 @@ check_domain(){
   info="$(virsh --connect "${LIBVIRT_URI:-qemu:///system}" dominfo "$name" 2>/dev/null || true)"
   if grep -Eq '^Autostart:[[:space:]]+(disable|no)' <<<"$info"; then emit OK "$name autostart" disabled; else emit KO "$name autostart" 'must remain disabled'; fi
 }
-check_domain ubuntu "${UBUNTU_SERVER_NAME:-ubuntu-devops}"
+check_domain rocky "${ROCKY_SERVER_NAME:-rocky-devops}"
 check_domain windows "${WINDOWS11_NAME:-windows-11}"
 
 report="$REPORT_ROOT/$RUN_ID-kvm-domain-contract.txt"
 {
   printf 'expected_io=%s\n' "$expected_io"
   printf 'domcaps_sha256=%s\n' "$(sha256sum "$tmpdir/domcaps.xml" 2>/dev/null | awk '{print $1}')"
-  for profile in ubuntu windows; do [[ -s "$tmpdir/$profile.xml" ]] && printf '%s_xml_sha256=%s\n' "$profile" "$(sha256sum "$tmpdir/$profile.xml" | awk '{print $1}')"; done
+  for profile in rocky windows; do [[ -s "$tmpdir/$profile.xml" ]] && printf '%s_xml_sha256=%s\n' "$profile" "$(sha256sum "$tmpdir/$profile.xml" | awk '{print $1}')"; done
 } | evidence_atomic_write "$report" 0644
 [[ "$quiet" == true ]] || { ui_meta Report "$report"; ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
 (( ko == 0 ))

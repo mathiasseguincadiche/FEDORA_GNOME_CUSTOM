@@ -62,7 +62,7 @@ grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
 grep -Fq 'runtime_certification_core.sh' "$ROOT/scripts/kvm/runtime_certification.sh"
 grep -Fq 'blocked_host_ipv4' "$ROOT/scripts/kvm/runtime_certification_core.sh"
 grep -Fq 'protected_networks' "$ROOT/scripts/kvm/runtime_certification_core.sh"
-grep -Fq 'Ubuntu → physical LAN' "$ROOT/scripts/kvm/runtime_certification_core.sh"
+grep -Fq 'Rocky → physical LAN' "$ROOT/scripts/kvm/runtime_certification_core.sh"
 grep -Fq 'KVM host-network guard rules' "$ROOT/scripts/kvm/runtime_certification_core.sh"
 
 grep -Fq 'clinfo' "$ROOT/diagnostics/arc-compute-doctor"

@@ -426,24 +426,24 @@ Voir [`KVM_NETWORK.md`](KVM_NETWORK.md).
 
 ---
 
-## 15. La VM Ubuntu n'a pas d'adresse IP
+## 15. La VM Rocky Linux n'a pas d'adresse IP
 
 Vérifier que la VM est démarrée :
 
 ```bash
-virsh --connect qemu:///system domstate ubuntu-devops
+virsh --connect qemu:///system domstate rocky-devops
 ```
 
 Interfaces :
 
 ```bash
-virsh --connect qemu:///system domiflist ubuntu-devops
+virsh --connect qemu:///system domiflist rocky-devops
 ```
 
 Adresse via Guest Agent :
 
 ```bash
-virsh --connect qemu:///system domifaddr ubuntu-devops --source agent
+virsh --connect qemu:///system domifaddr rocky-devops --source agent
 ```
 
 Fallback DHCP :
@@ -452,11 +452,11 @@ Fallback DHCP :
 virsh --connect qemu:///system net-dhcp-leases devops-nat
 ```
 
-Si aucune lease n'existe, vérifier `devops-nat` avant de modifier la configuration réseau Ubuntu.
+Si aucune lease n'existe, vérifier `devops-nat` avant de modifier la configuration réseau Rocky Linux.
 
 ---
 
-## 16. Ubuntu n'a plus Internet mais le HOST en a
+## 16. Rocky Linux n'a plus Internet mais le HOST en a
 
 D'abord vérifier le mode du guard :
 
@@ -479,7 +479,7 @@ virsh --connect qemu:///system net-info devops-nat
 virsh --connect qemu:///system net-dhcp-leases devops-nat
 ```
 
-Dans Ubuntu :
+Dans Rocky Linux :
 
 ```bash
 ip route
@@ -495,25 +495,25 @@ bash scripts/kvm/runtime_certification.sh
 
 ---
 
-## 17. La création Ubuntu refuse l'image cloud
+## 17. La création Rocky Linux refuse l'image cloud
 
-Le profil exige maintenant l'authentification Canonical.
+Le profil exige maintenant l'authentification Rocky Linux.
 
 Conserver dans le même dossier :
 
 ```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 ```
 
 Tester séparément :
 
 ```bash
-bash scripts/kvm/verify_ubuntu_cloud_image.sh \
-  --image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img \
-  --sha256sums /data/libvirt/iso/SHA256SUMS \
-  --signature /data/libvirt/iso/SHA256SUMS.gpg
+bash scripts/kvm/verify_rocky_cloud_image.sh \
+  --image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
+  --sha256sums /data/libvirt/iso/CHECKSUM \
+  --signature /data/libvirt/iso/CHECKSUM.asc
 ```
 
 Un échec peut signifier :
@@ -524,20 +524,20 @@ Un échec peut signifier :
 - keyserver indisponible ;
 - clé locale incorrecte.
 
-Pour une vérification hors ligne, fournir une clé Canonical obtenue par un canal de confiance avec `--key-file` ou `--canonical-key-file` selon le script appelé.
+Pour une vérification hors ligne, fournir une clé Rocky Linux obtenue par un canal de confiance avec `--key-file` ou `--rocky-key-file` selon le script appelé.
 
 Ne contourner pas ce contrôle en renommant une autre image.
 
 ---
 
-## 18. Le bootstrap Ubuntu ne termine pas
+## 18. Le bootstrap Rocky Linux ne termine pas
 
 Dans la VM :
 
 ```bash
 cloud-init status --long
 sudo cat /var/log/devops-bootstrap.log
-sudo cat /var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
+sudo cat /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 ```
 
 Puis :
@@ -553,11 +553,11 @@ Distinguer :
 - signature/checksum externe modifié ;
 - outil réellement non installé.
 
-Le workflow Ubuntu 26.04 réel est également exécuté périodiquement en CI pour détecter les ruptures externes.
+Le workflow Rocky Linux 10.2 réel est également exécuté périodiquement en CI pour détecter les ruptures externes.
 
 ---
 
-## 19. SSH Ubuntu refuse le mot de passe
+## 19. SSH Rocky Linux refuse le mot de passe
 
 C'est **normal**.
 
@@ -566,10 +566,10 @@ Le mot de passe runtime sert à la console et à `sudo`. SSH est key-only.
 Vérifier la clé publique utilisée lors de la création puis :
 
 ```bash
-ssh -v mathias@<ip-ubuntu>
+ssh -v mathias@<ip-rocky>
 ```
 
-Dans Ubuntu, la configuration effective doit conserver :
+Dans Rocky Linux, la configuration effective doit conserver :
 
 ```text
 PasswordAuthentication no
@@ -599,7 +599,7 @@ bash scripts/kvm/runtime_certification.sh
 
 ---
 
-## 21. Nautilus ne voit plus Ubuntu/Windows
+## 21. Nautilus ne voit plus Rocky Linux/Windows
 
 Rafraîchir les favoris :
 
@@ -610,7 +610,7 @@ bash scripts/kvm/configure_nautilus_vm_access.sh show
 
 Le helper découvre d'abord l'IP via Guest Agent, puis via DHCP libvirt.
 
-Ubuntu utilise SFTP. Windows utilise SMB uniquement si `Configure-VMShare.ps1` a été exécuté.
+Rocky Linux utilise SFTP. Windows utilise SMB uniquement si `Configure-VMShare.ps1` a été exécuté.
 
 Voir [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md).
 

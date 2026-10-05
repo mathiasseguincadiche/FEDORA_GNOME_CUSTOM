@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# sudo on Enterprise Linux can omit /usr/local/bin from secure_path.
+# Use only root-owned system directories for the reviewed upstream binaries.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-export DEBIAN_FRONTEND=noninteractive
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
 KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"
 KIND_VERSION="${KIND_VERSION:-v0.33.0}"
@@ -12,8 +14,21 @@ K9S_VERSION="${K9S_VERSION:-v0.51.0}"
 K9S_LINUX_AMD64_SHA256="${K9S_LINUX_AMD64_SHA256:-c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7}"
 AWS_CLI_PGP_FINGERPRINT="${AWS_CLI_PGP_FINGERPRINT:-FB5DB77FD5C118B80511ADA8A6310ACC4672475C}"
 
-log() { printf '[ubuntu-devops] %s\n' "$*"; }
-fail() { printf '[ubuntu-devops] ERROR: %s\n' "$*" >&2; exit 1; }
+# Preserve the real service failure before a disposable guest is destroyed.
+diagnose_failure() {
+  local rc=$?
+  trap - ERR
+  rm -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
+  printf '[rocky-devops] bootstrap failed (exit=%s), running kernel=%s\n' "$rc" "$(uname -r)" >&2
+  rpm -q kernel-core kernel-modules kernel-modules-extra >&2 || true
+  systemctl --failed --no-pager >&2 || true
+  journalctl -b -u docker -u containerd --no-pager -n 120 >&2 || true
+  exit "$rc"
+}
+trap diagnose_failure ERR
+
+log() { printf '[rocky-devops] %s\n' "$*"; }
+fail() { printf '[rocky-devops] ERROR: %s\n' "$*" >&2; exit 1; }
 
 write_aws_cli_public_key() {
   cat > "$1" <<'EOF'
@@ -53,122 +68,126 @@ EOF
 [[ -r /etc/os-release ]] || fail '/etc/os-release missing'
 # shellcheck disable=SC1091
 source /etc/os-release
-[[ "${ID:-}" == "ubuntu" ]] || fail "expected Ubuntu, got ${ID:-unknown}"
-[[ "${VERSION_ID:-}" == 26.04* ]] || fail "expected Ubuntu 26.04, got ${VERSION_ID:-unknown}"
-[[ "$(dpkg --print-architecture)" == amd64 ]] || fail 'this VM profile currently requires Ubuntu amd64'
+[[ "${ID:-}" == "rocky" ]] || fail "expected Rocky Linux, got ${ID:-unknown}"
+[[ "${VERSION_ID:-}" == 10.2 ]] || fail "expected Rocky Linux 10.2, got ${VERSION_ID:-unknown}"
+[[ "$(uname -m)" == x86_64 ]] || fail 'this VM profile currently requires Rocky Linux x86_64'
 [[ "$KUBERNETES_MINOR" =~ ^v[0-9]+[.][0-9]+$ ]] || fail "invalid Kubernetes minor: $KUBERNETES_MINOR"
 [[ "$KIND_VERSION" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail "invalid kind version: $KIND_VERSION"
 [[ "$MINIKUBE_VERSION" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail "invalid Minikube version: $MINIKUBE_VERSION"
 
-install -d -m 0755 /etc/apt/keyrings
-apt-get update
-apt-get install -y software-properties-common
-add-apt-repository -y universe
-apt-get update
-apt-get install -y \
-  apt-transport-https ca-certificates curl wget gnupg lsb-release \
+# A rerun cannot leave an old success marker after a failed transaction.
+rm -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
+[[ "$DEVOPS_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || fail 'invalid DevOps user'
+getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
+[[ "$(getenforce)" == Enforcing ]] || fail 'SELinux must remain enforcing'
+log 'configure Rocky 10 CRB and EPEL 10'
+dnf -y install dnf-plugins-core ca-certificates curl wget gnupg2
+dnf config-manager --set-enabled crb
+# Official Fedora EPEL release package installs its RPM trust/repository policy.
+dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+dnf -y upgrade --refresh
+# Cloud Base initially lacks some container networking modules. Install the
+# complete supported Rocky kernel/module set, then boot it before Docker.
+dnf -y install kernel kernel-modules kernel-modules-extra grubby kmod
+dnf -y install \
   git git-lfs jq unzip zip rsync openssh-server qemu-guest-agent \
-  python3 python3-pip python3-venv python3-dev pipx \
-  ansible ansible-core \
-  build-essential make shellcheck bash-completion \
-  dnsutils traceroute iproute2 net-tools netcat-openbsd \
-  htop tree tmux ripgrep less groff \
-  glab nodejs npm node-corepack \
-  openjdk-21-jdk maven \
-  kubectx
+  python3 python3-pip python3-devel pipx ansible-core \
+  gcc gcc-c++ make shellcheck bash-completion \
+  bind-utils traceroute iproute net-tools nmap-ncat \
+  htop tree tmux ripgrep less groff glab \
+  nodejs npm java-21-openjdk-devel maven \
+  container-selinux policycoreutils
 
-log 'configure Docker official repository'
-docker_suite="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
-if ! curl -fsSL -o /dev/null "https://download.docker.com/linux/ubuntu/dists/${docker_suite}/Release"; then
-  log "Docker repository has no ${docker_suite} suite yet; use noble compatibility suite"
-  docker_suite="noble"
-fi
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-cat >/etc/apt/sources.list.d/docker.sources <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/ubuntu
-Suites: ${docker_suite}
-Components: stable
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/docker.asc
+log 'configure native Enterprise Linux 10 RPM repositories'
+cat >/etc/yum.repos.d/devops-docker.repo <<'EOF'
+[devops-docker]
+name=Docker official RHEL 10
+baseurl=https://download.docker.com/linux/rhel/10/$basearch/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/rhel/gpg
 EOF
-
-log 'configure GitHub CLI official repository'
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /etc/apt/keyrings/githubcli-archive-keyring.gpg
-chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-cat >/etc/apt/sources.list.d/github-cli.list <<EOF
-deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main
+cat >/etc/yum.repos.d/devops-gh.repo <<'EOF'
+[devops-gh]
+name=GitHub CLI official RPM
+baseurl=https://cli.github.com/packages/rpm
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://cli.github.com/packages/githubcli-archive-keyring.gpg
 EOF
-
-log 'configure HashiCorp official repository'
-hashicorp_suite="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
-if ! curl -fsSL -o /dev/null "https://apt.releases.hashicorp.com/dists/${hashicorp_suite}/Release"; then
-  log "HashiCorp repository has no ${hashicorp_suite} suite yet; use noble compatibility suite"
-  hashicorp_suite="noble"
-fi
-curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor --yes -o /etc/apt/keyrings/hashicorp-archive-keyring.gpg
-cat >/etc/apt/sources.list.d/hashicorp.list <<EOF
-deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com ${hashicorp_suite} main
+cat >/etc/yum.repos.d/devops-hashicorp.repo <<'EOF'
+[devops-hashicorp]
+name=HashiCorp official RHEL 10
+baseurl=https://rpm.releases.hashicorp.com/RHEL/10/$basearch/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.releases.hashicorp.com/gpg
 EOF
-
-log 'configure Azure CLI Microsoft repository'
-curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor --yes -o /etc/apt/keyrings/microsoft.gpg
-chmod go+r /etc/apt/keyrings/microsoft.gpg
-configure_azure_repository() {
-  local suite="$1"
-  cat >/etc/apt/sources.list.d/azure-cli.sources <<EOF
-Types: deb
-URIs: https://packages.microsoft.com/repos/azure-cli/
-Suites: ${suite}
-Components: main
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/microsoft.gpg
+cat >/etc/yum.repos.d/devops-azure.repo <<'EOF'
+[devops-azure]
+name=Microsoft official RHEL 10
+baseurl=https://packages.microsoft.com/rhel/10/prod
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft-2025.asc
 EOF
-}
-azure_suite="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
-configure_azure_repository "$azure_suite"
-
-log "configure Kubernetes ${KUBERNETES_MINOR} official repository"
-kubernetes_minor="$KUBERNETES_MINOR"
-curl -fsSL "https://pkgs.k8s.io/core:/stable:/${kubernetes_minor}/deb/Release.key" \
-  | gpg --dearmor --yes -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-chmod 0644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-cat >/etc/apt/sources.list.d/kubernetes.list <<EOF
-deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${kubernetes_minor}/deb/ /
+cat >/etc/yum.repos.d/devops-kubernetes.repo <<EOF
+[devops-kubernetes]
+name=Kubernetes ${KUBERNETES_MINOR}
+baseurl=https://pkgs.k8s.io/core:/stable:/${KUBERNETES_MINOR}/rpm/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/${KUBERNETES_MINOR}/rpm/repodata/repomd.xml.key
 EOF
-
-log 'configure current Helm Debian repository'
-helm_expected_fpr="DDF78C3E6EBB2D2CC223C95C62BA89D07698DBC6"
-helm_key="$(mktemp)"
-curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey -o "$helm_key"
-helm_actual_fpr="$(gpg --show-keys --with-colons "$helm_key" | awk -F: '$1 == "fpr" {print $10; exit}')"
-[[ "$helm_actual_fpr" == "$helm_expected_fpr" ]] || fail "unexpected Helm repository key fingerprint: $helm_actual_fpr"
-gpg --dearmor --yes -o /etc/apt/keyrings/helm.gpg "$helm_key"
-rm -f "$helm_key"
-cat >/etc/apt/sources.list.d/helm-stable-debian.list <<'EOF'
-deb [signed-by=/etc/apt/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main
-EOF
-
-apt-get update
-if ! apt-cache show azure-cli >/dev/null 2>&1; then
-  native_azure_suite="$azure_suite"
-  azure_suite=""
-  for candidate in noble jammy; do
-    [[ "$candidate" == "$native_azure_suite" ]] && continue
-    log "Azure CLI package unavailable for ${native_azure_suite}; test ${candidate} compatibility suite"
-    configure_azure_repository "$candidate"
-    apt-get update
-    if apt-cache show azure-cli >/dev/null 2>&1; then azure_suite="$candidate"; log "Azure CLI package resolved from ${azure_suite} compatibility suite"; break; fi
-  done
-  [[ -n "$azure_suite" ]] || fail "Azure CLI package unavailable for ${native_azure_suite}, noble and jammy"
-else
-  log "Azure CLI package resolved from native ${azure_suite} suite"
-fi
-
-apt-get install -y \
+# No EL9/EL8 compatibility fallback, --nogpgcheck or --skip-broken.
+dnf -y install \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
-  gh terraform azure-cli kubectl helm
+  gh terraform azure-cli kubectl
+
+# EPEL 10.2 has no kubectx RPM; preserve kubectx/kubens with reviewed
+# upstream v0.11.0 assets. Digests come from ahmetb/kubectx release metadata.
+kubectx_tmp="$(mktemp -d)"
+for tool in kubectx kubens; do
+  case "$tool" in
+    kubectx) expected_sha=08e031c54fbffb3f100e904e4eae94bba2730fedf4869921fda79e4d7a8f5d4c ;;
+    kubens) expected_sha=326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09 ;;
+  esac
+  archive="$tool"_v0.11.0_linux_x86_64.tar.gz
+  curl -fsSL "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/$archive" -o "$kubectx_tmp/$archive"
+  printf '%s  %s\n' "$expected_sha" "$kubectx_tmp/$archive" | sha256sum -c -
+  tar -xzf "$kubectx_tmp/$archive" -C "$kubectx_tmp" "$tool"
+  install -m 0755 "$kubectx_tmp/$tool" "/usr/local/bin/$tool"
+done
+rm -rf "$kubectx_tmp"
+
+reboot_pending=/var/lib/fedora-gnome-custom/rocky-devops-reboot-required
+default_kernel="$(basename "$(grubby --default-kernel)")"
+default_kernel="${default_kernel#vmlinuz-}"
+[[ "$default_kernel" =~ ^[0-9][a-zA-Z0-9._+-]*$ ]] || fail 'invalid default Rocky kernel'
+if [[ "$(uname -r)" != "$default_kernel" ]]; then
+  [[ ! -e "$reboot_pending" ]] || fail "the prepared kernel did not boot; refusing a reboot loop (running=$(uname -r), expected=$default_kernel)"
+  install -d -m 0755 /var/lib/fedora-gnome-custom
+  printf '%s\n' "$default_kernel" >"$reboot_pending"
+  log "Packages prepared; reboot onto Rocky kernel $default_kernel before Docker (exit 75). No success marker written."
+  exit 75
+fi
+rm -f "$reboot_pending"
+
+log 'install Corepack at an explicit npm version (registry integrity checked by npm)'
+npm install --global corepack@0.34.5
+log 'install Helm from an explicit upstream release and its published SHA-256'
+helm_version=v4.3.0
+helm_tmp="$(mktemp -d)"
+helm_archive="helm-$helm_version-linux-amd64.tar.gz"
+curl -fsSL "https://get.helm.sh/$helm_archive" -o "$helm_tmp/$helm_archive"
+curl -fsSL "https://get.helm.sh/$helm_archive.sha256sum" -o "$helm_tmp/$helm_archive.sha256sum"
+(cd "$helm_tmp"; sha256sum -c "$helm_archive.sha256sum")
+tar -xzf "$helm_tmp/$helm_archive" -C "$helm_tmp" linux-amd64/helm
+install -m 0755 "$helm_tmp/linux-amd64/helm" /usr/local/bin/helm
+rm -rf "$helm_tmp"
+helm version --short | grep -Fq "$helm_version"
 
 kubernetes_release="$(kubectl version --client -o json 2>/dev/null | jq -r '.clientVersion.gitVersion // empty')"
 [[ "$kubernetes_release" == "${KUBERNETES_MINOR}."* ]] || fail "kubectl must stay on ${KUBERNETES_MINOR}.x, got ${kubernetes_release:-unknown}"
@@ -245,17 +264,22 @@ npm --version >/dev/null
 mvn -version >/dev/null
 
 log 'enable guest services and operator access'
-systemctl enable --now ssh
+systemctl enable --now sshd
 if [[ -e /dev/virtio-ports/org.qemu.guest_agent.0 ]]; then systemctl start qemu-guest-agent; else log 'qemu-guest-agent virtio channel is not exposed; leave the static service available for hypervisor activation'; fi
 systemctl enable --now docker
 getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
 usermod -aG docker "$DEVOPS_USER"
 devops_home="$(getent passwd "$DEVOPS_USER" | cut -d: -f6)"
 [[ -n "$devops_home" && -d "$devops_home" ]] || fail "home directory unavailable for $DEVOPS_USER"
-runuser -u "$DEVOPS_USER" -- env HOME="$devops_home" minikube config set driver docker >/dev/null
+runuser -u "$DEVOPS_USER" -- env HOME="$devops_home" PATH="$PATH" minikube config set driver docker >/dev/null
 
+log 'verify SSH and SELinux policy'
+sshd -T | grep -Fxq 'passwordauthentication no' || fail 'SSH password authentication must remain disabled'
+[[ "$(getenforce)" == Enforcing ]] || fail 'SELinux enforcement lost'
+dnf clean all
 log 'write completion marker'
 install -d -m 0755 /var/lib/fedora-gnome-custom
+rpm -qa --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' | sort >/var/lib/fedora-gnome-custom/rocky-devops-packages.txt
 {
   printf 'completed_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf 'kubernetes_minor=%s\n' "$KUBERNETES_MINOR"
@@ -266,8 +290,9 @@ install -d -m 0755 /var/lib/fedora-gnome-custom
   printf 'java_version=%s\n' "$(javac -version 2>&1)"
   printf 'yq_version=%s\n' "$YQ_VERSION"
   printf 'k9s_version=%s\n' "$K9S_VERSION"
-  printf 'azure_suite=%s\n' "$azure_suite"
-} >/var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
-chmod 0644 /var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
-
+  printf 'rpm_release=%s\n' "$VERSION_ID"
+  printf 'helm_version=%s\n' "$helm_version"
+} >/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp
+chmod 0644 /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp
+mv -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 log 'bootstrap completed: clone -> build/test -> containerize -> deploy toolchain is ready'

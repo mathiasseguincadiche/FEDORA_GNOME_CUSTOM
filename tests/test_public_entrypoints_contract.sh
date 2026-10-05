@@ -8,7 +8,7 @@ public_entrypoints=(
   installer/generate-fedora44-kickstart.sh
   scripts/collect-boot-failure.sh scripts/backup/backup-now.sh scripts/backup/daily-user-backup.sh scripts/backup/disaster-recovery.sh scripts/backup/restore.sh
   scripts/maintenance/update-system.sh
-  scripts/kernel/rollback-to-fedora.sh scripts/kvm/configure_nautilus_vm_access.sh scripts/kvm/create_ubuntu_devops_vm.sh scripts/kvm/create_windows11_vm.sh scripts/kvm/runtime_certification.sh
+  scripts/kernel/rollback-to-fedora.sh scripts/kvm/configure_nautilus_vm_access.sh scripts/kvm/create_rocky_devops_vm.sh scripts/kvm/create_windows11_vm.sh scripts/kvm/runtime_certification.sh
   scripts/gnome/configure-default-apps.sh scripts/gnome/display-repair.sh scripts/gnome/display-watch.sh scripts/gnome/nautilus-prewarm.sh scripts/lab/apply-gnome-virtualbox.sh
   scripts/validation/gate1-wsl2.sh scripts/validation/gate2-virtualbox.sh scripts/validation/gate3-baremetal.sh scripts/validation/gnome-ux-matrix.sh scripts/validation/import-proof.sh scripts/validation/export-proof.sh scripts/validation/status.sh
 )

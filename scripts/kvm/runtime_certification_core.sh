@@ -7,10 +7,10 @@ source "$REPO_ROOT/config/hardware-components.conf"
 source "$REPO_ROOT/config/vm-profiles.conf"
 
 uri="${LIBVIRT_URI:-qemu:///system}"
-ubuntu="${UBUNTU_SERVER_NAME:-ubuntu-devops}"
+rocky="${ROCKY_SERVER_NAME:-rocky-devops}"
 windows="${WINDOWS11_NAME:-windows-11}"
 network="${KVM_NETWORK_NAME:-devops-nat}"
-username="${UBUNTU_SERVER_USERNAME:-mathias}"
+username="${ROCKY_SERVER_USERNAME:-mathias}"
 guard_unit="fedora-gnome-custom-kvm-guard.service"
 guard_helper="/usr/local/libexec/fedora-gnome-custom/kvm-network-guard"
 ok=0
@@ -44,10 +44,10 @@ domain_xml_has() { vsh dumpxml "$1" 2>/dev/null | grep -Eq "$2"; }
 agent_ping() { vsh qemu-agent-command "$1" '{"execute":"guest-ping"}' >/dev/null 2>&1; }
 remote_ping() {
   local target="$1"
-  printf '%s\n' "$target" | ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'read -r target; ping -c 1 -W 2 "$target" >/dev/null'
+  printf '%s\n' "$target" | ssh "${ssh_base[@]}" "${username}@${rocky_ip}" 'read -r target; ping -c 1 -W 2 "$target" >/dev/null'
 }
 
-for dom in "$ubuntu" "$windows"; do
+for dom in "$rocky" "$windows"; do
   if vsh dominfo "$dom" >/dev/null 2>&1; then record OK "domain $dom" present; else record KO "domain $dom" missing; fi
 done
 ((ko == 0)) || exit 1
@@ -59,7 +59,7 @@ else
 fi
 ((ko == 0)) || exit 1
 
-for dom in "$ubuntu" "$windows"; do
+for dom in "$rocky" "$windows"; do
   if domain_xml_has "$dom" 'org.qemu.guest_agent.0'; then record OK "$dom QGA channel" present; else record KO "$dom QGA channel" missing; fi
   if domain_xml_has "$dom" '<rng'; then record OK "$dom VirtIO RNG" present; else record KO "$dom VirtIO RNG" missing; fi
   if domain_xml_has "$dom" '<memballoon[^>]+model=.virtio.'; then record OK "$dom balloon" virtio; else record KO "$dom balloon" missing; fi
@@ -123,37 +123,38 @@ if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
   fi
 fi
 
-ubuntu_ip="$(domain_ip "$ubuntu")"
+rocky_ip="$(domain_ip "$rocky")"
 windows_ip="$(domain_ip "$windows")"
-if [[ -n "$ubuntu_ip" ]]; then record OK 'Ubuntu IP' "$ubuntu_ip"; else record KO 'Ubuntu IP' unavailable; fi
+if [[ -n "$rocky_ip" ]]; then record OK 'Rocky IP' "$rocky_ip"; else record KO 'Rocky IP' unavailable; fi
 if [[ -n "$windows_ip" ]]; then record OK 'Windows IP' "$windows_ip"; else record WARN 'Windows IP' unavailable; fi
 
 physical_gateway="$(ip -4 route show default 2>/dev/null | awk 'NR==1 {for (i=1;i<=NF;i++) if ($i=="via") {print $(i+1); exit}}')"
 kvm_gateway="${KVM_GATEWAY:-192.168.50.254}"
 
 ssh_base=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new)
-if [[ -n "$ubuntu_ip" ]] && ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" true >/dev/null 2>&1; then
-  record OK 'HOST → Ubuntu SSH' reachable
+if [[ -n "$rocky_ip" ]] && ssh "${ssh_base[@]}" "${username}@${rocky_ip}" true >/dev/null 2>&1; then
+  record OK 'HOST → Rocky SSH' reachable
 
-  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'sudo /usr/local/sbin/devops-verify.sh' >/dev/null 2>&1; then record OK 'Ubuntu DevOps stack' verified; else record KO 'Ubuntu DevOps stack' failed; fi
-  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'getent ahostsv4 example.com >/dev/null && curl -fsS --max-time 10 https://example.com >/dev/null'; then record OK 'Ubuntu DNS/Internet' working; else record KO 'Ubuntu DNS/Internet' failed; fi
-  if remote_ping "$kvm_gateway"; then record OK 'Ubuntu → KVM gateway' reachable; else record KO 'Ubuntu → KVM gateway' failed; fi
+  # Allocate a terminal for the guest sudo password; SSH itself remains key-only.
+  if ssh -t "${ssh_base[@]}" "${username}@${rocky_ip}" 'sudo /usr/local/sbin/devops-verify.sh'; then record OK 'Rocky DevOps stack' verified; else record KO 'Rocky DevOps stack' failed; fi
+  if ssh "${ssh_base[@]}" "${username}@${rocky_ip}" 'getent ahostsv4 example.com >/dev/null && curl -fsS --max-time 10 https://example.com >/dev/null'; then record OK 'Rocky DNS/Internet' working; else record KO 'Rocky DNS/Internet' failed; fi
+  if remote_ping "$kvm_gateway"; then record OK 'Rocky → KVM gateway' reachable; else record KO 'Rocky → KVM gateway' failed; fi
 
   if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true && -n "$physical_gateway" ]]; then
     if ping -c 1 -W 2 "$physical_gateway" >/dev/null 2>&1; then
       if remote_ping "$physical_gateway" >/dev/null 2>&1; then
-        record KO 'Ubuntu → physical LAN' "live gateway $physical_gateway unexpectedly reachable"
+        record KO 'Rocky → physical LAN' "live gateway $physical_gateway unexpectedly reachable"
       else
-        record OK 'Ubuntu → physical LAN' "live host-reachable gateway blocked ($physical_gateway)"
+        record OK 'Rocky → physical LAN' "live host-reachable gateway blocked ($physical_gateway)"
       fi
     else
-      record WARN 'Ubuntu → physical LAN' "host cannot prove gateway $physical_gateway is ping-responsive; nft rules were validated statically"
+      record WARN 'Rocky → physical LAN' "host cannot prove gateway $physical_gateway is ping-responsive; nft rules were validated statically"
     fi
   elif [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
-    record WARN 'Ubuntu → physical LAN' 'no physical default gateway available for live proof'
+    record WARN 'Rocky → physical LAN' 'no physical default gateway available for live proof'
   fi
 else
-  record KO 'HOST → Ubuntu SSH' unavailable
+  record KO 'HOST → Rocky SSH' unavailable
 fi
 
 if "$REPO_ROOT/diagnostics/kvm-io-doctor" --quiet; then record OK 'T705 KVM I/O profile' benchmarked; else record WARN 'T705 KVM I/O profile' 'default profile in use'; fi
