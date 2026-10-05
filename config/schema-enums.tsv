@@ -3,7 +3,9 @@ BACKUP_ENGINE	borg
 INTEL_MEDIA_DRIVER_POLICY	auto|fedora-free|rpmfusion-full
 KVM_DATA_FSTYPE	ext4
 HOST_OS	fedora
-KERNEL_CHANNEL	cachyos|vanilla
+KERNEL_CHANNEL	vanilla
+KERNEL_VANILLA_COPR	@kernel-vanilla/stable
+HOST_RELEASE	44|45
 POLISH_ACCENT_COLOR	blue|teal|green|yellow|orange|red|pink|purple|slate
 POLISH_DOCK_POSITION	LEFT|BOTTOM|RIGHT
 POLISH_DOCK_CLICK_ACTION	focus-minimize-or-previews|focus-or-previews|focus-or-appspread|minimize-or-previews|previews|cycle-windows

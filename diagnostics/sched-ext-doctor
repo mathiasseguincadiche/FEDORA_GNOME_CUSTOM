@@ -11,7 +11,7 @@ policy="$(performance_policy_get sched_ext_policy)"
 
 if [[ "$policy" == off ]]; then emit OK Policy 'sched_ext disabled by policy'; exit 0; fi
 if rpm -q scx_rusty >/dev/null 2>&1; then emit OK Package 'scx_rusty installed'; else emit WARN Package 'scx_rusty unavailable'; fi
-# /boot/config-* (Fedora, Kernel Vanilla), /lib/modules/*/config (kernel-cachyos)
+# /boot/config-* (Fedora, Kernel Vanilla) and /lib/modules/*/config
 # and /sys/kernel/sched_ext (runtime proof) are all accepted.
 if [[ -d /sys/kernel/sched_ext ]] \
   || grep -Eq '^CONFIG_SCHED_CLASS_EXT=y$' "/boot/config-$(uname -r)" "/lib/modules/$(uname -r)/config" 2>/dev/null \

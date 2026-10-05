@@ -64,10 +64,7 @@ Le contrat `tests/test_host_security_policy_contract.sh` empêche l'ajout futur 
 
 ## Secure Boot et canaux de noyau
 
-Le lifecycle du canal configuré (CachyOS BORE par défaut, Vanilla en choix
-explicite) bloque l'installation si Secure Boot est actif ou si son état ne
-peut pas être établi. Le cycle est rolling N/N-1 ; aucune promotion de candidat
-n'est requise. La certification finale ajoute maintenant la même règle au niveau de la workstation entière.
+Le lifecycle Linux amont officiel stable bloque l'installation si Secure Boot est actif ou si son état ne peut pas être établi. Le cycle est rolling N/N-1, sans autre canal ni réglage SELinux spécifique au noyau. La certification finale vérifie également la politique de sécurité de la workstation entière.
 
 ## Changement de politique
 

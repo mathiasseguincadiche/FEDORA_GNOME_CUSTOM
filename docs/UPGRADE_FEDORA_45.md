@@ -1,53 +1,80 @@
-# Passer la Golden Workstation à Fedora 45 / GNOME 51
+# Préparer Fedora 45 / GNOME 51
 
-## Pourquoi ce document
+La cible future est Fedora 45 Workstation avec GNOME 51. Le profil Fedora 44 / GNOME 50 déjà testé reste actif pendant la préparation. Une Beta ou un numéro de version changé dans un ancien verrou ne constitue pas un profil de production.
 
-Le projet vise **la Fedora GNOME la plus récente**. Fedora 45 (GNOME 51) est en bêta depuis le 15 septembre 2026 ; sa sortie finale est planifiée au **20 octobre 2026** (date de repli : 27 octobre).
+## État réel du profil
 
-Le profil Golden n'installe jamais une bêta : il attend la version finale, puis vérifie que **chaque composant épinglé** existe pour la nouvelle version avant de changer quoi que ce soit.
-
-## Étape 1 — Mesurer : l'outil de préparation
+`profiles/fedora45/profile.json` est **pending**. Il ne contient aucun faux SHA de média final ou d'extension. Fedora 45 est encore en préparation ; la disponibilité de GNOME 51 ne suffit pas à qualifier la combinaison Fedora, noyau, extensions, applications et matériel.
 
 ```bash
-./scripts/development/release-readiness.sh            # Fedora 45 / GNOME 51 par défaut
-./scripts/development/release-readiness.sh --pin      # + lignes de configuration prêtes à copier
+./control.sh upgrade plan
+bash scripts/development/release-readiness.sh --report-only --pin
 ```
 
-L'outil est **en lecture seule**. Pour chaque composant tiers, il répond « prêt » ou « bloqué » :
+Le plan refuse de préparer une mutation tant que le profil final n'est pas promu. `--report-only` collecte les blocages et rend zéro pour permettre la publication du rapport ; seul son champ `OVERALL` exprime READY ou BLOCKED. Le statut vert du job de collecte n'est pas une certification.
 
-| Composant | Ce qui est vérifié |
-|---|---|
-| Noyau CachyOS, noyau Vanilla | le COPR publie un chroot `fedora-45-x86_64` |
-| DING, Show Desktop Plus, Resource Monitor | extensions.gnome.org publie une version pour GNOME Shell 51 |
-| Tiling Assistant | la dernière release GitHub déclare GNOME Shell 51 |
-| Dash to Dock, AppIndicator, adw-gtk3 | le paquet se résout dans les dépôts Fedora 45 (sur l'hôte Fedora) |
+Le workflow [Fedora 45 GNOME 51 preview readiness](../.github/workflows/release-readiness.yml) utilise un vrai conteneur Fedora 45. Il vérifie le système, GNOME 51, un aller-retour Borg, les manifestes RPM, les extensions RPM et les archives des quatre extensions épinglées. Il conserve `readiness.json` et, uniquement si les quatre archives sont compatibles, un verrou **candidat** complet. Il ne change pas le verrou GNOME 50 actuel et ne certifie pas une session Wayland, l'Arc B580 ou la veille.
 
-Avec `--pin`, il télécharge les candidats et affiche les lignes `*_SOURCE_URL`, `*_VERSION` et `*_SHA256` à reporter dans `config/gnome.conf` ou `config/gnome-polish.conf`.
+## Promotion à effectuer sur GitHub
 
-Le même rapport tourne **chaque lundi** dans la CI (workflow *Fedora next-release readiness*) : l'onglet *Actions* montre donc en permanence ce qui manque encore.
+Une même PR doit fournir et faire examiner :
 
-**Règle : on ne migre que lorsque toutes les lignes sont `READY`.**
+1. `installer/fedora45-media.lock` : Workstation **final**, compose exact, nom de l'ISO et du CHECKSUM, URL officielle et SHA256 réel. L'empreinte Fedora 45 est `4F50A6114CD5C6976A7F1179655A4B02F577861E`. Vérifier cryptographiquement le CHECKSUM signé et le couple exact nom/hash avant d'accepter ce verrou.
+2. `profiles/fedora45/gnome-extensions.lock` : mêmes UUID et schémas que le verrou actuel, mais archives réellement compatibles GNOME 51. URL, version, review, major GNOME et SHA changent ensemble. Télécharger, contrôler les métadonnées, compiler les schémas et tester la session réelle ; un simple tag API ne suffit pas.
+3. `profiles/fedora45/profile.json` : `schema=1`, `release=45`, `gnome_major=51`, `status=ready`, SHA256 des deux fichiers ci-dessus et `packages_lock_sha256` pour le manifeste Nautilus 45 et `qualification_commit` réel. Les preuves CI doivent porter sur ce commit et ces fichiers, avant la promotion.
+4. Un laboratoire Fedora 45 signé et épinglé, puis démarrage, redémarrage, journaux/coredumps, extensions actives et restauration isolée. Le laboratoire Fedora 44 existant reste la référence précédente, pas une preuve Fedora 45.
+5. Une mise à jour des tests de promotion : le test qui exige actuellement un profil pending doit devenir un contrôle du profil réellement promu. Préserver les tests négatifs Beta, GNOME 50, clés inattendues, archive altérée et identité obsolète.
 
-## Étape 2 — Porter le dépôt (branche dédiée)
+Le validateur rejette un statut pending, un média Beta, une empreinte incorrecte, des clés d'extension supplémentaires, un UUID modifié, un major 50, un hash manquant ou un verrou changé après qualification. Il vérifie la structure et l'identité du profil examiné ; il ne fabrique pas une preuve de téléchargement signé ni une qualification matérielle.
 
-1. Reporter les nouvelles valeurs épinglées produites par `--pin`.
-2. Adapter la cible GNOME Shell (`50` → `51`) dans les scripts d'installation d'extensions (`scripts/gnome/install-*.sh`) et dans les `*_SHELL_VERSION`.
-3. Créer `installer/fedora45-media.lock` à partir de l'ISO finale et de son fichier `CHECKSUM` signé, puis faire pointer le générateur Kickstart dessus.
-4. Rejouer la **Gate 1** (WSL2) et la **Gate 2** (GNOME / VirtualBox), puis ouvrir une Pull Request : la CI doit être verte.
+## Différence Nautilus/GVfs déjà traitée
 
-## Étape 3 — Installer sur la machine
+Fedora 45 ne fournit plus `gvfs-archive`. `profiles/fedora45/packages-nautilus.txt` conserve Nautilus, GVfs et les backends pris en charge, Sushi et File Roller, puis ajoute explicitement File Roller. Le moteur et le doctor sélectionnent cette liste uniquement sur un profil 45 promu. L'ouverture et l'extraction restent disponibles ; le montage des archives par GIO n'est plus promis.
 
-Deux chemins possibles :
+## Installation neuve directement en Fedora 45
 
-- **Installation neuve (recommandée tant que la Gate 3 n'a jamais été passée)** : Kickstart Fedora 45, baseline, sauvegarde, APPLY. On certifie directement la version finale.
-- **Mise à niveau d'une Fedora 44 déjà certifiée** : sauvegarde Borg complète, puis `sudo dnf system-upgrade download --releasever=45`, `sudo dnf offline reboot`, puis un APPLY pour reconverger.
-
-Dans les deux cas, terminer par :
+Une fois le profil final promu :
 
 ```bash
-./diagnostics/kernel-doctor
-./control.sh doctor polish
-./diagnostics/final-certification certify   # Gate 3
+bash installer/verify-fedora-media.sh --release 45 --iso /chemin/Fedora-Workstation-Live-45-COMPOSE.x86_64.iso --checksum /chemin/Fedora-Workstation-45-COMPOSE-x86_64-CHECKSUM --keyring /chemin/fedora.gpg
+bash installer/generate-fedora-kickstart.sh --release 45 --disk /dev/disk/by-id/nvme-IDENTITE_REELLE
 ```
 
-Un changement de version Fedora invalide l'ancienne certification : la Gate 3 doit être rejouée.
+Les noms COMPOSE et IDENTITE_REELLE sont des placeholders à remplacer par les valeurs vérifiées. La génération conserve le contrôle du numéro de série NVMe, la confirmation destructive, le mot de passe chiffré du compte et le commit Git épinglé. Le chiffrement du mot de passe ne chiffre pas le disque. Le post-install sélectionne `HOST_RELEASE="45"` ; aucun disque `/data` n'est formaté automatiquement.
+
+Installer une Beta manuellement ne permet pas de contourner la promotion : les préchecks du projet refuseront ce profil tant que le verrou final n'est pas prêt.
+
+## Mise à niveau Fedora 44 vers Fedora 45
+
+Mettre Fedora 44 complètement à jour et démarrer/finaliser ce résultat avant la migration :
+
+```bash
+./control.sh update all
+./control.sh update reboot
+./control.sh update finalize
+./control.sh upgrade plan
+./control.sh upgrade prepare
+./control.sh upgrade status
+```
+
+`prepare` exige le profil final, le HOST physique, Secure Boot désactivé, un Git propre, le système source à jour et aucune mise à jour projet déjà en attente. Il résout la dernière stable Linux amont pour Fedora 45, puis effectue une sauvegarde Borg complète **avec les VM arrêtées** : disques, XML, NVRAM et état swtpm. L'espace de staging, le support externe et les preuves d'intégrité/restitution sont contrôlés. Il télécharge ensuite la transaction DNF5 system-upgrade, sans `--allowerasing`, sans saut de paquets et sans redémarrage automatique.
+
+Relire les suppressions/conflits éventuels de la transaction. Le redémarrage est une action séparée :
+
+```bash
+./control.sh upgrade reboot
+# après retour en session Fedora 45 :
+./control.sh upgrade finalize
+```
+
+`finalize` exige le même commit et la même configuration, un boot différent, Fedora 45, GNOME 51, le journal DNF, une base de paquets cohérente et le noyau amont prévu réellement démarré. Il active ensuite le profil 45 dans l’override local sans supprimer les autres réglages et installe les quatre archives GNOME 51 du profil promu, avec vérification des hashes, UUID, major et schémas. Exécuter la finalisation depuis le compte GNOME, sans sudo. La phase `extensions-installed` demande une déconnexion normale puis une nouvelle connexion ; le code de retour 20 signifie qu’une action reste à effectuer. Relancer alors `./control.sh upgrade finalize` : le diagnostic doit confirmer le bureau et les extensions effectivement actifs avant le statut completed. Toute divergence bloque la finalisation ; elle n'est jamais annoncée comme réussie.
+
+Le profil, les médias et les verrous entrent dans l'empreinte de configuration : les anciennes preuves Golden deviennent obsolètes. Refaire WSL2 → VirtualBox avec validation visuelle → matériel physique, restauration isolée et reprise VM.
+
+## Récupération et qualification physique
+
+Le retour au noyau N-1 ne revient **pas** de Fedora 45 à Fedora 44. Une récupération de l'OS repose sur la sauvegarde, le média connu et la reconstruction isolée décrite dans [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
+
+Mesurer sur la machine réelle : GNOME/Wayland, Arc B580 et `xe`, Vulkan/Steam/Proton, écran 1440p/~240 Hz, veille/reprise, réseau, audio et périphériques. Conserver le cas à qualifier du redémarrage direct avec session GNOME ouverte, déjà observé dans le laboratoire QEMU : aucun timeout système ni contrôle de coredump n'est neutralisé.
+
+Références : [DNF5 system-upgrade](https://dnf5.readthedocs.io/en/latest/commands/system-upgrade.8.html), [clés Fedora](https://fedoraproject.org/security/), [calendrier GNOME](https://release.gnome.org/calendar/).

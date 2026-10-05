@@ -2,7 +2,7 @@
 # Ne placez jamais de mot de passe dans ce fichier : indiquez uniquement le chemin d'un fichier protégé.
 #
 # IMPORTANT: la copie de cet exemple n'approuve jamais automatiquement la machine.
-# Passez explicitement REAL_MACHINE_APPROVED à "true" uniquement sur Fedora 44 bare-metal,
+# Passez explicitement REAL_MACHINE_APPROVED à "true" uniquement sur selected Fedora release bare-metal,
 # après revue de la cible, dry-run, baseline et backup pré-APPLY du même commit.
 REAL_MACHINE_APPROVED="false"
 

@@ -581,7 +581,7 @@ cc_performance_menu() {
   while true; do
     cc_clear
     cc_header
-    cc_section '7 — PERFORMANCE FEDORA-CACHY'
+    cc_section '7 — PERFORMANCE FEDORA LINUX'
     cc_option 1 'État performance' 'AMD P-State / EPP / TuneD / zram / SCX'
     cc_option 2 'Profil balanced' 'mode Golden normal'
     cc_option 3 'Profil performance' 'temporaire'
@@ -712,7 +712,7 @@ cc_main_menu() {
     cc_option 4 'Diagnostics & santé' 'doctors par domaine'
     cc_option 5 'Kernel & boot' "canal ${KERNEL_CHANNEL:-vanilla} N/N-1 + recovery"
     cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'
-    cc_option 7 'Performance Fedora-Cachy' 'P-State / TuneD / SCX / zram / NVMe'
+    cc_option 7 'Performance Fedora Linux' 'P-State / TuneD / SCX / zram / NVMe'
     cc_option 8 'Maintenance' 'état et réparations ciblées'
     cc_option 9 'Certification' 'baseline / suspend / Golden'
     cc_option 10 'Logs & preuves' 'traçabilité opérateur'

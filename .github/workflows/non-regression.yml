@@ -40,8 +40,8 @@ jobs:
           grep -Fq '== oracle' lib/common.sh
           grep -Fq "grep -Eqi 'VirtualBox|Oracle|innotek'" lib/common.sh
           grep -Fq 'runtime_is_virtualbox' "$lab"
-          grep -Fq 'Fedora Linux 44' "$lab"
-          grep -Fq 'GNOME Shell 50' "$lab"
+          grep -Fq 'fedora_shell_matches' "$lab"
+          grep -Fq 'fedora_require_selected' "$lab"
           grep -Fq 'Wayland is required for GATE 2' "$lab"
           grep -Fq 'modules/gnome/24b_resource_monitor.sh' "$lab"
           grep -Fq 'gnome_telemetry_apply' "$lab"
@@ -73,7 +73,7 @@ jobs:
           grep -Fq 'gt_busy_percent' modules/gnome/24b_resource_monitor.sh
           grep -Fq 'runtime_is_baremetal' modules/gnome/24b_resource_monitor.sh
           ! grep -RFiq 'Astra Monitor' config manifests modules/gnome scripts/gnome
-      - name: Fedora-Cachy performance safety invariants
+      - name: Upstream workstation performance safety invariants
         shell: bash
         run: |
           set -Eeuo pipefail

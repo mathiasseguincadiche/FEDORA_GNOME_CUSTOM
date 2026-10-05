@@ -18,6 +18,9 @@ run_mutating() {
 
 install_manifest_packages() {
   local scope="$1" manifest="$2"
+  if declare -F fedora_manifest_path >/dev/null; then
+    manifest="$(fedora_manifest_path "$manifest")" || return $?
+  fi
   local -a packages=()
   local payload rc
   [[ -f "$manifest" && -r "$manifest" ]] || {

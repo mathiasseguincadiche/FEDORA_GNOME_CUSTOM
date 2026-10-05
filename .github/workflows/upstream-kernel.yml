@@ -1,0 +1,48 @@
+name: Official upstream Linux RPM preflight
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpm:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 20
+    steps:
+      - name: Install disposable preflight dependencies
+        run: dnf5 -y install git python3 dnf5-plugins sudo
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Resolve exact official upstream packages and exercise the DNF lock
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          dnf5 -y copr enable @kernel-vanilla/stable
+          REPO_ROOT="$GITHUB_WORKSPACE"
+          source lib/bootstrap.sh
+          engine_bootstrap
+          source lib/kernel_lifecycle.sh
+          target="$(kernel_lifecycle_resolve_latest_stable)"
+          mapfile -t packages < <(kernel_lifecycle_latest_nevras "$target")
+          (( ${#packages[@]} >= 5 ))
+          kernel_lifecycle_pin_target "$target"
+          dnf5 versionlock list
+          # Resolve/download a genuine pinned transaction in this disposable
+          # container; no production APPLY, kernel boot or hardware claim.
+          dnf5 -y --setopt=allow_vendor_change=1 install --downloadonly "${packages[@]}"
+          mkdir -p upstream-evidence
+          printf 'target=%s\ncommit=%s\nscope=RPM preflight; kernel boot and hardware DEFERRED\n' "$target" "$(git rev-parse HEAD)" > upstream-evidence/target.env
+          cp /etc/dnf/versionlock.toml upstream-evidence/
+          printf '%s\n' "${packages[@]}" > upstream-evidence/packages.txt
+          cat upstream-evidence/target.env >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve upstream RPM evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: upstream-linux-rpm-${{ github.run_id }}
+          path: upstream-evidence/
+          if-no-files-found: warn
+          retention-days: 14

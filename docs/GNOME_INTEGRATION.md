@@ -141,3 +141,5 @@ GATE 2 VirtualBox :
 Le LAB VirtualBox ne remplace jamais `install.sh --apply` et n'ouvre aucun gate production. Il permet uniquement de converger et observer la surface GNOME nécessaire à la preuve visuelle DING + Show Desktop. La même ergonomie est ensuite confirmée bare-metal.
 
 Ces contrôles sont repris dans la certification bare-metal finale selon leur scope.
+
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).

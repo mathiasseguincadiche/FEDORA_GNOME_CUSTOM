@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.20.0 — Linux amont et préparation Fedora 45
+
+- Retrait du noyau personnalisé et de ses réglages CPU/SELinux : canal Vanilla unique, dernière stable comparée à kernel.org, RC/linux-next/RPM obsolètes refusés.
+- Rétention N/N-1 sur kernel-core ; sources officielles signées récupérables, sans prétendre qu'un téléchargement constitue une installation.
+- Profils Fedora 44/50 et transition Fedora 45/51 avec blocage du futur profil tant que média final, archives GNOME 51 et preuves ne sont pas promus.
+- Préparation et finalisation DNF5 system-upgrade avec sauvegarde Borg complète des VM arrêtées, identité commit/config et contrôle du boot réel.
+- CI preview Fedora 45, inspection des archives d'extensions et rapports de dépendances explicites ; candidats distincts des verrous actifs.
+- Contrôle de la clé Fedora et du couple nom/hash du CHECKSUM signé ; installation neuve paramétrée par release.
+- Documentation, README, ADR et tests alignés. Qualification physique et promotion Fedora 45 restent à réaliser.
+
+
 ## 0.19.1 — 2026-10-01
 
 - Laboratoire Fedora 44/GNOME 50 sur runner GitHub : image signée et verrouillée, session Wayland réelle, extensions épinglées, Nautilus/Ptyxis et redémarrage avec identifiant de boot distinct.

@@ -34,7 +34,7 @@ Lire dans cet ordre :
 
 - pourquoi la workstation est traitée comme une infrastructure versionnée ;
 - la différence entre le T705 système et le T705 `/data` ;
-- le rôle du CachyOS BORE N / N-1 ;
+- le rôle du Linux amont stable N / N-1 ;
 - pourquoi Gaming et KVM sont des workloads contrôlés ;
 - la différence entre `CODE-READY` et `Golden runtime-certified` ;
 - pourquoi Gate 1 et Gate 2 ne constituent jamais une certification physique.

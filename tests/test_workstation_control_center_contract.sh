@@ -37,7 +37,7 @@ for expected in \
   'DIAGNOSTICS & SANTÉ' \
   'KERNEL & BOOT' \
   'KVM / MACHINES VIRTUELLES' \
-  'PERFORMANCE FEDORA-CACHY' \
+  'PERFORMANCE FEDORA LINUX' \
   'MAINTENANCE' \
   'CERTIFICATION' \
   'LOGS & PREUVES' \
@@ -205,7 +205,7 @@ grep -Fq 'Installation Fedora 44 bare-metal' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh logs retention' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh cert archive' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'CachyOS BORE stable' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq 'Kernel Vanilla stable' "$ROOT/docs/CONTROL_CENTER.md"
 
 if grep -Fq -- '--post-offline' "$ROOT/docs/INSTALLATION_GUIDE.md" "$ROOT/docs/RUNBOOK_GOLDEN_HARDWARE.md"; then
   echo 'stale --post-offline documentation remains' >&2

@@ -15,20 +15,10 @@ count="$(kernel_lifecycle_installed_count)"
 limit="$(kernel_lifecycle_max_installed)"
 dnf_limit="$(kernel_lifecycle_dnf_limit 2>/dev/null || true)"
 
-if kernel_lifecycle_version_at_least "$current"; then emit OK Kernel "$current >= ${KERNEL_MIN_VERSION:-7.2.2}"; else emit KO Kernel "$current < ${KERNEL_MIN_VERSION:-7.2.2}"; fi
+if kernel_lifecycle_version_at_least "$current"; then emit OK Kernel "$current >= ${KERNEL_MIN_VERSION:-7.2.9}"; else emit KO Kernel "$current < ${KERNEL_MIN_VERSION:-7.2.9}"; fi
 if kernel_lifecycle_release_is_stable "$current"; then emit OK 'Kernel stability' "$current is stable"; else emit KO 'Kernel stability' "$current is not a stable release"; fi
 
 if channel="$(kernel_channel)"; then emit OK 'Kernel channel' "$channel — $(kernel_channel_label) from $(kernel_channel_copr)"; else emit KO 'Kernel channel' "unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}"; fi
-if [[ "${channel:-}" == cachyos ]]; then
-  if kernel_lifecycle_cpu_supports_x86_64_v3; then emit OK 'x86-64-v3' 'CPU level required by kernel-cachyos'; else emit KO 'x86-64-v3' 'not reported by the dynamic loader'; fi
-  case "$(kernel_lifecycle_selinux_module_boolean)" in
-    on) emit OK 'SELinux module load' 'domain_kernel_load_modules=on (accepted trade-off, ADR 0012)' ;;
-    unavailable) emit WARN 'SELinux module load' 'getsebool unavailable' ;;
-    *) emit KO 'SELinux module load' 'domain_kernel_load_modules is off; kernel-cachyos modules may fail to load' ;;
-  esac
-  rescue="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null | grep -v 'is not installed' | sort -V | tail -n1 || true)"
-  if [[ -n "$rescue" ]]; then emit OK 'Rescue kernel' "kernel-core $rescue stays installed"; else emit WARN 'Rescue kernel' 'no kernel-core installed besides kernel-cachyos'; fi
-fi
 
 if ((limit == 2)); then emit OK 'Kernel policy' 'rolling N/N-1 max=2'; else emit KO 'Kernel policy' "max_installed=$limit expected=2"; fi
 if ((count <= limit)); then emit OK 'Kernel retention' "installed=$count max=$limit"; else emit KO 'Kernel retention' "installed=$count exceeds max=$limit"; fi
@@ -51,7 +41,6 @@ fi
 
 if [[ "$current" == "$latest" ]]; then emit OK 'Running kernel' "N=$current"
 elif [[ -n "$previous" && "$current" == "$previous" ]]; then emit WARN 'Running kernel' "N-1=$current rollback session; N=$latest remains installed"
-elif [[ "${channel:-}" == cachyos && "$current" != *cachyos* ]]; then emit WARN 'Running kernel' "rescue kernel-core session ($current); N=$latest remains the default"
 else emit KO 'Running kernel' "running=$current is outside retained N/N-1 set"; fi
 
 if rpm -q dracut-config-rescue >/dev/null 2>&1; then
@@ -62,13 +51,16 @@ else
   emit OK 'GRUB rescue' 'disabled; boot surface is limited to N/N-1'
 fi
 
+upstream="$(kernel_lifecycle_upstream_latest 2>/dev/null || true)"
 available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
-if [[ -n "$available" ]]; then
-  if [[ "$available" == "$latest" ]]; then emit OK 'Latest stable' "$available installed"
-  else emit WARN 'Latest stable' "available=$available installed=${latest:-none}; run a complete system update"
-  fi
+if [[ -z "$upstream" ]]; then
+  emit KO 'Latest stable' 'kernel.org unavailable; current latest stable cannot be verified'
+elif ! kernel_lifecycle_version_matches_upstream "$latest" "$upstream"; then
+  emit WARN 'Latest stable' "kernel.org=$upstream installed=${latest:-none}; run a complete system update"
+elif ! kernel_lifecycle_version_matches_upstream "$available" "$upstream"; then
+  emit WARN 'Latest stable' "installed latest upstream=$upstream; RPM publication unresolved or behind"
 else
-  emit WARN 'Latest stable' "unresolved from exact $(kernel_channel_label 2>/dev/null || echo kernel) repo"
+  emit OK 'Latest stable' "kernel.org=$upstream, RPM and installed N agree"
 fi
 
 if lspci -nnk -d 8086:e20b 2>/dev/null | grep -Fq 'Kernel driver in use: xe'; then emit OK 'Arc B580' 'xe bound'; else emit KO 'Arc B580' 'xe not bound'; fi

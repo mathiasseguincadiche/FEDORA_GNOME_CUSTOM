@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 # Rolling kernel N / N-1 lifecycle helpers.
-# Two channels are supported (ADR 0012):
-#   vanilla  -> @kernel-vanilla/stable, packages kernel/kernel-core/...
-#   cachyos  -> bieszczaders/kernel-cachyos (BORE), packages kernel-cachyos/...
-# The managed channel is selected by KERNEL_CHANNEL. With the cachyos channel,
-# the kernel-core track (Fedora or Kernel Vanilla) stays installed as rescue.
+# Only official unpatched upstream stable Linux is managed (ADR 0015).
+# The stable COPR uses its upstream Fedora dependency; both are version-checked.
 # REPO_ROOT, STATE_ROOT and project configuration are loaded by engine_bootstrap.
 
 kernel_lifecycle_state_dir() { printf '%s/kernel' "$STATE_ROOT"; }
@@ -23,7 +20,7 @@ kernel_lifecycle_value() {
 kernel_channel() {
   local channel="${KERNEL_CHANNEL:-vanilla}"
   case "$channel" in
-    vanilla|cachyos) printf '%s\n' "$channel" ;;
+    vanilla) printf '%s\n' "$channel" ;;
     *) return 1 ;;
   esac
 }
@@ -31,7 +28,6 @@ kernel_channel() {
 kernel_channel_label() {
   case "$(kernel_channel)" in
     vanilla) printf 'Kernel Vanilla stable\n' ;;
-    cachyos) printf 'CachyOS (BORE)\n' ;;
     *) return 1 ;;
   esac
 }
@@ -39,25 +35,18 @@ kernel_channel_label() {
 kernel_channel_copr() {
   case "$(kernel_channel)" in
     vanilla) printf '%s\n' "${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}" ;;
-    cachyos) printf '%s\n' "${KERNEL_CACHYOS_COPR:-bieszczaders/kernel-cachyos}" ;;
     *) return 1 ;;
   esac
 }
 
-# Extended regex matched against `dnf5 repo list` ids. The cachyos pattern is
-# anchored so that -addons, -lto, -lts and -rc COPRs never match.
+# Match the exact stable channel; RC and linux-next repositories are excluded.
 kernel_channel_repo_pattern() {
-  case "$(kernel_channel)" in
-    vanilla) printf '%s\n' 'kernel[-_]vanilla.*stable|group_kernel-vanilla:stable' ;;
-    cachyos) printf '%s\n' '(^|:)bieszczaders:kernel-cachyos$' ;;
-    *) return 1 ;;
-  esac
+  printf '%s\n' '(^|:)group_kernel-vanilla:stable$'
 }
 
 kernel_channel_core_package() {
   case "$(kernel_channel)" in
     vanilla) printf 'kernel-core\n' ;;
-    cachyos) printf 'kernel-cachyos-core\n' ;;
     *) return 1 ;;
   esac
 }
@@ -65,7 +54,6 @@ kernel_channel_core_package() {
 kernel_channel_release_marker() {
   case "$(kernel_channel)" in
     vanilla) printf 'vanilla\n' ;;
-    cachyos) printf 'cachyos\n' ;;
     *) return 1 ;;
   esac
 }
@@ -73,7 +61,6 @@ kernel_channel_release_marker() {
 kernel_channel_packages() {
   case "$(kernel_channel)" in
     vanilla) printf '%s\n' kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra ;;
-    cachyos) printf '%s\n' kernel-cachyos kernel-cachyos-core kernel-cachyos-modules ;;
     *) return 1 ;;
   esac
 }
@@ -81,48 +68,24 @@ kernel_channel_packages() {
 kernel_channel_optional_packages() {
   case "$(kernel_channel)" in
     vanilla) printf '%s\n' perf python3-perf ;;
-    cachyos) is_true "${KERNEL_CACHYOS_INSTALL_DEVEL:-false}" && printf '%s\n' kernel-cachyos-devel-matched ;;
   esac
   return 0
 }
 
 kernel_channel_release_matches() {
-  local release="$1" marker
-  marker="$(kernel_channel_release_marker)" || return 1
-  [[ -n "$release" && "$release" == *"$marker"* ]]
+  [[ "$1" =~ ^[0-9]+[.][0-9]+([.][0-9]+)?-[0-9.]+[.]vanilla[.]fc[0-9]+[.]x86_64$ ]]
 }
 
-# Wrapper so tests can replace the dynamic loader probe.
-kernel_lifecycle_ldso_help() {
-  local ldso="${KERNEL_LDSO_PATH:-/lib64/ld-linux-x86-64.so.2}"
-  [[ -x "$ldso" ]] || return 1
-  "$ldso" --help 2>/dev/null
-}
-
-kernel_lifecycle_cpu_supports_x86_64_v3() {
-  # Capture first: `producer | grep -q` can fail under pipefail (SIGPIPE).
-  local help
-  help="$(kernel_lifecycle_ldso_help)" || return 1
-  grep -Eq 'x86-64-v3[[:space:]]+\(supported, searched\)' <<<"$help"
-}
-
-kernel_lifecycle_selinux_module_boolean() {
-  command_exists getsebool || { printf 'unavailable\n'; return 0; }
-  getsebool domain_kernel_load_modules 2>/dev/null | awk '{print $NF; exit}'
-}
-
-# Channel-specific platform requirements, checked before any mutation.
+# No custom kernel, RC channel or replacement repository is allowed.
 kernel_channel_require_platform() {
-  kernel_channel >/dev/null || { ui_error "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}; expected vanilla or cachyos"; return "$EXIT_CONFIG_FAILED"; }
-  [[ "$(kernel_channel)" == cachyos ]] || return 0
-  kernel_lifecycle_cpu_supports_x86_64_v3 || {
-    ui_error 'CPU does not report x86-64-v3 support; kernel-cachyos would not boot. Use KERNEL_CHANNEL="vanilla".'
-    return "$EXIT_SECURITY_BLOCK"
-  }
-  is_true "${KERNEL_CACHYOS_SELINUX_MODULE_LOAD:-false}" || {
-    ui_error 'kernel-cachyos requires the SELinux boolean domain_kernel_load_modules=on; accept it explicitly with KERNEL_CACHYOS_SELINUX_MODULE_LOAD="true" (see ADR 0012).'
+  [[ "${KERNEL_CHANNEL:-vanilla}" == vanilla &&
+     "${KERNEL_VANILLA_COPR:-@kernel-vanilla/stable}" == @kernel-vanilla/stable ]] || {
+    ui_error 'Only official unpatched upstream Linux from @kernel-vanilla/stable is accepted.'
     return "$EXIT_CONFIG_FAILED"
   }
+}
+kernel_lifecycle_upstream_latest() {
+  python3 "$REPO_ROOT/scripts/kernel/upstream-release.py"
 }
 
 kernel_lifecycle_policy_value() { kernel_lifecycle_value "$(kernel_lifecycle_policy_path)" "$1"; }
@@ -141,7 +104,7 @@ kernel_lifecycle_release_is_stable() {
 }
 
 kernel_lifecycle_version_at_least() {
-  local release="$1" version minimum="${KERNEL_MIN_VERSION:-7.2.2}" first
+  local release="$1" version minimum="${KERNEL_MIN_VERSION:-7.2.9}" first
   version="${release%%-*}"
   [[ "$version" =~ ^[0-9]+([.][0-9]+){1,3}$ && "$minimum" =~ ^[0-9]+([.][0-9]+){1,3}$ ]] || return 1
   first="$(printf '%s\n%s\n' "$minimum" "$version" | sort -V | head -n1)"
@@ -155,7 +118,7 @@ kernel_lifecycle_channel_repo_id() {
   pattern="$(kernel_channel_repo_pattern)" || return 1
   mapfile -t repos < <(
     dnf5 -q repo list --enabled 2>/dev/null \
-      | awk 'NR>1 {print $1}' \
+      | awk '{print $1}' \
       | grep -Ei -- "$pattern" \
       | sort -u
   )
@@ -163,36 +126,58 @@ kernel_lifecycle_channel_repo_id() {
   printf '%s\n' "${repos[0]}"
 }
 
+# The stable COPR may serve packages through its kernel-vanilla/fedora dependency.
+# Enumerate only these two upstream repositories, never ordinary patched Fedora.
+kernel_lifecycle_query_dnf() {
+  local -a args=()
+  if [[ -n "${KERNEL_DNF_RELEASE:-}" ]]; then
+    [[ "$KERNEL_DNF_RELEASE" == 44 || "$KERNEL_DNF_RELEASE" == 45 ]] || return 1
+    args+=("--releasever=$KERNEL_DNF_RELEASE")
+  fi
+  dnf5 -q "${args[@]}" "$@"
+}
+kernel_lifecycle_repo_ids() {
+  kernel_lifecycle_channel_repo_id >/dev/null || return 1
+  dnf5 -q repo list --enabled 2>/dev/null \
+    | awk '{print $1}' \
+    | grep -E '(^|:)group_kernel-vanilla:(stable|fedora)$' | sort -u
+}
+kernel_lifecycle_repo_args() {
+  local repo
+  while IFS= read -r repo; do printf '%s\n' "--repo=$repo"; done < <(kernel_lifecycle_repo_ids)
+}
+
 # Backward-compatible name used by older call sites and documentation.
 kernel_lifecycle_vanilla_repo_id() { KERNEL_CHANNEL=vanilla kernel_lifecycle_channel_repo_id; }
 
 kernel_lifecycle_latest_available() {
-  local repo core marker
-  repo="$(kernel_lifecycle_channel_repo_id)" || return 1
+  local core
+  local -a repo_args=()
+  mapfile -t repo_args < <(kernel_lifecycle_repo_args)
+  (( ${#repo_args[@]} > 0 )) || return 1
   core="$(kernel_channel_core_package)" || return 1
-  marker="$(kernel_channel_release_marker)" || return 1
-  dnf5 -q --repo="$repo" repoquery --available --latest-limit 1 \
+  kernel_lifecycle_query_dnf --refresh "${repo_args[@]}" repoquery --available \
     --qf $'%{VERSION}-%{RELEASE}.%{ARCH}\n' "$core" 2>/dev/null \
-    | grep -F -- "$marker" \
-    | sort -V \
-    | tail -n1
+    | grep -E '^[0-9]+[.][0-9]+([.][0-9]+)?-[0-9.]+[.]vanilla[.]fc[0-9]+[.]x86_64$' \
+    | sort -V | tail -n1
 }
 
 kernel_lifecycle_latest_nevras() {
-  local release="$1" repo pkg found vr
-  local -a required=() optional=()
-  repo="$(kernel_lifecycle_channel_repo_id)" || return 1
+  local release="$1" pkg found vr
+  local -a required=() optional=() repo_args=()
+  mapfile -t repo_args < <(kernel_lifecycle_repo_args)
+  (( ${#repo_args[@]} > 0 )) || return 1
   mapfile -t required < <(kernel_channel_packages)
   mapfile -t optional < <(kernel_channel_optional_packages)
   vr="${release%.*}"
   for pkg in "${required[@]}"; do
-    found="$(dnf5 -q --repo="$repo" repoquery --available --qf $'%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' "$pkg" 2>/dev/null \
+    found="$(kernel_lifecycle_query_dnf "${repo_args[@]}" repoquery --available --qf $'%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' "$pkg" 2>/dev/null \
       | grep -Fx "$pkg-$release" | head -n1)"
-    [[ -n "$found" ]] || { ui_error "Exact $(kernel_channel_label) NEVRA missing for $pkg release=$release repo=$repo"; return 1; }
+    [[ -n "$found" ]] || { ui_error "Exact upstream NEVRA missing for $pkg release=$release"; return 1; }
     printf '%s\n' "$found"
   done
   for pkg in "${optional[@]}"; do
-    dnf5 -q --repo="$repo" repoquery --available --qf $'%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' "$pkg" 2>/dev/null \
+    kernel_lifecycle_query_dnf "${repo_args[@]}" repoquery --available --qf $'%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' "$pkg" 2>/dev/null \
       | grep -F -- "-$vr." | sort -V | tail -n1 || true
   done
 }
@@ -279,19 +264,14 @@ kernel_lifecycle_dnf_limit() {
 }
 
 kernel_lifecycle_ensure_tooling_and_repo() {
-  local copr
-  command_exists dnf5 || { ui_error "dnf5 is required for $(kernel_channel_label) management"; return "$EXIT_PRECHECK_FAILED"; }
-  copr="$(kernel_channel_copr)" || { ui_error "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}"; return "$EXIT_CONFIG_FAILED"; }
+  kernel_channel_require_platform || return $?
+  command_exists dnf5 || { ui_error 'dnf5 is required'; return "$EXIT_PRECHECK_FAILED"; }
   sudo dnf5 -y install dnf5-plugins mokutil grubby grub2-tools-minimal || return $?
-  sudo dnf5 -y copr enable "$copr" || return $?
-  kernel_lifecycle_channel_repo_id >/dev/null || { ui_error "Unable to identify exactly one enabled $(kernel_channel_label) repository"; return "$EXIT_POSTCHECK_FAILED"; }
-  if [[ "$(kernel_channel)" == cachyos ]]; then
-    # Documented upstream requirement for kernel-cachyos on SELinux hosts (ADR 0012).
-    if [[ "$(kernel_lifecycle_selinux_module_boolean)" != on ]]; then
-      sudo setsebool -P domain_kernel_load_modules on || return $?
-    fi
-    [[ "$(kernel_lifecycle_selinux_module_boolean)" == on ]] || { ui_error 'SELinux boolean domain_kernel_load_modules is not on'; return "$EXIT_POSTCHECK_FAILED"; }
-  fi
+  sudo dnf5 -y copr enable @kernel-vanilla/stable || return $?
+  kernel_lifecycle_channel_repo_id >/dev/null || {
+    ui_error 'Exactly one upstream stable repository must be enabled.'
+    return "$EXIT_POSTCHECK_FAILED"
+  }
 }
 
 kernel_lifecycle_ensure_dnf_retention() {
@@ -304,13 +284,32 @@ kernel_lifecycle_ensure_dnf_retention() {
   ui_check OK 'Kernel retention' "DNF installonly_limit=$limit"
 }
 
+# RPMs may encode the first final series release as X.Y.0, kernel.org as X.Y.
+kernel_lifecycle_version_matches_upstream() {
+  local version="${1%%-*}" upstream="$2"
+  [[ "$version" == "$upstream" ]] && return 0
+  [[ "$upstream" =~ ^[0-9]+[.][0-9]+$ && "$version" == "$upstream.0" ]]
+}
+
 kernel_lifecycle_resolve_latest_stable() {
-  local available
-  available="$(kernel_lifecycle_latest_available)"
-  [[ -n "$available" ]] || { ui_error "Unable to resolve latest available $(kernel_channel_label)"; return "$EXIT_POSTCHECK_FAILED"; }
-  kernel_lifecycle_release_is_stable "$available" || { ui_error "Refusing non-stable kernel: $available"; return "$EXIT_SECURITY_BLOCK"; }
-  kernel_lifecycle_version_at_least "$available" || { ui_error "Kernel $available is below minimum ${KERNEL_MIN_VERSION:-7.2.2}"; return "$EXIT_SECURITY_BLOCK"; }
-  kernel_channel_release_matches "$available" || { ui_error "Resolved kernel is not a $(kernel_channel_label) build: $available"; return "$EXIT_SECURITY_BLOCK"; }
+  local available upstream
+  kernel_channel_require_platform || return $?
+  upstream="$(kernel_lifecycle_upstream_latest)" || {
+    ui_error 'Cannot verify the current kernel.org release feed; refusing a stale target.'
+    return "$EXIT_POSTCHECK_FAILED"
+  }
+  available="$(kernel_lifecycle_latest_available)" || return "$EXIT_POSTCHECK_FAILED"
+  [[ -n "$available" ]] || { ui_error 'No upstream RPM candidate available'; return "$EXIT_POSTCHECK_FAILED"; }
+  if ! kernel_lifecycle_release_is_stable "$available" ||
+     ! kernel_lifecycle_version_at_least "$available" ||
+     ! kernel_channel_release_matches "$available"; then
+      ui_error "Refusing unstable, custom or unsupported kernel: $available"
+      return "$EXIT_SECURITY_BLOCK"
+  fi
+  kernel_lifecycle_version_matches_upstream "$available" "$upstream" || {
+    ui_error "kernel.org stable=$upstream; RPM candidate=$available. Packaging is pending; no older kernel is called latest."
+    return "$EXIT_PRECHECK_FAILED"
+  }
   printf '%s\n' "$available"
 }
 
@@ -376,8 +375,9 @@ kernel_lifecycle_install_latest() {
   available="$(kernel_lifecycle_resolve_latest_stable)" || return $?
   mapfile -t exact_nevras < <(kernel_lifecycle_latest_nevras "$available")
   (( ${#exact_nevras[@]} >= $(kernel_lifecycle_expected_nevra_count) )) || { ui_error "Incomplete exact $(kernel_channel_label) NEVRA set"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_pin_target "$available" || return $?
   is_true "${KERNEL_VENDOR_CHANGE_ALLOWED:-true}" && install_args+=(--setopt=allow_vendor_change=1)
-  sudo dnf5 -y "${install_args[@]}" install "${exact_nevras[@]}"
+  sudo dnf5 -y "${install_args[@]}" install "${exact_nevras[@]}" || return $?
 
   installed="$(kernel_lifecycle_latest_installed)"
   [[ "$installed" == "$available" ]] || { ui_error "Kernel install mismatch: installed=${installed:-missing} available=$available"; return "$EXIT_POSTCHECK_FAILED"; }
@@ -439,8 +439,17 @@ kernel_lifecycle_status() {
   printf 'latest_installed=%s\n' "${latest:-none}"
   printf 'previous_installed=%s\n' "${previous:-none}"
   printf 'grub_default=%s\n' "${default:-unknown}"
+  printf 'upstream_latest=%s\n' "$(kernel_lifecycle_upstream_latest 2>/dev/null || echo unresolved)"
   printf 'latest_available=%s\n' "${available:-unresolved}"
   printf 'installed_count=%s\n' "$count"
   printf 'max_installed=%s\n' "$limit"
   printf 'dnf_installonly_limit=%s\n' "${dnf_limit:-unknown}"
+}
+
+kernel_lifecycle_pin_target() {
+  kernel_channel_release_matches "$1" || return "$EXIT_CONFIG_FAILED"
+  sudo python3 "$REPO_ROOT/scripts/kernel/pin-upstream-target.py" "$1"
+}
+kernel_lifecycle_lock_hash() {
+  sudo sha256sum /etc/dnf/versionlock.toml | awk '{print $1}'
 }

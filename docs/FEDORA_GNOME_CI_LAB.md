@@ -106,7 +106,7 @@ de certification officiel. Restent explicitement DEFERRED :
 
 - Gate 1 WSL2 et Gate 2 VirtualBox avec contrôle visuel humain ;
 - Gate 3 et matériel physique Ryzen/B580/T705/écran ;
-- APPLY complet de production et démarrage du noyau CachyOS ;
+- APPLY complet de production et démarrage du noyau Linux amont ;
 - restauration des VM Ubuntu/Windows de production, UUID/libvirt/réseau,
   TPM Windows et éventuels logiciels associés.
 

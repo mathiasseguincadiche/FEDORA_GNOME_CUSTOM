@@ -118,3 +118,5 @@ Commencer par :
 ```
 
 Puis consulter [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant de modifier GVfs, portals, SELinux ou les services de session.
+
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).

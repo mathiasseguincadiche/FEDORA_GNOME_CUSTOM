@@ -15,7 +15,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.19.1**
+**Golden Workstation 0.20.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -30,7 +30,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
   <a href="#architecture-globale">Architecture</a> ·
   <a href="#les-6-piliers-golden">6 piliers</a> ·
   <a href="#matériel-cible">Matériel</a> ·
-  <a href="#performance-fedora-cachy">Performance</a> ·
+  <a href="#performance-fedora-linux">Performance</a> ·
   <a href="#finition-du-bureau-ubuntu-grade">Finition</a> ·
   <a href="#gaming">Gaming</a> ·
   <a href="#virtualisation">KVM</a> ·
@@ -101,7 +101,7 @@ Routes opérateur essentielles :
   [4] Diagnostics & santé
   [5] Kernel & boot
   [6] KVM / machines virtuelles
-  [7] Performance Fedora-Cachy
+  [7] Performance Fedora Linux
   [8] Maintenance
   [9] Certification
   [10] Logs & preuves
@@ -127,12 +127,23 @@ L'objectif n'est pas d'empiler des tweaks : le profil cherche une machine **stab
 
 ---
 
+## Fedora 45 / GNOME 51
+
+La transition est préparée par des profils versionnés, une CI Fedora 45 réelle et un parcours `plan → prepare → reboot → finalize`. Le profil Fedora 45 reste **pending** jusqu'à la vérification du média Workstation final signé, des extensions GNOME 51 et des preuves CI. Il est interdit de simplement changer les numéros des anciens verrous. Le profil actuel Fedora 44 / GNOME 50 reste la référence déjà testée pendant cette préparation.
+
+```bash
+./control.sh upgrade plan
+bash scripts/development/release-readiness.sh --report-only
+```
+
+Voir [la migration et l'installation Fedora 45](docs/UPGRADE_FEDORA_45.md) pour les conditions de promotion, la sauvegarde des VM et la nouvelle qualification.
+
 ## Les 6 piliers Golden
 
 | Pilier | Contrat |
 |---|---|
 | **HOST** | Fedora Linux 44 Workstation · GNOME 50 · Wayland · SELinux Enforcing · firewalld |
-| **Kernel & hardware** | Kernel CachyOS BORE par défaut (canal Fedora configurable) · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
+| **Kernel & hardware** | Linux amont officiel, dernière stable vérifiée sur kernel.org · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
 | **Données & recovery** | T705 système Btrfs · T705 `/data` EXT4 · Borg non chiffré (ADR 0014) · restauration staging-first |
 | **Workloads** | Desktop GNOME · applications pro · Steam/Proton · bibliothèque `/data/Jeux` · QEMU/KVM/libvirt |
 | **Opérations** | dry-run avant mutation · DNF5 offline · diagnostics · rollback kernel · firmware en consultation |
@@ -188,22 +199,17 @@ Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstalla
 
 ## Kernel et boot
 
-Le noyau se choisit par **canal** dans `config/kernel.conf` ([ADR 0012](docs/adr/0012-kernel-channel-cachyos.md)) :
+Le projet accepte uniquement le **noyau officiel Linux amont stable, sans patch de distribution ni noyau personnalisé**. Sa référence est `latest_stable` sur [kernel.org](https://www.kernel.org/), vérifiée à chaque installation et mise à jour ; les RC et linux-next sont refusés ([ADR 0015](docs/adr/0015-official-upstream-linux.md)).
 
-| Canal | Source | Rôle |
-|---|---|---|
-| `cachyos` (**défaut**) | `bieszczaders/kernel-cachyos` | réactivité desktop : ordonnanceur BORE, sched_ext, build x86-64-v3 |
-| `vanilla` | `@kernel-vanilla/stable` | noyau upstream sans patch |
-
-Politique Golden, identique pour les deux canaux :
+Les RPM `@kernel-vanilla/stable` permettent de suivre Linux indépendamment du calendrier des mises à jour Fedora. La dépendance `@kernel-vanilla/fedora` fournit aussi des noyaux amont sans patch. Une version RPM en retard sur kernel.org bloque l'installation : elle n'est jamais présentée comme « dernière stable ». Les [sources officielles signées](docs/UPSTREAM_LINUX.md) peuvent être récupérées immédiatement ; ce téléchargement ne compile ni n'installe un noyau.
 
 ```text
-N       = dernier stable du canal, défaut GRUB
-N-1     = noyau précédent du canal, rollback
-secours = kernel-core Fedora (canal cachyos), toujours démarrable
+N   = dernière stable officielle effectivement installée, défaut GRUB
+N-1 = version installée immédiatement précédente, conservée pour revenir en arrière
+max = 2 versions kernel-core ; aucun second canal ni secours supplémentaire épinglé
 ```
 
-Avant d'installer CachyOS, le projet **prouve** que le CPU supporte `x86-64-v3` et exige l'accord explicite `KERNEL_CACHYOS_SELINUX_MODULE_LOAD="true"` pour le réglage SELinux documenté par CachyOS.
+Lors du premier passage, le noyau Fedora déjà démarré peut servir de N-1. Après une deuxième mise à jour amont, N et N-1 sont tous deux amont. DNF protège le noyau en cours d'exécution : si cela empêche la rétention à deux versions, il faut démarrer sur N puis relancer la purge. Secure Boot actif ou indéterminé bloque l'installation ; aucune protection n'est désactivée automatiquement.
 
 Commandes ciblées :
 
@@ -217,7 +223,7 @@ Commandes ciblées :
 
 ---
 
-## Performance Fedora-Cachy
+## Performance Fedora Linux
 
 La Golden Workstation ajoute une couche de performance **mesurée, réversible et Fedora-native** :
 
@@ -239,7 +245,7 @@ La Golden Workstation ajoute une couche de performance **mesurée, réversible e
 ./control.sh perf nvme
 ```
 
-Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas d'overclock GPU automatique. Le noyau CachyOS est la seule exception assumée, décidée et outillée par l'ADR 0012. La Gate 3 exige aussi le contrat performance Golden dans son état normal avant de produire un PASS final. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de performance, pas de `nohz_full`, pas de scheduler I/O expérimental imposé, pas d'overclock GPU automatique. La Gate 3 exige aussi le contrat performance Golden dans son état normal avant de produire un PASS final. Voir [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 ---
 
@@ -267,7 +273,7 @@ Gaming fait partie du **profil Golden canonique**.
 
 Le socle couvre Steam RPM, Proton géré par Steam, Mesa/Vulkan x86_64+i686, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et la bibliothèque persistante `/data/Jeux`.
 
-Le projet conserve la pile graphique Fedora : pas de Mesa git/COPR, pas de `force_probe`, pas de Proton-GE imposé globalement. Le noyau CachyOS (ADR 0012) sert la réactivité du bureau, pas un pilote graphique alternatif.
+Le projet conserve la pile graphique Fedora : pas de Mesa git/COPR, pas de `force_probe`, pas de Proton-GE imposé globalement. Le pilote `xe` vient du noyau Linux amont officiel ; Mesa/ANV restent fournis par Fedora.
 
 ```bash
 ./control.sh doctor gaming
@@ -385,7 +391,7 @@ Le README reste la **synthèse opérateur** ; les détails normatifs et runbooks
 | Installer | [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) · [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) |
 | Piloter | [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) |
 | Comprendre l'architecture | [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
-| Performance / noyau CachyOS | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) · [`docs/adr/0012-kernel-channel-cachyos.md`](docs/adr/0012-kernel-channel-cachyos.md) |
+| Performance / Linux amont | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) · [`docs/UPSTREAM_LINUX.md`](docs/UPSTREAM_LINUX.md) |
 | Finition du bureau | [`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md) |
 | Gaming | [`docs/GAMING.md`](docs/GAMING.md) |
 | KVM | [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) · [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) |
@@ -469,7 +475,7 @@ baseline hardware
       ↓
 ./control.sh install apply
       ↓
-reboot sur le noyau N du canal choisi (CachyOS BORE par défaut)
+reboot sur le dernier Linux amont stable N
 ```
 
 ## Gate 3 — certification physique

@@ -4,7 +4,21 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 prefix="${1:-}"
 case "$prefix" in DING|SHOW_DESKTOP_PLUS|RESOURCE_MONITOR|TILING_ASSISTANT) ;; *) exit 2 ;; esac
 shift
-source "$root/config/gnome-extensions.lock"
+release="${HOST_RELEASE:-44}"
+# The child installer must select the same lock as the parent engine.
+if [[ -r "$root/config/local.conf" ]]; then
+  bash "$root/scripts/config/validate-config.sh" "$root/config" >/dev/null
+  configured="$(awk -F= '$1 ~ /^[[:space:]]*HOST_RELEASE$/ {gsub(/"/,"",$2); print $2}' "$root/config/local.conf")"
+  [[ -z "$configured" ]] || release="$configured"
+fi
+case "$release" in
+  44) source "$root/config/gnome-extensions.lock" ;;
+  45)
+    python3 "$root/scripts/development/fedora-profile.py" validate "$root" 45
+    source "$root/profiles/fedora45/gnome-extensions.lock"
+    ;;
+  *) echo 'Unsupported Fedora release' >&2; exit 2 ;;
+esac
 url_key="${prefix}_SOURCE_URL"; uuid_key="${prefix}_UUID"
 shell_key="${prefix}_SHELL_VERSION"; sha_key="${prefix}_SHA256"
 version_key="${prefix}_VERSION"; review_key="${prefix}_REVIEW_ID"; schema_key="${prefix}_SCHEMA"

@@ -30,4 +30,9 @@ config_load() {
     # shellcheck disable=SC1090
     source "$local_override"
   fi
+  if ! declare -F fedora_load_profile_extensions >/dev/null; then
+    # shellcheck disable=SC1091
+    source "$REPO_ROOT/lib/fedora_release.sh"
+  fi
+  fedora_load_profile_extensions || return $?
 }

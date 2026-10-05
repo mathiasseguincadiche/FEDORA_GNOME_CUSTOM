@@ -52,6 +52,4 @@ count="$(kernel_lifecycle_installed_count)"
 core="$(kernel_channel_core_package)" || { ui_error "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}"; exit "$EXIT_CONFIG_FAILED"; }
 (( count <= 2 )) || { ui_error "More than two $core versions are installed: $count"; exit "$EXIT_POSTCHECK_FAILED"; }
 
-# With the cachyos channel, kernel-core (Fedora/Vanilla) is the rescue track and
-# is bounded separately by DNF installonly_limit; it is reported, not counted.
 ui_check OK 'GRUB N/N-1 surface' "rescue image disabled; managed $core versions=$count max=2"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# CI-only RPM Fusion bootstrap for Fedora 44. MirrorManager remains the primary
+# CI-only RPM Fusion bootstrap for the requested Fedora release. MirrorManager remains the primary
 # endpoint; download1.rpmfusion.org is the official direct fallback when a
 # selected mirror/CDN is temporarily unreachable.
 release="${RPMFUSION_FEDORA_RELEASE:-44}"

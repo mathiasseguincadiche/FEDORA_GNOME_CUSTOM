@@ -68,7 +68,8 @@ grep -Fq '/data/{Documents,Projets,ISO,Jeux}' "$ROOT/diagnostics/data-storage-do
 
 # Kernel latest-stable is installed directly with a strict N/N-1 retention.
 grep -Fq 'kernel_lifecycle_vanilla_repo_id' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq -- "--repo=\"\$repo\"" "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'kernel_lifecycle_repo_args' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'group_kernel-vanilla:(stable|fedora)' "$ROOT/lib/kernel_lifecycle.sh"
 if grep -Fq -- '--repoid=' "$ROOT/lib/kernel_lifecycle.sh"; then
   echo 'legacy DNF4 --repoid syntax found in DNF5 kernel resolver' >&2
   exit 1
@@ -100,7 +101,7 @@ grep -Fq 'dnf5 check' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'kernel_target=' "$ROOT/scripts/maintenance/update-system.sh"
 
 # Golden release is an exact state attestation with hashed inventories and N/N-1 kernel metadata.
-for name in golden-release.json rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora44-media.lock MANIFEST.sha256; do
+for name in golden-release.json rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora-media.lock MANIFEST.sha256; do
   grep -Fq "$name" "$ROOT/scripts/release/capture-golden-release.sh" || { echo "release capture missing artifact: $name" >&2; exit 1; }
 done
 grep -Fq 'kernel_n' "$ROOT/scripts/release/capture-golden-release.sh"

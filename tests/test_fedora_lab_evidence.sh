@@ -52,21 +52,21 @@ for gate in lab.DEFERRED:
 rejected(lab.initialize("a" * 40))
 # The mandatory contracts context must actually wait for the reusable VM job.
 tests = (root / ".github/workflows/tests.yml").read_text()
-assert "needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm]" in tests
+assert "needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, upstream-kernel]" in tests
 assert "if: ${{ always() }}" in tests.split("\n  contracts:\n", 1)[1]
-assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm" in tests
+assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm upstream-kernel" in tests
 assert "uses: ./.github/workflows/fedora-gnome-vm.yml" in tests
 # Current operator guide must match the configured default channel.
-assert 'KERNEL_CHANNEL="cachyos"' in (root / "config/kernel.conf").read_text()
+assert 'KERNEL_CHANNEL="vanilla"' in (root / "config/kernel.conf").read_text()
 guide = (root / "docs/THREE_GATE_VALIDATION.md").read_text()
-assert "Kernel Vanilla" not in guide
+assert "CachyOS" not in guide
 assert "--include-vms --staging-root" in guide
-assert "CachyOS BORE" in guide
+assert "Linux amont" in guide
 # A skipped required context must not turn a failed dependency into success.
 spec = importlib.util.spec_from_file_location("jobs", root / ".github/scripts/require-jobs-success.py")
 jobs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(jobs)
-required = ["logic-contracts", "installer-audit", "borg-fedora", "fedora-gnome-vm"]
+required = ["logic-contracts", "installer-audit", "borg-fedora", "fedora-gnome-vm", "upstream-kernel"]
 needs = {name: {"result": "success"} for name in required}
 assert jobs.successful(needs, required)
 for name in required:

@@ -11,3 +11,4 @@ config/local.conf
 .env
 .env.*
 .fedora-gnome-lab/
+__pycache__/

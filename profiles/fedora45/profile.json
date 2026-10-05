@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "release": 45,
+  "gnome_major": 51,
+  "status": "pending",
+  "reason": "Final Workstation media, reviewed GNOME 51 extension lock and qualification evidence must be promoted together.",
+  "signing_fingerprint": "4F50A6114CD5C6976A7F1179655A4B02F577861E"
+}

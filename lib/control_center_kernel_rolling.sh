@@ -5,20 +5,16 @@
 cc_show_kernel_inventory() {
   printf 'Kernel actif : %s\n\n' "$(uname -r)"
   if command_exists rpm; then
-    rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core kernel-cachyos-core 2>/dev/null | grep -v 'is not installed' | sort -V || true
+    rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null | grep -v 'is not installed' | sort -V || true
   else
     printf 'rpm indisponible dans cet environnement.\n'
   fi
   printf '\nPolitique versionnée :\n'
-  printf '  Canal              %s (%s)\n' "${KERNEL_CHANNEL:-cachyos}" "$(kernel_channel_copr 2>/dev/null || echo 'non résolu')"
+  printf '  Canal              %s (%s)\n' "${KERNEL_CHANNEL:-vanilla}" "$(kernel_channel_copr 2>/dev/null || echo 'non résolu')"
   printf '  Cible              latest stable direct\n'
   printf '  Minimum actuel     %s\n' "${KERNEL_MIN_VERSION:-non défini}"
-  printf '  Rétention          N / N-1, maximum 2 par canal\n'
-  if [[ "${KERNEL_CHANNEL:-cachyos}" == cachyos ]]; then
-    printf '  Secours            kernel-core (Fedora/Vanilla) conservé dans GRUB\n'
-  else
-    printf '  Fedora fallback    non permanent (recovery explicite)\n'
-  fi
+  printf '  Rétention          N / N-1, maximum 2 kernel-core\n'
+  printf '  Secours            N-1 conservé; recovery Fedora explicite\n'
 }
 
 cc_kernel_menu() {
@@ -32,7 +28,7 @@ cc_kernel_menu() {
     cc_option 3 'Vérifier mises à jour kernel' 'via update check'
     cc_option 4 'Installer dernier stable' 'direct, N devient défaut'
     cc_option 5 'Rollback vers N-1' 'conserve N installé'
-    cc_option 6 'Appliquer rétention kernel' 'maximum 2 versions par canal'
+    cc_option 6 'Appliquer rétention kernel' 'maximum 2 versions kernel-core'
     cc_option 7 'Recovery vers kernel Fedora' 'urgence uniquement'
     cc_option 8 'Collecter panne de boot'
     cc_option 0 'Retour'
@@ -42,7 +38,7 @@ cc_kernel_menu() {
       2) cc_interactive_exec 'KERNEL DOCTOR' "$REPO_ROOT/diagnostics/kernel-doctor" ;;
       3) cc_interactive_exec 'RECHERCHE MISES À JOUR KERNEL' "$REPO_ROOT/scripts/maintenance/update-system.sh" --check ;;
       4)
-        if cc_confirm "Installer le dernier noyau stable du canal ${KERNEL_CHANNEL:-cachyos} et le définir par défaut ?"; then
+        if cc_confirm "Installer le dernier noyau stable du canal ${KERNEL_CHANNEL:-vanilla} et le définir par défaut ?"; then
           cc_interactive_exec 'INSTALLATION LATEST-STABLE' bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" install-latest
         fi
         ;;

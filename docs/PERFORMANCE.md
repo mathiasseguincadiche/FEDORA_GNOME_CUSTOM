@@ -1,4 +1,4 @@
-# Performance runtime — profil « Fedora-Cachy »
+# Performance runtime — profil « Fedora Linux »
 
 ## Objectif
 
@@ -12,38 +12,18 @@ mesurer → activer temporairement → observer → restaurer → certifier
 
 Le matériel cible est le Ryzen 7 7700, l'Intel Arc B580 et les deux Crucial T705 du profil Golden. Les optimisations restent donc compatibles avec GNOME/Wayland, SELinux, KVM/libvirt et les outils DevOps.
 
-## Noyau CachyOS (BORE)
+## Noyau officiel Linux amont
 
-Depuis la 0.16, la réactivité ne repose plus seulement sur des réglages : le projet installe le **vrai noyau CachyOS pour Fedora** (`kernel-cachyos`, COPR officiel `bieszczaders/kernel-cachyos`). Voir l'[ADR 0012](adr/0012-kernel-channel-cachyos.md).
-
-Ce que ce noyau apporte :
-
-- **BORE** : l'ordonnanceur CPU donne la priorité aux tâches « en rafale » (clic, frappe, rendu d'image) plutôt qu'aux tâches de fond. C'est la principale source de la sensation de fluidité de CachyOS ;
-- **sched_ext** activé, ce qui rend les schedulers SCX de ce document réellement utilisables ;
-- une compilation optimisée `x86-64-v3` (vérifiée sur le Ryzen 7 7700 avant installation).
-
-Le canal se choisit dans `config/kernel.conf` :
+Le profil utilise uniquement Kernel Vanilla stable, sans patch ni ordonnanceur personnalisé. La version doit correspondre à `latest_stable` sur kernel.org ; `@kernel-vanilla/stable` fournit les RPM indépendamment du calendrier Fedora. Le packaging peut prendre du temps : une archive de sources téléchargée n'est pas une installation. Voir [Linux amont](UPSTREAM_LINUX.md) et [ADR 0015](adr/0015-official-upstream-linux.md).
 
 ```bash
-KERNEL_CHANNEL="cachyos"   # défaut Golden
-KERNEL_CHANNEL="vanilla"   # noyau upstream sans patch
-```
-
-Sécurité du changement :
-
-```text
-précheck  → CPU x86-64-v3 prouvé + accord SELinux explicite
-APPLY     → sauvegarde Borg obligatoire → installation CachyOS N → défaut GRUB vérifié
-GRUB      → CachyOS N, CachyOS N-1, + kernel-core Fedora comme secours
-```
-
-Contrôle :
-
-```bash
+KERNEL_CHANNEL="vanilla"
 ./diagnostics/kernel-doctor
 ```
 
-Le reste de ce document (TuneD, EPP, zram, GameMode) s'applique **par-dessus** le noyau choisi.
+La politique conserve N et N-1 sur le même canal `kernel-core`. Aucun réglage SELinux de chargement de modules n'est ajouté par le changement de noyau.
+
+TuneD, EPP, zram et GameMode restent soumis aux mesures décrites ci-dessous. Les outils sched_ext détectent sa disponibilité dans le noyau réellement démarré ; ils ne prouvent pas que cette fonctionnalité est activée dans tous les RPM amont et n'imposent aucun scheduler au démarrage.
 
 ## Politique versionnée
 
@@ -204,5 +184,5 @@ un écart inférieur à la variabilité ne prouve pas un gain. Pour le gaming,
 ajouter les p95/p99/p99.9 des frametimes, les températures et la consommation.
 Une mesure de durée de compilation ne prouve pas une baisse de latence GNOME.
 
-Aucun gain CachyOS ni avantage du noyau Vanilla n'est acquis sans ces mesures.
+Aucun gain de performance du noyau Linux amont n'est acquis sans ces mesures.
 Les tests CI de ce dépôt ne comparent pas les performances de la machine cible.

@@ -7,18 +7,7 @@ system_kernel_precheck() {
   command_exists dnf5 || return "$EXIT_PRECHECK_FAILED"
   command_exists rpm || return "$EXIT_PRECHECK_FAILED"
   is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}" || return 0
-  kernel_channel >/dev/null || { log_error SYSTEM "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}; expected cachyos or vanilla"; return "$EXIT_CONFIG_FAILED"; }
-  if [[ "$(kernel_channel)" == cachyos ]]; then
-    if kernel_lifecycle_cpu_supports_x86_64_v3; then
-      :
-    elif runtime_is_baremetal; then
-      log_error SYSTEM 'CPU does not report x86-64-v3; kernel-cachyos is blocked. Use KERNEL_CHANNEL="vanilla".'
-      return "$EXIT_SECURITY_BLOCK"
-    else
-      log_warn SYSTEM 'x86-64-v3 not proven outside bare-metal; the kernel mutation itself stays bare-metal only.'
-    fi
-    is_true "${KERNEL_CACHYOS_SELINUX_MODULE_LOAD:-false}" || { log_error SYSTEM 'kernel-cachyos requires KERNEL_CACHYOS_SELINUX_MODULE_LOAD="true" (ADR 0012).'; return "$EXIT_CONFIG_FAILED"; }
-  fi
+  kernel_channel_require_platform || return $?
   if is_true "${KERNEL_BLOCK_SECURE_BOOT:-true}"; then
     case "$(kernel_lifecycle_secure_boot_state)" in
       enabled)
@@ -34,7 +23,7 @@ system_kernel_precheck() {
 }
 
 system_kernel_plan() {
-  echo "Install the latest stable $(kernel_channel_label) kernel from $(kernel_channel_copr) directly (minimum ${KERNEL_MIN_VERSION:-7.2.2}), set it as GRUB default, retain only N/N-1 of that channel, and disable Fedora's separate rescue boot entry."
+  echo "Install the latest stable $(kernel_channel_label) kernel from $(kernel_channel_copr) directly (minimum ${KERNEL_MIN_VERSION:-7.2.9}), set it as GRUB default, retain only N/N-1 of that channel, and disable Fedora's separate rescue boot entry."
 }
 
 system_kernel_apply() {
@@ -54,7 +43,7 @@ system_kernel_postcheck() {
   default="$(kernel_lifecycle_default_release)"
   [[ -n "$latest" ]] || { log_error SYSTEM "No installed $(kernel_channel_core_package) found after $(kernel_channel_label) APPLY"; return "$EXIT_POSTCHECK_FAILED"; }
   kernel_lifecycle_release_is_stable "$latest" || { log_error SYSTEM "Latest installed kernel is not stable: $latest"; return "$EXIT_POSTCHECK_FAILED"; }
-  kernel_lifecycle_version_at_least "$latest" || { log_error SYSTEM "Latest installed kernel is below ${KERNEL_MIN_VERSION:-7.2.2}: $latest"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_version_at_least "$latest" || { log_error SYSTEM "Latest installed kernel is below ${KERNEL_MIN_VERSION:-7.2.9}: $latest"; return "$EXIT_POSTCHECK_FAILED"; }
   kernel_channel_release_matches "$latest" || { log_error SYSTEM "Latest installed kernel is not a $(kernel_channel_label) build: $latest"; return "$EXIT_POSTCHECK_FAILED"; }
   (( count <= limit && limit == 2 )) || { log_error SYSTEM "Kernel retention mismatch: installed=$count max=$limit"; return "$EXIT_POSTCHECK_FAILED"; }
   [[ "$default" == "$latest" ]] || { log_error SYSTEM "GRUB default mismatch: default=$default latest=$latest"; return "$EXIT_POSTCHECK_FAILED"; }

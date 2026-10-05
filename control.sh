@@ -5,6 +5,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 
+# Major-release upgrade keeps its own identity-bound offline state.
+if [[ "${1:-}" == upgrade ]]; then
+  exec bash "$REPO_ROOT/scripts/maintenance/upgrade-fedora.sh" "${2:-plan}"
+fi
+
 # Kernel lifecycle commands are routed directly to the rolling N/N-1 engine.
 # Complete system updates install latest-stable automatically; these commands
 # provide status, explicit maintenance and rollback surfaces.
@@ -54,7 +59,7 @@ if [[ "${1:-}" == doctor ]]; then
   esac
 fi
 
-# Fedora-Cachy performance controls are explicit. Read-only probes remain
+# Workstation performance controls are explicit. Read-only probes remain
 # available everywhere; mutations and bounded smoke tests enforce bare-metal
 # guards inside their dedicated engines.
 if [[ "${1:-}" == perf ]]; then

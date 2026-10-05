@@ -131,7 +131,7 @@ Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed
 
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit. Son activation RPM Fusion passe par le bootstrap partagé ci-dessus.
 
-## Performance runtime Fedora-Cachy
+## Performance runtime Fedora Linux
 
 Le contrat `tests/test_performance_runtime_contract.sh` verrouille la couche de performance :
 
@@ -273,9 +273,15 @@ UEFI/TPM logiciel suivie d'une reconstruction sur image neuve. `contracts` dépe
 de ce job : un échec ou un skip bloque le contexte obligatoire et la publication.
 Voir [la portée exacte et les rapports](FEDORA_GNOME_CI_LAB.md).
 Les gates WSL2/VirtualBox/bare-metal, la validation visuelle et le démarrage
-CachyOS restent à qualifier sur leurs environnements réels.
+Linux amont restent à qualifier sur leurs environnements réels.
 
 Le check agrégé `contracts` s'exécute même après un échec grâce à `always()`
 et refuse explicitement une dépendance échouée, annulée ou sautée. La suite
 rapide `logic-contracts` démarre indépendamment du laboratoire pour exposer
 les régressions de code sans attendre les boots VM.
+
+## Linux amont officiel
+
+Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 44 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.
+
+Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connexion après la déconnexion. Un essai a identifié une course entre la création de ce scope et l'arrêt immédiat de GDM (`Result=resources`, PID disparu avant rattachement). L'attente observe l'état réel ; les unités échouées, journaux et coredumps restent bloquants, sans remise à zéro.

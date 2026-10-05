@@ -76,7 +76,7 @@ Gate 1 valide le **code de validation**, la cohérence système et les décision
 - totalité de la suite de contrats déclarée dans `.github/workflows/tests.yml` ;
 - logique dry-run / mutation ;
 - guards runtime ;
-- logique des canaux de noyau, CachyOS BORE par défaut, rolling N / N-1 ;
+- Linux amont stable comparé à kernel.org, canal unique vanilla, rolling N / N-1 ;
 - logique Borg et APPLY gates ;
 - logique KVM fail-closed ;
 - logique B580/T705/EDID via les contrats et fixtures du dépôt.
@@ -274,7 +274,7 @@ LUKS local            interdit
 SELinux               enforcing
 firewalld             actif
 Arc B580              host-only
-Kernel CachyOS BORE   canal cachyos, rolling N / N-1, max 2 par canal
+Linux amont stable   vanilla uniquement, rolling N / N-1, max 2 kernel-core
 Firmware              aucun flash automatique
 ```
 
@@ -313,11 +313,7 @@ quand `ENABLE_KVM=true` et `BACKUP_VM_DISKS=true` :
 ./control.sh install apply
 ```
 
-Le canal courant est `KERNEL_CHANNEL="cachyos"` dans `config/kernel.conf` :
-le module installe le dernier CachyOS BORE stable comme N, le sélectionne par
-défaut dans GRUB et conserve N-1. Le canal `kernel-core` reste disponible comme
-entrée de secours ; la rétention est de deux versions par canal. Un choix
-explicite `vanilla` suit le même cycle N/N-1. Redémarrer puis contrôler :
+Le canal unique est `KERNEL_CHANNEL="vanilla"` dans `config/kernel.conf`. Le module exige le dernier Linux amont officiel stable de kernel.org, l'installe comme N et conserve N-1 ; aucune RC ni version obsolète n'est acceptée. Il n'existe aucun second canal de secours. Redémarrer puis contrôler :
 
 ```bash
 sudo reboot
@@ -350,7 +346,7 @@ Gate 3 certifie notamment :
 - PCIe 5.0 x4 ;
 - absence d'erreur AER/NVMe critique ;
 - GNOME/Nautilus/Ptyxis/portals ;
-- contrat Performance Fedora-Cachy : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
+- contrat Performance Fedora Linux : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
 - profil TuneD revenu au mode Golden normal `balanced` au moment de la certification ;
 - KVM/libvirt et isolation réseau fail-closed ;
 - Borg externe non chiffré (ADR 0014) + restore canary ;

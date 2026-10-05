@@ -80,7 +80,7 @@ grep -Fq 'Politique N / N-1 · max 2' "$ROOT/lib/control_center_presentation.sh"
 grep -Fq 'Data' "$ROOT/lib/control_center_presentation.sh" || fail 'data dashboard missing'
 grep -Fq 'Gaming' "$ROOT/lib/control_center_presentation.sh" || fail 'gaming dashboard missing'
 grep -Fq 'Performance' "$ROOT/lib/control_center_presentation.sh" || fail 'performance dashboard missing'
-grep -Fq "cc_option 7 'Performance Fedora-Cachy'" "$ROOT/lib/control_center_presentation.sh" || fail 'performance main-menu pillar missing'
+grep -Fq "cc_option 7 'Performance Fedora Linux'" "$ROOT/lib/control_center_presentation.sh" || fail 'performance main-menu pillar missing'
 if grep -Eq 'dnf5?[[:space:]].*upgrade|borg[[:space:]]+(create|prune|compact|delete)|nft[[:space:]]+-f' "$ROOT/lib/control_center_presentation.sh"; then
   fail 'business logic must not leak into presentation layer'
 fi

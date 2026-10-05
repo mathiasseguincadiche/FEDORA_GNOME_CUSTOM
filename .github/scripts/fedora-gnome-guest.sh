@@ -12,6 +12,8 @@ EXPECTED_COMMIT="${2:-}"
 [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || exit 50
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO/lib/backup_runtime.sh"
+# shellcheck source=.github/scripts/fedora-greeter-ready.sh
+source "$REPO/.github/scripts/fedora-greeter-ready.sh"
 # shellcheck source=config/gnome-extensions.lock
 source "$REPO/config/gnome-extensions.lock"
 
@@ -187,6 +189,9 @@ CONF
     if pgrep -u "$LAB_UID" -x gnome-shell >/dev/null; then
       echo "GNOME did not log out cleanly." >&2; exit 1
     fi
+    # Wait for the newly created greeter scope/bus before stopping GDM.
+    # Never reset failed units or ignore shutdown journals to force success.
+    fedora_lab_wait_greeter
     systemctl stop gdm
     journalctl --sync
     # Check logout errors now, including the last VM shutdown with no next boot.

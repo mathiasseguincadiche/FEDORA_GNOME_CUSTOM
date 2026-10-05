@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [[ "${CI:-false}" == true && -f /.dockerenv ]] || { echo 'Disposable CI container only' >&2; exit 50; }
-grep -Eq '^VERSION_ID="?44"?$' /etc/os-release
+grep -Eq '^VERSION_ID="?(44|45)"?$' /etc/os-release
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 DRY_RUN=false; export DRY_RUN

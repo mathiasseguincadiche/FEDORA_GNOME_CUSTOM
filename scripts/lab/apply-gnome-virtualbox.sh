@@ -12,7 +12,7 @@ Usage: scripts/lab/apply-gnome-virtualbox.sh [--plan|--apply|--check]
 --apply  Apply only the desktop/user-surface required by GATE 2.
 --check  Run the read-only VirtualBox GNOME LAB doctor.
 
-This entrypoint is accepted only inside Fedora 44 GNOME 50/Wayland running
+This entrypoint is accepted only inside selected Fedora/GNOME profile on Wayland running
 under Oracle VirtualBox. It never opens the production bare-metal APPLY gate.
 USAGE
 }
@@ -43,8 +43,8 @@ lab_require_virtualbox() {
 }
 
 lab_require_fedora44() {
-  if ! grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || ! grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then
-    ui_error 'VIRTUALBOX GNOME LAB requires Fedora Linux 44'
+  if ! grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || ! fedora_require_selected; then
+    ui_error 'VIRTUALBOX GNOME LAB requires the selected promoted Fedora release'
     return "$EXIT_PRECHECK_FAILED"
   fi
 }
@@ -56,8 +56,8 @@ lab_require_gnome_session() {
   [[ "${XDG_SESSION_TYPE:-}" == wayland ]] || { ui_error "Wayland is required for GATE 2; detected ${XDG_SESSION_TYPE:-unknown}"; return "$EXIT_PRECHECK_FAILED"; }
   command_exists gnome-shell || { ui_error 'gnome-shell command missing'; return "$EXIT_PRECHECK_FAILED"; }
   shell_version="$(gnome-shell --version 2>/dev/null || true)"
-  [[ "$shell_version" =~ GNOME[[:space:]]Shell[[:space:]]50([.]|$) ]] || {
-    ui_error "GNOME Shell 50 required; detected ${shell_version:-unknown}"
+  fedora_shell_matches "$shell_version" || {
+    ui_error "Selected GNOME major required; detected ${shell_version:-unknown}"
     return "$EXIT_PRECHECK_FAILED"
   }
   [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]] || { ui_error 'User D-Bus session is required'; return "$EXIT_PRECHECK_FAILED"; }
@@ -66,7 +66,7 @@ lab_require_gnome_session() {
 lab_plan() {
   cat <<'PLAN'
 VIRTUALBOX GNOME LAB SCOPE
-- Fedora 44 + GNOME Shell 50 + Wayland + Oracle VirtualBox are mandatory.
+- selected Fedora profile + matching GNOME Shell + Wayland + Oracle VirtualBox are mandatory.
 - Install/validate the Fedora GNOME core and portal stack.
 - Install the full Fedora-native Nautilus/GVfs/Sushi/File Roller integration.
 - Install the curated GTK4/libadwaita application set, including native Ptyxis.
