@@ -77,7 +77,7 @@ def validate(root, release):
             review = lock.get(prefix + "_REVIEW_ID", "")
             if not re.fullmatch(r"[1-9][0-9]*", review) or lock[prefix + "_SOURCE_URL"] != "https://extensions.gnome.org/review/download/" + review + ".shell-extension.zip":
                 raise ValueError("extension URL/review mismatch")
-        if not lock.get(prefix + "_SOURCE_URL", "").startswith(("https://extensions.gnome.org/review/download/", "https://github.com/Leleat/Tiling-Assistant/releases/download/")):
+        if not lock.get(prefix + "_SOURCE_URL", "").startswith(("https://extensions.gnome.org/review/download/", "https://github.com/Leleat/Tiling-Assistant/releases/download/", "https://github.com/ubuntu/Tiling-Assistant/releases/download/")):
             raise ValueError("unreviewed extension source")
     if not re.fullmatch(r"[0-9a-f]{40}", profile.get("qualification_commit", "")):
         raise ValueError("missing qualification commit")

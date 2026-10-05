@@ -25,6 +25,16 @@ for data in (b"not a zip",archive(shell="50"),archive(uuid="wrong"),archive(sche
 try: m.profile.validate(root,45)
 except ValueError as error: assert "pending" in str(error)
 else: raise AssertionError("unqualified future profile accepted")
+uuid="tiling-assistant@leleat-on-github"
+tiling_url="https://github.com/ubuntu/Tiling-Assistant/releases/download/v55/tiling-assistant%40leleat-on-github.shell-extension.zip"
+release={"tag_name":"v55","prerelease":False,"draft":False,"assets":[{"name":uuid+".shell-extension.zip","browser_download_url":tiling_url}]}
+def tiling_transport(url):
+    return json.dumps(release).encode() if "api.github.com" in url else archive(uuid=uuid)
+assert m.tiling_candidate(uuid,51,tiling_transport)["SOURCE_URL"]==tiling_url
+release["assets"][0]["browser_download_url"]="https://github.com/untrusted/Tiling-Assistant/releases/download/v55/extension.zip"
+try: m.tiling_candidate(uuid,51,tiling_transport)
+except ValueError: pass
+else: raise AssertionError("untrusted Tiling publisher accepted")
 source=(root / "scripts/development/release-readiness.py").read_text()
 assert 'skipped work is BLOCKED' in source
 assert '"status": "BLOCKED" if blocked else "READY"' in source

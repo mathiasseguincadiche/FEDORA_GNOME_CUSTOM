@@ -24,7 +24,7 @@ spec.loader.exec_module(profile)
 
 def fetch(url):
     if not url.lower().startswith(("https://extensions.gnome.org/", "https://api.github.com/",
-                           "https://github.com/leleat/", "https://copr.fedorainfracloud.org/")):
+                           "https://github.com/leleat/", "https://github.com/ubuntu/tiling-assistant/", "https://copr.fedorainfracloud.org/")):
         raise ValueError("unapproved source URL")
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "FEDORA_GNOME_CUSTOM-readiness"}), timeout=30) as response:
         if not response.url.startswith("https://"):
@@ -65,14 +65,14 @@ def ego_candidate(uuid, shell, transport=fetch):
 
 
 def tiling_candidate(uuid, shell, transport=fetch):
-    answer = json.loads(transport("https://api.github.com/repos/Leleat/Tiling-Assistant/releases/latest"))
+    answer = json.loads(transport("https://api.github.com/repos/ubuntu/Tiling-Assistant/releases/latest"))
     tag = answer.get("tag_name", "")
     if not re.fullmatch(r"v[0-9]+", tag) or answer.get("prerelease") or answer.get("draft"):
         raise ValueError("no final Tiling Assistant release")
     name = uuid + ".shell-extension.zip"
     assets = [a["browser_download_url"] for a in answer.get("assets", []) if a.get("name") == name]
-    if len(assets) != 1 or not assets[0].lower().startswith("https://github.com/leleat/tiling-assistant/releases/download/" + tag.lower() + "/"):
-        raise ValueError("unexpected Tiling Assistant asset: " + repr(answer.get("assets", [])))
+    if len(assets) != 1 or not assets[0].lower().startswith("https://github.com/ubuntu/tiling-assistant/releases/download/" + tag.lower() + "/"):
+        raise ValueError("unexpected Tiling Assistant release asset")
     digest = inspect_zip(transport(assets[0]), uuid, shell)
     return {"SOURCE_URL": assets[0], "VERSION": tag[1:],
             "SHELL_VERSION": str(shell), "SHA256": digest}
@@ -145,7 +145,7 @@ def main():
             raise ValueError("no actual upstream RPM query available")
         result = subprocess.check_output(["dnf5", "-q", "--refresh",
             "--repo=*group_kernel-vanilla:stable", "--repo=*group_kernel-vanilla:fedora",
-            "repoquery", "--available", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}", "kernel-core"], text=True)
+            "repoquery", "--available", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}\n", "kernel-core"], text=True)
         if not any(re.fullmatch(re.escape(upstream) + (r"(?:[.]0)?" if upstream.count(".") == 1 else "") + r"-[0-9.]+[.]vanilla[.]fc45[.]x86_64", v) for v in result.splitlines()):
             raise ValueError("kernel.org=" + upstream + "; Fedora 45 RPM candidates=" + result.strip())
         return "actual upstream RPM = kernel.org " + upstream
