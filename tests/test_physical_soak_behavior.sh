@@ -52,9 +52,9 @@ mkdir -p "$(baseline_evidence_dir)" "$(physical_runtime_evidence_dir)"
 digest="$(printf 'a%.0s' {1..64})"
 for kind in cpu memory gpu; do
   case "$kind" in
-    cpu) name=cpu-soak; minimum=1800; path="$(baseline_evidence_dir)/$name.ok";;
-    memory) name=memory-5600; minimum=3600; path="$(baseline_evidence_dir)/$name.ok";;
-    gpu) name=gpu-soak; minimum=900; path="$(physical_runtime_evidence_path "$name")";;
+    cpu) name='cpu-soak'; minimum=1800; path="$(baseline_evidence_dir)/$name.ok";;
+    memory) name='memory-5600'; minimum=3600; path="$(baseline_evidence_dir)/$name.ok";;
+    gpu) name='gpu-soak'; minimum=900; path="$(physical_runtime_evidence_path "$name")";;
   esac
   printf 'status=PASS\nfingerprint=fixture\neffective_config_sha256=fixture\ndetail=automated=true sha256=%s seconds=%s instances=1\n' "$digest" "$minimum" >"$path"
   if [[ "$kind" == gpu ]]; then check=physical_runtime_evidence_valid; else check=baseline_evidence_valid; fi

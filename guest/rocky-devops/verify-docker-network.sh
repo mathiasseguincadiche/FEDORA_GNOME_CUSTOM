@@ -38,6 +38,8 @@ docker_local image inspect --format 'image_id={{.Id}} repo_digests={{json .RepoD
 # while the probe containers have no external egress.
 docker_local network create --internal --label "fgc.network-probe=$token" "$network" >/dev/null
 network_created=true
+# The quoted shell program is evaluated inside the container; $1 is its token.
+# shellcheck disable=SC2016
 docker_local create --pull=never --name "$server" --label "fgc.network-probe=$token" \
   --network "$network" --network-alias proof-server --publish 127.0.0.1::8080 \
   "$image" sh -c 'mkdir -p /www; printf "%s" "$1" >/www/index.html; exec httpd -f -p 8080 -h /www' sh "$token" >/dev/null
@@ -54,6 +56,7 @@ for ((attempt=0; attempt<30; attempt++)); do
 done
 $ready || { echo 'FAIL Docker loopback published HTTP port' >&2; exit 1; }
 # Resolve the network alias and reach a different container, not localhost.
+# shellcheck disable=SC2016
 docker_local create --pull=never --name "$client" --label "fgc.network-probe=$token" --network "$network" \
   "$image" sh -c 'test "$(wget -T 10 -qO- http://proof-server:8080/)" = "$1"' sh "$token" >/dev/null
 client_created=true
