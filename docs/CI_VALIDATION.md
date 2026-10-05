@@ -32,7 +32,7 @@ La documentation est testée comme une partie du produit.
 La CI bloque notamment :
 
 - retour d'anciennes commandes `baseline-doctor record-*` ;
-- profil GNOME qui oublierait l'une des **cinq extensions fonctionnelles** : Dash to Dock, AppIndicator, Desktop Icons NG, Show Desktop Plus ou Resource Monitor ;
+- profil GNOME qui oublierait l'une des **six extensions fonctionnelles** : Dash to Dock, AppIndicator, Desktop Icons NG, Show Desktop Plus, Resource Monitor ou Tiling Assistant ;
 - documentation qui exclurait encore Desktop Icons alors que DING est désormais Golden ;
 - disparition de `~/Bureau`, de la Corbeille ou de `Super+D` du contrat ergonomique documenté ;
 - retour de l'ancienne affirmation selon laquelle Fedora 44 fournirait DING comme RPM ;
@@ -127,7 +127,7 @@ Le helper conserve une politique fail-closed : il tente d'abord les endpoints Mi
 
 Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 50 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Rocky.
 
-Pour l'ergonomie desktop, il télécharge et valide les artefacts GNOME-reviewed : DING review `74408`/version `95`, Show Desktop Plus review `70326`/version `8` et Resource Monitor review `70909`/version `28`. Le workflow contrôle les UUID, la compatibilité GNOME Shell 50 et les payloads attendus.
+Pour l'ergonomie desktop, il télécharge et valide les archives gérées : DING review `74408`/version `95`, Show Desktop Plus review `70326`/version `8` et Resource Monitor review `70909`/version `28`, ainsi que la release GitHub officielle Tiling Assistant v55. Le workflow contrôle les UUID, la compatibilité GNOME Shell 50 et les payloads attendus.
 
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit. Son activation RPM Fusion passe par le bootstrap partagé ci-dessus.
 

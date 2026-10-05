@@ -101,6 +101,6 @@ Le template `.github/pull_request_template.md` fournit la checklist minimale.
 
 ## Sécurité
 
-Ne publier aucun secret, mot de passe Restic, token, clé privée ou média propriétaire.
+Ne publier aucun secret, mot de passe, token, clé privée ou média propriétaire.
 
 Pour un problème de sécurité, suivre [`SECURITY.md`](SECURITY.md) plutôt qu'une issue publique.

@@ -6,7 +6,7 @@ La branche `main` et la version indiquée dans `VERSION` représentent le contra
 
 ## Signaler un problème
 
-Pour une vulnérabilité ou un problème susceptible d'exposer des secrets, des identifiants, le HOST ou les VM, privilégier un canal GitHub privé lorsqu'il est disponible. Ne jamais publier de token, clé SSH, passphrase Restic, mot de passe, dump de secrets ou autre donnée sensible dans une issue publique.
+Pour une vulnérabilité ou un problème susceptible d'exposer des secrets, des identifiants, le HOST ou les VM, privilégier un canal GitHub privé lorsqu'il est disponible. Ne jamais publier de token, clé SSH, mot de passe, dump de secrets ou autre donnée sensible dans une issue publique.
 
 Une issue publique peut être utilisée pour un problème de durcissement non sensible, avec uniquement les informations nécessaires à la reproduction.
 

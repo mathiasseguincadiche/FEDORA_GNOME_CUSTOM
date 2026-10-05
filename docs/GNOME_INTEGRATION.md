@@ -42,6 +42,7 @@ Extensions fonctionnelles gérées :
 - **Desktop Icons NG (DING)** — installé depuis l'artefact GNOME Extensions review `74408`/version `95`, compatible GNOME Shell 50 ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
 - **Show Desktop Plus** — installé depuis l'artefact GNOME Extensions review `70326`/version `8`, avec bouton `left-end`, clic gauche `toggle-desktop` et raccourci `Super+D` ;
 - **Resource Monitor** — télémétrie CPU/RAM/réseau/B580 depuis l'artefact GNOME Extensions review piné.
+- **Tiling Assistant** — sixième extension du profil canonique, release GitHub officielle épinglée, installée et contrôlée par la couche gnome.polish.
 
 Fedora 44 ne fournit pas DING dans le manifest RPM du projet. DING et Show Desktop Plus utilisent donc deux installateurs étroits qui valident les artefacts GNOME-reviewed pinés, leurs UUID, leur compatibilité GNOME 50 et leur provenance.
 

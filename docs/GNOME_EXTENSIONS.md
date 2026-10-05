@@ -2,7 +2,7 @@
 
 Les références exécutables des quatre extensions téléchargées sont centralisées dans
 [`config/gnome-extensions.lock`](../config/gnome-extensions.lock). Les numéros cités
-ci-dessous décrivent la version 0.16.0 ; le lock reste la référence à mettre à jour.
+ci-dessous décrivent le profil actif ; le lock reste la référence à mettre à jour.
 Les clés de ce fichier sont des constantes vérifiées, pas des options `local.conf`.
 
 
@@ -16,7 +16,7 @@ Le projet distingue les extensions **fonctionnelles** des extensions purement co
 
 **Activé par défaut** depuis le paquet Fedora officiel.
 
-Le projet conserve les réglages Fedora/upstream sauf décision explicite versionnée.
+La couche gnome.polish configure le dock depuis config/gnome-polish.conf : à gauche, icônes 48 px, masquage intelligent OLED et clic focus/réduire/aperçus. Voir [GNOME_POLISH.md](GNOME_POLISH.md).
 
 ### AppIndicator
 
@@ -100,6 +100,14 @@ Le choix est **fail-closed** sur le bare-metal : si la B580 est présente mais q
 
 Le Ryzen 7 7700 utilise en priorité le capteur `k10temp`/`Tctl` (ou `zenpower` lorsqu'il est exposé). Aucun daemon de monitoring supplémentaire n'est requis : les données CPU/RAM/réseau viennent des interfaces kernel et les données GPU de DRM/sysfs.
 
+### Tiling Assistant
+
+**Activé par défaut** par la couche gnome.polish : quarts d'écran, popup de remplissage et groupes de fenêtres.
+
+L'UUID tiling-assistant@leleat-on-github et la release officielle GitHub v55 sont épinglés avec leur SHA-256 dans config/gnome-extensions.lock. Le script scripts/gnome/install-tiling-assistant.sh vérifie URL, UUID, hash, compatibilité GNOME 50 et schémas avant installation. diagnostics/polish-doctor contrôle l'activation et le marqueur de provenance.
+
+Le profil canonique comprend donc six extensions fonctionnelles : deux RPM Fedora et quatre archives épinglées. Fedora 45/GNOME 51 reste en préparation ; ce verrou GNOME 50 ne vaut pas qualification GNOME 51.
+
 ## Blur My Shell
 
 Installable, mais **désactivé dans l'état Golden certifié**. Il ajoute un chemin de rendu cosmétique sans bénéfice fonctionnel nécessaire et complique l'analyse des régressions à 240 Hz ou après reprise de veille.
@@ -116,7 +124,7 @@ Just Perfection et Dash to Panel ne sont pas imposés par le projet. Les ancienn
 
 ## Convergence et première session
 
-Les RPM Dash to Dock/AppIndicator peuvent être installés alors que GNOME Shell tourne déjà. DING, Show Desktop Plus et Resource Monitor sont ajoutés dans le répertoire d'extensions utilisateur depuis leurs artefacts GNOME-reviewed pinés. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
+Les RPM Dash to Dock/AppIndicator peuvent être installés alors que GNOME Shell tourne déjà. DING, Show Desktop Plus, Resource Monitor et Tiling Assistant sont ajoutés dans le répertoire d'extensions utilisateur depuis leurs archives épinglées : GNOME-reviewed pour les trois premiers, release GitHub officielle pour Tiling Assistant. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
 
 Le projet ne désactive jamais les contrôles simplement pour contourner cette frontière de session Wayland.
 

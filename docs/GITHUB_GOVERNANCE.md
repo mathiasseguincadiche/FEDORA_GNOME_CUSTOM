@@ -10,8 +10,8 @@ Configurer dans GitHub un ruleset ciblant `refs/heads/main` avec :
 - interdiction des force-push ;
 - interdiction de supprimer `main` ;
 - branche à jour avant fusion ;
-- checks obligatoires : **Tests**, **Shell quality**, **Architecture non-regression**, **Fedora 44 package preflight**, **Fedora 44 host integration pretest**, **Fedora 44 desktop integration pretest** ;
-- le workflow Rocky Linux 10.2 doit être vert lorsqu'il est déclenché par une modification de la VM, de son bootstrap ou de sa supply-chain.
+- contextes obligatoires : **contracts**, **shellcheck**, **guards**, **packages**, **packages-and-integration**, **nautilus-ptyxis** ;
+- le job Rocky Linux 10.2 est une dépendance de contracts sur chaque PR et push main ; son échec, annulation ou absence bloque le contrôle agrégé.
 
 Tout check configuré comme obligatoire dans le ruleset doit produire un contexte sur **chaque pull request**. En particulier, le job `nautilus-ptyxis` du workflow Fedora 44 desktop integration pretest est volontairement déclenché sans filtre `paths:` sur les pull requests afin qu'une modification non Desktop ne reste jamais bloquée dans l'état `Expected — Waiting for status to be reported`.
 
@@ -44,11 +44,11 @@ README.md lorsque le contrat utilisateur change
 
 La release candidate courante est décrite par `.github/release-manifest.env`. Le workflow `.github/workflows/release.yml`, déclenché uniquement après intégration de ce manifeste sur `main`, vérifie que la version de base du tag correspond exactement à `VERSION` puis crée la prerelease de façon idempotente.
 
-Pour la version courante :
+Lire les valeurs actuelles dans les fichiers exécutables, sans maintenir un second numéro de version dans ce guide :
 
-```text
-VERSION = 0.19.0
-tag     = v0.19.0-rc.1
+```bash
+cat VERSION
+cat .github/release-manifest.env
 ```
 
 Le check obligatoire `contracts` dépend des jobs `installer-audit` et `borg-fedora` du workflow Tests. Leur échec ou absence empêche donc le check obligatoire de réussir, avec le ruleset existant : aucune nouvelle permission d'administration n'est nécessaire pour rendre ces essais bloquants.

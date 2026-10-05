@@ -3,8 +3,8 @@
 Ce prétest fonctionne exclusivement sur un runner GitHub jetable. Il ne lance
 aucune commande sur le PC de l'opérateur. Le job réutilisable
 `.github/workflows/fedora-gnome-vm.yml` est appelé par `Tests` sur les push vers `main` et les pull requests.
-Le contexte obligatoire `contracts` attend sa réussite, celle de la suite
-rapide `logic-contracts` et des deux jobs Fedora existants. La publication attend donc aussi ce laboratoire.
+Le contexte obligatoire `contracts` attend sa réussite et celle des cinq autres jobs :
+logic-contracts, installer-audit, borg-fedora, upstream-kernel / rpm et rocky-devops-vm. La publication attend donc aussi ce laboratoire.
 
 ## Image et démarrage
 
@@ -55,9 +55,9 @@ le bureau est ouvert. Ce dernier chemin a produit des timeouts d'arrêt de
 GNOME Shell et SIGABRT dans le laboratoire ; le contrôle du boot précédent
 les a rendus bloquants. Il reste à qualifier sur les autres environnements.
 Aucun timeout de GNOME, mécanisme de protection ni contrôle des coredumps
-n'est affaibli pour faire réussir ce parcours. SELinux reste enforcing et firewalld actif. Les trois extensions
-DING, Show Desktop Plus et Resource Monitor utilisent l'installateur de
-production et les artefacts/hash du verrou existant. Les ZIP sont téléchargés
+n'est affaibli pour faire réussir ce parcours. SELinux reste enforcing et firewalld actif. Les quatre extensions utilisateur
+DING, Show Desktop Plus, Resource Monitor et Tiling Assistant utilisent leurs installateurs de
+production et les artefacts/hash du verrou existant. Les trois premières viennent de GNOME Extensions ; Tiling Assistant vient de sa release GitHub officielle. Avec Dash to Dock et AppIndicator fournis par RPM, les six extensions doivent être ACTIVE. Les ZIP sont téléchargés
 avec TLS strict par le runner, vérifiés puis transférés dans la VM ; le même
 installateur revérifie leur hash et leurs métadonnées depuis ce cache absolu.
 Aucun téléchargement non authentifié ni option curl insecure n'est utilisé.
@@ -107,7 +107,7 @@ de certification officiel. Restent explicitement DEFERRED :
 - Gate 1 WSL2 et Gate 2 VirtualBox avec contrôle visuel humain ;
 - Gate 3 et matériel physique Ryzen/B580/T705/écran ;
 - APPLY complet de production et démarrage du noyau Linux amont ;
-- restauration des VM Ubuntu/Windows de production, UUID/libvirt/réseau,
+- restauration des VM Rocky/Windows de production, UUID/libvirt/réseau,
   TPM Windows et éventuels logiciels associés.
 
 Le noyau du laboratoire reste celui de Fedora Cloud. Installer GNOME sur une
@@ -120,7 +120,7 @@ Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et
 restants sur le même commit. Un PASS CI conserve toutes ces limites.
 
 Le check obligatoire `contracts` s'exécute avec `always()` puis contrôle
-explicitement que chacun des quatre jobs a conclu `success`. Un job dépendant
+explicitement que chacune des six dépendances a conclu `success`. Un job dépendant
 simplement sauté peut être accepté comme check requis par GitHub ; ici tout
 `skipped`, `failure` ou `cancelled` produit un véritable échec du check agrégé.
 Voir [les conditions GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions).

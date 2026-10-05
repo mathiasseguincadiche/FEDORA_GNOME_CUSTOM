@@ -8,4 +8,4 @@ Secure Boot doit être désactivé et les block devices locaux du HOST ne doiven
 
 ## Conséquences
 
-La workstation ne protège pas les SSD contre un accès physique offline. SELinux, firewalld, contrôles de provenance et sauvegardes restent actifs. *(Mis à jour par l'[ADR 0014](0014-borg-unencrypted-backups.md) : les sauvegardes Borg ne sont pas chiffrées non plus.)* Les repositories Restic externes restent chiffrés : cette protection n'est pas du chiffrement du stockage local du HOST.
+La workstation ne protège pas les SSD contre un accès physique offline. SELinux, firewalld, contrôles de provenance et sauvegardes restent actifs. *(Mis à jour par l'[ADR 0014](0014-borg-unencrypted-backups.md) : les sauvegardes Borg ne sont pas chiffrées non plus.)*
