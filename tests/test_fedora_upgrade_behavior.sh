@@ -22,8 +22,8 @@ fedora_actual_release() { echo "${FAKE_OS:-44}"; }
 apply_gate_require_clean_git() { [[ "${FAKE_DIRTY:-false}" == false ]]; }
 ui_error() { echo "$*" >&2; }
 repo_commit() { printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'; }
-effective_config_sha256() { printf '%064d\n' 0; }
 source "$REPO_ROOT/lib/evidence.sh"
+effective_config_sha256() { printf '%064d\n' 0; }
 SH
 cat > "$tmp/lib/kernel_lifecycle.sh" <<'SH'
 kernel_lifecycle_require_host_gate() { return 0; }
@@ -70,10 +70,14 @@ run_expect 50 prepare
 [[ ! -s "$FGC_TRACE" ]]
 export FAKE_DIRTY=false FAKE_UPDATES_RC=100
 run_expect 20 prepare
-! grep -Eq 'backup|system-upgrade' "$FGC_TRACE"
+if grep -Eq 'backup|system-upgrade' "$FGC_TRACE"; then
+  echo 'source update refusal performed a mutation' >&2; exit 1
+fi
 export FAKE_UPDATES_RC=0 FAKE_BACKUP_RC=40
 run_expect 40 prepare
-! grep -Fq system-upgrade "$FGC_TRACE"
+if grep -Fq system-upgrade "$FGC_TRACE"; then
+  echo 'failed backup was followed by an upgrade transaction' >&2; exit 1
+fi
 [[ ! -e "$tmp/state/fedora45-upgrade.env" ]]
 export FAKE_BACKUP_RC=0 FAKE_DOWNLOAD_RC=1
 run_expect 1 prepare
