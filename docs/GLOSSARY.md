@@ -6,7 +6,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **HOST** — la machine Fedora physique. Ici, il s'agit de la workstation principale.
 
-**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, par exemple `ubuntu-devops` ou `windows-11`.
+**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, par exemple `rocky-devops` ou `windows-11`.
 
 **Bare-metal** — système exécuté directement sur le matériel physique, et non dans une VM, un conteneur ou WSL2.
 
@@ -100,7 +100,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 ## Provisionnement VM
 
-**Cloud image** — image disque préinstallée destinée à être personnalisée au démarrage. `ubuntu-devops` part d'une image Ubuntu Server 26.04 Canonical.
+**Cloud image** — image disque préinstallée destinée à être personnalisée au démarrage. `rocky-devops` part d'une image Rocky Linux 10.2 Rocky Linux.
 
 **cloud-init** — système de configuration initiale d'une image cloud : utilisateur, clé SSH, fichiers, commandes de premier démarrage, etc.
 

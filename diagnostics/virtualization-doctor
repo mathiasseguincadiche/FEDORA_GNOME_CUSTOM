@@ -188,22 +188,22 @@ if rpm -q libvirt-nss >/dev/null 2>&1; then record OK 'libvirt NSS' installed; e
 if rpm -q cloud-utils-cloud-localds >/dev/null 2>&1; then record OK 'cloud-init seed tooling' cloud-localds; else record KO 'cloud-init seed tooling' missing; fi
 if rpm -q openssl >/dev/null 2>&1; then record OK 'password hash tooling' openssl; else record KO 'password hash tooling' missing; fi
 
-if [[ "${UBUNTU_SERVER_RELEASE:-}" == 26.04 \
-   && "${UBUNTU_SERVER_VCPU:-}" == 6 \
-   && "${UBUNTU_SERVER_RAM_MB:-}" == 16384 \
-   && "${UBUNTU_SERVER_DISK_GB:-}" == 160 \
+if [[ "${ROCKY_SERVER_RELEASE:-}" == 10.2 \
+   && "${ROCKY_SERVER_VCPU:-}" == 6 \
+   && "${ROCKY_SERVER_RAM_MB:-}" == 16384 \
+   && "${ROCKY_SERVER_DISK_GB:-}" == 160 \
    && "${WINDOWS11_VCPU:-}" == 4 \
    && "${WINDOWS11_RAM_MB:-}" == 12288 \
    && "${WINDOWS11_DISK_GB:-}" == 128 \
    && -z "${FEDORA_VM_NAME:-}" ]]; then
-  record OK 'VM profiles' 'Ubuntu Server 26.04 + Windows 11 final contract'
+  record OK 'VM profiles' 'Rocky Linux 10.2 + Windows 11 final contract'
 else
   record KO 'VM profiles' 'profile resources or guest set mismatch'
 fi
 
 for helper in \
-  guest/ubuntu-devops/bootstrap-devops.sh guest/ubuntu-devops/verify-devops.sh \
-  scripts/kvm/create_ubuntu_devops_vm.sh scripts/kvm/create_windows11_vm.sh scripts/kvm/runtime_certification.sh; do
+  guest/rocky-devops/bootstrap-devops.sh guest/rocky-devops/verify-devops.sh \
+  scripts/kvm/create_rocky_devops_vm.sh scripts/kvm/create_windows11_vm.sh scripts/kvm/runtime_certification.sh; do
   if [[ -r "$REPO_ROOT/$helper" ]]; then record OK "$helper" present; else record KO "$helper" missing; fi
 done
 

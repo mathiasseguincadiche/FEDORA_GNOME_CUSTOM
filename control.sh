@@ -106,9 +106,9 @@ fi
 # actually usable through the public Control Center entrypoint.
 if [[ "${1:-}" == kvm ]]; then
   case "${2:-}" in
-    create-ubuntu)
+    create-rocky)
       shift 2
-      exec bash "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" "$@"
+      exec bash "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" "$@"
       ;;
     create-windows)
       shift 2

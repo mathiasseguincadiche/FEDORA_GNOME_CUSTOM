@@ -33,7 +33,7 @@ grep -Fq 'desktop-file-validate' "$ROOT/lib/application_runtime.sh"
 
 grep -Fq "trusted SHA-256 is mandatory for both Windows and VirtIO media" "$ROOT/scripts/kvm/create_windows11_vm.sh"
 forbidden_io_source="source \"\$io_state\""
-if grep -Fq "$forbidden_io_source" "$ROOT/scripts/kvm/create_windows11_vm.sh" "$ROOT/scripts/kvm/create_ubuntu_devops_vm.sh"; then
+if grep -Fq "$forbidden_io_source" "$ROOT/scripts/kvm/create_windows11_vm.sh" "$ROOT/scripts/kvm/create_rocky_devops_vm.sh"; then
   echo 'KVM I/O state must not be sourced as shell' >&2
   exit 1
 fi

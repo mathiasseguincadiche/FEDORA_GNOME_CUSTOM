@@ -17,7 +17,7 @@ Une contradiction entre ces fichiers, les scripts et ce document est un bug.
 Fedora 44 HOST
 │
 ├── KVM / QEMU / libvirt : qemu:///system
-│   ├── domaine ubuntu-devops
+│   ├── domaine rocky-devops
 │   ├── domaine windows-11
 │   ├── pool devops-data → /data/libvirt/images
 │   └── réseau devops-nat → virbr50 → 192.168.50.0/24
@@ -130,10 +130,10 @@ Le guard redécouvre l'uplink IPv4. Lors d'un changement réseau, il passe d'abo
 
 Voir [`KVM_NETWORK.md`](KVM_NETWORK.md).
 
-## Profil `ubuntu-devops`
+## Profil `rocky-devops`
 
 ```text
-OS                 Ubuntu Server 26.04 LTS
+OS                 Rocky Linux 10.2
 vCPU               6
 RAM                16 Gio
 disque             160 Gio qcow2
@@ -152,21 +152,21 @@ autostart          non
 L'opérateur fournit ensemble :
 
 ```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 ```
 
-`create_ubuntu_devops_vm.sh` authentifie `SHA256SUMS` avec la clé Canonical attendue, puis vérifie le SHA-256 de l'image **avant** toute création de disque.
+`create_rocky_devops_vm.sh` authentifie `CHECKSUM` avec la clé Rocky Linux attendue, puis vérifie le SHA-256 de l'image **avant** toute création de disque.
 
 ```bash
-bash scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+bash scripts/kvm/create_rocky_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
 Le mot de passe demandé est réservé à la console et à `sudo`; SSH reste key-only.
 
-Voir [`UBUNTU_DEVOPS_READY.md`](UBUNTU_DEVOPS_READY.md) et [`UBUNTU_DEVOPS_PROVISIONING.md`](UBUNTU_DEVOPS_PROVISIONING.md).
+Voir [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md) et [`ROCKY_DEVOPS_PROVISIONING.md`](ROCKY_DEVOPS_PROVISIONING.md).
 
 ## Profil `windows-11`
 
@@ -203,7 +203,7 @@ Les hashes sont vérifiés avant `qemu-img create`. Le script génère aussi `wi
 
 ```text
 Fedora / Nautilus
-├── SFTP/SSH → ubuntu-devops → /home/mathias
+├── SFTP/SSH → rocky-devops → /home/mathias
 └── SMB      → windows-11   → C:\VM-Share
 ```
 
@@ -227,7 +227,7 @@ Après installation des deux VM :
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification vérifie notamment domaines, QEMU Guest Agent, VirtIO RNG/balloon, Secure Boot+TPM Windows, réseau/disque VirtIO, guard KVM, IP guests, SSH Ubuntu, stack DevOps, DNS/HTTPS et isolement LAN.
+La certification vérifie notamment domaines, QEMU Guest Agent, VirtIO RNG/balloon, Secure Boot+TPM Windows, réseau/disque VirtIO, guard KVM, IP guests, SSH Rocky Linux, stack DevOps, DNS/HTTPS et isolement LAN.
 
 Une preuve live complète `LAN → VM` nécessite un deuxième appareil du LAN ; la procédure est documentée dans [`KVM_NETWORK.md`](KVM_NETWORK.md).
 

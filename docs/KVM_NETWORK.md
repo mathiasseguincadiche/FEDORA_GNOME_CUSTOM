@@ -35,7 +35,7 @@ Internet → VM       aucun port-forward implicite
 ## Vue simple
 
 ```text
-ubuntu-devops / windows-11
+rocky-devops / windows-11
           │
           │ VirtIO
           ▼
@@ -233,7 +233,7 @@ La certification recharge le guard via systemd, exige son retour en mode normal 
 
 ## Preuve VM → LAN
 
-Lorsque la passerelle physique répond au ping depuis Fedora, `runtime_certification.sh` établit d'abord qu'elle est réellement joignable depuis le HOST. Il exige ensuite que le même ping lancé depuis `ubuntu-devops` échoue.
+Lorsque la passerelle physique répond au ping depuis Fedora, `runtime_certification.sh` établit d'abord qu'elle est réellement joignable depuis le HOST. Il exige ensuite que le même ping lancé depuis `rocky-devops` échoue.
 
 Cela évite le faux positif suivant :
 

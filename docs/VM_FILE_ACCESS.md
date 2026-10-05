@@ -8,11 +8,11 @@ Le design est volontairement asymétrique :
 
 ```text
 Fedora / Nautilus
-├── SFTP/SSH → ubuntu-devops → /home/mathias
+├── SFTP/SSH → rocky-devops → /home/mathias
 └── SMB      → windows-11   → C:\VM-Share
 ```
 
-## Ubuntu Server 26.04
+## Rocky Linux 10.2
 
 `openssh-server` est installé par le bootstrap invité. Le helper HOST découvre l'adresse IPv4 courante via QEMU Guest Agent ou la lease DHCP libvirt, puis ajoute un favori Nautilus de la forme :
 
@@ -59,7 +59,7 @@ Commandes disponibles :
 install / refresh   détecte les IP et crée/met à jour les favoris
 show                affiche les favoris gérés
 remove              retire seulement les favoris gérés par le projet
-open-ubuntu         ouvre Ubuntu DevOps dans Nautilus via SFTP
+open-rocky         ouvre Rocky DevOps dans Nautilus via SFTP
 open-windows        ouvre Windows VM dans Nautilus via SMB
 ```
 

@@ -148,25 +148,25 @@ cc_storage_health() {
   "$REPO_ROOT/diagnostics/data-storage-doctor" --quiet
 }
 
-cc_kvm_create_ubuntu_interactive() {
+cc_kvm_create_rocky_interactive() {
   local cloud_image=''
   local ssh_key=''
-  local canonical_key=''
+  local rocky_key=''
   local -a args=()
 
-  read -r -p 'Image Ubuntu cloud (.img) : ' cloud_image
+  read -r -p 'Image Rocky Linux 10.2 cloud (.qcow2) : ' cloud_image
   if [[ -z "$cloud_image" ]]; then
     printf 'Chemin image obligatoire.\n'
     cc_pause
     return 0
   fi
   read -r -p 'Clé SSH publique [défaut ~/.ssh/id_ed25519.pub] : ' ssh_key
-  read -r -p 'Clé Canonical locale [optionnel] : ' canonical_key
+  read -r -p 'Clé Rocky Linux locale [optionnel] : ' rocky_key
 
   args=(--cloud-image "$cloud_image")
   [[ -n "$ssh_key" ]] && args+=(--ssh-key "$ssh_key")
-  [[ -n "$canonical_key" ]] && args+=(--canonical-key-file "$canonical_key")
-  cc_interactive_exec 'CRÉATION UBUNTU DEVOPS' "$REPO_ROOT/scripts/kvm/create_ubuntu_devops_vm.sh" "${args[@]}"
+  [[ -n "$rocky_key" ]] && args+=(--rocky-key-file "$rocky_key")
+  cc_interactive_exec 'CRÉATION ROCKY DEVOPS' "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" "${args[@]}"
 }
 
 cc_kvm_create_windows_interactive() {
@@ -204,7 +204,7 @@ cc_kvm_menu() {
     cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
     cc_option 4 'Certification runtime KVM' 'Ubuntu + Windows + isolation'
     cc_option 5 'Rafraîchir accès Nautilus aux VM'
-    cc_option 6 'Créer Ubuntu DevOps' 'image signée Canonical + cloud-init'
+    cc_option 6 'Créer Rocky DevOps' 'image signée Rocky Linux + cloud-init'
     cc_option 7 'Créer Windows 11' 'ISO + VirtIO + 2 SHA-256 obligatoires'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
@@ -218,7 +218,7 @@ cc_kvm_menu() {
         ;;
       4) cc_interactive_exec 'KVM RUNTIME CERTIFICATION' "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
       5) cc_interactive_exec 'NAUTILUS VM ACCESS' "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
-      6) cc_kvm_create_ubuntu_interactive ;;
+      6) cc_kvm_create_rocky_interactive ;;
       7) cc_kvm_create_windows_interactive ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
@@ -318,7 +318,7 @@ Usage:
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh
-  ./control.sh kvm create-ubuntu --cloud-image PATH [--ssh-key PATH] [--canonical-key-file PATH]
+  ./control.sh kvm create-rocky --cloud-image PATH [--ssh-key PATH] [--rocky-key-file PATH]
   ./control.sh kvm create-windows --windows-iso PATH --virtio-iso PATH --windows-sha256 HASH --virtio-sha256 HASH
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
   ./control.sh cert archive DESTINATION PAYLOAD [PAYLOAD ...]

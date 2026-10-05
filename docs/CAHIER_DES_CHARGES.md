@@ -17,7 +17,7 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - dry-run non-mutant + baseline + backup Borg avant APPLY ;
 - rollback kernel disponible vers N-1 ;
 - récupération explicite vers les paquets kernel Fedora disponible en cas d'urgence ;
-- aucune confiance implicite dans une image Ubuntu fournie uniquement par son nom : checksum signé Canonical requis avant création de `ubuntu-devops`.
+- aucune confiance implicite dans une image Rocky fournie uniquement par son nom : checksum signé Rocky Linux requis avant création de `rocky-devops`.
 
 ## P0 — matériel
 
@@ -80,7 +80,7 @@ Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensi
 - KVM/libvirt sur `qemu:///system` ;
 - sous-arbre KVM `/data/libvirt` sur le second T705 EXT4 persistant ;
 - pool `devops-data` sur `/data/libvirt/images` ;
-- profils `ubuntu-devops` et `windows-11` créés uniquement sur demande ;
+- profils `rocky-devops` et `windows-11` créés uniquement sur demande ;
 - réseau `devops-nat` / `virbr50` / `192.168.50.0/24` ;
 - VM → Internet autorisé ;
 - forwarding VM ↔ LAN uplink bloqué ;

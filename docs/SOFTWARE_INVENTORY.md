@@ -1,4 +1,4 @@
-# Inventaire logiciel — HOST Fedora 44 et VM Ubuntu DevOps
+# Inventaire logiciel — HOST Fedora 44 et VM Rocky DevOps
 
 Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora ou par le bootstrap Ubuntu.
 
@@ -37,7 +37,7 @@ Python est un outil workstation explicite, et non une simple dépendance de KVM 
 
 - python3
 - python3-pip
-- python3-devel
+- python3-develel
 - pipx
 
 Le post-check exige également :
@@ -333,7 +333,7 @@ Réseau / sécurité :
 
 `python3` est aussi requis historiquement par cette couche, mais le contrat Python HOST est désormais défini dans le socle système.
 
-## 2. VM — Ubuntu 26.04 DevOps
+## 2. VM — Rocky Linux 10.2 DevOps
 
 La VM est une workstation CLI DevOps prête à cloner, construire, tester, conteneuriser et déployer.
 
@@ -364,11 +364,11 @@ La VM est une workstation CLI DevOps prête à cloner, construire, tester, conte
 
 - python3
 - python3-pip
-- python3-venv
-- python3-dev
+- python3 (venv intégré)
+- python3-devel
 - pipx
 
-`python3-dev` fournit les en-têtes nécessaires pour compiler proprement les extensions Python natives dans la VM de build/DevOps.
+`python3-devel` fournit les en-têtes nécessaires pour compiler proprement les extensions Python natives dans la VM de build/DevOps.
 
 Le doctor Ubuntu vérifie :
 
@@ -413,7 +413,7 @@ SSH par mot de passe reste désactivé ; l'accès opérateur suit le contrat SSH
 
 ### 2.8 Java
 
-- openjdk-21-jdk
+- java-21-openjdk-devel
 - maven
 
 Le bootstrap exige OpenJDK 21.

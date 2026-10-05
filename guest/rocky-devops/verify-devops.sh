@@ -5,6 +5,12 @@ DEVOPS_USER="${DEVOPS_USER:-mathias}"
 EXPECTED_KUBERNETES_MINOR="${EXPECTED_KUBERNETES_MINOR:-v1.37}"
 EXPECTED_KIND_VERSION="${EXPECTED_KIND_VERSION:-v0.33.0}"
 EXPECTED_MINIKUBE_VERSION="${EXPECTED_MINIKUBE_VERSION:-v1.38.1}"
+# Identity and enforcement are part of qualification, not inferred from filenames.
+[[ -r /etc/os-release ]] || exit 1
+# shellcheck disable=SC1091
+source /etc/os-release
+[[ "$ID" == rocky && "$VERSION_ID" == 10.2 && "$(uname -m)" == x86_64 ]] || { echo 'Rocky Linux 10.2 x86_64 required' >&2; exit 1; }
+[[ "$(getenforce)" == Enforcing ]] || { echo 'SELinux enforcing required' >&2; exit 1; }
 ok=0
 ko=0
 
@@ -47,6 +53,7 @@ if command -v glab >/dev/null 2>&1 && glab version >/dev/null 2>&1; then pass gl
 if command -v corepack >/dev/null 2>&1 && corepack --version >/dev/null 2>&1; then pass corepack.version "$(corepack --version)"; fi
 if command -v mvn >/dev/null 2>&1 && mvn -version >/dev/null 2>&1; then pass maven.version "$(mvn -version 2>&1 | head -n1)"; fi
 
+if systemctl is-active --quiet sshd; then pass sshd.service active; else fail_check sshd.service inactive; fi
 if systemctl is-active --quiet docker; then pass docker.service active; else fail_check docker.service inactive; fi
 if systemctl is-active --quiet qemu-guest-agent; then pass qemu-guest-agent active; else fail_check qemu-guest-agent inactive; fi
 if id -nG "$DEVOPS_USER" 2>/dev/null | tr ' ' '\n' | grep -Fxq docker; then pass docker.group member; else fail_check docker.group "$DEVOPS_USER not member"; fi
@@ -56,6 +63,6 @@ if grep -Fxq 'passwordauthentication no' <<<"$sshd_effective"; then pass ssh.pas
 
 user_home="$(getent passwd "$DEVOPS_USER" 2>/dev/null | cut -d: -f6)"
 if [[ -n "$user_home" && -r "$user_home/.minikube/config/config.json" ]] && grep -q 'docker' "$user_home/.minikube/config/config.json"; then pass minikube.driver docker; else fail_check minikube.driver 'docker default not configured'; fi
-if [[ -r /var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env ]]; then pass bootstrap.marker present; else fail_check bootstrap.marker missing; fi
-printf '\nUbuntu DevOps verification: OK=%d KO=%d\n' "$ok" "$ko"
+if [[ -r /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env && -s /var/lib/fedora-gnome-custom/rocky-devops-packages.txt ]]; then pass bootstrap.marker present; else fail_check bootstrap.marker missing; fi
+printf '\nRocky DevOps verification: OK=%d KO=%d\n' "$ok" "$ko"
 ((ko == 0))

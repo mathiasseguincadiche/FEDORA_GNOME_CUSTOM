@@ -11,7 +11,7 @@ kvm_file_access_precheck() {
 kvm_file_access_plan() {
   cat <<'EOF'
 GNOME / NAUTILUS VM FILE ACCESS:
-- Ubuntu: expose the real guest filesystem to Nautilus through SFTP over the existing SSH service
+- Rocky: expose the real guest filesystem to Nautilus through SFTP over the existing SSH service
 - Windows: expose only C:\VM-Share through authenticated SMB; never expose the whole Windows filesystem
 - discover current libvirt DHCP addresses dynamically and maintain two Nautilus bookmarks idempotently
 - create a small FGC_TOOLS ISO containing the Windows SMB setup PowerShell script

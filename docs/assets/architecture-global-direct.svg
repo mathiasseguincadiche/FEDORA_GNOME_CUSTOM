@@ -53,7 +53,7 @@
 <rect x="615" y="530" width="230" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
 <text x="635" y="564" class="card">Gaming</text><text x="635" y="590" class="small">Steam · Proton · Vulkan</text>
 <rect x="860" y="530" width="250" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
-<text x="880" y="564" class="card">Virtualisation KVM</text><text x="880" y="590" class="small">Ubuntu DevOps · Windows 11</text>
+<text x="880" y="564" class="card">Virtualisation KVM</text><text x="880" y="590" class="small">Rocky DevOps · Windows 11</text>
 <rect x="1125" y="530" width="250" height="90" rx="14" fill="#fff" stroke="#d5d0ed"/>
 <text x="1145" y="564" class="card">Applications</text><text x="1145" y="590" class="small">outils pro · Flatpak contrôlé</text>
 <line x1="670" y1="405" x2="670" y2="427" stroke="#6d829d" stroke-width="4" marker-end="url(#arrow)"/>

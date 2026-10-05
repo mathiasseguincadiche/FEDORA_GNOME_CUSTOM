@@ -37,7 +37,7 @@ ask 'Nautilus : navigation, previews/Sushi, archives et recherche de fichiers fo
 printf '\nDans la fenêtre Nautilus ouverte sur "%s", utilisez clic droit → Open in Console, puis exécutez pwd.\n' "$probe_dir"
 ask 'Nautilus → Ptyxis : Open in Console ouvre Ptyxis exactement dans le dossier avec espaces'
 ask 'Applications par défaut : Files/Papers/Loupe/Text Editor/Showtime/File Roller ouvrent les types prévus'
-if [[ "$scope" == gate3 ]]; then ask 'Après les cycles suspend/resume : GNOME Shell, dock, DING, Ptyxis et Nautilus restent stables'; if is_true "${ENABLE_KVM:-true}"; then ask 'Nautilus : bookmarks Ubuntu DevOps SFTP et Windows VM SMB sont visibles et ouvrables'; fi; fi
+if [[ "$scope" == gate3 ]]; then ask 'Après les cycles suspend/resume : GNOME Shell, dock, DING, Ptyxis et Nautilus restent stables'; if is_true "${ENABLE_KVM:-true}"; then ask 'Nautilus : bookmarks Rocky DevOps SFTP et Windows VM SMB sont visibles et ouvrables'; fi; fi
 if [[ "$scope" == gate2 ]]; then
   mkdir -p "$(dirname "$gate2_marker")"; { printf 'schema=1\nstatus=PASS\ncommit=%s\neffective_config_sha256=%s\nportal_functional=PASS\nnautilus_ptyxis=PASS\nlocalsearch=PASS\nmanual_visual=PASS\nutc=%s\n' "$(repo_commit)" "$(effective_config_sha256)" "$(date -u +%FT%TZ)"; } | evidence_atomic_write "$gate2_marker" 0600; ui_check OK 'Gate 2 GNOME UX evidence' "$gate2_marker"
 else

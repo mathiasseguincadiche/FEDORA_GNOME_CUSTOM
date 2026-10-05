@@ -45,11 +45,11 @@ for cli in virt-admin virt-host-validate virt-xml-validate virt-xml qemu-io qemu
 done
 
 for expected in \
-  'UBUNTU_SERVER_RELEASE="26.04"' \
-  'UBUNTU_SERVER_VCPU="6"' \
-  'UBUNTU_SERVER_RAM_MB="16384"' \
-  'UBUNTU_SERVER_DISK_GB="160"' \
-  'UBUNTU_SERVER_USERNAME="mathias"' \
+  'ROCKY_SERVER_RELEASE="10.2"' \
+  'ROCKY_SERVER_VCPU="6"' \
+  'ROCKY_SERVER_RAM_MB="16384"' \
+  'ROCKY_SERVER_DISK_GB="160"' \
+  'ROCKY_SERVER_USERNAME="mathias"' \
   'WINDOWS11_VCPU="4"' \
   'WINDOWS11_RAM_MB="12288"' \
   'WINDOWS11_DISK_GB="128"' \
@@ -71,11 +71,11 @@ if grep -Fq 'Fedora 44 lab' "$ROOT/modules/virtualization/38_kvm_vm_profiles.sh"
 fi
 
 for file in \
-  guest/ubuntu-devops/bootstrap-devops.sh \
-  guest/ubuntu-devops/verify-devops.sh \
+  guest/rocky-devops/bootstrap-devops.sh \
+  guest/rocky-devops/verify-devops.sh \
   guest/windows-11/configure-smb-share.ps1 \
   scripts/kvm/configure_nautilus_vm_access.sh \
-  scripts/kvm/create_ubuntu_devops_vm.sh \
+  scripts/kvm/create_rocky_devops_vm.sh \
   scripts/kvm/create_windows11_vm.sh \
   scripts/kvm/runtime_certification.sh \
   diagnostics/virtualization-doctor; do
@@ -89,7 +89,7 @@ if grep -RInE --exclude-dir=.git --exclude='test_virtualization_contract.sh' '(p
 fi
 
 if grep -RInEi --exclude-dir=.git --exclude='CHANGELOG.md' --exclude='test_virtualization_contract.sh' 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' \
-  "$ROOT/config" "$ROOT/manifests" "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" "$ROOT/guest/ubuntu-devops" "$ROOT/diagnostics"; then
+  "$ROOT/config" "$ROOT/manifests" "$ROOT/modules/virtualization" "$ROOT/scripts/kvm" "$ROOT/guest/rocky-devops" "$ROOT/diagnostics"; then
   echo 'obsolete host-directory sharing / VirtioFS contract found' >&2
   exit 1
 fi

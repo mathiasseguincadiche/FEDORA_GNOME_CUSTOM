@@ -12,7 +12,7 @@ HOST-TO-GUEST SSH ACCESS:
 - install OpenSSH client tooling on the Fedora HOST
 - use operator-owned SSH keys; do not generate or overwrite identity files automatically
 - do not weaken host-key checking or guest sshd policy
-- ubuntu-devops is administered primarily through SSH on devops-nat
+- rocky-devops is administered primarily through SSH on devops-nat
 - SFTP/GVfs reuses the same SSH service for graphical Nautilus file access
 - runtime connectivity certification is explicit and requires the real guest address
 EOF

@@ -14,10 +14,10 @@ warn() { printf 'WARN: %s\n' "$*" >&2; }
 
 uri="${LIBVIRT_URI:-qemu:///system}"
 network="${KVM_NETWORK_NAME:-devops-nat}"
-ubuntu="${UBUNTU_SERVER_NAME:-ubuntu-devops}"
+rocky="${ROCKY_SERVER_NAME:-rocky-devops}"
 windows="${WINDOWS11_NAME:-windows-11}"
-ubuntu_user="${UBUNTU_SERVER_USERNAME:-mathias}"
-ubuntu_label="${UBUNTU_SERVER_NAUTILUS_LABEL:-Ubuntu DevOps}"
+ubuntu_user="${ROCKY_SERVER_USERNAME:-mathias}"
+ubuntu_label="${ROCKY_SERVER_NAUTILUS_LABEL:-Rocky DevOps}"
 windows_label="${WINDOWS11_NAUTILUS_LABEL:-Windows VM}"
 windows_share="${WINDOWS11_SMB_SHARE_NAME:-VM-Share}"
 config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
@@ -73,13 +73,13 @@ remove_bookmark_label() {
 
 install_bookmarks() {
   local ubuntu_ip windows_ip
-  ubuntu_ip="$(domain_ip "$ubuntu")"
+  ubuntu_ip="$(domain_ip "$rocky")"
   windows_ip="$(domain_ip "$windows")"
 
   if [[ -n "$ubuntu_ip" ]]; then
     upsert_bookmark "sftp://${ubuntu_user}@${ubuntu_ip}/home/${ubuntu_user}" "$ubuntu_label"
   else
-    warn "$ubuntu has no discoverable IP yet; start it and rerun this helper"
+    warn "$rocky has no discoverable IP yet; start it and rerun this helper"
   fi
 
   if [[ -n "$windows_ip" ]]; then
@@ -117,7 +117,7 @@ case "${1:-install}" in
       grep -E " (${ubuntu_label}|${windows_label})$" "$bookmark_file" || true
     fi
     ;;
-  open-ubuntu) open_guest "$ubuntu" sftp ;;
+  open-rocky) open_guest "$rocky" sftp ;;
   open-windows) open_guest "$windows" smb ;;
-  *) fail 'usage: configure_nautilus_vm_access.sh [install|refresh|remove|show|open-ubuntu|open-windows]' ;;
+  *) fail 'usage: configure_nautilus_vm_access.sh [install|refresh|remove|show|open-rocky|open-windows]' ;;
 esac

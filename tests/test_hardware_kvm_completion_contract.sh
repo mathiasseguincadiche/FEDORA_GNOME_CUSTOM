@@ -40,7 +40,7 @@ grep -Fq 'software-matrix-doctor' "$root/diagnostics/final-certification"
 grep -Fq 'usb-resume-doctor' "$root/diagnostics/final-certification"
 grep -Fq 'io_uring' "$root/diagnostics/kvm-io-doctor"
 grep -Fq 'libaio' "$root/diagnostics/kvm-io-doctor"
-for f in scripts/kvm/create_ubuntu_devops_vm.sh scripts/kvm/create_windows11_vm.sh; do
+for f in scripts/kvm/create_rocky_devops_vm.sh scripts/kvm/create_windows11_vm.sh; do
   grep -Fq 'org.qemu.guest_agent.0' "$root/$f"
   grep -Fq -- '--rng /dev/urandom' "$root/$f"
   grep -Fq -- '--memballoon virtio' "$root/$f"

@@ -1,19 +1,19 @@
-# Ubuntu Server 26.04 — provisioning DevOps
+# Rocky Linux 10.2 — provisioning DevOps
 
 ## Objectif
 
-`ubuntu-devops` doit être exploitable comme laboratoire DevOps/Ops après son premier démarrage, sans installer toute cette chaîne d'outils sur le HOST Fedora.
+`rocky-devops` doit être exploitable comme laboratoire DevOps/Ops après son premier démarrage, sans installer toute cette chaîne d'outils sur le HOST Fedora.
 
 Le flux est :
 
 ```text
-image cloud Ubuntu Server 26.04
-+ SHA256SUMS
-+ SHA256SUMS.gpg
+image cloud Rocky Linux 10.2
++ CHECKSUM
++ CHECKSUM.asc
         ↓
-authentification Canonical
+authentification Rocky Linux
         ↓
-create_ubuntu_devops_vm.sh
+create_rocky_devops_vm.sh
         ↓
 cloud-init + utilisateur mathias + clé SSH
         ↓
@@ -26,37 +26,39 @@ stack DevOps
 
 ## 1. Préparer l'image officielle
 
-Télécharger depuis la release Ubuntu Cloud Images correspondante :
+Télécharger depuis la release Rocky Linux Cloud Images correspondante :
 
 ```text
-ubuntu-26.04-server-cloudimg-amd64.img
-SHA256SUMS
-SHA256SUMS.gpg
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 ```
 
-Les trois fichiers doivent appartenir à la même release.
+Les trois fichiers doivent appartenir à la même release. Source officielle : [images Rocky 10.2](https://dl.rockylinux.org/pub/rocky/10.2/images/x86_64/). Le CHECKSUM global signé peut contenir plusieurs images ; le vérificateur exige une seule ligne SHA-256 pour le nom choisi. Les alias latest, autres variantes et autres versions sont refusés.
+
+Clé de production Rocky 10 : FC226859C0860BF0DDB95B085B106C736FEDFC85, publiée sur la [page officielle des clés](https://rockylinux.org/resources/gpg-key-info).
 
 Le projet n'accepte pas une image uniquement à partir de son nom.
 
 Test manuel avant création :
 
 ```bash
-bash scripts/kvm/verify_ubuntu_cloud_image.sh \
-  --image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img \
-  --sha256sums /data/libvirt/iso/SHA256SUMS \
-  --signature /data/libvirt/iso/SHA256SUMS.gpg
+bash scripts/kvm/verify_rocky_cloud_image.sh \
+  --image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
+  --sha256sums /data/libvirt/iso/CHECKSUM \
+  --signature /data/libvirt/iso/CHECKSUM.asc
 ```
 
-Le script épingle l'empreinte du signataire Canonical attendue, vérifie la signature de la liste puis le SHA-256 de l'image.
+Le script épingle l'empreinte du signataire Rocky Linux attendue, vérifie la signature de la liste puis le SHA-256 de l'image.
 
 ## 2. Créer la VM
 
 ```bash
-bash scripts/kvm/create_ubuntu_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/ubuntu-26.04-server-cloudimg-amd64.img
+bash scripts/kvm/create_rocky_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-Si `SHA256SUMS` et `SHA256SUMS.gpg` sont dans le même dossier que l'image, ils sont découverts automatiquement.
+Si `CHECKSUM` et `CHECKSUM.asc` sont dans le même dossier que l'image, ils sont découverts automatiquement.
 
 La création échoue avant `qemu-img convert` si l'authentification ne passe pas.
 
@@ -64,7 +66,7 @@ La création échoue avant `qemu-img convert` si l'authentification ne passe pas
 
 Le dépôt ne contient aucun mot de passe invité.
 
-`create_ubuntu_devops_vm.sh` demande le mot de passe au terminal sans écho, génère immédiatement un hash SHA-512 avec `openssl passwd -6`, puis n'intègre que ce hash dans le seed cloud-init.
+`create_rocky_devops_vm.sh` demande le mot de passe au terminal sans écho, génère immédiatement un hash SHA-512 avec `openssl passwd -6`, puis n'intègre que ce hash dans le seed cloud-init.
 
 SSH reste key-only :
 
@@ -91,7 +93,7 @@ Le bootstrap couvre notamment :
 - kind ;
 - Minikube ;
 - K9s, kubectx/kubens, yq ;
-- Node.js 22 LTS ;
+- Node.js ≥ 22 ;
 - OpenJDK 21 + Maven ;
 - Python 3, pip, venv et pipx ;
 - SSH server, QEMU Guest Agent et rsync ;
@@ -101,18 +103,18 @@ Le bootstrap couvre notamment :
 
 Le bootstrap utilise des canaux explicites :
 
-- Docker — dépôt APT officiel Docker ;
-- GitHub CLI — dépôt APT GitHub CLI ;
-- Terraform — dépôt APT HashiCorp ;
+- Docker — dépôt RPM officiel Docker pour EL10 ;
+- GitHub CLI — dépôt RPM GitHub CLI ;
+- Terraform — dépôt RPM HashiCorp pour EL10 ;
 - Azure CLI — dépôt Microsoft ;
 - kubectl — `pkgs.k8s.io` ;
-- Helm — dépôt Debian avec vérification d'empreinte ;
+- Helm — v4.3.0, archive amont + SHA-256 publié ;
 - AWS CLI v2 — ZIP + signature détachée ;
 - kind/Minikube/yq/K9s — releases précises avec contrôles de checksum selon leur contrat.
 
 Aucun `curl | bash` n'est utilisé.
 
-Ubuntu 26.04 étant récent, les dépôts éditeurs sont sondés sur le codename courant. Lorsqu'un éditeur ne publie pas encore ce canal mais documente une suite de compatibilité acceptée par le projet, le fallback est explicite et apparaît dans les logs.
+Les dépôts Docker/HashiCorp/Microsoft utilisent le canal natif Enterprise Linux 10. Aucun repli silencieux vers EL8/EL9. CRB et EPEL 10 complètent Rocky ; les signatures RPM restent requises. SELinux reste Enforcing.
 
 ## Premier boot
 
@@ -152,7 +154,7 @@ Aucun partage de répertoire HOST↔VM n'est configuré automatiquement.
 
 ```bash
 sudo cat /var/log/devops-bootstrap.log
-sudo cat /var/lib/fedora-gnome-custom/ubuntu-devops-bootstrap.env
+sudo cat /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 cloud-init status --long
 systemctl status qemu-guest-agent
 ```

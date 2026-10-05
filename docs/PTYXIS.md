@@ -59,7 +59,7 @@ Pour le profil actuel :
 ```text
 HOST Fedora          minimal et administrable
 Ptyxis + Bash        outils opérateur locaux
-KVM Ubuntu DevOps    environnement DevOps principal
+KVM Rocky DevOps    environnement DevOps principal
 KVM Windows 11       environnement Windows
 Toolbx               non imposé par défaut
 ```

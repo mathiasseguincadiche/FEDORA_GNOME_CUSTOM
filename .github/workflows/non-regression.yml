@@ -99,11 +99,11 @@ jobs:
           ! grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0|chmod[[:space:]]+777)' modules scripts install.sh
       - name: Ubuntu guest authentication and supply chain
         run: |
-          grep -Fq 'ssh_pwauth: false' scripts/kvm/create_ubuntu_devops_vm.sh
-          ! grep -Fq 'NOPASSWD:ALL' scripts/kvm/create_ubuntu_devops_vm.sh
-          grep -Fq 'awscli-exe-linux-x86_64.zip.sig' guest/ubuntu-devops/bootstrap-devops.sh
-          grep -Fq 'gpgv --keyring' guest/ubuntu-devops/bootstrap-devops.sh
-          grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' guest/ubuntu-devops/bootstrap-devops.sh
+          grep -Fq 'ssh_pwauth: false' scripts/kvm/create_rocky_devops_vm.sh
+          ! grep -Fq 'NOPASSWD:ALL' scripts/kvm/create_rocky_devops_vm.sh
+          grep -Fq 'awscli-exe-linux-x86_64.zip.sig' guest/rocky-devops/bootstrap-devops.sh
+          grep -Fq 'gpgv --keyring' guest/rocky-devops/bootstrap-devops.sh
+          grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' guest/rocky-devops/bootstrap-devops.sh
       - name: Immutable installer source
         run: |
           grep -Fq 'repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD' installer/generate-fedora44-kickstart.sh
