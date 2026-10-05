@@ -16,4 +16,4 @@ StandardError=inherit
 TimeoutStartSec=45min
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=cloud-init.target
