@@ -84,3 +84,13 @@ peripheral_resolve_camera_mic() {
   ((${#matches[@]} == 1)) || return 1
   printf '%s\n' "${matches[0]}"
 }
+
+peripheral_wifi_phy() {
+  local bdf="$1" root phy
+  root="$(hardware_platform_sysfs_root)"
+  for phy in "$root"/class/ieee80211/phy*; do
+    [[ -e "$phy/device" && "$(basename "$(readlink -f "$phy/device")")" == "$bdf" ]] || continue
+    printf '%s\n' "${phy##*/}"; return 0
+  done
+  return 1
+}

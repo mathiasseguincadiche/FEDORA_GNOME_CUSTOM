@@ -6,6 +6,7 @@ umask 077
   echo 'This disposable laboratory requires a GitHub Actions runner.' >&2; exit 50;
 }
 ROOT="$GITHUB_WORKSPACE"
+bash -n "$ROOT/.github/scripts/fedora-gnome-guest.sh"
 LAB_RELEASE="${FGC_LAB_RELEASE:-44}"
 LAB_EXTENSION_MODE="${FGC_LAB_EXTENSION_MODE:-curated}"
 case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) echo 'Unsupported lab profile' >&2; exit 50;; esac

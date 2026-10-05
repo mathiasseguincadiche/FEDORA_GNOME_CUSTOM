@@ -39,7 +39,9 @@ case "${1:-status}" in
     systemctl --user is-active --quiet fgc-ld240-display.service
     ;;
   remove)
-    systemctl --user disable --now fgc-ld240-display.service
+    if systemctl --user list-unit-files fgc-ld240-display.service --no-legend | grep -q fgc-ld240; then
+      systemctl --user disable --now fgc-ld240-display.service
+    fi
     rm -f "$HOME/.config/systemd/user/fgc-ld240-display.service"
     systemctl --user daemon-reload
     sudo rm -f /etc/udev/rules.d/70-fgc-ld240.rules /usr/local/libexec/fgc/deepcool-digital-linux

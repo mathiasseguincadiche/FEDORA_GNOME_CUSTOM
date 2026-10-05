@@ -45,7 +45,7 @@ def main():
         subscription = bus.signal_subscribe(
             dest, "org.freedesktop.portal.Request", "Response", None, None,
             Gio.DBusSignalFlags.NONE,
-            lambda _b, _s, object_path, _i, _n, params: replies.update(
+            lambda _b, _s, object_path, _i, _n, params, *_extra: replies.update(
                 {object_path: params.unpack()}))
         handle = None
         try:

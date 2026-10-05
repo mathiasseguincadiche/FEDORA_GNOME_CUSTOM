@@ -174,6 +174,7 @@ CONF
     touch "$LAB_HOME/.config/gnome-initial-setup-done"
     chown -R "$LAB_USER:$LAB_USER" "$LAB_HOME/.config"
     # Use the reviewed production artifact installer, without loosening gates.
+    if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
     for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
         bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"

@@ -17,12 +17,7 @@ for iface in FileChooser OpenURI Notification ScreenCast; do
   if grep -Fq "org.freedesktop.portal.$iface" <<<"$interfaces"; then emit OK "$iface" exposed; else emit KO "$iface" missing; fi
 done
 
-sc_token="fgc_sc_${RANDOM}_$$"; sc_session="fgc_session_${RANDOM}_$$"
-if portal_call org.freedesktop.portal.ScreenCast.CreateSession "{'handle_token': <'$sc_token'>, 'session_handle_token': <'$sc_session'>}" >/dev/null 2>&1; then
-  emit OK ScreenCast 'CreateSession request accepted by portal'
-else
-  emit KO ScreenCast 'CreateSession request failed'
-fi
+# CreateSession/SelectSources/Start and actual streams are tested by the interactive probe.
 
 if $interactive; then
   # A failed rerun must not leave a previous successful stream certificate.
