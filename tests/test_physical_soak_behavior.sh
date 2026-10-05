@@ -22,13 +22,13 @@ for kind in cpu memory gpu; do
     if physical_soak_evidence_detail_valid "$kind" "$detail"; then echo 'accepted missing/short/ambiguous proof' >&2; exit 1; fi
   done
 done
-physical_cpu_temp_millic() { printf '%s\n' "$sample"; }
-sample=45000
+physical_cpu_temp_millic() { printf '%s\n' "$fixture_cpu_temperature"; }
+fixture_cpu_temperature=45000
 [[ "$(physical_cpu_sample_checked 95000)" == 45000 ]]
-for sample in 0 invalid 95000 96000; do
+for fixture_cpu_temperature in 0 invalid 95000 96000; do
   if physical_cpu_sample_checked 95000 >/dev/null 2>&1; then exit 1; fi
 done
-sample=45000
+fixture_cpu_temperature=45000
 if physical_cpu_sample_checked 96000 >/dev/null 2>&1; then exit 1; fi
 physical_cpu_temp_millic() { return 1; }
 if physical_cpu_sample_checked 95000 >/dev/null 2>&1; then exit 1; fi
