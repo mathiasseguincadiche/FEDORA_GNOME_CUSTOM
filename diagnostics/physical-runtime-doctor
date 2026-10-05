@@ -23,9 +23,10 @@ marker_status(){
 gpu_soak() (
   require_baremetal
   [[ "${XDG_SESSION_TYPE:-}" == wayland ]] || { ui_error 'GPU soak requires the physical Wayland session'; exit "$EXIT_PRECHECK_FAILED"; }
-  local seconds="${GPU_SOAK_SECONDS:-900}" instances="${GPU_SOAK_INSTANCES:-2}" start log cube i pid rc=0 bad=0 started
+  local seconds="${GPU_SOAK_SECONDS:-900}" instances="${GPU_SOAK_INSTANCES:-2}" start log cube i pid rc=0 started
   local -a pids=()
   physical_soak_parameters_valid gpu "$seconds" "$instances" || { ui_error 'GPU qualification requires 900..86400 seconds and 1..8 Vulkan instances'; exit "$EXIT_CONFIG_FAILED"; }
+  physical_soak_invalidate_evidence gpu-soak
   "$REPO_ROOT/diagnostics/graphics-doctor" --quiet
   if command -v vkcube-wayland >/dev/null 2>&1; then cube='vkcube-wayland';
   elif command -v vkcube >/dev/null 2>&1; then cube='vkcube --wsi wayland';
@@ -41,11 +42,11 @@ gpu_soak() (
   done
   for pid in "${pids[@]}"; do
     rc=0; wait "$pid" || rc=$?
-    [[ "$rc" == 124 ]] || bad=1
+    [[ "$rc" == 124 ]] || { ui_error "Vulkan instance failed or stopped early rc=$rc; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
   done
   for pid in "${pids[@]}"; do physical_stop_process_group "$pid"; done
   pids=()
-  (( bad == 0 && SECONDS - started >= seconds )) || { ui_error "Vulkan soak failed or ended before ${seconds}s; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
+  (( SECONDS - started >= seconds )) || { ui_error "Vulkan soak failed or ended before ${seconds}s; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
   if ! kernel_journal_require_clean '\bxe\b.*(gpu hang|wedged|reset failed|fault|error)|PCIe Bus Error: severity=Uncorrected|AER:.*Uncorrected' --since "$start"; then
     ui_error 'Critical xe/PCIe/AER signal during Vulkan soak'; exit "$EXIT_POSTCHECK_FAILED"
   fi

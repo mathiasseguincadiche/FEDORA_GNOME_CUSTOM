@@ -87,7 +87,7 @@ Conserver une sauvegarde Borg contenant les disques/NVRAM des VM et exercer la [
 | Veille | Cinq cycles physiques actuels | PENDING |
 | KVM / sauvegarde | Rocky, Windows, isolation et restauration à froid | PENDING |
 
-Les preuves CPU/RAM/GPU utilisent qualification_policy=2 et enregistrent durée demandée et durée écoulée. Les anciens markers ne comportant pas ces mesures sont refusés : rejouer les essais concernés, sans éditer les markers.
+Les preuves CPU/RAM/GPU utilisent qualification_policy=2 et enregistrent durée demandée et durée écoulée. Les anciens markers ne comportant pas ces mesures sont refusés : rejouer les essais concernés, sans éditer les markers. Une nouvelle tentative valide invalide d'abord la preuve concernée et la certification courante ; un échec ne peut donc laisser un ancien PASS actif. Les bundles Golden archivés restent conservés.
 
 ~~~bash
 ./control.sh perf status

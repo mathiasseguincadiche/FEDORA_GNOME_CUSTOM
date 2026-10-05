@@ -220,3 +220,15 @@ physical_soak_evidence_detail_valid() {
   physical_soak_parameters_valid "$kind" "$seconds" "$instances" || return 1
   physical_soak_uint_between "$elapsed" "$seconds" 172800
 }
+
+physical_soak_invalidate_evidence() {
+  runtime_is_baremetal || return "$EXIT_SECURITY_BLOCK"
+  local name="$1" path
+  case "$name" in
+    gpu-soak) path="$(physical_runtime_evidence_path "$name")";;
+    cpu-soak|memory-5600|memory-6000) path="$(baseline_evidence_dir)/$name.ok";;
+    *) return 1;;
+  esac
+  rm -f -- "$path" "$STATE_ROOT/final/certified.ok"
+  if [[ "$name" != gpu-soak ]]; then rm -f -- "$(baseline_certification_path)"; fi
+}

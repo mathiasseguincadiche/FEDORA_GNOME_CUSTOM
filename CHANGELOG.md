@@ -6,6 +6,7 @@
 
 - Réseau Docker local exercé avant/après reboot et après restauration : DNS, HTTP inter-conteneurs, publication localhost, image en cache et nettoyage vérifié.
 - Charges CPU/RAM/GPU : durées minimales et écoulées contrôlées, zéro instance refusée, workers arrêtés sur échec/interruption ; arrêt CPU dès perte de capteur ou dépassement thermique.
+- Une nouvelle charge invalide sa preuve et la certification courante avant toute mesure ; un échec ne conserve pas un ancien PASS.
 - Preuves de charge qualification_policy=2 : anciennes preuves sans mesures désormais refusées ; fiche d'exécution physique et formulaire Rocky alignés.
 - Docker stable conservé : avertissements EL10 toujours visibles ; aucun backend nftables expérimental imposé et aucune certification matérielle simulée.
 

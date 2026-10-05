@@ -20,6 +20,7 @@ run_memory() (
   local speed="$1" seconds="${BASELINE_MEMORY_TEST_SECONDS:-3600}" actual log sha started pid='' rc=0
   [[ "$speed" == 5600 || "$speed" == 6000 ]] || { usage; exit "$EXIT_USAGE"; }
   physical_soak_parameters_valid memory "$seconds" || { ui_error 'Memory qualification requires 3600..86400 seconds'; exit "$EXIT_CONFIG_FAILED"; }
+  physical_soak_invalidate_evidence "memory-$speed"
   command_exists stress-ng || sudo dnf -y install stress-ng
   command_exists dmidecode || sudo dnf -y install dmidecode
   actual="$(sudo dmidecode --type 17 2>/dev/null | awk -F: '/Configured Memory Speed:/ {gsub(/^[ \t]+/,"",$2); print $2}' | sort -u | paste -sd, -)"
@@ -41,6 +42,7 @@ run_cpu_soak() (
   prepare_platform; command_exists stress-ng || sudo dnf -y install stress-ng
   local seconds="${BASELINE_CPU_SOAK_SECONDS:-1800}" max_allowed="${BASELINE_CPU_SOAK_MAX_MILLIC:-95000}" start log pid='' temp max_temp=0 sha rc=0 started
   physical_soak_parameters_valid cpu "$seconds" && physical_soak_uint_between "$max_allowed" 50000 95000 || { ui_error 'CPU qualification requires 1800..86400 seconds and a temperature limit of 50000..95000 m°C'; exit "$EXIT_CONFIG_FAILED"; }
+  physical_soak_invalidate_evidence cpu-soak
   hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost precheck failed'; exit "$EXIT_PRECHECK_FAILED"; }
   temp="$(physical_cpu_sample_checked "$max_allowed")" || { ui_error 'CPU temperature precheck failed'; exit "$EXIT_PRECHECK_FAILED"; }
   max_temp="$temp"

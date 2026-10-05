@@ -84,6 +84,8 @@ chmod +x "$tmp/diagnostics/graphics-doctor"
 export SOAK_TEST_ROOT="$ROOT" SOAK_TEST_TMP="$tmp"
 cat >"$tmp/lib/bootstrap.sh" <<'STUB'
 source "$SOAK_TEST_ROOT/lib/physical_certification.sh"
+source "$SOAK_TEST_ROOT/lib/baseline.sh"
+STATE_ROOT="$SOAK_TEST_TMP/state"
 engine_bootstrap() { :; }
 runtime_is_baremetal() { [[ "${SOAK_TEST_RUNTIME:-baremetal}" == baremetal ]]; }
 runtime_environment() { printf '%s\n' "${SOAK_TEST_RUNTIME:-baremetal}"; }
@@ -153,7 +155,11 @@ assert_stopped() {
 }
 for SOAK_TEST_MODE in overheat missing; do
   export SOAK_TEST_MODE
+  mkdir -p "$(baseline_evidence_dir)" "$STATE_ROOT/final"
+  echo OLD_PASS >"$(baseline_evidence_dir)/cpu-soak.ok"
+  echo OLD_PASS >"$STATE_ROOT/final/certified.ok"
   expect_failure 40 bash "$tmp/diagnostics/baseline-doctor" run-cpu-soak
+  [[ ! -e "$(baseline_evidence_dir)/cpu-soak.ok" && ! -e "$STATE_ROOT/final/certified.ok" ]]
   assert_stopped
 done
 echo 'Physical soak refusal/cleanup: PASS (fixture tests; hardware remains unqualified)'
