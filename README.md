@@ -2,6 +2,7 @@
 
 > État de qualification : voir [l'audit du moteur et les exigences restantes](docs/AUDIT_RUNTIME_2026-09-27.md).
 > Les sauvegardes utilisent Borg **sans chiffrement**, par décision du propriétaire (ADR 0014). Un PASS CI ne certifie pas le poste physique.
+> La [fiche d'exécution physique](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) prépare les mesures sur le PC. La [qualification réseau Docker](docs/ROCKY_DEVOPS_READY.md#qualification-réseau-docker) couvre redémarrage/restauration ; les notices de maintenance EL10 restent visibles.
 
 
 # Fedora 44 Golden Workstation

@@ -15,22 +15,55 @@ TXT
 require_baremetal(){ runtime_is_baremetal || { ui_error "Hardware evidence is bare-metal only; runtime=$(runtime_environment)"; exit "$EXIT_SECURITY_BLOCK"; }; }
 prepare_platform(){ require_baremetal; command_exists modprobe || { ui_error 'modprobe is required for NCT6687D hwmon validation'; exit "$EXIT_PRECHECK_FAILED"; }; if ! lsmod | grep -q '^nct6683'; then sudo modprobe nct6683 || { ui_error 'Unable to load Fedora in-tree nct6683 driver; force=1 and third-party modules are forbidden.'; exit "$EXIT_PRECHECK_FAILED"; }; fi; }
 snapshot(){ local report="$REPORT_ROOT/$RUN_ID-hardware-baseline-snapshot.txt"; { echo '[runtime]'; runtime_environment; echo '[fingerprint]'; baseline_fingerprint_payload; echo '[platform]'; printf 'board_vendor=%s\nboard_name=%s\nbios_vendor=%s\nbios_version=%s\nbios_date=%s\n' "$(hardware_platform_board_vendor)" "$(hardware_platform_board_name)" "$(hardware_platform_bios_vendor)" "$(hardware_platform_bios_version)" "$(hardware_platform_bios_date)"; printf 'cpu_scaling_driver=%s\namd_pstate=%s\nboost=%s\n' "$(hardware_platform_cpu_scaling_driver 2>/dev/null || echo unknown)" "$(hardware_platform_cpu_pstate_status 2>/dev/null || echo unknown)" "$(hardware_platform_cpu_boost_value 2>/dev/null || echo unknown)"; hardware_platform_wifi_identity 2>/dev/null || true; physical_bluetooth_identity 2>/dev/null || true; physical_cooling_list 2>/dev/null || true; hardware_platform_hwmon_counts 2>/dev/null || true; echo '[os]'; cat /etc/os-release; echo '[kernel]'; uname -a; echo '[kernel-signatures]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'MCE|EDAC|xe|drm|PCIe|AER|nvme|watchdog|panic|Oops|thermal|nct668' || true; } > "$report"; printf '%s\n' "$report"; }
-run_memory(){ require_baremetal; local speed="$1" actual log sha; [[ "$speed" == 5600 || "$speed" == 6000 ]] || { usage; exit "$EXIT_USAGE"; }; command_exists stress-ng || sudo dnf -y install stress-ng; command_exists dmidecode || sudo dnf -y install dmidecode; actual="$(sudo dmidecode --type 17 2>/dev/null | awk -F: '/Configured Memory Speed:/ {gsub(/^[ \t]+/,"",$2); print $2}' | sort -u | paste -sd, -)"; grep -Eq "(^|[^0-9])${speed}[[:space:]]*MT/s" <<<"$actual" || { ui_error "Configured memory speed does not report ${speed} MT/s: $actual"; exit "$EXIT_PRECHECK_FAILED"; }; log="$REPORT_ROOT/$RUN_ID-memory-${speed}.log"; stress-ng --vm 2 --vm-bytes 70% --verify --timeout "${BASELINE_MEMORY_TEST_SECONDS:-3600}s" --metrics-brief >"$log" 2>&1; sha="$(sha256sum "$log" | awk '{print $1}')"; baseline_write_evidence "memory-$speed" PASS "automated=true tool=stress-ng speed=${speed} sha256=$sha log=$log"; ui_check OK "memory-$speed" "automated stress-ng PASS sha256=$sha"; }
-run_cpu_soak(){
+run_memory() (
+  require_baremetal
+  local speed="$1" seconds="${BASELINE_MEMORY_TEST_SECONDS:-3600}" actual log sha started pid='' rc=0
+  [[ "$speed" == 5600 || "$speed" == 6000 ]] || { usage; exit "$EXIT_USAGE"; }
+  physical_soak_parameters_valid memory "$seconds" || { ui_error 'Memory qualification requires 3600..86400 seconds'; exit "$EXIT_CONFIG_FAILED"; }
+  command_exists stress-ng || sudo dnf -y install stress-ng
+  command_exists dmidecode || sudo dnf -y install dmidecode
+  actual="$(sudo dmidecode --type 17 2>/dev/null | awk -F: '/Configured Memory Speed:/ {gsub(/^[ \t]+/,"",$2); print $2}' | sort -u | paste -sd, -)"
+  grep -Eq "(^|[^0-9])${speed}[[:space:]]*MT/s" <<<"$actual" || { ui_error "Configured memory speed does not report ${speed} MT/s: $actual"; exit "$EXIT_PRECHECK_FAILED"; }
+  log="$REPORT_ROOT/$RUN_ID-memory-${speed}.log"
+  trap 'physical_stop_process_group "${pid:-}"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  started=$SECONDS
+  setsid stress-ng --vm 2 --vm-bytes 70% --verify --timeout "${seconds}s" --metrics-brief >"$log" 2>&1 & pid=$!
+  wait "$pid" || rc=$?
+  physical_stop_process_group "$pid"; pid=''
+  (( rc == 0 && SECONDS - started >= seconds )) || { ui_error "Memory soak failed or ended early; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
+  sha="$(sha256sum "$log" | awk '{print $1}')"
+  baseline_write_evidence "memory-$speed" PASS "automated=true tool=stress-ng qualification_policy=2 seconds=$seconds elapsed_seconds=$((SECONDS-started)) speed=${speed} sha256=$sha log=$log"
+  ui_check OK "memory-$speed" "automated stress-ng PASS sha256=$sha"
+)
+run_cpu_soak() (
   prepare_platform; command_exists stress-ng || sudo dnf -y install stress-ng
-  local seconds="${BASELINE_CPU_SOAK_SECONDS:-1800}" max_allowed="${BASELINE_CPU_SOAK_MAX_MILLIC:-95000}" start log pid temp max_temp=0 sha rc=0
-  [[ "$seconds" =~ ^[0-9]+$ && "$max_allowed" =~ ^[0-9]+$ ]] || exit "$EXIT_CONFIG_FAILED"
+  local seconds="${BASELINE_CPU_SOAK_SECONDS:-1800}" max_allowed="${BASELINE_CPU_SOAK_MAX_MILLIC:-95000}" start log pid='' temp max_temp=0 sha rc=0 started
+  physical_soak_parameters_valid cpu "$seconds" && physical_soak_uint_between "$max_allowed" 50000 95000 || { ui_error 'CPU qualification requires 1800..86400 seconds and a temperature limit of 50000..95000 m°C'; exit "$EXIT_CONFIG_FAILED"; }
   hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost precheck failed'; exit "$EXIT_PRECHECK_FAILED"; }
+  temp="$(physical_cpu_sample_checked "$max_allowed")" || { ui_error 'CPU temperature precheck failed'; exit "$EXIT_PRECHECK_FAILED"; }
+  max_temp="$temp"
   start="$(date --iso-8601=seconds)"; log="$REPORT_ROOT/$RUN_ID-cpu-soak.log"
-  stress-ng --cpu 0 --cpu-method all --verify --timeout "${seconds}s" --metrics-brief >"$log" 2>&1 & pid=$!
-  while kill -0 "$pid" 2>/dev/null; do temp="$(physical_cpu_temp_millic 2>/dev/null || echo 0)"; [[ "$temp" =~ ^[0-9]+$ ]] && (( temp > max_temp )) && max_temp="$temp"; sleep 5; done
-  wait "$pid" || rc=$?; (( rc == 0 )) || { ui_error "CPU soak failed rc=$rc; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
-  temp="$(physical_cpu_temp_millic 2>/dev/null || echo 0)"; [[ "$temp" =~ ^[0-9]+$ ]] && (( temp > max_temp )) && max_temp="$temp"
-  (( max_temp > 0 && max_temp < max_allowed )) || { ui_error "CPU temperature evidence invalid/too high: ${max_temp}m°C (limit ${max_allowed})"; exit "$EXIT_POSTCHECK_FAILED"; }
+  trap 'physical_stop_process_group "${pid:-}"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  started=$SECONDS
+  setsid stress-ng --cpu 0 --cpu-method all --verify --timeout "${seconds}s" --metrics-brief >"$log" 2>&1 & pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    temp="$(physical_cpu_sample_checked "$max_allowed")" || { ui_error "CPU soak stopped: temperature unsafe/unavailable; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
+    (( temp > max_temp )) && max_temp="$temp"
+    sleep 5
+  done
+  wait "$pid" || rc=$?
+  physical_stop_process_group "$pid"; pid=''
+  (( rc == 0 && SECONDS - started >= seconds )) || { ui_error "CPU soak failed or ended early rc=$rc; see $log"; exit "$EXIT_POSTCHECK_FAILED"; }
+  temp="$(physical_cpu_sample_checked "$max_allowed")" || { ui_error 'CPU temperature postcheck failed'; exit "$EXIT_POSTCHECK_FAILED"; }
+  (( temp > max_temp )) && max_temp="$temp"
   if ! kernel_journal_require_clean 'MCE:.*Hardware Error|Machine Check|EDAC.*(UE|uncorrected)|thermal.*critical|watchdog.*hard LOCKUP' --since "$start"; then ui_error 'MCE/EDAC/thermal/watchdog error during CPU soak'; exit "$EXIT_POSTCHECK_FAILED"; fi
-  hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost postcheck failed'; exit "$EXIT_POSTCHECK_FAILED"; }
-  sha="$(sha256sum "$log" | awk '{print $1}')"; baseline_write_evidence cpu-soak PASS "automated=true tool=stress-ng seconds=$seconds max_temp_millic=$max_temp sha256=$sha log=$log"; ui_check OK 'Ryzen CPU soak' "${seconds}s max=${max_temp}m°C sha256=$sha"
-}
+  hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost postcheck failed'; exit "$EXIT_PRECHECK_FAILED"; }
+  sha="$(sha256sum "$log" | awk '{print $1}')"; baseline_write_evidence cpu-soak PASS "automated=true tool=stress-ng qualification_policy=2 seconds=$seconds elapsed_seconds=$((SECONDS-started)) max_temp_millic=$max_temp sha256=$sha log=$log"; ui_check OK 'Ryzen CPU soak' "${seconds}s max=${max_temp}m°C sha256=$sha"
+)
 mount_source_device(){ local src; src="$(findmnt -no SOURCE "$1" | sed -E 's/\[.*$//')"; lsblk -ndo NAME,TYPE -s "$src" 2>/dev/null | awk '$2=="disk" {print "/dev/"$1; exit}'; }
 run_nvme() (
   # A subshell scopes the cleanup trap to this test, including error paths.

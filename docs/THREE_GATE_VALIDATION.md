@@ -323,6 +323,8 @@ sudo reboot
 
 La qualification Gate 3 porte donc sur le kernel N réellement utilisé ; il n'existe plus de promotion préalable `candidate → boot-candidate → certify`.
 
+La [fiche d'exécution physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) précise les charges minimales, les contrôles humains et les résultats à conserver. Une charge abrégée ne produit pas de preuve matérielle ; les preuves CPU/RAM/GPU antérieures à qualification_policy=2 doivent être rejouées.
+
 ## 5. Preuves physiques obligatoires
 
 Gate 3 certifie notamment :

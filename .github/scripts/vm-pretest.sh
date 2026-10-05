@@ -123,8 +123,8 @@ ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -q '^VERSION_ID=\"10.2\"' /etc/o
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'getent hosts github.com >/dev/null && curl -fsSI --max-time 20 https://github.com >/dev/null'
 
 report '[7/10] Copy exact repository guest bootstrap'
-scp "${SCP_OPTS[@]}" "$ROOT/guest/rocky-devops/bootstrap-devops.sh" "$ROOT/guest/rocky-devops/verify-devops.sh" "$ROOT/guest/rocky-devops/devops-bootstrap.service" "$ROOT/.github/scripts/rocky-guest-health.py" "$VM_USER@127.0.0.1:/tmp/"
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo install -m 0755 /tmp/bootstrap-devops.sh /usr/local/sbin/devops-bootstrap.sh; sudo install -m 0755 /tmp/verify-devops.sh /usr/local/sbin/devops-verify.sh; sudo install -m 0644 /tmp/devops-bootstrap.service /etc/systemd/system/fgc-devops-bootstrap.service; printf "DEVOPS_USER=mathias\n" | sudo tee /etc/fgc-devops-bootstrap.env >/dev/null; sudo chmod 0600 /etc/fgc-devops-bootstrap.env; sudo restorecon /usr/local/sbin/devops-bootstrap.sh /usr/local/sbin/devops-verify.sh /etc/systemd/system/fgc-devops-bootstrap.service; sudo install -D -m 0644 /tmp/rocky-guest-health.py /usr/local/libexec/fgc-rocky-guest-health.py; sudo systemctl daemon-reload'
+scp "${SCP_OPTS[@]}" "$ROOT/guest/rocky-devops/bootstrap-devops.sh" "$ROOT/guest/rocky-devops/verify-devops.sh" "$ROOT/guest/rocky-devops/verify-docker-network.sh" "$ROOT/guest/rocky-devops/devops-bootstrap.service" "$ROOT/.github/scripts/rocky-guest-health.py" "$VM_USER@127.0.0.1:/tmp/"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo install -m 0755 /tmp/bootstrap-devops.sh /usr/local/sbin/devops-bootstrap.sh; sudo install -m 0755 /tmp/verify-devops.sh /usr/local/sbin/devops-verify.sh; sudo install -m 0755 /tmp/verify-docker-network.sh /usr/local/sbin/devops-verify-docker-network.sh; sudo install -m 0644 /tmp/devops-bootstrap.service /etc/systemd/system/fgc-devops-bootstrap.service; printf "DEVOPS_USER=mathias\n" | sudo tee /etc/fgc-devops-bootstrap.env >/dev/null; sudo chmod 0600 /etc/fgc-devops-bootstrap.env; sudo restorecon /usr/local/sbin/devops-bootstrap.sh /usr/local/sbin/devops-verify.sh /usr/local/sbin/devops-verify-docker-network.sh /etc/systemd/system/fgc-devops-bootstrap.service; sudo install -D -m 0644 /tmp/rocky-guest-health.py /usr/local/libexec/fgc-rocky-guest-health.py; sudo systemctl daemon-reload'
 
 report '[8/10] Execute real DevOps bootstrap service (including required kernel reboot)'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo systemctl enable fgc-devops-bootstrap.service; sudo systemctl start --no-block fgc-devops-bootstrap.service'
@@ -147,6 +147,9 @@ report '[9/10] Full runtime verification + application toolchain smoke'
 # shellcheck disable=SC2029
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /usr/local/sbin/devops-verify.sh" 2>&1 | tee "$VERIFY_LOG"
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --rm hello-world >/dev/null && docker compose version >/dev/null'
+# Pull once while online; every probe later uses the saved immutable local ID.
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker pull busybox:1.37.0 >/dev/null; docker image inspect --format "{{.Id}}" busybox:1.37.0 > ~/docker-network-image.id; /usr/local/sbin/devops-verify-docker-network.sh "$(cat ~/docker-network-image.id)"' | tee -a "$VERIFY_LOG"
+report 'docker_network_before_reboot=PASS'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'node -e '\''if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'\'' && npm --version >/dev/null && corepack --version >/dev/null'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'cat >/tmp/Hello.java <<'\''EOF'\''
 public class Hello { public static void main(String[] args) { System.out.print("java-smoke"); } }
@@ -168,6 +171,8 @@ done
 ((ready == 1)) || { report 'FAIL: actual reboot or complete toolchain recovery failed'; exit 23; }
 report "boot_id_before=$boot_before"
 report "boot_id_after=$boot_after"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" '/usr/local/sbin/devops-verify-docker-network.sh "$(cat ~/docker-network-image.id)"' | tee -a "$VERIFY_LOG"
+report 'docker_network_after_reboot=PASS image_pull=never'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo fstrim -av; printf "rocky-restoration-proof\n" > ~/restoration-proof.txt; sync; sudo systemctl poweroff' || true
 stopped=0
 for _ in $(seq 1 90); do
@@ -202,6 +207,8 @@ done
 # The cached image must execute after restoration without downloading anything.
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --pull=never --rm hello-world >/dev/null'
 report 'restored_docker_container=PASS image_pull=never'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" '/usr/local/sbin/devops-verify-docker-network.sh "$(cat ~/docker-network-image.id)"' | tee -a "$VERIFY_LOG"
+report 'restored_docker_network=PASS image_pull=never'
 # Prove outbound isolation from inside the restored guest, beyond QEMU flags.
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'python3 - <<'\''PY'\''
 import socket

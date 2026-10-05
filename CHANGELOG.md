@@ -2,6 +2,15 @@
 
 ## 0.21.0 — Rocky Linux 10.2 DevOps
 
+### RC2 — Qualification réseau et garde-fous physiques
+
+- Réseau Docker local exercé avant/après reboot et après restauration : DNS, HTTP inter-conteneurs, publication localhost, image en cache et nettoyage vérifié.
+- Charges CPU/RAM/GPU : durées minimales et écoulées contrôlées, zéro instance refusée, workers arrêtés sur échec/interruption ; arrêt CPU dès perte de capteur ou dépassement thermique.
+- Preuves de charge qualification_policy=2 : anciennes preuves sans mesures désormais refusées ; fiche d'exécution physique et formulaire Rocky alignés.
+- Docker stable conservé : avertissements EL10 toujours visibles ; aucun backend nftables expérimental imposé et aucune certification matérielle simulée.
+
+### RC1 — Migration Rocky
+
 - Remplacement du profil Ubuntu par rocky-devops (Rocky Linux 10.2 x86_64), commandes, diagnostics et documentation alignés.
 - Image GenericCloud versionnée, signature de production Rocky 10 épinglée, checksum unique et authentifié avant création.
 - Bootstrap RPM/DNF natif EL10 : CRB/EPEL, Docker, GitHub, HashiCorp, Microsoft, Kubernetes ; SELinux Enforcing et SSH par clé.

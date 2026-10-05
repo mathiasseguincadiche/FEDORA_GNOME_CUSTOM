@@ -161,7 +161,60 @@ physical_runtime_evidence_valid() {
   runtime_is_baremetal || return 1
   local name="$1" path
   path="$(physical_runtime_evidence_path "$name")"; [[ -s "$path" ]] || return 1
+  if [[ "$name" == gpu-soak ]]; then
+    physical_soak_evidence_detail_valid gpu "$(sed -n 's/^detail=//p' "$path")" || return 1
+  fi
   grep -Fxq 'status=PASS' "$path" \
     && grep -Fxq "fingerprint=$(physical_runtime_fingerprint)" "$path" \
     && grep -Fxq "effective_config_sha256=$(effective_config_sha256)" "$path"
+}
+
+# Qualification workloads have minimum durations; shortened smoke tests cannot
+# write hardware PASS evidence. Bound integers before Bash arithmetic.
+physical_soak_uint_between() {
+  local value="$1" minimum="$2" maximum="$3"
+  [[ "$value" =~ ^[1-9][0-9]{0,5}$ ]] || return 1
+  (( value >= minimum && value <= maximum ))
+}
+physical_soak_parameters_valid() {
+  local kind="$1" seconds="$2" instances="${3:-1}" minimum
+  case "$kind" in cpu) minimum=1800;; memory) minimum=3600;; gpu) minimum=900;; *) return 1;; esac
+  physical_soak_uint_between "$seconds" "$minimum" 86400 || return 1
+  physical_soak_uint_between "$instances" 1 8
+}
+physical_cpu_sample_checked() {
+  local maximum="$1" sample
+  physical_soak_uint_between "$maximum" 50000 95000 || return 1
+  sample="$(physical_cpu_temp_millic)" || { echo 'CPU temperature sensor unavailable' >&2; return 1; }
+  physical_soak_uint_between "$sample" 1 120000 || { echo 'CPU temperature sample invalid' >&2; return 1; }
+  (( sample < maximum )) || { echo "CPU temperature reached safety limit: ${sample}m°C (limit ${maximum})" >&2; return 1; }
+  printf '%s\n' "$sample"
+}
+# Each workload runs in its own session. Stop its workers too, with a bounded
+# grace period, when a measurement fails or the operator interrupts the test.
+physical_stop_process_group() {
+  local pid="${1:-}" attempt
+  [[ "$pid" =~ ^[1-9][0-9]{0,8}$ ]] || return 0
+  kill -TERM -- "-$pid" 2>/dev/null || true
+  for ((attempt=0; attempt<30; attempt++)); do
+    kill -0 -- "-$pid" 2>/dev/null || break
+    sleep 0.1
+  done
+  kill -KILL -- "-$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+}
+
+physical_soak_detail_value() {
+  local detail="$1" key="$2"
+  awk -v key="$key" '{for(i=1;i<=NF;i++) if(index($i,key "=")==1){sub("^" key "=","",$i); value=$i; count++}} END {if(count!=1) exit 1; print value}' <<<"$detail"
+}
+physical_soak_evidence_detail_valid() {
+  local kind="$1" detail="$2" policy seconds elapsed instances=1
+  policy="$(physical_soak_detail_value "$detail" qualification_policy)" || return 1
+  [[ "$policy" == 2 ]] || return 1
+  seconds="$(physical_soak_detail_value "$detail" seconds)" || return 1
+  elapsed="$(physical_soak_detail_value "$detail" elapsed_seconds)" || return 1
+  if [[ "$kind" == gpu ]]; then instances="$(physical_soak_detail_value "$detail" instances)" || return 1; fi
+  physical_soak_parameters_valid "$kind" "$seconds" "$instances" || return 1
+  physical_soak_uint_between "$elapsed" "$seconds" 172800
 }
