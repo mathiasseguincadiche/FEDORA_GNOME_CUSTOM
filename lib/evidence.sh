@@ -30,6 +30,9 @@ effective_config_payload() {
       find "$REPO_ROOT/manifests" -maxdepth 1 -type f \
         \( -name '*.txt' -o -name '*.tsv' -o -name 'module-plan.conf' \) -print
       find "$REPO_ROOT/virtualization/xml" -type f -name '*.xml' -print 2>/dev/null || true
+      find "$REPO_ROOT/profiles" -type f \
+        \( -name '*.json' -o -name '*.lock' \) -print 2>/dev/null || true
+      [[ ! -r "$REPO_ROOT/installer/fedora45-media.lock" ]] || printf '%s\n' "$REPO_ROOT/installer/fedora45-media.lock"
       [[ -r "$REPO_ROOT/installer/fedora44-media.lock" ]] && printf '%s\n' "$REPO_ROOT/installer/fedora44-media.lock"
     } | sort -u
   )

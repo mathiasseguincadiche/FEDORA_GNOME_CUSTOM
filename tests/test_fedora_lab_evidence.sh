@@ -57,11 +57,11 @@ assert "if: ${{ always() }}" in tests.split("\n  contracts:\n", 1)[1]
 assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm" in tests
 assert "uses: ./.github/workflows/fedora-gnome-vm.yml" in tests
 # Current operator guide must match the configured default channel.
-assert 'KERNEL_CHANNEL="cachyos"' in (root / "config/kernel.conf").read_text()
+assert 'KERNEL_CHANNEL="vanilla"' in (root / "config/kernel.conf").read_text()
 guide = (root / "docs/THREE_GATE_VALIDATION.md").read_text()
 assert "Kernel Vanilla" not in guide
 assert "--include-vms --staging-root" in guide
-assert "CachyOS BORE" in guide
+assert "Kernel Vanilla" in guide
 # A skipped required context must not turn a failed dependency into success.
 spec = importlib.util.spec_from_file_location("jobs", root / ".github/scripts/require-jobs-success.py")
 jobs = importlib.util.module_from_spec(spec)

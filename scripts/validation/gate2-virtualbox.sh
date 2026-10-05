@@ -25,7 +25,7 @@ EOF
 
 gate2_require_runtime() {
   runtime_is_virtualbox || { ui_error "Gate 2 requires Oracle VirtualBox; runtime=$(runtime_environment) vendor=$(runtime_vm_vendor_detect 2>/dev/null || printf none)"; return "$EXIT_SECURITY_BLOCK"; }
-  validation_require_fedora44 || { ui_error 'Gate 2 requires Fedora Linux 44'; return "$EXIT_PRECHECK_FAILED"; }
+  validation_require_selected_fedora || { ui_error 'Gate 2 requires Fedora Linux 44'; return "$EXIT_PRECHECK_FAILED"; }
   [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]] || { ui_error 'Gate 2 requires an active GNOME session'; return "$EXIT_PRECHECK_FAILED"; }
   [[ "${XDG_SESSION_TYPE:-}" == wayland ]] || { ui_error "Gate 2 requires Wayland; detected ${XDG_SESSION_TYPE:-unknown}"; return "$EXIT_PRECHECK_FAILED"; }
   validation_require_clean_source || return $?
@@ -37,7 +37,7 @@ gate2_plan() {
 GATE 2 — VIRTUALBOX DESKTOP VALIDATION
 
 AUTOMATED SCOPE
-- Fedora 44 + GNOME Shell 50 + Wayland + Oracle VirtualBox identity.
+- selected Fedora profile + matching GNOME Shell + Wayland + Oracle VirtualBox identity.
 - GNOME runtime health: Shell/Mutter/GJS critical journal signals and extension runtime states.
 - Nautilus + LocalSearch + GVfs + Sushi + File Roller integration and user prewarm service.
 - LocalSearch service, indexed-locations query and real searchable HOME canary.

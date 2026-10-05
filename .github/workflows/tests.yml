@@ -82,6 +82,7 @@ jobs:
       - run: bash tests/test_validation_gate_proof_behavior.sh
       - run: bash tests/test_driver_runtime_behavior.sh
       - run: bash tests/test_kvm_xml_policy_behavior.sh
+      - run: bash tests/test_fedora_release_behavior.sh
       - run: bash tests/test_kernel_channel_behavior.sh
       - run: bash tests/test_gnome_polish_behavior.sh
       - run: bash tests/test_module_catalog_behavior.sh

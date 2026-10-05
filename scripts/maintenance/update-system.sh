@@ -32,7 +32,7 @@ EOF
 require_fedora() {
   [[ -r /etc/os-release ]] || { ui_error '/etc/os-release unavailable'; exit "$EXIT_PRECHECK_FAILED"; }
   grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || { ui_error 'This updater is Fedora-only'; exit "$EXIT_PRECHECK_FAILED"; }
-  grep -Eq '^VERSION_ID="?44"?$' /etc/os-release || { ui_error 'Golden updater expects Fedora 44'; exit "$EXIT_PRECHECK_FAILED"; }
+  fedora_require_selected || { ui_error 'Golden updater requires the selected promoted Fedora release'; exit "$EXIT_PRECHECK_FAILED"; }
 }
 
 require_baremetal_update() {

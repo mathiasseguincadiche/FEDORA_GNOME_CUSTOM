@@ -83,14 +83,11 @@ B580 PCIe/ReBAR = valide
 T705 SMART/PCIe = valide
 kernel courant = N
 GRUB default = N
-noyaux du canal configuré <= 2 ; kernel-core de secours <= 2
+versions kernel-core <= 2 ; aucun second canal
 performance-doctor --certify = PASS
 ```
 
-Le défaut Golden est le canal CachyOS BORE. Le canal `kernel-core` reste
-installé comme entrée de secours avec sa propre rétention de deux versions.
-Aucun fallback Fedora supplémentaire épinglé n'est exigé ; la procédure de
-retour aux paquets Fedora reste disponible en récupération (ADR 0012).
+Le défaut Golden est Linux amont officiel, sans patch, dernière stable comparée à kernel.org. Seul le canal `kernel-core` est géré, avec deux versions au maximum après purge. Aucun fallback supplémentaire épinglé n'est exigé ; le retour aux paquets Fedora reste une récupération explicite ([ADR 0015](adr/0015-official-upstream-linux.md)).
 
 La certification finale ajoute en plus les doctors, le cold-start Nautilus, les cycles suspend/resume et les autres preuves Golden.
 

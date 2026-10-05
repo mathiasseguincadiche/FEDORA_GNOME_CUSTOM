@@ -3,13 +3,11 @@ set -Eeuo pipefail
 [[ $EUID -ne 0 ]] || { echo 'Run as a normal user; sudo is invoked when required.' >&2; exit 2; }
 command -v dnf >/dev/null
 command -v grubby >/dev/null || sudo dnf -y install grubby
-printf 'This disables the Kernel Vanilla and CachyOS kernel COPRs and distro-syncs kernel/perf packages back to Fedora 44.\nInstalled kernels (including kernel-cachyos) are never deleted manually; set KERNEL_CHANNEL="vanilla" or remove them later with DNF.\nType exactly ROLLBACK FEDORA KERNEL: '
+printf 'This disables the Kernel Vanilla stable COPR and distro-syncs kernel/perf packages back to the selected Fedora release.\nInstalled kernels are never deleted manually; remove older versions later through DNF installonly retention.\nType exactly ROLLBACK FEDORA KERNEL: '
 read -r answer
 [[ "$answer" == 'ROLLBACK FEDORA KERNEL' ]] || { echo 'Cancelled.'; exit 2; }
 sudo dnf -y copr disable @kernel-vanilla/stable || true
-sudo dnf -y copr disable bieszczaders/kernel-cachyos || true
-# kernel-cachyos* has no Fedora equivalent: keep it out of distro-sync.
-mapfile -t names < <(rpm -qa --qf '%{NAME}\n' 'kernel*' 'libperf*' perf python3-perf rtla rv 2>/dev/null | grep -v '^kernel-cachyos' | sort -u)
+mapfile -t names < <(rpm -qa --qf '%{NAME}\n' 'kernel*' 'libperf*' perf python3-perf rtla rv 2>/dev/null | sort -u)
 sudo dnf -y --setopt=allow_vendor_change=1 distro-sync "${names[@]}"
 fedora_latest="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null | grep -v vanilla | sort -V | tail -n1 || true)"
 if [[ -n "$fedora_latest" && -e "/boot/vmlinuz-$fedora_latest" ]]; then

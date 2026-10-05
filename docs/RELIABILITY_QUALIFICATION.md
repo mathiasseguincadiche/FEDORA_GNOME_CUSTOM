@@ -83,7 +83,7 @@ Wayland, un reboot, le moteur Borg, une restauration de VM à froid avec UEFI/TP
 logiciel et une reconstruction depuis une seconde image Cloud neuve. Son rapport
 est propre à chaque commit/run ; consulter son verdict et les journaux avant de
 conclure à un PASS. Il ne couvre pas l'APPLY de production, Anaconda/Kickstart,
-le démarrage CachyOS, Windows ni les trois gates officielles. Les exercices
+le démarrage Linux amont, Windows ni les trois gates officielles. Les exercices
 opérateur du tableau restent requis sur la vraie configuration selon le
 [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md).
 

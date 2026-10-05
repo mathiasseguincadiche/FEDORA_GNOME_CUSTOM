@@ -9,6 +9,7 @@ engine_load_libraries() {
   source "$REPO_ROOT/lib/logging.sh"
   source "$REPO_ROOT/lib/ui.sh"
   source "$REPO_ROOT/lib/config.sh"
+  source "$REPO_ROOT/lib/fedora_release.sh"
   source "$REPO_ROOT/lib/mutations.sh"
   source "$REPO_ROOT/lib/module_catalog.sh"
   source "$REPO_ROOT/lib/orchestrator.sh"

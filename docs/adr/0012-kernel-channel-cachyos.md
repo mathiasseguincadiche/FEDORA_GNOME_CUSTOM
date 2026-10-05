@@ -1,5 +1,7 @@
 # ADR 0012 — Canal noyau CachyOS (BORE) à côté de Kernel Vanilla
 
+> Décision historique remplacée par [ADR 0015](0015-official-upstream-linux.md). Le noyau personnalisé n'est plus accepté par le projet.
+
 **Statut : accepté** — complète ADR 0010 (rolling N / N-1), qui reste valable pour chaque canal.
 
 ## Contexte

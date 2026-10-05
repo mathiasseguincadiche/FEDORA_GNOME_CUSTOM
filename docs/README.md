@@ -21,7 +21,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 | **Utiliser KVM** | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
 | **Préparer Fedora 45 / GNOME 51** | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) | `./scripts/development/release-readiness.sh` |
 | **Comprendre la finition du bureau** | [`GNOME_POLISH.md`](GNOME_POLISH.md) | [`adr/0013-ubuntu-grade-gnome-polish.md`](adr/0013-ubuntu-grade-gnome-polish.md) |
-| **Comprendre le noyau CachyOS** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-cachyos-bore) | [`adr/0012-kernel-channel-cachyos.md`](adr/0012-kernel-channel-cachyos.md) |
+| **Comprendre Linux amont** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-officiel-linux-amont) | [`UPSTREAM_LINUX.md`](UPSTREAM_LINUX.md) |
 | **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
 | **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |
 | **Sauvegarder / restaurer** | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) si échec |
@@ -250,3 +250,8 @@ Une contradiction active entre code, configuration et documentation est un bug.
 ## Notes historiques
 
 Les comptes rendus d'étapes passées (non normatifs) sont rangés dans [`history/`](history/README.md).
+
+## Transition de release
+
+- [Linux amont officiel et N/N-1](UPSTREAM_LINUX.md)
+- [Préparation Fedora 45 / GNOME 51 et mise à niveau](UPGRADE_FEDORA_45.md)

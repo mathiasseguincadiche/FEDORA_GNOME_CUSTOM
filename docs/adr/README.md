@@ -13,6 +13,9 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0009 — Validation en trois gates WSL2 → VirtualBox → bare-metal](0009-three-gate-validation.md)
 - [0010 — Kernel Vanilla rolling N / N-1](0010-kernel-rolling-n-nminus1.md)
 - [0011 — Second T705 persistant : données utilisateur + KVM](0011-persistent-second-t705-data-layout.md)
-- [0012 — Canal noyau CachyOS (BORE) à côté de Kernel Vanilla](0012-kernel-channel-cachyos.md)
+- [0012 — Canal noyau personnalisé — remplacé par ADR 0015](0012-kernel-channel-cachyos.md)
 - [0013 — Finition « Ubuntu-grade » sur GNOME upstream](0013-ubuntu-grade-gnome-polish.md)
 - [0014 — Sauvegardes Borg sans chiffrement](0014-borg-unencrypted-backups.md)
+
+- [0015 — Linux amont officiel stable uniquement](0015-official-upstream-linux.md)
+- [0016 — Transition Fedora 45 / GNOME 51](0016-fedora45-gnome51-transition.md)

@@ -80,14 +80,14 @@ check_value 'VM vendor' "$(runtime_vm_vendor_detect || true)" oracle
 dmi="$(runtime_virtualbox_dmi_payload 2>/dev/null | tr '\n' ' ' || true)"
 if grep -Eqi 'VirtualBox|Oracle|innotek' <<<"$dmi"; then emit OK 'VirtualBox DMI' "$dmi"; else emit KO 'VirtualBox DMI' "unexpected: ${dmi:-empty}"; fi
 
-if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && grep -Eq '^VERSION_ID="?44"?$' /etc/os-release; then
+if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && fedora_require_selected; then
   emit OK Fedora '44'
 else
-  emit KO Fedora 'Fedora 44 required'
+  emit KO Fedora 'Selected promoted Fedora release required'
 fi
 
 shell_version="$(gnome-shell --version 2>/dev/null || true)"
-if [[ "$shell_version" =~ GNOME[[:space:]]Shell[[:space:]]50([.]|$) ]]; then emit OK 'GNOME Shell' "$shell_version"; else emit KO 'GNOME Shell' "50 required; got ${shell_version:-unknown}"; fi
+if fedora_shell_matches "$shell_version"; then emit OK 'GNOME Shell' "$shell_version"; else emit KO 'GNOME Shell' "Selected GNOME major required; got ${shell_version:-unknown}"; fi
 
 if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then emit OK 'GNOME session' "${XDG_CURRENT_DESKTOP}"; else emit KO 'GNOME session' "${XDG_CURRENT_DESKTOP:-unknown}"; fi
 check_value Wayland "${XDG_SESSION_TYPE:-unknown}" wayland

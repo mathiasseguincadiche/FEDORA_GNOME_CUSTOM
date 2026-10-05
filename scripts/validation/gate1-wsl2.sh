@@ -12,7 +12,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/validation/gate1-wsl2.sh [run|status]
 
-run     Execute Gate 1 inside Fedora 44 on WSL2 and create a portable PASS proof.
+run     Execute Gate 1 inside selected Fedora release on WSL2 and create a portable PASS proof.
 status  Show whether a current Gate 1 proof exists locally.
 
 Gate 1 validates the project/system logic only. Native B580/xe, ReBAR, PCIe,
@@ -22,10 +22,10 @@ EOF
 
 gate1_require_runtime() {
   runtime_is_wsl2 || {
-    ui_error "Gate 1 requires Fedora 44 under WSL2; detected runtime=$(runtime_environment)"
+    ui_error "Gate 1 requires selected Fedora release under WSL2; detected runtime=$(runtime_environment)"
     return "$EXIT_SECURITY_BLOCK"
   }
-  validation_require_fedora44 || {
+  validation_require_selected_fedora || {
     ui_error 'Gate 1 requires Fedora Linux 44'
     return "$EXIT_PRECHECK_FAILED"
   }

@@ -27,7 +27,7 @@ APPLY protégé
 second T705 persistant /data
   Documents + Projets + ISO + Jeux + libvirt
       ↓
-reboot sur CachyOS BORE N
+reboot sur Linux amont stable N
       ↓
 certification hardware / desktop / KVM / backup
       ↓
@@ -38,21 +38,15 @@ matrice known-good
 
 ## Kernel
 
-Le profil installe le dernier noyau stable du canal `cachyos` via
-`bieszczaders/kernel-cachyos`, avec le plancher de `config/kernel.conf`.
-Le canal `vanilla` reste disponible comme choix explicite (ADR 0012).
-
-La politique est rolling **N / N-1** :
+Le profil installe uniquement le dernier Linux amont stable publié sur kernel.org, via les RPM sans patch `@kernel-vanilla/stable`, avec le plancher de `config/kernel.conf`. Une candidate RPM plus ancienne que kernel.org ou une RC est bloquée. Voir [ADR 0015](adr/0015-official-upstream-linux.md).
 
 ```text
 N   = dernier stable installé, défaut GRUB
-N-1 = version immédiatement précédente, rollback
+N-1 = version installée immédiatement précédente, rollback
 max = 2 versions kernel-core
 ```
 
-Les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly`. Avec CachyOS, le canal `kernel-core` reste installé comme entrée de secours.
-La limite DNF s'applique par nom de paquet : jusqu'à deux CachyOS et deux
-`kernel-core` peuvent être présents (ADR 0012).
+Les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly`. Le noyau actuellement démarré est protégé ; si la purge reste bloquée, démarrer sur N et recommencer. Le premier passage peut conserver le noyau Fedora initial comme N-1 ; aucun troisième noyau de secours n'est épinglé.
 
 Secure Boot actif bloque ce chemin par défaut. Le projet ne désactive pas Secure Boot automatiquement et ne génère/importera pas une clé MOK sans décision opérateur explicite.
 

@@ -175,13 +175,11 @@ Le doctor peut afficher un `WARN` lorsque N-1 est volontairement démarré. La G
 ## Plus de deux kernels installés
 
 ```bash
-rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-cachyos-core kernel-core | sort -V
+rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | sort -V
 ./control.sh kernel status
 ```
 
-Attendu : `installonly_limit=2` et au maximum deux versions par canal.
-Le défaut Golden est CachyOS BORE (`kernel-cachyos-core`) ; le canal
-`kernel-core` reste une entrée de secours, avec sa propre rétention.
+Attendu : `installonly_limit=2` et au maximum deux versions `kernel-core` : N et N-1. Le noyau en cours d'exécution est protégé ; aucun second canal ni secours supplémentaire n'est géré.
 
 Appliquer la politique :
 

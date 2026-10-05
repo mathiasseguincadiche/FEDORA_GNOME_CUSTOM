@@ -32,10 +32,10 @@ validation_fedora_release() {
   awk -F= '$1=="VERSION_ID" {gsub(/"/, "", $2); print $2; exit}' /etc/os-release
 }
 
-validation_require_fedora44() {
+validation_require_selected_fedora() {
   [[ -r /etc/os-release ]] || return "$EXIT_PRECHECK_FAILED"
   grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || return "$EXIT_PRECHECK_FAILED"
-  grep -Eq '^VERSION_ID="?44"?$' /etc/os-release || return "$EXIT_PRECHECK_FAILED"
+  fedora_require_selected || return "$EXIT_PRECHECK_FAILED"
 }
 
 validation_require_clean_source() {

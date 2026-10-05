@@ -273,7 +273,7 @@ UEFI/TPM logiciel suivie d'une reconstruction sur image neuve. `contracts` dépe
 de ce job : un échec ou un skip bloque le contexte obligatoire et la publication.
 Voir [la portée exacte et les rapports](FEDORA_GNOME_CI_LAB.md).
 Les gates WSL2/VirtualBox/bare-metal, la validation visuelle et le démarrage
-CachyOS restent à qualifier sur leurs environnements réels.
+Linux amont restent à qualifier sur leurs environnements réels.
 
 Le check agrégé `contracts` s'exécute même après un échec grâce à `always()`
 et refuse explicitement une dépendance échouée, annulée ou sautée. La suite

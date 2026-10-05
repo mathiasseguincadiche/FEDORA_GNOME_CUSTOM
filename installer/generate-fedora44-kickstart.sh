@@ -2,12 +2,19 @@
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-lock="$REPO_ROOT/installer/fedora44-media.lock"
+release=44
+if [[ "${1:-}" == --release ]]; then release="${2:-}"; shift 2; fi
+case "$release" in
+  44) ;;
+  45) python3 "$REPO_ROOT/scripts/development/fedora-profile.py" validate "$REPO_ROOT" 45 ;;
+  *) echo 'Unsupported Fedora release' >&2; exit 2 ;;
+esac
+lock="$REPO_ROOT/installer/fedora$release-media.lock"
 [[ -r "$lock" ]] || { echo "Missing Fedora media lock: $lock" >&2; exit 2; }
 # shellcheck disable=SC1090
 source "$lock"
 usage(){ echo "Usage: $0 --disk /dev/disk/by-id/nvme-... [--username mathias] [--hostname fedora-gnome-devops] [--output fedora44.ks]" >&2; }
-disk=""; username="mathias"; hostname="fedora-gnome-devops"; output="fedora44-golden-workstation.ks"
+disk=""; username="mathias"; hostname="fedora-gnome-devops"; output="fedora$release-golden-workstation.ks"
 while (($#)); do case "$1" in --disk) disk="${2:-}"; shift 2;; --username) username="${2:-}"; shift 2;; --hostname) hostname="${2:-}"; shift 2;; --output) output="${2:-}"; shift 2;; *) usage; exit 2;; esac; done
 [[ -b "$disk" ]] || { usage; echo 'Target disk must be an existing block device.' >&2; exit 2; }
 [[ "$disk" =~ ^/dev/disk/by-id/nvme-[A-Za-z0-9_.:+-]+$ && "$disk" != *-part[0-9]* ]] || { echo 'Use a stable whole-disk /dev/disk/by-id/nvme-* identity.' >&2; exit 2; }
@@ -77,6 +84,9 @@ runuser -u ${username} -- git -C "\$repo" fetch --depth 1 origin ${repo_sha}
 runuser -u ${username} -- git -C "\$repo" checkout --detach FETCH_HEAD
 actual_sha="\$(runuser -u ${username} -- git -C "\$repo" rev-parse HEAD)"
 [[ "\$actual_sha" == "${repo_sha}" ]]
+if [[ "${release}" == 45 ]]; then
+  printf 'HOST_RELEASE="45"\\n' > "\$repo/config/local.conf"
+fi
 chown -R ${username}:${username} "\$repo"
 %end
 EOF_KS

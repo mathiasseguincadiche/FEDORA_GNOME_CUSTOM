@@ -38,7 +38,7 @@ baseline_evidence_device(){ awk -F'device=' '/^detail=/ {split($2,a," "); print 
 
 baseline_automatic_health_check(){
   runtime_is_baremetal || return 1
-  grep -Eq '^VERSION_ID="?44"?$' /etc/os-release || return 1
+  fedora_require_selected || return 1
   lscpu 2>/dev/null | grep -Fq "${EXPECTED_CPU:-AMD Ryzen 7 7700}" || return 1
   hardware_platform_validate_dmi || { log_error BASELINE 'MSI MAG B850M MORTAR WIFI DMI/AMI BIOS validation failed'; return 1; }
   hardware_platform_validate_cpu_power || { log_error BASELINE 'Ryzen AMD P-State/boost validation failed'; return 1; }
