@@ -5,7 +5,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/scripts/maintenance" "$tmp/scripts/backup" "$tmp/lib" "$tmp/bin" "$tmp/state" "$tmp/diagnostics"
+mkdir -p "$tmp/scripts/gnome" "$tmp/config" "$tmp/scripts/maintenance" "$tmp/scripts/backup" "$tmp/lib" "$tmp/bin" "$tmp/state" "$tmp/diagnostics"
 cp "$ROOT/scripts/maintenance/upgrade-fedora.sh" "$tmp/scripts/maintenance/"
 cp "$ROOT/lib/evidence.sh" "$tmp/lib/"
 printf 'install_lock_acquire() { return 0; }\n' > "$tmp/lib/install_lock.sh"
@@ -24,6 +24,8 @@ ui_error() { echo "$*" >&2; }
 repo_commit() { printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'; }
 source "$REPO_ROOT/lib/evidence.sh"
 effective_config_sha256() { printf '%064d\n' 0; }
+fedora_shell_matches() { [[ "$1" == 'GNOME Shell 51.0' ]]; }
+config_load() { HOST_RELEASE=45; }
 SH
 cat > "$tmp/lib/kernel_lifecycle.sh" <<'SH'
 kernel_lifecycle_require_host_gate() { return 0; }
@@ -31,6 +33,7 @@ kernel_lifecycle_ensure_tooling_and_repo() { return 0; }
 kernel_lifecycle_ensure_dnf_retention() { return 0; }
 kernel_lifecycle_resolve_latest_stable() { echo '7.2.9-200.vanilla.fc45.x86_64'; }
 kernel_lifecycle_pin_target() { echo pin >> "$FGC_TRACE"; }
+kernel_lifecycle_finalize_update() { echo kernel-finalized >> "$FGC_TRACE"; }
 kernel_lifecycle_lock_hash() { printf '%064d\n' 1; }
 SH
 cat > "$tmp/scripts/backup/backup-now.sh" <<'SH'
@@ -52,6 +55,24 @@ cat > "$tmp/bin/dnf5" <<'SH'
 echo "$*" >> "$FGC_TRACE"
 case "$*" in *check-upgrade*) exit "${FAKE_UPDATES_RC:-0}" ;; *system-upgrade*download*) exit "${FAKE_DOWNLOAD_RC:-0}" ;; esac
 SH
+cat > "$tmp/bin/uname" <<'SH'
+#!/usr/bin/env bash
+echo '7.2.9-200.vanilla.fc45.x86_64'
+SH
+cat > "$tmp/bin/gnome-shell" <<'SH'
+#!/usr/bin/env bash
+echo 'GNOME Shell 51.0'
+SH
+cat > "$tmp/scripts/gnome/install-pinned-extension.sh" <<'SH'
+#!/usr/bin/env bash
+echo "extension:$1" >> "$FGC_TRACE"
+exit "${FAKE_EXTENSION_RC:-0}"
+SH
+cat > "$tmp/diagnostic.sh" <<'SH'
+#!/usr/bin/env bash
+echo postcheck >> "$FGC_TRACE"
+SH
+chmod +x "$tmp/diagnostic.sh"
 chmod +x "$tmp/bin/"* "$tmp/scripts/backup/backup-now.sh" "$tmp/diagnostics/backup-doctor"
 export FGC_TRACE="$tmp/trace" PATH="$tmp/bin:$PATH"
 run_expect() {
@@ -94,4 +115,24 @@ run_expect 20 finalize
 sed -i 's/^commit=.*/commit=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/' "$tmp/state/fedora45-upgrade.env"
 run_expect 50 reboot
 [[ ! -s "$FGC_TRACE" ]]
+# A successful OS transaction still requires verified extension installation.
+# A failed payload must leave activation incomplete and no successful postcheck.
+if [[ "$EUID" != 0 ]]; then
+  rm -f "$tmp/state/fedora45-upgrade.env"
+  export FAKE_OS=44
+  run_expect 0 prepare
+  sed -i 's/^source_boot_id=.*/source_boot_id=previous-source-boot/' "$tmp/state/fedora45-upgrade.env"
+  export FAKE_OS=45 FAKE_EXTENSION_RC=1
+  run_expect 1 finalize
+  grep -Fxq 'phase=activated' "$tmp/state/fedora45-upgrade.env"
+  if grep -Fq postcheck "$FGC_TRACE"; then exit 1; fi
+  export FAKE_EXTENSION_RC=0
+  run_expect 20 finalize
+  grep -Fxq 'phase=extensions-installed' "$tmp/state/fedora45-upgrade.env"
+  [[ "$(grep -c '^extension:' "$FGC_TRACE")" == 4 ]]
+  if grep -Fq postcheck "$FGC_TRACE"; then exit 1; fi
+  run_expect 0 finalize
+  grep -Fxq 'phase=completed' "$tmp/state/fedora45-upgrade.env"
+  grep -Fxq postcheck "$FGC_TRACE"
+fi
 echo 'Fedora upgrade guards and preparation behavior: PASS'

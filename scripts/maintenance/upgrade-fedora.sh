@@ -85,9 +85,13 @@ case "$action" in
   finalize)
     require_host; require_identity
     phase="$(value phase)"
-    [[ "$phase" == prepared || "$phase" == reboot-requested || "$phase" == activated ]] || exit "$EXIT_PRECHECK_FAILED"
+    [[ "$phase" == prepared || "$phase" == reboot-requested || "$phase" == activated || "$phase" == extensions-installed ]] || exit "$EXIT_PRECHECK_FAILED"
     [[ "$(fedora_actual_release)" == 45 &&
        "$(cat /proc/sys/kernel/random/boot_id)" != "$(value source_boot_id)" ]] || exit "$EXIT_PRECHECK_FAILED"
+    [[ "$EUID" != 0 ]] || {
+      ui_error 'Finalize from the GNOME user account, without sudo.'
+      exit "$EXIT_SECURITY_BLOCK"
+    }
     sudo dnf5 system-upgrade log --number=-1
     sudo dnf5 check
     (HOST_RELEASE=45; fedora_shell_matches "$(gnome-shell --version)")
@@ -105,7 +109,17 @@ case "$action" in
     chmod 0600 "$tmp"
     mv -f "$tmp" "$overlay"
     config_load
-    write_state activated "$target" "$(value source_boot_id)"
+    if [[ "$phase" != extensions-installed ]]; then
+      write_state activated "$target" "$(value source_boot_id)"
+      # Each payload is checked against the promoted profile's hash, UUID,
+      # GNOME major and schema. Never run the installer under sudo/root.
+      for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
+        HOST_RELEASE=45 bash "$REPO_ROOT/scripts/gnome/install-pinned-extension.sh" "$prefix"
+      done
+      write_state extensions-installed "$target" "$(value source_boot_id)"
+      printf 'Reviewed GNOME 51 extensions installed. Log out normally and log in again, then rerun ./control.sh upgrade finalize.\n'
+      exit "$EXIT_PRECHECK_FAILED"
+    fi
     "$REPO_ROOT/diagnostic.sh"
     write_state completed "$target" "$(value source_boot_id)"
     printf 'Fedora 45 / GNOME 51 upgrade checked. Previous Golden proofs are stale; repeat the three gates and hardware/restore qualification.\n'
