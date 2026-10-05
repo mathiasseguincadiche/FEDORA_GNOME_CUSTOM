@@ -117,6 +117,7 @@ ssh_public_key="$(awk 'NF >= 2 {print $1" "$2; exit}' "$ssh_key")"
 bootstrap_b64="$(base64 -w0 "$bootstrap")"
 verify_b64="$(base64 -w0 "$verify")"
 service_b64="$(base64 -w0 "$REPO_ROOT/guest/rocky-devops/devops-bootstrap.service")"
+network_verify_b64="$(base64 -w0 "$REPO_ROOT/guest/rocky-devops/verify-docker-network.sh")"
 
 cat >"$tmpdir/user-data" <<EOF
 #cloud-config
@@ -141,6 +142,10 @@ write_files:
     permissions: '0755'
     encoding: b64
     content: ${verify_b64}
+  - path: /usr/local/sbin/devops-verify-docker-network.sh
+    permissions: '0755'
+    encoding: b64
+    content: ${network_verify_b64}
   - path: /etc/systemd/system/fgc-devops-bootstrap.service
     permissions: '0644'
     encoding: b64

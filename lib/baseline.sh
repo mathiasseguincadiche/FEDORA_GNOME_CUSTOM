@@ -33,7 +33,19 @@ baseline_fingerprint_payload(){
 baseline_fingerprint(){ baseline_fingerprint_payload | sha256sum | awk '{print $1}'; }
 
 baseline_write_evidence(){ runtime_is_baremetal || return "$EXIT_SECURITY_BLOCK"; local name="$1" status="$2" detail="${3:-}" path; baseline_ensure_dirs; path="$(baseline_evidence_dir)/$name.ok"; { printf 'name=%s\nstatus=%s\nutc=%s\nfingerprint=%s\ndetail=%s\n' "$name" "$status" "$(date -u +%FT%TZ)" "$(baseline_fingerprint)" "$detail"; } | evidence_atomic_write "$path" 0600; }
-baseline_evidence_valid(){ runtime_is_baremetal || return 1; local name="$1" file; file="$(baseline_evidence_dir)/$name.ok"; [[ -s "$file" ]] || return 1; grep -Fxq 'status=PASS' "$file" || return 1; grep -Fxq "fingerprint=$(baseline_fingerprint)" "$file" || return 1; case "$name" in memory-5600|memory-6000|nvme-root|nvme-data|cpu-soak) grep -Eq '^detail=.*automated=true.*sha256=[0-9a-f]{64}' "$file";; esac; }
+baseline_evidence_valid(){
+  runtime_is_baremetal || return 1
+  local name="$1" file detail
+  file="$(baseline_evidence_dir)/$name.ok"; [[ -s "$file" ]] || return 1
+  grep -Fxq 'status=PASS' "$file" || return 1
+  grep -Fxq "fingerprint=$(baseline_fingerprint)" "$file" || return 1
+  detail="$(sed -n 's/^detail=//p' "$file")"
+  case "$name" in
+    memory-5600|memory-6000) physical_soak_evidence_detail_valid memory "$detail" || return 1;;
+    cpu-soak) physical_soak_evidence_detail_valid cpu "$detail" || return 1;;
+  esac
+  case "$name" in memory-5600|memory-6000|nvme-root|nvme-data|cpu-soak) grep -Eq '^detail=.*automated=true.*sha256=[0-9a-f]{64}' "$file";; esac
+}
 baseline_evidence_device(){ awk -F'device=' '/^detail=/ {split($2,a," "); print a[1]; exit}' "$(baseline_evidence_dir)/$1.ok"; }
 
 baseline_automatic_health_check(){
@@ -83,6 +95,8 @@ baseline_certification_valid(){
   physical_bluetooth_lock_valid || return 1
   physical_cooling_lock_valid || return 1
   baseline_evidence_valid cpu-soak || return 1
+  baseline_evidence_valid memory-5600 || return 1
+  baseline_evidence_valid memory-6000 || return 1
   driver_contract_validate || return 1
   [[ "$(evidence_marker_value "$marker" display_edid_sha256 2>/dev/null || true)" == "$(hardware_b580_expected_edid_sha256)" ]]
 }

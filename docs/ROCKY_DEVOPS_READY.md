@@ -153,3 +153,34 @@ L'image Cloud Base contient un noyau minimal. Le provisioning installe le noyau 
 Docker 29 stable utilise son backend iptables, qui charge les modules de compatibilité nft_compat et ip_set. Le noyau EL10 signale leur statut de maintenance avec le texte exact « Warning: Unmaintained driver is detected » et une priorité journal critique. Le laboratoire conserve ces notices dans les journaux et les signale explicitement par kernel_compatibility=WARNING. Le classificateur accepte seulement les quatre notices exactes des modules et de leurs initialiseurs, avec origine kernel et priorité 2 ; un message différent, une erreur critique, une origine différente ou un coredump reste bloquant. Les tests couvrent notamment les messages falsifiés, les erreurs mélangées aux notices et les journaux invalides.
 
 Voir les [notes RHEL 10.2](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html-single/10.2_release_notes/index) et la [documentation Docker nftables](https://docs.docker.com/engine/network/firewall-nftables/). Le backend nftables natif est encore indiqué expérimental par Docker ; le profil conserve donc le backend stable. Cette réserve de maintenance est visible dans les preuves et ne constitue pas une validation matérielle.
+
+## Qualification réseau Docker
+
+Une commande dédiée contrôle le réseau réel du Docker local : bridge interne,
+résolution DNS d'un alias et requête HTTP entre deux conteneurs. Le client
+reste sur le bridge interne ; le serveur possède aussi un bridge de publication
+normal, nécessaire à Docker pour activer le port HTTP lié uniquement à 127.0.0.1. Les ressources jetables sont nommées/étiquetées
+et supprimées après le test, y compris en cas d'erreur. Aucun réseau applicatif
+existant n'est supprimé.
+
+Sur l'invité, télécharger une fois l'image officielle versionnée, puis utiliser
+son identifiant local immuable :
+
+~~~bash
+docker pull busybox:1.37.0
+image_id="$(docker image inspect --format '{{.Id}}' busybox:1.37.0)"
+/usr/local/sbin/devops-verify-docker-network.sh "$image_id"
+~~~
+
+Le script utilise exclusivement le socket Docker local et --pull=never. Le
+journal conserve l'ID et les RepoDigests réellement utilisés. Le laboratoire
+exécute exactement ce script avant le reboot, après le reboot et dans la VM
+restaurée isolée ; il conserve le même ID dans le disque sauvegardé. Une erreur
+DNS, HTTP, liaison de port ou nettoyage bloque le test. Cette preuve concerne
+ces chemins réseau locaux : elle ne prétend pas valider Swarm, toutes les CNI
+Kubernetes ou le débit du réseau physique.
+
+Les notices de maintenance EL10 restent distinctes de ce verdict fonctionnel.
+Un test réseau réussi ne rend pas les modules à nouveau maintenus. Au
+2026-10-05, Docker décrit encore son backend nftables natif comme expérimental
+et incompatible avec Swarm ; le profil conserve la voie stable documentée.

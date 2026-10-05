@@ -4,6 +4,8 @@ Politique : **mesurer → reproduire → corriger → recertifier**, jamais appl
 
 La version applicable est celle de [`../VERSION`](../VERSION).
 
+Suivre la [fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) pour préparer les charges, conserver les preuves et distinguer les prétests GitHub des résultats sur le PC.
+
 ## Arc B580 / xe
 
 Le GPU doit rester `8086:e20b` lié à `xe`.

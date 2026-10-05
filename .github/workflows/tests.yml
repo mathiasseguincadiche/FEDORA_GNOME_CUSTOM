@@ -19,6 +19,30 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install real Borg integration-test dependency
         run: sudo apt-get update && sudo apt-get install -y borgbackup jq
+      - name: Exercise actual Docker probe and cleanup on the GitHub runner
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          application="fgc-existing-application-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          trap 'docker network rm "$application" >/dev/null 2>&1 || true' EXIT
+          docker network create "$application" >/dev/null
+          docker pull busybox:1.37.0 >/dev/null
+          image="$(docker image inspect --format '{{.Id}}' busybox:1.37.0)"
+          guest/rocky-devops/verify-docker-network.sh "$image"
+          docker network inspect "$application" >/dev/null
+          test -z "$(docker network ls --filter label=fgc.network-probe --format '{{.ID}}')"
+          test -z "$(docker ps -a --filter label=fgc.network-probe --format '{{.ID}}')"
+          # A cached image without the required shell forces a real start failure.
+          docker pull hello-world:latest >/dev/null
+          bad_image="$(docker image inspect --format '{{.Id}}' hello-world:latest)"
+          if guest/rocky-devops/verify-docker-network.sh "$bad_image"; then
+            echo 'A broken Docker probe returned success' >&2
+            exit 1
+          fi
+          docker network inspect "$application" >/dev/null
+          test -z "$(docker network ls --filter label=fgc.network-probe --format '{{.ID}}')"
+          test -z "$(docker ps -a --filter label=fgc.network-probe --format '{{.ID}}')"
+          echo 'Real Docker probe: PASS (normal path, failure cleanup, existing network preserved)'
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_lab_evidence.sh
       - if: ${{ !cancelled() }}
@@ -111,6 +135,8 @@ jobs:
         run: bash tests/test_hardware_kvm_completion_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_hardware_platform_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_physical_soak_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_desktop_lifecycle_contract.sh
       - if: ${{ !cancelled() }}
