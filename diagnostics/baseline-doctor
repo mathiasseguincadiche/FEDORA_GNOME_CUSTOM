@@ -63,7 +63,7 @@ run_cpu_soak() (
   temp="$(physical_cpu_sample_checked "$max_allowed")" || { ui_error 'CPU temperature postcheck failed'; exit "$EXIT_POSTCHECK_FAILED"; }
   (( temp > max_temp )) && max_temp="$temp"
   if ! kernel_journal_require_clean 'MCE:.*Hardware Error|Machine Check|EDAC.*(UE|uncorrected)|thermal.*critical|watchdog.*hard LOCKUP' --since "$start"; then ui_error 'MCE/EDAC/thermal/watchdog error during CPU soak'; exit "$EXIT_POSTCHECK_FAILED"; fi
-  hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost postcheck failed'; exit "$EXIT_PRECHECK_FAILED"; }
+  hardware_platform_validate_cpu_power || { ui_error 'AMD P-State/boost postcheck failed'; exit "$EXIT_POSTCHECK_FAILED"; }
   sha="$(sha256sum "$log" | awk '{print $1}')"; baseline_write_evidence cpu-soak PASS "automated=true tool=stress-ng qualification_policy=2 seconds=$seconds elapsed_seconds=$((SECONDS-started)) max_temp_millic=$max_temp sha256=$sha log=$log"; ui_check OK 'Ryzen CPU soak' "${seconds}s max=${max_temp}m°C sha256=$sha"
 )
 mount_source_device(){ local src; src="$(findmnt -no SOURCE "$1" | sed -E 's/\[.*$//')"; lsblk -ndo NAME,TYPE -s "$src" 2>/dev/null | awk '$2=="disk" {print "/dev/"$1; exit}'; }

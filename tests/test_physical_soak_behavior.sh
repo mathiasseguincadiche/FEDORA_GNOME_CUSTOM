@@ -124,7 +124,20 @@ sleep 60 &
 echo "$!" >"$SOAK_TEST_TMP/worker.pid"
 wait
 STUB
-printf '#!/usr/bin/env bash\nexit 0\n' >"$tmp/bin/vkcube-wayland"
+cat >"$tmp/bin/vkcube-wayland" <<'STUB'
+#!/usr/bin/env bash
+if [[ "$SOAK_TEST_MODE" == gpu_mixed ]]; then
+  if mkdir "$SOAK_TEST_TMP/first-gpu" 2>/dev/null; then
+    echo "$" >"$SOAK_TEST_TMP/workload.pid"
+    sleep 60 &
+    echo "$!" >"$SOAK_TEST_TMP/worker.pid"
+    wait
+  else
+    exit 7
+  fi
+fi
+exit 0
+STUB
 chmod +x "$tmp/bin/"*
 export PATH="$tmp/bin:$PATH" XDG_SESSION_TYPE=wayland SOAK_TEST_MODE=early
 
@@ -153,6 +166,13 @@ assert_stopped() {
     [[ -z "$state" || "$state" == Z* ]] || { echo "workload left alive: $pid $state" >&2; exit 1; }
   done
 }
+# One GPU instance fails while the other stays alive: detect it promptly.
+export SOAK_TEST_MODE=gpu_mixed
+started=$SECONDS
+expect_failure 40 bash "$tmp/diagnostics/physical-runtime-doctor" gpu-soak
+(( SECONDS-started < 10 )) || { echo 'GPU waited behind the healthy instance' >&2; exit 1; }
+assert_stopped
+
 for SOAK_TEST_MODE in overheat missing; do
   export SOAK_TEST_MODE
   mkdir -p "$(baseline_evidence_dir)" "$STATE_ROOT/final"
