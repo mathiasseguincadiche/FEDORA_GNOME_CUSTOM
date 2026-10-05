@@ -10,8 +10,8 @@ hardware_platform_validate_dmi(){ return 0; }
 runtime_is_baremetal(){ return 0; }
 evidence_atomic_write(){ cat > "$1"; chmod "$2" "$1"; }
 mkdir -p "$tmp/sys/class/sound/card2" "$tmp/sys/devices/audio/interface" "$tmp/sys/drivers/snd_usb_audio"
-printf '0bda\n' > "$tmp/sys/devices/audio/idVendor"
-printf '4080\n' > "$tmp/sys/devices/audio/idProduct"
+printf '0db0\n' > "$tmp/sys/devices/audio/idVendor"
+printf 'cc78\n' > "$tmp/sys/devices/audio/idProduct"
 printf 'USB Audio\n' > "$tmp/sys/devices/audio/product"
 ln -s "$tmp/sys/drivers/snd_usb_audio" "$tmp/sys/devices/audio/interface/driver"
 ln -s "$tmp/sys/devices/audio/interface" "$tmp/sys/class/sound/card2/device"
@@ -22,10 +22,13 @@ mv "$tmp/sys/class/sound/card2" "$tmp/sys/class/sound/card5"
 [[ "$(peripheral_resolve audio)" == card5 ]]
 printf '046d\n' > "$tmp/sys/devices/audio/idVendor"
 if peripheral_resolve audio; then echo 'Webcam mic was accepted as motherboard audio' >&2; exit 1; fi
-printf '0bda\n' > "$tmp/sys/devices/audio/idVendor"
+printf '0db0\n' > "$tmp/sys/devices/audio/idVendor"
 printf '9999\n' > "$tmp/sys/devices/audio/idProduct"
 if peripheral_resolve audio; then echo 'USB identity drift was accepted' >&2; exit 1; fi
-printf '4080\n' > "$tmp/sys/devices/audio/idProduct"
+printf 'cc78\n' > "$tmp/sys/devices/audio/idProduct"
+printf '0bda\n' > "$tmp/sys/devices/audio/idVendor"
+if peripheral_enroll audio card5; then echo 'Generic Realtek audio was enrolled as MSI ALC4080' >&2; exit 1; fi
+printf '0db0\n' > "$tmp/sys/devices/audio/idVendor"
 mkdir -p "$tmp/sys/class/video4linux/video0" "$tmp/sys/devices/camera/interface" "$tmp/sys/drivers/uvcvideo"
 printf '046d\n' > "$tmp/sys/devices/camera/idVendor"
 printf '0940\n' > "$tmp/sys/devices/camera/idProduct"
@@ -35,6 +38,10 @@ ln -s "$tmp/sys/devices/camera/interface" "$tmp/sys/class/video4linux/video0/dev
 v4l2-ctl(){ echo 'Video Capture'; }
 peripheral_enroll camera video0
 [[ "$(peripheral_resolve camera)" == video0 ]]
+mkdir -p "$tmp/sys/class/video4linux/video2"
+ln -s "$tmp/sys/devices/camera/interface" "$tmp/sys/class/video4linux/video2/device"
+if peripheral_resolve camera; then echo 'Ambiguous capture endpoints accepted' >&2; exit 1; fi
+rm -rf "$tmp/sys/class/video4linux/video2"
 printf 'Generic camera\n' > "$tmp/sys/devices/camera/product"
 if peripheral_resolve camera; then echo 'Wrong webcam accepted' >&2; exit 1; fi
 mkdir -p "$tmp/sys/class/ieee80211/phy0" "$tmp/sys/devices/0000:0a:00.0"

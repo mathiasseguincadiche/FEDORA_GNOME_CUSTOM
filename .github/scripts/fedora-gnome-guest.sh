@@ -145,10 +145,18 @@ case "${1:-}" in
       as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
     done
     fi
+    # A Beta seed can predate the current GNOME schema packages. Installing
+    # the desktop group alone does not update packages already on that seed.
+    # Bring its official Fedora repositories to one coherent transaction first.
+    if [[ "$LAB_RELEASE" == 45 ]]; then dnf -y upgrade --refresh; fi
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
       tpm2-tools firewalld python3 curl gjs gnome-shell-extension-dash-to-dock \
       gnome-shell-extension-appindicator gnome-text-editor libreoffice poppler-utils gnome-software dconf
+    if [[ "$LAB_RELEASE" == 45 ]]; then
+      rpm -q gsettings-desktop-schemas gnome-shell mutter
+      gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fxq custom-accel-config
+    fi
     # Exercise the production lifecycle writer in this disposable Fedora only.
     (
       # shellcheck source=modules/desktop/27_lifecycle.sh

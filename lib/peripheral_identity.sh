@@ -24,7 +24,9 @@ peripheral_identity() {
   case "$kind" in
     audio) [[ "$endpoint" =~ ^card[0-9]+$ ]] || return 1
       data="$(peripheral_usb_identity "$root/class/sound/$endpoint/device")" || return 1
-      grep -Eq '^usb_id=0bda:[0-9a-f]{4}$' <<<"$data" || return 1
+      # MSI MAG B850M MORTAR WIFI ALC4080 uses MSI's USB VID, not Realtek's.
+      # Listed by alsa-project/alsa-ucm-conf ucm2/USB-Audio/USB-Audio.conf.
+      grep -Fxq 'usb_id=0db0:cc78' <<<"$data" || return 1
       grep -Fxq 'driver=snd_usb_audio' <<<"$data" || return 1;;
     camera) [[ "$endpoint" =~ ^video[0-9]+$ ]] || return 1
       data="$(peripheral_usb_identity "$root/class/video4linux/$endpoint/device")" || return 1
@@ -60,11 +62,13 @@ peripheral_resolve() {
     [[ "$data" == "$saved" ]] && matches+=("$endpoint")
   done
   if [[ "$kind" == camera ]]; then
+    local capture_matches=()
     for endpoint in "${matches[@]}"; do
       v4l2-ctl -d "/dev/$endpoint" --all 2>/dev/null | grep -q 'Video Capture' || continue
-      printf '%s\n' "$endpoint"; return 0
+      capture_matches+=("$endpoint")
     done
-    return 1
+    ((${#capture_matches[@]} == 1)) || return 1
+    printf '%s\n' "${capture_matches[0]}"; return 0
   fi
   ((${#matches[@]} == 1)) || return 1
   printf '%s\n' "${matches[0]}"

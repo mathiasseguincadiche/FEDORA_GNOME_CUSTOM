@@ -37,7 +37,7 @@ Avant le postcheck hardware, identifier les périphériques physiques et sélect
 ./diagnostics/peripherals-doctor enroll camera videoN
 ~~~
 
-cardN/videoN sont des exemples à remplacer par les indices effectivement inspectés. Aucun numéro USB ou ALSA n'est figé : la résolution suit VID/PID, produit, série et pilote après reboot. La caméra exige Logitech/Brio 100 et uvcvideo ; l'audio exige Realtek et snd_usb_audio. Un micro USB générique ne valide plus l'audio de la carte mère. Si plusieurs périphériques restent indistinguables, la résolution bloque.
+cardN/videoN sont des exemples à remplacer par les indices effectivement inspectés. Aucun numéro USB ou ALSA n'est figé : la résolution suit VID/PID, produit, série et pilote après reboot. La caméra exige Logitech/Brio 100 et uvcvideo ; l'audio exige l'identité MSI **0db0:cc78** de cet ALC4080 et snd_usb_audio. Cet identifiant figure dans la [table officielle ALSA UCM](https://github.com/alsa-project/alsa-ucm-conf/blob/master/ucm2/USB-Audio/USB-Audio.conf) et est rapporté par le [correctif ALSA soumis le 23 septembre 2026](https://lists.openwall.net/linux-kernel/2026/09/23/2799) ; ce correctif de nommage des sorties ne vaut pas preuve de son inclusion dans chaque noyau stable. Si la machine présente un autre VID/PID, arrêter la qualification et documenter la révision matérielle avant d'adapter la liste. Aucun contournement ALSA/kernel n'est appliqué automatiquement. Un micro USB générique ne valide plus l'audio de la carte mère. Si plusieurs périphériques restent indistinguables, la résolution bloque.
 
 ~~~bash
 ./diagnostics/peripherals-doctor test-camera
@@ -72,6 +72,6 @@ Vérifier visuellement les valeurs puis la reprise après veille. Une incompatib
 
 Le laboratoire Fedora 44 contrôle Dash to Dock, AppIndicator, DING, Show Desktop Plus, Resource Monitor et Tiling Assistant dans la session Wayland après démarrage, reboot, restauration de VM et reconstruction. Il vérifie la politique GNOME Logiciels et un aller-retour LibreOffice TXT → ODT → PDF avec contrôle du contenu.
 
-Fedora 45/GNOME 51 reste un profil de production pending tant que les médias finaux, extensions et preuves ne sont pas prêts. Le laboratoire de préversion est distinct : un blocage d'extension empêche le test graphique, et un rapport de collecte vert ne certifie pas Fedora 45.
+Fedora 45/GNOME 51 reste un profil de production pending tant que les médias finaux, extensions et preuves ne sont pas prêts. Le laboratoire natif de préversion utilise une image Beta signée et épinglée : il exerce GNOME 51, redémarrage et restauration isolée avec les extensions personnalisées marquées DEFERRED. Le contrôle de leur compatibilité reste séparé. Un résultat natif vert ne promeut pas le profil de production et ne certifie pas les six extensions sous GNOME 51.
 
 Références : [politique GNOME Logiciels](https://github.com/GNOME/gnome-software/blob/50.0/data/org.gnome.software.gschema.xml), [portail ScreenCast](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.ScreenCast.html), [afficheur communautaire](https://github.com/Nortank12/deepcool-digital-linux), [Flatseal](https://github.com/tchx84/Flatseal).

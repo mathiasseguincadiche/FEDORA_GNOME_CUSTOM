@@ -34,7 +34,7 @@ EOF
   printf '/org/gnome/software/download-updates\n/org/gnome/software/allow-updates\n' > "$tmp/locks/updates"
   profile=/etc/dconf/profile/user
   if [[ -r "$profile" ]]; then cat "$profile" > "$tmp/profile"; else printf 'user-db:user\n' > "$tmp/profile"; fi
-  if ! grep -Fxq 'system-db:fgc' "$tmp/profile"; then printf 'system-db:fgc\n' >> "$tmp/profile"; fi
+  if ! grep -Fxq 'system-db:fgc' "$tmp/profile"; then printf '\nsystem-db:fgc\n' >> "$tmp/profile"; fi
   run_mutating DESKTOP sudo install -d -m 0755 /etc/dconf/profile /etc/dconf/db/fgc.d/locks || { rm -rf "$tmp"; return "$EXIT_APPLY_FAILED"; }
   run_mutating DESKTOP sudo install -m 0644 "$tmp/00-updates" /etc/dconf/db/fgc.d/00-updates || { rm -rf "$tmp"; return "$EXIT_APPLY_FAILED"; }
   run_mutating DESKTOP sudo install -m 0644 "$tmp/locks/updates" /etc/dconf/db/fgc.d/locks/updates || { rm -rf "$tmp"; return "$EXIT_APPLY_FAILED"; }
