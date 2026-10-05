@@ -87,7 +87,7 @@ start_vm() {
   rm -f "$QGA_SOCKET"
   qemu-system-x86_64 -name rocky-devops-ci -machine "q35,accel=$1" -cpu "$2" -smp 2 -m 6144 \
     -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" -drive if=pflash,format=raw,file=nvram.fd \
-    -drive file=disk.qcow2,format=qcow2,if=virtio -drive file=seed.img,format=raw,if=virtio,readonly=on \
+    -drive file=disk.qcow2,format=qcow2,if=virtio,discard=unmap,detect-zeroes=unmap -drive file=seed.img,format=raw,if=virtio,readonly=on \
     -device virtio-net-pci,netdev=net0 -netdev "user,id=net0,restrict=${3:-off},hostfwd=tcp:127.0.0.1:$SSH_PORT-:22" \
     -device virtio-serial-pci \
     -chardev "socket,id=qga0,path=$QGA_SOCKET,server=on,wait=off" \
@@ -123,16 +123,29 @@ ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -q '^VERSION_ID=\"10.2\"' /etc/o
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'getent hosts github.com >/dev/null && curl -fsSI --max-time 20 https://github.com >/dev/null'
 
 report '[7/10] Copy exact repository guest bootstrap'
-scp "${SCP_OPTS[@]}" "$ROOT/guest/rocky-devops/bootstrap-devops.sh" "$ROOT/guest/rocky-devops/verify-devops.sh" "$VM_USER@127.0.0.1:/tmp/"
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'chmod +x /tmp/bootstrap-devops.sh /tmp/verify-devops.sh'
+scp "${SCP_OPTS[@]}" "$ROOT/guest/rocky-devops/bootstrap-devops.sh" "$ROOT/guest/rocky-devops/verify-devops.sh" "$ROOT/guest/rocky-devops/devops-bootstrap.service" "$VM_USER@127.0.0.1:/tmp/"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo install -m 0755 /tmp/bootstrap-devops.sh /usr/local/sbin/devops-bootstrap.sh; sudo install -m 0755 /tmp/verify-devops.sh /usr/local/sbin/devops-verify.sh; sudo install -m 0644 /tmp/devops-bootstrap.service /etc/systemd/system/fgc-devops-bootstrap.service; printf "DEVOPS_USER=mathias\n" | sudo tee /etc/fgc-devops-bootstrap.env >/dev/null; sudo chmod 0600 /etc/fgc-devops-bootstrap.env; sudo restorecon /usr/local/sbin/devops-bootstrap.sh /usr/local/sbin/devops-verify.sh /etc/systemd/system/fgc-devops-bootstrap.service; sudo systemctl daemon-reload'
 
-report '[8/10] Execute real DevOps bootstrap'
-# shellcheck disable=SC2029
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/bootstrap-devops.sh" 2>&1 | tee "$BOOTSTRAP_LOG"
+report '[8/10] Execute real DevOps bootstrap service (including required kernel reboot)'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo systemctl enable fgc-devops-bootstrap.service; sudo systemctl start --no-block fgc-devops-bootstrap.service'
+ready=0
+for _ in $(seq 1 180); do
+  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo test -s /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env' >/dev/null 2>&1; then ready=1; break; fi
+  if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo systemctl is-failed --quiet fgc-devops-bootstrap.service' >/dev/null 2>&1; then
+    ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo cat /var/log/devops-bootstrap.log; sudo systemctl status fgc-devops-bootstrap.service --no-pager' 2>&1 | tee "$BOOTSTRAP_LOG" || true
+    report 'FAIL: bootstrap service failed; no readiness accepted'
+    exit 26
+  fi
+  sleep 10
+done
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo cat /var/log/devops-bootstrap.log' 2>&1 | tee "$BOOTSTRAP_LOG"
+((ready == 1)) || { report 'FAIL: bootstrap service did not complete within the qualification timeout'; exit 26; }
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo test ! -e /var/lib/fedora-gnome-custom/rocky-devops-reboot-required; sudo systemctl is-active --quiet docker'
+report 'bootstrap_service=PASS reboot_pending=false'
 
 report '[9/10] Full runtime verification + application toolchain smoke'
 # shellcheck disable=SC2029
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" 2>&1 | tee "$VERIFY_LOG"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /usr/local/sbin/devops-verify.sh" 2>&1 | tee "$VERIFY_LOG"
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --rm hello-world >/dev/null && docker compose version >/dev/null'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'node -e '\''if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'\'' && npm --version >/dev/null && corepack --version >/dev/null'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'cat >/tmp/Hello.java <<'\''EOF'\''
@@ -149,13 +162,13 @@ ready=0
 for _ in $(seq 1 120); do
   boot_after="$(ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'cat /proc/sys/kernel/random/boot_id' 2>/dev/null || true)"
 # shellcheck disable=SC2029
-  if [[ -n "$boot_after" && "$boot_before" != "$boot_after" ]] && ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" >>"$VERIFY_LOG" 2>&1; then ready=1; break; fi
+  if [[ -n "$boot_after" && "$boot_before" != "$boot_after" ]] && ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /usr/local/sbin/devops-verify.sh" >>"$VERIFY_LOG" 2>&1; then ready=1; break; fi
   sleep 5
 done
 ((ready == 1)) || { report 'FAIL: actual reboot or complete toolchain recovery failed'; exit 23; }
 report "boot_id_before=$boot_before"
 report "boot_id_after=$boot_after"
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'printf "rocky-restoration-proof\n" > ~/restoration-proof.txt; sync; sudo systemctl poweroff' || true
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo fstrim -av; printf "rocky-restoration-proof\n" > ~/restoration-proof.txt; sync; sudo systemctl poweroff' || true
 stopped=0
 for _ in $(seq 1 90); do
   if ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then stopped=1; break; fi
@@ -182,7 +195,7 @@ ready=0
 for _ in $(seq 1 120); do
 # shellcheck disable=SC2029
   if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'test "$(cat ~/restoration-proof.txt)" = rocky-restoration-proof' >/dev/null 2>&1 &&
-     ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" >>"$VERIFY_LOG" 2>&1; then ready=1; break; fi
+     ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /usr/local/sbin/devops-verify.sh" >>"$VERIFY_LOG" 2>&1; then ready=1; break; fi
   sleep 5
 done
 ((ready == 1)) || { report 'FAIL: restored Rocky VM/data/toolchain qualification failed'; exit 25; }

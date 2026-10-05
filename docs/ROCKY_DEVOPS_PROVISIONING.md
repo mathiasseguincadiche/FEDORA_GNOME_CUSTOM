@@ -168,3 +168,9 @@ bash scripts/kvm/runtime_certification.sh
 Pour les symptômes fréquents, utiliser [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
 
 Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
+
+## Reprise après mise à jour du noyau invité
+
+L'image Cloud Base contient un noyau minimal. Le provisioning installe le noyau Rocky et ses modules complets avant de lancer Docker. Si le noyau par défaut diffère du noyau chargé, le bootstrap retourne 75 sans écrire de marqueur de réussite. Le service `fgc-devops-bootstrap.service` redémarre alors l'invité et reprend la préparation après cloud-init. Un noyau attendu qui ne démarre pas bloque la reprise au lieu de produire une boucle de redémarrages.
+
+`cloud-init status` seul ne prouve donc pas la disponibilité DevOps. Vérifier `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, puis `sudo /usr/local/sbin/devops-verify.sh`. Le marqueur final est écrit atomiquement après l'installation, les services et les contrôles. Les scripts restent dans /usr/local/sbin après les redémarrages. Le laboratoire GitHub utilise ce même service et conserve les journaux des différentes étapes.

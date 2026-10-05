@@ -116,6 +116,7 @@ ssh_public_key="$(awk 'NF >= 2 {print $1" "$2; exit}' "$ssh_key")"
 [[ "$ssh_public_key" =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521))[[:space:]][A-Za-z0-9+/]+=*$ ]] || fail 'provide one plain OpenSSH public key without authorized_keys options'
 bootstrap_b64="$(base64 -w0 "$bootstrap")"
 verify_b64="$(base64 -w0 "$verify")"
+service_b64="$(base64 -w0 "$REPO_ROOT/guest/rocky-devops/devops-bootstrap.service")"
 
 cat >"$tmpdir/user-data" <<EOF
 #cloud-config
@@ -140,8 +141,18 @@ write_files:
     permissions: '0755'
     encoding: b64
     content: ${verify_b64}
+  - path: /etc/systemd/system/fgc-devops-bootstrap.service
+    permissions: '0644'
+    encoding: b64
+    content: ${service_b64}
+  - path: /etc/fgc-devops-bootstrap.env
+    permissions: '0600'
+    content: |
+      DEVOPS_USER=${username}
 runcmd:
-  - [ bash, -lc, 'DEVOPS_USER=${username} /usr/local/sbin/devops-bootstrap.sh > /var/log/devops-bootstrap.log 2>&1' ]
+  - [ systemctl, daemon-reload ]
+  - [ systemctl, enable, fgc-devops-bootstrap.service ]
+  - [ systemctl, start, --no-block, fgc-devops-bootstrap.service ]
 EOF
 printf 'instance-id: %s-001\nlocal-hostname: %s\n' "$name" "$name" >"$tmpdir/meta-data"
 cloud-localds "$tmpdir/seed.iso" "$tmpdir/user-data" "$tmpdir/meta-data"

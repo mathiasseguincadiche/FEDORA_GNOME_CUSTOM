@@ -18,6 +18,7 @@ AWS_CLI_PGP_FINGERPRINT="${AWS_CLI_PGP_FINGERPRINT:-FB5DB77FD5C118B80511ADA8A631
 diagnose_failure() {
   local rc=$?
   trap - ERR
+  rm -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
   printf '[rocky-devops] bootstrap failed (exit=%s), running kernel=%s\n' "$rc" "$(uname -r)" >&2
   rpm -q kernel-core kernel-modules kernel-modules-extra >&2 || true
   systemctl --failed --no-pager >&2 || true
@@ -85,6 +86,9 @@ dnf config-manager --set-enabled crb
 # Official Fedora EPEL release package installs its RPM trust/repository policy.
 dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
 dnf -y upgrade --refresh
+# Cloud Base initially lacks some container networking modules. Install the
+# complete supported Rocky kernel/module set, then boot it before Docker.
+dnf -y install kernel kernel-modules kernel-modules-extra grubby kmod
 dnf -y install \
   git git-lfs jq unzip zip rsync openssh-server qemu-guest-agent \
   python3 python3-pip python3-devel pipx ansible-core \
@@ -157,6 +161,19 @@ for tool in kubectx kubens; do
   install -m 0755 "$kubectx_tmp/$tool" "/usr/local/bin/$tool"
 done
 rm -rf "$kubectx_tmp"
+
+reboot_pending=/var/lib/fedora-gnome-custom/rocky-devops-reboot-required
+default_kernel="$(basename "$(grubby --default-kernel)")"
+default_kernel="${default_kernel#vmlinuz-}"
+[[ "$default_kernel" =~ ^[0-9][a-zA-Z0-9._+-]*$ ]] || fail 'invalid default Rocky kernel'
+if [[ "$(uname -r)" != "$default_kernel" ]]; then
+  [[ ! -e "$reboot_pending" ]] || fail "the prepared kernel did not boot; refusing a reboot loop (running=$(uname -r), expected=$default_kernel)"
+  install -d -m 0755 /var/lib/fedora-gnome-custom
+  printf '%s\n' "$default_kernel" >"$reboot_pending"
+  log "Packages prepared; reboot onto Rocky kernel $default_kernel before Docker (exit 75). No success marker written."
+  exit 75
+fi
+rm -f "$reboot_pending"
 
 log 'install Corepack at an explicit npm version (registry integrity checked by npm)'
 npm install --global corepack@0.34.5
@@ -259,6 +276,7 @@ runuser -u "$DEVOPS_USER" -- env HOME="$devops_home" PATH="$PATH" minikube confi
 log 'verify SSH and SELinux policy'
 sshd -T | grep -Fxq 'passwordauthentication no' || fail 'SSH password authentication must remain disabled'
 [[ "$(getenforce)" == Enforcing ]] || fail 'SELinux enforcement lost'
+dnf clean all
 log 'write completion marker'
 install -d -m 0755 /var/lib/fedora-gnome-custom
 rpm -qa --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' | sort >/var/lib/fedora-gnome-custom/rocky-devops-packages.txt
@@ -274,6 +292,7 @@ rpm -qa --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' | sort >/var/lib/fedora-g
   printf 'k9s_version=%s\n' "$K9S_VERSION"
   printf 'rpm_release=%s\n' "$VERSION_ID"
   printf 'helm_version=%s\n' "$helm_version"
-} >/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
-chmod 0644 /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
+} >/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp
+chmod 0644 /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp
+mv -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 log 'bootstrap completed: clone -> build/test -> containerize -> deploy toolchain is ready'

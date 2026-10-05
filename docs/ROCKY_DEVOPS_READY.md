@@ -141,3 +141,9 @@ Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/ku
 Rocky Linux 10 requiert un processeur x86-64-v3. Le profil host-passthrough expose les capacités du Ryzen 7 7700 ; masquer AVX2 dans un modèle CPU générique empêcherait le démarrage. Le laboratoire utilise CPU host en KVM, max en émulation.
 
 Le transfert porte sur les données applicatives ; ne pas recopier les répertoires système Ubuntu (/etc, /usr, base de paquets) dans Rocky. Vérifier les UID/GID, les propriétaires des volumes et les empreintes SSH du nouvel invité. Si une adresse IP est réutilisée, revoir l'entrée connue correspondant à cette seule VM après comparaison de la nouvelle clé ; ne pas effacer l'ensemble des clés connues.
+
+## Reprise après mise à jour du noyau invité
+
+L'image Cloud Base contient un noyau minimal. Le provisioning installe le noyau Rocky et ses modules complets avant de lancer Docker. Si le noyau par défaut diffère du noyau chargé, le bootstrap retourne 75 sans écrire de marqueur de réussite. Le service `fgc-devops-bootstrap.service` redémarre alors l'invité et reprend la préparation après cloud-init. Un noyau attendu qui ne démarre pas bloque la reprise au lieu de produire une boucle de redémarrages.
+
+`cloud-init status` seul ne prouve donc pas la disponibilité DevOps. Vérifier `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, puis `sudo /usr/local/sbin/devops-verify.sh`. Le marqueur final est écrit atomiquement après l'installation, les services et les contrôles. Les scripts restent dans /usr/local/sbin après les redémarrages. Le laboratoire GitHub utilise ce même service et conserve les journaux des différentes étapes.
