@@ -199,6 +199,9 @@ for _ in $(seq 1 120); do
   sleep 5
 done
 ((ready == 1)) || { report 'FAIL: restored Rocky VM/data/toolchain qualification failed'; exit 25; }
+# The cached image must execute after restoration without downloading anything.
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'docker run --pull=never --rm hello-world >/dev/null'
+report 'restored_docker_container=PASS image_pull=never'
 # Prove outbound isolation from inside the restored guest, beyond QEMU flags.
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'python3 - <<'\''PY'\''
 import socket
