@@ -103,7 +103,7 @@ Extension Manager reste disponible comme interface d'administration, sans transf
 
 ## Certification
 
-`diagnostics/gnome-doctor` vérifie les cinq extensions du socle GNOME et appelle également le doctor Resource Monitor. `diagnostics/polish-doctor` vérifie la sixième, Tiling Assistant, sa provenance et les réglages de finition. Les deux contrôles font partie du parcours de certification final.
+`diagnostics/gnome-doctor` vérifie les cinq extensions du socle GNOME et appelle également le doctor Resource Monitor. `diagnostics/polish-doctor` vérifie la sixième, Tiling Assistant, sa provenance et les réglages de finition. `gnome-doctor` est appelé par la certification finale ; `polish-doctor` par le diagnostic global workstation-doctor. Exécuter aussi ce dernier avant la qualification pour contrôler la finition.
 
 Les tests CI couvrent séparément :
 
