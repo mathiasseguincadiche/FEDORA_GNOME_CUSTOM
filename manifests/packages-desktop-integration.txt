@@ -62,5 +62,5 @@ dnf5-plugins
 gnome-disk-utility
 dconf
 python3-gobject
-gstreamer1-plugin-pipewire
+pipewire-gstreamer
 gstreamer1-plugins-base

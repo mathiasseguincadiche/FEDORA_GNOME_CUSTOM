@@ -1,0 +1,46 @@
+name: Fedora 45 native GNOME 51 boot and recovery preview
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/scripts/fedora-gnome-*'
+      - '.github/scripts/fedora45-*'
+      - '.github/scripts/desktop-document-smoke.sh'
+      - '.github/fedora45-preview-media.json'
+      - '.github/workflows/fedora45-gnome-preview.yml'
+      - 'modules/desktop/27_lifecycle.sh'
+  schedule:
+    - cron: '43 7 * * 1'
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify signed Fedora 45 Beta seed identity
+        run: python3 .github/scripts/fedora45-preview-media.py
+      - name: Exercise native GNOME 51 boot, reboot and isolated recovery
+        env:
+          FGC_LAB_RELEASE: '45'
+          FGC_LAB_EXTENSION_MODE: native
+        run: timeout --signal=TERM --kill-after=60s 80m bash .github/scripts/fedora-gnome-vm.sh
+      - name: Explain preview scope
+        if: always()
+        run: |
+          echo 'Native Fedora 45/GNOME 51 preview only. Curated extensions remain DEFERRED; production profile remains pending.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve signed preview and boot evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fedora45-native-preview-${{ github.run_id }}
+          path: |
+            .fedora45-preview/signature.log
+            .fedora45-preview/fedora45-cloud.lock
+            .fedora-gnome-lab/report.json
+            .fedora-gnome-lab/evidence/
+          if-no-files-found: error
+          retention-days: 14

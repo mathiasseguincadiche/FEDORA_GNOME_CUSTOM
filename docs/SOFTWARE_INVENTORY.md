@@ -209,7 +209,7 @@ Gestion des disques et diagnostics des flux :
 - gnome-disk-utility
 - dconf
 - python3-gobject
-- gstreamer1-plugin-pipewire
+- pipewire-gstreamer
 
 Lifecycle :
 

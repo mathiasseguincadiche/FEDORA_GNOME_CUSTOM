@@ -21,6 +21,7 @@ jobs:
         run: |
           bash tests/test_peripheral_identity_behavior.sh
           python3 tests/test_portal_stream_behavior.py
+          python3 tests/test_fedora45_preview_media.py
 
       - name: Install real Borg integration-test dependency
         run: sudo apt-get update && sudo apt-get install -y borgbackup jq

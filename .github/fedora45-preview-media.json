@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "scope": "preview-only",
+  "release": 45,
+  "gnome_major": 51,
+  "compose": "45_Beta-1.3",
+  "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/test/45_Beta/Cloud/x86_64/images",
+  "checksum": "Fedora-Cloud-images-45_Beta-1.3-x86_64-CHECKSUM",
+  "image_sha256": "06bd4382a3bc5e5f94cd520f9ee15bdfb38d7bb72552b27fe06d581ba9a84292",
+  "signing_fingerprint": "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+  "source": "https://fedoraproject.org/cloud/download/beta/"
+}

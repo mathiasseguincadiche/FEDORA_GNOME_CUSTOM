@@ -9,6 +9,10 @@ LAB_USER=lab
 LAB_HOME=/home/lab
 LAB_UID="$(id -u "$LAB_USER")"
 EXPECTED_COMMIT="${2:-}"
+LAB_RELEASE="${3:-44}"
+LAB_EXTENSION_MODE="${4:-curated}"
+case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) exit 50;; esac
+EXPECTED_GNOME_MAJOR="$((LAB_RELEASE+6))"
 [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || exit 50
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO/lib/backup_runtime.sh"
@@ -56,7 +60,7 @@ as_user() {
 require_session() {
   local sid
   systemctl is-active --quiet gdm
-  gnome-shell --version | grep -Eq '^GNOME Shell 50([.]|$)'
+  gnome-shell --version | grep -Eq "^GNOME Shell $EXPECTED_GNOME_MAJOR([.]|$)"
   pgrep -u "$LAB_UID" -x gnome-shell >/dev/null
   sid="$(loginctl list-sessions --no-legend | awk -v u="$LAB_USER" '$3==u {print $1}')"
   local found=false candidate
@@ -82,6 +86,7 @@ check_extension_settings() {
 
 check_extensions() {
   check_extension_settings
+  [[ "$LAB_EXTENSION_MODE" == curated ]] || { echo 'DEFERRED: six curated extensions; Fedora 45 native GNOME preview only'; return 0; }
   local uuid output
   for uuid in "$DASH_TO_DOCK_UUID" "$APPINDICATOR_UUID" "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID" "$TILING_ASSISTANT_UUID"; do
     # Shell activation is asynchronous. Observe it; never repair a reboot here.
@@ -126,16 +131,18 @@ case "${1:-}" in
     require_session
     ;;
   install)
-    grep -Eq '^VERSION_ID="?44"?$' /etc/os-release
+    grep -Eq "^VERSION_ID=\"?$LAB_RELEASE\"?$" /etc/os-release
     [[ "$(getenforce)" == Enforcing ]]
     mkdir -p /etc/systemd/journald.conf.d /var/log/journal
     printf '[Journal]\nStorage=persistent\nSystemMaxUse=128M\n' > /etc/systemd/journald.conf.d/90-fgc-lab.conf
     systemd-tmpfiles --create --prefix /var/log/journal
     systemctl restart systemd-journald
     journalctl --flush
+    if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
     for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
     done
+    fi
     dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
       tpm2-tools firewalld python3 curl gjs gnome-shell-extension-dash-to-dock \
@@ -171,6 +178,7 @@ CONF
       as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
         bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
     done
+    fi
     # Use the persistent user bus: multiple private dconf daemons can race.
     as_user systemctl --user daemon-reload
     as_user gsettings set org.gnome.desktop.session idle-delay 0
@@ -178,8 +186,10 @@ CONF
     as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
     # Persist the selected extensions before the first GDM session.
     # Reboot/recovery checks only observe these settings and active states.
+    if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
     as_user gsettings set org.gnome.shell enabled-extensions \
       "['$DASH_TO_DOCK_UUID', '$APPINDICATOR_UUID', '$DING_UUID', '$SHOW_DESKTOP_PLUS_UUID', '$RESOURCE_MONITOR_UUID', '$TILING_ASSISTANT_UUID']"
+    else as_user gsettings set org.gnome.shell enabled-extensions '[]'; fi
     as_user gsettings set org.gnome.shell disable-user-extensions false
     extension_settings > /var/lib/fgc-lab/extension-settings.expected
     dnf clean all

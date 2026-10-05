@@ -15,6 +15,12 @@ Le plan refuse de préparer une mutation tant que le profil final n'est pas prom
 
 Le workflow [Fedora 45 GNOME 51 preview readiness](../.github/workflows/release-readiness.yml) utilise un vrai conteneur Fedora 45. Il vérifie le système, GNOME 51, un aller-retour Borg, les manifestes RPM, les extensions RPM et les archives des quatre extensions épinglées. Il conserve `readiness.json` et, uniquement si les quatre archives sont compatibles, un verrou **candidat** complet. Il ne change pas le verrou GNOME 50 actuel et ne certifie pas une session Wayland, l'Arc B580 ou la veille.
 
+## Laboratoire GNOME 51 natif de préversion
+
+Le workflow [Fedora 45 native GNOME 51 boot and recovery preview](../.github/workflows/fedora45-gnome-preview.yml) utilise un seed Fedora Cloud 45 Beta dont le SHA256 et la clé de signature sont indépendamment épinglés. Le nom de l'image est extrait du CHECKSUM signé ; le laboratoire recontrôle signature et contenu avant démarrage.
+
+Il exerce une session Wayland GNOME 51 native, la politique de mises à jour, la bureautique, le reboot, Borg et la récupération isolée. Les six extensions personnalisées sont explicitement DEFERRED, car les blocages de compatibilité ne sont pas contournés. Un PASS natif ne promeut ni les extensions ni le profil de production. Le laboratoire Fedora 44 reste celui du bureau personnalisé complet.
+
 ## Promotion à effectuer sur GitHub
 
 Une même PR doit fournir et faire examiner :
