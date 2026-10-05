@@ -26,6 +26,21 @@ printf '0bda\n' > "$tmp/sys/devices/audio/idVendor"
 printf '9999\n' > "$tmp/sys/devices/audio/idProduct"
 if peripheral_resolve audio; then echo 'USB identity drift was accepted' >&2; exit 1; fi
 printf '4080\n' > "$tmp/sys/devices/audio/idProduct"
+mkdir -p "$tmp/sys/class/video4linux/video0" "$tmp/sys/devices/camera/interface" "$tmp/sys/drivers/uvcvideo"
+printf '046d\n' > "$tmp/sys/devices/camera/idVendor"
+printf '0940\n' > "$tmp/sys/devices/camera/idProduct"
+printf 'Brio 100\n' > "$tmp/sys/devices/camera/product"
+ln -s "$tmp/sys/drivers/uvcvideo" "$tmp/sys/devices/camera/interface/driver"
+ln -s "$tmp/sys/devices/camera/interface" "$tmp/sys/class/video4linux/video0/device"
+v4l2-ctl(){ echo 'Video Capture'; }
+peripheral_enroll camera video0
+[[ "$(peripheral_resolve camera)" == video0 ]]
+printf 'Generic camera\n' > "$tmp/sys/devices/camera/product"
+if peripheral_resolve camera; then echo 'Wrong webcam accepted' >&2; exit 1; fi
+mkdir -p "$tmp/sys/class/ieee80211/phy0" "$tmp/sys/devices/0000:0a:00.0"
+ln -s "$tmp/sys/devices/0000:0a:00.0" "$tmp/sys/class/ieee80211/phy0/device"
+[[ "$(peripheral_wifi_phy 0000:0a:00.0)" == phy0 ]]
+if peripheral_wifi_phy 0000:0b:00.0; then echo 'Wrong Wi-Fi PHY accepted' >&2; exit 1; fi
 runtime_is_baremetal(){ return 1; }
 if peripheral_enroll audio card5; then echo 'Virtual enrollment was accepted' >&2; exit 1; fi
 echo 'Peripheral identity behavior: PASS'

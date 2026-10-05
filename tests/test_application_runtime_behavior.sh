@@ -59,12 +59,16 @@ PATH="$tmp/bin:$PATH"
 export PATH
 
 application_runtime_validate_contract
+# Production provenance uses flathub while the runtime contract uses flatpak.
+sed -i 's/\tflatpak\t/\tflathub\t/' "$REPO_ROOT/manifests/application-provenance.tsv"
+application_runtime_validate_contract
 if FAKE_ORIGIN=other application_runtime_validate_contract; then echo 'non-Flathub origin was accepted' >&2; exit 1; fi
 printf '# drift\n' >> "$APPLICATION_RUNTIME_REPO_ROOT/vscode.repo"
 if application_runtime_validate_contract; then echo 'modified vendor repository file was accepted' >&2; exit 1; fi
 cp "$REPO_ROOT/config/repos/vscode.repo" "$APPLICATION_RUNTIME_REPO_ROOT/vscode.repo"
 UNVERIFIED_FLATHUB_ALLOWLIST=''
 if UNVERIFIED_FLATHUB_ALLOWLIST='' application_runtime_validate_contract; then echo 'unreviewed community Flatpak was accepted' >&2; exit 1; fi
+UNVERIFIED_FLATHUB_ALLOWLIST='com.slack.Slack'
 if BAD_FLATPAK_RUN=true application_runtime_validate_contract; then echo 'Flatpak runtime startup failure was accepted' >&2; exit 1; fi
 
 echo 'application runtime behavior: PASS'

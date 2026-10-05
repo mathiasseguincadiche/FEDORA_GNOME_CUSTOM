@@ -93,9 +93,9 @@ audio_cert() (
   require_baremetal
   [[ -t 0 ]] || { ui_error 'Audio certification requires physical confirmation'; exit "$EXIT_PRECHECK_FAILED"; }
   local card mic work wav answer
+  rm -f "$(physical_runtime_evidence_path audio)" "$STATE_ROOT/final/certified.ok"
   card="$(peripheral_resolve audio)" || { ui_error 'Enroll the motherboard audio endpoint first'; exit "$EXIT_PRECHECK_FAILED"; }
   mic="$(peripheral_resolve_camera_mic)" || { ui_error 'Enroll the Brio camera and inspect its microphone first'; exit "$EXIT_PRECHECK_FAILED"; }
-  rm -f "$(physical_runtime_evidence_path audio)" "$STATE_ROOT/final/certified.ok"
   work="$(mktemp -d "${XDG_RUNTIME_DIR:?}/fgc-audio.XXXXXX")"; trap 'rm -rf "$work"' EXIT
   wpctl status | grep -q Audio
   timeout 20 speaker-test -D "plughw:${card#card},0" -c 2 -t sine -l 1

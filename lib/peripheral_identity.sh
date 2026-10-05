@@ -43,6 +43,7 @@ peripheral_enroll() {
   path="$(peripheral_lock_path "$kind")"; mkdir -p "$(dirname "$path")"
   { printf 'schema=1\nboard_name=%s\n' "$(hardware_platform_board_name)"; printf '%s\n' "$data"; } |
     evidence_atomic_write "$path" 0600
+  rm -f "$STATE_ROOT/final/certified.ok"
 }
 peripheral_resolve() {
   local kind="$1" root path node endpoint data saved pattern matches=()

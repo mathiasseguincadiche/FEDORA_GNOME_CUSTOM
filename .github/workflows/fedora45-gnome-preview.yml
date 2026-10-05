@@ -13,6 +13,9 @@ on:
     - cron: '43 7 * * 1'
 permissions:
   contents: read
+concurrency:
+  group: fedora45-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   preview:
     runs-on: ubuntu-24.04

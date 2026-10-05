@@ -79,6 +79,7 @@ def main():
     try:
         node = None
         if args.kind == "screen":
+            print("Sélectionnez un écran, puis bougez une fenêtre pendant quelques secondes.", file=sys.stderr)
             result = request("ScreenCast", "CreateSession", "(a{sv})", ({
                 "session_handle_token": GLib.Variant("s", "fgc_" + uuid.uuid4().hex)},))
             session = result["session_handle"]
