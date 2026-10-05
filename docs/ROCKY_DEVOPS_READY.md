@@ -157,8 +157,9 @@ Voir les [notes RHEL 10.2](https://docs.redhat.com/en/documentation/red_hat_ente
 ## Qualification réseau Docker
 
 Une commande dédiée contrôle le réseau réel du Docker local : bridge interne,
-résolution DNS d'un alias, requête HTTP entre deux conteneurs et publication
-HTTP liée uniquement à 127.0.0.1. Les ressources jetables sont nommées/étiquetées
+résolution DNS d'un alias et requête HTTP entre deux conteneurs. Le client
+reste sur le bridge interne ; le serveur possède aussi un bridge de publication
+normal, nécessaire à Docker pour activer le port HTTP lié uniquement à 127.0.0.1. Les ressources jetables sont nommées/étiquetées
 et supprimées après le test, y compris en cas d'erreur. Aucun réseau applicatif
 existant n'est supprimé.
 
