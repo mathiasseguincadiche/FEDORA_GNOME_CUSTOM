@@ -123,8 +123,8 @@ ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -q '^VERSION_ID=\"10.2\"' /etc/o
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'getent hosts github.com >/dev/null && curl -fsSI --max-time 20 https://github.com >/dev/null'
 
 report '[7/10] Copy exact repository guest bootstrap'
-scp "${SCP_OPTS[@]}" "$ROOT/guest/rocky-devops/bootstrap-devops.sh" "$ROOT/guest/rocky-devops/verify-devops.sh" "$ROOT/guest/rocky-devops/devops-bootstrap.service" "$VM_USER@127.0.0.1:/tmp/"
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo install -m 0755 /tmp/bootstrap-devops.sh /usr/local/sbin/devops-bootstrap.sh; sudo install -m 0755 /tmp/verify-devops.sh /usr/local/sbin/devops-verify.sh; sudo install -m 0644 /tmp/devops-bootstrap.service /etc/systemd/system/fgc-devops-bootstrap.service; printf "DEVOPS_USER=mathias\n" | sudo tee /etc/fgc-devops-bootstrap.env >/dev/null; sudo chmod 0600 /etc/fgc-devops-bootstrap.env; sudo restorecon /usr/local/sbin/devops-bootstrap.sh /usr/local/sbin/devops-verify.sh /etc/systemd/system/fgc-devops-bootstrap.service; sudo systemctl daemon-reload'
+scp "${SCP_OPTS[@]}" "$ROOT/guest/rocky-devops/bootstrap-devops.sh" "$ROOT/guest/rocky-devops/verify-devops.sh" "$ROOT/guest/rocky-devops/devops-bootstrap.service" "$ROOT/.github/scripts/rocky-guest-health.py" "$VM_USER@127.0.0.1:/tmp/"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo install -m 0755 /tmp/bootstrap-devops.sh /usr/local/sbin/devops-bootstrap.sh; sudo install -m 0755 /tmp/verify-devops.sh /usr/local/sbin/devops-verify.sh; sudo install -m 0644 /tmp/devops-bootstrap.service /etc/systemd/system/fgc-devops-bootstrap.service; printf "DEVOPS_USER=mathias\n" | sudo tee /etc/fgc-devops-bootstrap.env >/dev/null; sudo chmod 0600 /etc/fgc-devops-bootstrap.env; sudo restorecon /usr/local/sbin/devops-bootstrap.sh /usr/local/sbin/devops-verify.sh /etc/systemd/system/fgc-devops-bootstrap.service; sudo install -D -m 0644 /tmp/rocky-guest-health.py /usr/local/libexec/fgc-rocky-guest-health.py; sudo systemctl daemon-reload'
 
 report '[8/10] Execute real DevOps bootstrap service (including required kernel reboot)'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'set -eu; sudo systemctl enable fgc-devops-bootstrap.service; sudo systemctl start --no-block fgc-devops-bootstrap.service'
@@ -215,12 +215,15 @@ PY'
 report 'restored_vm=PASS data=PASS toolchain=PASS network=restrict-on'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo systemctl --failed --no-legend; sudo journalctl -b -p err --no-pager; sudo cat /var/lib/fedora-gnome-custom/rocky-devops-packages.txt' | tee "$LAB/guest-health.log"
 # Unexpected failed units make the qualification fail; raw errors are retained.
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo bash -se' <<'HEALTH'
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo bash -se' <<'HEALTH' | tee -a "$LAB/guest-health.log"
 test -z "$(systemctl --failed --no-legend)"
-journalctl --quiet --no-pager -b -p emerg..crit >/tmp/rocky-critical.log
+journalctl --quiet --no-pager -b -p emerg..crit -o json >/tmp/rocky-critical.json
 journalctl --quiet --no-pager -b -t systemd-coredump >/tmp/rocky-coredumps.log
-cat /tmp/rocky-critical.log /tmp/rocky-coredumps.log
-test ! -s /tmp/rocky-critical.log
+cat /tmp/rocky-coredumps.log
+python3 /usr/local/libexec/fgc-rocky-guest-health.py </tmp/rocky-critical.json
 test ! -s /tmp/rocky-coredumps.log
 HEALTH
+if grep -q '^WARN EL10 Docker compatibility:' "$LAB/guest-health.log"; then
+  report 'kernel_compatibility=WARNING stable Docker uses documented unmaintained EL10 compatibility modules; see guest-health.log'
+fi
 report 'VERDICT: REAL ROCKY LINUX 10.2 READY-TO-WORK DEVOPS VM PRE-TEST PASS'

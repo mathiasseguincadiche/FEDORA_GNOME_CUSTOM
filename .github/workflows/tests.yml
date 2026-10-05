@@ -72,6 +72,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_install_exit_status_contract.sh
       - if: ${{ !cancelled() }}
+        run: python3 tests/test_rocky_guest_health.py
+      - if: ${{ !cancelled() }}
         run: bash tests/test_rocky_devops_bootstrap_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_python_toolchain_contract.sh
