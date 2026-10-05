@@ -19,7 +19,7 @@ Le workflow [Fedora 45 GNOME 51 preview readiness](../.github/workflows/release-
 
 Le workflow [Fedora 45 native GNOME 51 boot and recovery preview](../.github/workflows/fedora45-gnome-preview.yml) utilise un seed Fedora Cloud 45 Beta dont le SHA256 et la clé de signature sont indépendamment épinglés. Le nom de l'image est extrait du CHECKSUM signé ; le laboratoire recontrôle signature et contenu avant démarrage.
 
-Avant l'installation graphique, il met à jour les paquets déjà présents dans le seed Beta via les dépôts officiels : installer le groupe GNOME seul ne suffit pas à actualiser ses schémas. Il vérifie notamment la présence de custom-accel-config, requise par Mutter 51, avant le démarrage de GDM.
+Avant l'installation graphique, il met à jour les paquets déjà présents dans le seed Beta via les dépôts officiels : installer le groupe GNOME seul ne suffit pas à actualiser ses schémas. Il redémarre normalement cette transaction et exige le nouveau boot ainsi que le noyau Fedora mis à jour avant d'installer GNOME. Le journal de maintenance reste conservé ; aucun service en échec n'est réinitialisé pour fabriquer un PASS. Il vérifie notamment la présence de custom-accel-config, requise par Mutter 51, avant le démarrage de GDM.
 
 Il exerce une session Wayland GNOME 51 native, la politique de mises à jour, la bureautique, le reboot, Borg et la récupération isolée. Les six extensions personnalisées sont explicitement DEFERRED, car les blocages de compatibilité ne sont pas contournés. Un PASS natif ne promeut ni les extensions ni le profil de production. Le laboratoire Fedora 44 reste celui du bureau personnalisé complet.
 

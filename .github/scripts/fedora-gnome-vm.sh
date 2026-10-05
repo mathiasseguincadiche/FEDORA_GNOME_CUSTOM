@@ -215,6 +215,20 @@ provision() {
   guest "printf '%s\n' '$COMMIT' | sudo tee /opt/fgc-lab/repo/CI_COMMIT >/dev/null"
   scp "${SCP_OPTS[@]}" extensions.tar.gz lab@127.0.0.1:/tmp/
   guest 'sudo tar -C /opt/fgc-lab -xzf /tmp/extensions.tar.gz && sudo chown -R lab:lab /opt/fgc-lab/extensions'
+  if [[ "$LAB_RELEASE" == 45 ]]; then
+    guest_action prepare-base
+    local maintenance_boot maintenance_after
+    maintenance_boot="$(boot_id)"
+    guest 'sudo journalctl --no-pager -b' > "$LAB/evidence/$PHASE-maintenance-journal.log"
+    # No graphical session exists yet. Observe a normal QMP reboot, then prove
+    # both a new boot identity and the updated Fedora kernel in install().
+    python3 "$ROOT/.github/scripts/fedora-qmp-reboot.py" "$LAB/qmp.sock" \
+      ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemctl reboot'
+    wait_ssh
+    maintenance_after="$(boot_id)"
+    [[ -n "$maintenance_after" && "$maintenance_after" != "$maintenance_boot" ]]
+    printf 'PASS: base maintenance reboot %s -> %s\n' "$maintenance_boot" "$maintenance_after"
+  fi
   guest_action install
   wait_session
 }
