@@ -202,7 +202,7 @@ cc_kvm_menu() {
     cc_option 1 'Virtualization doctor' 'KVM / libvirt / pool / réseau'
     cc_option 2 'Contrôler guard réseau' 'fail-closed'
     cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
-    cc_option 4 'Certification runtime KVM' 'Ubuntu + Windows + isolation'
+    cc_option 4 'Certification runtime KVM' 'Rocky + Windows + isolation'
     cc_option 5 'Rafraîchir accès Nautilus aux VM'
     cc_option 6 'Créer Rocky DevOps' 'image signée Rocky Linux + cloud-init'
     cc_option 7 'Créer Windows 11' 'ISO + VirtIO + 2 SHA-256 obligatoires'

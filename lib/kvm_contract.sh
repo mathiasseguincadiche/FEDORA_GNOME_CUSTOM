@@ -45,7 +45,7 @@ kvm_contract_validate_guest_file() {
   python3 - "$profile" "$xml" "${KVM_NETWORK_NAME:-devops-nat}" "${KVM_POOL_PATH:-/data/libvirt/images}" "$expected_io" "${ROCKY_SERVER_NAME:-rocky-devops}" "${ROCKY_SERVER_VCPU:-6}" "${ROCKY_SERVER_RAM_MB:-16384}" "${WINDOWS11_NAME:-windows-11}" "${WINDOWS11_VCPU:-4}" "${WINDOWS11_RAM_MB:-12288}" <<'PY'
 import sys
 import xml.etree.ElementTree as ET
-(profile, path, network, pool_path, expected_io, ubuntu_name, ubuntu_vcpu, ubuntu_ram, windows_name, windows_vcpu, windows_ram) = sys.argv[1:]
+(profile, path, network, pool_path, expected_io, rocky_name, rocky_vcpu, rocky_ram, windows_name, windows_vcpu, windows_ram) = sys.argv[1:]
 root = ET.parse(path).getroot()
 def fail(msg):
     print(msg, file=sys.stderr); raise SystemExit(1)
@@ -56,7 +56,7 @@ def memory_mib(node):
     return round(value*factors.get(unit,1/1024))
 if root.tag != 'domain': fail('unexpected domain XML')
 name=(root.findtext('name') or '').strip()
-if profile=='rocky': expected_name, expected_vcpu, expected_ram=ubuntu_name,int(ubuntu_vcpu),int(ubuntu_ram)
+if profile=='rocky': expected_name, expected_vcpu, expected_ram=rocky_name,int(rocky_vcpu),int(rocky_ram)
 elif profile=='windows': expected_name, expected_vcpu, expected_ram=windows_name,int(windows_vcpu),int(windows_ram)
 else: fail('unknown profile')
 if name != expected_name: fail(f'domain name mismatch: {name}')

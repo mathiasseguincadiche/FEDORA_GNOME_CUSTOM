@@ -44,7 +44,7 @@ Quand `rocky-devops` ou `windows-11` existe, son XML réel est validé. `runtime
 
 Contrat commun : Q35, CPU `host-passthrough`, RAM/vCPU exacts, qcow2 VirtIO sur `/data`, `cache=none`, `discard=unmap`, profil I/O mesuré, réseau `devops-nat` en VirtIO, QEMU Guest Agent, VirtIO RNG, balloon et aucun `hostdev`.
 
-Ubuntu reste headless. Windows exige en plus Secure Boot, clés enrôlées, TPM 2.0 CRB emulator et SPICE.
+Rocky Linux reste headless. Windows exige en plus Secure Boot, clés enrôlées, TPM 2.0 CRB emulator et SPICE.
 
 ### Médias Windows
 

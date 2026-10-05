@@ -148,6 +148,7 @@ ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo systemctl reboot' || true
 ready=0
 for _ in $(seq 1 120); do
   boot_after="$(ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'cat /proc/sys/kernel/random/boot_id' 2>/dev/null || true)"
+# shellcheck disable=SC2029
   if [[ -n "$boot_after" && "$boot_before" != "$boot_after" ]] && ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" >>"$VERIFY_LOG" 2>&1; then ready=1; break; fi
   sleep 5
 done
@@ -179,6 +180,7 @@ report 'cold_archive=PASS encryption=none source_disks_deleted=true'
 start_vm "$ACCEL" "$QEMU_CPU"
 ready=0
 for _ in $(seq 1 120); do
+# shellcheck disable=SC2029
   if ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'test "$(cat ~/restoration-proof.txt)" = rocky-restoration-proof' >/dev/null 2>&1 &&
      ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "sudo env DEVOPS_USER=$VM_USER /tmp/verify-devops.sh" >>"$VERIFY_LOG" 2>&1; then ready=1; break; fi
   sleep 5

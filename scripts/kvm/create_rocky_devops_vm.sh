@@ -113,6 +113,7 @@ cleanup() { rm -rf "$tmpdir"; }
 trap cleanup EXIT
 
 ssh_public_key="$(awk 'NF >= 2 {print $1" "$2; exit}' "$ssh_key")"
+[[ "$ssh_public_key" =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521))[[:space:]][A-Za-z0-9+/]+=*$ ]] || fail 'provide one plain OpenSSH public key without authorized_keys options'
 bootstrap_b64="$(base64 -w0 "$bootstrap")"
 verify_b64="$(base64 -w0 "$verify")"
 
@@ -123,7 +124,6 @@ manage_etc_hosts: true
 ssh_pwauth: false
 disable_root: true
 users:
-  - default
   - name: ${username}
     groups: [wheel]
     sudo: ALL=(ALL) ALL

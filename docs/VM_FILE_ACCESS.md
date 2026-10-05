@@ -82,6 +82,6 @@ Si une adresse DHCP change, il suffit de relancer `refresh`. Aucun nom d'interfa
 - aucune réintroduction de VirtioFS ;
 - aucune exposition globale du filesystem Windows ;
 - pas de SMB invité/anonyme ;
-- SSH reste la méthode d'administration principale d'Ubuntu ;
+- SSH reste la méthode d'administration principale d'Rocky Linux ;
 - SMB reste limité au partage `VM-Share` ;
 - le réseau physique reste isolé par le contrat `devops-nat`.

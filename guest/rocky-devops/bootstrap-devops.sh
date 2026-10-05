@@ -76,7 +76,7 @@ dnf -y install \
   gcc gcc-c++ make shellcheck bash-completion \
   bind-utils traceroute iproute net-tools nmap-ncat \
   htop tree tmux ripgrep less groff glab \
-  nodejs npm java-21-openjdk-devel maven kubectx \
+  nodejs npm java-21-openjdk-devel maven \
   container-selinux policycoreutils
 
 log 'configure native Enterprise Linux 10 RPM repositories'
@@ -126,6 +126,22 @@ EOF
 dnf -y install \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
   gh terraform azure-cli kubectl
+
+# EPEL 10.2 has no kubectx RPM; preserve kubectx/kubens with reviewed
+# upstream v0.11.0 assets. Digests come from ahmetb/kubectx release metadata.
+kubectx_tmp="$(mktemp -d)"
+for tool in kubectx kubens; do
+  case "$tool" in
+    kubectx) expected_sha=08e031c54fbffb3f100e904e4eae94bba2730fedf4869921fda79e4d7a8f5d4c ;;
+    kubens) expected_sha=326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09 ;;
+  esac
+  archive="$tool"_v0.11.0_linux_x86_64.tar.gz
+  curl -fsSL "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/$archive" -o "$kubectx_tmp/$archive"
+  printf '%s  %s\n' "$expected_sha" "$kubectx_tmp/$archive" | sha256sum -c -
+  tar -xzf "$kubectx_tmp/$archive" -C "$kubectx_tmp" "$tool"
+  install -m 0755 "$kubectx_tmp/$tool" "/usr/local/bin/$tool"
+done
+rm -rf "$kubectx_tmp"
 
 log 'install Corepack at an explicit npm version (registry integrity checked by npm)'
 npm install --global corepack@0.34.5
@@ -230,6 +246,7 @@ sshd -T | grep -Fxq 'passwordauthentication no' || fail 'SSH password authentica
 [[ "$(getenforce)" == Enforcing ]] || fail 'SELinux enforcement lost'
 log 'write completion marker'
 install -d -m 0755 /var/lib/fedora-gnome-custom
+rpm -qa --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' | sort >/var/lib/fedora-gnome-custom/rocky-devops-packages.txt
 {
   printf 'completed_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf 'kubernetes_minor=%s\n' "$KUBERNETES_MINOR"
@@ -244,6 +261,4 @@ install -d -m 0755 /var/lib/fedora-gnome-custom
   printf 'helm_version=%s\n' "$helm_version"
 } >/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 chmod 0644 /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
-
-rpm -qa --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' | sort >/var/lib/fedora-gnome-custom/rocky-devops-packages.txt
 log 'bootstrap completed: clone -> build/test -> containerize -> deploy toolchain is ready'

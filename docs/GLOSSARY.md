@@ -108,7 +108,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **SHA-256** — fonction de hachage utilisée pour vérifier qu'un fichier correspond exactement au contenu attendu.
 
-**Signature GPG** — mécanisme permettant de vérifier qu'une liste de checksums a été signée par la clé attendue. Le workflow Ubuntu authentifie `SHA256SUMS` avant de faire confiance au SHA-256 de l'image.
+**Signature GPG** — mécanisme permettant de vérifier qu'une liste de checksums a été signée par la clé attendue. Le workflow Rocky Linux authentifie `SHA256SUMS` avant de faire confiance au SHA-256 de l'image.
 
 ## Bureau GNOME
 

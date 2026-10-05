@@ -1,8 +1,8 @@
 # Inventaire logiciel — HOST Fedora 44 et VM Rocky DevOps
 
-Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora ou par le bootstrap Ubuntu.
+Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora ou par le bootstrap Rocky Linux.
 
-Les dépendances transitives (`glibc`, bibliothèques GTK/Qt, bibliothèques Python, dépendances RPM/DEB, etc.) ne sont volontairement pas figées ici : DNF et APT les résolvent au moment de l'installation et leur liste peut évoluer sans changement du projet.
+Les dépendances transitives (`glibc`, bibliothèques GTK/Qt, bibliothèques Python, dépendances RPM, etc.) ne sont volontairement pas figées ici : DNF les résolvent au moment de l'installation et leur liste peut évoluer sans changement du projet.
 
 ## 1. HOST — Fedora 44 Golden Workstation
 
@@ -337,15 +337,15 @@ Réseau / sécurité :
 
 La VM est une workstation CLI DevOps prête à cloner, construire, tester, conteneuriser et déployer.
 
-### 2.1 Base APT / système
+### 2.1 Base RPM/DNF / système
 
-- software-properties-common
-- apt-transport-https
+- dnf-plugins-core
 - ca-certificates
 - curl
 - wget
-- gnupg
-- lsb-release
+- gnupg2
+- policycoreutils
+- container-selinux
 - jq
 - unzip
 - zip
@@ -370,7 +370,7 @@ La VM est une workstation CLI DevOps prête à cloner, construire, tester, conte
 
 `python3-devel` fournit les en-têtes nécessaires pour compiler proprement les extensions Python natives dans la VM de build/DevOps.
 
-Le doctor Ubuntu vérifie :
+Le doctor Rocky Linux vérifie :
 
 - Python 3
 - `python3 -m pip`
@@ -379,12 +379,12 @@ Le doctor Ubuntu vérifie :
 
 ### 2.4 Ansible / automation
 
-- ansible
 - ansible-core
 
 ### 2.5 Outils de build et shell
 
-- build-essential
+- gcc
+- gcc-c++
 - make
 - shellcheck
 - bash-completion
@@ -397,11 +397,11 @@ Le doctor Ubuntu vérifie :
 
 - openssh-server
 - qemu-guest-agent
-- dnsutils
+- bind-utils
 - traceroute
-- iproute2
+- iproute
 - net-tools
-- netcat-openbsd
+- nmap-ncat
 
 SSH par mot de passe reste désactivé ; l'accès opérateur suit le contrat SSH/SFTP du projet.
 
@@ -409,7 +409,7 @@ SSH par mot de passe reste désactivé ; l'accès opérateur suit le contrat SSH
 
 - nodejs — Node.js 22+ exigé
 - npm
-- node-corepack
+- corepack 0.34.5 (npm, contrôle d'intégrité du registre)
 
 ### 2.8 Java
 
@@ -435,7 +435,7 @@ Le service Docker est activé et l'utilisateur DevOps est ajouté au groupe `doc
 Dépôts / paquets :
 
 - kubectl — branche Kubernetes v1.37.x contractuelle
-- helm
+- helm v4.3.0 — archive get.helm.sh + SHA-256 publié
 - kubectx (et `kubens` fourni avec l'outillage associé)
 
 Binaires contrôlés / pinnés :
@@ -450,20 +450,20 @@ Minikube utilise Docker comme driver par défaut.
 ### 2.11 Infrastructure as Code / Cloud
 
 - terraform — dépôt HashiCorp officiel
-- azure-cli — dépôt Microsoft, avec fallback de suite contrôlé si nécessaire
+- azure-cli — dépôt Microsoft natif RHEL 10, clé microsoft-2025
 - AWS CLI v2 — archive officielle dont la signature GPG est vérifiée
 
 ### 2.12 Services VM
 
 Activés / validés :
 
-- ssh
+- sshd
 - docker
 - qemu-guest-agent lorsque le canal virtio est exposé
 
 ## 3. Dépendances transitives
 
-DNF et APT installent automatiquement les bibliothèques requises par les paquets ci-dessus. Cette liste est volontairement dynamique.
+DNF installe automatiquement les bibliothèques requises par les paquets ci-dessus. Cette liste est volontairement dynamique.
 
 Pour connaître la vérité exacte d'une installation donnée :
 
@@ -479,12 +479,14 @@ Paquets explicitement installés par l'utilisateur / projet :
 dnf repoquery --userinstalled
 ```
 
-VM Ubuntu :
+VM Rocky Linux :
 
 ```bash
-dpkg-query -W -f='${binary:Package}\n' | sort
+rpm -qa | sort
 ```
 
 Après installation, ces sorties peuvent être archivées comme inventaire runtime ; elles complètent le contrat versionné de ce document.
 
 Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
+
+Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.

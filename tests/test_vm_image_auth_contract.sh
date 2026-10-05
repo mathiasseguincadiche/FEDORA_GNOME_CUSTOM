@@ -14,6 +14,7 @@ done
 
 # Rocky authenticity: signed checksum list + pinned fingerprint + image hash.
 grep -Fq 'FC226859C0860BF0DDB95B085B106C736FEDFC85' "$verifier"
+# shellcheck disable=SC2016
 grep -Fq '"$signature" "$sums"' "$verifier"
 grep -Fq "sha256sum \"\$image\"" "$verifier"
 grep -Fq 'unexpected Rocky key fingerprint' "$verifier"

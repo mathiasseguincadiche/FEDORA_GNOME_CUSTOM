@@ -97,7 +97,7 @@ Le bootstrap couvre notamment :
 - OpenJDK 21 + Maven ;
 - Python 3, pip, venv et pipx ;
 - SSH server, QEMU Guest Agent et rsync ;
-- outils de diagnostic : `jq`, `shellcheck`, `dnsutils`, `traceroute`, `iproute2`, `netcat`, `htop`, `tmux`, `ripgrep`, etc.
+- outils de diagnostic : `jq`, `shellcheck`, `bind-utils`, `traceroute`, `iproute`, `nmap-ncat`, `htop`, `tmux`, `ripgrep`, etc.
 
 ## Sources du bootstrap
 
@@ -166,3 +166,5 @@ bash scripts/kvm/runtime_certification.sh
 ```
 
 Pour les symptômes fréquents, utiliser [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
+
+Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.

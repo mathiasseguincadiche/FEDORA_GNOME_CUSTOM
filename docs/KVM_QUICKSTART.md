@@ -73,7 +73,7 @@ Si la clé Rocky Linux doit être fournie localement :
 ```bash
 bash scripts/kvm/create_rocky_devops_vm.sh \
   --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
-  --rocky-key-file /chemin/cle-canonical.asc
+  --rocky-key-file /chemin/RPM-GPG-KEY-Rocky-10
 ```
 
 Accès :

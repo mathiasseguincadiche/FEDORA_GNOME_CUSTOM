@@ -15,7 +15,7 @@ grep -Fq 'Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2' "$ROOT/.githu
 grep -Fq 'scripts/kvm/verify_rocky_cloud_image.sh' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'guest/rocky-devops/bootstrap-devops.sh' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'docker run --rm hello-world' "$ROOT/.github/scripts/vm-pretest.sh"
-grep -Fq 'sudo reboot' "$ROOT/.github/scripts/vm-pretest.sh"
+grep -Fq 'sudo systemctl reboot' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq "actions/upload-artifact@$UPLOAD_ARTIFACT_SHA" "$ROOT/.github/workflows/vm-pretest.yml"
 grep -Fq 'Backup fail-closed invariants' "$ROOT/.github/workflows/non-regression.yml"
 

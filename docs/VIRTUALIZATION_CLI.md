@@ -86,7 +86,7 @@ OVMF / UEFI
 swtpm / TPM 2.0
 ```
 
-Windows 11 conserve son profil UEFI Secure Boot + TPM 2.0 ; Ubuntu Server utilise UEFI.
+Windows 11 conserve son profil UEFI Secure Boot + TPM 2.0 ; Rocky Linux 10.2 utilise UEFI.
 
 ## GUI complémentaire
 

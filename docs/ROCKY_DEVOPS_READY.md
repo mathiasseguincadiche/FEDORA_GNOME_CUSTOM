@@ -72,7 +72,7 @@ clé publique injectée
 
 Aucun `curl | bash`.
 
-- RPM/DNF + dépôts signés pour Rocky Linux/Docker/GitHub/HashiCorp/Azure/Kubernetes/Helm ;
+- RPM/DNF + paquets signés pour Rocky Linux/EPEL/Docker/GitHub/HashiCorp/Azure/Kubernetes ;
 - Kubernetes limité à la génération `v1.37` ;
 - kind v0.33.0 et Minikube v1.38.1 avec checksums publiés ;
 - yq v4.53.3 et K9s v0.51.0 avec SHA-256 attendus versionnés ;
@@ -95,7 +95,7 @@ Pour une clé Rocky Linux locale obtenue par un canal de confiance :
 ```bash
 scripts/kvm/create_rocky_devops_vm.sh \
   --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
-  --rocky-key-file /chemin/cle-canonical.asc
+  --rocky-key-file /chemin/RPM-GPG-KEY-Rocky-10
 ```
 
 Le bootstrap et le verify exacts du checkout HOST sont encodés dans cloud-init. Le premier démarrage exécute `/usr/local/sbin/devops-bootstrap.sh`.
@@ -116,7 +116,7 @@ scripts/kvm/runtime_certification.sh
 
 Le workflow CI `Rocky Linux 10.2 real VM pretest` authentifie lui aussi une image Rocky Linux, exécute le bootstrap exact, smoke-test Docker/Node/Java/Kubernetes/cloud/IaC, redémarre la VM et vérifie la persistance.
 
-Il tourne périodiquement afin de détecter une rupture de dépôt, clé, signature ou release externe.
+Il est exigé avant fusion et tourne périodiquement afin de détecter une rupture de dépôt, clé, signature ou release externe.
 
 ## Accès aux fichiers
 
@@ -131,3 +131,9 @@ Il n'existe pas de conversion en place entre Ubuntu et Rocky. Conserver l'ancien
 Le nouveau nom de domaine évite d'écraser l'ancien disque. Une ancienne clé UBUNTU_SERVER_* dans config/local.conf doit être retirée ou remplacée après revue : le validateur la refuse. Les preuves de certification antérieures deviennent obsolètes avec le nouveau profil. Rafraîchir les favoris Nautilus et certifier le nouvel invité avant de retirer l'ancien.
 
 Le test GitHub exigé par contracts démarre Rocky 10.2 en Q35/UEFI, valide le bootstrap, Docker et les outils, prouve le changement d'identifiant de démarrage, arrête la VM, archive qcow2/NVRAM/seed avec Borg sans chiffrement, supprime les sources, contrôle les SHA-256 restaurés et redémarre uniquement la copie restaurée. Il ne certifie pas les périphériques physiques ni Windows.
+
+La certification HOST ouvre un terminal SSH pour demander le mot de passe sudo de la VM. Le compte opérateur conserve un sudo authentifié ; aucun sudo illimité sans mot de passe n'est provisionné. Le sudo sans mot de passe du compte CI reste limité à une VM jetable de laboratoire.
+
+Le noyau de l'invité est celui maintenu par Rocky Linux pour Enterprise Linux 10. Le suivi Linux amont stable N/N-1 concerne le HOST Fedora et ne remplace pas le noyau Rocky.
+
+Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.

@@ -44,7 +44,7 @@ domain_xml_has() { vsh dumpxml "$1" 2>/dev/null | grep -Eq "$2"; }
 agent_ping() { vsh qemu-agent-command "$1" '{"execute":"guest-ping"}' >/dev/null 2>&1; }
 remote_ping() {
   local target="$1"
-  printf '%s\n' "$target" | ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'read -r target; ping -c 1 -W 2 "$target" >/dev/null'
+  printf '%s\n' "$target" | ssh "${ssh_base[@]}" "${username}@${rocky_ip}" 'read -r target; ping -c 1 -W 2 "$target" >/dev/null'
 }
 
 for dom in "$rocky" "$windows"; do
@@ -123,20 +123,21 @@ if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
   fi
 fi
 
-ubuntu_ip="$(domain_ip "$rocky")"
+rocky_ip="$(domain_ip "$rocky")"
 windows_ip="$(domain_ip "$windows")"
-if [[ -n "$ubuntu_ip" ]]; then record OK 'Rocky IP' "$ubuntu_ip"; else record KO 'Rocky IP' unavailable; fi
+if [[ -n "$rocky_ip" ]]; then record OK 'Rocky IP' "$rocky_ip"; else record KO 'Rocky IP' unavailable; fi
 if [[ -n "$windows_ip" ]]; then record OK 'Windows IP' "$windows_ip"; else record WARN 'Windows IP' unavailable; fi
 
 physical_gateway="$(ip -4 route show default 2>/dev/null | awk 'NR==1 {for (i=1;i<=NF;i++) if ($i=="via") {print $(i+1); exit}}')"
 kvm_gateway="${KVM_GATEWAY:-192.168.50.254}"
 
 ssh_base=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new)
-if [[ -n "$ubuntu_ip" ]] && ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" true >/dev/null 2>&1; then
+if [[ -n "$rocky_ip" ]] && ssh "${ssh_base[@]}" "${username}@${rocky_ip}" true >/dev/null 2>&1; then
   record OK 'HOST → Rocky SSH' reachable
 
-  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'sudo /usr/local/sbin/devops-verify.sh' >/dev/null 2>&1; then record OK 'Rocky DevOps stack' verified; else record KO 'Rocky DevOps stack' failed; fi
-  if ssh "${ssh_base[@]}" "${username}@${ubuntu_ip}" 'getent ahostsv4 example.com >/dev/null && curl -fsS --max-time 10 https://example.com >/dev/null'; then record OK 'Rocky DNS/Internet' working; else record KO 'Rocky DNS/Internet' failed; fi
+  # Allocate a terminal for the guest sudo password; SSH itself remains key-only.
+  if ssh -t "${ssh_base[@]}" "${username}@${rocky_ip}" 'sudo /usr/local/sbin/devops-verify.sh'; then record OK 'Rocky DevOps stack' verified; else record KO 'Rocky DevOps stack' failed; fi
+  if ssh "${ssh_base[@]}" "${username}@${rocky_ip}" 'getent ahostsv4 example.com >/dev/null && curl -fsS --max-time 10 https://example.com >/dev/null'; then record OK 'Rocky DNS/Internet' working; else record KO 'Rocky DNS/Internet' failed; fi
   if remote_ping "$kvm_gateway"; then record OK 'Rocky → KVM gateway' reachable; else record KO 'Rocky → KVM gateway' failed; fi
 
   if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true && -n "$physical_gateway" ]]; then

@@ -70,7 +70,7 @@ journalctl -u virtqemud -b --no-pager 2>/dev/null || true
 
 Vérifier le disque `/data/libvirt/images/rocky-devops.qcow2`, le seed cloud-init et le réseau `devops-nat`.
 
-## Ubuntu inaccessible en SSH
+## Rocky Linux inaccessible en SSH
 
 ```bash
 virsh --connect qemu:///system domifaddr rocky-devops --source agent
@@ -87,7 +87,7 @@ sudo systemctl status qemu-guest-agent
 sudo /usr/local/sbin/devops-verify.sh
 ```
 
-## Cloud-init / bootstrap Ubuntu incomplet
+## Cloud-init / bootstrap Rocky Linux incomplet
 
 Dans le guest :
 
@@ -99,7 +99,7 @@ sudo /usr/local/sbin/devops-verify.sh
 
 Ne recréer la VM qu'après avoir conservé les données utiles et compris l'échec.
 
-## Image Ubuntu refusée
+## Image Rocky Linux refusée
 
 La création exige l'image, `SHA256SUMS` et `SHA256SUMS.gpg` authentifiés.
 

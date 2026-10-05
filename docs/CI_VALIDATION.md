@@ -285,3 +285,7 @@ les régressions de code sans attendre les boots VM.
 Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 44 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.
 
 Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connexion après la déconnexion. Un essai a identifié une course entre la création de ce scope et l'arrêt immédiat de GDM (`Result=resources`, PID disparu avant rattachement). L'attente observe l'état réel ; les unités échouées, journaux et coredumps restent bloquants, sans remise à zéro.
+
+### Reprise Rocky Linux 10.2
+
+Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts : un échec ou un job ignoré bloque la fusion et la publication. Le laboratoire contrôle Q35/UEFI, l'OS réel, SELinux, le bootstrap exact, un changement de boot ID, puis une restauration Borg à froid sans chiffrement (disque, NVRAM et seed, SHA-256 et fichiers témoins). Les sources sont supprimées avant extraction. Les logs, l'inventaire RPM et les erreurs du démarrage sont conservés. Les privilèges du compte CI servent seulement à cette VM jetable ; le profil de production garde sudo avec mot de passe.
