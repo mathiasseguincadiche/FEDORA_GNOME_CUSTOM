@@ -2,8 +2,9 @@
 # Disposable QEMU guest only; never runs install.sh --apply or signs a gate.
 set -Eeuo pipefail
 export LC_ALL=C
-[[ "$EUID" == 0 && "$(hostname)" == fgc-fedora-ci && -e /etc/fgc-ci-lab ]] || exit 50
-case "$(systemd-detect-virt)" in kvm|qemu) ;; *) exit 50 ;; esac
+[[ "$EUID" == 0 && "$(hostname)" == fgc-fedora-ci && -e /etc/fgc-ci-lab ]] || { echo "Guest guard failed: euid=$EUID hostname=$(hostname) lab_marker=$(test -e /etc/fgc-ci-lab && echo present || echo missing)" >&2; exit 50; }
+virt="$(systemd-detect-virt)"
+case "$virt" in kvm|qemu) ;; *) echo "Guest virtualization guard failed: $virt" >&2; exit 50 ;; esac
 REPO=/opt/fgc-lab/repo
 LAB_USER=lab
 LAB_HOME=/home/lab
@@ -11,9 +12,10 @@ LAB_UID="$(id -u "$LAB_USER")"
 EXPECTED_COMMIT="${2:-}"
 LAB_RELEASE="${3:-44}"
 LAB_EXTENSION_MODE="${4:-curated}"
-case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) exit 50;; esac
+printf 'Guest profile release=%s extensions=%s action=%s\n' "$LAB_RELEASE" "$LAB_EXTENSION_MODE" "${1:-missing}"
+case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) echo 'Unsupported guest profile' >&2; exit 50;; esac
 EXPECTED_GNOME_MAJOR="$((LAB_RELEASE+6))"
-[[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || exit 50
+[[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || { echo "Guest commit guard failed: expected=$EXPECTED_COMMIT actual=$(cat "$REPO/CI_COMMIT")" >&2; exit 50; }
 # shellcheck source=lib/backup_runtime.sh
 source "$REPO/lib/backup_runtime.sh"
 # shellcheck source=.github/scripts/fedora-greeter-ready.sh

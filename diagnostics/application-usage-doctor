@@ -37,7 +37,7 @@ for id in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors co
 done
 echo 'Vérifiez Slack : notification et partage réel; Brio 100 : image et micro dans une application WebRTC.'
 confirm JE_CONFIRME_COMMUNICATION || exit "$EXIT_POSTCHECK_FAILED"
-echo 'Vérifiez VS Code : connexion Remote SSH à Rocky et ouverture/enregistrement d’un fichier dans la VM.'
+echo "Vérifiez VS Code : connexion Remote SSH à Rocky et ouverture/enregistrement d'un fichier dans la VM."
 confirm JE_CONFIRME_CODE_ROCKY || exit "$EXIT_POSTCHECK_FAILED"
 {
   printf 'schema=1\nstatus=PASS\nscope=%s\ncommit=%s\neffective_config_sha256=%s\napplication_fingerprint=%s\nutc=%s\n' \

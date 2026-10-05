@@ -50,7 +50,7 @@ peripheral_resolve() {
   root="$(hardware_platform_sysfs_root)"; path="$(peripheral_lock_path "$kind")"
   [[ -s "$path" ]] && grep -Fxq 'schema=1' "$path" &&
     grep -Fxq "board_name=$(hardware_platform_board_name)" "$path" || return 1
-  case "$kind" in audio) pattern="$root/class/sound/card"*;; camera) pattern="$root/class/video4linux/video"*;; *) return 1;; esac
+  case "$kind" in audio) pattern="$root/class/sound/card*";; camera) pattern="$root/class/video4linux/video*";; *) return 1;; esac
   saved="$(sed -n '/^usb_id=/p; /^driver=/p; /^product=/p; /^serial=/p' "$path")"
   # Glob is intentionally expanded; sysfs paths contain no whitespace.
   # shellcheck disable=SC2086
@@ -78,8 +78,8 @@ peripheral_resolve_camera_mic() {
   for node in "$root"/class/sound/card*; do
     [[ -e "$node/device" ]] || continue
     data="$(peripheral_usb_identity "$node/device")" || continue
-    grep -Fxq "usb_id=$usb" <<<"$data" && grep -Fxq "serial=$serial" <<<"$data" &&
-      grep -Fxq 'driver=snd_usb_audio' <<<"$data" || continue
+    if ! grep -Fxq "usb_id=$usb" <<<"$data" || ! grep -Fxq "serial=$serial" <<<"$data" ||
+       ! grep -Fxq 'driver=snd_usb_audio' <<<"$data"; then continue; fi
     matches+=("${node##*/}")
   done
   ((${#matches[@]} == 1)) || return 1
