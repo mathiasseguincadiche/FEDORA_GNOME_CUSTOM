@@ -3,8 +3,8 @@
 # GDM creates a greeter asynchronously; stopping it before logind attaches
 # its worker to the scope can fail with Result=resources.
 fedora_lab_wait_greeter() {
-  local attempt sid uid
-  for attempt in {1..90}; do
+  local sid uid
+  for _ in {1..90}; do
     while IFS= read -r sid; do
       [[ "$sid" =~ ^[a-zA-Z0-9]+$ ]] || continue
       [[ "$(loginctl show-session "$sid" -p Class --value)" == greeter &&
