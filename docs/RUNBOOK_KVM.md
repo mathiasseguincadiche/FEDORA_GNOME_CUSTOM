@@ -101,7 +101,7 @@ Ne recréer la VM qu'après avoir conservé les données utiles et compris l'éc
 
 ## Image Rocky Linux refusée
 
-La création exige l'image, `SHA256SUMS` et `SHA256SUMS.gpg` authentifiés.
+La création exige l'image, `CHECKSUM` et `CHECKSUM.asc` authentifiés.
 
 ```bash
 bash scripts/kvm/verify_rocky_cloud_image.sh --help

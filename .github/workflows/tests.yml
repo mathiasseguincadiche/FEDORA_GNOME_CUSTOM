@@ -118,7 +118,7 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_pre1_hardening_contract.sh
       - if: ${{ !cancelled() }}
-        run: bash -x tests/test_final_hardening_contract.sh
+        run: bash tests/test_final_hardening_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_public_entrypoints_contract.sh
       - if: ${{ !cancelled() }}

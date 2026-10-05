@@ -13,7 +13,7 @@ GUEST OS CATALOG:
 - use Fedora osinfo-db/libosinfo metadata instead of a project-maintained stale OS database
 - validate osinfo-query and virt-install OS detection support
 - allow install media detection with require=off when a brand-new release is newer than packaged osinfo-db
-- keep Rocky Server LTS, Fedora and Windows 11 as explicit project profiles
+- keep Rocky Linux 10.2 and Windows 11 as explicit project guests; Fedora remains a workstation qualification target
 - never download installation media automatically from this module
 EOF
 }

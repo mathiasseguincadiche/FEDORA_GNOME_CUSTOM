@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# sudo on Enterprise Linux can omit /usr/local/bin from secure_path.
+# Use only root-owned system directories for the reviewed upstream binaries.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
 KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"
@@ -65,7 +68,7 @@ rm -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
 [[ "$(getenforce)" == Enforcing ]] || fail 'SELinux must remain enforcing'
 log 'configure Rocky 10 CRB and EPEL 10'
-dnf -y install dnf-plugins-core ca-certificates curl gnupg2
+dnf -y install dnf-plugins-core ca-certificates curl wget gnupg2
 dnf config-manager --set-enabled crb
 # Official Fedora EPEL release package installs its RPM trust/repository policy.
 dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
@@ -239,7 +242,7 @@ getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is m
 usermod -aG docker "$DEVOPS_USER"
 devops_home="$(getent passwd "$DEVOPS_USER" | cut -d: -f6)"
 [[ -n "$devops_home" && -d "$devops_home" ]] || fail "home directory unavailable for $DEVOPS_USER"
-runuser -u "$DEVOPS_USER" -- env HOME="$devops_home" minikube config set driver docker >/dev/null
+runuser -u "$DEVOPS_USER" -- env HOME="$devops_home" PATH="$PATH" minikube config set driver docker >/dev/null
 
 log 'verify SSH and SELinux policy'
 sshd -T | grep -Fxq 'passwordauthentication no' || fail 'SSH password authentication must remain disabled'

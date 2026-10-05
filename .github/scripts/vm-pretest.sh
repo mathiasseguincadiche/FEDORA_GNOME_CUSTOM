@@ -28,7 +28,7 @@ cleanup() {
 }
 trap cleanup EXIT
 report '=== FEDORA_GNOME_CUSTOM REAL ROCKY LINUX 10.2 VM PRE-TEST ==='
-report "commit=${GITHUB_SHA:-local}"
+report "commit=$(git -C "$ROOT" rev-parse HEAD)"
 
 report '[1/10] Host VM dependencies'
 sudo apt-get update -qq
@@ -88,7 +88,7 @@ start_vm() {
   qemu-system-x86_64 -name rocky-devops-ci -machine "q35,accel=$1" -cpu "$2" -smp 2 -m 6144 \
     -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" -drive if=pflash,format=raw,file=nvram.fd \
     -drive file=disk.qcow2,format=qcow2,if=virtio -drive file=seed.img,format=raw,if=virtio,readonly=on \
-    -device virtio-net-pci,netdev=net0 -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22" \
+    -device virtio-net-pci,netdev=net0 -netdev "user,id=net0,restrict=${3:-off},hostfwd=tcp:127.0.0.1:$SSH_PORT-:22" \
     -device virtio-serial-pci \
     -chardev "socket,id=qga0,path=$QGA_SOCKET,server=on,wait=off" \
     -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 \
@@ -177,7 +177,7 @@ mkdir restored
 (cd restored/cold-stage; sha256sum -c SHA256SUMS)
 mv restored/cold-stage/disk.qcow2 restored/cold-stage/nvram.fd restored/cold-stage/seed.img .
 report 'cold_archive=PASS encryption=none source_disks_deleted=true'
-start_vm "$ACCEL" "$QEMU_CPU"
+start_vm "$ACCEL" "$QEMU_CPU" on
 ready=0
 for _ in $(seq 1 120); do
 # shellcheck disable=SC2029
@@ -186,7 +186,7 @@ for _ in $(seq 1 120); do
   sleep 5
 done
 ((ready == 1)) || { report 'FAIL: restored Rocky VM/data/toolchain qualification failed'; exit 25; }
-report 'restored_vm=PASS data=PASS toolchain=PASS'
+report 'restored_vm=PASS data=PASS toolchain=PASS network=restrict-on'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo systemctl --failed --no-legend; sudo journalctl -b -p err --no-pager; sudo cat /var/lib/fedora-gnome-custom/rocky-devops-packages.txt' | tee "$LAB/guest-health.log"
 # Unexpected failed units make the qualification fail; raw errors are retained.
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'test -z "$(systemctl --failed --no-legend)"'

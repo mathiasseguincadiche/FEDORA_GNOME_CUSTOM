@@ -37,7 +37,7 @@ Python est un outil workstation explicite, et non une simple dépendance de KVM 
 
 - python3
 - python3-pip
-- python3-develel
+- python3-devel
 - pipx
 
 Le post-check exige également :

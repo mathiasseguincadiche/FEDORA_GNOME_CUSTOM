@@ -233,7 +233,7 @@ CLI :
   --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-`SHA256SUMS` et `SHA256SUMS.gpg` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.
+`CHECKSUM` et `CHECKSUM.asc` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.
 
 ### Création Windows 11
 

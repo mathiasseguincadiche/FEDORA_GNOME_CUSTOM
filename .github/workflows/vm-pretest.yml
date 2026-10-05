@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Run real Rocky Linux 10.2 VM + DevOps bootstrap
         run: .github/scripts/vm-pretest.sh
       - name: Upload VM evidence

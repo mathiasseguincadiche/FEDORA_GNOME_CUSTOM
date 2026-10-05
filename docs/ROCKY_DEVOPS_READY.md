@@ -130,10 +130,14 @@ Il n'existe pas de conversion en place entre Ubuntu et Rocky. Conserver l'ancien
 
 Le nouveau nom de domaine évite d'écraser l'ancien disque. Une ancienne clé UBUNTU_SERVER_* dans config/local.conf doit être retirée ou remplacée après revue : le validateur la refuse. Les preuves de certification antérieures deviennent obsolètes avec le nouveau profil. Rafraîchir les favoris Nautilus et certifier le nouvel invité avant de retirer l'ancien.
 
-Le test GitHub exigé par contracts démarre Rocky 10.2 en Q35/UEFI, valide le bootstrap, Docker et les outils, prouve le changement d'identifiant de démarrage, arrête la VM, archive qcow2/NVRAM/seed avec Borg sans chiffrement, supprime les sources, contrôle les SHA-256 restaurés et redémarre uniquement la copie restaurée. Il ne certifie pas les périphériques physiques ni Windows.
+Le test GitHub exigé par contracts démarre Rocky 10.2 en Q35/UEFI, valide le bootstrap, Docker et les outils, prouve le changement d'identifiant de démarrage, arrête la VM, archive qcow2/NVRAM/seed avec Borg sans chiffrement, supprime les sources, contrôle les SHA-256 restaurés et redémarre uniquement la copie restaurée avec réseau QEMU restrict=on (SSH localhost autorisé, sorties réseau bloquées). Il ne certifie pas les périphériques physiques ni Windows.
 
 La certification HOST ouvre un terminal SSH pour demander le mot de passe sudo de la VM. Le compte opérateur conserve un sudo authentifié ; aucun sudo illimité sans mot de passe n'est provisionné. Le sudo sans mot de passe du compte CI reste limité à une VM jetable de laboratoire.
 
 Le noyau de l'invité est celui maintenu par Rocky Linux pour Enterprise Linux 10. Le suivi Linux amont stable N/N-1 concerne le HOST Fedora et ne remplace pas le noyau Rocky.
 
 Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
+
+Rocky Linux 10 requiert un processeur x86-64-v3. Le profil host-passthrough expose les capacités du Ryzen 7 7700 ; masquer AVX2 dans un modèle CPU générique empêcherait le démarrage. Le laboratoire utilise CPU host en KVM, max en émulation.
+
+Le transfert porte sur les données applicatives ; ne pas recopier les répertoires système Ubuntu (/etc, /usr, base de paquets) dans Rocky. Vérifier les UID/GID, les propriétaires des volumes et les empreintes SSH du nouvel invité. Si une adresse IP est réutilisée, revoir l'entrée connue correspondant à cette seule VM après comparaison de la nouvelle clé ; ne pas effacer l'ensemble des clés connues.

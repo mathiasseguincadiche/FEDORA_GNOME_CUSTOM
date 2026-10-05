@@ -14,11 +14,22 @@ fedora_lab_wait_greeter() {
       uid="$(loginctl show-session "$sid" -p User --value)"
       [[ "$uid" =~ ^[0-9]+$ ]] || continue
       pgrep -u "$uid" -x gnome-shell >/dev/null || continue
+      # Shell readiness precedes settings-daemon's asynchronous bus setup.
+      # Stopping in that gap can crash UsbProtection's on_bus_gotten callback.
+      # NameHasOwner observes registration without activating or disabling it.
+      if ! sudo -u "#$uid" env XDG_RUNTIME_DIR="/run/user/$uid" \
+          DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+          gdbus call --session --dest org.freedesktop.DBus \
+          --object-path /org/freedesktop/DBus \
+          --method org.freedesktop.DBus.NameHasOwner \
+          org.gnome.SettingsDaemon.UsbProtection 2>/dev/null | grep -Fxq '(true,)'; then
+        continue
+      fi
       if sudo -u "#$uid" env XDG_RUNTIME_DIR="/run/user/$uid" \
           DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
           gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell \
           --method org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1; then
-        printf 'Greeter ready: session=%s scope=active GNOME bus=ready\n' "$sid"
+        printf 'Greeter ready: session=%s scope=active GNOME bus=ready USB protection bus=ready\n' "$sid"
         return 0
       fi
     done < <(loginctl list-sessions --no-legend | awk '{print $1}')

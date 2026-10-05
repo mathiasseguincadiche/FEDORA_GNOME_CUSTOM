@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# sudo on Enterprise Linux can omit /usr/local/bin from secure_path.
+# Use only root-owned system directories for the reviewed upstream binaries.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
 EXPECTED_KUBERNETES_MINOR="${EXPECTED_KUBERNETES_MINOR:-v1.37}"
