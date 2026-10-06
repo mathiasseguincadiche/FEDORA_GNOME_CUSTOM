@@ -48,7 +48,11 @@ printf '%s|repo=%s|passphrase=[%s]\n' "$*" "${BORG_REPO:-}" "${BORG_PASSPHRASE-u
 case "${1:-}" in
   --version) echo 'borg 1.4.5' ;;
   info) echo '{"encryption": {"mode": "none"}}' ;;
-  prune|compact) exit 0 ;;
+  prune|compact|delete) exit 0 ;;
+  # Five refused archives, listed out of order and across kinds.
+  list) printf '%s\n' fgc-pending-daily-20261003T010000.000000003Z fgc-pending-full-20261001T010000.000000001Z \
+          fgc-pending-daily-20261005T010000.000000005Z fgc-pending-daily-20261002T010000.000000002Z \
+          fgc-pending-full-20261004T010000.000000004Z ;;
   *) exit 2 ;;
 esac
 SH
@@ -66,6 +70,10 @@ grep -Fq 'prune --glob-archives fgc-full-* --keep-daily 7 --keep-weekly 4 --keep
 grep -Fq 'prune --glob-archives fgc-daily-* --keep-daily 7 --keep-weekly 4 --keep-monthly 6|' "$tmp/borg.log"
 if grep -Fq 'fgc-preapply' "$tmp/borg.log"; then echo 'retention touched pre-APPLY archives' >&2; exit 1; fi
 [[ "$(grep -c '^compact|' "$tmp/borg.log")" -eq 1 ]]
+# Refused archives: exactly the two oldest (across kinds) are deleted.
+[[ "$(grep -c '^delete ' "$tmp/borg.log")" -eq 2 ]]
+grep -Fq 'delete ::fgc-pending-full-20261001T010000.000000001Z|' "$tmp/borg.log"
+grep -Fq 'delete ::fgc-pending-daily-20261002T010000.000000002Z|' "$tmp/borg.log"
 if grep -Fq 'ambient-secret-must-be-dropped' "$tmp/borg.log"; then echo 'ambient BORG_PASSPHRASE leaked into Borg' >&2; exit 1; fi
 [[ -s "$tmp/state/fedora-gnome-custom/last-retention.ok" ]]
 grep -Fxq 'engine=borg' "$tmp/state/fedora-gnome-custom/last-retention.ok"
