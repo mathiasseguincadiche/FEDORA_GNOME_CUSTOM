@@ -10,6 +10,15 @@ emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=
 portal_call(){ gdbus call --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop --method "$@"; }
 confirm(){ local label="$1" phrase="$2" answer; printf '%s\nTapez exactement %s : ' "$label" "$phrase"; read -r answer; [[ "$answer" == "$phrase" ]]; }
 
+# Invalidate interactive evidence before session/service checks can fail.
+# Read-only checks preserve existing evidence.
+if $interactive; then
+  case "$scope" in
+    gate2) rm -f "$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok";;
+    gate3) rm -f "$(physical_runtime_evidence_path portal-functional)" "$STATE_ROOT/final/certified.ok";;
+  esac
+fi
+
 if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || "${XDG_SESSION_TYPE:-}" != wayland ]]; then emit KO Session 'GNOME/Wayland required'; exit "$EXIT_PRECHECK_FAILED"; fi
 if ! "$REPO_ROOT/diagnostics/portal-doctor" --quiet; then emit KO Portal 'base portal doctor failed'; exit "$EXIT_POSTCHECK_FAILED"; fi
 interfaces="$(busctl --user introspect org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop 2>/dev/null || true)"
@@ -20,12 +29,6 @@ done
 # CreateSession/SelectSources/Start and actual streams are tested by the interactive probe.
 
 if $interactive; then
-  # A failed rerun must not leave a previous successful stream certificate.
-  case "$scope" in
-    gate2) rm -f "$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok";;
-    gate3) rm -f "$(physical_runtime_evidence_path portal-functional)" "$STATE_ROOT/final/certified.ok";;
-  esac
-
   if [[ ! -t 0 || ! -t 1 ]]; then emit KO Interactive 'TTY required'; exit "$EXIT_PRECHECK_FAILED"; fi
   nid="fgc-portal-${RANDOM}-$$"
   if portal_call org.freedesktop.portal.Notification.AddNotification "$nid" "{'title': <'Fedora GNOME Golden'>, 'body': <'Portal notification smoke test'>}" >/dev/null 2>&1; then

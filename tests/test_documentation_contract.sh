@@ -97,12 +97,12 @@ if grep -RInE --include='*.md' 'baseline-doctor[[:space:]]+(record-memory|record
   exit 1
 fi
 
-# GNOME docs must match the current five-extension functional contract.
-for expected in 'Dash to Dock' 'AppIndicator' 'Desktop Icons NG' 'Show Desktop Plus' 'Resource Monitor'; do
+# GNOME docs must match the canonical six-extension functional contract.
+for expected in 'Dash to Dock' 'AppIndicator' 'Desktop Icons NG' 'Show Desktop Plus' 'Resource Monitor' 'Tiling Assistant'; do
   grep -Fq "$expected" "$ROOT/docs/GNOME_PROFILE.md" || { echo "GNOME_PROFILE missing functional extension: $expected" >&2; exit 1; }
   grep -Fq "$expected" "$ROOT/docs/GNOME_EXTENSIONS.md" || { echo "GNOME_EXTENSIONS missing functional extension: $expected" >&2; exit 1; }
 done
-grep -Fq 'exactement **cinq extensions fonctionnelles**' "$ROOT/docs/GNOME_PROFILE.md"
+grep -Fq 'exactement **six extensions fonctionnelles**' "$ROOT/docs/GNOME_PROFILE.md"
 grep -Fq 'Bureau' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'XDG Desktop' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
@@ -236,5 +236,33 @@ if errors:
         print(f"- {error}", file=sys.stderr)
     raise SystemExit(1)
 PY
+
+
+# Finish checks read the executable release sources rather than a second
+# hardcoded version. Historical changelog/ADRs retain their original context.
+python3 - "$ROOT" <<'PY_FINISH'
+from pathlib import Path
+import re
+import sys
+
+root = Path(sys.argv[1])
+version = (root / "VERSION").read_text().strip()
+readme = (root / "README.md").read_text()
+shown = re.search(r"^\s*Projet\s+(\S+)", readme, flags=re.M)
+if shown is None or shown.group(1) != version:
+    raise SystemExit("README Control Center version differs from VERSION")
+governance = (root / "docs/GITHUB_GOVERNANCE.md").read_text()
+if "cat VERSION" not in governance or "cat .github/release-manifest.env" not in governance:
+    raise SystemExit("Governance must point to current release sources")
+if re.search(r"^\s*(VERSION|tag)\s*=", governance, flags=re.M):
+    raise SystemExit("Governance contains a duplicate hardcoded current release")
+lab = (root / "docs/FEDORA_GNOME_CI_LAB.md").read_text()
+if "restauration des VM Ubuntu/Windows" in lab or "chacun des quatre jobs" in lab:
+    raise SystemExit("Fedora lab guide still describes obsolete guests/dependencies")
+for path in ("CONTRIBUTING.md", "SECURITY.md", "docs/adr/0002-no-secureboot-no-local-luks.md"):
+    if "Restic" in (root / path).read_text():
+        raise SystemExit(f"{path}: obsolete active Restic policy")
+print("Documentation finish and current release sources: PASS")
+PY_FINISH
 
 echo 'documentation contract: PASS'

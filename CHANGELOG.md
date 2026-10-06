@@ -1,5 +1,12 @@
 # Changelog
 
+## Corrections de finition — changements après RC2
+
+- Diagnostics des portails : invalidation des preuves interactives avant les préchecks de session et de services ; une tentative échouée ne laisse pas un ancien PASS actif.
+- Tests de comportement sur les échecs précoces Gate 2/Gate 3, avec préservation des preuves lors d'une consultation seule.
+- Guides GNOME et tests documentaires alignés sur les six extensions du profil canonique et sur le dock OLED réellement configuré.
+- README, gouvernance CI, guide du laboratoire et ADR Borg nettoyés ; les textes historiques restent historiques.
+
 ## Intégration desktop — changements après RC2
 
 - Politique GNOME Logiciels verrouillée et vérifiée, cohérente avec les mises à jour système sauvegardées et les Flatpak manuels.

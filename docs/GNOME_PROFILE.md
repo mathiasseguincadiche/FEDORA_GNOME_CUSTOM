@@ -8,7 +8,7 @@ Le projet conserve les composants Fedora/GNOME natifs, Adwaita/libadwaita et Pty
 
 ## Extensions gérées et activées
 
-Le profil courant active exactement **cinq extensions fonctionnelles**.
+Le profil courant active exactement **six extensions fonctionnelles** dans sa configuration canonique : Dash to Dock, AppIndicator, DING, Show Desktop Plus, Resource Monitor et Tiling Assistant. La couche de finition est activée par défaut ; sa désactivation explicite dans local.conf modifie ce profil.
 
 ### Dash to Dock
 
@@ -18,7 +18,7 @@ Le profil courant active exactement **cinq extensions fonctionnelles**.
 - activation : `modules/gnome/24_gnome_extensions.sh` ;
 - diagnostic : `diagnostics/gnome-doctor`.
 
-Le projet conserve les préférences Fedora/upstream tant qu'une décision explicite n'est pas versionnée. Position, taille, autohide, opacité et animations ne sont donc pas arbitrairement forcées.
+La couche gnome.polish applique les réglages déclarés dans config/gnome-polish.conf : dock à gauche, icônes de 48 px, masquage intelligent pour l'écran OLED et clic focus/réduire/aperçus. Les valeurs restent personnalisables dans config/local.conf ; le module et polish-doctor relisent le même état attendu.
 
 ### AppIndicator
 
@@ -80,6 +80,17 @@ Le GPU est associé à la cible exacte `8086:e20b`. Sur bare-metal, l'absence de
 
 Aucun service root permanent ni collecteur distant n'est introduit par cette extension : les métriques viennent des interfaces kernel, `/proc`, NetworkManager et DRM/sysfs.
 
+### Tiling Assistant
+
+- UUID : tiling-assistant@leleat-on-github ;
+- source : release GitHub officielle v55, URL/version/SHA-256 dans config/gnome-extensions.lock ;
+- compatibilité exigée : GNOME Shell 50 ;
+- module : modules/gnome/24c_ubuntu_polish.sh (gnome.polish) ;
+- diagnostic : diagnostics/polish-doctor ;
+- usages : quarts d'écran, popup de remplissage et groupes de fenêtres.
+
+Le profil canonique active GNOME_POLISH_ENABLED=true et ENABLE_TILING_ASSISTANT=true. Voir [GNOME_POLISH.md](GNOME_POLISH.md) pour la finition et les réglages OLED.
+
 ## Extensions non activées dans l'état Golden
 
 - **Blur My Shell** : désactivé afin de réduire les variables de rendu/compositor à 240 Hz et après suspend/resume ;
@@ -92,7 +103,7 @@ Extension Manager reste disponible comme interface d'administration, sans transf
 
 ## Certification
 
-`diagnostics/gnome-doctor` fait partie de la certification finale et vérifie les cinq extensions fonctionnelles. Pour la télémétrie, il appelle également le doctor Resource Monitor.
+`diagnostics/gnome-doctor` vérifie les cinq extensions du socle GNOME et appelle également le doctor Resource Monitor. `diagnostics/polish-doctor` vérifie la sixième, Tiling Assistant, sa provenance et les réglages de finition. `gnome-doctor` est appelé par la certification finale ; `polish-doctor` par le diagnostic global workstation-doctor. Exécuter aussi ce dernier avant la qualification pour contrôler la finition.
 
 Les tests CI couvrent séparément :
 
@@ -100,11 +111,13 @@ Les tests CI couvrent séparément :
 - téléchargement et validation de l'artefact GNOME-reviewed DING review `74408` / version `95` ;
 - téléchargement et validation de l'artefact GNOME-reviewed Show Desktop Plus review `70326` / version `8` ;
 - téléchargement et validation de Resource Monitor review `70909` / version `28` ;
-- compatibilité GNOME 50 des trois payloads utilisateur ;
+- téléchargement et validation de Tiling Assistant v55 depuis la release GitHub officielle ;
+- compatibilité GNOME 50 des quatre payloads utilisateur ;
 - compilation de leurs schémas GSettings ;
 - présence du backend Intel de Resource Monitor et de ses compteurs `gpu_busy_percent`/`gt_busy_percent` ;
 - convergence réelle des préférences Resource Monitor dans Fedora 44 ;
-- contrat fail-closed du LAB GNOME VirtualBox.
+- contrat fail-closed du LAB GNOME VirtualBox ;
+- activation des six extensions après démarrage, redémarrage et récupération dans le laboratoire Fedora 44.
 
 La validation graphique réelle — icônes effectivement visibles sur le fond d'écran, comportement du bouton avec plusieurs fenêtres et lisibilité de la télémétrie dans le panneau — reste une preuve GNOME runtime et doit être réalisée au **GATE 2 VirtualBox** avec [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md), puis confirmée bare-metal.
 

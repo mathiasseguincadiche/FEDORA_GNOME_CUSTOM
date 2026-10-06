@@ -127,7 +127,7 @@ RPM Fedora :
 - gnome-shell-extension-blur-my-shell — installé mais désactivé dans le Golden courant
 - gnome-shell-extension-appindicator
 
-DING, Show Desktop Plus et Resource Monitor ne viennent pas d'un RPM Fedora dans le contrat actuel : ils sont installés depuis des artefacts GNOME Extensions revus, épinglés et contrôlés par le projet.
+DING, Show Desktop Plus et Resource Monitor utilisent des artefacts GNOME Extensions revus. Tiling Assistant utilise la release GitHub officielle v55. Ces quatre archives sont épinglées dans config/gnome-extensions.lock et contrôlées par le projet ; avec les deux extensions RPM activées, elles forment les six extensions fonctionnelles du profil canonique.
 
 ### 1.8 Intégration desktop
 
