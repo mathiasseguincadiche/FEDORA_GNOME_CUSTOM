@@ -286,12 +286,12 @@ backup_engine_prune() {
 # sorting by name is chronological: delete everything except the newest N.
 backup_engine_prune_pending() {
   local keep="${BACKUP_KEEP_PENDING:-3}" listing archive
-  local -a pending=()
+  local -a refused=()
   [[ "$keep" =~ ^[1-9][0-9]*$ ]] || return 2
   listing="$(borg list --short --glob-archives "${BACKUP_ARCHIVE_PREFIX}-pending-*")" || return 1
-  mapfile -t pending < <(sed '/^[[:space:]]*$/d' <<<"$listing" | sort -t- -k4)
-  (( ${#pending[@]} > keep )) || return 0
-  for archive in "${pending[@]:0:${#pending[@]}-keep}"; do
+  mapfile -t refused < <(sed '/^[[:space:]]*$/d' <<<"$listing" | sort -t- -k4)
+  (( ${#refused[@]} > keep )) || return 0
+  for archive in "${refused[@]:0:${#refused[@]}-keep}"; do
     [[ "$archive" == "${BACKUP_ARCHIVE_PREFIX}-pending-"* ]] || return 2
     borg delete "::$archive" || return $?
   done
