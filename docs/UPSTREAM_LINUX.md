@@ -15,7 +15,7 @@ sudo reboot
 ./diagnostics/kernel-doctor
 ```
 
-Les RPM sont empaquetés par les mainteneurs Kernel Vanilla : ils ne sont pas distribués comme binaires par kernel.org. La cadence est indépendante des mises à jour de noyau Fedora, mais la compilation et la publication COPR peuvent retarder la disponibilité. Si le RPM de la toute dernière stable manque, le projet bloque et explique ce retard. Il n'installe pas une RC ou un ancien noyau en le présentant comme dernier stable.
+Les RPM sont empaquetés par les mainteneurs Kernel Vanilla : ils ne sont pas distribués comme binaires par kernel.org. La cadence est indépendante des mises à jour de noyau Fedora, mais la compilation et la publication COPR peuvent retarder la disponibilité. Si le RPM de la toute dernière stable manque, ou si kernel.org est injoignable, le projet n'installe pas une RC ou un ancien noyau en le présentant comme dernier stable. Lors d'une **mise à jour système**, seul le noyau est alors reporté : il est exclu de la transaction DNF, le noyau en cours reste N, et toutes les autres mises à jour (sécurité comprise) sont appliquées. L'état enregistre `kernel_deferred=true` et le bilan final l'indique ; relancer la mise à jour plus tard installe le noyau. Pour bloquer toute la mise à jour dans ce cas, régler `KERNEL_DEFER_WHEN_UNAVAILABLE="false"`. Une installation explicite du noyau (`./control.sh kernel install-latest`) échoue toujours avec ce message.
 
 ## Récupérer les sources dès leur publication
 

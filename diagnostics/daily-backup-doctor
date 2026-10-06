@@ -42,6 +42,10 @@ elif [[ -s "$state" ]]; then
   snapshot="$(evidence_marker_value "$state" snapshot)"
   [[ "$snapshot" =~ ^[0-9a-f]{64}$ && "$archive" == fgc-daily-* ]] || marker_valid=false
   if ! $marker_valid; then emit KO 'Daily backup evidence' 'invalid success marker'; fi
+  changed="$(evidence_marker_value "$state" files_changed_during_backup 2>/dev/null || true)"
+  if [[ "$changed" =~ ^[1-9][0-9]*$ ]]; then
+    emit OK 'Live files' "$changed file(s) changed while being read; the version read is archived"
+  fi
   repository="$(backup_runtime_resolve_repository 2>/dev/null || true)"
   if [[ -z "$repository" ]]; then
     emit WARN 'Daily archive availability' 'repository unavailable; exact archive not verified'
@@ -51,6 +55,9 @@ elif [[ -s "$state" ]]; then
     backup_engine_env "$repository"
     if backup_engine_require && backup_engine_repo_ready && backup_engine_archive_matches "$archive" "$snapshot" daily; then
       emit OK 'Daily archive availability' 'exact name/id verified'
+      if pending="$(backup_engine_pending_count 2>/dev/null)" && [[ "$pending" =~ ^[0-9]+$ ]] && ((pending > 0)); then
+        emit WARN 'Refused archives' "$pending fgc-pending-* archive(s) kept for review (newest ${BACKUP_KEEP_PENDING:-3} at most after retention)"
+      fi
     else
       emit KO 'Daily archive availability' 'archive missing or repository invalid'
     fi

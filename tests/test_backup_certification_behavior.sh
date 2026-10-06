@@ -8,6 +8,9 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 export HOME="$tmp/home" BORG_BASE_DIR="$tmp/borg-base"
 export BACKUP_REPOSITORY="$tmp/borg" STATE_ROOT="$tmp/state"
+# Host-independent: the 20 GiB production reserve would make this test depend
+# on the free space of whoever runs it. Staging capacity is still exercised.
+export BACKUP_PREAPPLY_MIN_FREE_GIB=1
 export REPO_ROOT="$tmp/fixture"
 mkdir -p "$HOME/.config" "$STATE_ROOT" "$REPO_ROOT/lib" "$REPO_ROOT/scripts/backup" "$tmp/bin"
 cp "$ROOT/lib/backup_runtime.sh" "$REPO_ROOT/lib/"

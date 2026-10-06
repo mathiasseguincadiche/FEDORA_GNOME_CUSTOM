@@ -201,6 +201,10 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_apply_gate_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_update_kernel_deferral_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_borg_daily_warnings_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_application_runtime_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_stack_certification_contract.sh
@@ -275,6 +279,7 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: bash tests/test_borg_roundtrip.sh
       - run: bash tests/test_backup_certification_behavior.sh
+      - run: bash tests/test_borg_daily_warnings_behavior.sh
       - run: bash tests/test_kernel_journal_behavior.sh
 
   upstream-kernel:

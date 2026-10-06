@@ -9,6 +9,9 @@ readonly EXIT_APPLY_FAILED=30
 readonly EXIT_POSTCHECK_FAILED=40
 readonly EXIT_SECURITY_BLOCK=50
 readonly EXIT_CONFIG_FAILED=60
+# Temporary, non-fatal for system updates: the upstream kernel cannot be
+# verified now (kernel.org unreachable) or its RPM is not packaged yet.
+readonly EXIT_KERNEL_DEFERRED=75
 
 readonly SCOPE_BASELINE="BASELINE"
 readonly SCOPE_SYSTEM="SYSTEM"

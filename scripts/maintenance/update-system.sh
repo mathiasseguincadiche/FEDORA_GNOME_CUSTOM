@@ -12,6 +12,7 @@ UPDATE_STATE_FILE="$STATE_ROOT/last-system-update.status"
 UPDATE_REBOOT_REQUIRED="unknown"
 UPDATE_KERNEL_TARGET=""
 UPDATE_KERNEL_PREVIOUS=""
+UPDATE_KERNEL_DEFERRED="false"
 
 usage() {
   cat <<'EOF'
@@ -70,6 +71,7 @@ write_update_state() {
     printf 'kernel_running=%s\n' "$(uname -r)"
     printf 'kernel_policy=rolling-n-nminus1\n'
     printf 'kernel_target=%s\n' "$kernel_target"
+    printf 'kernel_deferred=%s\n' "${UPDATE_KERNEL_DEFERRED:-false}"
     printf 'kernel_previous=%s\n' "$kernel_previous"
     printf 'kernel_lock_sha256=%s\n' "$(kernel_lifecycle_lock_hash)"
     printf 'kernel_max_installed=%s\n' "$(kernel_lifecycle_max_installed)"
@@ -157,7 +159,18 @@ prepare_kernel_rolling_target() {
     return 0
   fi
   UPDATE_KERNEL_PREVIOUS="$(kernel_lifecycle_latest_installed)"
-  UPDATE_KERNEL_TARGET="$(kernel_lifecycle_prepare_rolling_update)" || return $?
+  local rc=0
+  UPDATE_KERNEL_TARGET="$(kernel_lifecycle_prepare_rolling_update)" || rc=$?
+  if ((rc == EXIT_KERNEL_DEFERRED)) && is_true "${KERNEL_DEFER_WHEN_UNAVAILABLE:-true}"; then
+    # A lagging RPM or an unreachable kernel.org must never hold back the
+    # security updates of every other package: the kernel alone is deferred,
+    # excluded from the transaction and stays on the running N.
+    UPDATE_KERNEL_TARGET=none
+    UPDATE_KERNEL_DEFERRED=true
+    ui_check WARN 'Kernel update' "deferred: upstream kernel not verifiable or not packaged yet; current N=${UPDATE_KERNEL_PREVIOUS:-unknown} kept; rerun the update later"
+    return 0
+  fi
+  ((rc == 0)) || return "$rc"
   kernel_lifecycle_pin_target "$UPDATE_KERNEL_TARGET" || return $?
   ui_check PASS 'Kernel update target' "N=$UPDATE_KERNEL_TARGET; current=${UPDATE_KERNEL_PREVIOUS:-none}; retention=$(kernel_lifecycle_max_installed)"
 }
@@ -171,11 +184,19 @@ prepare_dnf_offline() {
   fi
   ui_banner 'FEDORA WORKSTATION UPDATE' 'PREPARE DNF5 OFFLINE TRANSACTION'
   prepare_kernel_rolling_target || exit $?
-  sudo dnf5 --refresh upgrade --offline -y
+  local -a kernel_exclusion=()
+  if is_true "$UPDATE_KERNEL_DEFERRED"; then
+    kernel_exclusion=(--exclude="$(kernel_lifecycle_managed_packages_csv)")
+  fi
+  sudo dnf5 --refresh upgrade --offline -y "${kernel_exclusion[@]}"
   sudo dnf5 offline status
   UPDATE_REBOOT_REQUIRED=true
   write_update_state prepared "$mode" pending
-  ui_summary 'OFFLINE UPDATE PREPARED' "LATEST STABLE KERNEL TARGET=${UPDATE_KERNEL_TARGET}; MAX TWO KERNELS; NEXT: ./control.sh update reboot" "$UPDATE_STATE_FILE" "$LOG_DIR"
+  if is_true "$UPDATE_KERNEL_DEFERRED"; then
+    ui_summary 'OFFLINE UPDATE PREPARED (KERNEL DEFERRED)' "ALL PACKAGES EXCEPT THE KERNEL; RUNNING KERNEL KEPT; NEXT: ./control.sh update reboot" "$UPDATE_STATE_FILE" "$LOG_DIR"
+  else
+    ui_summary 'OFFLINE UPDATE PREPARED' "LATEST STABLE KERNEL TARGET=${UPDATE_KERNEL_TARGET}; MAX TWO KERNELS; NEXT: ./control.sh update reboot" "$UPDATE_STATE_FILE" "$LOG_DIR"
+  fi
 }
 
 request_offline_reboot() {
@@ -185,6 +206,8 @@ request_offline_reboot() {
   mode="$(update_state_value mode)"
   UPDATE_KERNEL_TARGET="$(update_state_value kernel_target)"
   UPDATE_KERNEL_PREVIOUS="$(update_state_value kernel_previous)"
+  UPDATE_KERNEL_DEFERRED="$(update_state_value kernel_deferred)"
+  [[ "$UPDATE_KERNEL_DEFERRED" == true ]] || UPDATE_KERNEL_DEFERRED=false
   sudo dnf5 offline status >/dev/null
   UPDATE_REBOOT_REQUIRED=true
   write_update_state reboot-requested "$mode" pending
@@ -218,6 +241,8 @@ finalize_offline_update() {
   mode="$(update_state_value mode)"
   UPDATE_KERNEL_TARGET="$(update_state_value kernel_target)"
   UPDATE_KERNEL_PREVIOUS="$(update_state_value kernel_previous)"
+  UPDATE_KERNEL_DEFERRED="$(update_state_value kernel_deferred)"
+  [[ "$UPDATE_KERNEL_DEFERRED" == true ]] || UPDATE_KERNEL_DEFERRED=false
   ui_banner 'FEDORA WORKSTATION UPDATE' 'POST-OFFLINE VALIDATION'
 
   capture_offline_log || exit $?
@@ -251,7 +276,11 @@ finalize_offline_update() {
   UPDATE_REBOOT_REQUIRED=false
   if ((doctor_rc == 0)); then
     write_update_state completed "$mode" 0
-    ui_summary 'UPDATE COMPLETED' 'LATEST STABLE KERNEL RUNNING + N/N-1 RETENTION + POSTCHECK PASS; GOLDEN RECERTIFICATION MAY NOW BE REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    if is_true "$UPDATE_KERNEL_DEFERRED"; then
+      ui_summary 'UPDATE COMPLETED (KERNEL DEFERRED)' 'ALL OTHER PACKAGES UPDATED + POSTCHECK PASS; KERNEL STILL PENDING UPSTREAM PACKAGING: RERUN ./control.sh update LATER' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    else
+      ui_summary 'UPDATE COMPLETED' 'LATEST STABLE KERNEL RUNNING + N/N-1 RETENTION + POSTCHECK PASS; GOLDEN RECERTIFICATION MAY NOW BE REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    fi
   else
     write_update_state failed "$mode" "$doctor_rc"
     ui_summary 'UPDATE POSTCHECK FAILED' 'INSPECT DNF5 OFFLINE LOG AND DIAGNOSTICS BEFORE CONTINUING' "$UPDATE_STATE_FILE" "$LOG_DIR"

@@ -48,6 +48,9 @@ if ! $policy_only; then
       backup_engine_env "$repo"
       if backup_engine_repo_ready; then
         record OK repository 'reachable, unencrypted Borg'
+        if pending="$(backup_engine_pending_count 2>/dev/null)" && [[ "$pending" =~ ^[0-9]+$ ]] && ((pending > 0)); then
+          strict_or_warn pending-archives "$pending refused fgc-pending-* archive(s); see restore.sh list"
+        fi
         if $deep; then borg check --verify-data >/dev/null 2>&1 && record OK deep-integrity 'PASS (every chunk re-read)' || record KO deep-integrity FAIL; fi
       else record KO repository 'unreachable, or encrypted (policy: unencrypted)'; fi
     else strict_or_warn repository 'external disk / repository not resolved'; fi
