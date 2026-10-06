@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.2 — rétention déterministe des archives refusées
+
+- Correctif trouvé par la CI de `main` (Fedora, Borg 1.4.5) : `borg prune --keep-last` est un alias de `--keep-secondly` et ne garde qu'une archive par seconde. Des archives refusées créées dans la même seconde étaient donc supprimées de façon imprévisible, d'où un échec intermittent. La purge des `fgc-pending-*` trie désormais les noms (horodatage UTC à la nanoseconde) et supprime exactement tout sauf les `BACKUP_KEEP_PENDING` plus récentes.
+- Test rejoué 3 fois avec Borg 1.2.8 et 3 fois avec Borg 1.4.5 (binaire officiel) : PASS.
+
 ## 0.21.1 — Audit Claude du 6 octobre 2026
 
 - **Mises à jour non bloquées par le noyau** : quand kernel.org est injoignable ou que le RPM du dernier noyau stable n'est pas encore publié, la mise à jour système reporte **uniquement le noyau** (exclu de la transaction DNF, noyau courant conservé) et applique toutes les autres mises à jour, sécurité comprise. Avant, toute la mise à jour s'arrêtait. Nouveau code `EXIT_KERNEL_DEFERRED=75`, état `kernel_deferred`, bilan final explicite, réglage `KERNEL_DEFER_WHEN_UNAVAILABLE` (défaut `true`). Toute autre erreur noyau bloque toujours. Test comportemental sur le vrai script, contrôlé par mutation.
