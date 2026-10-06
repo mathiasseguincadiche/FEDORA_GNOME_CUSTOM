@@ -280,10 +280,21 @@ backup_engine_prune() {
 
 # Archives that failed certification stay inspectable as fgc-pending-*, but
 # must not accumulate forever: keep only the newest BACKUP_KEEP_PENDING.
+# Deterministic: `borg prune --keep-last` is an alias of --keep-secondly and
+# keeps one archive per second, so several archives refused within the same
+# second would be pruned unpredictably. Names carry a nanosecond UTC stamp, so
+# sorting by name is chronological: delete everything except the newest N.
 backup_engine_prune_pending() {
-  local keep="${BACKUP_KEEP_PENDING:-3}"
+  local keep="${BACKUP_KEEP_PENDING:-3}" listing archive
+  local -a refused=()
   [[ "$keep" =~ ^[1-9][0-9]*$ ]] || return 2
-  borg prune --glob-archives "${BACKUP_ARCHIVE_PREFIX}-pending-*" --keep-last "$keep"
+  listing="$(borg list --short --glob-archives "${BACKUP_ARCHIVE_PREFIX}-pending-*")" || return 1
+  mapfile -t refused < <(sed '/^[[:space:]]*$/d' <<<"$listing" | sort -t- -k4)
+  (( ${#refused[@]} > keep )) || return 0
+  for archive in "${refused[@]:0:${#refused[@]}-keep}"; do
+    [[ "$archive" == "${BACKUP_ARCHIVE_PREFIX}-pending-"* ]] || return 2
+    borg delete "::$archive" || return $?
+  done
 }
 
 backup_engine_pending_count() {
