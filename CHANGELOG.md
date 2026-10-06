@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.1 — Audit Claude du 6 octobre 2026
+
+- **Mises à jour non bloquées par le noyau** : quand kernel.org est injoignable ou que le RPM du dernier noyau stable n'est pas encore publié, la mise à jour système reporte **uniquement le noyau** (exclu de la transaction DNF, noyau courant conservé) et applique toutes les autres mises à jour, sécurité comprise. Avant, toute la mise à jour s'arrêtait. Nouveau code `EXIT_KERNEL_DEFERRED=75`, état `kernel_deferred`, bilan final explicite, réglage `KERNEL_DEFER_WHEN_UNAVAILABLE` (défaut `true`). Toute autre erreur noyau bloque toujours. Test comportemental sur le vrai script, contrôlé par mutation.
+- **Sauvegardes quotidiennes fiables pendant la session** : reproduit avec un vrai Borg, un fichier modifié pendant sa lecture (profil de navigateur, Flatpak) faisait échouer chaque sauvegarde quotidienne. Seul cet avertissement exact est désormais toléré, et seulement pour `daily` ; pré-APPLY et sauvegarde complète restent strictes ; tout autre avertissement refuse l'archive. Le nombre de fichiers concernés est enregistré et affiché.
+- **Archives refusées bornées** : les `fgc-pending-*` n'étaient jamais supprimées ni signalées ; la rétention n'en garde plus que les plus récentes (`BACKUP_KEEP_PENDING`, 3) et les diagnostics les signalent.
+- Test de certification de sauvegarde rendu indépendant de la place libre de la machine qui l'exécute.
+
 ## Corrections de finition — changements après RC2
 
 - Diagnostics des portails : invalidation des preuves interactives avant les préchecks de session et de services ; une tentative échouée ne laisse pas un ancien PASS actif.

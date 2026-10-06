@@ -116,13 +116,19 @@ done
 }
 
 exclude_secrets="$HOME/.config/fedora-gnome-custom/secrets"
-read -r archive snap < <(backup_engine_create daily --exclude "$exclude_secrets" -- "${sources[@]}") || { echo 'Borg daily archive creation failed.' >&2; exit 40; }
+# No new EXIT trap here: daily_finish already owns it (failure markers).
+warnings_report="$(mktemp)"
+read -r archive snap < <(BACKUP_ENGINE_WARNINGS_REPORT="$warnings_report" backup_engine_create daily --exclude "$exclude_secrets" -- "${sources[@]}") || { rm -f "$warnings_report"; echo 'Borg daily archive creation failed.' >&2; exit 40; }
+files_changed="$(sed -n 's/^files_changed_during_backup=//p' "$warnings_report")"
+rm -f "$warnings_report"
+[[ "$files_changed" =~ ^[0-9]+$ ]] || files_changed=0
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid daily archive id.' >&2; exit 40; }
 
 {
   printf 'verdict=PASS\nengine=borg\nencryption=none\ncreation_rc=0\n'
   printf 'snapshot=%s\n' "$snap"
   printf 'archive=%s\n' "$archive"
+  printf 'files_changed_during_backup=%s\n' "$files_changed"
   printf 'runtime_sha=%s\n' "$FEDORA_GNOME_CUSTOM_RUNTIME_SHA"
   printf 'utc=%s\n' "$(date -u +%FT%TZ)"
   printf 'repository=%s\n' "$repo"

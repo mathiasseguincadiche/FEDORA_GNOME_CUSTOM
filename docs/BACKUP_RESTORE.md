@@ -296,12 +296,20 @@ La qualification réelle suit [le parcours de fiabilité](RELIABILITY_QUALIFICAT
 Aucun conteneur ne certifie le démarrage Fedora, la session GNOME, le TPM d'une VM
 récupérée ou le matériel physique.
 
-Les créations commencent dans le namespace `fgc-pending-<type>-*`. Seul un
-code de création 0 permet la promotion vers `fgc-full-*`, `fgc-daily-*` ou
-`fgc-preapply-*`, avec relecture de l'identifiant après renommage. Une archive
-écrite avec avertissement reste inspectable dans `fgc-pending-*` et ne peut
-devenir automatiquement une base de récupération. Ces archives sont exclues
-de la rétention automatique ; leur inspection/nettoyage reste une action opérateur.
+Les créations commencent dans le namespace `fgc-pending-<type>-*`. Pour
+`fgc-preapply-*` et `fgc-full-*`, seul un code de création 0 permet la
+promotion, avec relecture de l'identifiant après renommage. Pour la sauvegarde
+**quotidienne**, qui tourne pendant la session, un seul avertissement est toléré :
+« file changed while we backed it up » (profil de navigateur, données Flatpak
+modifiées pendant la lecture). L'archive est complète et contient la version
+lue ; le nombre de fichiers concernés est enregistré dans le marker
+(`files_changed_during_backup`) et affiché par `daily-backup-doctor`. Tout autre
+avertissement (fichier illisible, source absente…) refuse l'archive.
+
+Une archive refusée reste inspectable dans `fgc-pending-*` et ne peut devenir
+automatiquement une base de récupération. La rétention hebdomadaire n'en garde
+que les plus récentes (`BACKUP_KEEP_PENDING`, 3 par défaut) pour qu'elles ne
+remplissent jamais le disque, et les diagnostics signalent leur présence.
 
 Pour Gate 3, la politique `BACKUP_VM_DISKS=true` avec KVM actif impose un backup
 `--include-vms`. La certification compare le nombre et l'empreinte de la liste

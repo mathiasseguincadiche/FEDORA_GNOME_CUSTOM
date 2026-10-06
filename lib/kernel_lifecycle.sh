@@ -296,7 +296,7 @@ kernel_lifecycle_resolve_latest_stable() {
   kernel_channel_require_platform || return $?
   upstream="$(kernel_lifecycle_upstream_latest)" || {
     ui_error 'Cannot verify the current kernel.org release feed; refusing a stale target.'
-    return "$EXIT_POSTCHECK_FAILED"
+    return "$EXIT_KERNEL_DEFERRED"
   }
   available="$(kernel_lifecycle_latest_available)" || return "$EXIT_POSTCHECK_FAILED"
   [[ -n "$available" ]] || { ui_error 'No upstream RPM candidate available'; return "$EXIT_POSTCHECK_FAILED"; }
@@ -308,7 +308,7 @@ kernel_lifecycle_resolve_latest_stable() {
   fi
   kernel_lifecycle_version_matches_upstream "$available" "$upstream" || {
     ui_error "kernel.org stable=$upstream; RPM candidate=$available. Packaging is pending; no older kernel is called latest."
-    return "$EXIT_PRECHECK_FAILED"
+    return "$EXIT_KERNEL_DEFERRED"
   }
   printf '%s\n' "$available"
 }
@@ -444,6 +444,11 @@ kernel_lifecycle_status() {
   printf 'installed_count=%s\n' "$count"
   printf 'max_installed=%s\n' "$limit"
   printf 'dnf_installonly_limit=%s\n' "${dnf_limit:-unknown}"
+}
+
+# Comma-separated kernel packages managed by the project (dnf --exclude list).
+kernel_lifecycle_managed_packages_csv() {
+  kernel_channel_packages | paste -sd, -
 }
 
 kernel_lifecycle_pin_target() {

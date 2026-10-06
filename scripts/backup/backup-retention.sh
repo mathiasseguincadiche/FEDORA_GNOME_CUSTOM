@@ -38,6 +38,8 @@ backup_engine_repo_ready || skip_or_fail repository-unreachable
 for kind in full daily; do
   backup_engine_prune "$kind" || skip_or_fail "prune-$kind-failed"
 done
+# Failed-certification archives (fgc-pending-*): bounded, newest kept for review.
+backup_engine_prune_pending || skip_or_fail prune-pending-failed
 backup_engine_compact || skip_or_fail compact-failed
 
 {

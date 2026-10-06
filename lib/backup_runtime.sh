@@ -113,6 +113,54 @@ backup_engine_init() {
 
 # backup_engine_create KIND [--exclude PATTERN]... -- SOURCE...
 # Prints "<archive name> <archive id>" of the archive that was just written.
+# Prints the number of tolerated "file changed while we backed it up" warnings
+# (0 when rc=0). Fails when anything else was logged at WARNING/ERROR level,
+# for any non-daily archive with warnings, or for any rc other than 0/1.
+backup_engine_tolerated_changes() {
+  local kind="$1" rc="$2" log="$3"
+  (( rc == 0 || rc == 1 )) || return 1
+  python3 - "$kind" "$rc" "$log" <<'PY'
+import json, sys
+kind, rc, path = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+changed, other = 0, 0
+for line in open(path, encoding="utf-8", errors="replace"):
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        entry = json.loads(line)
+    except ValueError:
+        other += 1          # anything that is not Borg's own JSON log is suspect
+        continue
+    if entry.get("type") != "log_message" or entry.get("levelname") not in ("WARNING", "ERROR", "CRITICAL"):
+        continue
+    message = str(entry.get("message", ""))
+    if entry.get("levelname") == "WARNING" and message.endswith(": file changed while we backed it up"):
+        changed += 1
+    else:
+        other += 1
+if other or (rc == 1 and (kind != "daily" or changed == 0)) or (rc == 0 and changed):
+    sys.exit(1)
+print(changed)
+PY
+}
+
+# Human-readable view of Borg's JSON log (stderr is otherwise machine-only).
+backup_engine_print_log() {
+  python3 - "$1" <<'PY'
+import json, sys
+for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
+    line = line.rstrip("\n")
+    try:
+        entry = json.loads(line)
+        if entry.get("type") == "log_message":
+            print(f"borg {entry.get('levelname', '?')}: {entry.get('message', '')}")
+    except ValueError:
+        if line:
+            print(line)
+PY
+}
+
 backup_engine_create() {
   local kind="$1" name pending json comment identity
   shift
@@ -137,12 +185,22 @@ backup_engine_create() {
   pending="${BACKUP_ARCHIVE_PREFIX}-pending-${kind}-${name#"${BACKUP_ARCHIVE_PREFIX}-${kind}-"}"
   # A warning can mean unreadable/omitted files. Only rc=0 proves creation
   # succeeded; an archive written with warnings never produces a success marker.
-  local rc=0
-  json="$(borg create --json --compression zstd,3 --exclude-caches "${opts[@]}" "::$pending" "$@")" || rc=$?
-  if (( rc != 0 )); then
+  local rc=0 log changed
+  log="$(mktemp)"
+  json="$(borg create --json --log-json --compression zstd,3 --exclude-caches "${opts[@]}" "::$pending" "$@" 2>"$log")" || rc=$?
+  # Daily archives of a live session may legitimately see a file change while it
+  # is read (browser profile, Flatpak data): the archive is complete and keeps
+  # the version read. Only that exact warning is tolerated, only for `daily`;
+  # pre-APPLY and full archives stay strict (any warning = failure).
+  changed="$(backup_engine_tolerated_changes "$kind" "$rc" "$log")" || {
+    backup_engine_print_log "$log" >&2
+    rm -f "$log"
     echo "Borg creation refused certification for $name (rc=$rc; warnings may omit files)." >&2
-    return "$rc"
-  fi
+    return "$(( rc == 0 ? 2 : rc ))"
+  }
+  backup_engine_print_log "$log" >&2
+  rm -f "$log"
+  [[ -z "${BACKUP_ENGINE_WARNINGS_REPORT:-}" ]] || printf 'files_changed_during_backup=%s\n' "$changed" > "$BACKUP_ENGINE_WARNINGS_REPORT"
   identity="$(python3 -c 'import json,sys
 a=json.load(sys.stdin)["archive"]
 name, aid = a.get("name",""), a.get("id","")
@@ -218,6 +276,20 @@ backup_engine_prune() {
     --keep-daily "${BACKUP_KEEP_DAILY:-7}" \
     --keep-weekly "${BACKUP_KEEP_WEEKLY:-4}" \
     --keep-monthly "${BACKUP_KEEP_MONTHLY:-6}"
+}
+
+# Archives that failed certification stay inspectable as fgc-pending-*, but
+# must not accumulate forever: keep only the newest BACKUP_KEEP_PENDING.
+backup_engine_prune_pending() {
+  local keep="${BACKUP_KEEP_PENDING:-3}"
+  [[ "$keep" =~ ^[1-9][0-9]*$ ]] || return 2
+  borg prune --glob-archives "${BACKUP_ARCHIVE_PREFIX}-pending-*" --keep-last "$keep"
+}
+
+backup_engine_pending_count() {
+  local listing
+  listing="$(borg list --short --glob-archives "${BACKUP_ARCHIVE_PREFIX}-pending-*")" || return 1
+  grep -c . <<<"$listing" || true
 }
 
 backup_engine_compact() { borg compact; }
