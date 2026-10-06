@@ -9,7 +9,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 command -v borg >/dev/null || { echo 'borg required' >&2; exit 20; }
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-fail() { echo "borg daily warnings behavior: FAIL: $*" >&2; exit 1; }
+fail() {
+  # ::error:: lines are shown on the PR page (job logs are not always reachable).
+  echo "::error title=borg daily warnings::$* | borg=$(borg --version 2>&1 | head -1)" >&2
+  if [[ -s "$tmp/err" ]]; then sed 's/^/::error title=borg stderr::/' "$tmp/err" | head -n 8 >&2; fi
+  echo "borg daily warnings behavior: FAIL: $*" >&2
+  exit 1
+}
 export BORG_BASE_DIR="$tmp/base"
 # shellcheck source=lib/backup_runtime.sh
 source "$ROOT/lib/backup_runtime.sh"
@@ -40,7 +46,7 @@ if borg list --short --glob-archives 'fgc-daily-*' | grep -q .; then fail 'refus
 
 # 3. A clean daily archive still works and reports zero changed files.
 report="$tmp/warnings"
-read -r name id < <(BACKUP_ENGINE_WARNINGS_REPORT="$report" backup_engine_create daily -- "$tmp/src")
+read -r name id < <(BACKUP_ENGINE_WARNINGS_REPORT="$report" backup_engine_create daily -- "$tmp/src" 2>"$tmp/err")
 [[ "$name" == fgc-daily-* && "$id" =~ ^[0-9a-f]{64}$ ]] || fail 'clean daily archive not created'
 grep -Fxq 'files_changed_during_backup=0' "$report" || fail 'warning report missing'
 
