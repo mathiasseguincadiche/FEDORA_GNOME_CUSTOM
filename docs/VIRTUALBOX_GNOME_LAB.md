@@ -4,7 +4,7 @@ Ce document définit le **GATE 2 graphique officiel** utilisé après Gate 1 WSL
 
 La version applicable reste celle de [`../VERSION`](../VERSION). Gate 2 doit utiliser exactement le même commit Git et le même `module-plan` que Gate 1.
 
-Le protocole complet est défini dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
+Le protocole complet est défini dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md). Pour une première fois, le guide pratique [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md) détaille chaque étape depuis Windows.
 
 ## Objectif
 

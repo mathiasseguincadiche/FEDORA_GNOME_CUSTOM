@@ -129,6 +129,8 @@ Exporter la preuve vers Windows ou un support partagé :
 
 # Gate 2 — Fedora 44 GNOME sous VirtualBox
 
+> Guide pratique pas à pas depuis Windows (installation WSL2 et VirtualBox, dossier partagé, checklist, dépannage) : [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md).
+
 ## Objectif
 
 Gate 2 valide le **desktop réel dans une VM graphique** sans prétendre certifier le matériel hôte.

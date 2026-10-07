@@ -87,7 +87,8 @@ Lire dans cet ordre pour une installation bare-metal :
 2. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification CPU/RAM/NVMe/hardware ;
 3. [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) — stabilité et critères de rejet ;
 4. [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) — chaîne Gate 1 → Gate 2 → installation → Gate 3 ;
-5. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — LAB Gate 2 isolé de l'APPLY production.
+5. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — LAB Gate 2 isolé de l'APPLY production ;
+6. [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md) — guide pratique Gate 1 + Gate 2 depuis Windows (WSL2, VirtualBox, checklist, dépannage).
 
 **Résultat attendu :** une machine installée, diagnostiquée puis certifiée physiquement. Gate 1 et Gate 2 ne remplacent pas Gate 3.
 
@@ -213,6 +214,7 @@ final-certification PASS
 ### Gate 2
 
 - [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) ;
+- [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md) ;
 - [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md).
 
 ### Gate 3
