@@ -1,5 +1,7 @@
 # Finition GNOME « Ubuntu-grade »
 
+> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+
 ## En une phrase
 
 Fedora livre GNOME **tel quel** ; Ubuntu ajoute une couche de finition. Ce module ajoute **la même finition** sur Fedora, sans changer de distribution ni thémer GNOME Shell. La décision est expliquée dans l'[ADR 0013](adr/0013-ubuntu-grade-gnome-polish.md).

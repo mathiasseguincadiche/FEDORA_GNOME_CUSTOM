@@ -1,5 +1,7 @@
 # Resource Monitor — télémétrie de la Golden Workstation
 
+> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+
 ## Objectif
 
 Resource Monitor est l'extension GNOME 50 retenue pour afficher dans la barre supérieure les métriques utiles au quotidien sans ouvrir un outil de diagnostic :

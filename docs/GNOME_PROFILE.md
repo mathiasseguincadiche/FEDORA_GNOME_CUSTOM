@@ -4,7 +4,7 @@
 
 Le bureau de référence est **Fedora Linux 44 Workstation + GNOME 50 “Tokyo” + Wayland**.
 
-Le projet conserve les composants Fedora/GNOME natifs, Adwaita/libadwaita et Ptyxis comme terminal de référence. Il ne cherche pas à reproduire Ubuntu/Yaru et évite les personnalisations qui compliquent le diagnostic du compositor.
+Le projet conserve les composants Fedora/GNOME natifs, Adwaita/libadwaita et Ptyxis comme terminal de référence. Il leur ajoute la **finition fonctionnelle qu'Ubuntu apporte à GNOME** (dock, bureau, tuilage, cohérence des applications GTK3), sans reprendre le thème Yaru, et évite les personnalisations qui compliquent le diagnostic du compositor. Vue d'ensemble : [`GNOME.md`](GNOME.md).
 
 ## Extensions gérées et activées
 
