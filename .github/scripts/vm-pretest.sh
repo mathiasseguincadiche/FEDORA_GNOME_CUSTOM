@@ -31,8 +31,11 @@ report '=== FEDORA_GNOME_CUSTOM REAL ROCKY LINUX 10.2 VM PRE-TEST ==='
 report "commit=$(git -C "$ROOT" rev-parse HEAD)"
 
 report '[1/10] Host VM dependencies'
-sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+# Bounded network waits and an overall limit: a stalled Ubuntu mirror must fail
+# this step quickly instead of holding the runner until the job timeout.
+apt_opts=(-o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3)
+timeout 600 sudo apt-get "${apt_opts[@]}" update -qq
+timeout 900 sudo DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" install -y -qq \
   qemu-system-x86 qemu-utils cloud-image-utils openssh-client curl ca-certificates \
   gnupg dnsutils ovmf borgbackup jq >/dev/null
 
