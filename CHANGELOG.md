@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.3 — Guide pratique Gate 2
+
+- Nouveau `docs/GATE2_GUIDE_PAS_A_PAS.md` : Gate 1 puis Gate 2 depuis Windows 11, pas à pas — installation de Fedora 44 dans WSL2 (`wsl --install FedoraLinux-44`), réglages conseillés de la VM VirtualBox, dossier partagé pour faire passer les preuves, checklist visuelle à cocher, signature, export et tableau de dépannage. La procédure normative reste `THREE_GATE_VALIDATION.md` et `VIRTUALBOX_GNOME_LAB.md`, qui renvoient désormais vers ce guide.
+- Documentation uniquement : aucun code ni comportement modifié.
+
 ## 0.21.2 — rétention déterministe des archives refusées
 
 - Correctif trouvé par la CI de `main` (Fedora, Borg 1.4.5) : `borg prune --keep-last` est un alias de `--keep-secondly` et ne garde qu'une archive par seconde. Des archives refusées créées dans la même seconde étaient donc supprimées de façon imprévisible, d'où un échec intermittent. La purge des `fgc-pending-*` trie désormais les noms (horodatage UTC à la nanoseconde) et supprime exactement tout sauf les `BACKUP_KEEP_PENDING` plus récentes.
