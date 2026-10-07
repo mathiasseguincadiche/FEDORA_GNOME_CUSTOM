@@ -1,5 +1,7 @@
 # Extensions GNOME 50 — politique Golden Workstation
 
+> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+
 Les références exécutables des quatre extensions téléchargées sont centralisées dans
 [`config/gnome-extensions.lock`](../config/gnome-extensions.lock). Les numéros cités
 ci-dessous décrivent le profil actif ; le lock reste la référence à mettre à jour.

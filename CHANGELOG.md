@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.5 — Guide d'entrée du bureau GNOME
+
+- Nouveau `docs/GNOME.md` : porte d'entrée du pilier « finition GNOME façon Ubuntu ». Il explique ce que le bureau apporte, associe chaque brique (profil, extensions, finition, dock, Nautilus, terminal, barre système, applications, intégration, usage quotidien, matériel, preuves) à son document de détail, et regroupe les diagnostics et la personnalisation.
+- Contradictions corrigées : `GNOME_PROFILE.md` et `GNOME_INTEGRATION.md` disaient que le projet ne cherchait pas à reproduire Ubuntu, alors que la vision et l'ADR 0013 visent la finition d'Ubuntu (sans son thème Yaru). Le texte dit désormais exactement cela.
+- Le portail, la vision et les principaux documents du bureau renvoient vers ce guide.
+- Documentation uniquement : aucun code ni comportement modifié.
+
 ## 0.21.4 — Le projet réaligné sur son intention
 
 - Nouveau `docs/VISION.md` : pourquoi le projet existe (Fedora + GNOME comme OS principal, la plus récente, la plus finie, la plus réactive, reproductible), ses **quatre piliers d'importance égale** (finition GNOME façon Ubuntu, performance et réactivité, fiabilité et sauvegardes, outils DevOps), le matériel cible complet et les décisions du propriétaire (aucun chiffrement, BIOS 1.A66 minimum, noyau officiel, labo Rocky, Secure Boot désactivé).

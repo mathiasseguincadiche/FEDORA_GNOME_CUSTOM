@@ -21,7 +21,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 | **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
 | **Utiliser KVM** | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
 | **Préparer Fedora 45 / GNOME 51** | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) | `./scripts/development/release-readiness.sh` |
-| **Comprendre la finition du bureau** | [`GNOME_POLISH.md`](GNOME_POLISH.md) | [`adr/0013-ubuntu-grade-gnome-polish.md`](adr/0013-ubuntu-grade-gnome-polish.md) |
+| **Comprendre le bureau GNOME** | [`GNOME.md`](GNOME.md) | [`GNOME_POLISH.md`](GNOME_POLISH.md) |
 | **Comprendre Linux amont** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-officiel-linux-amont) | [`UPSTREAM_LINUX.md`](UPSTREAM_LINUX.md) |
 | **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
 | **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |

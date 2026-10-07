@@ -1,6 +1,6 @@
 # GNOME / Nautilus — intégration Golden Workstation
 
-Le bureau reste Fedora GNOME 50/Wayland proche de l'upstream. L'objectif n'est pas de copier Ubuntu/Yaru mais d'obtenir une pile GNOME maintenable, mesurable et complète pour une workstation principale.
+Le bureau reste Fedora GNOME 50/Wayland proche de l'upstream, avec la finition fonctionnelle façon Ubuntu décrite dans [`GNOME_POLISH.md`](GNOME_POLISH.md) (sans le thème Yaru). Ce document couvre l'intégration : une pile GNOME maintenable, mesurable et complète pour un OS principal. Vue d'ensemble : [`GNOME.md`](GNOME.md).
 
 La version applicable est celle de [`../VERSION`](../VERSION).
 

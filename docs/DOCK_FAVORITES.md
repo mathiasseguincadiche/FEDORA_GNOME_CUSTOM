@@ -1,5 +1,7 @@
 # Curated GNOME Dock — contrat de référence
 
+> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+
 La Golden Workstation impose une liste de favoris GNOME Shell déterministe afin qu'une installation fraîche présente immédiatement le même environnement de travail.
 
 La version applicable est celle de [`../VERSION`](../VERSION).

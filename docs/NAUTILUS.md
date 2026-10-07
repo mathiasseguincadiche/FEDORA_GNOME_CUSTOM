@@ -1,5 +1,7 @@
 # Nautilus — profil Golden complet
 
+> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+
 La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Objectif
