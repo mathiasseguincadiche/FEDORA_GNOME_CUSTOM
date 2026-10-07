@@ -1,5 +1,7 @@
 # Golden Workstation — completeness closure
 
+> Part of the certification journey — overview (in French): [`CERTIFICATION.md`](CERTIFICATION.md).
+
 This runbook closes the final gaps between a correct Fedora 44 deployment and a **physically certified Golden Workstation**. None of the long-running or interactive tests below runs automatically during APPLY.
 
 ## Scope

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.6 — Guides d'entrée « certification » et « virtualisation »
+
+- Nouveau `docs/CERTIFICATION.md` : le parcours de preuve dans l'ordre (CI → Gate 1 → Gate 2 → baseline → installation → Gate 3 → version figée), ce que prouve chaque étape et son document, plus les documents de référence. Les principaux documents de certification renvoient vers ce guide.
+- `docs/KVM_QUICKSTART.md` devient le guide d'entrée de la virtualisation, avec une carte de tous les documents KVM (architecture, réseau, profils, labo Rocky, fichiers des VM, ligne de commande, dépannage).
+- Portail et vision mis à jour. Documentation uniquement : aucun code ni comportement modifié.
+
 ## 0.21.5 — Guide d'entrée du bureau GNOME
 
 - Nouveau `docs/GNOME.md` : porte d'entrée du pilier « finition GNOME façon Ubuntu ». Il explique ce que le bureau apporte, associe chaque brique (profil, extensions, finition, dock, Nautilus, terminal, barre système, applications, intégration, usage quotidien, matériel, preuves) à son document de détail, et regroupe les diagnostics et la personnalisation.

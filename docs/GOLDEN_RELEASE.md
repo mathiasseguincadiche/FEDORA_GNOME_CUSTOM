@@ -1,5 +1,7 @@
 # Golden Release Manifest
 
+> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
+
 Une workstation n'est considérée reproductible que si son état certifié peut être identifié précisément et relié à toute sa chaîne de validation.
 
 Le bundle Golden ne peut être généré qu'en **GATE 3 bare-metal**, après validation de la chaîne Gate 1 WSL2 → Gate 2 VirtualBox.

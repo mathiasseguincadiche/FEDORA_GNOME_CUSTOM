@@ -1,5 +1,17 @@
 # KVM Quickstart — utilisation quotidienne
 
+> **Guide d'entrée du pilier « outils DevOps » côté virtualisation.** Les autres documents, selon le besoin :
+>
+> | Besoin | Document |
+> | --- | --- |
+> | Comprendre l'architecture KVM | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
+> | Comprendre le réseau privé des VM | [`KVM_NETWORK.md`](KVM_NETWORK.md) |
+> | Les deux VM de référence (Rocky, Windows 11) | [`VM_PROFILES.md`](VM_PROFILES.md) |
+> | Le labo DevOps Rocky Linux | [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md), [`ROCKY_DEVOPS_PROVISIONING.md`](ROCKY_DEVOPS_PROVISIONING.md) |
+> | Accéder aux fichiers des VM depuis Fedora | [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) |
+> | Tout piloter en ligne de commande | [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) |
+> | Un problème | [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) |
+
 Ce document est le parcours opérateur court pour KVM/libvirt. Pour l'architecture détaillée, lire ensuite [`VIRTUALIZATION.md`](VIRTUALIZATION.md). Pour le dépannage, utiliser [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md).
 
 ## Les quatre objets à retenir

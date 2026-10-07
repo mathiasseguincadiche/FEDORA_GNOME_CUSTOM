@@ -1,5 +1,7 @@
 # Qualification réelle du poste — fiche d'exécution
 
+> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
+
 Cette fiche prépare les essais sur le PC cible. Les résultats physiques restent **PENDING** tant que les commandes n'ont pas été exécutées sur ce PC et les contrôles humains réalisés. Les laboratoires GitHub Rocky/Fedora ne remplacent pas ces mesures.
 
 La procédure autoritaire reste [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md). Utiliser le profil Fedora/GNOME effectivement promu pour la production ; la préparation Fedora 45/GNOME 51 ne constitue pas cette promotion.

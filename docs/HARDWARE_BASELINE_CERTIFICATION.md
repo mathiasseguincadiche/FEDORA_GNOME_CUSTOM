@@ -1,5 +1,7 @@
 # Hardware Baseline Certification
 
+> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
+
 ## But
 
 La baseline pré-APPLY prouve uniquement que le matériel est suffisamment sain pour autoriser les mutations système. Elle ne certifie pas suspend/resume avant l'installation des corrections.

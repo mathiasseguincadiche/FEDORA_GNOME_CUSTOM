@@ -1,5 +1,7 @@
 # Validation en trois phases — WSL2 → VirtualBox → bare-metal
 
+> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
+
 Cette procédure est l'ordre officiel de qualification de la Golden Workstation.
 
 ```text

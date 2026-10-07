@@ -27,7 +27,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 | **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |
 | **Sauvegarder / restaurer** | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) si échec |
 | **Dépanner** | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | runbook du domaine concerné |
-| **Certifier la machine** | [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) | [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) |
+| **Certifier la machine** | [`CERTIFICATION.md`](CERTIFICATION.md) | [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) |
 | **Contribuer / maintenir** | [`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md) | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
 
 Utilisation quotidienne :
