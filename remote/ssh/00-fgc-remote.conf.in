@@ -1,0 +1,13 @@
+# FEDORA_GNOME_CUSTOM — durcissement SSH de l'accès distant (ADR 0017).
+# Nommé 00- : sshd applique la première valeur rencontrée, ce fichier doit donc précéder 50-redhat.conf.
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+AllowUsers @USER@
+X11Forwarding no
+MaxAuthTries 3
+LoginGraceTime 30
+ClientAliveInterval 60
+ClientAliveCountMax 3

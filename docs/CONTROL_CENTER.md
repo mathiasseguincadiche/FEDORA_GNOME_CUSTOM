@@ -187,6 +187,8 @@ Les mises à niveau majeures ont un parcours séparé : `./control.sh upgrade pl
 
 `doctor gaming` contrôle le profil Gaming canonique, `/data/Jeux`, Steam/Vulkan et les invariants Arc/Wayland/display disponibles sur bare-metal.
 
+`remote status` (alias `doctor remote`) contrôle le profil optionnel d'accès distant ; `remote info` affiche la MAC, la diffusion LAN et l'adresse Tailscale à reporter sur le relais Wake-on-LAN. Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
+
 ## Performance Fedora Linux
 
 Le socle Performance est une surface opérateur de première classe du Control Center. Le mode Golden normal reste `balanced` ; les modes `performance` et `powersave` sont des bascules explicites et réversibles.

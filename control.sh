@@ -56,6 +56,25 @@ if [[ "${1:-}" == doctor ]]; then
     polish)
       exec "$REPO_ROOT/diagnostics/polish-doctor"
       ;;
+    remote)
+      exec "$REPO_ROOT/diagnostics/remote-doctor"
+      ;;
+  esac
+fi
+
+# Optional remote-access profile (Tailscale + SSH + Wake-on-LAN, Sunshine opt-in): read-only routes.
+if [[ "${1:-}" == remote ]]; then
+  case "${2:-status}" in
+    status|doctor)
+      exec "$REPO_ROOT/diagnostics/remote-doctor"
+      ;;
+    info)
+      exec "$REPO_ROOT/diagnostics/remote-doctor" --info
+      ;;
+    *)
+      echo 'Usage: ./control.sh remote [status|doctor|info]' >&2
+      exit 2
+      ;;
   esac
 fi
 

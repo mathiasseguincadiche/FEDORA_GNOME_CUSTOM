@@ -341,6 +341,24 @@ Réseau / sécurité :
 
 `python3` est aussi requis historiquement par cette couche, mais le contrat Python HOST est désormais défini dans le socle système.
 
+### 1.14 Accès distant (profil optionnel, désactivé par défaut)
+
+Paquets Fedora officiels (`manifests/packages-remote-fedora.txt`) :
+
+- openssh-server
+- ethtool
+- polkit
+
+Dépôt éditeur signé Tailscale (`manifests/packages-remote-vendor.txt`, `config/repos/tailscale.repo`) :
+
+- tailscale
+
+COPR LizardByte, seulement si `REMOTE_SUNSHINE_ENABLE="true"` (`manifests/packages-remote-sunshine.txt`) :
+
+- Sunshine
+
+Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md) et l'[ADR 0017](adr/0017-remote-access.md).
+
 ## 2. VM — Rocky Linux 10.2 DevOps
 
 La VM est une workstation CLI DevOps prête à cloner, construire, tester, conteneuriser et déployer.

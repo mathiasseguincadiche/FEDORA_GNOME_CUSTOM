@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.0 — Accès distant (profil optionnel)
+
+- Nouveau profil **`REMOTE_*`**, désactivé par défaut : Tailscale, SSH par clés uniquement, Wake-on-LAN (profil NetworkManager) et Sunshine en option. Cinq modules (`remote.*`), `diagnostics/remote-doctor`, route `./control.sh remote status|info`. Guide `docs/REMOTE_ACCESS.md` (analyse du cahier des charges, limites, alternatives, qualification Gate 3) et [ADR 0017](docs/adr/0017-remote-access.md).
+- Le préflight refuse d'agir sans clé publique dans `authorized_keys`, avec SELinux non Enforcing, avec un port invalide ou avec le port 47990 (interface web de Sunshine). La configuration SSH est validée par `sshd -t` et retirée en cas d'échec.
+- Le garde-fou KVM accepte `KVM_EXTRA_PROTECTED_CIDRS` : le profil protège `100.64.0.0/10` (Tailscale) des VM sans attendre un événement NetworkManager. Test `test_remote_kvm_guard_behavior.sh`.
+- `scripts/remote/wol-send.py` (relais Wake-on-LAN, bibliothèque standard) et `scripts/remote/gdm_autologin.py` (connexion automatique GDM, idempotent).
+- Rien ne change tant que `REMOTE_ENABLE` reste à `false`. Le réveil depuis un arrêt complet, le streaming et l'AV1 restent des mesures du Gate 3.
+
 ## 0.21.8 — README cohérent avec la vision
 
 - Le README présentait « 6 piliers Golden » alors que la vision en définit **quatre, d'importance égale**. Il affiche désormais les quatre piliers avec leur guide d'entrée ; l'ancien tableau devient « le socle technique ».

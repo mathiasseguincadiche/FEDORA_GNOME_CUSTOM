@@ -1,0 +1,13 @@
+[Unit]
+Description=FEDORA_GNOME_CUSTOM lock the session right after automatic login
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+# Verrouille seulement une session ouverte automatiquement au démarrage (moins de 10 min après le boot).
+ExecCondition=/bin/sh -c 'test "$(cut -d. -f1 /proc/uptime)" -lt 600'
+ExecStart=/usr/bin/loginctl lock-session
+
+[Install]
+WantedBy=graphical-session.target

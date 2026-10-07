@@ -78,6 +78,23 @@ discover_protected_ipv4() {
   protected_host_routes | sort -u
 }
 
+# Static protected networks (comma/space separated), e.g. the Tailscale range: tailscaled adds its routes
+# after NetworkManager events, so they cannot be relied on to appear in the route tables in time.
+extra_protected_cidrs() {
+  local item normalized list="${KVM_EXTRA_PROTECTED_CIDRS:-}"
+  for item in ${list//,/ }; do
+    normalized="$(normalize_route_prefix "$item" 2>/dev/null)" || { log_error "invalid KVM_EXTRA_PROTECTED_CIDRS entry: $item"; return 1; }
+    printf '%s\n' "$normalized"
+  done
+}
+
+append_extra_protected() {
+  local extra
+  extra="$(extra_protected_cidrs)" || return 1
+  [[ -z "$extra" ]] || mapfile -t -O "${#protected_cidrs[@]}" protected_cidrs <<<"$extra"
+  validate_networks "${protected_cidrs[@]}"
+}
+
 validate_networks() {
   local -a protected_cidrs=("$@")
   python3 - "$KVM_CIDR" "${protected_cidrs[@]}" <<'PY'
@@ -142,6 +159,7 @@ check_guard() {
     log_error "default IPv4 uplink $default_dev exists but no protected non-default host network was discovered"
     return 1
   fi
+  append_extra_protected || return 1
 
   printf 'kvm_cidr=%s\n' "$KVM_CIDR"
   printf 'default_uplink=%s\n' "${default_dev:-none}"
@@ -184,6 +202,7 @@ apply_normal_guard() {
     log_error "refusing normal mode: default IPv4 uplink $default_dev has no protected non-default host network"
     return 1
   fi
+  append_extra_protected || return 1
 
   tmp="$(mktemp)" || return 1
   append_delete_if_present "$tmp"

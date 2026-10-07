@@ -1,0 +1,2 @@
+# Accès distant : Tailscale depuis le dépôt éditeur (config/repos/tailscale.repo).
+tailscale

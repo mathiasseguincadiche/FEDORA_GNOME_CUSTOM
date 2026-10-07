@@ -72,8 +72,10 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# Bounded network waits and an overall limit: a stalled Ubuntu mirror must fail fast.
+apt_opts=(-o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3)
+timeout 600 sudo apt-get "${apt_opts[@]}" update
+timeout 900 sudo DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" install -y --no-install-recommends \
   qemu-system-x86 qemu-utils cloud-image-utils ovmf swtpm swtpm-tools openssh-client \
   curl ca-certificates gnupg borgbackup jq python3
 cd "$LAB"

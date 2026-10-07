@@ -1,0 +1,8 @@
+# FEDORA_GNOME_CUSTOM — filet de sécurité Wake-on-LAN (REMOTE_WOL_LINK_FALLBACK="true").
+# Indépendant de NetworkManager : réglé à l'apparition de l'interface, donc encore valable à l'arrêt.
+[Match]
+Driver=r8169
+Type=ether
+
+[Link]
+WakeOnLan=magic
