@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.4 — Le projet réaligné sur son intention
+
+- Nouveau `docs/VISION.md` : pourquoi le projet existe (Fedora + GNOME comme OS principal, la plus récente, la plus finie, la plus réactive, reproductible), ses **quatre piliers d'importance égale** (finition GNOME façon Ubuntu, performance et réactivité, fiabilité et sauvegardes, outils DevOps), le matériel cible complet et les décisions du propriétaire (aucun chiffrement, BIOS 1.A66 minimum, noyau officiel, labo Rocky, Secure Boot désactivé).
+- `CAHIER_DES_CHARGES.md` : la finalité décrit enfin le projet voulu ; ajout de la section **finition GNOME façon Ubuntu** (absente jusque-là alors que le code l'applique) et du matériel manquant (écran QD-OLED, réseau, audio, webcam, disque de sauvegarde, BIOS minimum).
+- ADR 0012 (CachyOS) marquée « remplacée par ADR 0015 » : elle se présentait encore comme acceptée.
+- L'audit daté du 27 septembre, dont les exigences sont satisfaites, rejoint `docs/history/` ; le README et le portail pointent vers la vision.
+- Documentation uniquement : aucun code ni comportement modifié.
+
 ## 0.21.3 — Guide pratique Gate 2
 
 - Nouveau `docs/GATE2_GUIDE_PAS_A_PAS.md` : Gate 1 puis Gate 2 depuis Windows 11, pas à pas — installation de Fedora 44 dans WSL2 (`wsl --install FedoraLinux-44`), réglages conseillés de la VM VirtualBox, dossier partagé pour faire passer les preuves, checklist visuelle à cocher, signature, export et tableau de dépannage. La procédure normative reste `THREE_GATE_VALIDATION.md` et `VIRTUALBOX_GNOME_LAB.md`, qui renvoient désormais vers ce guide.
