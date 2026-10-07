@@ -189,7 +189,7 @@ Lorsqu'un détail est déjà canonique ailleurs, créer un lien plutôt que reco
 
 - KVM/libvirt ;
 - stockage `/data` ;
-- profils Ubuntu/Windows ;
+- profils Rocky Linux/Windows ;
 - hashes Windows/VirtIO obligatoires ;
 - runbooks dédiés ;
 - messages runtime liés au layout persistant.
