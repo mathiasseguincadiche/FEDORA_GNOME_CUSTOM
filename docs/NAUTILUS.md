@@ -65,7 +65,7 @@ Si `NAUTILUS_ENABLE_PREVIEWS=false`, le module converge explicitement `show-imag
 Le profil couvre :
 
 - SMB pour Windows/NAS ;
-- SFTP via GVfs pour la VM Ubuntu et les serveurs SSH ;
+- SFTP via GVfs pour la VM Rocky Linux et les serveurs SSH ;
 - MTP pour les appareils mobiles compatibles ;
 - GPhoto2 pour les appareils photo ;
 - AFC + `libimobiledevice`/`ifuse` pour les appareils Apple ;

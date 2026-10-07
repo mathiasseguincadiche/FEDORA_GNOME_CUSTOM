@@ -28,7 +28,7 @@ documenter tout remplacement ; une ancienne fiche matérielle ne suffit pas.
 | Gate 2 Fedora GNOME/VirtualBox | NON EXÉCUTÉ | LAB, doctors, matrice UX réellement exécutée, signature humaine et référence Gate 1 |
 | Fichiers isolés | NON EXÉCUTÉ | Archive exacte, verify-data, contenu/modes/liens comparés |
 | Fedora reconstruit | NON EXÉCUTÉ | Support cible distinct, boot, GNOME, données, diagnostics puis convergence répétée |
-| VM Ubuntu récupérée | NON EXÉCUTÉ | Membres correspondants, boot, documents/services, redémarrage et isolation |
+| VM Rocky Linux récupérée | NON EXÉCUTÉ | Membres correspondants, boot, documents/services, redémarrage et isolation |
 | VM Windows récupérée | NON EXÉCUTÉ | Disque/NVRAM/swtpm/UUID, boot, TPM, documents et isolation |
 | Arrêt/reboot GNOME | NON EXÉCUTÉ | Fermeture normale, reboot direct avec bureau ouvert et reboot précoce : aucune désactivation d'extensions ni crash dans le journal du boot précédent |
 | APPLY réel et noyau | NON EXÉCUTÉ | Baseline + dry-run + backup + APPLY, démarrage Linux amont stable, entrée N-1 disponible |

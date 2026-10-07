@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.7 — Documentation entièrement en français et à jour
+
+- `GOLDEN_COMPLETENESS_CLOSURE.md`, seul document encore en anglais, est traduit en français ; commandes et contrats inchangés.
+- Mentions périmées d'une VM Ubuntu corrigées (le labo est Rocky Linux depuis la 0.21) : la Gate 3 exige le domaine `rocky-devops`, la certification KVM teste Rocky, et `NAUTILUS.md`, `QUALIFICATION_EVIDENCE_TEMPLATE.md`, `VIRTUALIZATION_CLI.md` et `DOCUMENTATION_MODEL.md` parlent désormais de la bonne VM.
+- Documentation uniquement : aucun code ni comportement modifié.
+
 ## 0.21.6 — Guides d'entrée « certification » et « virtualisation »
 
 - Nouveau `docs/CERTIFICATION.md` : le parcours de preuve dans l'ordre (CI → Gate 1 → Gate 2 → baseline → installation → Gate 3 → version figée), ce que prouve chaque étape et son document, plus les documents de référence. Les principaux documents de certification renvoient vers ce guide.

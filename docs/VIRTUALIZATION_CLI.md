@@ -76,7 +76,7 @@ ping
 
 Le réseau principal reste `devops-nat` sur `virbr50`, avec isolation du LAN physique gérée par le projet.
 
-L'accès au filesystem Ubuntu depuis Fedora est volontairement SSH/SFTP-first. Aucun mécanisme de partage de répertoire HOST↔VM n'est installé ou configuré par le projet.
+L'accès au filesystem de la VM Rocky Linux depuis Fedora est volontairement SSH/SFTP-first. Aucun mécanisme de partage de répertoire HOST↔VM n'est installé ou configuré par le projet.
 
 ## Catalogue et firmware
 

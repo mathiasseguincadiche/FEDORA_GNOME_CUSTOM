@@ -1,65 +1,65 @@
-# Golden Workstation — completeness closure
+# Golden Workstation — fermeture de la complétude
 
-> Part of the certification journey — overview (in French): [`CERTIFICATION.md`](CERTIFICATION.md).
+> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
 
-This runbook closes the final gaps between a correct Fedora 44 deployment and a **physically certified Golden Workstation**. None of the long-running or interactive tests below runs automatically during APPLY.
+Ce runbook comble les derniers écarts entre un déploiement Fedora 44 correct et une **Golden Workstation certifiée physiquement**. Aucun des tests longs ou interactifs ci-dessous ne s'exécute automatiquement pendant l'APPLY.
 
-## Scope
+## Périmètre
 
-The closure makes the following contracts fail-closed on bare metal:
+Cette fermeture rend les contrats suivants *fail-closed* (bloquants en cas de doute) sur la vraie machine :
 
-- `gaming-doctor` is mandatory because Gaming is part of the canonical Golden profile;
-- Gate 3 requires both Golden KVM guests and a live Windows VirtIO/QEMU-GA proof;
-- final backup certification requires a current full Borg archive plus repository reachability and a deep integrity sample;
-- the Ryzen 7 7700 has a dedicated sustained CPU soak before baseline certification;
-- cooling certification identifies three distinct live channels: AIO pump, CPU/radiator fan, system fan;
-- the Bluetooth controller is enrolled by USB identity and must remain bound to Fedora `btusb`;
-- wired and Wi-Fi host networking each receive a real DHCP/IP/route/DNS/HTTPS proof; Wi-Fi additionally proves association;
-- audio receives a playback, capture and human confirmation proof;
-- every managed GTK4 application is activated through its installed `.desktop` launcher under Wayland;
-- the Arc B580 receives a sustained Vulkan/3D soak with post-run `xe`/PCIe/AER inspection;
-- the certified OLED display must expose VRR and HDR capability and receives a human confirmation of active VRR/HDR operation.
+- `gaming-doctor` est obligatoire, car le Gaming fait partie du profil Golden canonique ;
+- la Gate 3 exige les deux invités KVM Golden (Rocky Linux et Windows 11) et une preuve vivante VirtIO/QEMU-GA de Windows ;
+- la certification finale de la sauvegarde exige une archive Borg complète et récente, un dépôt joignable et un contrôle d'intégrité approfondi ;
+- le Ryzen 7 7700 passe un test de charge CPU prolongé dédié avant la certification de la baseline ;
+- la certification du refroidissement identifie trois canaux distincts et actifs : pompe de l'AIO, ventilateur CPU/radiateur, ventilateur système ;
+- le contrôleur Bluetooth est enregistré par son identité USB et doit rester lié au pilote Fedora `btusb` ;
+- le réseau filaire et le Wi-Fi de l'hôte reçoivent chacun une vraie preuve DHCP/IP/route/DNS/HTTPS ; le Wi-Fi prouve en plus son association ;
+- l'audio reçoit une preuve de lecture, de capture et une confirmation humaine ;
+- chaque application GTK4 gérée est lancée par son lanceur `.desktop` installé, sous Wayland ;
+- l'Arc B580 passe un test de charge Vulkan/3D prolongé, suivi d'une inspection `xe`/PCIe/AER ;
+- l'écran OLED certifié doit exposer les capacités VRR et HDR, et un humain confirme leur fonctionnement réel.
 
-All physical runtime evidence is bound to the physical hardware/kernel/driver fingerprint and effective configuration. Hardware or relevant runtime drift makes the evidence stale.
+Toutes les preuves physiques sont liées à l'empreinte matériel/noyau/pilote et à la configuration effective. Une dérive du matériel ou de l'exécution concernée rend la preuve caduque (`STALE`).
 
-## 1. Pre-APPLY hardware baseline additions
+## 1. Compléments de la baseline matérielle avant APPLY
 
-Run on the final physical Fedora 44 host.
+À exécuter sur l'hôte physique Fedora 44 final.
 
-### Bluetooth identity
+### Identité Bluetooth
 
 ```bash
 ./diagnostics/baseline-doctor enroll-bluetooth
 ```
 
-The enrolled controller must remain the same USB identity and use the Fedora in-tree `btusb` driver.
+Le contrôleur enregistré doit garder la même identité USB et utiliser le pilote Fedora intégré `btusb`.
 
-### Cooling channel enrollment
+### Enregistrement des canaux de refroidissement
 
-First list the NCT6687D channels while the pump and fans are running:
+Lister d'abord les canaux NCT6687D pendant que la pompe et les ventilateurs tournent :
 
 ```bash
 ./diagnostics/baseline-doctor list-cooling
 ```
 
-Identify three **different** channels and enroll them in this order:
+Identifier trois canaux **différents** et les enregistrer dans cet ordre :
 
 ```bash
 ./diagnostics/baseline-doctor enroll-cooling fanN fanN fanN
-#                                               pump CPU  system
+#                                               pompe CPU  système
 ```
 
-The enrollment is refused if a selected channel is absent or below the minimum live RPM threshold. The baseline and hardware doctor subsequently require all three channels to remain live.
+L'enregistrement est refusé si un canal choisi est absent ou sous le seuil minimal de rotation. La baseline et le diagnostic matériel exigent ensuite que les trois canaux restent actifs.
 
-### Ryzen soak
+### Test de charge du Ryzen
 
 ```bash
 ./diagnostics/baseline-doctor run-cpu-soak
 ```
 
-Default duration: 1800 seconds. The test uses all CPUs with `stress-ng --verify`, samples `k10temp`, requires temperature below 95 °C by default, verifies AMD P-State/boost before and after, and rejects MCE, uncorrected EDAC, thermal-critical and hard-lockup signals.
+Durée par défaut : 1800 secondes. Le test charge tous les CPU avec `stress-ng --verify`, échantillonne `k10temp`, exige une température inférieure à 95 °C par défaut, vérifie AMD P-State et le boost avant et après, et refuse tout signal MCE, EDAC non corrigé, seuil thermique critique ou blocage dur (*hard lockup*).
 
-Then complete the existing RAM/NVMe tests and certify the baseline:
+Terminer ensuite les tests RAM/NVMe existants et certifier la baseline :
 
 ```bash
 ./diagnostics/baseline-doctor run-memory-test 5600
@@ -69,139 +69,139 @@ Then complete the existing RAM/NVMe tests and certify the baseline:
 ./diagnostics/baseline-doctor certify
 ```
 
-The baseline certificate cannot be created without the CPU soak, Bluetooth lock and cooling-channel lock.
+Le certificat de baseline ne peut pas être créé sans le test de charge CPU, le verrou Bluetooth et le verrou des canaux de refroidissement.
 
-## 2. Windows 11 live guest proof
+## 2. Preuve vivante de l'invité Windows 11
 
-Inside the final Windows 11 guest, attach the trusted VirtIO media and run as Administrator:
+Dans l'invité Windows 11 final, attacher le média VirtIO de confiance et exécuter en administrateur :
 
 ```powershell
 .\Configure-GuestIntegration.ps1
 ```
 
-The script now refuses unhealthy VirtIO devices and explicitly requires healthy VirtIO storage, network and balloon devices plus a running QEMU Guest Agent. It writes:
+Le script refuse les périphériques VirtIO en mauvaise santé et exige explicitement un stockage, un réseau et un ballon VirtIO sains ainsi qu'un QEMU Guest Agent en fonctionnement. Il écrit :
 
 ```text
 C:\ProgramData\FedoraGnomeCustom\guest-integration.json
 ```
 
-The host retrieves this marker through QEMU Guest Agent; shared folders or guest credentials are not used.
+L'hôte récupère ce marqueur par le QEMU Guest Agent ; ni dossier partagé ni identifiant de l'invité ne sont utilisés.
 
-Host verification:
+Vérification côté hôte :
 
 ```bash
 ./diagnostics/windows-guest-doctor
 ```
 
-Gate 3 also requires `kvm-domain-doctor --require-guests`, so missing Ubuntu or Windows domains are fatal.
+La Gate 3 exige aussi `kvm-domain-doctor --require-guests` : l'absence du domaine Rocky Linux (`rocky-devops`) ou Windows est bloquante.
 
-## 3. Full Borg proof before final Gate 3
+## 3. Preuve Borg complète avant la Gate 3 finale
 
-Create a current full backup from the same Git commit that will be certified:
+Créer une sauvegarde complète récente depuis le même commit Git que celui qui sera certifié :
 
 ```bash
 ./scripts/backup/backup-now.sh
 ./diagnostics/backup-doctor --certify
 ```
 
-`--certify` is strict. It requires the current full archive marker, matching Git commit, integrity marker, freshness, repository resolution, repository reachability, and `borg check --verify-data`.
+`--certify` est strict. Il exige le marqueur de sauvegarde complète courant, le commit Git correspondant, le marqueur d'intégrité, la fraîcheur, la résolution et l'accessibilité du dépôt, et `borg check --verify-data`.
 
-## 4. Physical runtime proofs
+## 4. Preuves physiques d'exécution
 
-Import the current Gate 1 and Gate 2 proofs first, then run the following after the final applications and KVM guests are in place.
+Importer d'abord les preuves Gate 1 et Gate 2 courantes, puis exécuter ce qui suit une fois les applications finales et les invités KVM en place.
 
-### Arc B580 Vulkan soak
+### Test de charge Vulkan de l'Arc B580
 
 ```bash
 ./control.sh validate gate3 gpu-soak
 ```
 
-Default: two concurrent Vulkan cubes for 900 seconds. Any Vulkan process failure or critical `xe`, uncorrected PCIe or AER signal blocks the proof.
+Par défaut : deux cubes Vulkan simultanés pendant 900 secondes. Tout échec d'un processus Vulkan, ou tout signal critique `xe`, PCIe non corrigé ou AER, bloque la preuve.
 
-### Wired host connectivity
+### Connectivité filaire de l'hôte
 
 ```bash
 ./control.sh validate gate3 network-lan
 ```
 
-Requires a connected NetworkManager Ethernet interface, global IPv4, default route, DNS and real HTTPS access. IPv6 is validated when a global IPv6 address is present.
+Exige une interface Ethernet NetworkManager connectée, une IPv4 globale, une route par défaut, le DNS et un vrai accès HTTPS. L'IPv6 est validée lorsqu'une adresse IPv6 globale est présente.
 
-### Wi-Fi host connectivity
+### Connectivité Wi-Fi de l'hôte
 
 ```bash
 ./control.sh validate gate3 network-wifi
 ```
 
-Requires the same network proof plus a real `iw` association.
+Exige la même preuve réseau, plus une vraie association `iw`.
 
-The two proofs can be captured at different times; both must remain valid for the current physical fingerprint.
+Les deux preuves peuvent être capturées à des moments différents ; elles doivent toutes deux rester valides pour l'empreinte physique courante.
 
-### Audio playback and capture
+### Lecture et capture audio
 
 ```bash
 ./control.sh validate gate3 audio-cert
 ```
 
-The test runs an ALSA speaker tone and records a short microphone sample. It then requires the exact physical confirmation phrase printed by the command. This prevents a silent device-enumeration-only PASS.
+Le test joue une tonalité ALSA sur les haut-parleurs et enregistre un court échantillon du microphone. Il exige ensuite la phrase de confirmation physique exacte affichée par la commande. Cela empêche un PASS silencieux fondé sur la seule détection du périphérique.
 
-### VRR and HDR
+### VRR et HDR
 
 ```bash
 ./control.sh validate gate3 display-cert
 ```
 
-The display proof requires:
+La preuve d'affichage exige :
 
-1. the existing exact Arc B580 connector/EDID and 2560×1440 ~240 Hz contract;
-2. DRM VRR capability;
-3. a CTA HDR Static Metadata block in the monitor EDID;
-4. explicit human confirmation after VRR and HDR have been enabled/tested in GNOME.
+1. le contrat existant connecteur/EDID exact de l'Arc B580 et 2560×1440 à ~240 Hz ;
+2. la capacité VRR côté DRM ;
+3. un bloc *CTA HDR Static Metadata* dans l'EDID de l'écran ;
+4. une confirmation humaine explicite après activation et essai du VRR et du HDR dans GNOME.
 
-For the target ASUS ROG Strix OLED XG27AQDMES, VRR/Adaptive-Sync, HDR10 and 240 Hz are therefore part of the Golden contract rather than optional features.
+Pour l'écran cible ASUS ROG Strix OLED XG27AQDMES, VRR/Adaptive-Sync, HDR10 et 240 Hz font donc partie du contrat Golden et ne sont pas optionnels.
 
-### Status
+### État
 
 ```bash
 ./control.sh validate gate3 physical-status
 ```
 
-A PASS requires these five current markers: `gpu-soak`, `network-lan`, `network-wifi`, `audio`, and `display-capabilities`.
+Un PASS exige ces cinq marqueurs courants : `gpu-soak`, `network-lan`, `network-wifi`, `audio` et `display-capabilities`.
 
-## 5. Final KVM runtime certification
+## 5. Certification finale de l'exécution KVM
 
-Start both Golden guests and ensure the Windows marker exists, then run:
+Démarrer les deux invités Golden et vérifier que le marqueur Windows existe, puis exécuter :
 
 ```bash
 ./scripts/kvm/runtime_certification.sh
 ```
 
-The public runtime certification keeps the existing host, Ubuntu, XML and fail-closed network tests, and now adds the strict live Windows QGA proof.
+La certification publique conserve les tests existants de l'hôte, de Rocky Linux, du XML et du réseau fail-closed, et ajoute la preuve stricte et vivante du QGA Windows.
 
-## 6. Five physical suspend/resume cycles
+## 6. Cinq cycles physiques de veille/réveil
 
-Record five unique real cycles as already required:
+Enregistrer cinq cycles réels et distincts, comme déjà exigé :
 
 ```bash
 ./control.sh validate gate3 record-suspend
 ```
 
-Repeat after each separate physical suspend/resume cycle.
+Répéter après chaque cycle physique de veille/réveil séparé.
 
-## 7. Final Golden certification
+## 7. Certification Golden finale
 
 ```bash
 ./control.sh validate gate3 certify
 ```
 
-A final PASS now requires, in addition to the existing contracts:
+Un PASS final exige désormais, en plus des contrats existants :
 
-- valid CPU-soak/Bluetooth/cooling baseline;
-- strict Borg certification;
-- all five physical runtime proofs;
-- Gaming enabled and `gaming-doctor` PASS on the Arc B580/Wayland/240 Hz stack;
-- both KVM domains;
-- live Windows VirtIO/QGA proof;
-- complete managed application runtime activation;
-- the existing five suspend/resume cycles and Nautilus cold-start evidence.
+- une baseline valide avec test de charge CPU, verrou Bluetooth et verrou du refroidissement ;
+- une certification Borg stricte ;
+- les cinq preuves physiques d'exécution ;
+- le Gaming activé et `gaming-doctor` en PASS sur la pile Arc B580/Wayland/240 Hz ;
+- les deux domaines KVM ;
+- la preuve vivante VirtIO/QGA de Windows ;
+- l'activation complète des applications gérées ;
+- les cinq cycles de veille/réveil existants et la preuve de démarrage à froid de Nautilus.
 
-Only this physical command may create the final Golden marker. CI, WSL2 and VirtualBox still cannot certify the workstation hardware.
+Seule cette commande physique peut créer le marqueur Golden final. La CI, WSL2 et VirtualBox ne peuvent toujours pas certifier le matériel de la workstation.
