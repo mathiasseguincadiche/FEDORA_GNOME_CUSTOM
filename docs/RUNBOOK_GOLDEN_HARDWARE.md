@@ -69,7 +69,18 @@ Le module est aussi installé dans :
 /etc/modules-load.d/fedora-gnome-custom-hwmon.conf
 ```
 
-La Golden refuse `force=1`, `msi_fan_brute_force` et les modules NCT6687 tiers. Le BIOS/EC garde le contrôle des ventilateurs ; Linux ne fait ici que lire les températures/RPM.
+Par défaut, la Golden refuse `force=1`, `msi_fan_brute_force` et les modules NCT6687 tiers. Le BIOS/EC garde le contrôle des ventilateurs ; Linux ne fait ici que lire les températures/RPM (`nct6683` est en lecture seule).
+
+Si `nct6683` refuse la carte (aucun `hwmon` `nct6687`, et `sudo dmesg | grep -i nct6683` indique un *customer ID* non supporté), le correctif autorisé est un **opt-in explicite** :
+
+```bash
+# config/local.conf
+HARDWARE_NCT6683_FORCE="true"
+./control.sh install apply   # module HARDWARE : installe options nct6683 force=1, recharge le module
+sensors
+```
+
+Retour arrière : remettre `false`, puis `sudo rm /etc/modprobe.d/fedora-gnome-custom-nct6683-force.conf && sudo modprobe -r nct6683 && sudo modprobe nct6683`. Ne pas activer sans avoir constaté le refus : le module doit d'abord essayer sans force.
 
 Si le pilote `nct6683` se charge mais qu'aucun tachymètre vivant n'est exposé, vérifier d'abord les branchements CPU_FAN/PUMP/SYS_FAN et la visibilité BIOS des RPM avant de modifier Linux.
 

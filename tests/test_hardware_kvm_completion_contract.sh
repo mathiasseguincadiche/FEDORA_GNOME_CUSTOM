@@ -24,10 +24,13 @@ grep -Fq 'nct6687' "$root/lib/hardware_platform.sh"
 bootstrap_source="source \"\$REPO_ROOT/lib/hardware_platform.sh\""
 grep -Fq "$bootstrap_source" "$root/lib/bootstrap.sh"
 grep -Fxq 'nct6683' "$root/systemd/modules-load.d/fedora-gnome-custom-hwmon.conf"
-if grep -Eq 'force[[:space:]]*=[[:space:]]*1|force=1|msi_fan_brute_force' "$root/systemd/modules-load.d/fedora-gnome-custom-hwmon.conf" "$root/modules/hardware/10_cpu_memory.sh" "$root/lib/hardware_platform.sh"; then
+if grep -Eq 'force[[:space:]]*=[[:space:]]*1|force=1|msi_fan_brute_force' "$root/systemd/modules-load.d/fedora-gnome-custom-hwmon.conf" "$root/lib/hardware_platform.sh"; then
   echo 'unsafe NCT6687 force option or third-party-style override detected' >&2
   exit 1
 fi
+grep -Fxq 'HARDWARE_NCT6683_FORCE="false"' "$root/config/hardware-components.conf"
+grep -Fq 'is_true "${HARDWARE_NCT6683_FORCE:-false}"' "$root/modules/hardware/10_cpu_memory.sh"
+grep -Fxq 'options nct6683 force=1' "$root/systemd/modprobe.d/fedora-gnome-custom-nct6683-force.conf"
 grep -Fq 'sudo modprobe nct6683' "$root/modules/hardware/10_cpu_memory.sh"
 grep -Fq 'wifi_identity_lock=PASS' "$root/lib/baseline.sh"
 grep -Fq 'nct6687_hwmon=PASS' "$root/lib/baseline.sh"

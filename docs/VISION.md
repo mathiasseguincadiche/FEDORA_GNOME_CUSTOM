@@ -33,7 +33,7 @@ Aucun pilier n'a le droit d'en casser un autre : une optimisation de performance
 | Mémoire | 48 Go DDR5-6000 CL30 (2 × 24 Go G.Skill) | vitesse 6000 MT/s vérifiée (profil EXPO/XMP) |
 | GPU | ASRock Intel Arc B580 Challenger 12 Go | pilote `xe` et Mesa de Fedora, réservé à l'hôte |
 | Stockage | 2 × Crucial T705 1 To (PCIe 5.0) | système Btrfs sur le premier, `/data` EXT4 persistant sur le second |
-| Sauvegarde | Disque externe XS1000 (~1,8 To) | cible Borg externe, formatée en ext4 |
+| Sauvegarde | SSD externe Kingston XS1000, USB 3.2 (~1,8 To) | cible Borg externe, formatée en ext4 |
 | Réseau | Wi-Fi 7 Qualcomm FastConnect 7800, Realtek 5 GbE, Bluetooth Qualcomm | identités et pilotes vérifiés |
 | Audio / webcam | Realtek ALC4080, Logitech Brio 100 | identités vérifiées |
 | Écran | ASUS ROG Strix XG27AQDMES, 27" QD-OLED 1440p 240 Hz | 2560×1440 à 240 Hz, reprise après veille, soin OLED |
