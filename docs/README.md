@@ -14,6 +14,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 
 | Besoin | Lire d'abord | Puis |
 |---|---|---|
+| **Savoir pourquoi le projet existe** | [`VISION.md`](VISION.md) | [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) |
 | **Comprendre le projet** | [`LEARNING_PATH.md`](LEARNING_PATH.md) | [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
 | **Utiliser la workstation** | [`CONTROL_CENTER.md`](CONTROL_CENTER.md) | guide spécialisé selon le besoin |
 | **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |

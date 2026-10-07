@@ -2,7 +2,7 @@
 
 > Décision historique remplacée par [ADR 0015](0015-official-upstream-linux.md). Le noyau personnalisé n'est plus accepté par le projet.
 
-**Statut : accepté** — complète ADR 0010 (rolling N / N-1), qui reste valable pour chaque canal.
+**Statut : remplacé par ADR 0015** (décision du propriétaire du 4 octobre 2026 : Linux amont officiel uniquement). Conservé pour l'historique de la décision.
 
 ## Contexte
 

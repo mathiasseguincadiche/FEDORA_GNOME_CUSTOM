@@ -5,3 +5,4 @@ Ces documents décrivent des **étapes passées** du projet (durcissement pré-1
 - [`PRE1_HARDENING.md`](PRE1_HARDENING.md) — revue de durcissement avant la 1.0 (0.14)
 - [`INDUSTRIAL_READINESS.md`](INDUSTRIAL_READINESS.md) — état de préparation industrielle
 - [`HARDWARE_KVM_COMPLETION.md`](HARDWARE_KVM_COMPLETION.md) — fermeture du lot matériel + KVM
+- [`AUDIT_RUNTIME_2026-09-27.md`](AUDIT_RUNTIME_2026-09-27.md) — audit croisé du moteur (0.17–0.18), dont les exigences sont depuis satisfaites

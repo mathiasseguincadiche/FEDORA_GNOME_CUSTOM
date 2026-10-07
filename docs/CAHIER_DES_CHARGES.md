@@ -7,7 +7,9 @@ La révision du cahier des charges n'est pas le numéro de release du logiciel.
 
 ## Finalité
 
-Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée, récupérable et exploitable au quotidien pour un usage DevOps/Ops sur le matériel cible.
+Faire de Fedora + GNOME l'**OS principal** du propriétaire sur son PC exact : la Fedora GNOME la plus récente, la plus finie (finition façon Ubuntu), la plus réactive, reproductible et récupérable. Quatre piliers d'importance égale : **finition GNOME**, **performance et réactivité**, **fiabilité et sauvegardes**, **outils DevOps**.
+
+Le pourquoi, les piliers, le matériel complet et les décisions du propriétaire sont décrits dans [VISION.md](VISION.md). Ce cahier des charges en est la traduction technique vérifiable.
 
 ## P0 — installation et sécurité
 
@@ -27,6 +29,10 @@ Construire une workstation Fedora 44 + GNOME 50 stable, reproductible, mesurée,
 - deux Crucial T705, root et `/data` sur deux NVMe physiques distincts ;
 - premier T705 : Fedora Btrfs système ;
 - second T705 : EXT4 persistant monté sur `/data`, réutilisable après réinstallation du système sans formatage automatique ;
+- carte mère MSI MAG B850M Mortar WiFi, BIOS 1.A66 **minimum** (mises à jour attendues, aucune version exacte imposée) ;
+- écran ASUS ROG Strix XG27AQDMES 27" QD-OLED 1440p 240 Hz ;
+- Wi-Fi 7 Qualcomm FastConnect 7800, Realtek 5 GbE, Bluetooth Qualcomm, audio Realtek ALC4080, webcam Logitech Brio 100 ;
+- disque externe XS1000 comme cible de sauvegarde Borg ;
 - fingerprint BIOS/plateforme/GPU/NVMe/EDID ;
 - aucun tweak kernel/power expérimental aveugle.
 
@@ -65,6 +71,15 @@ Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensi
 - DING, Show Desktop Plus et Resource Monitor intégrés au contrat Golden ;
 - Blur My Shell désactivé dans l'état Golden certifié ;
 - Ptyxis comme terminal Fedora natif avec Bash géré ; Toolbx non imposé au HOST Golden.
+
+## P1 — finition GNOME façon Ubuntu
+
+- dock à gauche, pleine hauteur, *intellihide* (écran OLED), clic = focus / réduire / aperçus ;
+- session ouverte sur le bureau, icônes du bureau (DING), Tiling Assistant épinglé par SHA-256 ;
+- couleur d'accent, jour dans l'horloge, nouvelles fenêtres centrées ;
+- applications GTK3 au rendu libadwaita (`adw-gtk3`) suivant le mode clair/sombre ;
+- soin de l'écran QD-OLED : style sombre au premier APPLY (jamais réimposé), assombrissement puis veille de l'écran ;
+- une seule table d'état désiré pour APPLY, postcheck et `polish-doctor` (ADR 0013).
 
 ## P1 — affichage
 
