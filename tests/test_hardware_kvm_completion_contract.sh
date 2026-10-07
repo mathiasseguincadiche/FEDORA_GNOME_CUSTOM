@@ -29,6 +29,7 @@ if grep -Eq 'force[[:space:]]*=[[:space:]]*1|force=1|msi_fan_brute_force' "$root
   exit 1
 fi
 grep -Fxq 'HARDWARE_NCT6683_FORCE="false"' "$root/config/hardware-components.conf"
+# shellcheck disable=SC2016  # literal source text, must not expand
 grep -Fq 'is_true "${HARDWARE_NCT6683_FORCE:-false}"' "$root/modules/hardware/10_cpu_memory.sh"
 grep -Fxq 'options nct6683 force=1' "$root/systemd/modprobe.d/fedora-gnome-custom-nct6683-force.conf"
 grep -Fq 'sudo modprobe nct6683' "$root/modules/hardware/10_cpu_memory.sh"
