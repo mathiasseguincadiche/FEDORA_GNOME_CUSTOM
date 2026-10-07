@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.8 — README cohérent avec la vision
+
+- Le README présentait « 6 piliers Golden » alors que la vision en définit **quatre, d'importance égale**. Il affiche désormais les quatre piliers avec leur guide d'entrée ; l'ancien tableau devient « le socle technique ».
+- La section sur l'intégration du bureau et des périphériques, ajoutée en toute fin de fichier après la certification, rejoint la partie bureau, juste après la finition GNOME.
+- La section « Mises à jour » mentionne le report du seul noyau quand son paquet n'est pas encore publié ; la table de documentation pointe vers la vision et les nouveaux guides d'entrée ; le bandeau d'état passe sous le titre.
+- Documentation uniquement : aucun code ni comportement modifié.
+
 ## 0.21.7 — Documentation entièrement en français et à jour
 
 - `GOLDEN_COMPLETENESS_CLOSURE.md`, seul document encore en anglais, est traduit en français ; commandes et contrats inchangés.

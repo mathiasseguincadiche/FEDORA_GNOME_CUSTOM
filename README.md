@@ -1,9 +1,5 @@
 <div align="center">
 
-> **Pourquoi ce projet existe, ses quatre piliers et les décisions du propriétaire : [docs/VISION.md](docs/VISION.md).** État : code prêt (CI verte), machine pas encore certifiée (Gate 2 puis Gate 3).
-> Les sauvegardes utilisent Borg **sans chiffrement**, par décision du propriétaire (ADR 0014). Un PASS CI ne certifie pas le poste physique.
-> La [fiche d'exécution physique](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) prépare les mesures sur le PC. La [qualification réseau Docker](docs/ROCKY_DEVOPS_READY.md#qualification-réseau-docker) couvre redémarrage/restauration ; les notices de maintenance EL10 restent visibles.
-
 
 # Fedora 44 Golden Workstation
 
@@ -16,7 +12,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.21.7**
+**Golden Workstation 0.21.8**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -24,12 +20,16 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 
 </div>
 
+> **Pourquoi ce projet existe, ses quatre piliers et les décisions du propriétaire : [docs/VISION.md](docs/VISION.md).** État : code prêt (CI verte), machine pas encore certifiée (Gate 2 puis Gate 3).
+> Les sauvegardes utilisent Borg **sans chiffrement**, par décision du propriétaire (ADR 0014). Un PASS CI ne certifie pas le poste physique.
+> La [fiche d'exécution physique](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) prépare les mesures sur le PC. La [qualification réseau Docker](docs/ROCKY_DEVOPS_READY.md#qualification-réseau-docker) couvre redémarrage/restauration ; les notices de maintenance EL10 restent visibles.
+
 ---
 
 <p align="center">
   <a href="#démarrage-rapide">Démarrage</a> ·
   <a href="#architecture-globale">Architecture</a> ·
-  <a href="#les-6-piliers-golden">6 piliers</a> ·
+  <a href="#les-quatre-piliers">4 piliers</a> ·
   <a href="#matériel-cible">Matériel</a> ·
   <a href="#performance-fedora-linux">Performance</a> ·
   <a href="#finition-du-bureau-ubuntu-grade">Finition</a> ·
@@ -88,7 +88,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.21.7      Fedora 44      Runtime BAREMETAL
+  Projet      0.21.8      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
@@ -139,9 +139,20 @@ bash scripts/development/release-readiness.sh --report-only
 
 Voir [la migration et l'installation Fedora 45](docs/UPGRADE_FEDORA_45.md) pour les conditions de promotion, la sauvegarde des VM et la nouvelle qualification.
 
-## Les 6 piliers Golden
+## Les quatre piliers
 
-| Pilier | Contrat |
+Le projet poursuit quatre objectifs **d'importance égale** ; aucun n'a le droit d'en casser un autre ([vision complète](docs/VISION.md)).
+
+| Pilier | Ce qu'on veut | Guide d'entrée |
+|---|---|---|
+| **Finition GNOME façon Ubuntu** | Dock, bureau, tuilage, applications harmonisées, soin de l'écran QD-OLED | [`docs/GNOME.md`](docs/GNOME.md) |
+| **Performance et réactivité** | Dernier noyau stable, réglages mesurés, aucun réglage aveugle | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
+| **Fiabilité et sauvegardes** | Dry-run, baseline et sauvegarde avant toute modification ; restauration prouvée | [`docs/CERTIFICATION.md`](docs/CERTIFICATION.md) · [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) |
+| **Outils DevOps** | KVM isolé, labo Rocky Linux, terminal et Bash soignés | [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) |
+
+### Le socle technique
+
+| Couche | Contrat |
 |---|---|
 | **HOST** | Fedora Linux 44 Workstation · GNOME 50 · Wayland · SELinux Enforcing · firewalld |
 | **Kernel & hardware** | Linux amont officiel, dernière stable vérifiée sur kernel.org · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
@@ -268,6 +279,16 @@ Tout est réglable dans `config/local.conf`, sans toucher au code.
 
 ---
 
+## Intégration du bureau et des périphériques
+
+GNOME Logiciels reste le catalogue d’applications ; ses mises à jour sont verrouillées pour conserver la sauvegarde préalable et la transaction système via `./control.sh update all`. Les Flatpak se mettent à jour explicitement avec `flatpak update`. Après APPLY, ouvrir une nouvelle session puis vérifier `diagnostics/lifecycle-doctor`.
+
+GNOME Disques et Flatseal sont intégrés au catalogue. Le laboratoire Fedora 44 teste les six extensions actives et un aller-retour bureautique réel. Les contrôles de présence/sandbox ne remplacent pas les essais d’usage, de partage d’écran ou de webcam. Les identités audio de la carte mère et Brio 100 sont enrôlées séparément ; les capacités Wi-Fi déclarées obligatoires bloquent si elles ne sont pas prouvées.
+
+L’afficheur DeepCool LD240 dispose d’une intégration **facultative**, communautaire et épinglée, inactive par défaut. Voir [le guide d’intégration et de qualification](docs/DESKTOP_COMPLETION.md). La qualification matérielle reste à exécuter sur le PC.
+
+---
+
 ## Gaming
 
 Gaming fait partie du **profil Golden canonique**.
@@ -332,6 +353,8 @@ La maintenance suit une chaîne protégée :
 
 `finalize` vérifie le nouveau kernel, GRUB, `dnf5 check`, puis applique la rétention N/N-1. Aucun firmware n'est flashé automatiquement.
 
+Si le dernier noyau stable n'est pas encore publié en paquet (ou si kernel.org est injoignable), **seul le noyau est reporté** : toutes les autres mises à jour, sécurité comprise, sont appliquées, et le bilan l'indique ([détails](docs/UPSTREAM_LINUX.md)).
+
 ---
 
 ## Sauvegarde et restauration
@@ -389,16 +412,17 @@ Le README reste la **synthèse opérateur** ; les détails normatifs et runbooks
 
 | Besoin | Référence |
 |---|---|
+| Comprendre pourquoi | [`docs/VISION.md`](docs/VISION.md) · [`docs/CAHIER_DES_CHARGES.md`](docs/CAHIER_DES_CHARGES.md) |
 | Installer | [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) · [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) |
 | Piloter | [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) |
 | Comprendre l'architecture | [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
 | Performance / Linux amont | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) · [`docs/UPSTREAM_LINUX.md`](docs/UPSTREAM_LINUX.md) |
-| Finition du bureau | [`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md) |
+| Bureau GNOME | [`docs/GNOME.md`](docs/GNOME.md) · [`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md) |
 | Gaming | [`docs/GAMING.md`](docs/GAMING.md) |
 | KVM | [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) · [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) |
 | Backup / recovery | [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) |
 | Dépanner | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) |
-| Certifier | [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) · [`docs/GOLDEN_COMPLETENESS_CLOSURE.md`](docs/GOLDEN_COMPLETENESS_CLOSURE.md) |
+| Certifier | [`docs/CERTIFICATION.md`](docs/CERTIFICATION.md) · [`docs/GATE2_GUIDE_PAS_A_PAS.md`](docs/GATE2_GUIDE_PAS_A_PAS.md) · [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) |
 | Reproduire une release | [`docs/GOLDEN_RELEASE.md`](docs/GOLDEN_RELEASE.md) |
 | Comprendre la CI | [`docs/CI_VALIDATION.md`](docs/CI_VALIDATION.md) |
 
@@ -504,11 +528,3 @@ Certification finale :
 ```
 
 Un PASS produit le marker Golden et [`golden-release.json`](docs/GOLDEN_RELEASE.md). Tant que cette commande n'a pas réussi sur le matériel cible, le dépôt est **code-ready**, mais la workstation physique n'est pas encore **Golden runtime-certified**.
-
-## Intégration desktop et périphériques
-
-GNOME Logiciels reste le catalogue d’applications ; ses mises à jour sont verrouillées pour conserver la sauvegarde préalable et la transaction système via `./control.sh update all`. Les Flatpak se mettent à jour explicitement avec `flatpak update`. Après APPLY, ouvrir une nouvelle session puis vérifier `diagnostics/lifecycle-doctor`.
-
-GNOME Disques et Flatseal sont intégrés au catalogue. Le laboratoire Fedora 44 teste les six extensions actives et un aller-retour bureautique réel. Les contrôles de présence/sandbox ne remplacent pas les essais d’usage, de partage d’écran ou de webcam. Les identités audio de la carte mère et Brio 100 sont enrôlées séparément ; les capacités Wi-Fi déclarées obligatoires bloquent si elles ne sont pas prouvées.
-
-L’afficheur DeepCool LD240 dispose d’une intégration **facultative**, communautaire et épinglée, inactive par défaut. Voir [le guide d’intégration et de qualification](docs/DESKTOP_COMPLETION.md). La qualification matérielle reste à exécuter sur le PC.
