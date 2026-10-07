@@ -1,5 +1,7 @@
 # Golden Stack Certification — drivers, KVM and applications
 
+> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
+
 Ce runbook complète la certification matérielle. Le principe est identique : un composant n'est pas considéré Golden parce qu'un paquet est installé ; il doit prouver son binding, son runtime ou sa configuration effective.
 
 ## 1. Pilotes et drivers
