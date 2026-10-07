@@ -17,10 +17,10 @@ Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propri
 
 ## Disque de sauvegarde de la machine cible
 
-La fiche matérielle prévoit un troisième support de ~1,8 To, le **XS1000**, en plus des deux T705. C'est la cible naturelle du dépôt Borg local, à condition de respecter le contrat du projet :
+La fiche matérielle prévoit un troisième support de ~1,8 To, le **Kingston XS1000**, un **SSD externe USB 3.2 Gen 2** (et non un disque dur mécanique), en plus des deux T705. C'est la cible naturelle du dépôt Borg local, à condition de respecter le contrat du projet :
 
 - il doit être **externe** (USB / amovible) : le projet refuse un dépôt sur le disque système ou sur `/data` ;
-- il doit être formaté en **ext4** (`BACKUP_PREAPPLY_REQUIRED_FSTYPE`). Un XS1000 neuf est souvent livré en exFAT : il faut le reformater une fois (cela **efface** son contenu) ;
+- il doit être formaté en **ext4** (`BACKUP_PREAPPLY_REQUIRED_FSTYPE`). Un XS1000 neuf est livré en exFAT : il faut le reformater une fois (cela **efface** son contenu) ;
 - il doit être **seul** support externe monté lors du pré-APPLY, sinon la détection automatique s'arrête par sécurité. Dans ce cas, renseigner `BACKUP_REPOSITORY` dans `config/local.conf`.
 
 **Le dépôt n'est pas chiffré** : toute personne qui possède le disque peut lire les sauvegardes, y compris `~/.ssh`, `~/.gnupg` et les profils de navigateur. Ranger le disque en conséquence. En contrepartie, aucune passphrase ne peut être perdue : un Fedora neuf avec `borgbackup` suffit pour restaurer.

@@ -181,7 +181,7 @@ valider → mesurer → sauvegarder → converger → qualifier → certifier �
 | NVMe PCIe | x4, capacité PCIe 5.0 |
 | Écran | ASUS ROG Strix OLED XG27AQDMES, 2560×1440/~240 Hz |
 
-Le profil d'affichage est lié à l'EDID réellement certifié sur un connecteur appartenant à la B580. L'iGPU Ryzen peut rester disponible comme solution de récupération.
+Le profil d'affichage est lié à l'EDID réellement certifié sur un connecteur appartenant à la B580. L'iGPU Ryzen est **désactivé dans le BIOS** par décision du propriétaire : la B580 est le seul GPU.
 
 ---
 
