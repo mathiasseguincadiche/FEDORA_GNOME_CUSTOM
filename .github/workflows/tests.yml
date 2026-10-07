@@ -218,6 +218,14 @@ jobs:
         run: bash tests/test_documentation_code_alignment.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_github_presentation_contract.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_remote_access_contract.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_remote_wol_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_remote_modules_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_remote_kvm_guard_behavior.sh
 
   installer-audit:
     runs-on: ubuntu-latest

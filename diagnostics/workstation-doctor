@@ -42,6 +42,9 @@ if is_true "${GAMING_ENABLE:-false}"; then
 else
   emit KO Gaming 'canonical Golden profile requires Gaming enabled'
 fi
+if is_true "${REMOTE_ENABLE:-false}"; then
+  if "$REPO_ROOT/diagnostics/remote-doctor" --quiet; then emit OK 'Remote access' 'Tailscale/SSH key-only/Wake-on-LAN'; else emit KO 'Remote access' 'run remote-doctor'; fi
+fi
 if "$REPO_ROOT/diagnostics/software-matrix-doctor" --quiet; then emit OK 'Known-good matrix' certified; else emit WARN 'Known-good matrix' 'not certified or software versions changed'; fi
 
 if is_true "${ENABLE_KVM:-true}"; then

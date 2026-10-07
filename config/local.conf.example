@@ -19,3 +19,9 @@ BACKUP_REPOSITORY="/run/media/$USER/XS1000/Backup-Fedora/borg"
 # SHELL_UX_ENABLE_ZOXIDE="true"
 # SHELL_UX_ENABLE_DIRENV="true"
 # SHELL_UX_PROMPT_GIT="true"
+
+# Optionnel : accès distant (Tailscale + SSH + Wake-on-LAN). Lire docs/REMOTE_ACCESS.md avant d'activer.
+# REMOTE_ENABLE="true"
+# REMOTE_SUNSHINE_ENABLE="true"     # flux graphique Sunshine (COPR LizardByte)
+# REMOTE_AUTOLOGIN="true"           # session ouverte au démarrage, verrouillée aussitôt
+# REMOTE_POWEROFF_POLKIT="true"     # éteindre le PC par SSH sans mot de passe

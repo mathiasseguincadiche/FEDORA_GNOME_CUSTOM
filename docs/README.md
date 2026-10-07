@@ -25,6 +25,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 | **Comprendre Linux amont** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-officiel-linux-amont) | [`UPSTREAM_LINUX.md`](UPSTREAM_LINUX.md) |
 | **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
 | **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |
+| **Piloter le PC à distance (tablette, réveil)** | [`REMOTE_ACCESS.md`](REMOTE_ACCESS.md) | [`adr/0017-remote-access.md`](adr/0017-remote-access.md) pour la décision |
 | **Sauvegarder / restaurer** | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) si échec |
 | **Dépanner** | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | runbook du domaine concerné |
 | **Certifier la machine** | [`CERTIFICATION.md`](CERTIFICATION.md) | [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) |
@@ -103,6 +104,7 @@ Ces documents répondent à **« que dois-je lancer et quel résultat dois-je at
 - [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) — cycle de vie VM courant ;
 - [`PERFORMANCE.md`](PERFORMANCE.md) — AMD P-State/EPP, TuneD, sched_ext, zram, NVMe et frametimes ;
 - [`GAMING.md`](GAMING.md) — Steam/Vulkan/GameMode/`/data/Jeux` ;
+- [`REMOTE_ACCESS.md`](REMOTE_ACCESS.md) — accès distant : Tailscale, SSH, Wake-on-LAN, Sunshine (profil optionnel) ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — Borg (non chiffré), restore et disaster recovery ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — maintenance desktop ;
 - [`DOCK_FAVORITES.md`](DOCK_FAVORITES.md) — favoris GNOME ;

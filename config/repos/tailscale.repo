@@ -1,0 +1,11 @@
+# Définition du dépôt officiel Tailscale pour Fedora, reproduite telle que publiée par l'éditeur.
+# À comparer avec https://pkgs.tailscale.com/stable/fedora/tailscale.repo avant la première installation :
+# les métadonnées du dépôt sont signées (repo_gpgcheck=1).
+[tailscale-stable]
+name=Tailscale stable
+baseurl=https://pkgs.tailscale.com/stable/fedora/$basearch
+enabled=1
+type=rpm
+repo_gpgcheck=1
+gpgcheck=0
+gpgkey=https://pkgs.tailscale.com/stable/fedora/repo.gpg

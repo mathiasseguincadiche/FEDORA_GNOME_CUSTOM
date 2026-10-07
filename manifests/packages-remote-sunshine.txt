@@ -1,0 +1,2 @@
+# Sunshine depuis le COPR LizardByte (REMOTE_SUNSHINE_COPR). Installé seulement si REMOTE_SUNSHINE_ENABLE=true.
+Sunshine

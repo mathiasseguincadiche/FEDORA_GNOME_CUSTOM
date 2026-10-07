@@ -12,7 +12,7 @@
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 
-**Golden Workstation 0.21.8**
+**Golden Workstation 0.22.0**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -88,7 +88,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.21.8      Fedora 44      Runtime BAREMETAL
+  Projet      0.22.0      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
@@ -302,6 +302,19 @@ Le projet conserve la pile graphique Fedora : pas de Mesa git/COPR, pas de `forc
 ```
 
 La preuve finale reste bare-metal : rendu Vulkan Arc B580, Wayland, VRR/~240 Hz et lancement Steam/Proton. Voir [`docs/GAMING.md`](docs/GAMING.md).
+
+---
+
+## Accès distant
+
+Profil **optionnel et désactivé par défaut** pour piloter le PC depuis une tablette : Tailscale (aucun port exposé), SSH par clés, Wake-on-LAN et, en option, Sunshine + Moonlight.
+
+```bash
+./control.sh remote status   # contrôle complet, lecture seule
+./control.sh remote info     # MAC / diffusion LAN à reporter sur le relais de réveil
+```
+
+Le réveil d'un PC éteint exige un **relais toujours allumé** sur le LAN, et le Wake-on-LAN depuis un arrêt complet se **mesure** au Gate 3. Le guide analyse l'architecture demandée, ses limites et ses alternatives : [`docs/REMOTE_ACCESS.md`](docs/REMOTE_ACCESS.md) · [ADR 0017](docs/adr/0017-remote-access.md).
 
 ---
 

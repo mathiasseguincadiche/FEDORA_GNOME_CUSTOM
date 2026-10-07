@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# Diagnostic en lecture seule du profil « accès distant » (ADR 0017).
+#   remote-doctor            contrôle complet
+#   remote-doctor --quiet    sortie réduite (utilisé par la validation et les doctors agrégés)
+#   remote-doctor --info     affiche MAC, diffusion et adresses à reporter sur le relais Wake-on-LAN
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/remote_access.sh"
+quiet=false; info=false
+case "${1:-}" in --quiet) quiet=true ;; --info) info=true ;; esac
+ok=0; warn=0; ko=0
+
+emit() {
+  local state="$1" label="$2" detail="$3"
+  $quiet || ui_check "$state" "$label" "$detail"
+  case "$state" in OK) ((ok+=1)) ;; WARN) ((warn+=1)) ;; KO) ((ko+=1)) ;; esac
+}
+
+if $info; then
+  iface="$(remote_wired_interface || true)"
+  [[ -n "$iface" ]] || { ui_error "aucune interface filaire liée à ${HARDWARE_LAN_DRIVER:-r8169}"; exit "$EXIT_PRECHECK_FAILED"; }
+  ui_meta 'Interface filaire' "$iface"
+  ui_meta 'Adresse MAC' "$(cat "$(remote_sysfs_root)/class/net/$iface/address" 2>/dev/null || echo inconnue)"
+  ui_meta 'Adresse IPv4 / diffusion' "$(ip -4 -br addr show dev "$iface" 2>/dev/null | awk '{print $3}')"
+  ui_meta 'Adresse Tailscale' "$(tailscale ip -4 2>/dev/null | head -n1 || true)"
+  ui_info 'Reporter la MAC et l'"'"'adresse de diffusion du LAN sur le relais : python3 wol-send.py <MAC> --broadcast <diffusion>'
+  exit 0
+fi
+
+if ! remote_enabled; then
+  $quiet || ui_summary 'REMOTE ACCESS PROFILE DISABLED' 'OPTIONAL (REMOTE_ENABLE=false)' "$REPORT_ROOT" "$LOG_DIR"
+  exit 0
+fi
+
+# --- Socle de sécurité ---------------------------------------------------------------------------
+if [[ "$(getenforce 2>/dev/null || echo unknown)" == Enforcing ]]; then emit OK SELinux Enforcing; else emit KO SELinux 'must stay Enforcing'; fi
+if systemctl is-active --quiet firewalld; then emit OK firewalld active; else emit KO firewalld 'must be active'; fi
+
+# --- Tailscale -----------------------------------------------------------------------------------
+zone="${REMOTE_TAILSCALE_ZONE:-fgc-tailnet}"
+if rpm -q tailscale >/dev/null 2>&1 && systemctl is-active --quiet tailscaled.service; then
+  emit OK tailscaled 'package installed and daemon active'
+  backend="$(remote_tailscale_backend_state || true)"
+  if [[ "$backend" == Running ]]; then
+    emit OK 'Tailnet login' "connected, address $(tailscale ip -4 2>/dev/null | head -n1)"
+  else
+    emit WARN 'Tailnet login' "state='${backend:-unknown}': run 'sudo tailscale up' once (interactive login) and disable key expiry for this node"
+  fi
+else
+  emit KO tailscaled 'package or daemon missing'
+fi
+
+if remote_zone_exists "$zone"; then
+  emit OK 'Tailnet zone' "$zone exists"
+  if remote_zone_has_service "$zone" ssh; then emit OK 'Tailnet SSH' "ssh allowed in $zone"; else emit KO 'Tailnet SSH' "ssh missing from $zone"; fi
+  if sudo firewall-cmd --permanent --zone="$zone" --query-interface="${REMOTE_TAILSCALE_INTERFACE:-tailscale0}" >/dev/null 2>&1; then
+    emit OK 'Tailnet interface' "${REMOTE_TAILSCALE_INTERFACE:-tailscale0} bound to $zone"
+  else
+    emit KO 'Tailnet interface' "${REMOTE_TAILSCALE_INTERFACE:-tailscale0} not bound to $zone"
+  fi
+  # La web UI de Sunshine ne doit jamais être exposée.
+  if sudo firewall-cmd --permanent --zone="$zone" --list-ports 2>/dev/null | grep -Fq 47990; then emit KO 'Sunshine web UI' 'port 47990 must never be opened'; fi
+else
+  emit KO 'Tailnet zone' "firewalld zone $zone missing"
+fi
+
+# --- SSH -----------------------------------------------------------------------------------------
+if systemctl is-active --quiet sshd.service; then
+  effective="$(sudo sshd -T 2>/dev/null || true)"
+  user="$(remote_user)"
+  if grep -Fxq 'passwordauthentication no' <<<"$effective" && grep -Fxq 'permitrootlogin no' <<<"$effective" && grep -Fxq 'pubkeyauthentication yes' <<<"$effective"; then
+    emit OK 'SSH policy' 'public keys only, no root login'
+  else
+    emit KO 'SSH policy' 'passwords or root login still accepted (sshd -T)'
+  fi
+  if grep -Fxq "allowusers $user" <<<"$effective"; then emit OK 'SSH users' "AllowUsers $user"; else emit KO 'SSH users' "sshd must allow only $user"; fi
+  if ! is_true "${REMOTE_SSH_LAN:-false}"; then
+    lan_zone="$(remote_default_zone || true)"; lan_zone="${lan_zone:-FedoraWorkstation}"
+    if remote_zone_has_service "$lan_zone" ssh; then emit KO 'SSH on LAN' "ssh still open in zone $lan_zone"; else emit OK 'SSH on LAN' "ssh closed in zone $lan_zone (tailnet only)"; fi
+  fi
+  if remote_authorized_keys_present; then emit OK 'SSH keys' 'authorized_keys holds a public key'; else emit KO 'SSH keys' 'authorized_keys empty: remote login impossible'; fi
+else
+  emit KO sshd 'service inactive'
+fi
+
+# --- Wake-on-LAN ---------------------------------------------------------------------------------
+if remote_wol_enabled; then
+  iface="$(remote_wired_interface || true)"
+  if [[ -z "$iface" ]]; then
+    emit KO 'Wake-on-LAN' "no wired interface bound to ${HARDWARE_LAN_DRIVER:-r8169}"
+  else
+    wol_state="$(remote_ethtool_wol "$iface" || true)"
+    if [[ "$wol_state" =~ supports=[a-z]*g ]]; then emit OK 'WoL capability' "$iface $wol_state"; else emit KO 'WoL capability' "$iface does not advertise magic packet ($wol_state)"; fi
+    if [[ "$wol_state" =~ current=[a-z]*g ]]; then emit OK 'WoL active' 'ethtool shows Wake-on: g'; else emit KO 'WoL active' 'Wake-on is not g: check the NetworkManager profile'; fi
+    con="$(remote_wired_connection "$iface")"
+    if [[ -n "$con" && "$(nmcli -g 802-3-ethernet.wake-on-lan connection show "$con" 2>/dev/null)" == "${REMOTE_WOL_MODE:-magic}" ]]; then
+      emit OK 'WoL profile' "NetworkManager '$con' = ${REMOTE_WOL_MODE:-magic} (persistent)"
+    else
+      emit KO 'WoL profile' 'wake-on-lan is not stored in the NetworkManager profile'
+    fi
+    emit WARN 'WoL from power-off' 'BIOS wake settings and wake from a full shutdown are only proven by the Gate 3 cycles (docs/REMOTE_ACCESS.md)'
+  fi
+fi
+
+# --- Isolation KVM -------------------------------------------------------------------------------
+if [[ -f "$(remote_kvm_guard_unit)" ]]; then
+  guard="$(sudo /usr/local/libexec/fedora-gnome-custom/kvm-network-guard check 2>/dev/null || true)"
+  if grep -Fq "${REMOTE_TAILNET_CIDR:-100.64.0.0/10}" <<<"$guard"; then emit OK 'KVM isolation' 'tailnet range protected from the VM network'; else emit KO 'KVM isolation' 'tailnet range is not in the KVM guard protected networks'; fi
+else
+  emit WARN 'KVM isolation' 'KVM guard not installed: the tailnet range is protected once the KVM profile is applied'
+fi
+
+# --- Sunshine / session --------------------------------------------------------------------------
+if remote_sunshine_enabled; then
+  if rpm -q Sunshine >/dev/null 2>&1; then emit OK Sunshine 'package installed'; else emit KO Sunshine 'package missing'; fi
+  if runtime_is_baremetal; then
+    node="$(drm_render_node_for_pci_id "${EXPECTED_GPU_PCI_VENDOR:-8086}" "${EXPECTED_GPU_PCI_DEVICE:-e20b}" 2>/dev/null || true)"
+    if [[ -n "$node" ]] && remote_vaapi_av1_encode "$node"; then
+      emit OK 'AV1 encode' "VA-API exposes AV1 hardware encoding on $node"
+    else
+      emit WARN 'AV1 encode' 'AV1 hardware encode not confirmed: Sunshine would silently fall back to H.264/software (check vainfo and the Sunshine log)'
+    fi
+  else
+    emit WARN 'AV1 encode' "runtime=$(runtime_environment): hardware encoding is only measurable on the bare-metal workstation"
+  fi
+  emit WARN 'Sunshine capture' 'KMS/portal capture, SELinux and LAN exposure of the high ports are Gate 3 measurements (docs/REMOTE_ACCESS.md)'
+fi
+
+if remote_autologin_enabled; then
+  if [[ "$(remote_autologin_status)" == "enabled user=$(remote_user)" ]]; then emit OK Autologin 'GDM automatic login configured'; else emit KO Autologin 'REMOTE_AUTOLOGIN=true but GDM is not configured'; fi
+  if is_true "${REMOTE_LOCK_ON_AUTOLOGIN:-true}"; then
+    if systemctl --user is-enabled fgc-remote-lock.service >/dev/null 2>&1; then emit OK 'Session lock' 'locked right after automatic login'; else emit KO 'Session lock' 'fgc-remote-lock.service not enabled'; fi
+  else
+    emit WARN 'Session lock' 'REMOTE_LOCK_ON_AUTOLOGIN=false: anyone with physical access gets an unlocked session'
+  fi
+fi
+
+if is_true "${REMOTE_POWEROFF_POLKIT:-false}"; then
+  if [[ -r "$(remote_polkit_rule)" ]]; then emit OK 'Remote poweroff' 'polkit rule installed for the workstation user'; else emit KO 'Remote poweroff' 'polkit rule missing'; fi
+fi
+
+$quiet || {
+  ui_meta OK "$ok"
+  ui_meta WARN "$warn"
+  ui_meta KO "$ko"
+}
+(( ko == 0 )) || exit "$EXIT_POSTCHECK_FAILED"
+$quiet || ui_summary 'REMOTE ACCESS HEALTHY' 'READY (Gate 3 cycles remain a physical measurement)' "$REPORT_ROOT" "$LOG_DIR"

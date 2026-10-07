@@ -18,3 +18,4 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0014 — Sauvegardes Borg sans chiffrement](0014-borg-unencrypted-backups.md)
 - [0015 — Linux amont officiel stable uniquement](0015-official-upstream-linux.md)
 - [0016 — Transition Fedora 45 / GNOME 51](0016-fedora45-gnome51-transition.md)
+- [0017 — Accès distant : Tailscale, SSH, Wake-on-LAN, Sunshine en option](0017-remote-access.md)

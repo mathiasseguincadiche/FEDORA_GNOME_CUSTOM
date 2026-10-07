@@ -92,6 +92,14 @@ Les prétests package Fedora, intégration host et Rocky Linux VM sont rejoués 
 
 La CI complète la provenance et la reproductibilité ; elle ne remplace pas la validation du matériel physique ni la responsabilité de l'opérateur sur les médias Windows fournis manuellement.
 
+## Accès distant (profil optionnel)
+
+Activé seulement par `REMOTE_ENABLE="true"` ; rien n'est téléchargé sinon.
+
+- **Tailscale** : dépôt éditeur `pkgs.tailscale.com`, définition dans `config/repos/tailscale.repo`. Les **métadonnées** du dépôt sont signées (`repo_gpgcheck=1`), les paquets ne le sont pas dans la définition publiée par l'éditeur (`gpgcheck=0`) : la confiance repose donc sur la signature du dépôt et sur TLS. La définition est reproduite **sans avoir pu être relue à la source** depuis l'environnement de rédaction : la comparer avec la version publiée avant la première installation.
+- **Sunshine** : COPR `lizardbyte/stable` du projet amont, uniquement avec `REMOTE_SUNSHINE_ENABLE="true"`. Le COPR est un dépôt communautaire signé par COPR : même classe de confiance que le COPR noyau, et le seul tiers du profil. La valeur est contrainte par `config/schema-enums.tsv`.
+- **Aucun** `curl | bash`, aucun binaire téléchargé hors dépôt, aucun port exposé à Internet.
+
 ## Extensions GNOME revues
 
 Les extensions téléchargées directement depuis GNOME Extensions sont verrouillées par review, version **et SHA-256** :

@@ -1,0 +1,4 @@
+# Accès distant : paquets Fedora officiels (résolus par le preflight Fedora).
+openssh-server
+ethtool
+polkit
