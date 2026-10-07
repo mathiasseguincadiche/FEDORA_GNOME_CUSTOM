@@ -85,7 +85,14 @@ dnf -y install dnf-plugins-core ca-certificates curl wget gnupg2
 dnf config-manager --set-enabled crb
 # Official Fedora EPEL release package installs its RPM trust/repository policy.
 dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
-dnf -y upgrade --refresh
+# Rocky CRB can lag BaseOS on selinux-policy-targeted-extra (pulled in by
+# epel-release), which makes the whole upgrade unsolvable. Retry once without
+# selinux-policy*: it stays on the installed, mutually consistent version until
+# CRB catches up. Any other failure still aborts.
+if ! dnf -y upgrade --refresh; then
+  log 'upgrade blocked by BaseOS/CRB selinux-policy skew; retrying without selinux-policy*'
+  dnf -y upgrade --refresh --exclude='selinux-policy*'
+fi
 # Cloud Base initially lacks some container networking modules. Install the
 # complete supported Rocky kernel/module set, then boot it before Docker.
 dnf -y install kernel kernel-modules kernel-modules-extra grubby kmod
