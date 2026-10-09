@@ -9,6 +9,17 @@ for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-p
 done
 
 grep -Fq 'fedora:44' "$ROOT/.github/workflows/fedora-host-pretest.yml"
+
+# Hosted runners share Docker Hub's anonymous pull quota, which fails whole CI runs with
+# "toomanyrequests". Workflow containers and probe images come from the official Docker
+# library mirror on ECR Public instead; guest-VM pulls in vm-pretest.sh are unaffected.
+if grep -nE '^[[:space:]]*container:[[:space:]]+fedora:' "$ROOT"/.github/workflows/*.yml; then
+  echo 'workflow containers must use public.ecr.aws/docker/library/fedora, not Docker Hub' >&2; exit 1
+fi
+if grep -nE 'docker pull (busybox|hello-world)' "$ROOT/.github/workflows/tests.yml"; then
+  echo 'tests.yml must pull probe images from public.ecr.aws/docker/library' >&2; exit 1
+fi
+grep -Fq 'container: public.ecr.aws/docker/library/fedora:44' "$ROOT/.github/workflows/fedora-installer-audit.yml"
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2' "$ROOT/.github/scripts/vm-pretest.sh"

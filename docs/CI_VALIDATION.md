@@ -289,3 +289,7 @@ Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connex
 ### Reprise Rocky Linux 10.2
 
 Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts : un échec ou un job ignoré bloque la fusion et la publication. Le laboratoire contrôle Q35/UEFI, l'OS réel, SELinux, le bootstrap exact, un changement de boot ID, puis une restauration Borg à froid sans chiffrement (disque, NVRAM et seed, SHA-256 et fichiers témoins). Les sources sont supprimées avant extraction. Les logs, l'inventaire RPM et les erreurs du démarrage sont conservés. Les privilèges du compte CI servent seulement à cette VM jetable ; le profil de production garde sudo avec mot de passe.
+
+## Images de conteneur
+
+Les jobs CI tirent leurs images (`fedora:44`, `fedora:45`, `busybox`, `hello-world`) du miroir officiel de la bibliothèque Docker sur ECR Public (`public.ecr.aws/docker/library/…`), pas de Docker Hub : les runners GitHub partagent le quota de téléchargements anonymes de Docker Hub, et son dépassement (`toomanyrequests`) fait échouer des séries entières sans rapport avec le code. Le contrat `tests/test_ci_maturity_contract.sh` refuse le retour à `container: fedora:…`.
