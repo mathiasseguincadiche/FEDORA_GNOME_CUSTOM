@@ -126,6 +126,7 @@ def main():
     entries = []
     lock = profile.assignments(ROOT / "config/gnome-extensions.lock")
     candidate = dict(lock)
+    found_prefixes = []
 
     def check(component, action):
         try:
@@ -138,6 +139,7 @@ def main():
         uuid = lock[prefix + "_UUID"]
         result = (tiling_candidate if prefix == "TILING_ASSISTANT" else ego_candidate)(uuid, args.shell)
         candidate.update({prefix + "_" + key: value for key, value in result.items()})
+        found_prefixes.append(prefix)
         return "downloaded UUID/GNOME metadata and SHA256 verified"
 
     for prefix in profile.PREFIXES:
@@ -202,6 +204,29 @@ def main():
         probes.append({"candidate": label, "pk": pk, **found})
         print("PROBE", label, json.dumps(found, sort_keys=True), sep="\t")
     report["replacement_probes"] = probes
+    for prefix in found_prefixes:
+        print("CANDIDATE", prefix, json.dumps({k[len(prefix) + 1:]: v for k, v in candidate.items()
+                                                if k.startswith(prefix + "_")}, sort_keys=True), sep="\t")
+    blocked = any(x["status"] != "READY" for x in entries)
+    report = {"schema": 1, "fedora": 45, "gnome": 51, "status": "BLOCKED" if blocked else "READY",
+              "scope": "readiness-only; no production promotion or hardware certification",
+              "report_only": args.report_only, "checks": entries}
+    for item in entries:
+        print(item["status"], item["component"], item["detail"], sep="\t")
+    print("OVERALL=" + report["status"] + " REPORT_ONLY=" + str(args.report_only).lower())
+    probes = []
+    for label, pk in PROBES:
+        try:
+            found = probe_candidate(pk, args.shell)
+        except (ValueError, KeyError, OSError, zipfile.BadZipFile, ET.ParseError) as error:
+            found = {"unavailable": str(error)}
+        probes.append({"candidate": label, "pk": pk, **found})
+        print("PROBE", label, json.dumps(found, sort_keys=True), sep="\t")
+    report["replacement_probes"] = probes
+    for prefix in profile.PREFIXES:
+        if (prefix + "_SOURCE_URL") in candidate and candidate[prefix + "_SOURCE_URL"] != lock.get(prefix + "_SOURCE_URL") or prefix == "TILING_ASSISTANT":
+            print("CANDIDATE", prefix, json.dumps({k[len(prefix) + 1:]: v for k, v in candidate.items()
+                                                    if k.startswith(prefix + "_")}, sort_keys=True), sep="\t")
     all_extensions = all(x["status"] == "READY" for x in entries[:4])
     pins = "# CANDIDATE ONLY: metadata checked; review and runtime qualification still required.\n"
     pins += "".join(key + '="' + value + '"\n' for key, value in candidate.items())
