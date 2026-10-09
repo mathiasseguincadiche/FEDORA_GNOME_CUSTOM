@@ -115,9 +115,16 @@ def probe_candidate(pk, shell, transport=fetch):
 def pinned_check(prefix, pins, shell, transport=fetch):
     """Download the exact pinned archive and prove URL, digest, UUID and GNOME major still hold."""
     url = pins[prefix + "_SOURCE_URL"]
-    digest = inspect_zip(transport(url), pins[prefix + "_UUID"], shell)
+    data = transport(url)
+    digest = inspect_zip(data, pins[prefix + "_UUID"], shell)
     if digest != pins[prefix + "_SHA256"]:
         raise ValueError("pinned archive digest changed: " + digest)
+    schema = pins.get(prefix + "_SCHEMA", "")
+    if schema:
+        # scripts/gnome/install-pinned-extension.sh refuses an archive without this exact file.
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            if "schemas/" + schema + ".gschema.xml" not in archive.namelist():
+                raise ValueError("installer expects schemas/" + schema + ".gschema.xml in the archive")
     return "pinned archive downloaded; UUID/GNOME " + str(shell) + " metadata and SHA256 verified"
 
 

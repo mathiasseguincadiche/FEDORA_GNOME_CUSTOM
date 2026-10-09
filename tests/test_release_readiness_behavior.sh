@@ -43,6 +43,12 @@ pa=probe_archive()
 import hashlib
 pins={"RESOURCE_MONITOR_UUID":"Vitals@CoreCoding.com","RESOURCE_MONITOR_SOURCE_URL":"https://extensions.gnome.org/review/download/1.shell-extension.zip","RESOURCE_MONITOR_SHA256":hashlib.sha256(pa).hexdigest()}
 assert "verified" in m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+pins["RESOURCE_MONITOR_SCHEMA"]="org.example.other"
+try: m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+except ValueError as error: assert "installer expects" in str(error)
+else: raise AssertionError("archive without the installer schema file accepted")
+pins["RESOURCE_MONITOR_SCHEMA"]="x"
+assert "verified" in m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
 pins["RESOURCE_MONITOR_SHA256"]="0"*64
 try: m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
 except ValueError as error: assert "digest changed" in str(error)
