@@ -27,12 +27,12 @@ def probe_archive(shell="51"):
     result=io.BytesIO()
     with zipfile.ZipFile(result,"w") as z:
         z.writestr("metadata.json",json.dumps({"uuid":"Vitals@CoreCoding.com","shell-version":[shell]}))
-        z.writestr("schemas/x.gschema.xml",'<schemalist><schema id="org.example.v"><key name="a" type="b"/></schema></schemalist>')
+        z.writestr("schemas/x.gschema.xml",'<schemalist><enum id="org.example.e"><value nick="left" value="0"/></enum><schema id="org.example.v"><key name="a" type="b"><default>true</default></key><key name="p" enum="org.example.e"><default>\'left\'</default></key></schema></schemalist>')
     return result.getvalue()
 def probe_transport(info, data):
     return lambda url: json.dumps(info).encode() if "extension-info" in url else data
 good=m.probe_candidate(1460,51,probe_transport({"uuid":"Vitals@CoreCoding.com","version":85,"version_tag":90001,"name":"Vitals"},probe_archive()))
-assert good["schemas"]=={"org.example.v":["a:b"]} and len(good["sha256"])==64 and good["review_id"]=="90001"
+assert good["schemas"]=={"org.example.v":{"a":"b default=true","p":"enum:org.example.e default='left'"}} and good["enums"]=={"org.example.e":["left=0"]} and len(good["sha256"])==64 and good["review_id"]=="90001"
 for info,data in (({"uuid":"Vitals@CoreCoding.com","version":85},probe_archive()),
                   ({"uuid":"Vitals@CoreCoding.com","version_tag":90001},probe_archive("50"))):
     try: m.probe_candidate(1460,51,probe_transport(info,data))

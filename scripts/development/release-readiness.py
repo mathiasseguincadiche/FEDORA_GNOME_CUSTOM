@@ -94,17 +94,23 @@ def probe_candidate(pk, shell, transport=fetch):
     url = "https://extensions.gnome.org/review/download/" + tag + ".shell-extension.zip"
     data = transport(url)
     digest = inspect_zip(data, uuid, shell)
-    schemas = {}
+    schemas, enums = {}, {}
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         metadata = json.loads(archive.read("metadata.json"))
         for name in archive.namelist():
             if name.startswith("schemas/") and name.endswith(".gschema.xml"):
-                for node in ET.fromstring(archive.read(name)).iter("schema"):
-                    schemas[node.get("id")] = sorted(key.get("name") + ":" + key.get("type", "?")
-                                                     for key in node.iter("key"))
+                root = ET.fromstring(archive.read(name))
+                for node in root.iter("enum"):
+                    enums[node.get("id")] = [value.get("nick") + "=" + value.get("value")
+                                             for value in node.iter("value")]
+                for node in root.iter("schema"):
+                    schemas[node.get("id")] = {
+                        key.get("name"): (key.get("type") or "enum:" + str(key.get("enum")))
+                        + " default=" + (key.findtext("default") or "").strip()
+                        for key in node.iter("key")}
     return {"name": answer.get("name"), "uuid": uuid, "version": answer.get("version"),
             "review_id": tag, "source_url": url, "sha256": digest,
-            "shell_versions": metadata.get("shell-version"), "schemas": schemas}
+            "shell_versions": metadata.get("shell-version"), "schemas": schemas, "enums": enums}
 
 
 def main():
