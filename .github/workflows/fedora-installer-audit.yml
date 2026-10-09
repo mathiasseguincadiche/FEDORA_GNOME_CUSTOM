@@ -8,7 +8,7 @@ permissions:
 jobs:
   installer-audit:
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: public.ecr.aws/docker/library/fedora:44
     timeout-minutes: 20
     steps:
       # Git must exist BEFORE actions/checkout: without it, checkout silently
