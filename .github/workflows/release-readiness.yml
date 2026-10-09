@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          bash scripts/development/release-readiness.sh --report-only --output readiness | tee readiness.log
+          bash scripts/development/release-readiness.sh --report-only --latest --output readiness | tee readiness.log
           {
             echo '## Fedora 45 / GNOME 51 preview'
             echo 'This job collects blockers. Its green result is not production qualification.'

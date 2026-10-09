@@ -128,12 +128,34 @@ def pinned_check(prefix, pins, shell, transport=fetch):
     return "pinned archive downloaded; UUID/GNOME " + str(shell) + " metadata and SHA256 verified"
 
 
+def latest_status(prefix, pins, shell, transport=fetch):
+    """Compare the pinned archive with the newest build published for this GNOME major.
+
+    Returns (status, detail, candidate) where status is UP-TO-DATE, NEWER or UNKNOWN and candidate
+    holds the pin fields of the newest build (empty when it cannot be inspected).
+    """
+    uuid = pins[prefix + "_UUID"]
+    try:
+        fetch_latest = tiling_candidate if prefix == "TILING_ASSISTANT" else ego_candidate
+        latest = fetch_latest(uuid, shell, transport)
+    except (ValueError, KeyError, OSError, zipfile.BadZipFile) as error:
+        return "UNKNOWN", "newest build could not be inspected: " + str(error), {}
+    if latest["SHA256"] == pins[prefix + "_SHA256"]:
+        return "UP-TO-DATE", "pinned v" + pins[prefix + "_VERSION"] + " is the newest build", latest
+    detail = "pinned v" + pins[prefix + "_VERSION"] + " -> available v" + latest["VERSION"]
+    if "REVIEW_ID" in latest:
+        detail += " (review " + latest["REVIEW_ID"] + ")"
+    return "NEWER", detail + " sha256=" + latest["SHA256"], latest
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fedora", type=int, default=45)
     parser.add_argument("--shell", type=int, default=51)
     parser.add_argument("--pin", action="store_true", help="print candidate pins after actual archive inspection")
     parser.add_argument("--report-only", action="store_true", help="collect blockers, exit zero; never means qualified")
+    parser.add_argument("--latest", action="store_true",
+                        help="also compare every pin with the newest published build (release-day check)")
     parser.add_argument("--output", type=pathlib.Path)
     args = parser.parse_args()
     if (args.fedora, args.shell) != (45, 51):
@@ -143,6 +165,7 @@ def main():
     lock = profile.assignments(profile_lock if profile_lock.exists() else ROOT / "config/gnome-extensions.lock")
     candidate = dict(lock)
     found_prefixes = []
+    kernel_seen = []
 
     def check(component, action):
         try:
@@ -185,11 +208,18 @@ def main():
     check("Fedora45 packages", packages)
 
     def rpm_extensions():
+        compatible, incompatible = [], []
         for uuid in ("dash-to-dock@micxgx.gmail.com", "appindicatorsupport@rgcjonas.gmail.com"):
             metadata = json.loads((pathlib.Path("/usr/share/gnome-shell/extensions") / uuid / "metadata.json").read_text())
             if metadata.get("uuid") != uuid or "51" not in [str(v) for v in metadata.get("shell-version", [])]:
-                raise ValueError("installed RPM extension incompatible with GNOME 51: " + uuid)
-        return "installed RPM extension metadata compatible"
+                incompatible.append(uuid)
+            else:
+                compatible.append(uuid)
+        if incompatible:
+            # Report every extension, not only the first failure.
+            raise ValueError("installed RPM extension incompatible with GNOME 51: " + ", ".join(incompatible)
+                             + ("; compatible: " + ", ".join(compatible) if compatible else ""))
+        return "installed RPM extension metadata compatible: " + ", ".join(compatible)
     check("GNOME51 RPM extensions", rpm_extensions)
 
     def kernel():
@@ -203,6 +233,7 @@ def main():
             "repoquery", "--available", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}\n", "kernel-core"], text=True)
         if not any(re.fullmatch(re.escape(upstream) + (r"(?:[.]0)?" if upstream.count(".") == 1 else "") + r"-[0-9.]+[.]vanilla[.]fc45[.]x86_64", v) for v in result.splitlines()):
             raise ValueError("kernel.org=" + upstream + "; Fedora 45 RPM candidates=" + result.strip())
+        kernel_seen.append(upstream)
         return "actual upstream RPM = kernel.org " + upstream
     check("Upstream Linux45", kernel)
     check("Final production profile", lambda: profile.validate(ROOT, 45)["qualification_commit"])
@@ -222,29 +253,29 @@ def main():
         probes.append({"candidate": label, "pk": pk, **found})
         print("PROBE", label, json.dumps(found, sort_keys=True), sep="\t")
     report["replacement_probes"] = probes
+    if args.latest:
+        newest = dict(lock)
+        report["latest"] = []
+        for prefix in profile.PREFIXES:
+            status, detail, found = latest_status(prefix, lock, args.shell)
+            report["latest"].append({"component": prefix, "status": status, "detail": detail})
+            print("LATEST", prefix, status + " " + detail, sep="\t")
+            if status == "NEWER":
+                newest.update({prefix + "_" + key: value for key, value in found.items()})
+        if kernel_seen:
+            minimum = profile.assignments(ROOT / "config/kernel.conf").get("KERNEL_MIN_VERSION", "")
+            note = "kernel.org stable " + kernel_seen[0] + " (configured floor " + (minimum or "unset") + ")"
+            print("LATEST", "KERNEL", note, sep="\t")
+            report["latest"].append({"component": "KERNEL", "status": "INFO", "detail": note})
+        if any(item["status"] == "NEWER" for item in report["latest"]):
+            newest_text = "# NEWER BUILDS FOUND: review each one, then replace the matching pins by hand.\n" + "".join(
+                key + '="' + value + '"\n' for key, value in newest.items())
+            if args.output:
+                args.output.mkdir(parents=True, exist_ok=True)
+                (args.output / "latest-gnome-extensions.lock").write_text(newest_text)
     for prefix in found_prefixes:
         print("CANDIDATE", prefix, json.dumps({k[len(prefix) + 1:]: v for k, v in candidate.items()
                                                 if k.startswith(prefix + "_")}, sort_keys=True), sep="\t")
-    blocked = any(x["status"] != "READY" for x in entries)
-    report = {"schema": 1, "fedora": 45, "gnome": 51, "status": "BLOCKED" if blocked else "READY",
-              "scope": "readiness-only; no production promotion or hardware certification",
-              "report_only": args.report_only, "checks": entries}
-    for item in entries:
-        print(item["status"], item["component"], item["detail"], sep="\t")
-    print("OVERALL=" + report["status"] + " REPORT_ONLY=" + str(args.report_only).lower())
-    probes = []
-    for label, pk in PROBES:
-        try:
-            found = probe_candidate(pk, args.shell)
-        except (ValueError, KeyError, OSError, zipfile.BadZipFile, ET.ParseError) as error:
-            found = {"unavailable": str(error)}
-        probes.append({"candidate": label, "pk": pk, **found})
-        print("PROBE", label, json.dumps(found, sort_keys=True), sep="\t")
-    report["replacement_probes"] = probes
-    for prefix in profile.PREFIXES:
-        if (prefix + "_SOURCE_URL") in candidate and candidate[prefix + "_SOURCE_URL"] != lock.get(prefix + "_SOURCE_URL") or prefix == "TILING_ASSISTANT":
-            print("CANDIDATE", prefix, json.dumps({k[len(prefix) + 1:]: v for k, v in candidate.items()
-                                                    if k.startswith(prefix + "_")}, sort_keys=True), sep="\t")
     all_extensions = all(x["status"] == "READY" for x in entries[:4])
     pins = "# CANDIDATE ONLY: metadata checked; review and runtime qualification still required.\n"
     pins += "".join(key + '="' + value + '"\n' for key, value in candidate.items())

@@ -39,6 +39,22 @@ Le validateur rejette un statut pending, un média Beta, une empreinte incorrect
 
 Fedora 45 ne fournit plus `gvfs-archive`. `profiles/fedora45/packages-nautilus.txt` conserve Nautilus, GVfs et les backends pris en charge, Sushi et File Roller, puis ajoute explicitement File Roller. Le moteur et le doctor sélectionnent cette liste uniquement sur un profil 45 promu. L'ouverture et l'extraction restent disponibles ; le montage des archives par GIO n'est plus promis.
 
+## Vérification « jour J » avant d'installer
+
+Les extensions GNOME sont épinglées (URL, version, SHA256) : elles ne se mettent pas à jour toutes seules. Juste avant d'installer, lancer le workflow [Fedora 45 GNOME 51 preview readiness](../.github/workflows/release-readiness.yml) (onglet Actions, « Run workflow ») et lire son résumé :
+
+- `READY` pour chaque extension : l'archive épinglée est toujours téléchargeable, de même empreinte, avec le bon UUID et le major 51.
+- `LATEST … UP-TO-DATE` : l'épingle est la dernière version publiée. `LATEST … NEWER` : une version plus récente existe ; le rapport donne sa version, sa review et son SHA256, et l'artefact `latest-gnome-extensions.lock` contient le verrou mis à jour à relire avant de remplacer les épingles.
+- `LATEST KERNEL` : la dernière stable publiée sur kernel.org, à comparer au plancher `KERNEL_MIN_VERSION` de `config/kernel.conf`.
+
+Après l'installation : `./control.sh update all`, `./control.sh update reboot`, `./control.sh update finalize`, puis `./control.sh kernel status`. Le BIOS de la carte mère et le firmware (`fwupd`) se vérifient à la main : le projet liste les mises à jour de firmware mais ne les installe jamais.
+
+### Dash to Dock et AppIndicator (paquets RPM Fedora)
+
+Ces deux extensions viennent des paquets Fedora, pas du verrou. Le rapport `GNOME51 RPM extensions` liste chacune : `compatible` ou `incompatible`. À la date du 9 octobre 2026, avec la Beta de Fedora 45, AppIndicator et Blur My Shell déclarent GNOME 51, pas encore Dash to Dock.
+
+Si le jour J le rapport indique encore Dash to Dock `incompatible`, GNOME Shell refuserait de le charger (le dock n'apparaîtrait pas) et la vérification d'activation du projet échouerait. Dans ce cas, attendre la mise à jour du paquet Fedora (`./control.sh update all` le récupère) ou demander de l'épingler depuis extensions.gnome.org comme les autres extensions.
+
 ## Promouvoir le profil à la sortie de l'ISO finale
 
 Une fois l'ISO **finale** Workstation et son fichier CHECKSUM signé téléchargés (jamais une Beta), le propriétaire promeut le profil avec un seul outil, au lieu de recopier des empreintes à la main :
