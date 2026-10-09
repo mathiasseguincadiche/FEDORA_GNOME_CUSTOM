@@ -4,7 +4,7 @@ Ce document décrit le **contrat logiciel explicite** du projet. Il liste les pa
 
 Les dépendances transitives (`glibc`, bibliothèques GTK/Qt, bibliothèques Python, dépendances RPM, etc.) ne sont volontairement pas figées ici : DNF les résolvent au moment de l'installation et leur liste peut évoluer sans changement du projet.
 
-## 1. HOST — Fedora 44 Golden Workstation
+## 1. HOST — Fedora Golden Workstation
 
 ### 1.1 Socle système
 

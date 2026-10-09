@@ -1,4 +1,4 @@
-# Contribuer à Fedora 44 Golden Workstation
+# Contribuer à Fedora Golden Workstation
 
 Merci de préserver l'objectif principal du dépôt : une Fedora 44 / GNOME 50 **stable, reproductible, mesurée, récupérable et adaptée au matériel cible**.
 
