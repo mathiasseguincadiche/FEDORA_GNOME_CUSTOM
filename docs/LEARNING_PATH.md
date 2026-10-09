@@ -1,4 +1,4 @@
-# Parcours d'apprentissage — Fedora 44 Golden Workstation
+# Parcours d'apprentissage — Fedora Golden Workstation
 
 Ce document est le **guide de lecture** du dépôt. Il ne remplace pas les procédures : il explique **dans quel ordre les lire**, ce qu'il faut comprendre à chaque étape et quand passer au niveau suivant.
 

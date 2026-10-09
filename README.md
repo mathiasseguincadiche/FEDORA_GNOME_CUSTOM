@@ -31,6 +31,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 ---
 
 <p align="center">
+  <a href="#en-bref">En bref</a> ·
   <a href="#aperçu-du-bureau">Aperçu</a> ·
   <a href="#démarrage-rapide">Démarrage</a> ·
   <a href="#architecture-globale">Architecture</a> ·
@@ -45,6 +46,13 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
   <a href="#validation-complète--à-lire-avant-linstallation-de-production">Validation</a> ·
   <a href="#documentation">Docs</a>
 </p>
+
+## En bref
+
+- **Quoi :** une Fedora Workstation installée, réglée, sauvegardée et diagnostiquée par scripts versionnés, avec un point d'entrée unique : `./control.sh`.
+- **Pour qui / quoi :** un PC précis (Ryzen 7 7700, Intel Arc B580, 48 Gio, deux SSD) pour le DevOps, le gaming et les VM KVM.
+- **Où on en est :** code prêt et CI verte ; Fedora 44 / GNOME 50 est la référence testée, Fedora 45 / GNOME 51 est préparé et s'active à la sortie de l'ISO finale.
+- **Par où commencer :** [Démarrage rapide](#démarrage-rapide), puis [l'installation bare-metal](#installation-bare-metal) et [la documentation](#documentation).
 
 ## Aperçu du bureau
 
@@ -135,7 +143,7 @@ Routes opérateur essentielles :
 ## Architecture globale
 
 <p align="center">
-  <img src="docs/assets/architecture-global-direct.svg" alt="Architecture globale directe de Fedora 44 Golden Workstation : matériel cible, système Fedora, stockage, usages, sauvegarde, maintenance et certification" width="100%">
+  <img src="docs/assets/architecture-global-direct.svg" alt="Architecture globale directe de Fedora Golden Workstation : matériel cible, système Fedora, stockage, usages, sauvegarde, maintenance et certification" width="100%">
 </p>
 
 **En une phrase :** Fedora 44 constitue le HOST, `/data` porte la persistance, Gaming et KVM sont les workloads, Borg assure la résilience et les Gates prouvent l'état obtenu.

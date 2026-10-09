@@ -1,4 +1,4 @@
-# Documentation — Fedora 44 Golden Workstation
+# Documentation — Fedora Golden Workstation
 
 Ce portail est la **carte officielle** de la documentation de `FEDORA_GNOME_CUSTOM`.
 

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 300" role="img" aria-labelledby="title desc">
-<title id="title">Chaîne de validation Fedora 44 Golden Workstation</title>
+<title id="title">Chaîne de validation Fedora Golden Workstation</title>
 <desc id="desc">Gate 1 sous WSL2, Gate 2 sous VirtualBox, installation bare-metal, APPLY protégé, Gate 3 sur la machine réelle, puis Golden release PASS.</desc>
 <defs>
   <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#4f6f98"/></marker>

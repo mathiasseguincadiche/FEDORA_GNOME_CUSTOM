@@ -1,4 +1,4 @@
-# Modèle documentaire — Fedora 44 Golden Workstation
+# Modèle documentaire — Fedora Golden Workstation
 
 ## Objectif
 
