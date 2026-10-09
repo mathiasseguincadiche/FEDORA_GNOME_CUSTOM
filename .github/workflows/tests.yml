@@ -44,15 +44,21 @@ jobs:
           application="fgc-existing-application-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           trap 'docker network rm "$application" >/dev/null 2>&1 || true' EXIT
           docker network create "$application" >/dev/null
-          docker pull public.ecr.aws/docker/library/busybox:1.37.0 >/dev/null
+          # Registries throttle shared runner IPs; retry the one pull this probe needs.
+          for attempt in 1 2 3 4; do
+            docker pull public.ecr.aws/docker/library/busybox:1.37.0 >/dev/null && break
+            [[ $attempt -lt 4 ]] || { echo 'busybox pull failed after 4 attempts' >&2; exit 1; }
+            sleep $((attempt * 15))
+          done
           image="$(docker image inspect --format '{{.Id}}' public.ecr.aws/docker/library/busybox:1.37.0)"
           guest/rocky-devops/verify-docker-network.sh "$image"
           docker network inspect "$application" >/dev/null
           test -z "$(docker network ls --filter label=fgc.network-probe --format '{{.ID}}')"
           test -z "$(docker ps -a --filter label=fgc.network-probe --format '{{.ID}}')"
-          # A cached image without the required shell forces a real start failure.
-          docker pull public.ecr.aws/docker/library/hello-world:latest >/dev/null
-          bad_image="$(docker image inspect --format '{{.Id}}' public.ecr.aws/docker/library/hello-world:latest)"
+          # A local image without the required shell forces a real start failure. It is built
+          # FROM scratch, so no second registry pull is needed.
+          printf 'FROM scratch\nLABEL fgc.probe=no-shell\n' | docker build --quiet --tag fgc-no-shell-probe:local - >/dev/null
+          bad_image="$(docker image inspect --format '{{.Id}}' fgc-no-shell-probe:local)"
           if guest/rocky-devops/verify-docker-network.sh "$bad_image"; then
             echo 'A broken Docker probe returned success' >&2
             exit 1
