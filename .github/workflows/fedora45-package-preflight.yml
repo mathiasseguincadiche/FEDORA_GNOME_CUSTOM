@@ -1,0 +1,142 @@
+name: Fedora 45 package and driver preflight
+# Informative, not a merge requirement: proves on a real Fedora 45 container that the manifests,
+# the Intel Arc user space, the upstream Linux RPM and the GNOME 51 extension archives are usable.
+# It never promotes the Fedora 45 profile and never certifies hardware.
+on:
+  pull_request:
+    paths:
+      - 'manifests/**'
+      - 'profiles/**'
+      - 'config/repos/**'
+      - 'config/kernel.conf'
+      - 'lib/kernel_lifecycle.sh'
+      - 'scripts/kernel/**'
+      - 'scripts/ci/enable-rpmfusion.sh'
+      - '.github/workflows/fedora45-package-preflight.yml'
+      - '.github/workflows/upstream-kernel.yml'
+  schedule:
+    - cron: '47 5 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fedora45-package-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kernel:
+    uses: ./.github/workflows/upstream-kernel.yml
+    with:
+      fedora_release: '45'
+
+  packages45:
+    runs-on: ubuntu-latest
+    container: fedora:45
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Enable RPM Fusion for Fedora 45
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$(rpm -E '%fedora')" == 45 ]]
+          RPMFUSION_FEDORA_RELEASE=45 bash scripts/ci/enable-rpmfusion.sh
+      - name: Resolve every Fedora 45 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt profiles/fedora45/packages-nautilus.txt manifests/packages-nautilus-optional.txt manifests/packages-gnome-extensions.txt manifests/packages-desktop-integration.txt manifests/packages-performance.txt manifests/packages-shell.txt manifests/packages-remote-fedora.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-appimage.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt manifests/packages-gaming.txt; do
+            echo "== $manifest =="
+            while IFS= read -r pkg; do
+              [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+              dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED: $pkg"; exit 1; }
+            done < "$manifest"
+          done
+          for pkg in ffmpeg intel-media-driver; do
+            dnf -q repoquery --available "$pkg" | grep -q . || { echo "UNRESOLVED PROVIDER: $pkg"; exit 1; }
+          done
+      - name: Intel Arc user space installs (Vulkan ANV, VA-API)
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install mesa-dri-drivers mesa-vulkan-drivers libva-utils vulkan-tools libva-intel-media-driver
+          rpm -q mesa-dri-drivers mesa-vulkan-drivers libva-utils vulkan-tools
+          # Mesa's Intel Vulkan driver (ANV) is the one an Arc B580 on the xe kernel driver uses.
+          find /usr/share/vulkan/icd.d -name 'intel_icd*.json' | tee /dev/stderr | grep -q .
+      - name: Validate multimedia provider swaps
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install ffmpeg-free
+          dnf -y swap ffmpeg-free ffmpeg --allowerasing
+          rpm -q ffmpeg
+          if rpm -q ffmpeg-free; then echo 'ffmpeg-free is still installed after the swap'; exit 1; fi
+          dnf -y swap libva-intel-media-driver intel-media-driver --allowerasing
+          rpm -q intel-media-driver
+          test -e /usr/lib64/dri/iHD_drv_video.so
+      - name: Verify professional vendor RPM repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 0644 config/repos/vscode.repo /etc/yum.repos.d/vscode.repo
+          install -m 0644 config/repos/brave-browser.repo /etc/yum.repos.d/brave-browser.repo
+          dnf -y makecache --refresh
+          dnf -q --repo=code list --available code >/dev/null
+          dnf -q --repo=brave-browser list --available brave-browser >/dev/null
+      - name: Verify professional and AppImage Flathub applications
+        shell: bash
+        run: |
+          set -euo pipefail
+          dnf -y install flatpak
+          flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          for manifest in manifests/flatpaks-applications-professional.txt manifests/flatpaks-appimage.txt; do
+            while IFS= read -r app; do
+              [[ -z "$app" || "$app" == \#* ]] && continue
+              flatpak remote-info --system flathub "$app" >/dev/null || { echo "UNRESOLVED FLATPAK: $app"; exit 1; }
+            done < "$manifest"
+          done
+      - name: Verify GTK4 libadwaita application contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r pkg; do
+            [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+            requirements="$(dnf -q repoquery --requires "$pkg")"
+            grep -Eqi 'gtk4|libgtk-4\.so\.1' <<<"$requirements" || { echo "GTK4 REQUIREMENT MISSING: $pkg"; exit 1; }
+            grep -Eqi 'libadwaita|libadwaita-1\.so\.0' <<<"$requirements" || { echo "LIBADWAITA REQUIREMENT MISSING: $pkg"; exit 1; }
+          done < manifests/packages-applications-gtk4.txt
+      - name: Report Fedora GNOME 51 extension packages (informative)
+        shell: bash
+        run: |
+          set -uo pipefail
+          dnf -y install gnome-shell gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
+          gnome-shell --version | grep -E '^GNOME Shell 51([.]|$)'
+          for uuid in dash-to-dock@micxgx.gmail.com blur-my-shell@aunetx appindicatorsupport@rgcjonas.gmail.com; do
+            file="/usr/share/gnome-shell/extensions/$uuid/metadata.json"
+            [[ -r "$file" ]] || { echo "::error::$uuid is missing from its Fedora package"; exit 1; }
+            if grep -Eq '"51"' "$file"; then echo "OK   $uuid declares GNOME 51"
+            else echo "::warning::$uuid does not yet declare GNOME 51 in the Fedora 45 package"; fi
+          done
+      - name: Verify reviewed extension artifacts from the Fedora 45 lock
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          dnf -y install curl unzip glib2 python3
+          source profiles/fedora45/gnome-extensions.lock
+          for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
+            url_key="${prefix}_SOURCE_URL"; sha_key="${prefix}_SHA256"
+            uuid_key="${prefix}_UUID"; shell_key="${prefix}_SHELL_VERSION"; schema_key="${prefix}_SCHEMA"
+            dir="$(mktemp -d)"
+            curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 3 --retry-all-errors "${!url_key}" --output "$dir/extension.zip"
+            printf '%s  %s\n' "${!sha_key}" "$dir/extension.zip" | sha256sum --check --status
+            unzip -p "$dir/extension.zip" metadata.json > "$dir/metadata.json"
+            python3 scripts/gnome/validate-extension-metadata.py "$dir/metadata.json" "${!uuid_key}" "${!shell_key}"
+            unzip -q "$dir/extension.zip" -d "$dir/extension"
+            if [[ -n "${!schema_key:-}" ]]; then
+              [[ -r "$dir/extension/schemas/${!schema_key}.gschema.xml" ]] || { echo "schema file missing for $prefix"; exit 1; }
+            fi
+            glib-compile-schemas "$dir/extension/schemas"
+            echo "OK $prefix ${!uuid_key}"
+          done

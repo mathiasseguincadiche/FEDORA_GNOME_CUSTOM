@@ -39,6 +39,23 @@ Le validateur rejette un statut pending, un média Beta, une empreinte incorrect
 
 Fedora 45 ne fournit plus `gvfs-archive`. `profiles/fedora45/packages-nautilus.txt` conserve Nautilus, GVfs et les backends pris en charge, Sushi et File Roller, puis ajoute explicitement File Roller. Le moteur et le doctor sélectionnent cette liste uniquement sur un profil 45 promu. L'ouverture et l'extraction restent disponibles ; le montage des archives par GIO n'est plus promis.
 
+## Promouvoir le profil à la sortie de l'ISO finale
+
+Une fois l'ISO **finale** Workstation et son fichier CHECKSUM signé téléchargés (jamais une Beta), le propriétaire promeut le profil avec un seul outil, au lieu de recopier des empreintes à la main :
+
+```bash
+# Prérequis : arbre Git propre, CI verte sur le commit courant, clé Fedora 45 dans un trousseau GPG.
+python3 scripts/development/promote-fedora45.py \
+  --iso /chemin/Fedora-Workstation-Live-45-COMPOSE.x86_64.iso \
+  --checksum /chemin/Fedora-Workstation-45-COMPOSE-x86_64-CHECKSUM \
+  --keyring /chemin/fedora.gpg \
+  --commit "$(git rev-parse HEAD)"
+```
+
+L'outil refuse (et restaure les fichiers) si : le nom n'est pas celui d'une image finale (Beta/RC), le CHECKSUM n'est pas signé par la clé Fedora 45 épinglée (`4F50A611…861E`) ou ne lie pas exactement ce nom à cette empreinte, l'ISO a été modifiée, l'arbre Git n'est pas propre, ou `--commit` n'est pas le HEAD courant. En cas de succès il écrit `installer/fedora45-media.lock` et `profiles/fedora45/profile.json` (`status: ready`, empreintes du média, du verrou d'extensions et de la liste de paquets), puis exécute le même validateur que tous les gardes. Il ne commit rien : relire `git diff`, committer ces deux fichiers, laisser la CI tourner, puis passer par une PR.
+
+Le contrôle [Fedora 45 package and driver preflight](../.github/workflows/fedora45-package-preflight.yml) prouve en conteneur Fedora 45 réel que les manifestes se résolvent (RPM Fusion 45 compris), que l'espace utilisateur Intel Arc s'installe (Vulkan ANV, VA-API `iHD`), que les échanges ffmpeg/intel-media-driver fonctionnent, que le RPM Linux amont existe et se télécharge pour Fedora 45, et que les quatre archives GNOME 51 épinglées sont valides. Il est informatif : il ne promeut rien et ne certifie aucun matériel.
+
 ## Installation neuve directement en Fedora 45
 
 Une fois le profil final promu :

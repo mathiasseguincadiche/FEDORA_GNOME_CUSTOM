@@ -1,13 +1,23 @@
 name: Official upstream Linux RPM preflight
 on:
   workflow_call:
+    inputs:
+      fedora_release:
+        description: Fedora release of the disposable container
+        type: string
+        default: '44'
   workflow_dispatch:
+    inputs:
+      fedora_release:
+        description: Fedora release of the disposable container
+        type: string
+        default: '44'
 permissions:
   contents: read
 jobs:
   rpm:
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: fedora:${{ inputs.fedora_release || '44' }}
     timeout-minutes: 20
     steps:
       - name: Install disposable preflight dependencies

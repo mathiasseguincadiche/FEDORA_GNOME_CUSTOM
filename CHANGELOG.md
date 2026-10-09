@@ -7,6 +7,9 @@
 - `fedora-profile.py` n'accepte, pour ces trois rôles, que l'identité d'origine ou son remplaçant revu, avec UUID et schéma cohérents ; toute autre identité est refusée.
 - Outil de readiness : vérifie l'archive **réellement épinglée** (téléchargement, SHA256, UUID, major 51) et signale si l'ancien DING obtient un build natif GNOME 51. Le COPR de Sunshine est activé pour la résolution des paquets (faux blocage « Sunshine » supprimé).
 - Test `test_extension_variants_behavior.sh` (faux `gsettings`) ; la fixture de promotion de `test_fedora_release_behavior.sh` utilise le vrai verrou 45.
+- Nouveau `scripts/development/promote-fedora45.py` : promeut le profil Fedora 45 depuis l'ISO finale et son CHECKSUM signé (clé épinglée), écrit le verrou média et `profile.json` avec les vraies empreintes, relance le validateur et restaure les fichiers au moindre refus. Test `test_promote_fedora45_behavior.sh` avec de vraies signatures GPG.
+- Nouveau workflow informatif `fedora45-package-preflight.yml` (conteneur Fedora 45) : manifestes, RPM Fusion 45, espace utilisateur Intel Arc (Vulkan ANV, VA-API), échanges ffmpeg/intel-media-driver, dépôts éditeurs, Flathub, contrat GTK4, RPM Linux amont `fc45` et archives GNOME 51. `upstream-kernel.yml` accepte une version Fedora en entrée (44 par défaut).
+- Diagnostics et gates : le numéro de Fedora affiché est celui de la machine, plus un « 44 » figé.
 - Limite connue : Vitals ne garantit pas la charge de l'Arc B580 dans la barre du haut ; les sources `xe` restent contrôlées comme santé matérielle. Le profil Fedora 45 reste **pending** : média final, qualification et preuves manquent encore.
 
 ## 0.22.0 — Accès distant (profil optionnel)
