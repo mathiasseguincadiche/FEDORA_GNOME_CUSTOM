@@ -53,6 +53,16 @@ pins["RESOURCE_MONITOR_SHA256"]="0"*64
 try: m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
 except ValueError as error: assert "digest changed" in str(error)
 else: raise AssertionError("tampered pinned archive accepted")
+# Release-day check: a pin equal to the newest build is UP-TO-DATE, a different newest build is NEWER.
+lpins={"RESOURCE_MONITOR_UUID":"Vitals@CoreCoding.com","RESOURCE_MONITOR_VERSION":"85","RESOURCE_MONITOR_SHA256":hashlib.sha256(pa).hexdigest()}
+def ltransport(version, data):
+    return lambda url: json.dumps({"version":version,"version_tag":90001}).encode() if "extension-info" in url else data
+status,detail,_=m.latest_status("RESOURCE_MONITOR",lpins,51,ltransport(85,pa))
+assert status=="UP-TO-DATE", (status,detail)
+status,detail,found=m.latest_status("RESOURCE_MONITOR",dict(lpins,RESOURCE_MONITOR_SHA256="0"*64),51,ltransport(86,pa))
+assert status=="NEWER" and "v85 -> available v86" in detail and found["VERSION"]=="86", (status,detail)
+status,detail,found=m.latest_status("RESOURCE_MONITOR",lpins,51,lambda url: (_ for _ in ()).throw(OSError("HTTP Error 503")))
+assert status=="UNKNOWN" and found=={} and "503" in detail, (status,detail)
 try: m.profile.validate(root,45)
 except ValueError as error: assert "pending" in str(error)
 else: raise AssertionError("unqualified future profile accepted")

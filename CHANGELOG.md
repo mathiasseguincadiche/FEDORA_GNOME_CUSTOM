@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22.2 — Vérification « jour J » avant l'installation de Fedora 45
+
+- `release-readiness.py --latest` (activé dans le workflow hebdomadaire et manuel) compare chaque extension épinglée à la dernière version publiée : `UP-TO-DATE`, `NEWER` (version, review et SHA256 du nouveau build, plus un `latest-gnome-extensions.lock` à relire) ou `UNKNOWN`, et rappelle la dernière stable de kernel.org face au plancher `KERNEL_MIN_VERSION`. Les épingles ne changent jamais toutes seules.
+- Guide « Vérification jour J » dans `docs/UPGRADE_FEDORA_45.md` : ordre des commandes avant et après l'installation, BIOS et firmware à vérifier à la main.
+- Le profil Fedora 45 reste `pending` tant que l'ISO finale n'est pas promue avec `scripts/development/promote-fedora45.py`.
+
 ## 0.22.1 — Fedora 45 / GNOME 51 : remplaçants des extensions sans build GNOME 51
 
 - DING, Show Desktop Plus et Resource Monitor ne publiaient aucun build GNOME 51 : le profil Fedora 45 (`profiles/fedora45/gnome-extensions.lock`) les remplace par **Gtk4 Desktop Icons NG** (smedius, v145), **Show Desktop Button** (amivaleo, v59) et **Vitals** (corecoding, v85), et épingle **Tiling Assistant v56**. SHA256, review et compatibilité GNOME 51 ont été relevés par la CI sur le store, pas saisis à la main.
