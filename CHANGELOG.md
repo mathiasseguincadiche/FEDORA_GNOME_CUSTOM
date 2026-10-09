@@ -3,6 +3,7 @@
 ## 0.22.2 — Vérification « jour J » avant l'installation de Fedora 45
 
 - `release-readiness.py --latest` (activé dans le workflow hebdomadaire et manuel) compare chaque extension épinglée à la dernière version publiée : `UP-TO-DATE`, `NEWER` (version, review et SHA256 du nouveau build, plus un `latest-gnome-extensions.lock` à relire) ou `UNKNOWN`, et rappelle la dernière stable de kernel.org face au plancher `KERNEL_MIN_VERSION`. Les épingles ne changent jamais toutes seules.
+- Correction : le rapport de readiness s'imprimait deux fois (un bloc dupliqué par erreur en 0.22.1, qui relançait aussi les sondes réseau). Un test garantit désormais qu'il n'existe qu'une fois.
 - Guide « Vérification jour J » dans `docs/UPGRADE_FEDORA_45.md` : ordre des commandes avant et après l'installation, BIOS et firmware à vérifier à la main.
 - Le profil Fedora 45 reste `pending` tant que l'ISO finale n'est pas promue avec `scripts/development/promote-fedora45.py`.
 

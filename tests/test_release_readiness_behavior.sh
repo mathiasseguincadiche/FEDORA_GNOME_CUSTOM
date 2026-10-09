@@ -78,6 +78,9 @@ except ValueError: pass
 else: raise AssertionError("untrusted Tiling publisher accepted")
 source=(root / "scripts/development/release-readiness.py").read_text()
 assert 'skipped work is BLOCKED' in source
+# The report block must exist exactly once: a duplicated copy prints every line twice and repeats the network probes.
+for needle in ('blocked = any(x["status"]', 'print("OVERALL="', 'for label, pk in PROBES:', 'for prefix in found_prefixes:'):
+    assert source.count(needle) == 1, "duplicated report block: " + needle
 assert '"status": "BLOCKED" if blocked else "READY"' in source
 assert "candidate-gnome-extensions.lock" in source
 print("release readiness behavior: PASS")
