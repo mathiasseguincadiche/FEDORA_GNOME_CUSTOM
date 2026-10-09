@@ -208,11 +208,18 @@ def main():
     check("Fedora45 packages", packages)
 
     def rpm_extensions():
+        compatible, incompatible = [], []
         for uuid in ("dash-to-dock@micxgx.gmail.com", "appindicatorsupport@rgcjonas.gmail.com"):
             metadata = json.loads((pathlib.Path("/usr/share/gnome-shell/extensions") / uuid / "metadata.json").read_text())
             if metadata.get("uuid") != uuid or "51" not in [str(v) for v in metadata.get("shell-version", [])]:
-                raise ValueError("installed RPM extension incompatible with GNOME 51: " + uuid)
-        return "installed RPM extension metadata compatible"
+                incompatible.append(uuid)
+            else:
+                compatible.append(uuid)
+        if incompatible:
+            # Report every extension, not only the first failure.
+            raise ValueError("installed RPM extension incompatible with GNOME 51: " + ", ".join(incompatible)
+                             + ("; compatible: " + ", ".join(compatible) if compatible else ""))
+        return "installed RPM extension metadata compatible: " + ", ".join(compatible)
     check("GNOME51 RPM extensions", rpm_extensions)
 
     def kernel():

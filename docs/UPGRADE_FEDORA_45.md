@@ -49,6 +49,12 @@ Les extensions GNOME sont épinglées (URL, version, SHA256) : elles ne se mette
 
 Après l'installation : `./control.sh update all`, `./control.sh update reboot`, `./control.sh update finalize`, puis `./control.sh kernel status`. Le BIOS de la carte mère et le firmware (`fwupd`) se vérifient à la main : le projet liste les mises à jour de firmware mais ne les installe jamais.
 
+### Dash to Dock et AppIndicator (paquets RPM Fedora)
+
+Ces deux extensions viennent des paquets Fedora, pas du verrou. Le rapport `GNOME51 RPM extensions` liste chacune : `compatible` ou `incompatible`. À la date du 9 octobre 2026, avec la Beta de Fedora 45, AppIndicator et Blur My Shell déclarent GNOME 51, pas encore Dash to Dock.
+
+Si le jour J le rapport indique encore Dash to Dock `incompatible`, GNOME Shell refuserait de le charger (le dock n'apparaîtrait pas) et la vérification d'activation du projet échouerait. Dans ce cas, attendre la mise à jour du paquet Fedora (`./control.sh update all` le récupère) ou demander de l'épingler depuis extensions.gnome.org comme les autres extensions.
+
 ## Promouvoir le profil à la sortie de l'ISO finale
 
 Une fois l'ISO **finale** Workstation et son fichier CHECKSUM signé téléchargés (jamais une Beta), le propriétaire promeut le profil avec un seul outil, au lieu de recopier des empreintes à la main :
