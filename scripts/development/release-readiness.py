@@ -14,6 +14,7 @@ import subprocess
 import sys
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -76,6 +77,34 @@ def tiling_candidate(uuid, shell, transport=fetch):
     digest = inspect_zip(transport(assets[0]), uuid, shell)
     return {"SOURCE_URL": assets[0], "VERSION": tag[1:],
             "SHELL_VERSION": str(shell), "SHA256": digest}
+
+
+# Replacement candidates for extensions with no GNOME 51 build (EGO numeric ids).
+# Probing is informational: it never changes READY/BLOCKED and never writes a lock.
+PROBES = (("Vitals", 1460), ("Show Desktop Button", 1194),
+          ("DING (rastersoft)", 2087), ("Gtk4 DING (smedius)", 5263))
+
+
+def probe_candidate(pk, shell, transport=fetch):
+    query = urllib.parse.urlencode({"pk": pk, "shell_version": shell})
+    answer = json.loads(transport("https://extensions.gnome.org/extension-info/?" + query))
+    uuid, tag = str(answer.get("uuid", "")), str(answer.get("version_tag", ""))
+    if not uuid or not tag.isdigit():
+        raise ValueError("no build offered for GNOME " + str(shell))
+    url = "https://extensions.gnome.org/review/download/" + tag + ".shell-extension.zip"
+    data = transport(url)
+    digest = inspect_zip(data, uuid, shell)
+    schemas = {}
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        metadata = json.loads(archive.read("metadata.json"))
+        for name in archive.namelist():
+            if name.startswith("schemas/") and name.endswith(".gschema.xml"):
+                for node in ET.fromstring(archive.read(name)).iter("schema"):
+                    schemas[node.get("id")] = sorted(key.get("name") + ":" + key.get("type", "?")
+                                                     for key in node.iter("key"))
+    return {"name": answer.get("name"), "uuid": uuid, "version": answer.get("version"),
+            "review_id": tag, "source_url": url, "sha256": digest,
+            "shell_versions": metadata.get("shell-version"), "schemas": schemas}
 
 
 def main():
@@ -158,6 +187,15 @@ def main():
     for item in entries:
         print(item["status"], item["component"], item["detail"], sep="\t")
     print("OVERALL=" + report["status"] + " REPORT_ONLY=" + str(args.report_only).lower())
+    probes = []
+    for label, pk in PROBES:
+        try:
+            found = probe_candidate(pk, args.shell)
+        except (ValueError, KeyError, OSError, zipfile.BadZipFile, ET.ParseError) as error:
+            found = {"unavailable": str(error)}
+        probes.append({"candidate": label, "pk": pk, **found})
+        print("PROBE", label, json.dumps(found, sort_keys=True), sep="\t")
+    report["replacement_probes"] = probes
     all_extensions = all(x["status"] == "READY" for x in entries[:4])
     pins = "# CANDIDATE ONLY: metadata checked; review and runtime qualification still required.\n"
     pins += "".join(key + '="' + value + '"\n' for key, value in candidate.items())
