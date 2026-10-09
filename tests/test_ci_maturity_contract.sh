@@ -19,6 +19,12 @@ fi
 if grep -nE 'docker pull (busybox|hello-world)' "$ROOT/.github/workflows/tests.yml"; then
   echo 'tests.yml must pull probe images from public.ecr.aws/docker/library' >&2; exit 1
 fi
+# The probe needs one registry pull (busybox, retried); the no-shell image is built FROM scratch,
+# because a second anonymous pull is throttled too ("toomanyrequests: Rate exceeded").
+grep -Fq 'FROM scratch' "$ROOT/.github/workflows/tests.yml"
+if grep -n 'hello-world' "$ROOT/.github/workflows/tests.yml"; then
+  echo 'tests.yml must not pull hello-world for the probe' >&2; exit 1
+fi
 grep -Fq 'container: public.ecr.aws/docker/library/fedora:44' "$ROOT/.github/workflows/fedora-installer-audit.yml"
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
