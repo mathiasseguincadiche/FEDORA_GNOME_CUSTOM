@@ -75,7 +75,8 @@ jobs:
           if rpm -q ffmpeg-free; then echo 'ffmpeg-free is still installed after the swap'; exit 1; fi
           dnf -y swap libva-intel-media-driver intel-media-driver --allowerasing
           rpm -q intel-media-driver
-          test -e /usr/lib64/dri/iHD_drv_video.so
+          # The package must ship the iHD VA-API driver (its directory differs between releases).
+          rpm -ql intel-media-driver | grep -Eq 'iHD_drv_video\.so$'
       - name: Verify professional vendor RPM repositories
         shell: bash
         run: |
