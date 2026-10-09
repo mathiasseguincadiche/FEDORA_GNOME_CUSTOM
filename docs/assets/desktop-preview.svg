@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+<title id="title">Maquette du bureau Fedora Golden Workstation (GNOME 51)</title>
+<desc id="desc">Illustration du bureau cible : barre supérieure avec bouton Afficher le bureau et moniteur Vitals, dock à gauche, Ptyxis et Fichiers en tuilage côte à côte, Corbeille sur le bureau. Maquette illustrative, pas une capture réelle.</desc>
+<defs>
+  <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#1c3b6f"/><stop offset=".55" stop-color="#3b2f7d"/><stop offset="1" stop-color="#7a3f8f"/>
+  </linearGradient>
+  <radialGradient id="glow" cx=".78" cy=".2" r=".6"><stop offset="0" stop-color="#5cc3ff" stop-opacity=".35"/><stop offset="1" stop-color="#5cc3ff" stop-opacity="0"/></radialGradient>
+  <filter id="sh" x="-5%" y="-5%" width="110%" height="115%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-opacity=".45"/></filter>
+  <style>
+    text{font-family:Inter,"Cantarell",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;fill:#fff}
+    .mono{font-family:"JetBrains Mono","DejaVu Sans Mono",Menlo,Consolas,monospace;font-size:14px;fill:#d7dbe0;white-space:pre}
+    .bar{font-size:13px;font-weight:600}
+    .dim{fill:#8b94a1} .ok{fill:#6bd68c} .warn{fill:#f5c451} .acc{fill:#6fb4ff}
+    .lbl{font-size:13px;fill:#2b2f36} .side{font-size:13px;fill:#2b2f36}
+    .cap{font-size:12px;fill:#e8ecf5;opacity:.9}
+  </style>
+</defs>
+<rect width="1440" height="810" fill="url(#wall)"/><rect width="1440" height="810" fill="url(#glow)"/>
+
+<rect width="1440" height="32" fill="#161618"/>
+<g transform="translate(12 8)"><rect width="18" height="14" rx="2" fill="none" stroke="#fff" stroke-width="1.6"/><rect x="3" y="3" width="12" height="6" rx="1" fill="#fff" opacity=".85"/><rect x="5" y="16" width="8" height="1.8" rx=".9" fill="#fff"/></g>
+<text x="44" y="21" class="bar">Activités</text>
+<text x="720" y="21" text-anchor="middle" class="bar">ven. 20 oct.  09:41</text>
+<g class="bar"><text x="900" y="21" class="dim">CPU</text><text x="934" y="21">7 %</text><text x="980" y="21" class="dim">RAM</text><text x="1014" y="21">21 %</text><text x="1062" y="21" class="dim">↓</text><text x="1076" y="21">1,2 Mo/s</text><text x="1150" y="21" class="dim">↑</text><text x="1164" y="21">0,1 Mo/s</text></g>
+<circle cx="1250" cy="16" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+<circle cx="1278" cy="16" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+<circle cx="1306" cy="16" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+<circle cx="1334" cy="16" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+<circle cx="1362" cy="16" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+<rect x="1394" y="10" width="26" height="12" rx="3" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="1397" y="13" width="18" height="6" rx="1.5" fill="#6bd68c"/>
+<g transform="translate(1340 52)"><rect x="14" y="14" width="38" height="46" rx="6" fill="#dfe5ee"/><rect x="10" y="8" width="46" height="9" rx="3" fill="#c3ccd9"/><rect x="26" y="3" width="14" height="6" rx="2" fill="#c3ccd9"/><rect x="22" y="24" width="3" height="28" rx="1.5" fill="#9aa6b8"/><rect x="31" y="24" width="3" height="28" rx="1.5" fill="#9aa6b8"/><rect x="40" y="24" width="3" height="28" rx="1.5" fill="#9aa6b8"/><text x="33" y="82" text-anchor="middle" style="font-size:12px;fill:#fff">Corbeille</text></g>
+<rect x="8" y="189" width="64" height="456" rx="18" fill="#101114" opacity=".62"/>
+<rect x="16" y="197" width="48" height="48" rx="12" fill="#3584e4"/>
+<path d="M26 212h10l4 4h14v16H26z" fill="#fff" opacity=".92"/>
+<rect x="16" y="253" width="48" height="48" rx="12" fill="#e8590c"/>
+<path d="M40 263l12 4v10c0 8-6 12-12 14-6-2-12-6-12-14V267z" fill="#fff" opacity=".92"/>
+<rect x="16" y="309" width="48" height="48" rx="12" fill="#241f31"/>
+<path d="M29 326l8 7-8 7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect x="41" y="339" width="10" height="3" rx="1.5" fill="#fff"/>
+<rect x="16" y="365" width="48" height="48" rx="12" fill="#1f6feb"/>
+<path d="M35 380l-8 9 8 9M45 380l8 9-8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="16" y="421" width="48" height="48" rx="12" fill="#2b6cd6"/>
+<rect x="28" y="433" width="24" height="24" rx="5" fill="#fff" opacity=".92"/><circle cx="40" cy="445" r="5" fill="#2b6cd6"/>
+<rect x="16" y="477" width="48" height="48" rx="12" fill="#7c3aed"/>
+<path d="M34 490l-3 22M46 490l-3 22M28 497h24M28 505h24" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+<rect x="16" y="533" width="48" height="48" rx="12" fill="#2fa86f"/>
+<path d="M30 543h14l8 8v20H30z" fill="#fff" opacity=".95"/><path d="M44 543v8h8" fill="#cfe9dc"/><rect x="34" y="557" width="14" height="2.6" fill="#2fa86f"/><rect x="34" y="563" width="10" height="2.6" fill="#2fa86f"/>
+<rect x="16" y="589" width="48" height="48" rx="12" fill="#26a269"/>
+<rect x="28" y="606" width="24" height="20" rx="4" fill="#fff" opacity=".95"/><path d="M34 606v-3a6 6 0 0 1 12 0v3" fill="none" stroke="#fff" stroke-width="3"/>
+<circle cx="11" cy="221" r="2.4" fill="#fff"/>
+<circle cx="11" cy="333" r="2.4" fill="#fff"/>
+<g filter="url(#sh)"><rect x="84" y="44" width="610" height="724" rx="12" fill="#1e1e1e"/></g>
+<path d="M84 90V56a12 12 0 0 1 12-12H682a12 12 0 0 1 12 12V90z" fill="#303030"/>
+<text x="389.0" y="73" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#fff">Ptyxis</text>
+<path d="M660 61l12 12m0-12l-12 12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+<text x="106" y="120" class="mono acc">golden@fedora:~/FEDORA_GNOME_CUSTOM$ ./control.sh status</text>
+<text x="106" y="144" class="mono dim">════════════════════════════════════════════════════════════</text>
+<text x="106" y="168" class="mono" style="font-weight:700;fill:#fff">  FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE</text>
+<text x="106" y="192" class="mono dim">════════════════════════════════════════════════════════════</text>
+<text x="106" y="216" class="mono">  Projet      0.22.2      Fedora 45      Runtime BAREMETAL</text>
+<text x="106" y="240" class="mono">  Kernel      7.2.x stable               N / N-1 · max 2</text>
+<text x="106" y="264" class="mono">  GPU         Arc B580 / xe              Git      [CLEAN]</text>
+<text x="106" y="288" class="mono">  Data        /data EXT4                 Gaming   [PASS]</text>
+<text x="106" y="312" class="mono">  Performance [PASS] TuneD balanced</text>
+<text x="106" y="336" class="mono">  Backup      [PASS]                     Certif.  [PENDING]</text>
+<text x="106" y="360" class="mono dim">════════════════════════════════════════════════════════════</text>
+<text x="106" y="384" class="mono"></text>
+<text x="106" y="408" class="mono">  [1] Installation &amp; convergence</text>
+<text x="106" y="432" class="mono">  [2] Mises à jour</text>
+<text x="106" y="456" class="mono">  [3] Sauvegarde &amp; restauration</text>
+<text x="106" y="480" class="mono">  [4] Diagnostics &amp; santé</text>
+<text x="106" y="504" class="mono">  [5] Kernel &amp; boot</text>
+<text x="106" y="528" class="mono">  [6] KVM / machines virtuelles</text>
+<text x="106" y="552" class="mono">  [7] Performance Fedora Linux</text>
+<text x="106" y="576" class="mono">  [8] Maintenance</text>
+<text x="106" y="600" class="mono">  [9] Certification</text>
+<text x="106" y="624" class="mono">  [10] Logs &amp; preuves</text>
+<text x="106" y="648" class="mono"></text>
+<text x="106" y="672" class="mono acc">golden@fedora:~/FEDORA_GNOME_CUSTOM$ ./control.sh update check</text>
+<text x="106" y="696" class="mono ok">  [PASS] Système · Flatpak · noyau : à jour</text>
+<text x="106" y="720" class="mono warn">  [INFO] BIOS MSI : vérification manuelle</text>
+<text x="106" y="744" class="mono acc">golden@fedora:~/FEDORA_GNOME_CUSTOM$ █</text>
+<g filter="url(#sh)"><rect x="702" y="44" width="610" height="724" rx="12" fill="#fafafb"/></g>
+<path d="M702 90V56a12 12 0 0 1 12-12H1300a12 12 0 0 1 12 12V90z" fill="#ebebed"/>
+<text x="1007.0" y="73" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#2b2f36">Fichiers</text>
+<path d="M1278 61l12 12m0-12l-12 12" stroke="#2b2f36" stroke-width="1.8" stroke-linecap="round"/>
+<rect x="702" y="90" width="170" height="678" fill="#f0f1f3"/>
+<path d="M702 756a12 12 0 0 0 12 12H872V756z" fill="none"/>
+<circle cx="726" cy="121" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="124" class="side" style="font-weight:400">Récents</text>
+<circle cx="726" cy="153" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="156" class="side" style="font-weight:400">Favoris</text>
+<circle cx="726" cy="185" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="188" class="side" style="font-weight:400">Accueil</text>
+<circle cx="726" cy="217" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="220" class="side" style="font-weight:400">Bureau</text>
+<circle cx="726" cy="249" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="252" class="side" style="font-weight:400">Documents</text>
+<circle cx="726" cy="281" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="284" class="side" style="font-weight:400">Téléchargements</text>
+<circle cx="726" cy="313" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="316" class="side" style="font-weight:400">Corbeille</text>
+<rect x="710" y="345" width="154" height="28" rx="8" fill="#d6e4fb"/>
+<circle cx="726" cy="359" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="362" class="side" style="font-weight:700">/data</text>
+<circle cx="726" cy="391" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="394" class="side" style="font-weight:400">Jeux</text>
+<circle cx="726" cy="423" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="426" class="side" style="font-weight:400">Projets</text>
+<circle cx="726" cy="455" r="5" fill="#6c7a8f" opacity=".55"/>
+<text x="742" y="458" class="side" style="font-weight:400">ISO</text>
+<text x="896" y="120" class="side" style="font-weight:700;font-size:15px">/data</text>
+<text x="896" y="142" class="side dim" style="fill:#7a8494">EXT4 · Crucial T705 #2 · persistant</text>
+<path d="M896 188a8 8 0 0 1 8-8h22l8 9h36a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H904a8 8 0 0 1-8-8z" fill="#62a0ea"/><path d="M896 204h82v38a8 8 0 0 1-8 8H904a8 8 0 0 1-8-8z" fill="#99c1f1"/>
+<text x="937" y="274" text-anchor="middle" class="lbl">Documents</text>
+<path d="M1036 188a8 8 0 0 1 8-8h22l8 9h36a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H1044a8 8 0 0 1-8-8z" fill="#62a0ea"/><path d="M1036 204h82v38a8 8 0 0 1-8 8H1044a8 8 0 0 1-8-8z" fill="#99c1f1"/>
+<text x="1077" y="274" text-anchor="middle" class="lbl">Projets</text>
+<path d="M1176 188a8 8 0 0 1 8-8h22l8 9h36a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H1184a8 8 0 0 1-8-8z" fill="#62a0ea"/><path d="M1176 204h82v38a8 8 0 0 1-8 8H1184a8 8 0 0 1-8-8z" fill="#99c1f1"/>
+<text x="1217" y="274" text-anchor="middle" class="lbl">ISO</text>
+<path d="M896 328a8 8 0 0 1 8-8h22l8 9h36a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H904a8 8 0 0 1-8-8z" fill="#62a0ea"/><path d="M896 344h82v38a8 8 0 0 1-8 8H904a8 8 0 0 1-8-8z" fill="#99c1f1"/>
+<text x="937" y="414" text-anchor="middle" class="lbl">Jeux</text>
+<path d="M1036 328a8 8 0 0 1 8-8h22l8 9h36a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H1044a8 8 0 0 1-8-8z" fill="#62a0ea"/><path d="M1036 344h82v38a8 8 0 0 1-8 8H1044a8 8 0 0 1-8-8z" fill="#99c1f1"/>
+<text x="1077" y="414" text-anchor="middle" class="lbl">libvirt</text>
+<path d="M1176 328a8 8 0 0 1 8-8h22l8 9h36a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H1184a8 8 0 0 1-8-8z" fill="#62a0ea"/><path d="M1176 344h82v38a8 8 0 0 1-8 8H1184a8 8 0 0 1-8-8z" fill="#99c1f1"/>
+<text x="1217" y="414" text-anchor="middle" class="lbl">Sauvegardes</text>
+<g><rect x="1060" y="778" width="364" height="24" rx="12" fill="#101114" opacity=".7"/><text x="1242" y="794" text-anchor="middle" class="cap">Maquette illustrative — pas une capture réelle</text></g>
+</svg>

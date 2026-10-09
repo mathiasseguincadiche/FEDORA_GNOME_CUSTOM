@@ -25,12 +25,19 @@ grep -Fq 'Version 2.0' "$ROOT/LICENSE" || fail 'Apache-2.0 version missing'
 # Landing page: identity, live CI badges, quick start and honest project status.
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail 'VERSION is not semantic x.y.z'
-grep -Fq '# Fedora 44 Golden Workstation' "$ROOT/README.md" || fail 'landing title missing'
+grep -Fq '# Fedora Golden Workstation' "$ROOT/README.md" || fail 'landing title missing'
 grep -Fq "**Golden Workstation $version**" "$ROOT/README.md" || fail 'version identity missing'
 grep -Fq 'actions/workflows/tests.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Tests badge missing'
 grep -Fq 'actions/workflows/shell-quality.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Shell quality badge missing'
 grep -Fq 'actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora package badge missing'
 grep -Fq 'actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Gaming badge missing'
+grep -Fq 'actions/workflows/fedora45-package-preflight.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora 45 preflight badge missing'
+grep -Fq 'actions/workflows/release-readiness.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora 45 readiness badge missing'
+# The desktop preview is an illustration and must say so.
+[[ -s "$ROOT/docs/assets/desktop-preview.svg" ]] || fail 'desktop preview missing'
+grep -Fq 'docs/assets/desktop-preview.svg' "$ROOT/README.md" || fail 'README does not show the desktop preview'
+grep -Fq 'Maquette illustrative, pas une capture réelle' "$ROOT/README.md" || fail 'README must label the preview as a mockup'
+grep -Fq 'pas une capture réelle' "$ROOT/docs/assets/desktop-preview.svg" || fail 'preview image must label itself as a mockup'
 grep -Fq 'État logiciel : CODE-READY' "$ROOT/README.md" || fail 'honest code-ready status missing'
 grep -Fq 'Certification matérielle : Gate 3 bare-metal à exécuter' "$ROOT/README.md" || fail 'bare-metal status missing'
 if grep -Fq 'conçue et certifiée' "$ROOT/README.md"; then
