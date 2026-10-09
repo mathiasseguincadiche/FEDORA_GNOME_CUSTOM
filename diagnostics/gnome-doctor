@@ -93,7 +93,7 @@ if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
   report_local_extension 'Desktop Icons NG' "${DING_UUID:-ding@rastersoft.com}" "${DING_SOURCE_URL:-}"
 fi
 if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
-  report_local_extension 'Show Desktop' "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}"
+  report_local_extension 'Show Desktop Plus / Button' "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}"
 fi
 if is_true "${ENABLE_RESOURCE_MONITOR:-false}"; then
   report_local_extension 'Telemetry (Resource Monitor / Vitals)' "${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}" "${RESOURCE_MONITOR_SOURCE_URL:-}"
