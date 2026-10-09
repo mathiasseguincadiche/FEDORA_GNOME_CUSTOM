@@ -1,0 +1,36 @@
+# Fedora 45 / GNOME 51 reviewed extension artifacts. Constants, not local.conf options.
+# Values were observed by the release-readiness CI on extensions.gnome.org / GitHub (2026-10-09) and
+# are inert while profiles/fedora45/profile.json is "pending". Change URL, version, SHA-256 and
+# compatibility together after review.
+#
+# DING, Show Desktop Plus and Resource Monitor publish no GNOME 51 build. They are replaced here:
+#   DING              -> Gtk4 Desktop Icons NG (smedius), same show-trash/home/volumes keys
+#   SHOW_DESKTOP_PLUS -> Show Desktop Button v59 (amivaleo)
+#   RESOURCE_MONITOR  -> Vitals v85 (corecoding)
+# The prefixes stay role names so installers, upgrade and guards keep one code path.
+DING_UUID="gtk4-ding@smedius.gitlab.com"
+DING_SOURCE_URL="https://extensions.gnome.org/review/download/75162.shell-extension.zip"
+DING_REVIEW_ID="75162"
+DING_VERSION="145"
+DING_SHELL_VERSION="51"
+DING_SHA256="4a884fa3976aeb814726fd96428c09cfeca2da01aec3ac8629ddd6cd22bff2c1"
+DING_SCHEMA="org.gnome.shell.extensions.gtk4-ding"
+SHOW_DESKTOP_PLUS_UUID="show-desktop-button@amivaleo"
+SHOW_DESKTOP_PLUS_SOURCE_URL="https://extensions.gnome.org/review/download/75965.shell-extension.zip"
+SHOW_DESKTOP_PLUS_REVIEW_ID="75965"
+SHOW_DESKTOP_PLUS_VERSION="59"
+SHOW_DESKTOP_PLUS_SHELL_VERSION="51"
+SHOW_DESKTOP_PLUS_SHA256="76411e57bf5402c54bc04e5a94700c62dfb71b094ed6eac48509f609c07f6000"
+SHOW_DESKTOP_PLUS_SCHEMA="org.gnome.shell.extensions.show-desktop-button"
+RESOURCE_MONITOR_UUID="Vitals@CoreCoding.com"
+RESOURCE_MONITOR_SOURCE_URL="https://extensions.gnome.org/review/download/74743.shell-extension.zip"
+RESOURCE_MONITOR_REVIEW_ID="74743"
+RESOURCE_MONITOR_VERSION="85"
+RESOURCE_MONITOR_SHELL_VERSION="51"
+RESOURCE_MONITOR_SHA256="899e5ffe27d1793cf13db069d835c11136cec816717e4e450a56f08bcf976b2f"
+RESOURCE_MONITOR_SCHEMA="org.gnome.shell.extensions.vitals"
+TILING_ASSISTANT_UUID="tiling-assistant@leleat-on-github"
+TILING_ASSISTANT_SOURCE_URL="https://github.com/ubuntu/Tiling-Assistant/releases/download/v56/tiling-assistant%40leleat-on-github.shell-extension.zip"
+TILING_ASSISTANT_VERSION="56"
+TILING_ASSISTANT_SHELL_VERSION="51"
+TILING_ASSISTANT_SHA256="961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a"

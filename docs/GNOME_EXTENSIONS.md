@@ -12,6 +12,26 @@ Référence : Fedora Linux 44 Workstation + GNOME 50 + Wayland.
 
 Le projet distingue les extensions **fonctionnelles** des extensions purement cosmétiques. L'objectif est de conserver un bureau proche de l'upstream, stable à 240 Hz et simple à diagnostiquer après une mise à jour ou un suspend/resume.
 
+## Profil Fedora 45 / GNOME 51 (en préparation)
+
+Trois des quatre extensions téléchargées n'ont **aucun build GNOME 51** sur extensions.gnome.org. Le profil Fedora 45 les remplace ; Fedora 44 / GNOME 50 garde les extensions ci-dessous inchangées. Le verrou du profil est `profiles/fedora45/gnome-extensions.lock` (inerte tant que `profiles/fedora45/profile.json` reste `pending`).
+
+| Rôle (préfixe du verrou) | Fedora 44 / GNOME 50 | Fedora 45 / GNOME 51 |
+|---|---|---|
+| Icônes du bureau (`DING_*`) | Desktop Icons NG, `ding@rastersoft.com` | Gtk4 Desktop Icons NG (smedius) v145, `gtk4-ding@smedius.gitlab.com` |
+| Bouton bureau (`SHOW_DESKTOP_PLUS_*`) | Show Desktop Plus v8 | Show Desktop Button (amivaleo) v59, `show-desktop-button@amivaleo` |
+| Télémétrie (`RESOURCE_MONITOR_*`) | Resource Monitor v28 | Vitals (corecoding) v85, `Vitals@CoreCoding.com` |
+| Tuilage (`TILING_ASSISTANT_*`) | Tiling Assistant v55 | Tiling Assistant v56 |
+
+Ce qui change à l'usage :
+
+- **Icônes du bureau** : mêmes réglages (`~/Bureau`, Corbeille visible, Home, volumes et réseau masqués) ; le fork GTK4 expose les mêmes clés.
+- **Bouton bureau** : indicateur à l'extrémité gauche et raccourci Super+D. L'action du clic gauche/milieu, l'icône « bureau » et le badge de fenêtres cachées de Show Desktop Plus n'existent pas dans Show Desktop Button ; l'icône se change dans les préférences de l'extension.
+- **Télémétrie** : Vitals affiche en haut à droite l'usage CPU, la RAM et le débit réseau, rafraîchis toutes les 2 s. Les identifiants de ses capteurs de température dépendent des puces détectées : épinglez la température CPU/GPU depuis son menu. Vitals **ne garantit pas** la charge de l'Intel Arc B580 dans la barre ; les sources `xe` (`gpu_busy_percent`) restent contrôlées comme santé matérielle sur le poste physique.
+- **Dash to Dock** reste fourni par le RPM Fedora ; la readiness signale que le paquet de la Beta 45 n'est pas encore déclaré compatible GNOME 51.
+
+Chaque installation reste épinglée par URL, review, version et SHA256 ; le validateur n'accepte, pour ces trois rôles, que l'identité Fedora 44 ou son remplaçant revu, avec UUID et schéma cohérents. Le workflow de readiness télécharge les archives épinglées et vérifie leur empreinte, leur UUID et le major 51.
+
 ## Extensions fonctionnelles activées
 
 ### Dash to Dock

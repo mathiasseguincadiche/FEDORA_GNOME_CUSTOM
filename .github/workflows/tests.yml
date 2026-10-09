@@ -208,6 +208,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_gnome_polish_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_extension_variants_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_module_catalog_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_apply_gate_behavior.sh

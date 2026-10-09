@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.22.1 — Fedora 45 / GNOME 51 : remplaçants des extensions sans build GNOME 51
+
+- DING, Show Desktop Plus et Resource Monitor ne publiaient aucun build GNOME 51 : le profil Fedora 45 (`profiles/fedora45/gnome-extensions.lock`) les remplace par **Gtk4 Desktop Icons NG** (smedius, v145), **Show Desktop Button** (amivaleo, v59) et **Vitals** (corecoding, v85), et épingle **Tiling Assistant v56**. SHA256, review et compatibilité GNOME 51 ont été relevés par la CI sur le store, pas saisis à la main.
+- Les préfixes `DING_*`, `SHOW_DESKTOP_PLUS_*`, `RESOURCE_MONITOR_*` restent des noms de rôle : l'installateur, la mise à niveau et les gardes gardent un seul chemin de code. Le module `24_gnome_extensions.sh` et `24b_resource_monitor.sh` choisissent la configuration d'après l'UUID du verrou (indicateur `LEFT_END` + raccourci Super+D pour Show Desktop Button ; capteurs `_processor_usage_`, `_memory_usage_`, réseau pour Vitals). Le comportement Fedora 44 est inchangé.
+- `fedora-profile.py` n'accepte, pour ces trois rôles, que l'identité d'origine ou son remplaçant revu, avec UUID et schéma cohérents ; toute autre identité est refusée.
+- Outil de readiness : vérifie l'archive **réellement épinglée** (téléchargement, SHA256, UUID, major 51) et signale si l'ancien DING obtient un build natif GNOME 51. Le COPR de Sunshine est activé pour la résolution des paquets (faux blocage « Sunshine » supprimé).
+- Test `test_extension_variants_behavior.sh` (faux `gsettings`) ; la fixture de promotion de `test_fedora_release_behavior.sh` utilise le vrai verrou 45.
+- Limite connue : Vitals ne garantit pas la charge de l'Arc B580 dans la barre du haut ; les sources `xe` restent contrôlées comme santé matérielle. Le profil Fedora 45 reste **pending** : média final, qualification et preuves manquent encore.
+
 ## 0.22.0 — Accès distant (profil optionnel)
 
 - Nouveau profil **`REMOTE_*`**, désactivé par défaut : Tailscale, SSH par clés uniquement, Wake-on-LAN (profil NetworkManager) et Sunshine en option. Cinq modules (`remote.*`), `diagnostics/remote-doctor`, route `./control.sh remote status|info`. Guide `docs/REMOTE_ACCESS.md` (analyse du cahier des charges, limites, alternatives, qualification Gate 3) et [ADR 0017](docs/adr/0017-remote-access.md).

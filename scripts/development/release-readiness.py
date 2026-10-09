@@ -79,10 +79,9 @@ def tiling_candidate(uuid, shell, transport=fetch):
             "SHELL_VERSION": str(shell), "SHA256": digest}
 
 
-# Replacement candidates for extensions with no GNOME 51 build (EGO numeric ids).
-# Probing is informational: it never changes READY/BLOCKED and never writes a lock.
-PROBES = (("Vitals", 1460), ("Show Desktop Button", 1194),
-          ("DING (rastersoft)", 2087), ("Gtk4 DING (smedius)", 5263))
+# Informational probes (EGO numeric ids). They never change READY/BLOCKED and never write a lock.
+# The original DING has no GNOME 51 build yet; report it so a native build is noticed.
+PROBES = (("DING (rastersoft) native GNOME 51 build", 2087),)
 
 
 def probe_candidate(pk, shell, transport=fetch):
@@ -113,6 +112,15 @@ def probe_candidate(pk, shell, transport=fetch):
             "shell_versions": metadata.get("shell-version"), "schemas": schemas, "enums": enums}
 
 
+def pinned_check(prefix, pins, shell, transport=fetch):
+    """Download the exact pinned archive and prove URL, digest, UUID and GNOME major still hold."""
+    url = pins[prefix + "_SOURCE_URL"]
+    digest = inspect_zip(transport(url), pins[prefix + "_UUID"], shell)
+    if digest != pins[prefix + "_SHA256"]:
+        raise ValueError("pinned archive digest changed: " + digest)
+    return "pinned archive downloaded; UUID/GNOME " + str(shell) + " metadata and SHA256 verified"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fedora", type=int, default=45)
@@ -124,7 +132,8 @@ def main():
     if (args.fedora, args.shell) != (45, 51):
         parser.error("only Fedora 45 / GNOME 51 is supported")
     entries = []
-    lock = profile.assignments(ROOT / "config/gnome-extensions.lock")
+    profile_lock = ROOT / "profiles/fedora45/gnome-extensions.lock"
+    lock = profile.assignments(profile_lock if profile_lock.exists() else ROOT / "config/gnome-extensions.lock")
     candidate = dict(lock)
     found_prefixes = []
 
@@ -136,6 +145,8 @@ def main():
             entries.append({"component": component, "status": "BLOCKED", "detail": str(error)})
 
     def extension(prefix):
+        if profile_lock.exists():
+            return pinned_check(prefix, lock, args.shell)
         uuid = lock[prefix + "_UUID"]
         result = (tiling_candidate if prefix == "TILING_ASSISTANT" else ego_candidate)(uuid, args.shell)
         candidate.update({prefix + "_" + key: value for key, value in result.items()})

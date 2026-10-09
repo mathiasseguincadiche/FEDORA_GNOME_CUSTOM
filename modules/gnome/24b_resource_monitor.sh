@@ -89,6 +89,66 @@ resource_monitor_set() {
     "${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}" "$key" "$value"
 }
 
+# Fedora 45 / GNOME 51: Resource Monitor has no GNOME 51 build, Vitals replaces it.
+# The role prefix RESOURCE_MONITOR_* is unchanged; the reviewed lock decides the identity.
+resource_monitor_is_vitals() {
+  [[ "${RESOURCE_MONITOR_UUID:-}" == "Vitals@CoreCoding.com" ]]
+}
+
+resource_monitor_label() {
+  if resource_monitor_is_vitals; then printf 'Vitals'; else printf 'Resource Monitor'; fi
+}
+
+resource_monitor_vitals_position() {
+  case "${RESOURCE_MONITOR_POSITION:-right}" in
+    left) printf '0' ;;
+    center) printf '1' ;;
+    right) printf '2' ;;
+    *) return 1 ;;
+  esac
+}
+
+# Top-bar sensors Vitals can address by a stable identifier. CPU/GPU temperature sensor
+# identifiers depend on the detected hwmon chips, so they are pinned from the Vitals menu.
+resource_monitor_vitals_hot_sensors() {
+  local sensors=()
+  is_true "${RESOURCE_MONITOR_CPU_USAGE:-true}" && sensors+=("'_processor_usage_'")
+  is_true "${RESOURCE_MONITOR_RAM:-true}" && sensors+=("'_memory_usage_'")
+  if is_true "${RESOURCE_MONITOR_NETWORK:-true}"; then
+    sensors+=("'__network-rx_max__'" "'__network-tx_max__'")
+  fi
+  local joined=""
+  local item
+  for item in "${sensors[@]}"; do joined+="${joined:+, }$item"; done
+  printf '[%s]' "$joined"
+}
+
+resource_monitor_vitals_apply() {
+  local position
+  position="$(resource_monitor_vitals_position)" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set update-time "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set position-in-panel "$position" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set show-processor "${RESOURCE_MONITOR_CPU_USAGE:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set show-memory "${RESOURCE_MONITOR_RAM:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set show-network "${RESOURCE_MONITOR_NETWORK:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set show-temperature "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set show-gpu "${RESOURCE_MONITOR_GPU_USAGE:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set hot-sensors "$(resource_monitor_vitals_hot_sensors)" || return "$EXIT_APPLY_FAILED"
+}
+
+resource_monitor_vitals_check() {
+  local schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.vitals}"
+  local schema_dir position
+  schema_dir="$(resource_monitor_schema_dir)"
+  position="$(resource_monitor_vitals_position)" || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" update-time)" == "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" position-in-panel)" == "$position" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-processor)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-memory)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-network)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" hot-sensors)" == "$(resource_monitor_vitals_hot_sensors)" ]] || return "$EXIT_POSTCHECK_FAILED"
+}
+
 gnome_telemetry_precheck() {
   is_true "${ENABLE_RESOURCE_MONITOR:-false}" || return 0
   [[ "${RESOURCE_MONITOR_REFRESH_SECONDS:-}" == "2" ]] || return "$EXIT_PRECHECK_FAILED"
@@ -96,6 +156,16 @@ gnome_telemetry_precheck() {
 }
 
 gnome_telemetry_plan() {
+  if resource_monitor_is_vitals; then
+    cat <<EOF
+VITALS PLAN (Fedora 45 / GNOME 51 replacement of Resource Monitor):
+- install Vitals v${RESOURCE_MONITOR_VERSION} from reviewed artifact ${RESOURCE_MONITOR_REVIEW_ID} (GNOME Shell ${RESOURCE_MONITOR_SHELL_VERSION})
+- top-right compact telemetry: CPU usage, RAM used %, network download|upload, refreshed every ${RESOURCE_MONITOR_REFRESH_SECONDS:-2} s
+- CPU/GPU temperature sensors are discovered by Vitals from hwmon; pin them from the Vitals menu (their identifiers depend on the detected chips)
+- Intel Arc B580 load in the top bar is not guaranteed by Vitals; the xe load/temperature sources remain verified as hardware health on bare metal
+EOF
+    return 0
+  fi
   cat <<EOF
 RESOURCE MONITOR PLAN:
 - install Resource Monitor v${RESOURCE_MONITOR_VERSION} from reviewed artifact ${RESOURCE_MONITOR_REVIEW_ID} (GNOME Shell ${RESOURCE_MONITOR_SHELL_VERSION})
@@ -114,6 +184,21 @@ gnome_telemetry_apply() {
 
   run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-resource-monitor.sh" \
     "${RESOURCE_MONITOR_SOURCE_URL:-}" "$uuid" "${RESOURCE_MONITOR_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+
+  if resource_monitor_is_vitals; then
+    resource_monitor_vitals_apply || return "$EXIT_APPLY_FAILED"
+    if ! is_true "${DRY_RUN:-true}"; then
+      if resource_monitor_find_b580_card >/dev/null 2>&1; then
+        log_warn GNOME 'Vitals: Intel Arc B580 load/temperature in the top bar depends on Vitals GPU support; pin the sensors from its menu'
+      fi
+      if declare -F gnome_extension_enable_checked >/dev/null; then
+        gnome_extension_enable_checked Vitals "$uuid" || return "$EXIT_APPLY_FAILED"
+      else
+        gnome-extensions enable "$uuid" || return "$EXIT_APPLY_FAILED"
+      fi
+    fi
+    return 0
+  fi
 
   resource_monitor_set refreshtime "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set extensionposition "'${RESOURCE_MONITOR_POSITION:-right}'" || return "$EXIT_APPLY_FAILED"
@@ -180,12 +265,16 @@ gnome_telemetry_postcheck() {
   grep -Fxq "source_url=${RESOURCE_MONITOR_SOURCE_URL:-}" "$extension_dir/.fedora-gnome-custom-source" || return "$EXIT_POSTCHECK_FAILED"
   grep -Fxq "review_id=${RESOURCE_MONITOR_REVIEW_ID:-}" "$extension_dir/.fedora-gnome-custom-source" || return "$EXIT_POSTCHECK_FAILED"
   gnome_extension_active "$uuid" || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+  if resource_monitor_is_vitals; then
+    resource_monitor_vitals_check || return "$EXIT_POSTCHECK_FAILED"
+  else
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+  fi
 
   if runtime_is_baremetal; then
     resource_monitor_find_cpu_sensor >/dev/null || { log_error GNOME 'Resource Monitor cannot resolve Ryzen CPU temperature sensor'; return "$EXIT_POSTCHECK_FAILED"; }

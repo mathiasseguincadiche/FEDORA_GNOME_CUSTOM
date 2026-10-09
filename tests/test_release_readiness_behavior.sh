@@ -38,6 +38,15 @@ for info,data in (({"uuid":"Vitals@CoreCoding.com","version":85},probe_archive()
     try: m.probe_candidate(1460,51,probe_transport(info,data))
     except ValueError: pass
     else: raise AssertionError("probe accepted a candidate without a GNOME 51 build")
+# Pinned-archive check: exact URL content, digest, UUID and GNOME major must still hold.
+pa=probe_archive()
+import hashlib
+pins={"RESOURCE_MONITOR_UUID":"Vitals@CoreCoding.com","RESOURCE_MONITOR_SOURCE_URL":"https://extensions.gnome.org/review/download/1.shell-extension.zip","RESOURCE_MONITOR_SHA256":hashlib.sha256(pa).hexdigest()}
+assert "verified" in m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+pins["RESOURCE_MONITOR_SHA256"]="0"*64
+try: m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+except ValueError as error: assert "digest changed" in str(error)
+else: raise AssertionError("tampered pinned archive accepted")
 try: m.profile.validate(root,45)
 except ValueError as error: assert "pending" in str(error)
 else: raise AssertionError("unqualified future profile accepted")
