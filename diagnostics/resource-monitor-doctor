@@ -56,7 +56,14 @@ else
   emit EXPECTED 'Resource Monitor state' 'requires active GNOME session'
 fi
 
-if [[ -r "$schema_dir/gschemas.compiled" ]]; then
+if [[ -r "$schema_dir/gschemas.compiled" ]] && resource_monitor_is_vitals; then
+  check_value 'Refresh interval' "$(gsettings --schemadir "$schema_dir" get "$schema" update-time 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
+  check_value 'Panel position' "$(gsettings --schemadir "$schema_dir" get "$schema" position-in-panel 2>/dev/null || true)" "$(resource_monitor_vitals_position)"
+  check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" show-processor 2>/dev/null || true)" true
+  check_value 'RAM usage' "$(gsettings --schemadir "$schema_dir" get "$schema" show-memory 2>/dev/null || true)" true
+  check_value 'Network throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" show-network 2>/dev/null || true)" true
+  check_value 'Top-bar sensors' "$(gsettings --schemadir "$schema_dir" get "$schema" hot-sensors 2>/dev/null || true)" "$(resource_monitor_vitals_hot_sensors)"
+elif [[ -r "$schema_dir/gschemas.compiled" ]]; then
   check_value 'Refresh interval' "$(gsettings --schemadir "$schema_dir" get "$schema" refreshtime 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
   check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus 2>/dev/null || true)" true
   check_value 'CPU temperature' "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus 2>/dev/null || true)" true

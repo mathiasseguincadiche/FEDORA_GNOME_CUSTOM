@@ -8,6 +8,14 @@ import sys
 
 PREFIXES = ("DING", "SHOW_DESKTOP_PLUS", "RESOURCE_MONITOR", "TILING_ASSISTANT")
 
+# DING, Show Desktop Plus and Resource Monitor publish no GNOME 51 build. The prefix stays a role
+# name; the Fedora 45 lock may keep the Fedora 44 identity or use exactly one reviewed replacement.
+REPLACEMENTS = {
+    "DING": ("gtk4-ding@smedius.gitlab.com", "org.gnome.shell.extensions.gtk4-ding"),
+    "SHOW_DESKTOP_PLUS": ("show-desktop-button@amivaleo", "org.gnome.shell.extensions.show-desktop-button"),
+    "RESOURCE_MONITOR": ("Vitals@CoreCoding.com", "org.gnome.shell.extensions.vitals"),
+}
+
 
 def assignments(path):
     result = {}
@@ -65,8 +73,16 @@ def validate(root, release):
     for prefix in PREFIXES:
         for suffix in ("UUID", "SCHEMA"):
             key = prefix + "_" + suffix
-            if key in canonical and lock[key] != canonical[key]:
+            if key not in canonical:
+                continue
+            allowed = {canonical[key]}
+            if prefix in REPLACEMENTS:
+                allowed.add(REPLACEMENTS[prefix][0 if suffix == "UUID" else 1])
+            if lock[key] not in allowed:
                 raise ValueError("extension identity changed: " + key)
+        if prefix in REPLACEMENTS and (lock[prefix + "_UUID"] == canonical[prefix + "_UUID"]) != \
+                (lock[prefix + "_SCHEMA"] == canonical[prefix + "_SCHEMA"]):
+            raise ValueError("extension UUID and schema must come from the same reviewed identity: " + prefix)
         if lock.get(prefix + "_SHELL_VERSION") != "51":
             raise ValueError("unported GNOME extension: " + prefix)
         if not re.fullmatch(r"[0-9a-f]{64}", lock.get(prefix + "_SHA256", "")):

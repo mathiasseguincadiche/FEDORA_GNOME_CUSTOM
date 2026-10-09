@@ -44,11 +44,11 @@ gnome_extensions_precheck() {
 gnome_extensions_plan() {
   cat <<EOF
 GNOME EXTENSIONS PLAN:
-- Fedora 44 / GNOME 50 remains the desktop reference
+- Fedora ${HOST_RELEASE:-44} / GNOME $(fedora_expected_gnome_major 2>/dev/null || printf '50') extension profile (Fedora 44 / GNOME 50 remains the tested reference)
 - Dash to Dock is enabled from the official Fedora RPM
 - AppIndicator is enabled from the official Fedora RPM for functional tray compatibility
 - Desktop Icons NG (DING) v${DING_VERSION} is installed from the exact GNOME-reviewed artifact ${DING_REVIEW_ID}; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
-- Show Desktop Plus v${SHOW_DESKTOP_PLUS_VERSION} is installed from the exact GNOME-reviewed artifact ${SHOW_DESKTOP_PLUS_REVIEW_ID} and configured as a top-left desktop toggle with Super+D
+- $(gnome_show_desktop_label) v${SHOW_DESKTOP_PLUS_VERSION} is installed from the exact GNOME-reviewed artifact ${SHOW_DESKTOP_PLUS_REVIEW_ID} and configured as a top-left desktop toggle with Super+D
 - Blur My Shell stays disabled by default for 240 Hz/resume stability
 - Extension Manager is installed from Flathub as the administration UI
 - Just Perfection and Dash to Panel remain outside the Golden profile
@@ -84,11 +84,56 @@ gnome_ding_settings_apply() {
   run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-network-volumes "${DING_SHOW_NETWORK_VOLUMES:-false}" || return "$EXIT_APPLY_FAILED"
 }
 
+# Fedora 45 / GNOME 51 replaces Show Desktop Plus (no GNOME 51 build) by Show Desktop Button.
+# The role prefix SHOW_DESKTOP_PLUS_* is unchanged; the reviewed lock decides the identity.
+gnome_show_desktop_is_button() {
+  [[ "${SHOW_DESKTOP_PLUS_UUID:-}" == "show-desktop-button@amivaleo" ]]
+}
+
+gnome_show_desktop_label() {
+  if gnome_show_desktop_is_button; then printf 'Show Desktop Button'; else printf 'Show Desktop Plus'; fi
+}
+
+gnome_show_desktop_button_position_nick() {
+  case "${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}" in
+    left-end) printf 'LEFT_END' ;;
+    *) return 1 ;;
+  esac
+}
+
+gnome_show_desktop_button_shortcut() {
+  if is_true "${SHOW_DESKTOP_PLUS_ENABLE_HOTKEY:-true}"; then
+    printf "['%s']" "${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}"
+  else
+    printf "['']"
+  fi
+}
+
+gnome_show_desktop_button_settings_apply() {
+  local schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-button}"
+  local schema_dir position
+  schema_dir="$(gnome_show_desktop_plus_schema_dir)"
+  position="$(gnome_show_desktop_button_position_nick)" || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" indicator-position "'$position'" || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-icon true || return "$EXIT_APPLY_FAILED"
+  run_mutating GNOME gsettings --schemadir "$schema_dir" set "$schema" show-desktop-shortcut "$(gnome_show_desktop_button_shortcut)" || return "$EXIT_APPLY_FAILED"
+}
+
+gnome_show_desktop_button_settings_check() {
+  local schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-button}"
+  local schema_dir position
+  schema_dir="$(gnome_show_desktop_plus_schema_dir)"
+  position="$(gnome_show_desktop_button_position_nick)" || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" indicator-position)" == "'$position'" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-desktop-shortcut)" == "$(gnome_show_desktop_button_shortcut)" ]] || return "$EXIT_POSTCHECK_FAILED"
+}
+
 gnome_show_desktop_plus_schema_dir() {
   printf '%s/%s/schemas' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
 }
 
 gnome_show_desktop_plus_settings_apply() {
+  if gnome_show_desktop_is_button; then gnome_show_desktop_button_settings_apply; return $?; fi
   local schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
   local schema_dir
   schema_dir="$(gnome_show_desktop_plus_schema_dir)"
@@ -149,7 +194,7 @@ gnome_extensions_apply() {
       gnome_extension_enable_checked 'Desktop Icons NG' "$ding_uuid" || return "$EXIT_APPLY_FAILED"
     fi
     if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
-      gnome_extension_enable_checked 'Show Desktop Plus' "$show_desktop_uuid" || return "$EXIT_APPLY_FAILED"
+      gnome_extension_enable_checked "$(gnome_show_desktop_label)" "$show_desktop_uuid" || return "$EXIT_APPLY_FAILED"
     fi
   fi
 
@@ -204,11 +249,15 @@ gnome_extensions_postcheck() {
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
     [[ -r "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$show_desktop_uuid/metadata.json" ]] || return "$EXIT_POSTCHECK_FAILED"
     gnome_extension_active "$show_desktop_uuid" || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position)" == "'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action)" == "'${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-toggle-desktop}'" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey)" == "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
+    if gnome_show_desktop_is_button; then
+      gnome_show_desktop_button_settings_check || return "$EXIT_POSTCHECK_FAILED"
+    else
+      [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position)" == "'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'" ]] || return "$EXIT_POSTCHECK_FAILED"
+      [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action)" == "'${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-toggle-desktop}'" ]] || return "$EXIT_POSTCHECK_FAILED"
+      [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+      [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey)" == "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']" ]] || return "$EXIT_POSTCHECK_FAILED"
+      [[ "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count)" == "false" ]] || return "$EXIT_POSTCHECK_FAILED"
+    fi
   fi
 
   if is_true "${INSTALL_EXTENSION_MANAGER:-false}"; then

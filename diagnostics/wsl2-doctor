@@ -33,7 +33,7 @@ emit OK 'Core tools' 'bash/dnf/rpm/git/grep/awk/free/lscpu/lsblk/findmnt/systemc
 
 if runtime_is_wsl2; then emit OK Runtime 'WSL2 detected'; else emit KO Runtime "expected wsl2, detected $RUNTIME_ENVIRONMENT"; fi
 if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && fedora_require_selected; then
-  emit OK Fedora '44'
+  emit OK Fedora "$(fedora_actual_release)"
 else
   emit KO Fedora 'Selected promoted Fedora release required'
 fi

@@ -26,7 +26,7 @@ gate1_require_runtime() {
     return "$EXIT_SECURITY_BLOCK"
   }
   validation_require_selected_fedora || {
-    ui_error 'Gate 1 requires Fedora Linux 44'
+    ui_error 'Gate 1 requires the selected promoted Fedora release'
     return "$EXIT_PRECHECK_FAILED"
   }
   validation_require_clean_source
@@ -67,7 +67,7 @@ gate1_run() {
   local proof
   gate1_require_runtime || return $?
   gate1_require_tools || return $?
-  ui_banner 'GATE 1 — WSL2' 'FEDORA 44 SYSTEM / LOGIC PREVALIDATION — HARDWARE DEFERRED'
+  ui_banner 'GATE 1 — WSL2' "FEDORA $(fedora_actual_release) SYSTEM / LOGIC PREVALIDATION — HARDWARE DEFERRED"
 
   "$REPO_ROOT/scripts/config/validate-config.sh" "$REPO_ROOT/config"
   "$REPO_ROOT/diagnostics/wsl2-doctor"

@@ -28,7 +28,7 @@ Il exerce une session Wayland GNOME 51 native, la politique de mises à jour, la
 Une même PR doit fournir et faire examiner :
 
 1. `installer/fedora45-media.lock` : Workstation **final**, compose exact, nom de l'ISO et du CHECKSUM, URL officielle et SHA256 réel. L'empreinte Fedora 45 est `4F50A6114CD5C6976A7F1179655A4B02F577861E`. Vérifier cryptographiquement le CHECKSUM signé et le couple exact nom/hash avant d'accepter ce verrou.
-2. `profiles/fedora45/gnome-extensions.lock` : mêmes UUID et schémas que le verrou actuel, mais archives réellement compatibles GNOME 51. URL, version, review, major GNOME et SHA changent ensemble. Télécharger, contrôler les métadonnées, compiler les schémas et tester la session réelle ; un simple tag API ne suffit pas.
+2. `profiles/fedora45/gnome-extensions.lock` : **déjà renseigné** avec des archives compatibles GNOME 51 relevées par la CI (voir [GNOME_EXTENSIONS.md](GNOME_EXTENSIONS.md#profil-fedora-45--gnome-51-en-préparation)). DING, Show Desktop Plus et Resource Monitor n'ont pas de build GNOME 51 : ils sont remplacés par Gtk4 DING, Show Desktop Button et Vitals ; seules ces identités revues (ou celles de Fedora 44) sont acceptées. Reste à faire examiner le fichier, compiler les schémas et tester la session GNOME 51 réelle ; un simple tag API ne suffit pas.
 3. `profiles/fedora45/profile.json` : `schema=1`, `release=45`, `gnome_major=51`, `status=ready`, SHA256 des deux fichiers ci-dessus et `packages_lock_sha256` pour le manifeste Nautilus 45 et `qualification_commit` réel. Les preuves CI doivent porter sur ce commit et ces fichiers, avant la promotion.
 4. Un laboratoire Fedora 45 signé et épinglé, puis démarrage, redémarrage, journaux/coredumps, extensions actives et restauration isolée. Le laboratoire Fedora 44 existant reste la référence précédente, pas une preuve Fedora 45.
 5. Une mise à jour des tests de promotion : le test qui exige actuellement un profil pending doit devenir un contrôle du profil réellement promu. Préserver les tests négatifs Beta, GNOME 50, clés inattendues, archive altérée et identité obsolète.
@@ -38,6 +38,23 @@ Le validateur rejette un statut pending, un média Beta, une empreinte incorrect
 ## Différence Nautilus/GVfs déjà traitée
 
 Fedora 45 ne fournit plus `gvfs-archive`. `profiles/fedora45/packages-nautilus.txt` conserve Nautilus, GVfs et les backends pris en charge, Sushi et File Roller, puis ajoute explicitement File Roller. Le moteur et le doctor sélectionnent cette liste uniquement sur un profil 45 promu. L'ouverture et l'extraction restent disponibles ; le montage des archives par GIO n'est plus promis.
+
+## Promouvoir le profil à la sortie de l'ISO finale
+
+Une fois l'ISO **finale** Workstation et son fichier CHECKSUM signé téléchargés (jamais une Beta), le propriétaire promeut le profil avec un seul outil, au lieu de recopier des empreintes à la main :
+
+```bash
+# Prérequis : arbre Git propre, CI verte sur le commit courant, clé Fedora 45 dans un trousseau GPG.
+python3 scripts/development/promote-fedora45.py \
+  --iso /chemin/Fedora-Workstation-Live-45-COMPOSE.x86_64.iso \
+  --checksum /chemin/Fedora-Workstation-45-COMPOSE-x86_64-CHECKSUM \
+  --keyring /chemin/fedora.gpg \
+  --commit "$(git rev-parse HEAD)"
+```
+
+L'outil refuse (et restaure les fichiers) si : le nom n'est pas celui d'une image finale (Beta/RC), le CHECKSUM n'est pas signé par la clé Fedora 45 épinglée (`4F50A611…861E`) ou ne lie pas exactement ce nom à cette empreinte, l'ISO a été modifiée, l'arbre Git n'est pas propre, ou `--commit` n'est pas le HEAD courant. En cas de succès il écrit `installer/fedora45-media.lock` et `profiles/fedora45/profile.json` (`status: ready`, empreintes du média, du verrou d'extensions et de la liste de paquets), puis exécute le même validateur que tous les gardes. Il ne commit rien : relire `git diff`, committer ces deux fichiers, laisser la CI tourner, puis passer par une PR.
+
+Le contrôle [Fedora 45 package and driver preflight](../.github/workflows/fedora45-package-preflight.yml) prouve en conteneur Fedora 45 réel que les manifestes se résolvent (RPM Fusion 45 compris), que l'espace utilisateur Intel Arc s'installe (Vulkan ANV, VA-API `iHD`), que les échanges ffmpeg/intel-media-driver fonctionnent, que le RPM Linux amont existe et se télécharge pour Fedora 45, et que les quatre archives GNOME 51 épinglées sont valides. Il est informatif : il ne promeut rien et ne certifie aucun matériel.
 
 ## Installation neuve directement en Fedora 45
 

@@ -81,7 +81,7 @@ dmi="$(runtime_virtualbox_dmi_payload 2>/dev/null | tr '\n' ' ' || true)"
 if grep -Eqi 'VirtualBox|Oracle|innotek' <<<"$dmi"; then emit OK 'VirtualBox DMI' "$dmi"; else emit KO 'VirtualBox DMI' "unexpected: ${dmi:-empty}"; fi
 
 if grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release && fedora_require_selected; then
-  emit OK Fedora '44'
+  emit OK Fedora "$(fedora_actual_release)"
 else
   emit KO Fedora 'Selected promoted Fedora release required'
 fi

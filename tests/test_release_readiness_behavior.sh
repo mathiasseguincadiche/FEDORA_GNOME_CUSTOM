@@ -22,6 +22,37 @@ for data in (b"not a zip",archive(shell="50"),archive(uuid="wrong"),archive(sche
     try: m.ego_candidate("ding@rastersoft.com",51,transport(data))
     except (ValueError,zipfile.BadZipFile): pass
     else: raise AssertionError("API availability falsely called compatible")
+# Replacement-candidate probe: reports facts from the real archive, rejects wrong major / no build.
+def probe_archive(shell="51"):
+    result=io.BytesIO()
+    with zipfile.ZipFile(result,"w") as z:
+        z.writestr("metadata.json",json.dumps({"uuid":"Vitals@CoreCoding.com","shell-version":[shell]}))
+        z.writestr("schemas/x.gschema.xml",'<schemalist><enum id="org.example.e"><value nick="left" value="0"/></enum><schema id="org.example.v"><key name="a" type="b"><default>true</default></key><key name="p" enum="org.example.e"><default>\'left\'</default></key></schema></schemalist>')
+    return result.getvalue()
+def probe_transport(info, data):
+    return lambda url: json.dumps(info).encode() if "extension-info" in url else data
+good=m.probe_candidate(1460,51,probe_transport({"uuid":"Vitals@CoreCoding.com","version":85,"version_tag":90001,"name":"Vitals"},probe_archive()))
+assert good["schemas"]=={"org.example.v":{"a":"b default=true","p":"enum:org.example.e default='left'"}} and good["enums"]=={"org.example.e":["left=0"]} and len(good["sha256"])==64 and good["review_id"]=="90001"
+for info,data in (({"uuid":"Vitals@CoreCoding.com","version":85},probe_archive()),
+                  ({"uuid":"Vitals@CoreCoding.com","version_tag":90001},probe_archive("50"))):
+    try: m.probe_candidate(1460,51,probe_transport(info,data))
+    except ValueError: pass
+    else: raise AssertionError("probe accepted a candidate without a GNOME 51 build")
+# Pinned-archive check: exact URL content, digest, UUID and GNOME major must still hold.
+pa=probe_archive()
+import hashlib
+pins={"RESOURCE_MONITOR_UUID":"Vitals@CoreCoding.com","RESOURCE_MONITOR_SOURCE_URL":"https://extensions.gnome.org/review/download/1.shell-extension.zip","RESOURCE_MONITOR_SHA256":hashlib.sha256(pa).hexdigest()}
+assert "verified" in m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+pins["RESOURCE_MONITOR_SCHEMA"]="org.example.other"
+try: m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+except ValueError as error: assert "installer expects" in str(error)
+else: raise AssertionError("archive without the installer schema file accepted")
+pins["RESOURCE_MONITOR_SCHEMA"]="x"
+assert "verified" in m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+pins["RESOURCE_MONITOR_SHA256"]="0"*64
+try: m.pinned_check("RESOURCE_MONITOR",pins,51,lambda url: pa)
+except ValueError as error: assert "digest changed" in str(error)
+else: raise AssertionError("tampered pinned archive accepted")
 try: m.profile.validate(root,45)
 except ValueError as error: assert "pending" in str(error)
 else: raise AssertionError("unqualified future profile accepted")
