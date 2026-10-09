@@ -17,7 +17,7 @@ permissions:
 jobs:
   rpm:
     runs-on: ubuntu-latest
-    container: fedora:${{ inputs.fedora_release || '44' }}
+    container: public.ecr.aws/docker/library/fedora:${{ inputs.fedora_release || '44' }}
     timeout-minutes: 20
     steps:
       - name: Install disposable preflight dependencies

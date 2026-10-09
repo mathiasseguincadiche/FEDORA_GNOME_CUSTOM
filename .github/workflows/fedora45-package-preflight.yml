@@ -33,7 +33,7 @@ jobs:
 
   packages45:
     runs-on: ubuntu-latest
-    container: fedora:45
+    container: public.ecr.aws/docker/library/fedora:45
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

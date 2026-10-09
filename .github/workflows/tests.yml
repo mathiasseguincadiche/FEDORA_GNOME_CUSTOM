@@ -44,15 +44,15 @@ jobs:
           application="fgc-existing-application-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           trap 'docker network rm "$application" >/dev/null 2>&1 || true' EXIT
           docker network create "$application" >/dev/null
-          docker pull busybox:1.37.0 >/dev/null
-          image="$(docker image inspect --format '{{.Id}}' busybox:1.37.0)"
+          docker pull public.ecr.aws/docker/library/busybox:1.37.0 >/dev/null
+          image="$(docker image inspect --format '{{.Id}}' public.ecr.aws/docker/library/busybox:1.37.0)"
           guest/rocky-devops/verify-docker-network.sh "$image"
           docker network inspect "$application" >/dev/null
           test -z "$(docker network ls --filter label=fgc.network-probe --format '{{.ID}}')"
           test -z "$(docker ps -a --filter label=fgc.network-probe --format '{{.ID}}')"
           # A cached image without the required shell forces a real start failure.
-          docker pull hello-world:latest >/dev/null
-          bad_image="$(docker image inspect --format '{{.Id}}' hello-world:latest)"
+          docker pull public.ecr.aws/docker/library/hello-world:latest >/dev/null
+          bad_image="$(docker image inspect --format '{{.Id}}' public.ecr.aws/docker/library/hello-world:latest)"
           if guest/rocky-devops/verify-docker-network.sh "$bad_image"; then
             echo 'A broken Docker probe returned success' >&2
             exit 1
@@ -244,7 +244,7 @@ jobs:
 
   installer-audit:
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: public.ecr.aws/docker/library/fedora:44
     timeout-minutes: 20
     steps:
       # Git must exist BEFORE actions/checkout: without it, checkout silently
@@ -293,7 +293,7 @@ jobs:
 
   borg-fedora:
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: public.ecr.aws/docker/library/fedora:44
     timeout-minutes: 15
     steps:
       - name: Install Fedora Borg and test dependencies

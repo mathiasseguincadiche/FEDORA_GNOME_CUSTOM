@@ -37,7 +37,7 @@ concurrency:
 jobs:
   gaming-stack:
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: public.ecr.aws/docker/library/fedora:44
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
