@@ -31,6 +31,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 ---
 
 <p align="center">
+  <a href="#aperçu-du-bureau">Aperçu</a> ·
   <a href="#démarrage-rapide">Démarrage</a> ·
   <a href="#architecture-globale">Architecture</a> ·
   <a href="#les-quatre-piliers">4 piliers</a> ·
@@ -44,6 +45,16 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
   <a href="#validation-complète--à-lire-avant-linstallation-de-production">Validation</a> ·
   <a href="#documentation">Docs</a>
 </p>
+
+## Aperçu du bureau
+
+<p align="center">
+  <img src="docs/assets/desktop-preview.svg" alt="Maquette du bureau cible : barre supérieure avec bouton Afficher le bureau et moniteur Vitals, dock à gauche, Ptyxis et Fichiers en tuilage, Corbeille sur le bureau" width="100%">
+</p>
+
+> **Maquette illustrative, pas une capture réelle.** Elle montre ce que le profil vise : GNOME 51 natif sous Wayland, dock à gauche avec les huit favoris certifiés, bouton « Afficher le bureau » et télémétrie CPU / RAM / réseau dans la barre, Corbeille sur le bureau, Ptyxis et Fichiers en tuilage, données de travail sur `/data`. Les captures réelles viendront de la Gate 3 sur la machine.
+
+---
 
 ## État du projet
 
