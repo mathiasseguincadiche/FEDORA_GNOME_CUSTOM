@@ -1,16 +1,20 @@
 <div align="center">
 
 
-# Fedora 44 Golden Workstation
+# Fedora Golden Workstation
 
 **Production-oriented · Reproductible · Récupérable · CI-gated**
 
-**Fedora 44 · GNOME 50 · Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
+**Fedora 44 · GNOME 50 (référence testée) → Fedora 45 · GNOME 51 (en préparation)**
+
+**Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
 
 [![Tests](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml)
 [![Shell quality](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml)
 [![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
 [![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
+[![Fedora 45 package and driver preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora45-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora45-package-preflight.yml)
+[![Fedora 45 GNOME 51 preview readiness](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/release-readiness.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/release-readiness.yml)
 
 **Golden Workstation 0.22.2**
 
@@ -22,7 +26,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 
 > **Pourquoi ce projet existe, ses quatre piliers et les décisions du propriétaire : [docs/VISION.md](docs/VISION.md).** État : code prêt (CI verte), machine pas encore certifiée (Gate 2 puis Gate 3).
 > Les sauvegardes utilisent Borg **sans chiffrement**, par décision du propriétaire (ADR 0014). Un PASS CI ne certifie pas le poste physique.
-> La [fiche d'exécution physique](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) prépare les mesures sur le PC. La [qualification réseau Docker](docs/ROCKY_DEVOPS_READY.md#qualification-réseau-docker) couvre redémarrage/restauration ; les notices de maintenance EL10 restent visibles.
+> La [fiche d'exécution physique](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) prépare les mesures sur le PC. La [qualification réseau Docker](docs/ROCKY_DEVOPS_READY.md#qualification-réseau-docker) couvre redémarrage/restauration (les notices de maintenance du labo Rocky Linux 10 restent visibles dans ces guides).
 
 ---
 
@@ -48,6 +52,7 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 | **Code / contrats** | `CODE-READY` |
 | **CI de `main`** | 6 checks obligatoires avant fusion : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration`, `nautilus-ptyxis` |
 | **Matériel cible** | MSI MAG B850M MORTAR WIFI · Ryzen 7 7700 · Arc B580 · 48 Gio · 2× Crucial T705 |
+| **Fedora 45 / GNOME 51** | Préparé et vérifié en CI ; profil `pending` jusqu'à l'ISO finale signée ([détails](docs/UPGRADE_FEDORA_45.md)) |
 | **Certification physique** | **PENDING** — Gate 3 bare-metal |
 | **Golden runtime-certified** | Non, tant que `gate3 certify` n'a pas réussi sur la machine cible |
 
