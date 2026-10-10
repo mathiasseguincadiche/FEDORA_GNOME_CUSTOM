@@ -27,7 +27,7 @@ remote_ssh_apply() {
   # restore an existing working configuration rather than silently deleting it.
   if ! is_true "${DRY_RUN:-true}" && sudo test -f "$dropin"; then
     previous="$(mktemp)" || { rm -f "$tmp"; return "$EXIT_APPLY_FAILED"; }
-    sudo cat "$dropin" > "$previous" || { rm -f "$tmp" "$previous"; return "$EXIT_APPLY_FAILED"; }
+    sudo cat "$dropin" | tee "$previous" >/dev/null || { rm -f "$tmp" "$previous"; return "$EXIT_APPLY_FAILED"; }
   fi
   run_mutating REMOTE sudo install -Dm0644 "$tmp" "$dropin" || { rm -f "$tmp" "$previous"; return "$EXIT_APPLY_FAILED"; }
   rm -f "$tmp"

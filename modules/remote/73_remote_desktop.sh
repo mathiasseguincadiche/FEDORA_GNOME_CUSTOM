@@ -32,9 +32,12 @@ remote_desktop_sunshine() {
     install_manifest_packages REMOTE "$REPO_ROOT/manifests/packages-remote-sunshine.txt" || return "$EXIT_APPLY_FAILED"
     # Security default upstream is LAN. Restrict the administration Web UI to localhost.
     run_mutating REMOTE python3 "$REPO_ROOT/scripts/remote/sunshine-config.py" "$conf" || return "$EXIT_APPLY_FAILED"
-    run_mutating REMOTE systemctl --user enable sunshine.service || return "$EXIT_APPLY_FAILED"
-    run_mutating REMOTE sudo install -d -m 0755 "$(remote_state_dir)" || return "$EXIT_APPLY_FAILED"
-    run_mutating REMOTE sudo touch "$marker" || return "$EXIT_APPLY_FAILED"
+    # Do not claim ownership of a service already enabled manually.
+    if is_true "${DRY_RUN:-true}" || sudo test -e "$marker" || ! systemctl --user is-enabled --quiet sunshine.service; then
+      run_mutating REMOTE systemctl --user enable sunshine.service || return "$EXIT_APPLY_FAILED"
+      run_mutating REMOTE sudo install -d -m 0755 "$(remote_state_dir)" || return "$EXIT_APPLY_FAILED"
+      run_mutating REMOTE sudo touch "$marker" || return "$EXIT_APPLY_FAILED"
+    fi
   elif [[ -e "$marker" ]]; then
     # Only disable a Sunshine service previously enabled through our profile.
     run_mutating REMOTE systemctl --user disable --now sunshine.service || return "$EXIT_APPLY_FAILED"
@@ -52,7 +55,7 @@ remote_desktop_autologin() {
   if remote_autologin_enabled; then
     run_mutating REMOTE sudo install -d -m 0755 "$(remote_state_dir)" || return "$EXIT_APPLY_FAILED"
     if ! sudo test -e "$marker"; then
-      run_mutating REMOTE sudo cp -n "$conf" "$conf.fgc-backup" || return "$EXIT_APPLY_FAILED"
+      run_mutating REMOTE sudo cp "$conf" "$conf.fgc-backup" || return "$EXIT_APPLY_FAILED"
     fi
     run_mutating REMOTE sudo python3 "$REPO_ROOT/scripts/remote/gdm_autologin.py" enable --user "$user" --file "$conf" || return "$EXIT_APPLY_FAILED"
     run_mutating REMOTE sudo touch "$marker" || return "$EXIT_APPLY_FAILED"

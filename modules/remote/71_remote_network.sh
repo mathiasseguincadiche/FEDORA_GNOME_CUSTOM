@@ -45,7 +45,7 @@ remote_network_firewall() {
   state="$(remote_state_dir)/sunshine-ports.managed"
   previous="$(mktemp)" || return "$EXIT_APPLY_FAILED"
   next="$(mktemp)" || { rm -f "$previous"; return "$EXIT_APPLY_FAILED"; }
-  if sudo test -f "$state"; then sudo cat "$state" > "$previous" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }; fi
+  if sudo test -f "$state"; then sudo cat "$state" | tee "$previous" >/dev/null || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }; fi
   desired=''
   if remote_sunshine_enabled; then
     for port in ${REMOTE_SUNSHINE_TCP_PORTS:-}; do desired="$desired $zone:$port/tcp"; done
@@ -65,7 +65,7 @@ remote_network_firewall() {
       fi
       run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --remove-port="$proto" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
     fi
-  done < "$previous"
+  done < <(cat "$previous")
   for entry in $desired; do
     if grep -Fxq "$entry" "$next"; then continue; fi
     proto="${entry#*:}"
