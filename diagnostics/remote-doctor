@@ -130,7 +130,7 @@ fi
 if remote_autologin_enabled; then
   if [[ "$(remote_autologin_status)" == "enabled user=$(remote_user)" ]]; then emit OK Autologin 'GDM automatic login configured'; else emit KO Autologin 'REMOTE_AUTOLOGIN=true but GDM is not configured'; fi
   if is_true "${REMOTE_LOCK_ON_AUTOLOGIN:-true}"; then
-    if systemctl --user is-enabled fgc-remote-lock.service >/dev/null 2>&1; then emit OK 'Session lock' 'locked right after automatic login'; else emit KO 'Session lock' 'fgc-remote-lock.service not enabled'; fi
+    if systemctl --user is-enabled fgc-remote-lock.service >/dev/null 2>&1; then emit WARN 'Session lock' 'lock service enabled; verify the actual lock during Gate 3'; else emit KO 'Session lock' 'fgc-remote-lock.service not enabled'; fi
   else
     emit WARN 'Session lock' 'REMOTE_LOCK_ON_AUTOLOGIN=false: anyone with physical access gets an unlocked session'
   fi

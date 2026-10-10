@@ -23,7 +23,6 @@ remote_network_plan() {
 remote_network_firewall() {
   local zone="${REMOTE_TAILSCALE_ZONE:-fgc-tailnet}" iface="${REMOTE_TAILSCALE_INTERFACE:-tailscale0}"
   local lan_zone rule family state previous next desired proto port entry
-  zone="${zone}"
   lan_zone="$(remote_lan_zone || true)"
   lan_zone="${lan_zone:-FedoraWorkstation}"
   if is_true "${DRY_RUN:-true}" || ! remote_zone_exists "$zone"; then

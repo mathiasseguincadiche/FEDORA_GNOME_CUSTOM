@@ -121,7 +121,7 @@ rm -f "$labdir/guard.service"
 
 # 2d. Turning Sunshine off reconciles only previously managed firewalld ports.
 mkdir -p "$labdir/state"
-printf 'fgc-tailnet:47984/tcp\\nfgc-tailnet:47998/udp\\n' > "$labdir/state/sunshine-ports.managed"
+printf 'fgc-tailnet:47984/tcp\nfgc-tailnet:47998/udp\n' > "$labdir/state/sunshine-ports.managed"
 phase 71_remote_network.sh remote_network_firewall REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=false >/dev/null
 calls_have '--remove-port=47984/tcp'
 calls_have '--remove-port=47998/udp'

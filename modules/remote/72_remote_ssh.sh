@@ -18,7 +18,7 @@ remote_ssh_plan() {
 
 remote_ssh_apply() {
   remote_enabled || return 0
-  local user dropin tmp zone previous='' 
+  local user dropin tmp zone previous=''
   user="$(remote_user)"
   dropin="$(remote_sshd_dropin)"
   tmp="$(mktemp)" || return "$EXIT_APPLY_FAILED"
@@ -65,7 +65,7 @@ remote_ssh_postcheck() {
   grep -Fxq 'pubkeyauthentication yes' <<<"$effective" || return "$EXIT_POSTCHECK_FAILED"
   grep -Fxq "allowusers $user" <<<"$effective" || { log_error REMOTE "sshd must allow only $user"; return "$EXIT_POSTCHECK_FAILED"; }
   if ! is_true "${REMOTE_SSH_LAN:-false}"; then
-    zone="$(remote_default_zone || true)"; zone="${zone:-FedoraWorkstation}"
+    zone="$(remote_lan_zone || true)"; zone="${zone:-FedoraWorkstation}"
     if remote_zone_has_service "$zone" ssh; then log_error REMOTE "ssh is still open in the LAN zone $zone"; return "$EXIT_POSTCHECK_FAILED"; fi
   fi
 }
