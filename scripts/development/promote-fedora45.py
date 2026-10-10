@@ -4,7 +4,7 @@
 Verifies the ISO against the signed CHECKSUM with the pinned Fedora 45 key, then writes
 installer/fedora45-media.lock and profiles/fedora45/profile.json (status "ready") with the real
 digests, and runs the same validator that every guard uses. On any failure the two files are
-restored. It does not commit, does not push and does not certify hardware.
+restored. promotion_source_commit identifies code examined BEFORE changing the locks. It does not attest a CI result for the resulting commit, does not commit, push or certify hardware.
 """
 import argparse
 import datetime
@@ -113,7 +113,8 @@ def promote(root, iso, checksum, keyring, commit, now=None):
             "media_lock_sha256": sha256_file(media_path),
             "extensions_lock_sha256": sha256_file(extensions_path),
             "packages_lock_sha256": sha256_file(packages_path),
-            "qualification_commit": commit,
+            # This SHA predates the new media lock: it is NOT CI evidence on the promoted tree.
+            "promotion_source_commit": commit,
         }
         profile_path.write_text(json.dumps(profile, indent=2) + "\n")
         load_validator(root).validate(root, 45)
@@ -140,7 +141,7 @@ def main():
     except (ValueError, OSError, KeyError) as error:
         print("PROMOTION REFUSED: " + str(error), file=sys.stderr)
         return 1
-    print("Fedora 45 profile promoted: status=ready qualification_commit=" + profile["qualification_commit"])
+    print("Fedora 45 profile promoted: status=ready promotion_source_commit=" + profile["promotion_source_commit"])
     print("Review `git diff`, commit installer/fedora45-media.lock and profiles/fedora45/profile.json, "
           "and let the CI run on that commit.")
     return 0

@@ -64,7 +64,7 @@ python3 - "$repo" "$digest" "$head" <<'PY'
 import json, pathlib, sys
 root, digest, head = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 profile = json.loads((root / "profiles/fedora45/profile.json").read_text())
-assert profile["status"] == "ready" and profile["qualification_commit"] == head
+assert profile["status"] == "ready" and profile["promotion_source_commit"] == head
 lock = (root / "installer/fedora45-media.lock").read_text()
 assert "ISO_SHA256=" + digest in lock and "RELEASE_STATUS=final" in lock and "FEDORA_COMPOSE=1.3" in lock
 PY

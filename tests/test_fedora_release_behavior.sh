@@ -39,7 +39,7 @@ def seal():
         "media_lock_sha256":hashlib.sha256(media.read_bytes()).hexdigest(),
         "extensions_lock_sha256":hashlib.sha256(extensions.read_bytes()).hexdigest(),
         "packages_lock_sha256":hashlib.sha256(packages.read_bytes()).hexdigest(),
-        "qualification_commit":"b"*40}))
+        "promotion_source_commit":"b"*40}))
 seal(); m.validate(work,45)
 def rejected():
     try: m.validate(work,45)
