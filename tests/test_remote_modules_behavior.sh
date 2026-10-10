@@ -155,7 +155,8 @@ expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABL
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false | tail -n1)" 20 'missing SSH public key must be refused'
 printf 'not-a-key\n' > "$labdir/home/.ssh/authorized_keys"
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false | tail -n1)" 20 'a file without a public key must be refused'
-printf 'ssh-ed25519 AAAAC3Nza tablet\n' > "$labdir/home/.ssh/authorized_keys"
+ssh-keygen -q -t ed25519 -N '' -f "$labdir/tablet-key" >/dev/null
+cp "$labdir/tablet-key.pub" "$labdir/home/.ssh/authorized_keys"
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false | tail -n1)" 0 'complete real preflight'
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false STUB_ENFORCE=Permissive | tail -n1)" 20 'SELinux not enforcing must be refused'
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false REMOTE_SYSFS_ROOT="$labdir/empty-sys" | tail -n1)" 20 'missing wired interface must be refused'

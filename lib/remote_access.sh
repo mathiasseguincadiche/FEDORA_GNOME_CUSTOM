@@ -51,7 +51,9 @@ remote_wol_magic_active() {
 }
 
 remote_authorized_keys_present() {
-  [[ -s "$HOME/.ssh/authorized_keys" ]] && grep -Eq '^(ssh-|ecdsa-|sk-)' "$HOME/.ssh/authorized_keys"
+  local keys="$HOME/.ssh/authorized_keys"
+  [[ -s "$keys" ]] && command -v ssh-keygen >/dev/null 2>&1 &&
+    ssh-keygen -lf "$keys" >/dev/null 2>&1
 }
 
 remote_tailscale_backend_state() {
