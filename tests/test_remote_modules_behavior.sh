@@ -106,7 +106,8 @@ calls_lack 'kvm-guard'
 phase 71_remote_network.sh remote_network_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=true >/dev/null
 calls_have '--zone=fgc-tailnet --add-port=47984/tcp'
 calls_have '--zone=fgc-tailnet --add-port=47998/udp'
-calls_lack '47990'
+calls_lack '--add-port=47990'
+calls_have 'port port="47990" protocol="tcp" drop'
 
 # 2c. WoL link fallback and KVM guard drop-in when their preconditions hold.
 : > "$labdir/guard.service"
@@ -117,6 +118,15 @@ calls_have 'systemctl reload-or-restart fedora-gnome-custom-kvm-guard.service'
 phase 71_remote_network.sh remote_network_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_WOL_ENABLE=false >/dev/null
 calls_lack 'wake-on-lan'
 rm -f "$labdir/guard.service"
+
+# 2d. Turning Sunshine off reconciles only previously managed firewalld ports.
+mkdir -p "$labdir/state"
+printf 'fgc-tailnet:47984/tcp\\nfgc-tailnet:47998/udp\\n' > "$labdir/state/sunshine-ports.managed"
+phase 71_remote_network.sh remote_network_firewall REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=false >/dev/null
+calls_have '--remove-port=47984/tcp'
+calls_have '--remove-port=47998/udp'
+calls_lack '--add-port=47984/tcp'
+rm -f "$labdir/state/sunshine-ports.managed"
 
 # 3. SSH module: hardened drop-in, LAN closure only when not opted out.
 expect_rc "$(phase 72_remote_ssh.sh remote_ssh_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SSHD_DROPIN="$labdir/00-fgc-remote.conf" | tail -n1)" 0 'ssh apply'

@@ -47,7 +47,7 @@ remote_ssh_apply() {
   run_mutating REMOTE sudo systemctl enable --now sshd.service || return "$EXIT_APPLY_FAILED"
   run_mutating REMOTE sudo systemctl reload sshd.service || return "$EXIT_APPLY_FAILED"
   if ! is_true "${REMOTE_SSH_LAN:-false}"; then
-    zone="$(remote_default_zone || true)"; zone="${zone:-FedoraWorkstation}"
+    zone="$(remote_lan_zone || true)"; zone="${zone:-FedoraWorkstation}"
     run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --remove-service=ssh || return "$EXIT_APPLY_FAILED"
     run_mutating REMOTE sudo firewall-cmd --reload || return "$EXIT_APPLY_FAILED"
   fi
