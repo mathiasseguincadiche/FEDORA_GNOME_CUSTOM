@@ -144,6 +144,13 @@ phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true 
 calls_have 'dnf -y copr enable lizardbyte/stable'
 calls_have 'PKGS packages-remote-sunshine.txt'
 calls_have 'systemctl --user enable sunshine.service'
+calls_have 'sunshine-config.py'
+calls_have 'sunshine-managed'
+mkdir -p "$labdir/state"
+touch "$labdir/state/sunshine-managed"
+phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=false >/dev/null
+calls_have 'systemctl --user disable --now sunshine.service'
+rm -f "$labdir/state/sunshine-managed"
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_AUTOLOGIN=true >/dev/null
 calls_have 'gdm_autologin.py enable --user'
 calls_have 'systemctl --user enable fgc-remote-lock.service'

@@ -24,11 +24,22 @@ remote_desktop_plan() {
 }
 
 remote_desktop_sunshine() {
-  remote_sunshine_enabled || return 0
-  run_mutating REMOTE sudo dnf -y copr enable "${REMOTE_SUNSHINE_COPR:-lizardbyte/stable}" || return "$EXIT_APPLY_FAILED"
-  install_manifest_packages REMOTE "$REPO_ROOT/manifests/packages-remote-sunshine.txt" || return "$EXIT_APPLY_FAILED"
-  # Started at the next graphical login: Sunshine needs a user session to capture.
-  run_mutating REMOTE systemctl --user enable sunshine.service || return "$EXIT_APPLY_FAILED"
+  local marker conf
+  marker="$(remote_state_dir)/sunshine-managed"
+  conf="$HOME/.config/sunshine/sunshine.conf"
+  if remote_sunshine_enabled; then
+    run_mutating REMOTE sudo dnf -y copr enable "${REMOTE_SUNSHINE_COPR:-lizardbyte/stable}" || return "$EXIT_APPLY_FAILED"
+    install_manifest_packages REMOTE "$REPO_ROOT/manifests/packages-remote-sunshine.txt" || return "$EXIT_APPLY_FAILED"
+    # Security default upstream is LAN. Restrict the administration Web UI to localhost.
+    run_mutating REMOTE python3 "$REPO_ROOT/scripts/remote/sunshine-config.py" "$conf" || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE systemctl --user enable sunshine.service || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE sudo install -d -m 0755 "$(remote_state_dir)" || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE sudo touch "$marker" || return "$EXIT_APPLY_FAILED"
+  elif [[ -e "$marker" ]]; then
+    # Only disable a Sunshine service previously enabled through our profile.
+    run_mutating REMOTE systemctl --user disable --now sunshine.service || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE sudo rm -f "$marker" || return "$EXIT_APPLY_FAILED"
+  fi
 }
 
 remote_desktop_autologin() {
@@ -44,6 +55,8 @@ remote_desktop_autologin() {
       run_mutating REMOTE install -Dm0644 "$REPO_ROOT/remote/systemd/user/fgc-remote-lock.service" "$HOME/.config/systemd/user/fgc-remote-lock.service" || return "$EXIT_APPLY_FAILED"
       run_mutating REMOTE systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
       run_mutating REMOTE systemctl --user enable fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
+    elif [[ -f "$HOME/.config/systemd/user/fgc-remote-lock.service" ]]; then
+      run_mutating REMOTE systemctl --user disable --now fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
     fi
   elif [[ -e "$marker" ]]; then
     # Converge only what this profile created: a hand-made GDM configuration has no marker and is left alone.
@@ -52,6 +65,11 @@ remote_desktop_autologin() {
       run_mutating REMOTE sudo python3 "$REPO_ROOT/scripts/remote/gdm_autologin.py" disable || return "$EXIT_APPLY_FAILED"
     fi
     run_mutating REMOTE sudo rm -f "$marker" || return "$EXIT_APPLY_FAILED"
+    if [[ -f "$HOME/.config/systemd/user/fgc-remote-lock.service" ]]; then
+      run_mutating REMOTE systemctl --user disable --now fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
+      run_mutating REMOTE rm -f "$HOME/.config/systemd/user/fgc-remote-lock.service" || return "$EXIT_APPLY_FAILED"
+      run_mutating REMOTE systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
+    fi
   fi
 }
 
@@ -81,6 +99,8 @@ remote_desktop_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   if remote_sunshine_enabled; then
     rpm -q Sunshine >/dev/null 2>&1 || { log_error REMOTE 'Sunshine package missing'; return "$EXIT_POSTCHECK_FAILED"; }
+    python3 "$REPO_ROOT/scripts/remote/sunshine-config.py" --check "$HOME/.config/sunshine/sunshine.conf" ||
+      { log_error REMOTE 'Sunshine web UI is not restricted to localhost'; return "$EXIT_POSTCHECK_FAILED"; }
   fi
   if remote_autologin_enabled; then
     [[ "$(remote_autologin_status)" == "enabled user=$(remote_user)" ]] || { log_error REMOTE 'GDM automatic login is not configured for the workstation user'; return "$EXIT_POSTCHECK_FAILED"; }

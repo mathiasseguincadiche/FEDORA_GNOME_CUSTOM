@@ -11,7 +11,7 @@ for file in \
   lib/remote_access.sh diagnostics/remote-doctor \
   modules/remote/70_remote_preflight.sh modules/remote/71_remote_network.sh modules/remote/72_remote_ssh.sh modules/remote/73_remote_desktop.sh modules/remote/79_remote_validation.sh \
   remote/ssh/00-fgc-remote.conf.in remote/polkit/50-fgc-remote-power.rules.in remote/systemd/network/80-fgc-wol.link remote/systemd/user/fgc-remote-lock.service \
-  scripts/remote/wol-send.py scripts/remote/gdm_autologin.py \
+   scripts/remote/wol-send.py scripts/remote/gdm_autologin.py scripts/remote/sunshine-config.py \
   docs/REMOTE_ACCESS.md docs/adr/0017-remote-access.md; do
   [[ -s "$file" ]] || fail "missing $file"
 done

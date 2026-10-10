@@ -114,6 +114,11 @@ fi
 # --- Sunshine / session --------------------------------------------------------------------------
 if remote_sunshine_enabled; then
   if rpm -q Sunshine >/dev/null 2>&1; then emit OK Sunshine 'package installed'; else emit KO Sunshine 'package missing'; fi
+  if python3 "$REPO_ROOT/scripts/remote/sunshine-config.py" --check "$HOME/.config/sunshine/sunshine.conf"; then
+    emit OK 'Sunshine Web UI' 'configuration restricted to localhost'
+  else
+    emit KO 'Sunshine Web UI' 'configuration must have origin_web_ui_allowed=pc'
+  fi
   if runtime_is_baremetal; then
     node="$(drm_render_node_for_pci_id "${EXPECTED_GPU_PCI_VENDOR:-8086}" "${EXPECTED_GPU_PCI_DEVICE:-e20b}" 2>/dev/null || true)"
     if [[ -n "$node" ]] && remote_vaapi_av1_encode "$node"; then
