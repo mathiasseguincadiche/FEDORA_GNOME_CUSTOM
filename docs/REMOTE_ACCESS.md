@@ -139,7 +139,7 @@ Ces ports doivent être **reconfirmés** avec `ss -tulpn` pendant le Gate 3 : je
 
 **Il faut une session graphique ouverte.** Après un réveil, le PC s'arrête sur l'écran de connexion GDM : sans session, Sunshine n'a rien à capturer. Deux options :
 
-- `REMOTE_AUTOLOGIN="true"` : GDM ouvre la session seul, et `REMOTE_LOCK_ON_AUTOLOGIN="true"` la **verrouille aussitôt** (vous saisissez le mot de passe depuis la tablette). Compromis à connaître : les disques ne sont pas chiffrés (ADR 0002), donc l'accès physique reste un accès au compte.
+- `REMOTE_AUTOLOGIN="true"` : GDM ouvre la session seul, et `REMOTE_LOCK_ON_AUTOLOGIN="true"` demande son **verrouillage** (vous saisissez le mot de passe depuis la tablette). Le service résout explicitement la session Wayland active et refuse le succès si `LockedHint=yes` n'est pas observé ; seule la Gate 3 prouve le fonctionnement de bout en bout. Compromis à connaître : les disques ne sont pas chiffrés (ADR 0002), donc l'accès physique reste un accès au compte.
 - Ne pas utiliser Sunshine, et passer par GNOME Remote Desktop.
 
 **Réglages de départ** (cahier des charges, à ajuster par mesure) :
@@ -219,7 +219,7 @@ Rien de ce qui suit n'est prouvable par la CI : c'est une **mesure sur le PC**.
 
 **Si le réveil échoue après un arrêt complet** mais fonctionne après une veille : activer `REMOTE_WOL_LINK_FALLBACK="true"` (le réglage est alors posé par `systemd-udev`, indépendamment de NetworkManager), puis recommencer les cycles. Si cela échoue encore, comparer arrêt (S5) et suspension (S3) : le projet a déjà une qualification de veille/reprise, à réutiliser.
 
-**Critère d'arrêt :** un seul cycle nécessitant une intervention locale invalide la qualification du profil.
+**Critère d'arrêt :** un seul cycle nécessitant une intervention locale invalide la qualification du profil. Ne jamais considérer le simple statut `enabled` du service `fgc-remote-lock.service` comme une preuve que la session est verrouillée. Tester le verrouillage à chaque boot avec `loginctl show-session SESSION -p LockedHint`.
 
 ---
 

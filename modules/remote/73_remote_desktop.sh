@@ -43,33 +43,38 @@ remote_desktop_sunshine() {
 }
 
 remote_desktop_autologin() {
-  local user marker conf=/etc/gdm/custom.conf state
+  local user marker conf state lock_unit lock_bin
   user="$(remote_user)"
   marker="$(remote_state_dir)/autologin-managed"
+  conf="${REMOTE_GDM_CONF:-/etc/gdm/custom.conf}"
+  lock_unit="$HOME/.config/systemd/user/fgc-remote-lock.service"
+  lock_bin="$HOME/.local/libexec/fgc-remote-lock"
   if remote_autologin_enabled; then
     run_mutating REMOTE sudo install -d -m 0755 "$(remote_state_dir)" || return "$EXIT_APPLY_FAILED"
-    run_mutating REMOTE sudo cp -n "$conf" "$conf.fgc-backup" || true
-    run_mutating REMOTE sudo python3 "$REPO_ROOT/scripts/remote/gdm_autologin.py" enable --user "$user" || return "$EXIT_APPLY_FAILED"
-    run_mutating REMOTE sudo touch "$marker" || return "$EXIT_APPLY_FAILED"
-    if is_true "${REMOTE_LOCK_ON_AUTOLOGIN:-true}"; then
-      run_mutating REMOTE install -Dm0644 "$REPO_ROOT/remote/systemd/user/fgc-remote-lock.service" "$HOME/.config/systemd/user/fgc-remote-lock.service" || return "$EXIT_APPLY_FAILED"
-      run_mutating REMOTE systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
-      run_mutating REMOTE systemctl --user enable fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
-    elif [[ -f "$HOME/.config/systemd/user/fgc-remote-lock.service" ]]; then
-      run_mutating REMOTE systemctl --user disable --now fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
+    if ! sudo test -e "$marker"; then
+      run_mutating REMOTE sudo cp -n "$conf" "$conf.fgc-backup" || return "$EXIT_APPLY_FAILED"
     fi
-  elif [[ -e "$marker" ]]; then
-    # Converge only what this profile created: a hand-made GDM configuration has no marker and is left alone.
+    run_mutating REMOTE sudo python3 "$REPO_ROOT/scripts/remote/gdm_autologin.py" enable --user "$user" --file "$conf" || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE sudo touch "$marker" || return "$EXIT_APPLY_FAILED"
+  elif sudo test -e "$marker"; then
     state="$(remote_autologin_status)"
-    if [[ "$state" == enabled* ]]; then
-      run_mutating REMOTE sudo python3 "$REPO_ROOT/scripts/remote/gdm_autologin.py" disable || return "$EXIT_APPLY_FAILED"
+    if [[ "$state" == "enabled user=$user" ]]; then
+      run_mutating REMOTE sudo python3 "$REPO_ROOT/scripts/remote/gdm_autologin.py" disable --file "$conf" --restore-from "$conf.fgc-backup" || return "$EXIT_APPLY_FAILED"
+    elif [[ "$state" == enabled* ]]; then
+      log_error REMOTE 'GDM was changed to a different user: refusing to change manually managed autologin'
+      return "$EXIT_APPLY_FAILED"
     fi
     run_mutating REMOTE sudo rm -f "$marker" || return "$EXIT_APPLY_FAILED"
-    if [[ -f "$HOME/.config/systemd/user/fgc-remote-lock.service" ]]; then
-      run_mutating REMOTE systemctl --user disable --now fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
-      run_mutating REMOTE rm -f "$HOME/.config/systemd/user/fgc-remote-lock.service" || return "$EXIT_APPLY_FAILED"
-      run_mutating REMOTE systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
-    fi
+  fi
+  if remote_autologin_enabled && is_true "${REMOTE_LOCK_ON_AUTOLOGIN:-true}"; then
+    run_mutating REMOTE install -Dm0755 "$REPO_ROOT/scripts/remote/lock-graphical-session.sh" "$lock_bin" || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE install -Dm0644 "$REPO_ROOT/remote/systemd/user/fgc-remote-lock.service" "$lock_unit" || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE systemctl --user enable fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
+  elif [[ -f "$lock_unit" ]]; then
+    run_mutating REMOTE systemctl --user disable --now fgc-remote-lock.service || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE rm -f "$lock_unit" "$lock_bin" || return "$EXIT_APPLY_FAILED"
+    run_mutating REMOTE systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
   fi
 }
 

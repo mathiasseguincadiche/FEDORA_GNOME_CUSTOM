@@ -42,6 +42,10 @@ python3 "$gdm" enable --user alice --file "$conf"
 python3 "$gdm" disable --file "$conf"
 [[ "$(python3 "$gdm" status --file "$conf")" == disabled ]] || fail 'status after disable'
 grep -Fq 'WaylandEnable=true' "$conf" || fail 'disable must preserve unrelated settings'
+printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=original\n' > "$tmp/gdm-original"
+python3 "$gdm" enable --user mathias --file "$conf"
+python3 "$gdm" disable --file "$conf" --restore-from "$tmp/gdm-original"
+[[ "$(python3 "$gdm" status --file "$conf")" == 'enabled user=original' ]] || fail 'existing autologin must be restored from backup'
 if python3 "$gdm" enable --user root --file "$conf" 2>/dev/null; then fail 'root automatic login must be refused'; fi
 if python3 "$gdm" enable --user 'a;b' --file "$conf" 2>/dev/null; then fail 'invalid user name accepted'; fi
 : > "$tmp/empty.conf"

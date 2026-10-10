@@ -154,6 +154,7 @@ rm -f "$labdir/state/sunshine-managed"
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_AUTOLOGIN=true >/dev/null
 calls_have 'gdm_autologin.py enable --user'
 calls_have 'systemctl --user enable fgc-remote-lock.service'
+calls_have 'lock-graphical-session.sh'
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_AUTOLOGIN=true REMOTE_LOCK_ON_AUTOLOGIN=false >/dev/null
 calls_lack 'fgc-remote-lock'
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_POWEROFF_POLKIT=true REMOTE_POLKIT_RULE="$labdir/rule" >/dev/null
