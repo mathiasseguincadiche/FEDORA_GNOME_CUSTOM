@@ -76,7 +76,7 @@ if systemctl is-active --quiet sshd.service; then
   fi
   if grep -Fxq "allowusers $user" <<<"$effective"; then emit OK 'SSH users' "AllowUsers $user"; else emit KO 'SSH users' "sshd must allow only $user"; fi
   if ! is_true "${REMOTE_SSH_LAN:-false}"; then
-    lan_zone="$(remote_default_zone || true)"; lan_zone="${lan_zone:-FedoraWorkstation}"
+    lan_zone="$(remote_lan_zone || true)"; lan_zone="${lan_zone:-FedoraWorkstation}"
     if remote_zone_has_service "$lan_zone" ssh; then emit KO 'SSH on LAN' "ssh still open in zone $lan_zone"; else emit OK 'SSH on LAN' "ssh closed in zone $lan_zone (tailnet only)"; fi
   fi
   if remote_authorized_keys_present; then emit OK 'SSH keys' 'authorized_keys holds a public key'; else emit KO 'SSH keys' 'authorized_keys empty: remote login impossible'; fi
@@ -115,9 +115,9 @@ fi
 if remote_sunshine_enabled; then
   if rpm -q Sunshine >/dev/null 2>&1; then emit OK Sunshine 'package installed'; else emit KO Sunshine 'package missing'; fi
   if python3 "$REPO_ROOT/scripts/remote/sunshine-config.py" --check "$HOME/.config/sunshine/sunshine.conf"; then
-    emit OK 'Sunshine Web UI' 'configuration restricted to localhost'
+    emit OK 'Sunshine Web UI' 'localhost-only administration; UPnP disabled'
   else
-    emit KO 'Sunshine Web UI' 'configuration must have origin_web_ui_allowed=pc'
+    emit KO 'Sunshine Web UI' 'configuration must have origin_web_ui_allowed=pc and upnp=off'
   fi
   if runtime_is_baremetal; then
     node="$(drm_render_node_for_pci_id "${EXPECTED_GPU_PCI_VENDOR:-8086}" "${EXPECTED_GPU_PCI_DEVICE:-e20b}" 2>/dev/null || true)"
