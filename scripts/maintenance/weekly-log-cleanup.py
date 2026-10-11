@@ -42,7 +42,7 @@ def scan(root, now, dry_run):
         if run.is_symlink() or not run.is_dir() or not RUN_ID.fullmatch(run.name):
             continue
         try:
-            stamp = dt.datetime.strptime(run.name[:24], "%Y%m%dT%H%M%S%fZ").replace(tzinfo=dt.timezone.utc)
+            stamp = dt.datetime.strptime(run.name[:15] + run.name[15:21] + "Z", "%Y%m%dT%H%M%S%fZ").replace(tzinfo=dt.timezone.utc)
         except ValueError:
             continue
         if stamp >= cutoff:
