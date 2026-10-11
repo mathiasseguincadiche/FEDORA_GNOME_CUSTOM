@@ -115,6 +115,8 @@ if runtime_is_baremetal; then
   [[ -d "$(persistent_data_projects)" ]] && sources+=("$(persistent_data_projects)")
 fi
 while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(git -C "$REPO_ROOT" ls-files -z)
+# A readable inventory of actual source roots, preserved inside the archive.
+printf '%s\n' "${sources[@]}" > "$staging/inventory/backup-sources.txt"
 backup_runtime_require_source_capacity "$repo" "${sources[@]}" || { echo 'Insufficient repository capacity for full backup.' >&2; exit 40; }
 vm_names_json="$(printf '%s\n' "${vm_names[@]}" | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')"
 vm_names_sha256="$(printf '%s' "$vm_names_json" | sha256sum | awk '{print $1}')"
@@ -124,7 +126,12 @@ manifest="$(jq -cn --arg commit "$(repo_commit)" --arg config "$(effective_confi
   --argjson names "$vm_names_json" --arg names_digest "$vm_names_sha256" \
   '{schema:1,kind:"full",engine:"borg",encryption:"none",commit:$commit,effective_config_sha256:$config,module_plan_sha256:$plan,hardware_fingerprint:$hardware,canary_path:$canary,canary_sha256:$digest,include_vms:$vms,vm_count:$count,vm_names:$names,vm_names_sha256:$names_digest}')"
 printf '%s\n' "$manifest" > "$staging/recovery-manifest.json"
-read -r archive snap < <(backup_engine_create full --comment "$manifest" --exclude "$HOME/.config/fedora-gnome-custom/secrets" --exclude "*.qcow2" --exclude "*.vmdk" --exclude "*.vdi" --exclude "*.vhd" --exclude "*.vhdx" --exclude "*.raw" --exclude "*/libvirt/images/*" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
+# Explicit VM mode is only permitted after owner opt-in; keep staged qcow2 then.
+vm_excludes=()
+if ! $include_vms; then
+  vm_excludes=(--exclude "*.qcow2" --exclude "*.vmdk" --exclude "*.vdi" --exclude "*.vhd" --exclude "*.vhdx" --exclude "*.raw" --exclude "*/libvirt/images/*")
+fi
+read -r archive snap < <(backup_engine_create full --comment "$manifest" --exclude "$HOME/.config/fedora-gnome-custom/secrets" "${vm_excludes[@]}" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid archive id.' >&2; exit 40; }
 backup_engine_check full "$archive" || { echo 'Borg integrity check failed.' >&2; exit 40; }
 
