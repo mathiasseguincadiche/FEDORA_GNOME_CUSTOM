@@ -118,7 +118,7 @@ done
 exclude_secrets="$HOME/.config/fedora-gnome-custom/secrets"
 # No new EXIT trap here: daily_finish already owns it (failure markers).
 warnings_report="$(mktemp)"
-read -r archive snap < <(BACKUP_ENGINE_WARNINGS_REPORT="$warnings_report" backup_engine_create daily --exclude "$exclude_secrets" -- "${sources[@]}") || { rm -f "$warnings_report"; echo 'Borg daily archive creation failed.' >&2; exit 40; }
+read -r archive snap < <(BACKUP_ENGINE_WARNINGS_REPORT="$warnings_report" backup_engine_create daily --exclude "$exclude_secrets" --exclude "*.qcow2" --exclude "*.vmdk" --exclude "*.vdi" --exclude "*.vhd" --exclude "*.vhdx" --exclude "*.raw" --exclude "*/libvirt/images/*" -- "${sources[@]}") || { rm -f "$warnings_report"; echo 'Borg daily archive creation failed.' >&2; exit 40; }
 files_changed="$(sed -n 's/^files_changed_during_backup=//p' "$warnings_report")"
 rm -f "$warnings_report"
 [[ "$files_changed" =~ ^[0-9]+$ ]] || files_changed=0

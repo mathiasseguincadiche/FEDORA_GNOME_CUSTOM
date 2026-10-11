@@ -25,6 +25,19 @@ La fiche matérielle prévoit un troisième support de ~1,8 To, le **Kingston XS
 
 **Le dépôt n'est pas chiffré** : toute personne qui possède le disque peut lire les sauvegardes, y compris `~/.ssh`, `~/.gnupg` et les profils de navigateur. Ranger le disque en conséquence. En contrepartie, aucune passphrase ne peut être perdue : un Fedora neuf avec `borgbackup` suffit pour restaurer.
 
+## VM sous gestion manuelle et données personnelles
+
+Par défaut, `BACKUP_VM_DISKS=false` interdit `--include-vms`. Les images de VM
+(qcow2, vmdk, vdi, vhd, vhdx, raw) sont exclues des archives Borg, même si elles
+se trouvent dans un dossier utilisateur. Les définitions XML libvirt restent
+dans l'inventaire du backup complet. L'utilisateur exporte et conserve ses VM
+séparément sur le support de son choix.
+
+Le backup complet ajoute les dossiers XDG localisés (Bureau, Documents,
+Images, Vidéos, Musique) et `~/Development` aux configurations système.
+Une résolution XDG inconnue ou ambiguë bloque la sauvegarde plutôt que de
+risquer d'archiver un emplacement imprévu.
+
 ## Deux niveaux de protection des données
 
 Le second T705 monté sur `/data` fournit une première protection contre la perte ou la réinstallation du **SSD système Btrfs**. Il contient :

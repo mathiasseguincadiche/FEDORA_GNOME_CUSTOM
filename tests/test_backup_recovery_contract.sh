@@ -10,6 +10,7 @@ for expected in \
   'BACKUP_INTEGRITY_CHECK_REQUIRED="true"' \
   'BACKUP_RESTORE_TEST_REQUIRED="true"' \
   'BACKUP_VM_SHUTDOWN_REQUIRED="true"' \
+  'BACKUP_VM_DISKS="false"' \
   'BACKUP_ALLOW_LIVE_QCOW2_COPY="false"' \
   'BACKUP_PRUNE_AUTOMATICALLY="true"' \
   'BACKUP_RETENTION_TIMER_ENABLED="true"' \
@@ -44,6 +45,9 @@ grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'backup_engine_check preapply' "$ROOT/prepare-preapply-backup.sh"
 
 # Full and daily backups protect Documents/Projets; ISO and Jeux stay excluded by default.
+grep -Fq 'VM disk backup disabled by policy' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'for key in DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq -- '--exclude "*.qcow2"' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'source "$REPO_ROOT/lib/persistent_data.sh"' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'persistent_data_documents' "$ROOT/scripts/backup/backup-now.sh"

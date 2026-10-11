@@ -54,6 +54,10 @@ if [[ "$1" == tar ]]; then
 fi
 exec "$@"
 MOCK
+cat > "$tmp/bin/xdg-user-dir" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$HOME/.config"
+MOCK
 cat > "$tmp/bin/rpm" <<'MOCK'
 #!/usr/bin/env bash
 exit 0
@@ -161,7 +165,7 @@ MOCK
 chmod +x "$tmp/bin/"*
 export TEST_CONVERT_CALLED="$tmp/conversion-called"
 rc=0
-bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/capacity.log" 2>&1 || rc=$?
+BACKUP_VM_DISKS=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/capacity.log" 2>&1 || rc=$?
 [[ "$rc" == 40 && ! -e "$TEST_CONVERT_CALLED" ]]
 grep -Fq 'Insufficient staging capacity for VM demo disk vda' "$tmp/capacity.log"
 echo 'Backup certification behavior: PASS'
