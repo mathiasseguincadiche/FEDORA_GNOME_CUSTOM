@@ -36,7 +36,7 @@ if [[ -n "$latest" ]]; then
 else
   emit KO N "no installed $(kernel_channel_core_package 2>/dev/null || echo kernel) release found"
 fi
-if [[ -n "$previous" ]]; then emit OK 'N-1' "$previous retained for rollback"; else if $certify; then emit KO 'N-1' 'no rollback kernel installed: physical certification blocked'; else emit WARN 'N-1' 'only one kernel is installed; a previous kernel will exist after the next kernel update'; fi; fi
+if [[ -n "$previous" ]]; then emit OK 'N-1' "$previous retained for rollback"; elif $certify; then emit KO 'N-1' 'no rollback kernel installed: physical certification blocked'; else emit WARN 'N-1' 'only one kernel is installed; a previous kernel will exist after the next kernel update'; fi
 
 if [[ "$default" == "$latest" ]]; then
   emit OK 'GRUB default' "N=$latest"
