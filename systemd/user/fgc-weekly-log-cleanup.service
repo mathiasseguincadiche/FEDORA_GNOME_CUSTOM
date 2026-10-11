@@ -1,0 +1,10 @@
+[Unit]
+Description=Nettoyage hebdomadaire prudent des journaux Fedora GNOME Custom
+ConditionPathIsDirectory=%h/FEDORA_GNOME_CUSTOM/logs
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/FEDORA_GNOME_CUSTOM/scripts/maintenance/weekly-log-cleanup.py --root %h/FEDORA_GNOME_CUSTOM --apply
+NoNewPrivileges=yes
+PrivateTmp=yes
+UMask=0077
