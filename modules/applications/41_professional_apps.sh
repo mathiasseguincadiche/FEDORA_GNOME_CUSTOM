@@ -56,10 +56,10 @@ applications_professional_precheck() {
 applications_professional_plan() { cat <<'EOF'
 PROFESSIONAL APPLICATIONS:
 - keep GNOME Text Editor as the native GTK4/libadwaita text editor
-- install VLC and FileZilla from Fedora repositories
+- install VLC, LibreOffice with the Fedora GTK4 integration, and FileZilla from Fedora repositories
 - install Visual Studio Code from Microsoft's signed RPM repository
 - install Brave from Brave Software's signed RPM repository
-- install Bitwarden, Slack, Collabora Office, MarkText, draw.io and Flatseal from Flathub
+- install Bitwarden, Slack, MarkText, draw.io and Flatseal from Flathub
 - community-unverified Flathub packages require an explicit versioned allowlist entry
 - application provenance/trust class is documented in manifests/application-provenance.tsv
 - professional applications are an explicit functional exception to the GTK4-only general desktop rule
