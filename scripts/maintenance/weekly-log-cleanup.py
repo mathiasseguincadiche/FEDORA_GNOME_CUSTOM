@@ -87,7 +87,7 @@ def scan(root, now, dry_run):
     report = {"date_utc":now.isoformat(),"simulation":dry_run,"events":events}
     print(json.dumps(report,ensure_ascii=False,indent=2))
     if not dry_run:
-        filename = "nettoyage-" + now.strftime("%Y%m%dT%H%M%SZ") + ".json"
+        filename = "nettoyage-" + now.strftime("%Y%m%dT%H%M%S%fZ") + "-" + str(os.getpid()) + ".json"
         target = reports / filename
         with target.open("x",encoding="utf-8") as stream:
             json.dump(report,stream,ensure_ascii=False,indent=2)
