@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import sys
+from log_explanations import explain
 
 RUN_ID = re.compile(r"^\d{8}T\d{6}\d{9}Z-\d+$")
 CATEGORIES = {
@@ -68,7 +69,10 @@ def scan(root, now, dry_run):
                 events.append({"run":run.name,"action":"conserve","reason":"incident non résolu"})
                 continue
         elif ERROR.search(text):
+            details = explain(text)
             data = {"run":run.name,"status":"open","category":classify(text),
+                    "title":details["title"],"explanation":details["explanation"],
+                    "recommended_action":details["action"],"certainty":details["certainty"],
                     "summary":"Erreur détectée dans le journal : diagnostic humain nécessaire.",
                     "created_utc":now.isoformat(),"resolution":None}
             if not dry_run:
