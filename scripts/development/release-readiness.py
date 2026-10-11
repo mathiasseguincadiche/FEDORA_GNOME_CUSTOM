@@ -236,7 +236,7 @@ def main():
         kernel_seen.append(upstream)
         return "actual upstream RPM = kernel.org " + upstream
     check("Upstream Linux45", kernel)
-    check("Final production profile", lambda: profile.validate(ROOT, 45)["qualification_commit"])
+    check("Final production profile", lambda: profile.validate(ROOT, 45)["promotion_source_commit"])
     blocked = any(x["status"] != "READY" for x in entries)
     report = {"schema": 1, "fedora": 45, "gnome": 51, "status": "BLOCKED" if blocked else "READY",
               "scope": "readiness-only; no production promotion or hardware certification",

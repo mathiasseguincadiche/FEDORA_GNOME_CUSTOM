@@ -57,7 +57,7 @@
 <text x="106" y="144" class="mono dim">════════════════════════════════════════════════════════════</text>
 <text x="106" y="168" class="mono" style="font-weight:700;fill:#fff">  FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE</text>
 <text x="106" y="192" class="mono dim">════════════════════════════════════════════════════════════</text>
-<text x="106" y="216" class="mono">  Projet      0.22.2      Fedora 45      Runtime BAREMETAL</text>
+<text x="106" y="216" class="mono">  Projet      0.22.3      Fedora 45      Runtime BAREMETAL</text>
 <text x="106" y="240" class="mono">  Kernel      7.2.x stable               N / N-1 · max 2</text>
 <text x="106" y="264" class="mono">  GPU         Arc B580 / xe              Git      [CLEAN]</text>
 <text x="106" y="288" class="mono">  Data        /data EXT4                 Gaming   [PASS]</text>

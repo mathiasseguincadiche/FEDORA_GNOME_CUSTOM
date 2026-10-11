@@ -1,13 +1,16 @@
 [Unit]
-Description=FEDORA_GNOME_CUSTOM lock the session right after automatic login
+Description=FEDORA_GNOME_CUSTOM lock the active Wayland login session
 After=graphical-session.target
 PartOf=graphical-session.target
+StartLimitIntervalSec=45
+StartLimitBurst=8
 
 [Service]
 Type=oneshot
-# Verrouille seulement une session ouverte automatiquement au démarrage (moins de 10 min après le boot).
 ExecCondition=/bin/sh -c 'test "$(cut -d. -f1 /proc/uptime)" -lt 600'
-ExecStart=/usr/bin/loginctl lock-session
+ExecStart=%h/.local/libexec/fgc-remote-lock
+Restart=on-failure
+RestartSec=2s
 
 [Install]
 WantedBy=graphical-session.target

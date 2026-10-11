@@ -106,7 +106,8 @@ calls_lack 'kvm-guard'
 phase 71_remote_network.sh remote_network_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=true >/dev/null
 calls_have '--zone=fgc-tailnet --add-port=47984/tcp'
 calls_have '--zone=fgc-tailnet --add-port=47998/udp'
-calls_lack '47990'
+calls_lack '--add-port=47990'
+calls_have 'port port="47990" protocol="tcp" drop'
 
 # 2c. WoL link fallback and KVM guard drop-in when their preconditions hold.
 : > "$labdir/guard.service"
@@ -117,6 +118,15 @@ calls_have 'systemctl reload-or-restart fedora-gnome-custom-kvm-guard.service'
 phase 71_remote_network.sh remote_network_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_WOL_ENABLE=false >/dev/null
 calls_lack 'wake-on-lan'
 rm -f "$labdir/guard.service"
+
+# 2d. Turning Sunshine off reconciles only previously managed firewalld ports.
+mkdir -p "$labdir/state"
+printf 'fgc-tailnet:47984/tcp\nfgc-tailnet:47998/udp\n' > "$labdir/state/sunshine-ports.managed"
+phase 71_remote_network.sh remote_network_firewall REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=false >/dev/null
+calls_have '--remove-port=47984/tcp'
+calls_have '--remove-port=47998/udp'
+calls_lack '--add-port=47984/tcp'
+rm -f "$labdir/state/sunshine-ports.managed"
 
 # 3. SSH module: hardened drop-in, LAN closure only when not opted out.
 expect_rc "$(phase 72_remote_ssh.sh remote_ssh_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SSHD_DROPIN="$labdir/00-fgc-remote.conf" | tail -n1)" 0 'ssh apply'
@@ -134,9 +144,17 @@ phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true 
 calls_have 'dnf -y copr enable lizardbyte/stable'
 calls_have 'PKGS packages-remote-sunshine.txt'
 calls_have 'systemctl --user enable sunshine.service'
+calls_have 'sunshine-config.py'
+calls_have 'sunshine-managed'
+mkdir -p "$labdir/state"
+touch "$labdir/state/sunshine-managed"
+phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SUNSHINE_ENABLE=false >/dev/null
+calls_have 'systemctl --user disable --now sunshine.service'
+rm -f "$labdir/state/sunshine-managed"
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_AUTOLOGIN=true >/dev/null
 calls_have 'gdm_autologin.py enable --user'
 calls_have 'systemctl --user enable fgc-remote-lock.service'
+calls_have 'lock-graphical-session.sh'
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_AUTOLOGIN=true REMOTE_LOCK_ON_AUTOLOGIN=false >/dev/null
 calls_lack 'fgc-remote-lock'
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_POWEROFF_POLKIT=true REMOTE_POLKIT_RULE="$labdir/rule" >/dev/null
@@ -155,7 +173,8 @@ expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABL
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false | tail -n1)" 20 'missing SSH public key must be refused'
 printf 'not-a-key\n' > "$labdir/home/.ssh/authorized_keys"
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false | tail -n1)" 20 'a file without a public key must be refused'
-printf 'ssh-ed25519 AAAAC3Nza tablet\n' > "$labdir/home/.ssh/authorized_keys"
+ssh-keygen -q -t ed25519 -N '' -f "$labdir/tablet-key" >/dev/null
+cp "$labdir/tablet-key.pub" "$labdir/home/.ssh/authorized_keys"
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false | tail -n1)" 0 'complete real preflight'
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false STUB_ENFORCE=Permissive | tail -n1)" 20 'SELinux not enforcing must be refused'
 expect_rc "$(phase 70_remote_preflight.sh remote_preflight_precheck REMOTE_ENABLE=true DRY_RUN=false REMOTE_SYSFS_ROOT="$labdir/empty-sys" | tail -n1)" 20 'missing wired interface must be refused'

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.3 — Durcissement de l'accès distant et vérification des preuves
+
+- Tailscale : signatures des métadonnées ET des RPM exigées (`repo_gpgcheck=1`, `gpgcheck=1`) ; présence d'une véritable clé SSH publique testée par `ssh-keygen`.
+- SSH : sauvegarde et restauration du drop-in précédent si `sshd -t` refuse les nouveaux réglages ; zone LAN déterminée depuis l'interface filaire.
+- Sunshine : administration limitée à localhost (`origin_web_ui_allowed=pc`), UPnP désactivé, port 47990 refusé par des règles firewalld dédiées IPv4/IPv6 ; les ports de streaming suivis sont retirés lors de la désactivation de l'option.
+- GDM : rétablissement des précédents paramètres d'autologin conservés, commande de verrouillage visant la session Wayland réelle et vérifiant `LockedHint` ; la présence d'un service activé reste un WARN tant que la Gate 3 n'est pas réalisée.
+- Fedora 45 : `promotion_source_commit` désigne la base du changement, non une certification CI ; la qualification porte sur le nouveau SHA après commit.
+- Tests supplémentaires pour Sunshine, GDM, gestion des services et règles firewalld ; nouveaux contrôles CodeQL Python et Gitleaks, avec actions épinglées.
+- Les opérations distantes et la promotion Fedora 45 restent opt-in ; `REMOTE_ENABLE=false` par défaut et `profiles/fedora45/profile.json` toujours `pending`. Aucun PASS bare-metal n'est supposé.
+
 ## 0.22.2 — Vérification « jour J » avant l'installation de Fedora 45
 
 - `release-readiness.py --latest` (activé dans le workflow hebdomadaire et manuel) compare chaque extension épinglée à la dernière version publiée : `UP-TO-DATE`, `NEWER` (version, review et SHA256 du nouveau build, plus un `latest-gnome-extensions.lock` à relire) ou `UNKNOWN`, et rappelle la dernière stable de kernel.org face au plancher `KERNEL_MIN_VERSION`. Les épingles ne changent jamais toutes seules.

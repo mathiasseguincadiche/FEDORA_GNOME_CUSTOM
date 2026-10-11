@@ -6,7 +6,7 @@ source "$REPO_ROOT/lib/remote_access.sh"
 remote_preflight_precheck() {
   remote_enabled || return 0
   local tool
-  for tool in dnf nmcli systemctl firewall-cmd python3; do
+  for tool in dnf nmcli systemctl firewall-cmd python3 ssh-keygen; do
     command_exists "$tool" || { log_error REMOTE "$tool is required by the remote-access profile"; return "$EXIT_PRECHECK_FAILED"; }
   done
   remote_valid_port_list "${REMOTE_SUNSHINE_TCP_PORTS:-}" || { log_error REMOTE 'REMOTE_SUNSHINE_TCP_PORTS must list valid port numbers'; return "$EXIT_PRECHECK_FAILED"; }

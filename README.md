@@ -16,7 +16,7 @@
 [![Fedora 45 package and driver preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora45-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora45-package-preflight.yml)
 [![Fedora 45 GNOME 51 preview readiness](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/release-readiness.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/release-readiness.yml)
 
-**Golden Workstation 0.22.2**
+**Golden Workstation 0.22.3**
 
 Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
 
@@ -112,7 +112,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.22.2      Fedora 44      Runtime BAREMETAL
+  Projet      0.22.3      Fedora 44      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]

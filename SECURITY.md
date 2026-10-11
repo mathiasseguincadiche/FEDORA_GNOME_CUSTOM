@@ -26,4 +26,6 @@ Le projet considère notamment comme des régressions de sécurité :
 
 ## Validation
 
+Le workflow `Security scanning` ajoute CodeQL pour les sources Python et Gitleaks pour repérer les secrets dans l'historique. Les versions des actions sont épinglées par commit. Ses résultats sont examinés avant merge ; ne pas contourner un finding en désactivant la détection. Les contrôles ShellCheck, architecture et tests restent requis.
+
 Une correction de sécurité doit conserver les workflows CI verts sur le SHA exact proposé. Les invariants matériels qui ne peuvent pas être prouvés en CI restent soumis à la certification bare-metal avant qu'une version soit considérée Golden 1.0.

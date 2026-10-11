@@ -244,6 +244,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_remote_wol_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_remote_sunshine_config.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_remote_modules_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_remote_kvm_guard_behavior.sh

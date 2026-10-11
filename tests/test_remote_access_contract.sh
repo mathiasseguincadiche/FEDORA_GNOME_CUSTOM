@@ -11,7 +11,7 @@ for file in \
   lib/remote_access.sh diagnostics/remote-doctor \
   modules/remote/70_remote_preflight.sh modules/remote/71_remote_network.sh modules/remote/72_remote_ssh.sh modules/remote/73_remote_desktop.sh modules/remote/79_remote_validation.sh \
   remote/ssh/00-fgc-remote.conf.in remote/polkit/50-fgc-remote-power.rules.in remote/systemd/network/80-fgc-wol.link remote/systemd/user/fgc-remote-lock.service \
-  scripts/remote/wol-send.py scripts/remote/gdm_autologin.py \
+   scripts/remote/wol-send.py scripts/remote/gdm_autologin.py scripts/remote/lock-graphical-session.sh scripts/remote/sunshine-config.py \
   docs/REMOTE_ACCESS.md docs/adr/0017-remote-access.md; do
   [[ -s "$file" ]] || fail "missing $file"
 done
@@ -51,6 +51,7 @@ grep -Fq 'authorized_keys' modules/remote/70_remote_preflight.sh || fail 'prefli
 
 # Supply chain: signed repository metadata, no pipe-to-shell, no secret in the profile.
 grep -Fxq 'repo_gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale repository metadata must be signature-checked'
+grep -Fxq 'gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale RPM packages must be signature-checked'
 if grep -REn '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' modules/remote lib/remote_access.sh scripts/remote remote; then fail 'no pipe-to-shell in the remote profile'; fi
 if grep -REni 'authkey|tskey-|password=|passphrase' modules/remote lib/remote_access.sh scripts/remote remote config/remote.conf; then fail 'no secret or auth key may live in the repository'; fi
 
