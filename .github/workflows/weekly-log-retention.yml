@@ -4,6 +4,7 @@ on:
     paths:
       - 'scripts/maintenance/weekly-log-cleanup.py'
       - 'tests/test_weekly_log_cleanup.py'
+      - 'scripts/maintenance/log_explanations.py'
       - '.github/workflows/weekly-log-retention.yml'
   pull_request:
     paths:
