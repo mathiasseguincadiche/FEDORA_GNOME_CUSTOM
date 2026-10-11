@@ -47,6 +47,9 @@ sudo chown "$(id -u):$(id -g)" "$staging/fedora-system-config.tar.gz"
 
 vm_count=0
 vm_names=()
+if $include_vms && ! is_true "${BACKUP_VM_DISKS:-false}"; then
+  echo "VM disk backup disabled by policy." >&2; exit 30
+fi
 if $include_vms; then
   for cmd in virsh qemu-img python3; do command -v "$cmd" >/dev/null || { echo "Missing VM backup command: $cmd" >&2; exit 20; }; done
   uri="${LIBVIRT_URI:-qemu:///system}"
@@ -94,6 +97,15 @@ if $include_vms; then
 fi
 
 sources=("$staging")
+# Match daily user-data protection, including localized XDG folders.
+for key in DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC; do
+  command -v xdg-user-dir >/dev/null || { echo 'xdg-user-dir required' >&2; exit 20; }
+  path="$(xdg-user-dir "$key")" || exit 20
+  [[ -n "$path" && "$path" != "$HOME" ]] || { echo "Unsafe XDG $key" >&2; exit 20; }
+  case "$path" in "$HOME"/*|/data/Documents) ;; *) echo "Unapproved XDG path: $path" >&2; exit 20 ;; esac
+  [[ ! -d "$path" ]] || sources+=("$path")
+done
+[[ ! -d "$HOME/Development" ]] || sources+=("$HOME/Development")
 for user_path in .config .local/share .var/app .mozilla .ssh .gnupg; do
   [[ ! -d "$HOME/$user_path" ]] || sources+=("$HOME/$user_path")
 done
@@ -112,7 +124,7 @@ manifest="$(jq -cn --arg commit "$(repo_commit)" --arg config "$(effective_confi
   --argjson names "$vm_names_json" --arg names_digest "$vm_names_sha256" \
   '{schema:1,kind:"full",engine:"borg",encryption:"none",commit:$commit,effective_config_sha256:$config,module_plan_sha256:$plan,hardware_fingerprint:$hardware,canary_path:$canary,canary_sha256:$digest,include_vms:$vms,vm_count:$count,vm_names:$names,vm_names_sha256:$names_digest}')"
 printf '%s\n' "$manifest" > "$staging/recovery-manifest.json"
-read -r archive snap < <(backup_engine_create full --comment "$manifest" --exclude "$HOME/.config/fedora-gnome-custom/secrets" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
+read -r archive snap < <(backup_engine_create full --comment "$manifest" --exclude "$HOME/.config/fedora-gnome-custom/secrets" --exclude "*.qcow2" --exclude "*.vmdk" --exclude "*.vdi" --exclude "*.vhd" --exclude "*.vhdx" --exclude "*.raw" --exclude "*/libvirt/images/*" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid archive id.' >&2; exit 40; }
 backup_engine_check full "$archive" || { echo 'Borg integrity check failed.' >&2; exit 40; }
 
