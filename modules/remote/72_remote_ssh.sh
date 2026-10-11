@@ -18,25 +18,36 @@ remote_ssh_plan() {
 
 remote_ssh_apply() {
   remote_enabled || return 0
-  local user dropin tmp zone
+  local user dropin tmp zone previous=''
   user="$(remote_user)"
   dropin="$(remote_sshd_dropin)"
   tmp="$(mktemp)" || return "$EXIT_APPLY_FAILED"
   remote_render_template "$REPO_ROOT/remote/ssh/00-fgc-remote.conf.in" "$user" > "$tmp"
-  run_mutating REMOTE sudo install -Dm0644 "$tmp" "$dropin" || { rm -f "$tmp"; return "$EXIT_APPLY_FAILED"; }
+  # Preserve the previous drop-in before replacing it. A failed validation must
+  # restore an existing working configuration rather than silently deleting it.
+  if ! is_true "${DRY_RUN:-true}" && sudo test -f "$dropin"; then
+    previous="$(mktemp)" || { rm -f "$tmp"; return "$EXIT_APPLY_FAILED"; }
+    sudo cat "$dropin" | tee "$previous" >/dev/null || { rm -f "$tmp" "$previous"; return "$EXIT_APPLY_FAILED"; }
+  fi
+  run_mutating REMOTE sudo install -Dm0644 "$tmp" "$dropin" || { rm -f "$tmp" "$previous"; return "$EXIT_APPLY_FAILED"; }
   rm -f "$tmp"
   if ! is_true "${DRY_RUN:-true}"; then
-    # An invalid sshd configuration would lock the remote door: roll the drop-in back before reloading anything.
     if ! sudo sshd -t; then
-      sudo rm -f "$dropin"
-      log_error REMOTE 'sshd -t rejected the hardened configuration: drop-in removed'
+      if [[ -n "$previous" ]]; then
+        sudo install -m0644 "$previous" "$dropin" || log_error REMOTE 'CRITICAL: failed to restore the SSH drop-in'
+      else
+        sudo rm -f "$dropin" || log_error REMOTE 'CRITICAL: failed to remove invalid SSH drop-in'
+      fi
+      rm -f "$previous"
+      log_error REMOTE 'sshd -t rejected the hardened configuration: previous drop-in restored if one existed'
       return "$EXIT_APPLY_FAILED"
     fi
+    rm -f "$previous"
   fi
   run_mutating REMOTE sudo systemctl enable --now sshd.service || return "$EXIT_APPLY_FAILED"
   run_mutating REMOTE sudo systemctl reload sshd.service || return "$EXIT_APPLY_FAILED"
   if ! is_true "${REMOTE_SSH_LAN:-false}"; then
-    zone="$(remote_default_zone || true)"; zone="${zone:-FedoraWorkstation}"
+    zone="$(remote_lan_zone || true)"; zone="${zone:-FedoraWorkstation}"
     run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --remove-service=ssh || return "$EXIT_APPLY_FAILED"
     run_mutating REMOTE sudo firewall-cmd --reload || return "$EXIT_APPLY_FAILED"
   fi
@@ -54,7 +65,7 @@ remote_ssh_postcheck() {
   grep -Fxq 'pubkeyauthentication yes' <<<"$effective" || return "$EXIT_POSTCHECK_FAILED"
   grep -Fxq "allowusers $user" <<<"$effective" || { log_error REMOTE "sshd must allow only $user"; return "$EXIT_POSTCHECK_FAILED"; }
   if ! is_true "${REMOTE_SSH_LAN:-false}"; then
-    zone="$(remote_default_zone || true)"; zone="${zone:-FedoraWorkstation}"
+    zone="$(remote_lan_zone || true)"; zone="${zone:-FedoraWorkstation}"
     if remote_zone_has_service "$zone" ssh; then log_error REMOTE "ssh is still open in the LAN zone $zone"; return "$EXIT_POSTCHECK_FAILED"; fi
   fi
 }

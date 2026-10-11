@@ -51,7 +51,9 @@ remote_wol_magic_active() {
 }
 
 remote_authorized_keys_present() {
-  [[ -s "$HOME/.ssh/authorized_keys" ]] && grep -Eq '^(ssh-|ecdsa-|sk-)' "$HOME/.ssh/authorized_keys"
+  local keys="$HOME/.ssh/authorized_keys"
+  [[ -s "$keys" ]] && command -v ssh-keygen >/dev/null 2>&1 &&
+    ssh-keygen -lf "$keys" >/dev/null 2>&1
 }
 
 remote_tailscale_backend_state() {
@@ -62,6 +64,15 @@ remote_tailscale_backend_state() {
 remote_render_template() { sed "s/@USER@/$2/g" "$1"; }
 
 remote_default_zone() { sudo firewall-cmd --get-default-zone 2>/dev/null; }
+remote_lan_zone() {
+  local iface zone
+  iface="$(remote_wired_interface || true)"
+  if [[ -n "$iface" ]]; then
+    zone="$(sudo firewall-cmd --get-zone-of-interface="$iface" 2>/dev/null || true)"
+    [[ -n "$zone" && "$zone" != no ]] && { printf '%s\n' "$zone"; return 0; }
+  fi
+  remote_default_zone
+}
 remote_zone_has_service() { sudo firewall-cmd --permanent --zone="$1" --query-service="$2" >/dev/null 2>&1; }
 remote_zone_exists() { sudo firewall-cmd --permanent --get-zones 2>/dev/null | tr ' ' '\n' | grep -Fxq "$1"; }
 

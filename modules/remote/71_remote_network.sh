@@ -21,21 +21,67 @@ remote_network_plan() {
 }
 
 remote_network_firewall() {
-  local zone="${REMOTE_TAILSCALE_ZONE:-fgc-tailnet}" iface="${REMOTE_TAILSCALE_INTERFACE:-tailscale0}" port
+  local zone="${REMOTE_TAILSCALE_ZONE:-fgc-tailnet}" iface="${REMOTE_TAILSCALE_INTERFACE:-tailscale0}"
+  local lan_zone rule family state previous next desired proto port entry
+  lan_zone="$(remote_lan_zone || true)"
+  lan_zone="${lan_zone:-FedoraWorkstation}"
   if is_true "${DRY_RUN:-true}" || ! remote_zone_exists "$zone"; then
     run_mutating REMOTE sudo firewall-cmd --permanent --new-zone="$zone" || return "$EXIT_APPLY_FAILED"
   fi
   run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-service=ssh || return "$EXIT_APPLY_FAILED"
+
+  # FedoraWorkstation may admit TCP 47990 via its broad high-port rule.
+  # Priority -100 ensures the deny happens before ordinary zone allows.
+  for family in ipv4 ipv6; do
+    rule="rule family=\"$family\" priority=\"-100\" port port=\"47990\" protocol=\"tcp\" drop"
+    run_mutating REMOTE sudo firewall-cmd --permanent --zone="$lan_zone" --add-rich-rule="$rule" || return "$EXIT_APPLY_FAILED"
+    if [[ "$lan_zone" != "$zone" ]]; then
+      run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-rich-rule="$rule" || return "$EXIT_APPLY_FAILED"
+    fi
+  done
+
+  # Only remove ports that this project recorded as its own. A user's
+  # pre-existing firewalld openings must not be silently deleted.
+  state="$(remote_state_dir)/sunshine-ports.managed"
+  previous="$(mktemp)" || return "$EXIT_APPLY_FAILED"
+  next="$(mktemp)" || { rm -f "$previous"; return "$EXIT_APPLY_FAILED"; }
+  if sudo test -f "$state"; then sudo cat "$state" | tee "$previous" >/dev/null || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }; fi
+  desired=''
   if remote_sunshine_enabled; then
-    for port in ${REMOTE_SUNSHINE_TCP_PORTS:-}; do
-      run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-port="$port/tcp" || return "$EXIT_APPLY_FAILED"
-    done
-    for port in ${REMOTE_SUNSHINE_UDP_PORTS:-}; do
-      run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-port="$port/udp" || return "$EXIT_APPLY_FAILED"
-    done
+    for port in ${REMOTE_SUNSHINE_TCP_PORTS:-}; do desired="$desired $zone:$port/tcp"; done
+    for port in ${REMOTE_SUNSHINE_UDP_PORTS:-}; do desired="$desired $zone:$port/udp"; done
   fi
-  run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-interface="$iface" || return "$EXIT_APPLY_FAILED"
-  run_mutating REMOTE sudo firewall-cmd --reload || return "$EXIT_APPLY_FAILED"
+  while IFS= read -r entry; do
+    [[ -n "$entry" ]] || continue
+    if [[ " $desired " == *" $entry "* ]]; then
+      printf '%s\n' "$entry" >> "$next"
+    else
+      proto="${entry#*:}"
+      port="${entry%%:*}"
+      # A corrupt state file is never fed back into privileged commands.
+      if [[ "$port" != "$zone" || ! "$proto" =~ ^[1-9][0-9]{0,4}/(tcp|udp)$ ]]; then
+        log_error REMOTE "invalid managed firewall marker entry: $entry"
+        rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"
+      fi
+      run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --remove-port="$proto" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
+    fi
+  done < <(cat "$previous")
+  for entry in $desired; do
+    if grep -Fxq "$entry" "$next"; then continue; fi
+    proto="${entry#*:}"
+    if is_true "${DRY_RUN:-true}" || ! sudo firewall-cmd --permanent --zone="$zone" --query-port="$proto" >/dev/null 2>&1; then
+      run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-port="$proto" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
+      printf '%s\n' "$entry" >> "$next"
+    fi
+  done
+  run_mutating REMOTE sudo firewall-cmd --permanent --zone="$zone" --add-interface="$iface" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
+  run_mutating REMOTE sudo firewall-cmd --reload || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
+  if [[ -s "$next" ]]; then
+    run_mutating REMOTE sudo install -Dm0600 "$next" "$state" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
+  elif sudo test -e "$state"; then
+    run_mutating REMOTE sudo rm -f "$state" || { rm -f "$previous" "$next"; return "$EXIT_APPLY_FAILED"; }
+  fi
+  rm -f "$previous" "$next"
 }
 
 # tailscaled adds its routes after NetworkManager events: the tailnet range is protected statically.

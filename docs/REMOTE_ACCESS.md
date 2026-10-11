@@ -98,6 +98,8 @@ Le profil `remote` s'ajoute aux profils existants (comme `GAMING`) : cinq module
 5. **BIOS** : § 9. **Relais** : § 7.
 6. `./control.sh remote status` doit afficher **0 KO**. Un `WARN` sur « Tailnet login » avant l'étape 4 est normal.
 
+**Réversibilité :** avec `REMOTE_ENABLE=true`, remettre `REMOTE_SUNSHINE_ENABLE=false` puis repasser par les gates/dry-run/APPLY retire les seuls ports enregistrés par le projet et désactive le service Sunshine uniquement s'il a été activé par le projet. Remettre `REMOTE_AUTOLOGIN=false` restaure les anciens réglages de connexion automatique conservés dans la sauvegarde GDM et désactive le verrouillage géré. Passer directement à `REMOTE_ENABLE=false` rend les modules inertes, **mais n'annule pas** les changements précédemment installés : effectuer d'abord la convergence des options individuelles. Toute opération mutante doit être exécutée depuis la console physique, non via une connexion SSH qui pourrait être coupée.
+
 **Résultat attendu :** `REMOTE ACCESS HEALTHY`. **Critère d'arrêt :** un KO sur SSH, SELinux ou l'isolation KVM — ne pas poursuivre vers Sunshine tant qu'il n'est pas résolu.
 
 ---
@@ -127,19 +129,19 @@ Le PC et le relais portent leur étiquette ; la tablette, nœud personnel, n'en 
 
 ### Sunshine + Moonlight (choix du cahier des charges)
 
-À activer avec `REMOTE_SUNSHINE_ENABLE="true"`. Installé depuis le COPR `lizardbyte/stable` (source amont, signée par COPR — voir [SUPPLY_CHAIN.md](SUPPLY_CHAIN.md)). Ports ouverts **uniquement** dans la zone `fgc-tailnet`, d'après les valeurs par défaut documentées par LizardByte :
+À activer avec `REMOTE_SUNSHINE_ENABLE="true"`. Installé depuis le COPR `lizardbyte/stable` (source amont, signée par COPR — voir [SUPPLY_CHAIN.md](SUPPLY_CHAIN.md)). Ports explicitement autorisés dans la zone `fgc-tailnet`, d'après les valeurs par défaut documentées par LizardByte. **Attention :** la zone LAN FedoraWorkstation peut déjà permettre ces ports hauts : vérifier les règles réelles avant de conclure qu'ils sont exclusivement accessibles via le tailnet :
 
 | Protocole | Ports | Rôle |
 |---|---|---|
 | TCP | 47984, 47989, 48010 | appairage / contrôle / RTSP |
 | UDP | 47998, 47999, 48000 | vidéo / contrôle / audio |
-| — | **47990** | interface web : **jamais ouverte** (le préflight le refuse) |
+| — | **47990** | administration : `origin_web_ui_allowed=pc`, `upnp=off`, refus en configuration de ports et blocage entrant IPv4/IPv6 firewalld |
 
 Ces ports doivent être **reconfirmés** avec `ss -tulpn` pendant le Gate 3 : je n'ai pas pu relire la documentation LizardByte depuis l'environnement où ce profil a été écrit.
 
 **Il faut une session graphique ouverte.** Après un réveil, le PC s'arrête sur l'écran de connexion GDM : sans session, Sunshine n'a rien à capturer. Deux options :
 
-- `REMOTE_AUTOLOGIN="true"` : GDM ouvre la session seul, et `REMOTE_LOCK_ON_AUTOLOGIN="true"` la **verrouille aussitôt** (vous saisissez le mot de passe depuis la tablette). Compromis à connaître : les disques ne sont pas chiffrés (ADR 0002), donc l'accès physique reste un accès au compte.
+- `REMOTE_AUTOLOGIN="true"` : GDM ouvre la session seul, et `REMOTE_LOCK_ON_AUTOLOGIN="true"` demande son **verrouillage** (vous saisissez le mot de passe depuis la tablette). Le service résout explicitement la session Wayland active et refuse le succès si `LockedHint=yes` n'est pas observé ; seule la Gate 3 prouve le fonctionnement de bout en bout. Compromis à connaître : les disques ne sont pas chiffrés (ADR 0002), donc l'accès physique reste un accès au compte.
 - Ne pas utiliser Sunshine, et passer par GNOME Remote Desktop.
 
 **Réglages de départ** (cahier des charges, à ajuster par mesure) :
@@ -185,7 +187,7 @@ Le script envoie le paquet 3 fois (robustesse) et valide la MAC et l'adresse de 
 - **SSH** : clés uniquement, pas de root, un seul utilisateur autorisé, `sshd -t` avant tout rechargement (une configuration invalide est retirée automatiquement). Le fichier s'appelle `00-fgc-remote.conf` car `sshd` applique la **première** valeur rencontrée : il doit précéder `50-redhat.conf`.
 - **SELinux** reste Enforcing et firewalld actif : le préflight et le doctor les exigent.
 - **Isolation des VM** : la plage Tailscale est interdite aux VM KVM (garde-fou, testé).
-- **Limite assumée — LAN** : avec la zone `FedoraWorkstation` par défaut, les ports hauts (dont ceux de Sunshine) restent atteignables depuis le LAN domestique. Un appareil du LAN pourrait donc **tenter** de s'appairer ; l'appairage exige un code. Durcir cette zone modifierait d'autres usages (partages, découverte) : ce n'est pas fait automatiquement.
+- **Limite assumée — LAN** : avec la zone `FedoraWorkstation` par défaut, les ports de streaming hauts (hors administration 47990, explicitement bloquée) peuvent rester atteignables depuis le LAN domestique. Un appareil du LAN pourrait donc **tenter** de s'appairer ; l'appairage exige un code. Durcir cette zone modifierait d'autres usages (partages, découverte) : ce n'est pas fait automatiquement.
 - **Extinction sans mot de passe** (`REMOTE_POWEROFF_POLKIT`) : autorise tout processus de l'utilisateur à éteindre ou suspendre le PC. Le risque est faible (aucun accès, seulement une disponibilité) mais c'est un opt-in.
 
 ---
@@ -219,7 +221,7 @@ Rien de ce qui suit n'est prouvable par la CI : c'est une **mesure sur le PC**.
 
 **Si le réveil échoue après un arrêt complet** mais fonctionne après une veille : activer `REMOTE_WOL_LINK_FALLBACK="true"` (le réglage est alors posé par `systemd-udev`, indépendamment de NetworkManager), puis recommencer les cycles. Si cela échoue encore, comparer arrêt (S5) et suspension (S3) : le projet a déjà une qualification de veille/reprise, à réutiliser.
 
-**Critère d'arrêt :** un seul cycle nécessitant une intervention locale invalide la qualification du profil.
+**Critère d'arrêt :** un seul cycle nécessitant une intervention locale invalide la qualification du profil. Ne jamais considérer le simple statut `enabled` du service `fgc-remote-lock.service` comme une preuve que la session est verrouillée. Tester le verrouillage à chaque boot avec `loginctl show-session SESSION -p LockedHint`.
 
 ---
 
