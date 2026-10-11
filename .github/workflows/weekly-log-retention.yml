@@ -1,0 +1,19 @@
+name: Weekly log retention tests
+on:
+  push:
+    paths:
+      - 'scripts/maintenance/weekly-log-cleanup.py'
+      - 'tests/test_weekly_log_cleanup.py'
+      - '.github/workflows/weekly-log-retention.yml'
+  pull_request:
+    paths:
+      - 'scripts/maintenance/weekly-log-cleanup.py'
+      - 'tests/test_weekly_log_cleanup.py'
+      - '.github/workflows/weekly-log-retention.yml'
+jobs:
+  retention:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test conservative weekly retention
+        run: python3 -m unittest discover -s tests -p 'test_weekly_log_cleanup.py' -v
