@@ -1,0 +1,10 @@
+[Unit]
+Description=Nettoyage des journaux chaque lundi a 03h (heure locale)
+
+[Timer]
+OnCalendar=Mon *-*-* 03:00:00
+Persistent=true
+Unit=fgc-weekly-log-cleanup.service
+
+[Install]
+WantedBy=timers.target
