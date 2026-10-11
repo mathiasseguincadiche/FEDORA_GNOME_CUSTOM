@@ -1,5 +1,10 @@
 # Préparer Fedora 45 / GNOME 51
 
+**Installation neuve prévue** : télécharger l'ISO Workstation finale directement sur le site officiel Fedora après sa publication. Le dépôt peut être préparé et testé avant cette date, mais le verrou ISO final ne peut pas être vérifié à l'avance. Ne jamais désactiver les vérifications cryptographiques ni déclarer une certification matérielle sans test réel.
+
+**Bureautique cible** : Collabora Office (`com.collaboraoffice.Office`) via Flathub, sans installation de LibreOffice ni ONLYOFFICE par les manifestes du dépôt. L'ISO Workstation peut néanmoins inclure LibreOffice initialement : sa suppression, après contrôle des dépendances et des documents, est une opération distincte de l'installation des manifestes.
+
+
 La cible future est Fedora 45 Workstation avec GNOME 51. Le profil Fedora 44 / GNOME 50 déjà testé reste actif pendant la préparation. Une Beta ou un numéro de version changé dans un ancien verrou ne constitue pas un profil de production.
 
 ## État réel du profil
