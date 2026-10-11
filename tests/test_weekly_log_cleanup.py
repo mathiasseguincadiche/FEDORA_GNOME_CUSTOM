@@ -35,6 +35,8 @@ class RetentionTests(unittest.TestCase):
             self.assertTrue((logs/fresh).exists())
             record = logs/"incidents"/(broken+".json")
             self.assertEqual(json.loads(record.read_text())["status"],"open")
+            self.assertIn("recommended_action",json.loads(record.read_text()))
+            self.assertIn("explanation",json.loads(record.read_text()))
             mod.scan(root,now,False)
             self.assertTrue((logs/broken).exists())
             data=json.loads(record.read_text())
