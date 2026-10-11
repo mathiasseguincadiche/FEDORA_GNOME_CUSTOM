@@ -5,7 +5,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 grep -Fq 'PROFESSIONAL_APPLICATION_EXCEPTIONS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'ENABLE_PROFESSIONAL_APPLICATIONS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'ENABLE_PROFESSIONAL_FLATPAKS="true"' "$ROOT/config/applications.conf"
-! grep -Eq '^(org.onlyoffice.desktopeditors|com.collaboraoffice.Office)"gnome-text-editor"' "$ROOT/config/applications.conf"
+if grep -Eq '^(org[.]onlyoffice[.]desktopeditors|com[.]collaboraoffice[.]Office)$' "$ROOT/manifests/flatpaks-applications-professional.txt"; then
+  echo 'unexpected alternative office suite in Flatpak manifest' >&2
+  exit 1
+fi
 
 for pkg in vlc libreoffice libreoffice-langpack-fr libreoffice-gtk4 filezilla; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-applications-professional-fedora.txt" || { echo "missing Fedora professional app: $pkg" >&2; exit 1; }
