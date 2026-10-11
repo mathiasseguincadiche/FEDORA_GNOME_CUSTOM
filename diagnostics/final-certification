@@ -13,7 +13,7 @@ latest_post_resume_log(){ local link=/var/lib/fedora-gnome-custom/suspend/latest
 
 record_suspend(){
   require_baremetal; require_validation_chain
-  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; "$REPO_ROOT/diagnostics/display-doctor" --quiet
+  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet --certify; "$REPO_ROOT/diagnostics/display-doctor" --quiet
   "$REPO_ROOT/diagnostics/storage-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet; "$REPO_ROOT/diagnostics/driver-doctor" --quiet; "$REPO_ROOT/diagnostics/usb-resume-doctor" --quiet
   "$REPO_ROOT/diagnostics/performance-doctor" --quiet --core
   local marker="$HOME/.local/state/fedora-gnome-custom/display-repair-last.txt" post_log cycle_id now marker_ts post_ts marker_age post_age n f evidence
