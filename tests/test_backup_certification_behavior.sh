@@ -54,6 +54,10 @@ if [[ "$1" == tar ]]; then
 fi
 exec "$@"
 MOCK
+cat > "$tmp/bin/xdg-user-dir" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$HOME/.config"
+MOCK
 cat > "$tmp/bin/rpm" <<'MOCK'
 #!/usr/bin/env bash
 exit 0
