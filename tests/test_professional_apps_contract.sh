@@ -7,7 +7,7 @@ grep -Fq 'ENABLE_PROFESSIONAL_APPLICATIONS="true"' "$ROOT/config/applications.co
 grep -Fq 'ENABLE_PROFESSIONAL_FLATPAKS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'TEXT_EDITOR_PACKAGE="gnome-text-editor"' "$ROOT/config/applications.conf"
 
-for pkg in vlc libreoffice libreoffice-langpack-fr filezilla; do
+for pkg in vlc filezilla; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-applications-professional-fedora.txt" || { echo "missing Fedora professional app: $pkg" >&2; exit 1; }
 done
 
@@ -15,7 +15,7 @@ for pkg in code brave-browser; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-applications-professional-vendor.txt" || { echo "missing vendor professional app: $pkg" >&2; exit 1; }
 done
 
-for app in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors com.github.marktext.marktext com.jgraph.drawio.desktop; do
+for app in com.bitwarden.desktop com.slack.Slack com.collaboraoffice.Office com.github.marktext.marktext com.jgraph.drawio.desktop; do
   grep -Fxq "$app" "$ROOT/manifests/flatpaks-applications-professional.txt" || { echo "missing professional Flatpak: $app" >&2; exit 1; }
 done
 
