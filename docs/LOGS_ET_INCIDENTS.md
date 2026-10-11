@@ -6,6 +6,10 @@ Les exécutions existantes sont conservées sous `logs/<RUN_ID>/main.log` et `mo
 
 Les catégories logiques sont : système, installation, matériel, accès distant, sécurité et sauvegardes. Le champ `category` d'une fiche incident permet de les retrouver. Les journaux bruts sont préservés : traduire ou masquer une erreur technique risquerait de perdre la preuve du diagnostic.
 
+## Explications en français
+
+Les fiches d'incident fournissent automatiquement un titre, une explication, une action recommandée et un niveau d'incertitude. Les règles couvrent notamment permissions, SELinux, stockage, réseau, services, signatures, sauvegardes, Wake-on-LAN et Sunshine. Une explication est une **hypothèse de diagnostic**, jamais une preuve de cause racine. Les fichiers main.log et modules.log originaux restent inchangés.
+
 ## Lecture simple
 
 - `status: open` : problème non résolu ; le journal associé ne doit pas être supprimé.
