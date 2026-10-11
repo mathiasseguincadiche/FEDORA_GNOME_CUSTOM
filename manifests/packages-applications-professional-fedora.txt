@@ -4,8 +4,6 @@
 vlc
 
 # Office
-libreoffice
-libreoffice-langpack-fr
 
 # File transfer
 filezilla
