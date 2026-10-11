@@ -1,7 +1,7 @@
 # Professional desktop applications from Flathub
 com.bitwarden.desktop
 com.slack.Slack
-org.onlyoffice.desktopeditors
+com.collaboraoffice.Office
 com.github.marktext.marktext
 com.jgraph.drawio.desktop
 com.github.tchx84.Flatseal
