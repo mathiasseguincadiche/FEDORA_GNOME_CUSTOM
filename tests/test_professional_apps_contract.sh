@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 grep -Fq 'PROFESSIONAL_APPLICATION_EXCEPTIONS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'ENABLE_PROFESSIONAL_APPLICATIONS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'ENABLE_PROFESSIONAL_FLATPAKS="true"' "$ROOT/config/applications.conf"
+grep -Fq 'TEXT_EDITOR_PACKAGE="gnome-text-editor"' "$ROOT/config/applications.conf"
 if grep -Eq '^(org[.]onlyoffice[.]desktopeditors|com[.]collaboraoffice[.]Office)$' "$ROOT/manifests/flatpaks-applications-professional.txt"; then
   echo 'unexpected alternative office suite in Flatpak manifest' >&2
   exit 1
