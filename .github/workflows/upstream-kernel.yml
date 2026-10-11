@@ -42,7 +42,24 @@ jobs:
           dnf5 versionlock list
           # Resolve/download a genuine pinned transaction in this disposable
           # container; no production APPLY, kernel boot or hardware claim.
-          dnf5 -y --setopt=allow_vendor_change=1 install --downloadonly "${packages[@]}"
+          # COPR mirrors can briefly publish metadata before every RPM is reachable.
+          # Retry the exact pinned transaction; never weaken the lock or skip packages.
+          downloaded=false
+          for attempt in 1 2 3 4; do
+            if dnf5 -y --setopt=allow_vendor_change=1 --setopt=timeout=30 --setopt=retries=5 install --downloadonly "${packages[@]}"; then
+              downloaded=true
+              break
+            fi
+            if (( attempt < 4 )); then
+              echo "::warning::Pinned kernel RPM download failed (attempt $attempt/4); refreshing COPR metadata before retry"
+              sleep $(( attempt * 10 ))
+              dnf5 -y makecache --refresh || true
+            fi
+          done
+          if [[ "$downloaded" != true ]]; then
+            echo "::error::Pinned kernel RPMs unavailable after four attempts; failing closed"
+            exit 1
+          fi
           mkdir -p upstream-evidence
           printf 'target=%s\ncommit=%s\nscope=RPM preflight; kernel boot and hardware DEFERRED\n' "$target" "$(git rev-parse HEAD)" > upstream-evidence/target.env
           cp /etc/dnf/versionlock.toml upstream-evidence/

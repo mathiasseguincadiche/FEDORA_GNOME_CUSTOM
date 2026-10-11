@@ -6,6 +6,7 @@ vlc
 # Office
 libreoffice
 libreoffice-langpack-fr
+libreoffice-gtk4
 
 # File transfer
 filezilla

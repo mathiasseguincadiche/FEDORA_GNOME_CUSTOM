@@ -6,8 +6,12 @@ grep -Fq 'PROFESSIONAL_APPLICATION_EXCEPTIONS="true"' "$ROOT/config/applications
 grep -Fq 'ENABLE_PROFESSIONAL_APPLICATIONS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'ENABLE_PROFESSIONAL_FLATPAKS="true"' "$ROOT/config/applications.conf"
 grep -Fq 'TEXT_EDITOR_PACKAGE="gnome-text-editor"' "$ROOT/config/applications.conf"
+if grep -Eq '^(org[.]onlyoffice[.]desktopeditors|com[.]collaboraoffice[.]Office)$' "$ROOT/manifests/flatpaks-applications-professional.txt"; then
+  echo 'unexpected alternative office suite in Flatpak manifest' >&2
+  exit 1
+fi
 
-for pkg in vlc libreoffice libreoffice-langpack-fr filezilla; do
+for pkg in vlc libreoffice libreoffice-langpack-fr libreoffice-gtk4 filezilla; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-applications-professional-fedora.txt" || { echo "missing Fedora professional app: $pkg" >&2; exit 1; }
 done
 
@@ -15,7 +19,7 @@ for pkg in code brave-browser; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-applications-professional-vendor.txt" || { echo "missing vendor professional app: $pkg" >&2; exit 1; }
 done
 
-for app in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors com.github.marktext.marktext com.jgraph.drawio.desktop; do
+for app in com.bitwarden.desktop com.slack.Slack com.github.marktext.marktext com.jgraph.drawio.desktop; do
   grep -Fxq "$app" "$ROOT/manifests/flatpaks-applications-professional.txt" || { echo "missing professional Flatpak: $app" >&2; exit 1; }
 done
 

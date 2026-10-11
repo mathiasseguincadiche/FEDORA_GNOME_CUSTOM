@@ -1,5 +1,10 @@
 # Préparer Fedora 45 / GNOME 51
 
+**Installation neuve prévue** : télécharger l'ISO Workstation finale directement sur le site officiel Fedora après sa publication. Le dépôt peut être préparé et testé avant cette date, mais le verrou ISO final ne peut pas être vérifié à l'avance. Ne jamais désactiver les vérifications cryptographiques ni déclarer une certification matérielle sans test réel.
+
+**Bureautique cible** : LibreOffice depuis les dépôts Fedora avec `libreoffice-gtk4` (intégration GTK4 expérimentale), et pack linguistique français. ONLYOFFICE et Collabora Office ne sont pas installés par les manifestes. L'intégration GTK4 doit être validée en session GNOME 51 ; si elle est instable, revenir à l'intégration GTK3 éprouvée sans supprimer les documents.
+
+
 La cible future est Fedora 45 Workstation avec GNOME 51. Le profil Fedora 44 / GNOME 50 déjà testé reste actif pendant la préparation. Une Beta ou un numéro de version changé dans un ancien verrou ne constitue pas un profil de production.
 
 ## État réel du profil
