@@ -319,7 +319,10 @@ PY
       exit 1
     fi
     echo 'Rebuild: fresh user-data absence verified'
-    echo "Rebuild: validating transferred recovery bundle"\n    tar -tzf /tmp/fgc-files-recovery.tar.gz >/dev/null\n    tar -C /var/lib/fgc-lab -xzf /tmp/fgc-files-recovery.tar.gz\n    echo "Rebuild: recovery bundle extracted"
+    echo "Rebuild: validating transferred recovery bundle"
+    tar -tzf /tmp/fgc-files-recovery.tar.gz >/dev/null
+    tar -C /var/lib/fgc-lab -xzf /tmp/fgc-files-recovery.tar.gz
+    echo "Rebuild: recovery bundle extracted"
     backup_engine_env /var/lib/fgc-lab/files-repository
     backup_engine_repo_ready
     read -r archive aid < /var/lib/fgc-lab/files-archive.txt
