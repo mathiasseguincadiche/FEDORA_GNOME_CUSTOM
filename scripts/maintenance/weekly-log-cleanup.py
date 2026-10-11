@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from log_explanations import explain
 
 RUN_ID = re.compile(r"^\d{8}T\d{6}\d{9}Z-\d+$")
