@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from log_explanations import explain
 
@@ -56,7 +57,7 @@ def scan(root, now, dry_run):
         if not main.exists():
             events.append({"run":run.name,"action":"conserve","reason":"journal principal absent"})
             continue
-        text = main.read_text(encoding="utf-8", errors="replace")
+        text = "\\n".join(p.read_text(encoding="utf-8", errors="replace") for p in run.iterdir() if p.suffix == ".log")
         incident = incidents / (run.name + ".json")
         if incident.exists():
             if not incident.is_file() or incident.is_symlink():
@@ -92,7 +93,7 @@ def scan(root, now, dry_run):
     report = {"date_utc":now.isoformat(),"simulation":dry_run,"events":events}
     print(json.dumps(report,ensure_ascii=False,indent=2))
     if not dry_run:
-        filename = "nettoyage-" + now.strftime("%Y%m%dT%H%M%S%fZ") + "-" + str(os.getpid()) + ".json"
+        filename = "nettoyage-" + now.strftime("%Y%m%dT%H%M%S%fZ") + "-" + uuid.uuid4().hex[:12] + ".json"
         target = reports / filename
         with target.open("x",encoding="utf-8") as stream:
             json.dump(report,stream,ensure_ascii=False,indent=2)
