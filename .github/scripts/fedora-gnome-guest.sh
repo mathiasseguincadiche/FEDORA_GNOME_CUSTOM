@@ -313,8 +313,13 @@ PY
     # Fresh Fedora OS: application packages were installed independently.
     # Only explicit test files are copied out of a verified empty staging.
     require_session
-    [[ ! -e "$LAB_HOME/.config/fgc-lab" && ! -e "$LAB_HOME/Documents/Lab" ]]
-    tar -C /var/lib/fgc-lab -xzf /tmp/fgc-files-recovery.tar.gz
+    if [[ -e "$LAB_HOME/.config/fgc-lab" || -e "$LAB_HOME/Documents/Lab" ]]; then
+      echo 'Rebuild invariant violated: restored user data already exists before recovery' >&2
+      ls -ld "$LAB_HOME/.config/fgc-lab" "$LAB_HOME/Documents/Lab" >&2 || true
+      exit 1
+    fi
+    echo 'Rebuild: fresh user-data absence verified'
+    echo "Rebuild: validating transferred recovery bundle"\n    tar -tzf /tmp/fgc-files-recovery.tar.gz >/dev/null\n    tar -C /var/lib/fgc-lab -xzf /tmp/fgc-files-recovery.tar.gz\n    echo "Rebuild: recovery bundle extracted"
     backup_engine_env /var/lib/fgc-lab/files-repository
     backup_engine_repo_ready
     read -r archive aid < /var/lib/fgc-lab/files-archive.txt
