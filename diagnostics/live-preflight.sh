@@ -40,7 +40,7 @@ else emit NOT_TESTED pci "lspci unavailable"; emit NOT_TESTED gpu "lspci unavail
 if [[ -r /sys/class/dmi/id/board_name ]]; then emit PASS motherboard "$(cat /sys/class/dmi/id/board_name) (identity only)"; else emit NOT_TESTED motherboard "DMI inaccessible"; fi
 if command -v lsblk >/dev/null 2>&1; then
   nvme="$(lsblk -dn -o NAME,MODEL,TRAN 2>/dev/null | awk '$3=="nvme" {print $1":"$2}' | paste -sd, -)"
-  [[ -n "$nvme" ]] && emit PASS nvme "$nvme (enumeration only; no writes)" || emit NOT_TESTED nvme "NVMe not enumerated"
+  if [[ -n "$nvme" ]]; then emit PASS nvme "$nvme (enumeration only; no writes)"; else emit NOT_TESTED nvme "NVMe not enumerated"; fi
 else emit NOT_TESTED nvme "lsblk unavailable"; fi
 if [[ ${XDG_SESSION_TYPE:-} == wayland ]]; then emit PASS session "Wayland"; else emit NOT_TESTED session "Wayland not confirmed"; fi
 emit NOT_TESTED display "1440p/240Hz, EDID, color and artifacts require interactive inspection"
