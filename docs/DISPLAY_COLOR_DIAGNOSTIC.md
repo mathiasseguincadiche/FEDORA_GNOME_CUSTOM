@@ -25,8 +25,8 @@ Dans une session GNOME Wayland installée, ou en Live Fedora 45 :
 ```bash
 echo "$XDG_SESSION_TYPE"
 gnome-shell --version
-python3 diagnostics/display-color-audit.py
-python3 diagnostics/display-color-audit.py --format json
+./diagnostics/display-color-audit
+./diagnostics/display-color-audit --format json
 ```
 
 Le nouveau diagnostic interroge **seulement les connecteurs DRM lisibles dans sysfs** : connexion, activation et **liste des modes pris en charge**. Il ne demande ni `sudo`, ni accès à `/dev/mem`, ni modification d'affichage. Il ne collecte pas l'EDID brut, les numéros de série, les adresses réseau ou les captures d'écran. En l'absence d'information, il renvoie `NOT_TESTED`.

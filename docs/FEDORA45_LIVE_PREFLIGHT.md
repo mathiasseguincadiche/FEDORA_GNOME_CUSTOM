@@ -56,8 +56,8 @@ Si `lspci` ou `lsblk` n'est pas disponible dans l'ISO Live, le rapport affiche u
 Dans le dépôt vérifié, toujours **sans `sudo`** :
 
 ```bash
-python3 diagnostics/display-color-audit.py
-python3 diagnostics/display-color-audit.py --format json
+./diagnostics/display-color-audit
+./diagnostics/display-color-audit --format json
 ```
 
 Ce diagnostic ne lit que l'état des connecteurs DRM, sans numéro de série ni EDID brut, et ne modifie rien. Les modes listés sont les modes **pris en charge**, pas ceux actuellement activés. Les niveaux RGB, le HDR, les profils ICC et la fidélité du blanc restent explicitement `NOT_TESTED` : leur mesure exige la comparaison visuelle [décrite ici](DISPLAY_COLOR_DIAGNOSTIC.md).

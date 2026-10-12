@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "diagnostics/display-color-audit.py"
+SCRIPT = ROOT / "scripts/development/display-color-audit.py"
 spec = importlib.util.spec_from_file_location("fgc_display_audit", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader

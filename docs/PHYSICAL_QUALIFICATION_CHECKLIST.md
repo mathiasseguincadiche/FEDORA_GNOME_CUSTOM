@@ -27,7 +27,7 @@ La procédure autoritaire reste [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION
 L'affichage est une **mesure visuelle** à conduire avec l'Intel Arc B580 réelle. Ne pas afficher un PASS parce qu'un connecteur annonce un mode 2560×1440 : ce mode peut être simplement disponible, pas actif.
 
 1. Relever les sorties réellement connectées, le modèle des écrans et leur arrangement dans GNOME.
-2. Exécuter `python3 diagnostics/display-color-audit.py` **sans privilèges** pour obtenir un inventaire DRM anonymisé.
+2. Exécuter `./diagnostics/display-color-audit` **sans privilèges** pour obtenir un inventaire DRM anonymisé.
 3. Observer avec GNOME **la résolution et la fréquence active** sur chaque écran, ainsi que les éventuels VRR/HDR.
 4. Tester un aplat blanc, un dégradé noir/blanc et des gris neutres à réglages fixes ; noter la plage RGB côté moniteur, l'ICC et Night Light.
 5. Refaire la comparaison en SDR puis, si disponible, en HDR ; comparer HDMI et DisplayPort en ne changeant **qu'un facteur** à la fois.
