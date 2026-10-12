@@ -42,6 +42,9 @@ jobs:
       - name: Strict GNOME 51 six-role audit (pending remains DEFERRED)
         shell: bash
         run: |
+          set -Eeuo pipefail
+          # Minimal Fedora container does not include Python by default.
+          dnf -y --disablerepo=fedora-cisco-openh264 install python3
           python3 -B tests/test_gnome51_extension_audit.py
           python3 -B scripts/validation/gnome51-extension-audit.py --report
       - name: Enable RPM Fusion for Fedora 45
