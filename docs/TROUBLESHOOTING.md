@@ -646,21 +646,16 @@ Un simple `borg create` terminé ne suffit pas à produire le marker de confianc
 
 ---
 
-## 23. Le backup des VM est refusé
+## 23. Le moteur Borg refuse une sauvegarde de VM
 
-```bash
-virsh --connect qemu:///system list --all
-```
+C'est le fonctionnement prévu : **les exports de VM sont strictement manuels**.
+Les anciennes commandes `--include-vms` et les overrides
+`BACKUP_VM_DISKS=true`, `BACKUP_LIBVIRT_METADATA=true` ou
+`BACKUP_VM_CLOUD_INIT_METADATA=true` sont refusés.
 
-Avec `--include-vms`, toutes les VM concernées doivent être `shut off`.
-
-```bash
-scripts/backup/backup-now.sh --include-vms
-```
-
-Le projet refuse volontairement la copie live d'un QCOW2.
-
----
+Pour les documents et le système Fedora, utiliser `./control.sh backup now`.
+Pour les VM, conserver la procédure d'export personnelle hors du dépôt.
+Ne pas contourner le refus en modifiant les scripts ou les prérequis.
 
 ## 24. Restaurer sans écraser le système live
 
