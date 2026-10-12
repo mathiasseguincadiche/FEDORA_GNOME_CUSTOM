@@ -91,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           dnf -y install flatpak
-          flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          bash scripts/ci/ensure-flathub.sh
           for manifest in manifests/flatpaks-applications-professional.txt manifests/flatpaks-appimage.txt; do
             while IFS= read -r app; do
               [[ -z "$app" || "$app" == \#* ]] && continue

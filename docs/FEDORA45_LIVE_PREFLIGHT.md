@@ -34,6 +34,37 @@ bash diagnostics/live-preflight.sh | tee "$HOME/fedora45-live-preflight.tsv"
 
 Le code de sortie de la commande de diagnostic peut être conservé avec `set -o pipefail` avant le pipeline. Le rapport enregistré dans le HOME Live est **temporaire** : le copier manuellement sur un support externe autorisé, après revue et suppression des identifiants sensibles. Ne pas pousser automatiquement des informations matérielles vers GitHub.
 
+## Contrôles matériels renforcés
+
+Le script distingue désormais les **identités réellement vérifiées** des propriétés nécessitant la Gate 3 :
+
+| Ligne du rapport | `PASS` signifie | Cela ne certifie pas |
+|---|---|---|
+| `os` / `gnome` | Fedora 45 et GNOME Shell 51 identifiés | intégration finale de toutes les extensions |
+| `motherboard` / `cpu` | MSI MAG B850M MORTAR WIFI et Ryzen 7 7700 observés | stabilité RAM, BIOS, performance |
+| `gpu` | identifiant PCI **8086:e20b** et pilote **actif** `xe` sur le même périphérique | Vulkan, OpenCL, accélération AV1 ou couleurs |
+| `nvme` | **deux** périphériques NVMe de modèle Crucial T705 recensés | numéros de série, températures, performance, système de fichiers |
+| `display` | toujours `NOT_TESTED` | blanc, HDR/SDR, RGB complet/limité, 240 Hz, EDID |
+| `suspend`, `installed` | restent `NOT_TESTED` | veille/réveil, sauvegarde, installation et certification matérielle |
+
+Si `lspci` ou `lsblk` n'est pas disponible dans l'ISO Live, le rapport affiche un contrôle non testé plutôt que de prétendre avoir mesuré le matériel.
+
+**Le script n'est pas un utilitaire de configuration.** Il refuse `root`, les arguments non autorisés, un autre OS et l'absence d'indices Live. Aucun « mode test » ne permet de contourner ces refus. Les parseurs sont testés à part avec des fixtures sans simuler un faux démarrage Live.
+
+### Diagnostic complémentaire des blancs et de la chaîne d'affichage
+
+Dans le dépôt vérifié, toujours **sans `sudo`** :
+
+```bash
+./diagnostics/display-color-audit
+./diagnostics/display-color-audit --format json
+```
+
+Ce diagnostic ne lit que l'état des connecteurs DRM, sans numéro de série ni EDID brut, et ne modifie rien. Les modes listés sont les modes **pris en charge**, pas ceux actuellement activés. Les niveaux RGB, le HDR, les profils ICC et la fidélité du blanc restent explicitement `NOT_TESTED` : leur mesure exige la comparaison visuelle [décrite ici](DISPLAY_COLOR_DIAGNOSTIC.md).
+
+Les rapports stockés dans le HOME Live sont éphémères et ne doivent être publiés qu'après revue des informations qu'ils contiennent.
+
+
 ## Contrat de sécurité
 
 - Le script refuse `root`, les systèmes non-Fedora et les environnements qui ne présentent aucun indice de session Live.

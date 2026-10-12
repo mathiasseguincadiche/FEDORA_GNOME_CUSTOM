@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Stable diagnostic entrypoint. Python implementation stays outside diagnostics/
+# because Shell quality audits all diagnostics/* entrypoints as Bash.
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec python3 "$REPO_ROOT/scripts/development/display-color-audit.py" "$@"
