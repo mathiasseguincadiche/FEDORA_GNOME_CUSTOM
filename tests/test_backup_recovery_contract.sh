@@ -45,7 +45,27 @@ grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'backup_engine_check preapply' "$ROOT/prepare-preapply-backup.sh"
 
 # Full and daily backups protect Documents/Projets; ISO and Jeux stay excluded by default.
-grep -Fq 'VM disk backup disabled by policy' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'VM exports are owner-managed' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'VM backup/export is manual-only' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'BACKUP_LIBVIRT_METADATA="false"' "$ROOT/config/backup.conf"
+grep -Fq 'BACKUP_VM_CLOUD_INIT_METADATA="false"' "$ROOT/config/backup.conf"
+if grep -Fq 'backup_runtime_export_libvirt "$staging/libvirt"' "$ROOT/scripts/backup/backup-now.sh"; then
+  echo 'Full backup still captures libvirt metadata' >&2; exit 1
+fi
+if grep -Fq 'backup_runtime_export_libvirt "$staging/libvirt"' "$ROOT/prepare-preapply-backup.sh"; then
+  echo 'Pre-APPLY backup still captures libvirt metadata' >&2; exit 1
+fi
+if grep -Fq -- '--include-vms' "$ROOT/scripts/maintenance/upgrade-fedora.sh"; then
+  echo 'Fedora upgrade still forces VM backups' >&2; exit 1
+fi
+if grep -Fq -- 'now-with-vms)' "$ROOT/lib/control_center.sh"; then
+  echo 'Control Center still exposes VM backups' >&2; exit 1
+fi
+for p in scripts/backup/backup-now.sh prepare-preapply-backup.sh scripts/backup/daily-user-backup.sh; do
+  grep -Fq -- '--exclude "*/libvirt/*"' "$ROOT/$p" || {
+    echo "Borg path lacks a libvirt exclusion: $p" >&2; exit 1;
+  }
+done
 grep -Fq 'for key in DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq -- '--exclude "*.qcow2"' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"

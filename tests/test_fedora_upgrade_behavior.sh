@@ -114,7 +114,10 @@ run_expect 1 prepare
 export FAKE_DOWNLOAD_RC=0
 run_expect 0 prepare
 grep -Fxq 'phase=prepared' "$tmp/state/fedora45-upgrade.env"
-grep -Fq -- '--include-vms' "$ROOT/scripts/maintenance/upgrade-fedora.sh"
+grep -Fq 'VM disk/XML/NVRAM/TPM exports are the owner' "$ROOT/scripts/maintenance/upgrade-fedora.sh"
+if grep -Fq -- '--include-vms' "$ROOT/scripts/maintenance/upgrade-fedora.sh"; then
+  echo 'Fedora upgrade tried to back up VM disks' >&2; exit 1
+fi
 run_expect 20 finalize
 [[ ! -s "$FGC_TRACE" ]]
 export FAKE_OS=45
