@@ -6,6 +6,26 @@ aucune commande sur le PC de l'opérateur. Le job réutilisable
 Le contexte obligatoire `contracts` attend sa réussite et celle des cinq autres jobs :
 logic-contracts, installer-audit, borg-fedora, upstream-kernel / rpm et rocky-devops-vm. La publication attend donc aussi ce laboratoire.
 
+## Les deux laboratoires Fedora/GNOME : ce que chacun prouve
+
+| Profil laboratoire | Exercices | Non certifié |
+|---|---|---|
+| **Fedora 44 / GNOME 50** | session personnalisée et extensions, applications, fermeture, reboot, Borg, restauration/reconstruction | Intel Arc B580 et écran physiques |
+| **Fedora 45 / GNOME 51 native preview** | GNOME 51 Wayland, maintenance, bureautique, redémarrage et récupération | six extensions personnalisées finales, matériel réel |
+
+```mermaid
+flowchart LR
+  A["VM Fedora jetable"] --> B["Boot + GNOME"]
+  B --> C["Bureau + logout + reboot"]
+  C --> D["Borg à froid"]
+  D --> E["Restauration isolée"]
+  E --> F["Rapport + journaux"]
+```
+
+**Un plantage GNOME n'est pas une réussite.** Les coredumps, erreurs critiques, services en échec et incohérences de reprise doivent rester bloquants, même s'ils apparaissent au dernier logout. Le job `contracts` dépend du succès effectif des laboratoires.
+
+Pour voir comment la VM et les preuves se rattachent à la machine physique, consulter [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md).
+
 ## Image et démarrage
 
 L'image Fedora Cloud Base 44 compose 1.7 est verrouillée dans

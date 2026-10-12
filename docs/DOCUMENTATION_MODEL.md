@@ -151,6 +151,19 @@ Les documents historiques décrivent ce qui a existé. Ils ne deviennent jamais 
 
 ---
 
+## Maintenir des schémas pédagogiques fiables
+
+Les diagrammes du [README](../README.md) et du [guide d'architecture](ARCHITECTURE_PEDAGOGIQUE.md) doivent être aussi fiables que les commandes qu'ils expliquent. À chaque évolution, vérifier que :
+
+- **les flèches ne créent pas de raccourci** vers `install.sh --apply` ;
+- les composants correspondent aux vrais répertoires et moteurs ;
+- les **flux de données**, **commandes** et **preuves** sont clairement distingués ;
+- `CI PASS`, `Gate 2` et `Gate 3` ne sont jamais confondus ;
+- les versions `Fedora 44 actif` / `Fedora 45 pending` sont actualisées ensemble ;
+- une **explication textuelle sous le schéma** aide à lire le diagramme et reste accessible sur mobile.
+
+Les ADR historiques ne sont pas réécrites : une évolution doit être assumée et documentée.
+
 ## Règles de cohérence
 
 1. Une commande documentée doit exister réellement.

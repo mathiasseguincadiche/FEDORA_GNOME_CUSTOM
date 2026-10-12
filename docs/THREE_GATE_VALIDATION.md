@@ -25,6 +25,22 @@ final-certification PASS
 golden-release.json
 ```
 
+## Comprendre le parcours de certification
+
+La **CI GitHub** vérifie contrats, paquets et VM éphémères. Les **trois Gates** constituent une chaîne distincte de preuves opérateur, jusqu'au vrai PC.
+
+```mermaid
+flowchart TD
+  C["CI : code, conteneurs et VM"] --> P["Qualité logicielle du commit"]
+  A["Gate 1 : logique WSL2"] --> B["Gate 2 : GNOME VirtualBox"]
+  B --> I["Installation bare-metal protégée"]
+  I --> G["Gate 3 : matériel, veille, recovery"]
+  G --> S["Golden runtime-certified"]
+  P -. "ne remplace pas" .-> G
+```
+
+Le parcours détaillé ci-dessous concerne **Fedora 44 / GNOME 50**, référence active. Pour **Fedora 45 / GNOME 51**, le profil reste `pending` : média signé, promotion des verrous et nouvelles preuves sont nécessaires. Une ancienne Gate 2 GNOME 50 ne certifie pas automatiquement un bureau GNOME 51. [Architecture et exemples](ARCHITECTURE_PEDAGOGIQUE.md) · [Transition Fedora 45](UPGRADE_FEDORA_45.md).
+
 ## Règles absolues
 
 1. Les trois phases doivent utiliser **le même commit Git** et le même `manifests/module-plan.conf`.
