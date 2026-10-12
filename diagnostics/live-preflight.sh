@@ -12,6 +12,8 @@ cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
 if [[ "$cmdline" != *rd.live.image* && "$cmdline" != *root=live:* && ! -d /run/initramfs/live ]]; then
   echo "REFUSED: no evidence of a Live environment; never run this on an installed host." >&2; exit 2
 fi
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT/lib/live_preflight_probe.sh"
 pass=0; fail=0; unknown=0
 emit() {
   local status="$1" name="$2" detail="$3"
@@ -29,20 +31,48 @@ if command -v gnome-shell >/dev/null 2>&1; then
 else emit NOT_TESTED gnome "gnome-shell unavailable"; fi
 if command -v lspci >/dev/null 2>&1; then
   pci="$(lspci -Dnnk 2>/dev/null || true)"
-  if grep -Eiq '\\[8086:e20b\\]' <<<"$pci"; then
-    gpu_block="$(grep -i -A 5 '8086:e20b' <<<"$pci" | head -n 6)"
-    if grep -Eq 'Kernel driver in use: xe' <<<"$gpu_block"; then emit PASS gpu "Arc B580 (8086:e20b) bound to xe"; else emit FAIL gpu "Arc B580 detected; xe binding not confirmed"; fi
-  else emit FAIL gpu "Arc B580 PCI ID 8086:e20b absent"; fi
+  # Scan the exact PCI function, never a nearby device's xe driver.
+  gpu_state="$(live_b580_binding_status "$pci")"
+  case "$gpu_state" in
+    bound) emit PASS gpu "Arc B580 PCI 8086:e20b uses xe (Live only)" ;;
+    driver-unverified) emit FAIL gpu "Arc B580 present but its active xe binding is unverified" ;;
+    absent) emit FAIL gpu "Arc B580 PCI ID 8086:e20b absent" ;;
+  esac
   if grep -Eiq 'Ethernet controller' <<<"$pci"; then emit PASS ethernet "Ethernet PCI controller detected; link/5GbE not certified"; else emit NOT_TESTED ethernet "no Ethernet PCI controller visible"; fi
   if grep -Eiq 'Network controller' <<<"$pci"; then emit PASS wifi "PCI wireless controller detected; Wi-Fi 7/6GHz not certified"; else emit NOT_TESTED wifi "PCI wireless controller not visible"; fi
 else emit NOT_TESTED pci "lspci unavailable"; emit NOT_TESTED gpu "lspci unavailable"; emit NOT_TESTED ethernet "lspci unavailable"; emit NOT_TESTED wifi "lspci unavailable"; fi
-if [[ -r /sys/class/dmi/id/board_name ]]; then emit PASS motherboard "$(cat /sys/class/dmi/id/board_name) (identity only)"; else emit NOT_TESTED motherboard "DMI inaccessible"; fi
+if [[ -r /sys/class/dmi/id/board_name ]]; then
+  board="$(cat /sys/class/dmi/id/board_name)"
+  if [[ "$board" == *"MAG B850M MORTAR WIFI"* ]]; then
+    emit PASS motherboard "MSI MAG B850M MORTAR WIFI identity verified"
+  else
+    emit FAIL motherboard "expected MSI MAG B850M MORTAR WIFI; found ${board:-unknown}"
+  fi
+else emit NOT_TESTED motherboard "DMI inaccessible"; fi
+
+if [[ -r /proc/cpuinfo ]]; then
+  cpu="$(awk -F: '/^model name[[:space:]]*:/ {gsub(/^[[:space:]]+/, "", $2); print $2; exit}' /proc/cpuinfo)"
+  if live_expected_cpu_model "$cpu"; then
+    emit PASS cpu "AMD Ryzen 7 7700 detected (performance not tested)"
+  elif [[ -n "$cpu" ]]; then
+    emit FAIL cpu "expected Ryzen 7 7700, found $cpu"
+  else
+    emit NOT_TESTED cpu "CPU model unavailable"
+  fi
+else emit NOT_TESTED cpu "proc/cpuinfo unavailable"; fi
+
 if command -v lsblk >/dev/null 2>&1; then
-  nvme="$(lsblk -dn -o NAME,TRAN 2>/dev/null | awk '$2=="nvme" {print $1}' | paste -sd, -)"
-  if [[ -n "$nvme" ]]; then emit PASS nvme "$nvme (enumeration only; no writes)"; else emit NOT_TESTED nvme "NVMe not enumerated"; fi
+  disks="$(lsblk -dn -o NAME,TRAN,MODEL 2>/dev/null || true)"
+  nvme_state="$(live_t705_status "$disks")"
+  case "$nvme_state" in
+    match) emit PASS nvme "two Crucial T705 NVMe devices present (identities only; no writes)" ;;
+    model-unverified) emit NOT_TESTED nvme "two NVMe devices, but both T705 models not readable" ;;
+    count-mismatch) emit FAIL nvme "expected exactly two NVMe devices; count or enumeration differs" ;;
+    model-mismatch) emit FAIL nvme "expected exactly two Crucial T705 models" ;;
+  esac
 else emit NOT_TESTED nvme "lsblk unavailable"; fi
 if [[ ${XDG_SESSION_TYPE:-} == wayland ]]; then emit PASS session "Wayland"; else emit NOT_TESTED session "Wayland not confirmed"; fi
-emit NOT_TESTED display "1440p/240Hz, EDID, color and artifacts require interactive inspection"
+emit NOT_TESTED display "1440p/240Hz, full vs limited RGB, HDR/SDR, ICC, white level and artifacts require interactive inspection"
 emit NOT_TESTED audio "ALC4080 playback/capture require interactive inspection"
 emit NOT_TESTED suspend "suspend/resume cycles require controlled manual testing"
 emit NOT_TESTED installed "bootloader, SELinux persistence, storage layout, rollback, backup and Gate 3 cannot be certified in Live"

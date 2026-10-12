@@ -1,10 +1,15 @@
 # Supply-chain et provenance
 
-Les références exécutables des quatre extensions téléchargées sont centralisées dans
-[`config/gnome-extensions.lock`](../config/gnome-extensions.lock). Les numéros cités
-ci-dessous décrivent la version 0.16.0 ; le lock reste la référence à mettre à jour.
-Les clés de ce fichier sont des constantes vérifiées, pas des options `local.conf`.
+Les archives d'extensions de la référence **Fedora 44 / GNOME 50** sont
+épinglées dans [`config/gnome-extensions.lock`](../config/gnome-extensions.lock).
+La cible **Fedora 45 / GNOME 51** possède un verrou séparé,
+[`profiles/fedora45/gnome-extensions.lock`](../profiles/fedora45/gnome-extensions.lock),
+dont la promotion reste conditionnée au média final signé et au profil
+[`pending`](../profiles/fedora45/profile.json).
 
+La version actuelle du projet se lit dans [`VERSION`](../VERSION), jamais
+dans une ancienne notice historique. Les verrous sont des constantes de
+provenance vérifiées et non des options libres de `config/local.conf`.
 
 ## Principes
 
@@ -96,7 +101,7 @@ La CI complète la provenance et la reproductibilité ; elle ne remplace pas la 
 
 Activé seulement par `REMOTE_ENABLE="true"` ; rien n'est téléchargé sinon.
 
-- **Tailscale** : dépôt éditeur `pkgs.tailscale.com`, définition dans `config/repos/tailscale.repo`. Les **métadonnées** du dépôt sont signées (`repo_gpgcheck=1`), les paquets ne le sont pas dans la définition publiée par l'éditeur (`gpgcheck=0`) : la confiance repose donc sur la signature du dépôt et sur TLS. La définition est reproduite **sans avoir pu être relue à la source** depuis l'environnement de rédaction : la comparer avec la version publiée avant la première installation.
+- **Tailscale** : dépôt éditeur `pkgs.tailscale.com`, fichier versionné dans `config/repos/tailscale.repo`. Les **métadonnées et les paquets RPM** sont soumis aux contrôles de signature (`repo_gpgcheck=1` et `gpgcheck=1`), exigés par les contrats du projet. Cette configuration doit encore être comparée à la publication officielle avant la première installation : la présence de clés et de directives n'est pas à elle seule une preuve de provenance.
 - **Sunshine** : COPR `lizardbyte/stable` du projet amont, uniquement avec `REMOTE_SUNSHINE_ENABLE="true"`. Le COPR est un dépôt communautaire signé par COPR : même classe de confiance que le COPR noyau, et le seul tiers du profil. La valeur est contrainte par `config/schema-enums.tsv`.
 - **Aucun** `curl | bash`, aucun binaire téléchargé hors dépôt, aucun port exposé à Internet.
 

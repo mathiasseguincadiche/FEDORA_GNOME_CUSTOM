@@ -3,12 +3,26 @@ on:
   pull_request:
     paths:
       - 'diagnostics/live-preflight.sh'
+      - 'diagnostics/display-color-audit'
+      - 'scripts/development/display-color-audit.py'
+      - 'lib/live_preflight_probe.sh'
+      - 'tests/test_live_preflight_probe.sh'
+      - 'tests/test_display_color_audit.py'
+      - 'docs/DISPLAY_COLOR_DIAGNOSTIC.md'
+      - 'docs/ROADMAP_FEDORA45_2026.md'
       - 'docs/FEDORA45_LIVE_PREFLIGHT.md'
       - '.github/workflows/live-preflight.yml'
   push:
     branches: [main]
     paths:
       - 'diagnostics/live-preflight.sh'
+      - 'diagnostics/display-color-audit'
+      - 'scripts/development/display-color-audit.py'
+      - 'lib/live_preflight_probe.sh'
+      - 'tests/test_live_preflight_probe.sh'
+      - 'tests/test_display_color_audit.py'
+      - 'docs/DISPLAY_COLOR_DIAGNOSTIC.md'
+      - 'docs/ROADMAP_FEDORA45_2026.md'
       - 'docs/FEDORA45_LIVE_PREFLIGHT.md'
       - '.github/workflows/live-preflight.yml'
 permissions:
@@ -19,7 +33,16 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Parse Bash
-        run: bash -n diagnostics/live-preflight.sh
+        run: |
+          for script in diagnostics/live-preflight.sh lib/live_preflight_probe.sh tests/test_live_preflight_probe.sh; do
+            bash -n "$script"
+          done
+      - name: Hardware parser fixtures (never fake Live boot)
+        run: bash tests/test_live_preflight_probe.sh
+      - name: Display inventory fixtures and privacy contract
+        run: python3 -B tests/test_display_color_audit.py
+      - name: Display utility is read-only
+        run: ./diagnostics/display-color-audit --format json
       - name: Help is non-mutating
         run: bash diagnostics/live-preflight.sh --help
       - name: Reject unexpected arguments

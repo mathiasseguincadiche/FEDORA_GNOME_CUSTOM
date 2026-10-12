@@ -52,6 +52,11 @@ grep -Fq 'authorized_keys' modules/remote/70_remote_preflight.sh || fail 'prefli
 # Supply chain: signed repository metadata, no pipe-to-shell, no secret in the profile.
 grep -Fxq 'repo_gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale repository metadata must be signature-checked'
 grep -Fxq 'gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale RPM packages must be signature-checked'
+grep -Fq 'repo_gpgcheck=1' docs/SUPPLY_CHAIN.md || fail 'metadata signatures must be documented'
+grep -Fq 'gpgcheck=1' docs/SUPPLY_CHAIN.md || fail 'RPM signatures must be documented'
+if grep -F '**Tailscale**' docs/SUPPLY_CHAIN.md | grep -Fq 'gpgcheck=0'; then
+  fail 'signed Tailscale RPM policy misrepresented in supply-chain doc'
+fi
 if grep -REn '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' modules/remote lib/remote_access.sh scripts/remote remote; then fail 'no pipe-to-shell in the remote profile'; fi
 if grep -REni 'authkey|tskey-|password=|passphrase' modules/remote lib/remote_access.sh scripts/remote remote config/remote.conf; then fail 'no secret or auth key may live in the repository'; fi
 

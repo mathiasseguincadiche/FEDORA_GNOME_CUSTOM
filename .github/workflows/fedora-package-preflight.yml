@@ -15,6 +15,9 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify strict Flathub bootstrap behavior offline
+        shell: bash
+        run: bash tests/test_ci_flathub_bootstrap.sh
       - name: Enable RPM Fusion metadata
         shell: bash
         run: bash scripts/ci/enable-rpmfusion.sh
@@ -46,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           dnf -y install flatpak
-          flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          bash scripts/ci/ensure-flathub.sh
           for manifest in manifests/flatpaks-applications-professional.txt manifests/flatpaks-appimage.txt; do
             while IFS= read -r app; do
               [[ -z "$app" || "$app" == \#* ]] && continue

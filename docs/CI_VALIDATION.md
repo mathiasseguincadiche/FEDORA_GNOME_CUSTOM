@@ -320,6 +320,12 @@ Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connex
 
 Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts : un échec ou un job ignoré bloque la fusion et la publication. Le laboratoire contrôle Q35/UEFI, l'OS réel, SELinux, le bootstrap exact, un changement de boot ID, puis une restauration Borg à froid sans chiffrement (disque, NVRAM et seed, SHA-256 et fichiers témoins). Les sources sont supprimées avant extraction. Les logs, l'inventaire RPM et les erreurs du démarrage sont conservés. Les privilèges du compte CI servent seulement à cette VM jetable ; le profil de production garde sudo avec mot de passe.
 
+## Flathub : fournisseur externe, erreurs de réseau et preuve
+
+Les prétests Fedora 44/45 vérifient toujours les identifiants des applications Flatpak sur le vrai catalogue Flathub. Les workflows concernés utilisent désormais le même bootstrap strict `scripts/ci/ensure-flathub.sh` : dépôt stable officiel sous `https://dl.flathub.org/repo/flathub.flatpakrepo`, tentatives limitées, **échec obligatoire si le dépôt reste inaccessible**. Aucun `--no-gpg-verify` ni liste d'applications fictive ne transforme un incident réseau en PASS.
+
+Le module de production utilise également cette adresse CDN officielle, mais reste soumis aux guards d'APPLY et à la gestion du remote par Flatpak. Le téléchargement du fichier .flatpakrepo n'est pas une preuve de disponibilité de toutes les applications : chaque `flatpak remote-info` reste obligatoire.
+
 ## Images de conteneur
 
 Les conteneurs **Fedora 44** des principaux workflows utilisent le registre officiel `registry.fedoraproject.org/fedora:44`, y compris le préflight réutilisable du noyau Linux amont dont l'image est paramétrée par la release Fedora. L'ancienne source ECR Public (`public.ecr.aws/docker/library/fedora:44`) a déjà provoqué `toomanyrequests: Data limit exceeded` avant même l'exécution de Nautilus/Ptyxis. Le contrat `tests/test_ci_maturity_contract.sh` interdit son retour pour les images Fedora 44 à référence fixe.

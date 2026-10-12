@@ -22,6 +22,20 @@ La procédure autoritaire reste [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION
 **État initial : `PENDING`.** Remplir les preuves observées, puis requalifier après tout changement majeur de noyau, version Fedora, profil GNOME ou matériel. Pour la procédure exacte et les gardes, voir [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md).
 
 
+## Qualification de l'affichage B580 : blanc, RGB, HDR, double écran
+
+L'affichage est une **mesure visuelle** à conduire avec l'Intel Arc B580 réelle. Ne pas afficher un PASS parce qu'un connecteur annonce un mode 2560×1440 : ce mode peut être simplement disponible, pas actif.
+
+1. Relever les sorties réellement connectées, le modèle des écrans et leur arrangement dans GNOME.
+2. Exécuter `./diagnostics/display-color-audit` **sans privilèges** pour obtenir un inventaire DRM anonymisé.
+3. Observer avec GNOME **la résolution et la fréquence active** sur chaque écran, ainsi que les éventuels VRR/HDR.
+4. Tester un aplat blanc, un dégradé noir/blanc et des gris neutres à réglages fixes ; noter la plage RGB côté moniteur, l'ICC et Night Light.
+5. Refaire la comparaison en SDR puis, si disponible, en HDR ; comparer HDMI et DisplayPort en ne changeant **qu'un facteur** à la fois.
+6. Refaire les observations après veille/réveil et vérifier les éventuels messages `xe`/DRM/PCIe.
+
+Le protocole complet, les causes possibles du blanc grisâtre et les décisions en cas d'échec sont dans [DISPLAY_COLOR_DIAGNOSTIC.md](DISPLAY_COLOR_DIAGNOSTIC.md). La validation ne doit pas contourner `xe`, désactiver SELinux ni imposer des profils couleur non vérifiés.
+
+
 ## Avant les charges
 
 1. Conserver le même commit Git propre et le même plan de modules pour les trois gates.
