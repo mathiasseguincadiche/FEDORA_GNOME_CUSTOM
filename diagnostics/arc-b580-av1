@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# One stable Bash diagnostics entrypoint: Shell quality audits diagnostics/*.
+set -Eeuo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec python3 "$ROOT/scripts/validation/arc-b580-av1.py" "$@"
