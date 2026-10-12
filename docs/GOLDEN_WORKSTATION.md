@@ -206,7 +206,7 @@ Le pré-APPLY Borg exige :
 
 Le backup quotidien protège notamment `/data/Documents` et `/data/Projets`. Le backup full les inclut également. `/data/ISO` et `/data/Jeux` restent hors sauvegarde automatique par défaut.
 
-Les disques QCOW2 ne sont sauvegardés que VM arrêtée, via staging cohérent et validation `qemu-img`.
+Les disques QCOW2, les définitions XML libvirt et les états NVRAM/TPM **ne sont pas sauvegardés automatiquement**. Le propriétaire choisit personnellement quand exporter ses VM, indépendamment de Borg.
 
 La restauration reste staging-first : aucune procédure ne doit formater ou écraser automatiquement le second T705.
 

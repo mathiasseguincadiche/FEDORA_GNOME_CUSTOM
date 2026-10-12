@@ -71,9 +71,9 @@ machine Fedora ou d'un laboratoire isolé. Les rapports GitHub ne les remplacent
 | Reprise VM isolée | Disque + NVRAM + swtpm correspondants, démarrage et données accessibles | Manifeste VM, UUID, réseau isolé, résultats |
 | Matériel cible | Ryzen 7700, Arc B580, deux T705, écran 240 Hz, réseau/audio/USB et plusieurs veilles stables | Durées, températures, SMART, erreurs noyau, résultats par composant |
 
-Pour le staging des disques VM, choisir un espace de travail disponible avec
-`backup-now.sh --include-vms --staging-root /chemin/absolu`. La capacité est
-contrôlée avant chaque copie ; elle ne prouve pas la santé physique du SSD.
+Les exports de VM sont exclusivement manuels, selon le calendrier et la procédure
+choisis par le propriétaire ; ils ne transitent pas par `backup-now.sh`.
+Le contrôle de capacité Borg concerne uniquement le HOST et les données utilisateur.
 Le profil conserve le choix de noyau existant et les protections SELinux/firewalld.
 
 ## Prétest de démarrage et reprise sur GitHub

@@ -30,16 +30,6 @@ changed=copy.deepcopy(state);changed[1][0][1][0][0]='unavailable'
 try: m.validate_restore(saved,changed)
 except ValueError: pass
 else: raise AssertionError('unavailable mode accepted')
-b=load('scripts/backup/vm-backup-plan.py')
-xml='''<domain><uuid>01234567-89ab-cdef-0123-456789abcdef</uuid><os><nvram>/custom/vars.fd</nvram></os><devices><disk type="file" device="disk"><driver type="qcow2"/><source file="/data/a b.qcow2"/><target dev="vda"/></disk><tpm><backend type="emulator"/></tpm></devices></domain>'''
-plan=b.plan(xml)
-assert plan['disks'][0]['source']=='/data/a b.qcow2'
-assert '/custom/vars.fd' in plan['state_paths']
-assert '/var/lib/libvirt/swtpm/01234567-89ab-cdef-0123-456789abcdef' in plan['state_paths']
-for invalid in [xml.replace('type="qcow2"','type="raw"'),xml.replace('type="emulator"','type="passthrough"')]:
-    try: b.plan(invalid)
-    except ValueError: pass
-    else: raise AssertionError('incomplete VM backup was accepted')
 m=load('scripts/performance/measure-workload.py')
 with tempfile.TemporaryDirectory() as directory:
     good=pathlib.Path(directory)/'good'; bad=pathlib.Path(directory)/'bad'
@@ -48,7 +38,6 @@ with tempfile.TemporaryDirectory() as directory:
     assert json.loads((good/'measurements.json').read_text())['verdict']=='PASS'
     failed=json.loads((bad/'measurements.json').read_text())
     assert failed['verdict']=='FAIL' and len(failed['samples'])==1
-print('display, VM state and measurement behavior: PASS')
+print('display and measurement behavior: PASS')
 PY
 
-python3 -B "$ROOT/tests/test_vm_backup_plan.py"

@@ -95,7 +95,7 @@ flowchart TB
 
 - **T705 système :** Fedora, le bureau et la base réinstallable. Il peut être reconstruit depuis le dépôt.
 - **T705 `/data` :** documents, projets, ISO, jeux et VM. Il est **préservé lors d'une réinstallation**, jamais formaté automatiquement par le dépôt.
-- **SSD Borg externe :** seconde protection contre la perte de données, notamment en cas de panne du disque `/data`. Les sauvegardes sont **non chiffrées** par choix explicite : ce support doit être protégé physiquement. Les dossiers `ISO` et `Jeux` sont exclus du backup automatique par défaut ; les sauvegardes de VM exigent leur arrêt.
+- **SSD Borg externe :** seconde protection contre la perte de données, notamment en cas de panne du disque `/data`. Les sauvegardes sont **non chiffrées** par choix explicite : ce support doit être protégé physiquement. Les dossiers `ISO` et `Jeux` sont exclus du backup automatique par défaut ; les VM sont exclues de Borg et exportées manuellement par leur propriétaire.
 
 Le fait d'avoir un second T705 ne protège pas contre sa propre panne, un effacement accidentel ou une compromission : c'est pourquoi [BACKUP_RESTORE.md](BACKUP_RESTORE.md) reste central.
 

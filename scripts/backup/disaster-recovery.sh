@@ -21,7 +21,7 @@ manifest="$(backup_runtime_recovery_manifest "$latest")" || { echo 'Full archive
 backup_engine_check full "$latest" || { echo 'Full recovery archive integrity check failed.' >&2; exit 30; }
 backup_runtime_recovery_canary_valid "$latest" "$manifest" || { echo 'Recovery canary extraction failed or mismatched.' >&2; exit 30; }
 recovery_commit="$(jq -r '.commit' <<<"$manifest")"
-vm_coverage="$(jq -r 'if .include_vms then "requested; VM count=" + (.vm_count|tostring) else "NO VM DISKS; metadata only" end' <<<"$manifest")"
+vm_coverage="$(jq -r 'if .include_vms then "UNSUPPORTED ARCHIVE; VM exports are owner-managed" else "NONE; VM exports are manual and separate from Borg" end' <<<"$manifest")"
 
 mkdir -p "$STATE_ROOT"
 plan="$STATE_ROOT/disaster-recovery-$(date -u +%Y%m%dT%H%M%SZ).txt"
@@ -40,12 +40,12 @@ Engine: Borg 1.x, unencrypted repository (ADR 0014)
 3. Clone FEDORA_GNOME_CUSTOM and checkout the commit associated with the chosen backup when available.
 4. Run ./diagnostic.sh and ./install.sh --dry-run before any real convergence.
 5. Install borgbackup, then restore the selected Borg archive into a staging directory with scripts/backup/restore.sh (no passphrase is needed).
-6. Review fedora-system-config.tar.gz, inventory/ and libvirt XML before applying anything manually.
-7. Recreate libvirt network/pool definitions from reviewed XML; never overwrite conflicting live definitions blindly.
-8. Restore qcow2 images only while the affected VM is undefined/shut off, then run qemu-img check and restorecon.
-9. Recover the matching NVRAM and swtpm archive with the original domain UUID, ownership and SELinux labels; boot an isolated recovery VM before declaring recovery successful. Recreate cloud-init/Windows media as needed; proprietary ISO files are not assumed to be backed up.
-10. Run diagnostics/gnome-doctor, diagnostics/virtualization-doctor, diagnostics/backup-doctor and KVM runtime certification.
-11. Only after all postchecks pass, resume normal workstation use.
+6. Review fedora-system-config.tar.gz and inventory/ before applying anything manually.
+7. Recreate host networking/KVM tooling with the project; no VM domain or disk export is included in Borg.
+8. If virtual machines must be recovered, use the owner's SEPARATE MANUAL exports of their disks/XML/NVRAM/TPM. Do not infer VM coverage from this Borg archive.
+9. Restore the owner's manual VM exports only after reviewing their authenticity, UUIDs, permissions and SELinux labels; boot an isolated recovery VM before use.
+10. Run diagnostics/gnome-doctor, diagnostics/virtualization-doctor and diagnostics/backup-doctor on the rebuilt host.
+11. Resume normal workstation use only after all independent host and manual VM checks pass.
 
 This helper is intentionally non-destructive. It never formats storage, overwrites /etc, replaces active VM disks or redefines libvirt objects automatically.
 EOF

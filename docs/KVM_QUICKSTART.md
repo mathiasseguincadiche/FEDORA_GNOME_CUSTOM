@@ -157,23 +157,13 @@ bash scripts/kvm/runtime_certification.sh
 
 La certification contrôle notamment QEMU Guest Agent, VirtIO, Secure Boot/TPM Windows, réseau, stack DevOps Rocky Linux, Internet et guard KVM.
 
-## 7. Sauvegarder les VM
+## 7. Exports des VM : gestion personnelle
 
-Arrêter les deux domaines puis vérifier leur état :
-
-```bash
-virsh --connect qemu:///system shutdown rocky-devops
-virsh --connect qemu:///system shutdown windows-11
-virsh --connect qemu:///system list --all
-```
-
-Puis :
-
-```bash
-scripts/backup/backup-now.sh --include-vms
-```
-
-Le projet refuse la copie naïve d'un QCOW2 actif.
+Les exports des VM sont réalisés **manuellement**, seulement quand le
+propriétaire le souhaite. Aucune commande du moteur Borg n'exporte
+Rocky Linux ou Windows, et le projet ne planifie aucun export automatique.
+Pour un export personnel cohérent, il appartient au propriétaire de
+vérifier l'état de la VM et de conserver ensemble ses fichiers nécessaires.
 
 ## 8. En cas de problème
 

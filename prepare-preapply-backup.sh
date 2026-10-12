@@ -7,6 +7,10 @@ install_lock_acquire || exit $?
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 
 fail() { printf 'BACKUP BLOCKED: %s\n' "$*" >&2; exit 20; }
+if is_true "${BACKUP_VM_DISKS:-false}" || is_true "${BACKUP_LIBVIRT_METADATA:-false}" ||
+   is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}"; then
+  fail 'VM exports are manual-only; Borg must not archive VM files or metadata'
+fi
 apply_gate_require_clean_git || fail 'tracked Git worktree must be clean'
 apply_gate_require_dryrun || fail 'FULL DRY-RUN PASS proof for the current commit/config/module-plan/hardware identity is required'
 
@@ -41,17 +45,16 @@ backup_engine_repo_ready || fail 'repository unreachable, or encrypted: the Gold
 
 staging="$STATE_ROOT/preapply-staging/$RUN_ID"
 rm -rf "$staging"
-mkdir -p "$staging/inventory" "$staging/libvirt"
+mkdir -p "$staging/inventory"
 trap 'rm -rf "$staging"' EXIT
 system_bytes="$(sudo du -scB1 /etc /boot | awk 'END {print $1}')"
 backup_runtime_require_staging_space "$staging" "$system_bytes" || fail 'insufficient staging capacity for /etc and /boot'
 backup_runtime_capture_inventory "$staging/inventory"
 printf 'fedora-gnome-custom restore canary\ncommit=%s\neffective_config_sha256=%s\n' \
   "$(repo_commit)" "$(effective_config_sha256)" > "$staging/restore-canary.txt"
-backup_runtime_export_libvirt "$staging/libvirt"
 
 printf 'Capturing privileged Fedora configuration metadata...\n'
-sudo tar -C / --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
+sudo tar -C / --exclude=etc/libvirt --exclude='etc/libvirt/*' --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
 sudo chown "$(id -u):$(id -g)" "$staging/fedora-system-config.tar.gz"
 
 sources=("$staging")
@@ -61,7 +64,11 @@ while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(
 
 backup_runtime_require_source_capacity "$repo" "${sources[@]}" || fail 'insufficient repository capacity for source data'
 printf 'Creating pre-APPLY archive (unencrypted Borg)...\n'
-read -r archive snap < <(backup_engine_create preapply -- "${sources[@]}") || fail 'Borg archive creation failed'
+read -r archive snap < <(backup_engine_create preapply \
+  --exclude '*.qcow2' --exclude '*.vmdk' --exclude '*.vdi' \
+  --exclude '*.vhd' --exclude '*.vhdx' --exclude '*.raw' \
+  --exclude '*/libvirt/*' --exclude '*/libvirt/**' \
+  -- "${sources[@]}") || fail 'Borg archive creation failed'
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || fail 'Borg did not return one valid archive id'
 
 printf 'Running Borg repository check and full data verification of this archive...\n'

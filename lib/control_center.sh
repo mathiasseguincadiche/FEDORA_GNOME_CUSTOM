@@ -443,30 +443,28 @@ cc_backup_menu() {
     cc_header
     cc_section '3 — SAUVEGARDE & RESTAURATION'
     cc_option 1 'Backup complet HOST' 'Borg + intégrité'
-    cc_option 2 'Backup complet + VM arrêtées'
-    cc_option 3 'Backup utilisateur XDG' 'Bureau/Documents/Images/Vidéos/Musique'
-    cc_option 4 'Lister les archives Borg'
-    cc_option 5 'Vérifier le dépôt Borg' 'doctor'
-    cc_option 6 'Vérification profonde Borg'
-    cc_option 7 'Restaurer vers staging' 'non destructif'
-    cc_option 8 'Plan Disaster Recovery'
-    cc_option 9 'Appliquer rétention Borg' 'manuel: full + daily'
+    cc_option 2 'Backup utilisateur XDG' 'Bureau/Documents/Images/Vidéos/Musique'
+    cc_option 3 'Lister les archives Borg'
+    cc_option 4 'Vérifier le dépôt Borg' 'doctor'
+    cc_option 5 'Vérification profonde Borg'
+    cc_option 6 'Restaurer vers staging' 'non destructif'
+    cc_option 7 'Plan Disaster Recovery'
+    cc_option 8 'Appliquer rétention Borg' 'manuel: full + daily'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
       1) cc_interactive_exec 'BACKUP COMPLET HOST' "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
-      2) cc_interactive_exec 'BACKUP COMPLET + VM' "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms ;;
-      3) cc_interactive_exec 'BACKUP UTILISATEUR XDG' env FEDORA_GNOME_CUSTOM_REPO="$REPO_ROOT" "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
-      4) cc_interactive_exec 'ARCHIVES BORG' "$REPO_ROOT/scripts/backup/restore.sh" list ;;
-      5) cc_interactive_exec 'BACKUP / RECOVERY DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
-      6) cc_interactive_exec 'VÉRIFICATION PROFONDE BORG' "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
-      7)
+      2) cc_interactive_exec 'BACKUP UTILISATEUR XDG' env FEDORA_GNOME_CUSTOM_REPO="$REPO_ROOT" "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
+      3) cc_interactive_exec 'ARCHIVES BORG' "$REPO_ROOT/scripts/backup/restore.sh" list ;;
+      4) cc_interactive_exec 'BACKUP / RECOVERY DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
+      5) cc_interactive_exec 'VÉRIFICATION PROFONDE BORG' "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
+      6)
         read -r -p 'Snapshot [latest] : ' snap
         cc_interactive_exec 'RESTAURATION VERS STAGING' "$REPO_ROOT/scripts/backup/restore.sh" restore "${snap:-latest}"
         ;;
-      8) cc_interactive_exec 'PLAN DISASTER RECOVERY' "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
-      9)
-        if cc_confirm 'Créer un backup complet puis appliquer la rétention Borg full + daily ?'; then
+      7) cc_interactive_exec 'PLAN DISASTER RECOVERY' "$REPO_ROOT/scripts/backup/disaster-recovery.sh" ;;
+      8)
+        if cc_confirm 'Créer un backup complet HOST puis appliquer la rétention Borg full + daily ?'; then
           cc_interactive_exec 'RÉTENTION BORG MANUELLE' "$REPO_ROOT/scripts/backup/backup-now.sh" --prune
         fi
         ;;
@@ -745,7 +743,7 @@ Usage:
   ./control.sh status                  Tableau de bord read-only
   ./control.sh install dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
-  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
+  ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|rollback
@@ -785,7 +783,6 @@ cc_cli_dispatch() {
     backup)
       case "$action" in
         now) "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
-        now-with-vms) "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms ;;
         daily) FEDORA_GNOME_CUSTOM_REPO="$REPO_ROOT" "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
         list) "$REPO_ROOT/scripts/backup/restore.sh" list ;;
         check) "$REPO_ROOT/diagnostics/backup-doctor" ;;

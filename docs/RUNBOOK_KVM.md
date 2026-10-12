@@ -151,21 +151,16 @@ Le partage SMB est facultatif et limité à `C:\VM-Share`. Après `Configure-Gue
 
 Aucun partage invité/anonyme et aucun VirtioFS automatique n'appartiennent au contrat Golden.
 
-## Sauvegarde VM refusée
+## Export manuel des VM
 
-Vérifier que les domaines sont réellement arrêtés :
+Les VM Rocky Linux et Windows sont exportées **manuellement par le propriétaire**,
+quand il en a besoin. Les sauvegardes Borg du projet concernent uniquement le
+système Fedora et les données utilisateur. Ni le Control Center, ni l'upgrade
+Fedora 45, ni les timers Borg ne sauvegardent des disques QCOW2 ou XML libvirt.
 
-```bash
-virsh --connect qemu:///system list --all
-```
-
-Puis :
-
-```bash
-scripts/backup/backup-now.sh --include-vms
-```
-
-Le chemin attendu est : VM arrêtée → `qemu-img check` → conversion staging → Borg.
+La validation des VM par `virsh` et les tests KVM restent indépendants de
+l'existence d'un export personnel. Aucun arrêt automatique des VM n'est
+demandé par le moteur de sauvegarde Borg.
 
 ## Certification KVM échoue
 

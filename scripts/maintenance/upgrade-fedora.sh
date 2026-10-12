@@ -38,7 +38,7 @@ require_host() {
 case "$action" in
   plan)
     printf 'Source: Fedora 44. Target: final promoted Fedora 45 / GNOME 51.\n'
-    printf 'Steps: latest Fedora 44 update + reboot/finalize -> full Borg with cold VMs -> download -> reboot -> finalize -> requalify.\n'
+    printf 'Steps: latest Fedora 44 update + reboot/finalize -> host-only Borg (manual VM exports are separate) -> download -> reboot -> finalize -> requalify.\n'
     fedora_require_profile 45
     ;;
   prepare)
@@ -62,8 +62,8 @@ case "$action" in
     kernel_lifecycle_ensure_dnf_retention
     target="$(KERNEL_DNF_RELEASE=45 kernel_lifecycle_resolve_latest_stable)"
     [[ "$target" == *.fc45.x86_64 ]] || exit "$EXIT_PRECHECK_FAILED"
-    # Includes disks, XML, NVRAM and swtpm; refuses live VMs and insufficient staging.
-    "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms
+    # Host-only Borg. VM disk/XML/NVRAM/TPM exports are the owner's manual task.
+    "$REPO_ROOT/scripts/backup/backup-now.sh"
     "$REPO_ROOT/diagnostics/backup-doctor" --certify
     kernel_lifecycle_pin_target "$target"
     # No --allowerasing, --skip-unavailable or automatic reboot.

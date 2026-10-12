@@ -45,10 +45,37 @@ grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'backup_engine_check preapply' "$ROOT/prepare-preapply-backup.sh"
 
 # Full and daily backups protect Documents/Projets; ISO and Jeux stay excluded by default.
-grep -Fq 'VM disk backup disabled by policy' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'VM exports are owner-managed' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'VM backup/export is manual-only' "$ROOT/scripts/backup/backup-now.sh"
+grep -Fq 'BACKUP_LIBVIRT_METADATA="false"' "$ROOT/config/backup.conf"
+grep -Fq 'BACKUP_VM_CLOUD_INIT_METADATA="false"' "$ROOT/config/backup.conf"
+if grep -Fq 'backup_runtime_export_libvirt "$staging/libvirt"' "$ROOT/scripts/backup/backup-now.sh"; then
+  echo 'Full backup still captures libvirt metadata' >&2; exit 1
+fi
+if grep -Fq 'backup_runtime_export_libvirt "$staging/libvirt"' "$ROOT/prepare-preapply-backup.sh"; then
+  echo 'Pre-APPLY backup still captures libvirt metadata' >&2; exit 1
+fi
+if grep -Fq -- '--include-vms' "$ROOT/scripts/maintenance/upgrade-fedora.sh"; then
+  echo 'Fedora upgrade still forces VM backups' >&2; exit 1
+fi
+if grep -Fq -- 'now-with-vms)' "$ROOT/lib/control_center.sh"; then
+  echo 'Control Center still exposes VM backups' >&2; exit 1
+fi
+for p in scripts/backup/backup-now.sh prepare-preapply-backup.sh scripts/backup/daily-user-backup.sh; do
+  grep -Fq -- 'libvirt/*' "$ROOT/$p" || {
+    echo "Borg path lacks a libvirt exclusion: $p" >&2; exit 1;
+  }
+done
 grep -Fq 'for key in DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq -- '--exclude "*.qcow2"' "$ROOT/scripts/backup/daily-user-backup.sh"
-grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"
+if grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"; then
+  echo 'VM conversion must never run inside the Borg script' >&2
+  exit 1
+fi
+if [[ -e "$ROOT/scripts/backup/vm-backup-plan.py" ]]; then
+  echo 'Obsolete automatic VM backup plan still exists' >&2
+  exit 1
+fi
 grep -Fq 'source "$REPO_ROOT/lib/persistent_data.sh"' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'persistent_data_documents' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'persistent_data_projects' "$ROOT/scripts/backup/backup-now.sh"
@@ -79,5 +106,27 @@ fi
 grep -Fq 'for kind in full daily; do' "$ROOT/scripts/backup/backup-retention.sh"
 grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'MANIFEST.sha256' "$ROOT/lib/backup_runtime_bundle.sh"
+
+# Even the privileged /etc system snapshot must exclude libvirt's domain XML.
+for script in scripts/backup/backup-now.sh prepare-preapply-backup.sh; do
+  grep -Fq -- '--exclude=etc/libvirt' "$ROOT/$script" || {
+    echo "system-config tar still includes VM definitions: $script" >&2; exit 1;
+  }
+done
+# Check GNU tar's intended exclusion with a disposable /etc tree; never read
+# the host's real /etc/libvirt and never create real VM state.
+tmp_tar="$(mktemp -d)"
+mkdir -p "$tmp_tar/etc/libvirt/qemu" "$tmp_tar/archive"
+printf 'host config\n' > "$tmp_tar/etc/hostname"
+printf 'private domain XML\n' > "$tmp_tar/etc/libvirt/qemu/owner-managed.xml"
+tar -C "$tmp_tar" --exclude=etc/libvirt --exclude='etc/libvirt/*' -czf "$tmp_tar/archive/host.tgz" etc
+tar -tzf "$tmp_tar/archive/host.tgz" > "$tmp_tar/archive/members.txt"
+grep -Fqx 'etc/hostname' "$tmp_tar/archive/members.txt"
+if grep -Fq 'etc/libvirt' "$tmp_tar/archive/members.txt"; then
+  echo 'VM metadata leaked into simulated HOST tar' >&2
+  rm -rf "$tmp_tar"
+  exit 1
+fi
+rm -rf "$tmp_tar"
 
 echo 'backup/recovery contract: PASS'

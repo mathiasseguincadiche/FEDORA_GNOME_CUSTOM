@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# Contract: no automated VM disk backup or copy, even with local.conf overrides.
 backup_vm_precheck() {
-  is_true "${BACKUP_VM_DISKS:-true}" || return 0
-  is_true "${BACKUP_VM_SHUTDOWN_REQUIRED:-true}" || return "$EXIT_PRECHECK_FAILED"
-  ! is_true "${BACKUP_ALLOW_LIVE_QCOW2_COPY:-false}" || return "$EXIT_PRECHECK_FAILED"
+  ! is_true "${BACKUP_VM_DISKS:-false}" || return "${EXIT_CONFIG_FAILED:-60}"
+  ! is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}" || return "${EXIT_CONFIG_FAILED:-60}"
 }
-backup_vm_plan() { echo 'VM disk backup is explicit: reference guests must be shut off; qcow2 files are staged with qemu-img convert before the Borg archive. Live file-copy backup is forbidden.'; }
+backup_vm_plan() { echo 'VM disks, NVRAM, TPM and cloud-init are exported manually by the owner; Borg explicitly excludes them.'; }
 backup_vm_apply() { :; }
-backup_vm_postcheck() { return 0; }
+backup_vm_postcheck() {
+  ! is_true "${BACKUP_VM_DISKS:-false}" && ! is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}"
+}

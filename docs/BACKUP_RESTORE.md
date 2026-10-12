@@ -13,7 +13,7 @@ flowchart TD
   BORG --> RESTORE["Restauration d'abord en staging, puis vérification"]
 ```
 
-Le second SSD protège les données de travail lors d'une **réinstallation du premier**, mais **pas** contre la panne ou l'effacement du second SSD. Borg fournit la sauvegarde externe pour les jeux de données sélectionnés ; `ISO` et `Jeux` ne sont pas automatiquement inclus par défaut, et les VM nécessitent une sauvegarde cohérente à froid.
+Le second SSD protège les données de travail lors d'une **réinstallation du premier**, mais **pas** contre la panne ou l'effacement du second SSD. Borg fournit la sauvegarde externe pour les jeux de données sélectionnés ; `ISO` et `Jeux` ne sont pas automatiquement inclus par défaut, les VM sont exclues de Borg : leurs exports restent exclusivement manuels, sous la responsabilité de l'utilisateur.
 
 Les dépôts Borg de ce projet sont **non chiffrés** par décision explicite (ADR 0014) : traiter le support externe comme une donnée confidentielle. Aucune restauration ne doit écraser directement le système en production sans inspection. [Schéma d'architecture détaillé](ARCHITECTURE_PEDAGOGIQUE.md).
 
@@ -25,8 +25,8 @@ Les dépôts Borg de ce projet sont **non chiffrés** par décision explicite (A
 - marker pré-APPLY lié au **même commit Git** que le dry-run et l'APPLY, et à l'archive exacte (nom + identifiant) ;
 - `borg check --verify-data` sur l'archive pré-APPLY obligatoire (chaque bloc est relu et vérifié) ;
 - restauration du canary obligatoire avant création de `state/preapply-backup.ok` ;
-- aucune copie live d'un QCOW2 ;
-- pour sauvegarder les disques VM, les domaines doivent être `shut off` ;
+- **aucune sauvegarde, copie ou export automatique de VM par Borg**, y compris XML libvirt, NVRAM, swtpm, disques virtuels et cloud-init ;
+- les exports de VM sont effectués manuellement par leur propriétaire, hors des scripts du projet ;
 - aucune restauration automatique en place de `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images` ;
 - runtime des timers installé dans un bundle immutable versionné par SHA et contrôlé par `MANIFEST.sha256` ;
 - rétention Borg périodique versionnée : 7 daily / 4 weekly / 6 monthly, appliquée séparément aux archives `fgc-full-*` et `fgc-daily-*` ; les archives `fgc-preapply-*` (points de retour arrière) ne sont jamais supprimées automatiquement.
@@ -41,18 +41,13 @@ La fiche matérielle prévoit un troisième support de ~1,8 To, le **Kingston XS
 
 **Le dépôt n'est pas chiffré** : toute personne qui possède le disque peut lire les sauvegardes, y compris `~/.ssh`, `~/.gnupg` et les profils de navigateur. Ranger le disque en conséquence. En contrepartie, aucune passphrase ne peut être perdue : un Fedora neuf avec `borgbackup` suffit pour restaurer.
 
-## VM sous gestion manuelle et données personnelles
+## VM : exports strictement manuels, indépendants de Borg
 
-Par défaut, `BACKUP_VM_DISKS=false` interdit `--include-vms`. Les images de VM
-(qcow2, vmdk, vdi, vhd, vhdx, raw) sont exclues des archives Borg, même si elles
-se trouvent dans un dossier utilisateur. Les définitions XML libvirt restent
-dans l'inventaire du backup complet. L'utilisateur exporte et conserve ses VM
-séparément sur le support de son choix.
+**Les disques virtuels, définitions XML libvirt, états NVRAM/TPM et médias cloud-init ne sont jamais sauvegardés automatiquement par le projet.** Le propriétaire exporte lui-même ses VM **lorsqu'il en a besoin**, selon sa procédure et vers le support de son choix.
 
-Le backup complet ajoute les dossiers XDG localisés (Bureau, Documents,
-Images, Vidéos, Musique) et `~/Development` aux configurations système.
-Une résolution XDG inconnue ou ambiguë bloque la sauvegarde plutôt que de
-risquer d'archiver un emplacement imprévu.
+Le contrat `BACKUP_VM_DISKS=false`, `BACKUP_LIBVIRT_METADATA=false` et `BACKUP_VM_CLOUD_INIT_METADATA=false` est imposé. Les anciens overrides `true` échouent explicitement, `--include-vms` est refusé et le Control Center ne propose plus de sauvegarde VM. Les exclusions s'appliquent aux sauvegardes quotidiennes, complètes et pré-APPLY. Les VM n'entrent **pas** dans le périmètre de certification Borg.
+
+Borg continue de protéger le HOST, les données personnelles, `/data/Documents` et `/data/Projets`. Le backup complet ajoute aussi les dossiers XDG localisés (Bureau, Documents, Images, Vidéos, Musique) et `~/Development`. Une résolution XDG inconnue ou ambiguë bloque la sauvegarde plutôt que d'archiver un emplacement imprévu.
 
 ## Deux niveaux de protection des données
 
@@ -161,29 +156,17 @@ scripts/backup/backup-now.sh --prune
 
 Le chemin manuel est strict : une cible Borg indisponible provoque un échec explicite au lieu d'un skip.
 
-## Backup d'exploitation
-
-HOST + métadonnées KVM + Documents/Projets persistants :
+## Sauvegarde du HOST et des données utilisateur
 
 ```bash
+# Fedora HOST, configuration, documents et projets — jamais les VM
 scripts/backup/backup-now.sh
-```
 
-HOST + métadonnées + disques QCOW2 :
-
-```bash
-scripts/backup/backup-now.sh --include-vms
-```
-
-Cette deuxième commande **refuse** toute VM qui n'est pas arrêtée. Les images sont d'abord recopiées par `qemu-img convert` vers un staging cohérent, vérifiées avec `qemu-img check`, puis seulement archivées par Borg.
-
-Pour créer le backup puis appliquer immédiatement la rétention :
-
-```bash
+# Même portée sans VM, avec rétention ensuite
 scripts/backup/backup-now.sh --prune
-# avec les disques VM arrêtés :
-scripts/backup/backup-now.sh --include-vms --prune
 ```
+
+L'option historique `--include-vms` n'est **plus prise en charge**. Ne pas la réactiver en modifiant `local.conf`. Le propriétaire gère ses exports de VM en dehors de Borg.
 
 ## Diagnostic
 
@@ -238,16 +221,13 @@ Ce générateur de plan exige `borgbackup`, `jq` et Python 3.
 
 Le script sélectionne uniquement la dernière archive **full**, valide son manifeste de récupération, puis relit ses données (`borg check --verify-data`) puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
 
-## Règle QCOW2
+## Export manuel des VM : périmètre et limites
 
-### Portée du plan de sauvegarde VM
+Le projet ne prend **aucune initiative** de sauvegarde ou d'export des VM. Les outils libvirt/KVM servent à **créer, exploiter et diagnostiquer** les VM, pas à les archiver. L'ancien planificateur de sauvegarde VM a été retiré du dépôt : aucun composant de Borg ne doit générer de plan de conversion ou copie QCOW2.
 
-Le planificateur `scripts/backup/vm-backup-plan.py` lit le XML de libvirt **sans modifier** les disques. Il accepte uniquement les disques persistants au format fichier QCOW2 et inventorie la NVRAM UEFI ainsi que l'état TPM émulé. Il refuse les chemins relatifs, les segments `..` ou `.`, les pseudo-systèmes (`/dev`, `/proc`, `/sys`, `/run`) ainsi que les chemins de secrets de l'hôte (`/etc`, `/root`). Des cibles ou sources dupliquées bloquent le plan plutôt que de faire perdre silencieusement une partie d'une VM.
+Pour ses exports personnels, le propriétaire choisit quand arrêter ses VM et quels fichiers conserver ensemble (disque virtuel, XML, NVRAM et état TPM si applicable). Ce travail est **hors périmètre** de la sauvegarde du HOST ; aucune preuve Borg ne vaut preuve de récupération d'une VM.
 
-Le XML de domaine n'est **pas** une autorisation générale de lire les fichiers du système hôte. La sauvegarde effective exige toujours l'arrêt des VM, un contrôle de capacité et une copie cohérente. Ce contrôle lexical ne certifie pas l'absence de liens symboliques sur le stockage réel : les dossiers et les permissions devront être vérifiés lors de la Gate 3. Le stockage Borg reste **non chiffré** par décision explicite.
-
-
-Ne jamais copier un disque QCOW2 actif avec `cp`, `rsync` ou Borg en espérant obtenir une sauvegarde cohérente. Ce projet choisit volontairement le contrat simple et robuste : **VM arrêtée → qemu-img check → qemu-img convert → Borg**.
+Pour la reprise du système, la seule procédure automatisée concerne l'archive **HOST** et la restauration des fichiers utilisateur en zone de staging.
 
 ## Qualification après l'audit de fiabilité
 
@@ -261,12 +241,8 @@ inclus via `.mozilla`, `.var/app` et `.local/share`. Ces répertoires peuvent ê
 volumineux : dimensionner et vérifier le support externe. Le dossier
 `~/.config/fedora-gnome-custom/secrets` reste exclu des archives.
 
-`backup-now.sh --include-vms` exige toutes les VM arrêtées et inclut les disques
-qcow2, les variables UEFI (NVRAM) et l'état swtpm, avec un inventaire JSON par VM.
-Un disque ou backend TPM non pris en charge bloque la sauvegarde au lieu d'être
-ignoré. Empêcher tout démarrage automatique ou manuel des VM pendant cette
-opération. Une vérification de l'état avant/après ne constitue pas un verrou
-contre un autre administrateur.
+`Les VM sont **entièrement exclues** des sauvegardes de ce projet. Le propriétaire
+gère lui-même ses exports ponctuels, sans `backup-now.sh` ni timer Borg.
 
 Pour un exercice réel, sélectionner un nom d'archive exact :
 
@@ -281,11 +257,8 @@ vérifie aussi chaque bloc contre son empreinte pendant l'extraction. Comparer e
 permissions et liens attendus. Une restauration de fichiers réussie ne prouve
 pas le redémarrage de Fedora ou de Windows.
 
-Pour les VM : inspecter le plan JSON, extraire l'archive d'état persistant dans
-un second staging, puis remettre disque, NVRAM et swtpm ensemble, VM arrêtée,
-avec son UUID d'origine et les bons propriétaires/labels SELinux. Démarrer une
-copie de récupération isolée du réseau et de la VM originale. Vérifier Windows,
-le TPM et l'accès aux données avant de déclarer la reprise opérationnelle.
+La reprise d'une VM repose **uniquement sur l'export manuel effectué par le propriétaire**.
+Ce document n'indique pas d'archive VM dans Borg et ne certifie aucune restauration VM.
 
 Le test `tests/test_borg_roundtrip.sh` exerce un vrai dépôt Borg non chiffré,
 le runtime quotidien installé, la rétention et le script de restauration. Il
@@ -308,21 +281,21 @@ Une archive supprimée, un dépôt différent ou une configuration modifiée inv
 la preuve. Les anciens markers complets doivent être régénérés.
 
 Le manifeste de récupération est inclus dans le staging et dans le commentaire
-Borg de l'archive complète. Le plan précise le commit à récupérer et si les
-disques VM ont été inclus, avec le nombre de domaines. Sans `--include-vms`,
-les XML seuls ne prouvent jamais une récupération VM. Une archive quotidienne,
-même plus récente, reste réservée à la récupération des fichiers utilisateur.
+Borg de l'archive complète. Pour la compatibilité avec les archives historiques,
+il conserve les champs `include_vms=false`, `vm_count=0` et une liste vide.
+Cela indique explicitement **l'absence de sauvegarde de VM** ; l'archive
+quotidienne reste réservée à la récupération des fichiers utilisateur.
 
 Le staging par défaut reste sous `state/backup-staging`. Pour choisir un autre
 espace de travail :
 
 ```bash
-scripts/backup/backup-now.sh --include-vms --staging-root /chemin/absolu/backup-staging
+scripts/backup/backup-now.sh --staging-root /chemin/absolu/backup-staging
 ```
 
-Avant la capture système et chaque copie VM, l'espace disponible doit couvrir
-la taille estimée et conserver 1 Gio de réserve. Les disques VM sont dimensionnés
-avec `qemu-img measure`. Avant l'archivage local, la taille des sources et la
+Avant la capture système, l'espace disponible doit couvrir la taille estimée
+et conserver la marge de sécurité configurée. Aucun disque VM n'est mesuré
+ni copié. Avant l'archivage local, la taille des sources HOST et la
 réserve configurée (20 Gio par défaut) doivent tenir sur le support externe.
 Cette estimation est conservatrice : compression et déduplication ne permettent
 pas de contourner le contrôle. La capacité d'un dépôt distant ne peut pas être
@@ -347,9 +320,7 @@ automatiquement une base de récupération. La rétention hebdomadaire n'en gard
 que les plus récentes (`BACKUP_KEEP_PENDING`, 3 par défaut) pour qu'elles ne
 remplissent jamais le disque, et les diagnostics signalent leur présence.
 
-Pour Gate 3, la politique `BACKUP_VM_DISKS=true` avec KVM actif impose un backup
-`--include-vms`. La certification compare le nombre et l'empreinte de la liste
-triée des domaines sauvegardés avec la liste actuelle de libvirt, accessible
-avec les droits sudo déjà disponibles. Une sauvegarde de métadonnées seule ou
-une liste de VM modifiée bloque la certification ; la commande de backup HOST
-sans disques VM reste disponible pour les sauvegardes intermédiaires.
+Pour Gate 3, la certification Borg vérifie **le HOST et les données protégées**,
+ainsi que `include_vms=false`, `vm_count=0` et l'interdiction des overrides VM.
+Elle ne doit jamais demander un export de VM. Les exports personnels de
+Rocky Linux ou Windows restent totalement indépendants de cette Gate Borg.

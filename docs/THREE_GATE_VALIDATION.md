@@ -323,9 +323,10 @@ Gate 2 est rejetée si elle ne référence pas exactement la preuve Gate 1 impor
 
 ## 4. Convergence bare-metal
 
-Exécuter la séquence Golden habituelle. La sauvegarde pré-APPLY protège le HOST ;
-la sauvegarde complète avec disques VM est ensuite nécessaire à la certification
-quand `ENABLE_KVM=true` et `BACKUP_VM_DISKS=true` :
+Exécuter la séquence Golden habituelle. La sauvegarde pré-APPLY protège
+uniquement le HOST. Les VM sont exclues des archives Borg et sont exportées
+manuellement par leur propriétaire selon ses besoins, sans conditionner la
+certification du HOST :
 
 ```bash
 ./control.sh install dry-run
@@ -386,16 +387,16 @@ Enregistrer chaque cycle physique :
 Après convergence et avant la certification finale :
 
 ```bash
-scripts/backup/backup-now.sh --include-vms --staging-root /chemin/absolu/backup-staging
+scripts/backup/backup-now.sh --staging-root /chemin/absolu/backup-staging
 ./diagnostics/backup-doctor
 ```
 
 Le staging et le support externe doivent disposer de la capacité requise. Le
-nom/id de l'archive exacte, sa couverture des domaines et son canary restauré
-sont contrôlés. Une sauvegarde XML seule ne couvre pas les disques VM. Suivre
-le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) pour exercer une
-restauration sans toucher aux disques originaux ; la vérification Borg seule
-ne prouve pas le démarrage du système récupéré.
+nom/id de l'archive HOST et son canary restauré sont contrôlés ; aucune
+couverture des domaines ou des disques VM n'est attendue. Suivre le
+[runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) pour une restauration
+sans toucher aux disques originaux. La vérification Borg ne prouve pas le
+démarrage de Fedora et **ne représente jamais un export de VM**.
 
 ## 7. Certification finale
 

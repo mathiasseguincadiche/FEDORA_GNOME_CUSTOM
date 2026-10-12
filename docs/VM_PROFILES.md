@@ -151,11 +151,9 @@ Valider :
 bash scripts/kvm/runtime_certification.sh
 ```
 
-Sauvegarder les disques, VM arrêtées :
-
-```bash
-scripts/backup/backup-now.sh --include-vms
-```
+**Exports de VM : gestion personnelle.** Le propriétaire choisit lui-même
+le moment d'un export manuel, son support et sa méthode. Le moteur Borg
+ne copie ni les disques ni les métadonnées libvirt.
 
 Pour reconstruire un guest, conserver les données utiles et la sauvegarde, retirer explicitement le domaine/disque concerné selon [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md), puis relancer le script de création correspondant.
 

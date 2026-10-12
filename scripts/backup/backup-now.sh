@@ -15,14 +15,23 @@ prune=false
 staging_root="$STATE_ROOT/backup-staging"
 while (($#)); do
   case "$1" in
-    --include-vms) include_vms=true; shift ;;
+    --include-vms) echo 'VM exports are owner-managed; Borg backup of VM disks is disabled.' >&2; exit 2 ;;
     --prune) prune=true; shift ;;
     --staging-root) [[ ${2:-} == /* ]] || { echo '--staging-root requires an absolute path' >&2; exit 2; }; staging_root="$2"; shift 2 ;;
     -h|--help)
-      echo 'Usage: backup-now.sh [--include-vms] [--prune] [--staging-root /absolute/path]'; echo '  --prune applies the versioned retention policy to full and daily archives, then compacts the Borg repository.'; exit 0 ;;
+      echo 'Usage: backup-now.sh [--prune] [--staging-root /absolute/path]'; echo '  --prune applies the versioned retention policy to full and daily archives, then compacts the Borg repository.'; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
+
+# VM images, libvirt definitions and cloud-init metadata belong to the owner's
+# manual export workflow. Reject legacy local overrides instead of silently
+# enabling a VM backup via Borg.
+if is_true "${BACKUP_VM_DISKS:-false}" || is_true "${BACKUP_LIBVIRT_METADATA:-false}" ||
+   is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}"; then
+  echo 'VM backup/export is manual-only. Disable BACKUP_VM_* and BACKUP_LIBVIRT_METADATA overrides.' >&2
+  exit 20
+fi
 
 for cmd in borg jq git tar rpm; do command -v "$cmd" >/dev/null 2>&1 || { echo "Missing command: $cmd" >&2; exit 20; }; done
 backup_engine_require || exit 20
@@ -34,67 +43,21 @@ stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$staging_root"
 staging_root="$(readlink -f -- "$staging_root")"
 staging="$(mktemp -d "$staging_root/$stamp.XXXXXX")"
-mkdir -p "$staging/inventory" "$staging/libvirt" "$staging/vm-disks"
+mkdir -p "$staging/inventory"
 trap 'rm -rf "$staging"' EXIT
 backup_runtime_capture_inventory "$staging/inventory"
-backup_runtime_export_libvirt "$staging/libvirt"
 printf 'fedora-gnome-custom backup canary\ncommit=%s\n' "$(repo_commit)" > "$staging/restore-canary.txt"
 
 system_bytes="$(sudo du -scB1 /etc /boot | awk 'END {print $1}')"
 backup_runtime_require_staging_space "$staging" "$system_bytes" || { echo 'Insufficient staging capacity for system configuration.' >&2; exit 40; }
-sudo tar -C / --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
+sudo tar -C / --exclude=etc/libvirt --exclude='etc/libvirt/*' --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
 sudo chown "$(id -u):$(id -g)" "$staging/fedora-system-config.tar.gz"
 
+# Recovery manifest retains the historical fields for compatibility, but
+# this Borg archive NEVER includes virtual machines or their libvirt metadata.
 vm_count=0
 vm_names=()
-if $include_vms && ! is_true "${BACKUP_VM_DISKS:-false}"; then
-  echo "VM disk backup disabled by policy." >&2; exit 30
-fi
-if $include_vms; then
-  for cmd in virsh qemu-img python3; do command -v "$cmd" >/dev/null || { echo "Missing VM backup command: $cmd" >&2; exit 20; }; done
-  uri="${LIBVIRT_URI:-qemu:///system}"
-  domains="$(sudo virsh -c "$uri" list --all --name)"
-  while IFS= read -r dom; do
-    [[ -n "$dom" ]] || continue
-    [[ "$dom" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo 'Unsafe domain name' >&2; exit 30; }
-    state="$(LC_ALL=C sudo virsh -c "$uri" domstate "$dom")"
-    [[ "$state" == 'shut off' ]] || { echo "VM must be shut off before disk backup: $dom ($state)" >&2; exit 30; }
-    backup_runtime_virsh_capture "$uri" "$staging/libvirt/domains/$dom.xml" dumpxml --inactive "$dom"
-    ((vm_count+=1))
-    vm_names+=("$dom")
-    plan="$staging/libvirt/domains/$dom-backup-plan.json"
-    python3 "$REPO_ROOT/scripts/backup/vm-backup-plan.py" "$staging/libvirt/domains/$dom.xml" > "$plan"
-    while IFS= read -r disk; do
-      source="$(jq -r '.source' <<<"$disk")"; target="$(jq -r '.target' <<<"$disk")"
-      out="$staging/vm-disks/${dom}-${target}.qcow2"
-      sudo qemu-img check "$source"
-      required="$(sudo qemu-img measure --output=json -O qcow2 "$source" | jq -er '.required')"
-      backup_runtime_require_staging_space "$staging" "$required" || { echo "Insufficient staging capacity for VM $dom disk $target." >&2; exit 40; }
-      sudo qemu-img convert -O qcow2 "$source" "$out"
-      sudo chown "$(id -u):$(id -g)" "$out"
-      qemu-img check "$out"
-    done < <(jq -c '.disks[]' "$plan")
-    mapfile -t state_paths < <(jq -r '.state_paths[]' "$plan")
-    if (( ${#state_paths[@]} )); then
-      for state_path in "${state_paths[@]}"; do
-        sudo test -e "$state_path" || { echo "Missing persistent VM state: $state_path" >&2; exit 30; }
-      done
-      # Absolute paths in the archive become relative to the recovery staging
-      # root. Never extract this archive directly over a running libvirt host.
-      required="$(sudo du -scB1 -- "${state_paths[@]}" | awk 'END {print $1}')"
-      backup_runtime_require_staging_space "$staging" "$required" || { echo "Insufficient staging capacity for VM $dom persistent state." >&2; exit 40; }
-      sudo tar --xattrs --acls --selinux --numeric-owner -czf "$staging/libvirt/domains/$dom-persistent-state.tar.gz" -- "${state_paths[@]}"
-      sudo chown "$(id -u):$(id -g)" "$staging/libvirt/domains/$dom-persistent-state.tar.gz"
-    fi
-    [[ "$(LC_ALL=C sudo virsh -c "$uri" domstate "$dom")" == 'shut off' ]] || { echo "VM started during backup: $dom" >&2; exit 30; }
-  done <<< "$domains"
-  if is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-true}" && [[ -d "${KVM_DATA_MOUNT:-/data}/libvirt/cloud-init" ]]; then
-    required="$(sudo du -scB1 -- "${KVM_DATA_MOUNT:-/data}/libvirt/cloud-init" | awk 'END {print $1}')"
-    backup_runtime_require_staging_space "$staging" "$required" || { echo 'Insufficient staging capacity for cloud-init metadata.' >&2; exit 40; }
-    sudo tar -C "${KVM_DATA_MOUNT:-/data}/libvirt" -czf "$staging/cloud-init-metadata.tar.gz" cloud-init
-    sudo chown "$(id -u):$(id -g)" "$staging/cloud-init-metadata.tar.gz"
-  fi
-fi
+include_vms=false
 
 sources=("$staging")
 # Match daily user-data protection, including localized XDG folders.
@@ -126,11 +89,14 @@ manifest="$(jq -cn --arg commit "$(repo_commit)" --arg config "$(effective_confi
   --argjson names "$vm_names_json" --arg names_digest "$vm_names_sha256" \
   '{schema:1,kind:"full",engine:"borg",encryption:"none",commit:$commit,effective_config_sha256:$config,module_plan_sha256:$plan,hardware_fingerprint:$hardware,canary_path:$canary,canary_sha256:$digest,include_vms:$vms,vm_count:$count,vm_names:$names,vm_names_sha256:$names_digest}')"
 printf '%s\n' "$manifest" > "$staging/recovery-manifest.json"
-# Explicit VM mode is only permitted after owner opt-in; keep staged qcow2 then.
-vm_excludes=()
-if ! $include_vms; then
-  vm_excludes=(--exclude "*.qcow2" --exclude "*.vmdk" --exclude "*.vdi" --exclude "*.vhd" --exclude "*.vhdx" --exclude "*.raw" --exclude "*/libvirt/images/*")
-fi
+# Exclude VM disks and libvirt-managed state even if one appears in a
+# localized user directory, app-data folder or the tracked working tree.
+vm_excludes=(
+  --exclude '*.qcow2' --exclude '*.vmdk' --exclude '*.vdi'
+  --exclude '*.vhd' --exclude '*.vhdx' --exclude '*.raw'
+  --exclude '*/libvirt/*' --exclude '*/libvirt/**'
+)
+
 read -r archive snap < <(backup_engine_create full --comment "$manifest" --exclude "$HOME/.config/fedora-gnome-custom/secrets" "${vm_excludes[@]}" -- "${sources[@]}") || { echo 'Borg archive creation failed.' >&2; exit 40; }
 [[ "$snap" =~ ^[0-9a-f]{64}$ && -n "$archive" ]] || { echo 'Invalid archive id.' >&2; exit 40; }
 backup_engine_check full "$archive" || { echo 'Borg integrity check failed.' >&2; exit 40; }

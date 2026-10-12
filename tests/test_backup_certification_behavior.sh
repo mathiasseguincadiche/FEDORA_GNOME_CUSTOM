@@ -17,6 +17,9 @@ cp "$ROOT/lib/backup_runtime.sh" "$REPO_ROOT/lib/"
 cp "$ROOT/lib/evidence.sh" "$REPO_ROOT/lib/"
 cp "$ROOT/scripts/backup/backup-now.sh" "$REPO_ROOT/scripts/backup/"
 printf 'settings\n' > "$HOME/.config/settings"
+# Ensure a VM metadata file under an otherwise approved directory is excluded.
+mkdir -p "$HOME/.config/libvirt"
+printf 'private owner-managed VM XML\n' > "$HOME/.config/libvirt/manual-domain.xml"
 cat > "$REPO_ROOT/lib/install_lock.sh" <<'MOCK'
 install_lock_acquire() { return 0; }
 MOCK
@@ -40,7 +43,7 @@ MOCK
 cat >> "$REPO_ROOT/lib/backup_runtime.sh" <<'MOCK'
 backup_runtime_validate_local_target() { [[ "$1" == "$BACKUP_REPOSITORY" ]]; }
 backup_runtime_capture_inventory() { mkdir -p "$1"; printf 'inventory\n' > "$1/metadata.txt"; }
-backup_runtime_export_libvirt() { mkdir -p "$1/domains"; }
+backup_runtime_export_libvirt() { echo 'Unexpected automatic libvirt export' >&2; exit 99; }
 MOCK
 cat > "$tmp/bin/sudo" <<'MOCK'
 #!/usr/bin/env bash
@@ -78,23 +81,26 @@ snapshot="$(evidence_marker_value "$marker" snapshot)"
 manifest="$(backup_runtime_recovery_manifest "$archive")"
 [[ "$(jq -r '.include_vms' <<<"$manifest")" == false ]]
 [[ "$(jq -r '.vm_count' <<<"$manifest")" == 0 ]]
-# Certification honors the VM-disk policy and the current domain set.
-if ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$marker"; then
-  echo 'Metadata-only backup accepted for VM policy' >&2; exit 1
+[[ "$(jq -c '.vm_names' <<<"$manifest")" == '[]' ]]
+[[ "$(jq -r '.include_vms' <<<"$manifest")" == false ]]
+if borg list "::$archive" | grep -Fq 'manual-domain.xml'; then
+  echo 'Manual libvirt domain XML was archived by Borg' >&2
+  exit 1
 fi
-ENABLE_KVM=false backup_runtime_full_vm_coverage_valid "$marker"
+backup_runtime_full_vm_coverage_valid "$marker"
+# The VM-export policy cannot be enabled, even if a local override is set.
+for flag in BACKUP_VM_DISKS BACKUP_LIBVIRT_METADATA BACKUP_VM_CLOUD_INIT_METADATA; do
+  if env "$flag=true" bash "$REPO_ROOT/scripts/backup/backup-now.sh" --staging-root "$tmp/rejected-$flag" > "$tmp/rejected-$flag.log" 2>&1; then
+    echo "Owner-managed VM policy bypassed: $flag" >&2; exit 1
+  fi
+  grep -Fq 'VM backup/export is manual-only' "$tmp/rejected-$flag.log"
+done
+# Invalid/legacy manifests must not earn a current host-only certificate.
 coverage="$tmp/vm-coverage.ok"
-printf 'include_vms=true\nvm_count=1\nvm_names_sha256=%s\n' "$(printf '["demo"]' | sha256sum | awk '{print $1}')" > "$coverage"
-cat > "$tmp/bin/virsh" <<'MOCK'
-#!/usr/bin/env bash
-echo "${TEST_DOMAIN_NAME:-demo}"
-MOCK
-chmod +x "$tmp/bin/virsh"
-ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$coverage"
-if TEST_DOMAIN_NAME=added ENABLE_KVM=true BACKUP_VM_DISKS=true backup_runtime_full_vm_coverage_valid "$coverage"; then
-  echo 'Changed VM set accepted' >&2; exit 1
+printf 'include_vms=true\nvm_count=1\nvm_names_sha256=%s\n' "$(printf '[\"demo\"]' | sha256sum | awk '{print $1}')" > "$coverage"
+if backup_runtime_full_vm_coverage_valid "$coverage"; then
+  echo 'Legacy VM-inclusive backup incorrectly certified' >&2; exit 1
 fi
-rm "$tmp/bin/virsh"
 # A newer daily archive never becomes an OS recovery base.
 read -r daily _ < <(backup_engine_create daily -- "$HOME/.config")
 read -r selected selected_id < <(backup_engine_latest full)
@@ -139,33 +145,9 @@ for TEST_BORG_RC in 1 2; do
   [[ "$rc" == "$TEST_BORG_RC" && -z "$output" ]]
 done
 unset -f borg
-# Capacity failure must happen before any VM conversion. Exercise the real
-# backup-now entrypoint with its real measurement/capacity helpers.
-cat > "$tmp/bin/virsh" <<'MOCK'
-#!/usr/bin/env bash
-case "$3" in
-  list) echo demo ;;
-  domstate) echo 'shut off' ;;
-  dumpxml) echo '<domain/>' ;;
-  *) exit 1 ;;
-esac
-MOCK
-cat > "$tmp/bin/qemu-img" <<'MOCK'
-#!/usr/bin/env bash
-case "$1" in
-  check) exit 0 ;;
-  measure) echo '{"required":9000000000000000000}' ;;
-  convert) touch "$TEST_CONVERT_CALLED"; exit 1 ;;
-  *) exit 1 ;;
-esac
-MOCK
-cat > "$REPO_ROOT/scripts/backup/vm-backup-plan.py" <<'MOCK'
-print('{"disks":[{"source":"/fixture/disk.qcow2","target":"vda"}],"state_paths":[]}')
-MOCK
-chmod +x "$tmp/bin/"*
-export TEST_CONVERT_CALLED="$tmp/conversion-called"
-rc=0
-BACKUP_VM_DISKS=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/capacity.log" 2>&1 || rc=$?
-[[ "$rc" == 40 && ! -e "$TEST_CONVERT_CALLED" ]]
-grep -Fq 'Insufficient staging capacity for VM demo disk vda' "$tmp/capacity.log"
+# Manual-only means the old flag must be rejected before any Borg or VM work.
+if bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms > "$tmp/unsupported-flag.log" 2>&1; then
+  echo 'Deprecated VM automatic backup flag unexpectedly succeeded' >&2; exit 1
+fi
+grep -Fq 'owner-managed' "$tmp/unsupported-flag.log"
 echo 'Backup certification behavior: PASS'

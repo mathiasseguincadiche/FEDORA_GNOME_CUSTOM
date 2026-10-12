@@ -76,7 +76,7 @@ assert "journal_health 0" in logout
 assert 'KERNEL_CHANNEL="vanilla"' in (root / "config/kernel.conf").read_text()
 guide = (root / "docs/THREE_GATE_VALIDATION.md").read_text()
 assert "CachyOS" not in guide
-assert "--include-vms --staging-root" in guide
+assert "manuellement par leur propriétaire" in guide
 assert "Linux amont" in guide
 # A skipped required context must not turn a failed dependency into success.
 spec = importlib.util.spec_from_file_location("jobs", root / ".github/scripts/require-jobs-success.py")

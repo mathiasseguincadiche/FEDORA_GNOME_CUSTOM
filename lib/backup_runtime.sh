@@ -321,23 +321,6 @@ backup_runtime_capture_inventory() {
   lspci -nnk > "$out/lspci-nnk.txt" 2>/dev/null || true
 }
 
-backup_runtime_virsh_capture() { local uri="$1" output="$2"; shift 2; sudo virsh -c "$uri" "$@" | cat > "$output"; }
-
-backup_runtime_export_libvirt() {
-  local out="$1" uri="${LIBVIRT_URI:-qemu:///system}" name
-  mkdir -p "$out/domains" "$out/networks" "$out/pools"
-  command -v virsh >/dev/null 2>&1 || {
-    printf 'libvirt_metadata=unavailable\n' > "$out/metadata-status.env"
-    return 0
-  }
-  sudo virsh -c "$uri" list --all --name | sed '/^$/d' > "$out/domains.txt" || return $?
-  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/domains/$name.xml" dumpxml "$name"; backup_runtime_virsh_capture "$uri" "$out/domains/$name-blocks.txt" domblklist "$name" --details; done < "$out/domains.txt"
-  sudo virsh -c "$uri" net-list --all --name | sed '/^$/d' > "$out/networks.txt" || return $?
-  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/networks/$name.xml" net-dumpxml "$name"; done < "$out/networks.txt"
-  sudo virsh -c "$uri" pool-list --all --name | sed '/^$/d' > "$out/pools.txt" || return $?
-  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/pools/$name.xml" pool-dumpxml "$name"; backup_runtime_virsh_capture "$uri" "$out/pools/$name-volumes.txt" vol-list "$name" --details 2>/dev/null || : > "$out/pools/$name-volumes.txt"; done < "$out/pools.txt"
-}
-
 backup_runtime_require_free_space() {
   local repository="$1" existing available min_bytes min_gib
   backup_runtime_is_remote_repository "$repository" && return 0
@@ -467,18 +450,15 @@ backup_runtime_atomic_write() {
   fi
 }
 
-# Gate 3 must honor the configured VM-disk policy, not merely an optional
-# command-line flag. Compare the current domain set with the archived set.
+# Gate 3 must prove a host-only Borg backup. VM exports belong to the owner;
+# KVM enabled or disabled must NEVER turn on archive coverage of VM disks.
 backup_runtime_full_vm_coverage_valid() {
-  local marker="$1" count names canonical digest
-  if ! is_true "${ENABLE_KVM:-true}" || ! is_true "${BACKUP_VM_DISKS:-true}"; then return 0; fi
-  [[ "$(evidence_marker_value "$marker" include_vms)" == true ]] || return 1
-  count="$(evidence_marker_value "$marker" vm_count)" || return 1
-  [[ "$count" =~ ^[0-9]+$ ]] || return 1
-  command -v virsh >/dev/null 2>&1 || return 1
-  names="$(sudo -n virsh -c "${LIBVIRT_URI:-qemu:///system}" list --all --name)" || return 1
-  canonical="$(printf '%s\n' "$names" | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')" || return 1
-  [[ "$(jq 'length' <<<"$canonical")" == "$count" ]] || return 1
-  digest="$(printf '%s' "$canonical" | sha256sum | awk '{print $1}')" || return 1
-  [[ "$digest" == "$(evidence_marker_value "$marker" vm_names_sha256)" ]]
+  local marker="$1" empty_digest
+  ! is_true "${BACKUP_VM_DISKS:-false}" || return 1
+  ! is_true "${BACKUP_LIBVIRT_METADATA:-false}" || return 1
+  ! is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}" || return 1
+  [[ "$(evidence_marker_value "$marker" include_vms)" == false ]] || return 1
+  [[ "$(evidence_marker_value "$marker" vm_count)" == 0 ]] || return 1
+  empty_digest="$(printf '[]' | sha256sum | awk '{print $1}')"
+  [[ "$(evidence_marker_value "$marker" vm_names_sha256)" == "$empty_digest" ]]
 }

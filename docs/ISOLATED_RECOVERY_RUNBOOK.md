@@ -13,19 +13,20 @@ l'identité du dépôt et le nom/id de l'archive. Borg doit être non chiffré.
 Il ne faut aucune clé de chiffrement ; il faut conserver les accès au dépôt,
 le média Fedora verrouillé et le support physique de sauvegarde.
 
-Créer un backup complet incluant les VM, avec un staging dimensionné :
+Créer un backup complet du HOST et des données utilisateur, avec un staging dimensionné
+**sans inclure de VM** :
 
 ```bash
-scripts/backup/backup-now.sh --include-vms --staging-root /chemin/absolu/staging
+scripts/backup/backup-now.sh --staging-root /chemin/absolu/staging
 ./diagnostics/backup-doctor
 scripts/backup/disaster-recovery.sh
 ```
 
-Lire le plan généré, sa couverture VM et le commit qu'il désigne. Une archive
-quotidienne couvre les fichiers utilisateur ; une archive complète sans
-disques VM ne prouve pas une reprise de VM. Consigner les noms/id exacts
-avant toute extraction. Les archives `fgc-pending-*` ne sont jamais une base
-de reprise automatique.
+Lire le plan de récupération du HOST et le commit qu'il désigne. Les archives
+Borg **ne couvrent ni les disques ni les métadonnées libvirt**. Une reprise
+de VM dépend uniquement de l'export manuel que le propriétaire a choisi
+de réaliser et de conserver séparément. Les archives `fgc-pending-*`
+ne sont jamais une base de reprise automatique.
 
 ## Séparer physiquement les cibles
 
@@ -87,7 +88,8 @@ applications/services réellement réinstallés et toute partie non récupérée
 
 ## 3. Reprendre une VM
 
-Réunir les membres correspondants de l'archive complète :
+Si le propriétaire dispose d'un export **manuel** de la VM, réunir
+les composants de cet export (hors Borg) :
 
 - XML/définition et UUID du domaine ;
 - disques autonomes ou toutes les dépendances de leur backing chain ;

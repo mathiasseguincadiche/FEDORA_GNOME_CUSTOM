@@ -162,7 +162,7 @@ grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-bac
 grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq 'MANIFEST.sha256' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq 'fedora-gnome-backup-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq "cc_option 9 'Appliquer rétention Borg'" "$ROOT/lib/control_center.sh"
+grep -Fq "cc_option 8 'Appliquer rétention Borg'" "$ROOT/lib/control_center.sh"
 grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
 grep -Fq 'aucun secret à conserver' "$ROOT/docs/BACKUP_RESTORE.md"
 
