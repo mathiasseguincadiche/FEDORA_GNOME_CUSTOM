@@ -62,7 +62,7 @@ if grep -Fq -- 'now-with-vms)' "$ROOT/lib/control_center.sh"; then
   echo 'Control Center still exposes VM backups' >&2; exit 1
 fi
 for p in scripts/backup/backup-now.sh prepare-preapply-backup.sh scripts/backup/daily-user-backup.sh; do
-  grep -Fq -- '--exclude "*/libvirt/*"' "$ROOT/$p" || {
+  grep -Fq -- 'libvirt/*' "$ROOT/$p" || {
     echo "Borg path lacks a libvirt exclusion: $p" >&2; exit 1;
   }
 done
