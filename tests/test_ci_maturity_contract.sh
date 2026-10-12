@@ -10,9 +10,9 @@ done
 
 grep -Fq 'fedora:44' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 
-# Hosted runners share Docker Hub's anonymous pull quota, which fails whole CI runs with
-# "toomanyrequests". Workflow containers and probe images come from the official Docker
-# library mirror on ECR Public instead; guest-VM pulls in vm-pretest.sh are unaffected.
+# Hosted runners may hit both Docker Hub and ECR Public anonymous pull limits.
+# Fedora 44 job containers use Fedora's official registry, as the installer audit
+# already does. Keep Docker Hub out of CI; guest-VM pulls are unaffected.
 if grep -nE '^[[:space:]]*container:[[:space:]]+fedora:' "$ROOT"/.github/workflows/*.yml; then
   echo 'workflow containers must use public.ecr.aws/docker/library/fedora, not Docker Hub' >&2; exit 1
 fi
@@ -26,7 +26,21 @@ if grep -n 'hello-world' "$ROOT/.github/workflows/tests.yml"; then
   echo 'tests.yml must not pull hello-world for the probe' >&2; exit 1
 fi
 grep -Fq 'container: registry.fedoraproject.org/fedora:44' "$ROOT/.github/workflows/fedora-installer-audit.yml"
+# Every Fedora 44 workflow container must avoid ECR Public's data cap as well
+# as Docker Hub's rate limit. Regressions fail before expensive VM jobs launch.
+if grep -nE '^[[:space:]]*container:[[:space:]]+(public[.]ecr[.]aws/docker/library/fedora:44|fedora:44)([[:space:]]|$)' "$ROOT"/.github/workflows/*.yml; then
+  echo 'Fedora 44 workflow containers must use registry.fedoraproject.org/fedora:44' >&2
+  exit 1
+fi
+for workflow in desktop-integration-pretest fedora-appimage-pretest fedora-gaming-pretest fedora-host-pretest fedora-installer-audit fedora-package-preflight resource-monitor-fedora-pretest tests; do
+  grep -Fq 'container: registry.fedoraproject.org/fedora:44' "$ROOT/.github/workflows/$workflow.yml" || {
+    echo "missing official Fedora 44 registry for $workflow" >&2; exit 1;
+  }
+done
+grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
+grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install borgbackup jq acl xorriso dbus-daemon' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'scripts/kvm/verify_rocky_cloud_image.sh' "$ROOT/.github/scripts/vm-pretest.sh"

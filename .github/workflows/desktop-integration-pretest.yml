@@ -21,7 +21,7 @@ jobs:
   # trigger unfiltered so the nautilus-ptyxis context exists on every PR.
   nautilus-ptyxis:
     runs-on: ubuntu-latest
-    container: public.ecr.aws/docker/library/fedora:44
+    container: registry.fedoraproject.org/fedora:44
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -34,7 +34,7 @@ jobs:
             manifests/packages-nautilus.txt \
             manifests/packages-nautilus-optional.txt \
             manifests/packages-applications-gtk4.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
-          dnf -y install dbus-daemon "${packages[@]}"
+          dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon "${packages[@]}"
           rpm -q nautilus localsearch xdg-user-dirs-gtk gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus ptyxis
       - name: Validate File Roller Nautilus extension payload
         shell: bash
