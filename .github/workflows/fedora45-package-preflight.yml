@@ -7,6 +7,8 @@ on:
     paths:
       - 'manifests/**'
       - 'profiles/**'
+      - 'scripts/validation/gnome51-extension-audit.py'
+      - 'tests/test_gnome51_extension_audit.py'
       - 'config/repos/**'
       - 'config/kernel.conf'
       - 'lib/kernel_lifecycle.sh'
@@ -37,6 +39,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Strict GNOME 51 six-role audit (pending remains DEFERRED)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # Minimal Fedora container does not include Python by default.
+          dnf -y --disablerepo=fedora-cisco-openh264 install python3
+          python3 -B tests/test_gnome51_extension_audit.py
+          python3 -B scripts/validation/gnome51-extension-audit.py --report
       - name: Enable RPM Fusion for Fedora 45
         shell: bash
         run: |

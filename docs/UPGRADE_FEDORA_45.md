@@ -154,6 +154,12 @@ Relire les suppressions/conflits éventuels de la transaction. Le redémarrage e
 
 Le profil, les médias et les verrous entrent dans l'empreinte de configuration : les anciennes preuves Golden deviennent obsolètes. Refaire WSL2 → VirtualBox avec validation visuelle → matériel physique, restauration isolée et reprise VM.
 
+## Qualification de la session GNOME 51 après migration
+
+La validation finale appelle maintenant `python3 scripts/validation/gnome51-extension-audit.py --live` **depuis la session GNOME de l'utilisateur**. Cette vérification fail-closed exige six rôles actifs, les métadonnées GNOME 51 et la provenance des quatre extensions épinglées. Elle ne peut pas réussir sur un profil `pending` et ne contourne pas le système de signatures du média.
+
+En cas d'erreur, la phase reste `extensions-installed` ; corriger le paquet RPM incompatible ou l'extension concernée, se déconnecter/reconnecter normalement, puis relancer `./control.sh upgrade finalize`. Ne pas désactiver le vérificateur pour annoncer `completed`.
+
 ## Récupération et qualification physique
 
 Le retour au noyau N-1 ne revient **pas** de Fedora 45 à Fedora 44. Une récupération de l'OS repose sur la sauvegarde, le média connu et la reconstruction isolée décrite dans [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
