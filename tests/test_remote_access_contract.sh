@@ -82,7 +82,7 @@ grep -Fq 'REMOTE_ENABLE' config/local.conf.example || fail 'local.conf.example m
 [[ "$(tr -d '[:space:]' < VERSION)" =~ ^0\.(2[2-9]|[3-9][0-9])\.[0-9]+$ ]] || fail 'VERSION must be at least 0.22.0 (remote access profile shipped in 0.22.0)'
 grep -Fq "v$(tr -d '[:space:]' < VERSION)-rc." .github/release-manifest.env || fail 'release manifest must follow VERSION'
 
-python3 -B "$ROOT/tests/test_arc_b580_av1.py"
-grep -Fq 'sunshine_moonlight_end_to_end' "$ROOT/scripts/validation/arc-b580-av1.py"
-grep -Fq 'REMOTE_SUNSHINE_ENABLE="false"' "$ROOT/config/remote.conf"
+python3 -B tests/test_arc_b580_av1.py
+grep -Fq 'sunshine_moonlight_end_to_end' scripts/validation/arc-b580-av1.py
+grep -Fq 'REMOTE_SUNSHINE_ENABLE="false"' config/remote.conf
 echo 'remote access contract: PASS'
