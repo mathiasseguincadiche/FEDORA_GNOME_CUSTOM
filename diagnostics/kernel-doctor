@@ -3,7 +3,14 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 source "$REPO_ROOT/lib/kernel_lifecycle.sh"
-quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+quiet=false; certify=false
+for arg in "$@"; do
+  case "$arg" in
+    --quiet) quiet=true ;;
+    --certify) certify=true ;;
+    *) echo 'Usage: kernel-doctor [--quiet] [--certify]' >&2; exit 2 ;;
+  esac
+done
 ok=0; warn=0; ko=0
 emit(){ if ! $quiet; then ui_check "$1" "$2" "$3"; fi; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 
@@ -29,7 +36,7 @@ if [[ -n "$latest" ]]; then
 else
   emit KO N "no installed $(kernel_channel_core_package 2>/dev/null || echo kernel) release found"
 fi
-if [[ -n "$previous" ]]; then emit OK 'N-1' "$previous retained for rollback"; else emit WARN 'N-1' 'only one kernel is installed; a previous kernel will exist after the next kernel update'; fi
+if [[ -n "$previous" ]]; then emit OK 'N-1' "$previous retained for rollback"; elif $certify; then emit KO 'N-1' 'no rollback kernel installed: physical certification blocked'; else emit WARN 'N-1' 'only one kernel is installed; a previous kernel will exist after the next kernel update'; fi
 
 if [[ "$default" == "$latest" ]]; then
   emit OK 'GRUB default' "N=$latest"

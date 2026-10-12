@@ -13,7 +13,7 @@ latest_post_resume_log(){ local link=/var/lib/fedora-gnome-custom/suspend/latest
 
 record_suspend(){
   require_baremetal; require_validation_chain
-  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; "$REPO_ROOT/diagnostics/display-doctor" --quiet
+  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet --certify; "$REPO_ROOT/diagnostics/display-doctor" --quiet
   "$REPO_ROOT/diagnostics/storage-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet; "$REPO_ROOT/diagnostics/driver-doctor" --quiet; "$REPO_ROOT/diagnostics/usb-resume-doctor" --quiet
   "$REPO_ROOT/diagnostics/performance-doctor" --quiet --core
   local marker="$HOME/.local/state/fedora-gnome-custom/display-repair-last.txt" post_log cycle_id now marker_ts post_ts marker_age post_age n f evidence
@@ -50,7 +50,7 @@ certify(){
   baseline_certification_valid || { ui_error 'Pre-APPLY hardware baseline is not valid'; exit "$EXIT_PRECHECK_FAILED"; }
   is_true "${GAMING_ENABLE:-false}" || { ui_error 'Canonical Golden profile requires Gaming enabled'; exit "$EXIT_CONFIG_FAILED"; }
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet
-  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet; "$REPO_ROOT/diagnostics/firmware-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
+  "$REPO_ROOT/diagnostics/kernel-doctor" --quiet --certify; "$REPO_ROOT/diagnostics/firmware-doctor" --quiet; "$REPO_ROOT/diagnostics/hardware-components-doctor" --quiet
   "$REPO_ROOT/diagnostics/driver-doctor" --quiet; "$REPO_ROOT/diagnostics/storage-doctor" --quiet; "$REPO_ROOT/diagnostics/graphics-doctor" --quiet; "$REPO_ROOT/diagnostics/display-doctor" --quiet
   "$REPO_ROOT/diagnostics/media-doctor" --quiet; "$REPO_ROOT/diagnostics/gnome-doctor" --quiet; "$REPO_ROOT/diagnostics/nautilus-integration-doctor" --quiet
   "$REPO_ROOT/diagnostics/desktop-integration-doctor" --quiet; "$REPO_ROOT/diagnostics/portal-doctor" --quiet; "$REPO_ROOT/diagnostics/arc-compute-doctor" --quiet

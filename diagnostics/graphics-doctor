@@ -2,7 +2,14 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
-quiet=false; [[ "${1:-}" == '--quiet' ]] && quiet=true
+quiet=false; certify=false
+for arg in "$@"; do
+  case "$arg" in
+    --quiet) quiet=true ;;
+    --certify) certify=true ;;
+    *) echo 'Usage: graphics-doctor [--quiet] [--certify]' >&2; exit 2 ;;
+  esac
+done
 ok=0; warn=0; ko=0
 check(){ local s="$1" n="$2" d="$3"; if ! $quiet; then ui_check "$s" "$n" "$d"; fi; case "$s" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 
@@ -12,12 +19,12 @@ if [[ -n "$bdf" ]]; then
   caps="$(hardware_pcie_link_caps "$bdf")"
   if hardware_b580_pcie_validate; then check OK 'B580 PCIe/ReBAR' "x8 + ReBAR PASS; $(tr '\n' ' ' <<<"$caps")"; else check KO 'B580 PCIe/ReBAR' "expected PCIe >=4.0 x8 with ReBAR; $(tr '\n' ' ' <<<"$caps")"; fi
 fi
-if command_exists vulkaninfo && vulkaninfo --summary 2>/dev/null | grep -Eqi 'Intel|B580|Battlemage'; then check OK Vulkan 'Intel Mesa device visible'; else check WARN Vulkan 'probe unavailable or no graphical session'; fi
+if command_exists vulkaninfo && vulkaninfo --summary 2>/dev/null | grep -Eqi 'Intel|B580|Battlemage'; then check OK Vulkan 'Intel Mesa device visible'; elif $certify; then check KO Vulkan 'Intel Vulkan acceleration is required for physical certification'; else check WARN Vulkan 'probe unavailable or no graphical session'; fi
 if command_exists vainfo; then
   node="$(drm_render_node_for_pci_id 8086 e20b 2>/dev/null || true)"
-  if [[ -n "$node" ]] && vainfo --display drm --device "$node" >/dev/null 2>&1; then check OK VA-API "$node media acceleration visible"; else check WARN VA-API 'B580 render-node probe unavailable'; fi
-else check WARN VA-API 'vainfo unavailable'; fi
-if [[ "${XDG_SESSION_TYPE:-unknown}" == wayland ]]; then check OK Wayland 'current session'; else check WARN Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
+  if [[ -n "$node" ]] && vainfo --display drm --device "$node" >/dev/null 2>&1; then check OK VA-API "$node media acceleration visible"; elif $certify; then check KO VA-API 'B580 render-node acceleration is required for physical certification'; else check WARN VA-API 'B580 render-node probe unavailable'; fi
+elif $certify; then check KO VA-API 'vainfo unavailable'; else check WARN VA-API 'vainfo unavailable'; fi
+if [[ "${XDG_SESSION_TYPE:-unknown}" == wayland ]]; then check OK Wayland 'current session'; elif $certify; then check KO Wayland "GNOME Wayland session required; session=${XDG_SESSION_TYPE:-unknown}"; else check WARN Wayland "session=${XDG_SESSION_TYPE:-unknown}"; fi
 if kernel_journal_require_clean '\b(xe|drm)\b.*(gpu hang|reset|wedged|fault|error)|PCIe Bus Error: severity=Uncorrected'; then check OK 'xe/DRM/PCIe journal' clean; else check KO 'xe/DRM/PCIe journal' 'journal unavailable or critical GPU/display/PCIe signature found'; fi
 if ! $quiet; then ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; fi
 (( ko == 0 ))
