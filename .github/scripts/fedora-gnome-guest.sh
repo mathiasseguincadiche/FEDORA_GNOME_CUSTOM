@@ -45,12 +45,30 @@ failure() {
 }
 journal_health() {
   local journal_boot="$1"
-  journalctl --quiet --no-pager -b "$journal_boot" -p emerg..crit > /tmp/fgc-critical.log
-  [[ ! -s /tmp/fgc-critical.log ]]
-  journalctl --quiet --no-pager -b "$journal_boot" -t systemd-coredump -o json > /tmp/fgc-coredumps.log
-  [[ ! -s /tmp/fgc-coredumps.log ]]
+  if ! journalctl --quiet --no-pager -b "$journal_boot" -p emerg..crit > /tmp/fgc-critical.log; then
+    echo "Unable to read critical journal for boot $journal_boot" >&2
+    return 1
+  fi
+  if [[ -s /tmp/fgc-critical.log ]]; then
+    echo "Critical journal entries for boot $journal_boot:" >&2
+    cat /tmp/fgc-critical.log >&2
+    return 1
+  fi
+  if ! journalctl --quiet --no-pager -b "$journal_boot" -t systemd-coredump -o json > /tmp/fgc-coredumps.log; then
+    echo "Unable to read coredump journal for boot $journal_boot" >&2
+    return 1
+  fi
+  if [[ -s /tmp/fgc-coredumps.log ]]; then
+    echo "Coredumps recorded for boot $journal_boot:" >&2
+    cat /tmp/fgc-coredumps.log >&2
+    return 1
+  fi
   systemctl --failed --no-legend --no-pager > /tmp/fgc-failed-units.log
-  [[ ! -s /tmp/fgc-failed-units.log ]]
+  if [[ -s /tmp/fgc-failed-units.log ]]; then
+    echo "Failed system units:" >&2
+    cat /tmp/fgc-failed-units.log >&2
+    return 1
+  fi
 }
 
 ACTION="${1:-unknown}"

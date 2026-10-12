@@ -25,7 +25,7 @@ grep -Fq 'FROM scratch' "$ROOT/.github/workflows/tests.yml"
 if grep -n 'hello-world' "$ROOT/.github/workflows/tests.yml"; then
   echo 'tests.yml must not pull hello-world for the probe' >&2; exit 1
 fi
-grep -Fq 'container: public.ecr.aws/docker/library/fedora:44' "$ROOT/.github/workflows/fedora-installer-audit.yml"
+grep -Fq 'container: registry.fedoraproject.org/fedora:44' "$ROOT/.github/workflows/fedora-installer-audit.yml"
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2' "$ROOT/.github/scripts/vm-pretest.sh"

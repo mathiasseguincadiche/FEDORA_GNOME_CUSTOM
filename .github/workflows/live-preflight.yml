@@ -1,0 +1,36 @@
+name: Fedora 45 Live preflight contract
+on:
+  pull_request:
+    paths:
+      - 'diagnostics/live-preflight.sh'
+      - 'docs/FEDORA45_LIVE_PREFLIGHT.md'
+      - '.github/workflows/live-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'diagnostics/live-preflight.sh'
+      - 'docs/FEDORA45_LIVE_PREFLIGHT.md'
+      - '.github/workflows/live-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  readonly-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Parse Bash
+        run: bash -n diagnostics/live-preflight.sh
+      - name: Help is non-mutating
+        run: bash diagnostics/live-preflight.sh --help
+      - name: Reject unexpected arguments
+        run: |
+          if bash diagnostics/live-preflight.sh --apply; then
+            echo "Unsafe argument accepted" >&2
+            exit 1
+          fi
+      - name: Reject non-Live execution
+        run: |
+          if bash diagnostics/live-preflight.sh; then
+            echo "Non-Live host accepted" >&2
+            exit 1
+          fi
