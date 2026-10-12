@@ -240,6 +240,13 @@ Le script sélectionne uniquement la dernière archive **full**, valide son mani
 
 ## Règle QCOW2
 
+### Portée du plan de sauvegarde VM
+
+Le planificateur `scripts/backup/vm-backup-plan.py` lit le XML de libvirt **sans modifier** les disques. Il accepte uniquement les disques persistants au format fichier QCOW2 et inventorie la NVRAM UEFI ainsi que l'état TPM émulé. Il refuse les chemins relatifs, les segments `..` ou `.`, les pseudo-systèmes (`/dev`, `/proc`, `/sys`, `/run`) ainsi que les chemins de secrets de l'hôte (`/etc`, `/root`). Des cibles ou sources dupliquées bloquent le plan plutôt que de faire perdre silencieusement une partie d'une VM.
+
+Le XML de domaine n'est **pas** une autorisation générale de lire les fichiers du système hôte. La sauvegarde effective exige toujours l'arrêt des VM, un contrôle de capacité et une copie cohérente. Ce contrôle lexical ne certifie pas l'absence de liens symboliques sur le stockage réel : les dossiers et les permissions devront être vérifiés lors de la Gate 3. Le stockage Borg reste **non chiffré** par décision explicite.
+
+
 Ne jamais copier un disque QCOW2 actif avec `cp`, `rsync` ou Borg en espérant obtenir une sauvegarde cohérente. Ce projet choisit volontairement le contrat simple et robuste : **VM arrêtée → qemu-img check → qemu-img convert → Borg**.
 
 ## Qualification après l'audit de fiabilité

@@ -50,3 +50,5 @@ with tempfile.TemporaryDirectory() as directory:
     assert failed['verdict']=='FAIL' and len(failed['samples'])==1
 print('display, VM state and measurement behavior: PASS')
 PY
+
+python3 -B "$ROOT/tests/test_vm_backup_plan.py"

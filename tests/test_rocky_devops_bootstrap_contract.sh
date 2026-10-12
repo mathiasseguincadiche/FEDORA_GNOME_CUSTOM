@@ -69,4 +69,8 @@ if grep -RInEi --exclude='test_rocky_devops_bootstrap_contract.sh' 'virtiofs|vir
 if grep -RInE --exclude='test_rocky_devops_bootstrap_contract.sh' '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' "$ROOT/guest/rocky-devops" "$ROOT/scripts/kvm" >/dev/null; then echo 'forbidden curl/wget pipe-to-shell pattern found in Rocky/KVM provisioning' >&2; exit 1; fi
 if grep -RInE --exclude='test_rocky_devops_bootstrap_contract.sh' 'guest_password=.*guest|password:[[:space:]]*guest|passwd:[[:space:]]*guest' "$ROOT/guest/rocky-devops" "$ROOT/scripts/kvm" >/dev/null; then echo 'forbidden clear-text guest password pattern found' >&2; exit 1; fi
 
+grep -Fq 'devops-verify-bootstrap-marker.py' "$VERIFY"
+grep -Fq 'devops-verify-bootstrap-marker.py' "$CREATE"
+grep -Fq 'verify-bootstrap-marker.py' "$VM_PRETEST"
+python3 -B "$ROOT/tests/test_rocky_bootstrap_marker.py"
 echo 'rocky devops ready-to-work bootstrap contract: PASS'
