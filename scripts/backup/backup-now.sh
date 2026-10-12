@@ -67,6 +67,17 @@ if $include_vms; then
     while IFS= read -r disk; do
       source="$(jq -r '.source' <<<"$disk")"; target="$(jq -r '.target' <<<"$disk")"
       out="$staging/vm-disks/${dom}-${target}.qcow2"
+      # A libvirt XML path must not redirect a privileged copy through a
+      # symlink or an external qcow2 backing chain.
+      sudo test -f "$source" && [[ "$(sudo readlink -e -- "$source")" == "$source" ]] || {
+        echo "Refusing VM disk source: missing, symlinked or noncanonical: $source" >&2; exit 30;
+      }
+      disk_info="$(sudo qemu-img info --output=json "$source")" || {
+        echo "Cannot inspect VM image format/backing chain: $source" >&2; exit 30;
+      }
+      jq -e '(.format == "qcow2") and (."backing-filename" == null) and (."full-backing-filename" == null)' <<<"$disk_info" >/dev/null || {
+        echo "Refusing non-QCOW2 image or external backing chain: $source" >&2; exit 30;
+      }
       sudo qemu-img check "$source"
       required="$(sudo qemu-img measure --output=json -O qcow2 "$source" | jq -er '.required')"
       backup_runtime_require_staging_space "$staging" "$required" || { echo "Insufficient staging capacity for VM $dom disk $target." >&2; exit 40; }
@@ -77,7 +88,9 @@ if $include_vms; then
     mapfile -t state_paths < <(jq -r '.state_paths[]' "$plan")
     if (( ${#state_paths[@]} )); then
       for state_path in "${state_paths[@]}"; do
-        sudo test -e "$state_path" || { echo "Missing persistent VM state: $state_path" >&2; exit 30; }
+        sudo test -e "$state_path" && [[ "$(sudo readlink -e -- "$state_path")" == "$state_path" ]] || {
+          echo "Refusing persistent VM state with missing/symlinked/noncanonical path: $state_path" >&2; exit 30;
+        }
       done
       # Absolute paths in the archive become relative to the recovery staging
       # root. Never extract this archive directly over a running libvirt host.
