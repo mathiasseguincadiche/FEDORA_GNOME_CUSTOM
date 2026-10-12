@@ -140,7 +140,7 @@ Mettre Fedora 44 complètement à jour et démarrer/finaliser ce résultat avant
 ./control.sh upgrade status
 ```
 
-`prepare` exige le profil final, le HOST physique, Secure Boot désactivé, un Git propre, le système source à jour et aucune mise à jour projet déjà en attente. Il résout la dernière stable Linux amont pour Fedora 45, puis effectue une sauvegarde Borg complète **avec les VM arrêtées** : disques, XML, NVRAM et état swtpm. L'espace de staging, le support externe et les preuves d'intégrité/restitution sont contrôlés. Il télécharge ensuite la transaction DNF5 system-upgrade, sans `--allowerasing`, sans saut de paquets et sans redémarrage automatique.
+`prepare` exige le profil final, le HOST physique, Secure Boot désactivé, un Git propre, le système source à jour et aucune mise à jour projet déjà en attente. Il résout la dernière stable Linux amont pour Fedora 45, puis effectue une sauvegarde Borg du **HOST et des fichiers utilisateur uniquement**, sans arrêter, copier ni exporter de VM. Les disques, XML, NVRAM et états TPM des VM restent exclusivement sous la gestion des exports manuels du propriétaire. L'espace de staging, le support externe et les preuves d'intégrité/restitution du HOST sont contrôlés. Il télécharge ensuite la transaction DNF5 system-upgrade, sans `--allowerasing`, sans saut de paquets et sans redémarrage automatique.
 
 Relire les suppressions/conflits éventuels de la transaction. Le redémarrage est une action séparée :
 

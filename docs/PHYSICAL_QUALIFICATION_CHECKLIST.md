@@ -131,7 +131,7 @@ Après les cycles, refaire la capture Brio, l'écoute/capture audio et le partag
 
 Voir [DESKTOP_COMPLETION.md](DESKTOP_COMPLETION.md) pour les identités, les blocages Wi-Fi et l'afficheur LD240 facultatif.
 
-Conserver une sauvegarde Borg contenant les disques/NVRAM des VM et exercer la [restauration isolée](ISOLATED_RECOVERY_RUNBOOK.md) avant le verdict final.
+Conserver une sauvegarde Borg du HOST et des données utilisateur, puis exercer la [restauration isolée](ISOLATED_RECOVERY_RUNBOOK.md). Les VM restent **hors de Borg** : leur éventuelle exportation manuelle et leur restauration sont gérées personnellement par le propriétaire et évaluées séparément.
 
 ## Résultats à conserver
 
