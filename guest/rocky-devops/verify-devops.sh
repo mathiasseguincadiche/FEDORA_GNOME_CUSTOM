@@ -82,6 +82,15 @@ if grep -Fxq 'passwordauthentication no' <<<"$sshd_effective"; then pass ssh.pas
 
 user_home="$(getent passwd "$DEVOPS_USER" 2>/dev/null | cut -d: -f6)"
 if [[ -n "$user_home" && -r "$user_home/.minikube/config/config.json" ]] && grep -q 'docker' "$user_home/.minikube/config/config.json"; then pass minikube.driver docker; else fail_check minikube.driver 'docker default not configured'; fi
-if [[ -s /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env && -s /var/lib/fedora-gnome-custom/rocky-devops-packages.txt ]]; then pass bootstrap.marker present; else fail_check bootstrap.marker missing; fi
+marker=/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
+packages=/var/lib/fedora-gnome-custom/rocky-devops-packages.txt
+if [[ -s "$marker" && -s "$packages" ]] && python3 /usr/local/sbin/devops-verify-bootstrap-marker.py "$marker" \
+    --kubernetes-minor "$EXPECTED_KUBERNETES_MINOR" \
+    --kind-version "$EXPECTED_KIND_VERSION" \
+    --minikube-version "$EXPECTED_MINIKUBE_VERSION" --os-release "$VERSION_ID"; then
+  pass bootstrap.marker 'release and toolchain evidence verified'
+else
+  fail_check bootstrap.marker 'missing, stale or malformed bootstrap evidence'
+fi
 printf '\nRocky DevOps verification: OK=%d KO=%d\n' "$ok" "$ko"
 ((ko == 0))
