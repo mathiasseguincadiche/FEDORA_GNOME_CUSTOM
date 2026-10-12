@@ -3,7 +3,8 @@ on:
   pull_request:
     paths:
       - 'diagnostics/live-preflight.sh'
-      - 'diagnostics/display-color-audit'\n      - 'scripts/development/display-color-audit.py'
+      - 'diagnostics/display-color-audit'
+      - 'scripts/development/display-color-audit.py'
       - 'lib/live_preflight_probe.sh'
       - 'tests/test_live_preflight_probe.sh'
       - 'tests/test_display_color_audit.py'
@@ -15,7 +16,8 @@ on:
     branches: [main]
     paths:
       - 'diagnostics/live-preflight.sh'
-      - 'diagnostics/display-color-audit'\n      - 'scripts/development/display-color-audit.py'
+      - 'diagnostics/display-color-audit'
+      - 'scripts/development/display-color-audit.py'
       - 'lib/live_preflight_probe.sh'
       - 'tests/test_live_preflight_probe.sh'
       - 'tests/test_display_color_audit.py'
