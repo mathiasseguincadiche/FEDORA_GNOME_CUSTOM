@@ -26,7 +26,10 @@ is_true "${BACKUP_REQUIRE_EXTERNAL_TARGET:-false}" && record OK external-target 
 is_true "${BACKUP_INTEGRITY_CHECK_REQUIRED:-false}" && record OK integrity-check required || record KO integrity-check not-required
 is_true "${BACKUP_RESTORE_TEST_REQUIRED:-false}" && record OK restore-test required || record KO restore-test not-required
 is_true "${BACKUP_ALLOW_LIVE_QCOW2_COPY:-false}" && record KO live-qcow2 allowed || record OK live-qcow2 forbidden
-is_true "${BACKUP_VM_SHUTDOWN_REQUIRED:-false}" && record OK vm-shutdown required || record KO vm-shutdown not-required
+! is_true "${BACKUP_VM_DISKS:-false}" && ! is_true "${BACKUP_LIBVIRT_METADATA:-false}" &&
+  ! is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}" &&
+  record OK 'VM exports' 'manual-only, excluded from Borg' ||
+  record KO 'VM exports' 'unexpected VM backup policy enabled'
 for file in scripts/backup/backup-now.sh scripts/backup/restore.sh scripts/backup/disaster-recovery.sh prepare-preapply-backup.sh; do [[ -r "$REPO_ROOT/$file" ]] && record OK "$file" present || record KO "$file" missing; done
 if backup_engine_require >/dev/null 2>&1; then record OK borg "$(borg --version)"; else strict_or_warn borg 'Borg 1.x not installed yet'; fi
 
@@ -68,7 +71,7 @@ if ! $policy_only; then
     full="$STATE_ROOT/last-full-backup.ok"; max_h="${DAILY_BACKUP_MAX_AGE_HOURS:-36}"
     if [[ -s "$full" ]]; then
       backup_runtime_validate_full_marker "$full" && record OK 'Full backup exact archive' 'current identity, repository, manifest and restored canary verified' || record KO 'Full backup exact archive' 'missing/stale archive, repository, identity or recovery proof'
-      backup_runtime_full_vm_coverage_valid "$full" && record OK 'Full backup VM coverage' 'configured policy and current domain set match' || record KO 'Full backup VM coverage' 'run backup-now.sh --include-vms with all current VMs shut off'
+      backup_runtime_full_vm_coverage_valid "$full" && record OK 'VM excluded from full Borg' 'no VM disks or libvirt metadata requested' || record KO 'VM excluded from full Borg' 'full archive or policy requests VM backups'
       age_h=$(( ( $(date +%s) - $(stat -c %Y "$full") ) / 3600 ))
       snap="$(awk -F= '$1=="snapshot" {print $2; exit}' "$full")"; commit="$(awk -F= '$1=="commit" {print $2; exit}' "$full")"; integrity="$(awk -F= '$1=="integrity_check" {print $2; exit}' "$full")"
       [[ "$snap" =~ ^[0-9a-fA-F]{64}$ ]] && record OK 'Full backup snapshot' "$snap" || record KO 'Full backup snapshot' invalid

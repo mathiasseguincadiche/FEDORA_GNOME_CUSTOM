@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-backup_kvm_precheck() { is_true "${DRY_RUN:-true}" && return 0; is_true "${BACKUP_LIBVIRT_METADATA:-true}" || return 0; command_exists virsh; }
-backup_kvm_plan() { echo 'Export qemu:///system domain XML, network XML, pool XML, volume inventory and VM identity metadata; generated ISO media are not treated as irreplaceable data.'; }
+# The owner performs VM exports manually; Borg never exports libvirt metadata.
+backup_kvm_precheck() {
+  ! is_true "${BACKUP_LIBVIRT_METADATA:-false}" || return "$EXIT_CONFIG_FAILED"
+}
+backup_kvm_plan() { echo 'VM domain XML, libvirt pools/networks and NVRAM are owner-managed manual exports; not archived by Borg.'; }
 backup_kvm_apply() { :; }
-backup_kvm_postcheck() { is_true "${DRY_RUN:-true}" && return 0; command_exists virsh; }
+backup_kvm_postcheck() { ! is_true "${BACKUP_LIBVIRT_METADATA:-false}"; }
