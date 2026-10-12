@@ -69,9 +69,10 @@ if $include_vms; then
       out="$staging/vm-disks/${dom}-${target}.qcow2"
       # A libvirt XML path must not redirect a privileged copy through a
       # symlink or an external qcow2 backing chain.
-      sudo test -f "$source" && [[ "$(sudo readlink -e -- "$source")" == "$source" ]] || {
-        echo "Refusing VM disk source: missing, symlinked or noncanonical: $source" >&2; exit 30;
-      }
+      if ! sudo test -f "$source" || [[ "$(sudo readlink -e -- "$source")" != "$source" ]]; then
+        echo "Refusing VM disk source: missing, symlinked or noncanonical: $source" >&2
+        exit 30
+      fi
       disk_info="$(sudo qemu-img info --output=json "$source")" || {
         echo "Cannot inspect VM image format/backing chain: $source" >&2; exit 30;
       }
@@ -88,9 +89,10 @@ if $include_vms; then
     mapfile -t state_paths < <(jq -r '.state_paths[]' "$plan")
     if (( ${#state_paths[@]} )); then
       for state_path in "${state_paths[@]}"; do
-        sudo test -e "$state_path" && [[ "$(sudo readlink -e -- "$state_path")" == "$state_path" ]] || {
-          echo "Refusing persistent VM state with missing/symlinked/noncanonical path: $state_path" >&2; exit 30;
-        }
+        if ! sudo test -e "$state_path" || [[ "$(sudo readlink -e -- "$state_path")" != "$state_path" ]]; then
+          echo "Refusing persistent VM state with missing/symlinked/noncanonical path: $state_path" >&2
+          exit 30
+        fi
       done
       # Absolute paths in the archive become relative to the recovery staging
       # root. Never extract this archive directly over a running libvirt host.
