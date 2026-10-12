@@ -244,6 +244,31 @@ CONF
     ;;
   end-session)
     settle_session
+    # The lab opens Nautilus and Ptyxis as dedicated transient user units.
+    # Stop these test clients before ending GNOME: tearing down their Wayland
+    # windows concurrently with Shell/Xwayland shutdown can stall Mutter's X11
+    # roundtrip and produce a real gnome-shell coredump in a software-rendered VM.
+    # This does not disable extensions, reset units or ignore any crash.
+    for unit in fgc-lab-ptyxis.service fgc-lab-nautilus.service; do
+      unit_state="$(as_user systemctl --user show --property=ActiveState --value "$unit")"
+      case "$unit_state" in
+        active|activating|deactivating|reloading)
+          as_user systemctl --user stop "$unit"
+          ;;
+        inactive) ;;
+        *)
+          echo "Refusing GNOME logout: $unit is $unit_state" >&2
+          exit 1
+          ;;
+      esac
+      unit_state="$(as_user systemctl --user show --property=ActiveState --value "$unit")"
+      if [[ "$unit_state" != inactive ]]; then
+        echo "CI desktop client did not stop cleanly: $unit ($unit_state)" >&2
+        exit 1
+      fi
+    done
+    # Confirm the compositor still answers after its test clients have left.
+    require_session
     # Close GNOME through its supported logout API before stopping system buses.
     as_user gnome-session-quit --logout --no-prompt
     for _ in {1..90}; do
