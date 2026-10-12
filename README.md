@@ -169,33 +169,9 @@ Routes opérateur essentielles :
   <img src="docs/assets/architecture-global-direct.svg" alt="Vue simplifiée des composants : matériel, Fedora, données, applications, sauvegardes et certification" width="100%">
 </p>
 
-### Le trajet d'une installation Golden
+**Architecture du poste.** Fedora Workstation constitue le système hôte. Le premier SSD héberge l'OS et les applications ; le second conserve les données de travail et les machines virtuelles sur `/data`. Le bureau GNOME, les outils DevOps et le gaming partagent ce socle, tandis que Borg assure les sauvegardes sur un support externe. Les opérations d'installation, de maintenance et de certification restent encadrées par les contrôles du projet.
 
-```mermaid
-flowchart TD
-  A["Code Git + configuration + profil Fedora"] --> B["Tests CI : qualité, sécurité, VM"]
-  B --> C{"Profil valide + prérequis vérifiés ?"}
-  C -- non --> STOP["Stop : examiner et corriger"]
-  C -- oui --> D["Gate 1 + Gate 2 : logique et GNOME"]
-  D --> E["PC : média signé + matériel identifié"]
-  E --> F["Baseline + dry-run + backup Borg"]
-  F --> G["APPLY protégé : système, GNOME, stockage, KVM"]
-  G --> H["Redémarrage + diagnostics"]
-  H --> I["Gate 3 : B580, écran, réseau, veille, backup"]
-  I --> J{"Preuves physiques complètes ?"}
-  J -- non --> STOP
-  J -- oui --> K["Golden runtime-certified"]
-```
-
-**La logique en cinq phrases :**
-
-1. **Git est la recette** : code, configuration, manifestes et profils de release décrivent l'état recherché.
-2. **`./control.sh` est le tableau de bord** : il appelle les moteurs spécialisés, il ne remplace pas leur logique.
-3. **Les modules exécutent le travail** : système, matériel, GNOME, applications, performance, gaming, KVM, sauvegarde.
-4. **Le second T705 est le coffre de données** : `/data` survit à une réinstallation du premier T705 ; Borg protège les données sélectionnées sur un SSD externe.
-5. **Les tests ne sont pas interchangeables** : CI verte ≠ Gate 2 physique ≠ Golden runtime-certified.
-
-Pour retrouver **le rôle précis de chaque répertoire, de chaque couche et de chaque étape**, lire le [guide d'architecture pédagogique](docs/ARCHITECTURE_PEDAGOGIQUE.md), avec ses schémas détaillés et ses exemples.
+Pour les responsabilités des composants, les conditions d'installation et les niveaux de validation, consulter [l'architecture détaillée](docs/ARCHITECTURE_PEDAGOGIQUE.md).
 
 ---
 
