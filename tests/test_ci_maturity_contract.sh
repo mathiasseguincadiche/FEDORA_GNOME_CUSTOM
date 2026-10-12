@@ -38,6 +38,19 @@ for workflow in desktop-integration-pretest fedora-appimage-pretest fedora-gamin
   }
 done
 grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+# Flathub can transiently refuse flathub.org connections. The CI bootstrap must
+# keep the official signed .flatpakrepo and refuse success after exhausted retries.
+for wf in fedora-package-preflight fedora-appimage-pretest fedora-host-pretest fedora45-package-preflight; do
+  grep -Fq 'bash scripts/ci/ensure-flathub.sh' "$ROOT/.github/workflows/$wf.yml" || {
+    echo "missing shared strict Flathub bootstrap in $wf" >&2; exit 1;
+  }
+done
+grep -Fq 'https://dl.flathub.org/repo/flathub.flatpakrepo' "$ROOT/scripts/ci/ensure-flathub.sh"
+grep -Fq 'https://dl.flathub.org/repo/flathub.flatpakrepo' "$ROOT/modules/system/04_package_sources.sh"
+if grep -Eq -- '--no-gpg-verify|--disable-gpg-verify|--no-verify' "$ROOT/scripts/ci/ensure-flathub.sh"; then
+  echo 'Flathub bootstrap must never bypass signatures' >&2; exit 1;
+fi
+
 # This reusable kernel preflight accepts both Fedora 44 and 45. It must use
 # Fedora's official registry for either input; the old dynamic ECR reference
 # bypassed the fixed-image checks and could fail before running any test.

@@ -9,7 +9,7 @@ system_sources_apply() {
   fi
   if is_true "${ENABLE_FLATHUB:-true}"; then
     run_mutating SYSTEM sudo dnf -y install flatpak
-    run_mutating SYSTEM flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    run_mutating SYSTEM flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
   fi
 }
 system_sources_postcheck() {
