@@ -144,6 +144,23 @@ Le PC et le relais portent leur étiquette ; la tablette, nœud personnel, n'en 
 
 ## 6. Bureau distant : Sunshine, ou GNOME Remote Desktop
 
+### Diagnostic AV1 sur Intel Arc B580, sans activer Sunshine
+
+Le contrôleur `./diagnostics/arc-b580-av1` est **strictement en lecture seule** : il recherche le nœud DRM associé au périphérique PCI Intel B580 `8086:e20b`, exige sa liaison au pilote `xe`, puis interroge **ce nœud précis** avec `vainfo`. Il ne déduit jamais l'encodage AV1 du simple fait qu'une B580 est installée.
+
+```bash
+# Sur Fedora, depuis ton compte normal (sans sudo)
+./diagnostics/arc-b580-av1
+./diagnostics/arc-b580-av1 --format json
+
+# Le contrôle strict échoue si l'AV1 matériel encode+decode n'est pas observé
+./diagnostics/arc-b580-av1 --require-av1
+```
+
+Le verdict `CAPABILITY_OBSERVED` signifie **uniquement** que le pilote VA-API expose `VAProfileAV1Profile0` avec des points d'entrée **décodage** et **encodage**. Il ne signifie pas que Sunshine capture GNOME, que l'encodeur AV1 est effectivement sélectionné, ni que la tablette décode sans pertes. Le rapport laisse donc `sunshine_moonlight_end_to_end=NOT_TESTED`, `tablet_av1_decode=NOT_TESTED` et `wifi7_and_wol=NOT_TESTED`.
+
+**Gate 3 doit encore démontrer** le codec réellement choisi dans les journaux Sunshine, l'appairage Moonlight, le décodage et l'autonomie de la tablette, la latence et les pertes en Wi-Fi 7, la résolution/les FPS, les cycles Wake-on-LAN et la reprise après veille. H.264 de secours doit être identifié comme tel, jamais présenté comme de l'AV1.
+
 ### Sunshine + Moonlight (choix du cahier des charges)
 
 À activer avec `REMOTE_SUNSHINE_ENABLE="true"`. Installé depuis le COPR `lizardbyte/stable` (source amont, signée par COPR — voir [SUPPLY_CHAIN.md](SUPPLY_CHAIN.md)). Ports explicitement autorisés dans la zone `fgc-tailnet`, d'après les valeurs par défaut documentées par LizardByte. **Attention :** la zone LAN FedoraWorkstation peut déjà permettre ces ports hauts : vérifier les règles réelles avant de conclure qu'ils sont exclusivement accessibles via le tailnet :
