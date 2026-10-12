@@ -322,7 +322,7 @@ Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts
 
 ## Images de conteneur
 
-Les conteneurs **Fedora 44** des principaux workflows utilisent le registre officiel `registry.fedoraproject.org/fedora:44`. L'ancienne source ECR Public (`public.ecr.aws/docker/library/fedora:44`) a déjà provoqué `toomanyrequests: Data limit exceeded` avant même l'exécution de Nautilus/Ptyxis. Le contrat `tests/test_ci_maturity_contract.sh` interdit son retour pour les images Fedora 44 à référence fixe.
+Les conteneurs **Fedora 44** des principaux workflows utilisent le registre officiel `registry.fedoraproject.org/fedora:44`, y compris le préflight réutilisable du noyau Linux amont dont l'image est paramétrée par la release Fedora. L'ancienne source ECR Public (`public.ecr.aws/docker/library/fedora:44`) a déjà provoqué `toomanyrequests: Data limit exceeded` avant même l'exécution de Nautilus/Ptyxis. Le contrat `tests/test_ci_maturity_contract.sh` interdit son retour pour les images Fedora 44 à référence fixe.
 
 Certains workflows Fedora **45** et le test de sonde Docker **busybox** utilisent encore ECR Public selon leur configuration. Les conteneurs ne tirent pas les images Fedora 44 anonymement de Docker Hub. La sonde construit son image vide localement (`FROM scratch`).
 
