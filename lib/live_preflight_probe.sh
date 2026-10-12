@@ -24,12 +24,17 @@ live_b580_binding_status() {
   fi
 }
 
+live_expected_cpu_model() {
+  # Reject nearby SKUs such as Ryzen 7 7700X: the workstation targets 7700.
+  [[ "$1" =~ AMD[[:space:]]Ryzen[[:space:]]7[[:space:]]7700([^[:alnum:]]|$) ]]
+}
+
 live_t705_status() {
   # Input: lsblk -dn -o NAME,TRAN,MODEL (the model may contain spaces).
   awk '
     tolower($2) == "nvme" {
       total++
-      if (toupper($0) ~ /T705/) t705++
+      if (toupper($0) ~ /CT[0-9]+T705SSD[0-9]+/) t705++
       if (NF < 3) unknown++
     }
     END {

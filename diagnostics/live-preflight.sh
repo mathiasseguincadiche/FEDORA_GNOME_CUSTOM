@@ -52,7 +52,7 @@ else emit NOT_TESTED motherboard "DMI inaccessible"; fi
 
 if [[ -r /proc/cpuinfo ]]; then
   cpu="$(awk -F: '/^model name[[:space:]]*:/ {gsub(/^[[:space:]]+/, "", $2); print $2; exit}' /proc/cpuinfo)"
-  if [[ "$cpu" == *"AMD Ryzen 7 7700"* ]]; then
+  if live_expected_cpu_model "$cpu"; then
     emit PASS cpu "AMD Ryzen 7 7700 detected (performance not tested)"
   elif [[ -n "$cpu" ]]; then
     emit FAIL cpu "expected Ryzen 7 7700, found $cpu"

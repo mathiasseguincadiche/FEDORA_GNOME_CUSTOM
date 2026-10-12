@@ -15,6 +15,13 @@ pci_good='0000:00:14.0 USB controller [0c03]: Intel Corporation Something [8086:
 [[ "$(live_b580_binding_status "${pci_good/Kernel driver in use: xe/Kernel driver in use: i915}")" == driver-unverified ]]
 [[ "$(live_b580_binding_status "${pci_good/Kernel driver in use: xe/Kernel modules: xe}")" == driver-unverified ]]
 [[ "$(live_b580_binding_status '0000:04:00.0 Ethernet controller [0200]: Realtek [10ec:8126]')" == absent ]]
+live_expected_cpu_model 'AMD Ryzen 7 7700 8-Core Processor'
+if live_expected_cpu_model 'AMD Ryzen 7 7700X 8-Core Processor'; then
+  echo 'incorrectly accepted Ryzen 7700X' >&2; exit 1
+fi
+if live_expected_cpu_model 'AMD Ryzen 7 77000 8-Core Processor'; then
+  echo 'incorrectly accepted unrelated Ryzen SKU' >&2; exit 1
+fi
 nvme_good='nvme0n1 nvme CT1000T705SSD3
 nvme1n1 nvme CT1000T705SSD3'
 [[ "$(live_t705_status "$nvme_good")" == match ]]
