@@ -195,7 +195,7 @@ La transition est préparée par des profils versionnés, une CI Fedora 45 réel
 bash scripts/development/release-readiness.sh --report-only
 ```
 
-Voir [la migration et l'installation Fedora 45](docs/UPGRADE_FEDORA_45.md) pour les conditions de promotion, la sauvegarde des VM et la nouvelle qualification.
+Voir [la migration et l'installation Fedora 45](docs/UPGRADE_FEDORA_45.md) pour les conditions de promotion, la sauvegarde du HOST et la nouvelle qualification. **Les exports de VM restent exclusivement manuels.**
 
 ## Les quatre piliers
 
@@ -263,7 +263,7 @@ Crucial T705 #2
 
 Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstallation doit remonter `/data` et réutiliser son contenu existant.
 
-`Documents` et `Projets` sont protégés par Borg. `ISO` et `Jeux` restent hors backup automatique par défaut pour éviter de dupliquer de gros payloads reproductibles.
+`Documents` et `Projets` sont protégés par Borg. `ISO`, `Jeux` et **les VM** restent hors des sauvegardes automatiques. Le propriétaire exporte lui-même ses VM lorsqu'il en a besoin.
 
 ---
 
@@ -451,7 +451,7 @@ T705 données perdu
 ./control.sh backup dr-plan
 ```
 
-Les images QCOW2 doivent être froides/arrêtées avant une sauvegarde VM cohérente. Une restauration ne remplace jamais silencieusement le système actif.
+Les sauvegardes Borg concernent uniquement le HOST et les données utilisateur ; elles n'exportent aucun disque QCOW2, XML libvirt, état UEFI/TPM ni média cloud-init. Les VM sont gérées et exportées manuellement par leur propriétaire. Une restauration Borg ne remplace jamais silencieusement le système actif.
 
 Voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 
