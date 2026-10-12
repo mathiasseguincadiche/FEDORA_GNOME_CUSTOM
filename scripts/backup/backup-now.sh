@@ -50,7 +50,7 @@ printf 'fedora-gnome-custom backup canary\ncommit=%s\n' "$(repo_commit)" > "$sta
 
 system_bytes="$(sudo du -scB1 /etc /boot | awk 'END {print $1}')"
 backup_runtime_require_staging_space "$staging" "$system_bytes" || { echo 'Insufficient staging capacity for system configuration.' >&2; exit 40; }
-sudo tar -C / --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
+sudo tar -C / --exclude=etc/libvirt --exclude='etc/libvirt/*' --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
 sudo chown "$(id -u):$(id -g)" "$staging/fedora-system-config.tar.gz"
 
 # Recovery manifest retains the historical fields for compatibility, but

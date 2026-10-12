@@ -107,4 +107,26 @@ grep -Fq 'for kind in full daily; do' "$ROOT/scripts/backup/backup-retention.sh"
 grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-backup.sh"
 grep -Fq 'MANIFEST.sha256' "$ROOT/lib/backup_runtime_bundle.sh"
 
+# Even the privileged /etc system snapshot must exclude libvirt's domain XML.
+for script in scripts/backup/backup-now.sh prepare-preapply-backup.sh; do
+  grep -Fq -- '--exclude=etc/libvirt' "$ROOT/$script" || {
+    echo "system-config tar still includes VM definitions: $script" >&2; exit 1;
+  }
+done
+# Check GNU tar's intended exclusion with a disposable /etc tree; never read
+# the host's real /etc/libvirt and never create real VM state.
+tmp_tar="$(mktemp -d)"
+mkdir -p "$tmp_tar/etc/libvirt/qemu" "$tmp_tar/archive"
+printf 'host config\n' > "$tmp_tar/etc/hostname"
+printf 'private domain XML\n' > "$tmp_tar/etc/libvirt/qemu/owner-managed.xml"
+tar -C "$tmp_tar" --exclude=etc/libvirt --exclude='etc/libvirt/*' -czf "$tmp_tar/archive/host.tgz" etc
+tar -tzf "$tmp_tar/archive/host.tgz" > "$tmp_tar/archive/members.txt"
+grep -Fqx 'etc/hostname' "$tmp_tar/archive/members.txt"
+if grep -Fq 'etc/libvirt' "$tmp_tar/archive/members.txt"; then
+  echo 'VM metadata leaked into simulated HOST tar' >&2
+  rm -rf "$tmp_tar"
+  exit 1
+fi
+rm -rf "$tmp_tar"
+
 echo 'backup/recovery contract: PASS'
