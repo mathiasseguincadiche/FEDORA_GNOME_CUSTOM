@@ -94,7 +94,14 @@ PCI
   assert_fails backup_repository_postcheck
   # KVM metadata is strictly manual-only; no virsh probing is required.
   backup_kvm_precheck
+  # When sourced in an isolated shell, config failure must still be defined
+  # and must never be an unbound-variable crash.
+  unset EXIT_CONFIG_FAILED
   BACKUP_LIBVIRT_METADATA=true assert_fails backup_kvm_precheck
+  source "$ROOT/modules/backup/55_vm_backup.sh"
+  backup_vm_precheck
+  BACKUP_VM_DISKS=true assert_fails backup_vm_precheck
+  BACKUP_VM_CLOUD_INIT_METADATA=true assert_fails backup_vm_precheck
 )
 
 # Bootstrapping a nested entrypoint preserves its parent's logs.
