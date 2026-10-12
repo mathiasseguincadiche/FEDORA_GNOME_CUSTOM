@@ -223,7 +223,7 @@ Le script sélectionne uniquement la dernière archive **full**, valide son mani
 
 ## Export manuel des VM : périmètre et limites
 
-Le projet ne prend **aucune initiative** de sauvegarde ou d'export des VM. Les outils libvirt/KVM servent à **créer, exploiter et diagnostiquer** les VM, pas à les archiver. Le script historique `scripts/backup/vm-backup-plan.py` n'est pas appelé par le moteur Borg et ne constitue pas une procédure automatique à utiliser.
+Le projet ne prend **aucune initiative** de sauvegarde ou d'export des VM. Les outils libvirt/KVM servent à **créer, exploiter et diagnostiquer** les VM, pas à les archiver. L'ancien planificateur de sauvegarde VM a été retiré du dépôt : aucun composant de Borg ne doit générer de plan de conversion ou copie QCOW2.
 
 Pour ses exports personnels, le propriétaire choisit quand arrêter ses VM et quels fichiers conserver ensemble (disque virtuel, XML, NVRAM et état TPM si applicable). Ce travail est **hors périmètre** de la sauvegarde du HOST ; aucune preuve Borg ne vaut preuve de récupération d'une VM.
 

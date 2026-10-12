@@ -68,7 +68,14 @@ for p in scripts/backup/backup-now.sh prepare-preapply-backup.sh scripts/backup/
 done
 grep -Fq 'for key in DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq -- '--exclude "*.qcow2"' "$ROOT/scripts/backup/daily-user-backup.sh"
-grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"
+if grep -Fq 'qemu-img convert' "$ROOT/scripts/backup/backup-now.sh"; then
+  echo 'VM conversion must never run inside the Borg script' >&2
+  exit 1
+fi
+if [[ -e "$ROOT/scripts/backup/vm-backup-plan.py" ]]; then
+  echo 'Obsolete automatic VM backup plan still exists' >&2
+  exit 1
+fi
 grep -Fq 'source "$REPO_ROOT/lib/persistent_data.sh"' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'persistent_data_documents' "$ROOT/scripts/backup/backup-now.sh"
 grep -Fq 'persistent_data_projects' "$ROOT/scripts/backup/backup-now.sh"

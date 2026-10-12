@@ -321,23 +321,6 @@ backup_runtime_capture_inventory() {
   lspci -nnk > "$out/lspci-nnk.txt" 2>/dev/null || true
 }
 
-backup_runtime_virsh_capture() { local uri="$1" output="$2"; shift 2; sudo virsh -c "$uri" "$@" | cat > "$output"; }
-
-backup_runtime_export_libvirt() {
-  local out="$1" uri="${LIBVIRT_URI:-qemu:///system}" name
-  mkdir -p "$out/domains" "$out/networks" "$out/pools"
-  command -v virsh >/dev/null 2>&1 || {
-    printf 'libvirt_metadata=unavailable\n' > "$out/metadata-status.env"
-    return 0
-  }
-  sudo virsh -c "$uri" list --all --name | sed '/^$/d' > "$out/domains.txt" || return $?
-  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/domains/$name.xml" dumpxml "$name"; backup_runtime_virsh_capture "$uri" "$out/domains/$name-blocks.txt" domblklist "$name" --details; done < "$out/domains.txt"
-  sudo virsh -c "$uri" net-list --all --name | sed '/^$/d' > "$out/networks.txt" || return $?
-  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/networks/$name.xml" net-dumpxml "$name"; done < "$out/networks.txt"
-  sudo virsh -c "$uri" pool-list --all --name | sed '/^$/d' > "$out/pools.txt" || return $?
-  while IFS= read -r name; do [[ -n "$name" ]] || continue; backup_runtime_virsh_capture "$uri" "$out/pools/$name.xml" pool-dumpxml "$name"; backup_runtime_virsh_capture "$uri" "$out/pools/$name-volumes.txt" vol-list "$name" --details 2>/dev/null || : > "$out/pools/$name-volumes.txt"; done < "$out/pools.txt"
-}
-
 backup_runtime_require_free_space() {
   local repository="$1" existing available min_bytes min_gib
   backup_runtime_is_remote_repository "$repository" && return 0
