@@ -35,7 +35,12 @@ jobs:
           source lib/bootstrap.sh
           engine_bootstrap
           source lib/kernel_lifecycle.sh
-          target="$(kernel_lifecycle_resolve_latest_stable)"
+          mkdir -p upstream-evidence
+          if ! target="$(kernel_lifecycle_resolve_latest_stable 2>upstream-evidence/resolution.log)"; then
+            cat upstream-evidence/resolution.log >&2
+            echo "::error::Kernel target could not be verified against kernel.org and COPR; RPM download was not attempted."
+            exit 40
+          fi
           mapfile -t packages < <(kernel_lifecycle_latest_nevras "$target")
           (( ${#packages[@]} >= 5 ))
           kernel_lifecycle_pin_target "$target"
