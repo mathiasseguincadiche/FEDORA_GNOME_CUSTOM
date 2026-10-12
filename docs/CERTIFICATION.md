@@ -2,6 +2,22 @@
 
 Ce guide est la **porte d'entrée** du pilier « fiabilité » côté preuves : comment le projet passe de « le code est correct » à « cette machine précise est certifiée ». Il ne répète pas le détail : il donne l'ordre des étapes et le document de chacune.
 
+## La certification, ce n'est pas « le programme s'est lancé »
+
+```mermaid
+flowchart LR
+  C["CI : code et VM"] --> P["CODE-READY"]
+  G1["Gate 1 : logique"] --> G2["Gate 2 : GNOME"]
+  G2 --> G3["Gate 3 : vrai PC"]
+  G3 --> F["Golden runtime-certified"]
+  P -. "ne remplace pas" .-> G3
+```
+
+La **cible finale** est Fedora 45 Workstation + GNOME 51. Le profil Fedora 45 est encore `pending` : il ne suffit pas d'installer la Beta ou de réussir un laboratoire GNOME 51 pour déclarer la station certifiée.
+
+**Question décisive :** la preuve est-elle liée au **bon commit**, à la **bonne configuration**, à la **bonne release** et au **vrai matériel** ? Si l'un de ces éléments a changé, le résultat peut devenir `STALE`. [Schéma pédagogique](ARCHITECTURE_PEDAGOGIQUE.md) · [Procédure officielle](THREE_GATE_VALIDATION.md).
+
+
 ## Le principe
 
 Un réglage n'est pas considéré comme bon parce qu'il est écrit, ni parce qu'un paquet est installé : il faut une **preuve** qui correspond au commit, à la configuration et au matériel exacts. Une preuve qui ne correspond plus (nouveau commit, nouveau noyau, autre machine) devient `STALE` et doit être refaite.

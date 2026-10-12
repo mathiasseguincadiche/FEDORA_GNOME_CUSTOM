@@ -1,5 +1,21 @@
 # Journaux et incidents — guide opérateur
 
+## De l'erreur à la preuve de réparation
+
+```mermaid
+flowchart LR
+  A["Symptôme observé"] --> B["Logs bruts + commit + environnement"]
+  B --> C["Hypothèse et diagnostic"]
+  C --> D["Correction limitée et justifiée"]
+  D --> E["Revalidation au nouveau SHA"]
+  E --> F["Incident résolu avec preuve"]
+```
+
+Un message en français facilite la lecture, mais **ne remplace jamais le journal brut**. Exemples : `systemd-coredump` d'un GNOME Shell, erreur de miroir DNF, refus de gate `APPLY` ou garde-fou KVM. Les logs doivent permettre d'identifier le **premier défaut**, pas simplement de constater un échec final.
+
+Pour les problèmes GitHub Actions et la distinction PR / `push` vers `main`, voir le [runbook CI](TROUBLESHOOTING.md#un-contrôle-github-actions-devient-rouge) et [CI_VALIDATION.md](CI_VALIDATION.md).
+
+
 ## Organisation
 
 Les exécutions existantes sont conservées sous `logs/<RUN_ID>/main.log` et `modules.log`. Les identifiants sont horodatés en UTC. Les incidents ouverts sont suivis sous `logs/incidents/<RUN_ID>.json`. Les comptes rendus de nettoyage sont dans `reports/nettoyage-*.json`.
