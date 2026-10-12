@@ -254,7 +254,7 @@ jobs:
 
   installer-audit:
     runs-on: ubuntu-latest
-    container: public.ecr.aws/docker/library/fedora:44
+    container: registry.fedoraproject.org/fedora:44
     timeout-minutes: 20
     steps:
       # Git must exist BEFORE actions/checkout: without it, checkout silently
@@ -303,7 +303,7 @@ jobs:
 
   borg-fedora:
     runs-on: ubuntu-latest
-    container: public.ecr.aws/docker/library/fedora:44
+    container: registry.fedoraproject.org/fedora:44
     timeout-minutes: 15
     steps:
       - name: Install Fedora Borg and test dependencies
