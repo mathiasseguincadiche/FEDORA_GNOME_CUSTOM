@@ -153,6 +153,12 @@ MOCK
 cat > "$tmp/bin/qemu-img" <<'MOCK'
 #!/usr/bin/env bash
 case "$1" in
+  info)
+    if [[ "${TEST_QEMU_BACKING:-false}" == true ]]; then
+      echo '{"format":"qcow2","backing-filename":"../../unexpected/base.qcow2"}'
+    else
+      echo '{"format":"qcow2"}'
+    fi ;;
   check) exit 0 ;;
   measure) echo '{"required":9000000000000000000}' ;;
   convert) touch "$TEST_CONVERT_CALLED"; exit 1 ;;
@@ -160,12 +166,35 @@ case "$1" in
 esac
 MOCK
 cat > "$REPO_ROOT/scripts/backup/vm-backup-plan.py" <<'MOCK'
-print('{"disks":[{"source":"/fixture/disk.qcow2","target":"vda"}],"state_paths":[]}')
+import json
+import os
+print(json.dumps({"disks":[{"source":os.environ["TEST_VM_SOURCE"],"target":"vda"}],"state_paths":[]}))
 MOCK
 chmod +x "$tmp/bin/"*
 export TEST_CONVERT_CALLED="$tmp/conversion-called"
+export TEST_VM_SOURCE="$tmp/source.qcow2"
+printf 'disposable QCOW2 fixture, qemu-img is mocked\n' > "$TEST_VM_SOURCE"
 rc=0
 BACKUP_VM_DISKS=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/capacity.log" 2>&1 || rc=$?
 [[ "$rc" == 40 && ! -e "$TEST_CONVERT_CALLED" ]]
 grep -Fq 'Insufficient staging capacity for VM demo disk vda' "$tmp/capacity.log"
+# A backing chain cannot be treated as a self-contained VM backup.
+export TEST_QEMU_BACKING=true
+rc=0
+BACKUP_VM_DISKS=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/backing.log" 2>&1 || rc=$?
+[[ "$rc" == 30 && ! -e "$TEST_CONVERT_CALLED" ]]
+grep -Fq 'external backing chain' "$tmp/backing.log"
+unset TEST_QEMU_BACKING
+# A lexical path guard does not detect a symlinked source at backup time.
+ln -s "$tmp/source.qcow2" "$tmp/source-link.qcow2"
+export TEST_VM_SOURCE="$tmp/source-link.qcow2"
+rc=0
+BACKUP_VM_DISKS=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/link.log" 2>&1 || rc=$?
+[[ "$rc" == 30 && ! -e "$TEST_CONVERT_CALLED" ]]
+grep -Fq 'symlinked or noncanonical' "$tmp/link.log"
+export TEST_VM_SOURCE="$tmp/missing.qcow2"
+rc=0
+BACKUP_VM_DISKS=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms --staging-root "$tmp/vm-staging" > "$tmp/missing.log" 2>&1 || rc=$?
+[[ "$rc" == 30 && ! -e "$TEST_CONVERT_CALLED" ]]
+grep -Fq 'missing, symlinked or noncanonical' "$tmp/missing.log"
 echo 'Backup certification behavior: PASS'
