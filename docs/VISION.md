@@ -13,6 +13,18 @@ Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact*
 
 Pourquoi un dépôt plutôt qu'une installation à la main : pour que chaque réglage soit écrit, expliqué, vérifiable et rejouable, et pour apprendre en le construisant les pratiques DevOps (configuration déclarative, tests, CI, preuves) que le propriétaire vise dans son métier.
 
+## Le résultat recherché, raconté comme un parcours
+
+**Avant** : un poste Fedora installé manuellement, des paquets et extensions ajoutés peu à peu, des commandes oubliées, et une panne qui oblige à tout reconstituer.
+
+**Avec la Golden** : les choix sont inscrits dans le dépôt ; l'installateur vérifie le média et la machine ; les modules installent les composants prévus ; `/data` conserve les fichiers ; Borg permet une récupération externe ; les diagnostics et les preuves montrent ce qui fonctionne réellement.
+
+La cible est **Fedora 45 Workstation + GNOME 51**, avec une ergonomie personnelle soignée et une pile matérielle adaptée au Ryzen 7 7700, à l'Arc B580 et aux deux Crucial T705. La stratégie reste progressive : **la référence actuellement disponible demeure Fedora 44 / GNOME 50 jusqu'à la promotion explicite et qualifiée du profil 45**. Le projet recherche une installation fiable, pas un affichage prématuré du dernier numéro de version.
+
+Cette démarche est aussi un support d'apprentissage DevOps : versionner la configuration, séparer les environnements, automatiser les vérifications, comprendre les erreurs et conserver des preuves. Voir le [schéma pédagogique de bout en bout](ARCHITECTURE_PEDAGOGIQUE.md).
+
+
+
 ## Les quatre piliers, d'importance égale
 
 | Pilier | Ce qu'on veut | Où c'est dans le projet |
