@@ -720,3 +720,27 @@ Pour un reboot/crash :
 ```
 
 Le commit Git doit toujours accompagner les rapports : les diagnostics et les corrections du projet évoluent avec la version du dépôt.
+
+---
+
+## Un contrôle GitHub Actions devient rouge
+
+**But :** trouver la première cause plutôt que de masquer le job final. Des exemples déjà observés dans ce dépôt :
+
+| Erreur affichée | Ce qui s'est réellement passé | Réflexe correct |
+|---|---|---|
+| `Initialize containers` + `toomanyrequests` | registre de conteneurs limité | vérifier la source d'image ; les jobs Fedora 44 utilisent `registry.fedoraproject.org/fedora:44` |
+| `Cannot download openh264` | dépôt tiers Cisco injoignable depuis un runner | inspecter la transaction ; si ce dépôt n'est pas nécessaire au contrat de CI, l'isoler sans retirer les paquets requis |
+| `fedora-gnome-vm / lab` + coredump | vrai crash ou blocage de fermeture GNOME/Mutter | lire les journaux GDM, Wayland/XWayland, unités utilisateur et `systemd-coredump` |
+| `Tests / contracts` rouge | l'une des six dépendances a échoué ou été sautée | corriger d'abord le job amont ; laisser `contracts` fail-closed |
+| PR verte puis échec `push` sur `main` | deux SHA et deux exécutions distincts | inspecter le **commit de fusion**, puis corriger sur une nouvelle branche |
+
+### Diagnostic en cinq gestes
+
+1. Ouvrir **GitHub → Actions**, choisir la branche et le **SHA exact**.
+2. Dans le workflow rouge, identifier **l'étape précise** qui a échoué, pas seulement la dernière ligne `exit code 1`.
+3. Examiner les journaux et les artefacts : réseau, dépendance RPM, exceptions, coredumps, état des VM.
+4. Vérifier si la cause est un défaut fonctionnel ou une rupture d'infrastructure externe (registre, CDN, miroir).
+5. Corriger sur une branche, lancer les contrôles requis, faire fusionner la PR, puis vérifier **les checks du push sur `main`**.
+
+**Ce qu'il ne faut jamais faire :** désactiver `journal_health`, supprimer une assertion bloquante, ajouter `|| true` pour fabriquer un vert, ou ignorer les coredumps. Voir [CI_VALIDATION.md](CI_VALIDATION.md), [FEDORA_GNOME_CI_LAB.md](FEDORA_GNOME_CI_LAB.md) et [GITHUB_GOVERNANCE.md](GITHUB_GOVERNANCE.md).

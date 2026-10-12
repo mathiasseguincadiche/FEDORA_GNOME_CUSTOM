@@ -12,6 +12,22 @@ Référence : Fedora Linux 44 Workstation + GNOME 50 + Wayland.
 
 Le projet distingue les extensions **fonctionnelles** des extensions purement cosmétiques. L'objectif est de conserver un bureau proche de l'upstream, stable à 240 Hz et simple à diagnostiquer après une mise à jour ou un suspend/resume.
 
+## Les six rôles GNOME et la transition vers GNOME 51
+
+Le projet conserve les **mêmes besoins fonctionnels**, pas forcément les mêmes extensions à chaque version de GNOME :
+
+| Rôle attendu | Fedora 44 / GNOME 50 | Cible Fedora 45 / GNOME 51 |
+|---|---|---|
+| Dock | Dash to Dock | Dash to Dock, après validation de compatibilité |
+| Icônes et Corbeille | Desktop Icons NG (DING) | Gtk4 DING |
+| Afficher le bureau | Show Desktop Plus | Show Desktop Button |
+| Informations CPU/RAM/réseau | Resource Monitor | Vitals |
+| Tuilage | Tiling Assistant | compatibilité à prouver |
+| AppIndicator | AppIndicator | compatibilité à prouver |
+
+**Ne pas confondre** : le laboratoire Fedora 45 a prouvé GNOME 51 Wayland, le redémarrage et la récupération, mais **pas encore le profil intégral de six extensions qualifiées en GNOME 51**. Les URLs, hashes et identités du profil promu sont vérifiés séparément ; la Gate 2 et la Gate 3 devront être rejouées. Voir [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md) et [GNOME.md](GNOME.md).
+
+
 ## Profil Fedora 45 / GNOME 51 (en préparation)
 
 Trois des quatre extensions téléchargées n'ont **aucun build GNOME 51** sur extensions.gnome.org. Le profil Fedora 45 les remplace ; Fedora 44 / GNOME 50 garde les extensions ci-dessous inchangées. Le verrou du profil est `profiles/fedora45/gnome-extensions.lock` (inerte tant que `profiles/fedora45/profile.json` reste `pending`).

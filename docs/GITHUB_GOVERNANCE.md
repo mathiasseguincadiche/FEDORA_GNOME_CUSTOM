@@ -17,6 +17,26 @@ Tout check configuré comme obligatoire dans le ruleset doit produire un context
 
 Le dépôt contient `scripts/development/check-main-protection.sh` pour vérifier l'état public attendu de la protection. Ce script ne modifie aucun réglage GitHub.
 
+## Le contrôle après fusion fait partie de la validation
+
+```mermaid
+flowchart LR
+  A["Branche + PR"] --> B["Checks pull_request"]
+  B --> C{"Tous les contrôles requis verts ?"}
+  C -- non --> F["Correction sur la branche"]
+  F --> B
+  C -- oui --> D["Merge vers main"]
+  D --> E["Nouveaux checks push au SHA de fusion"]
+  E --> G{"Tout est vert sur main ?"}
+  G -- non --> H["Nouvelle PR corrective"]
+  G -- oui --> I["Code de main validé"]
+```
+
+**Pourquoi deux phases ?** Les contrôles de PR portent sur un SHA différent de celui du commit de fusion. Une exécution verte **avant** la fusion ne suffit pas à certifier le nouveau `main`. Inspecter aussi `Tests / contracts` et ses six dépendances après le `push`.
+
+Les corrections CI doivent conserver des diagnostics exploitables et les protections fail-closed. Les restrictions des registres ou dépôts externes se traitent à la **source**, pas en désactivant le test. [Guide de lecture CI](CI_VALIDATION.md) · [runbook d'incident](TROUBLESHOOTING.md#un-contrôle-github-actions-devient-rouge).
+
+
 ## Discipline de branche et de merge
 
 Les changements fonctionnels ou structurants sont préparés sur une branche dédiée puis proposés par pull request.
