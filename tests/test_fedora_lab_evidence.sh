@@ -63,6 +63,15 @@ assert "needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, 
 assert "if: ${{ always() }}" in tests.split("\n  contracts:\n", 1)[1]
 assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm upstream-kernel rocky-devops-vm" in tests
 assert "uses: ./.github/workflows/fedora-gnome-vm.yml" in tests
+# The real GNOME lab must close CI-owned GUI clients before logging out.
+# Keep both the actual logout and the strict post-logout journal gate.
+guest = (root / ".github/scripts/fedora-gnome-guest.sh").read_text()
+logout = guest.split("  end-session)", 1)[1].split("  session)", 1)[0]
+assert "fgc-lab-ptyxis.service fgc-lab-nautilus.service" in logout
+assert 'as_user systemctl --user stop "$unit"' in logout
+assert logout.index('as_user systemctl --user stop "$unit"') < logout.index("gnome-session-quit --logout --no-prompt")
+assert "require_session" in logout
+assert "journal_health 0" in logout
 # Current operator guide must match the configured default channel.
 assert 'KERNEL_CHANNEL="vanilla"' in (root / "config/kernel.conf").read_text()
 guide = (root / "docs/THREE_GATE_VALIDATION.md").read_text()
