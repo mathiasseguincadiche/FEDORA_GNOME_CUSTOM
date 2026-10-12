@@ -36,6 +36,16 @@ L'affichage est une **mesure visuelle** à conduire avec l'Intel Arc B580 réell
 Le protocole complet, les causes possibles du blanc grisâtre et les décisions en cas d'échec sont dans [DISPLAY_COLOR_DIAGNOSTIC.md](DISPLAY_COLOR_DIAGNOSTIC.md). La validation ne doit pas contourner `xe`, désactiver SELinux ni imposer des profils couleur non vérifiés.
 
 
+## AV1 sur le poste et la tablette (qualification distincte)
+
+1. Sur l'hôte Fedora, observer `./diagnostics/arc-b580-av1 --format json` : **un seul** render node B580 `8086:e20b` lié à `xe` doit exposer `VAProfileAV1Profile0` avec `VAEntrypointVLD` et `VAEntrypointEncSlice` ou `VAEntrypointEncSliceLP`. Sinon : `NOT_TESTED` ou `MISSING_AV1_CAPABILITY`, et arrêt de la qualification AV1.
+2. Avec Sunshine activé **volontairement** et une session GNOME ouverte, vérifier le codec/encodeur réellement retenu dans les journaux, et non dans une simple liste de codecs disponibles.
+3. Depuis la tablette Android, lancer Moonlight ; relever codec décodé, résolution, FPS, pertes réseau et latence sur LAN puis via Tailscale.
+4. Après arrêt complet, demander Wake-on-LAN depuis un **relais LAN** ; répéter les cycles exigés, mesurer les erreurs et vérifier le verrouillage de session.
+5. Consigner la présence éventuelle de bascule H.264/HEVC, d'intervention locale, d'absence de 240 Hz ou d'artefacts. **Aucun résultat n'est simulé par GitHub Actions.**
+
+Le diagnostic ne modifie ni les pilotes, ni l'ouverture du pare-feu, ni le compte GNOME, ni Sunshine. Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md) pour la procédure d'activation et de retour arrière.
+
 ## Avant les charges
 
 1. Conserver le même commit Git propre et le même plan de modules pour les trois gates.
