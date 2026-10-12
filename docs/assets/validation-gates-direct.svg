@@ -14,7 +14,7 @@
 </defs>
 <rect width="1400" height="300" fill="#fff"/>
 <text x="35" y="48" class="title">Validation complète</text>
-<text x="35" y="78" class="kicker">Prévalider → installer → certifier sur le vrai matériel</text>
+<text x="35" y="78" class="kicker">Actuel : Fedora 44 / GNOME 50 · Cible : Fedora 45 / GNOME 51 (pending)</text>
 
 <g transform="translate(30 112)">
   <rect width="175" height="128" rx="18" fill="#eaf4ff" stroke="#7bb8ed"/>
