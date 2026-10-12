@@ -4,7 +4,7 @@ Ce guide est la **porte d'entrée** du pilier « finition GNOME façon Ubuntu »
 
 ## Ce que tu obtiens
 
-Fedora livre GNOME tel que ses développeurs l'ont conçu : propre, mais très dépouillé. Le projet garde ce GNOME officiel (GNOME 50, Wayland, Adwaita/libadwaita, applications Fedora) et lui ajoute **la finition qu'Ubuntu apporte à GNOME** :
+Fedora livre GNOME tel que ses développeurs l'ont conçu : propre, mais très dépouillé. Le projet garde ce GNOME officiel (GNOME 50 sur la référence actuelle, GNOME 51 comme cible, Wayland, Adwaita/libadwaita, applications Fedora) et lui ajoute **la finition qu'Ubuntu apporte à GNOME** :
 
 - un dock toujours accessible et un bureau avec ses icônes ;
 - un tuilage des fenêtres plus riche, des applications anciennes harmonisées avec les modernes ;
@@ -13,6 +13,24 @@ Fedora livre GNOME tel que ses développeurs l'ont conçu : propre, mais très d
 - un soin particulier pour l'écran QD-OLED.
 
 Ce qui n'est **pas** repris d'Ubuntu : le thème visuel Yaru et ses icônes. Le projet reprend l'ergonomie, pas l'apparence (ADR 0013).
+
+## GNOME sur mesure : le résultat voulu, pas seulement des extensions
+
+Le projet conserve **Fedora + GNOME natifs**, Wayland, Adwaita et les applications Fedora, puis ajoute une ergonomie choisie pour le PC. Les extensions remplissent des **fonctions**, elles ne sont pas interchangeables au hasard.
+
+| Ce que l'utilisateur veut | Profil de référence GNOME 50 | Intention GNOME 51 |
+|---|---|---|
+| Dock pratique et adapté à l'OLED | Dash to Dock | Dash to Dock après vérification de compatibilité |
+| Icônes, Bureau et Corbeille | DING | **Gtk4 DING** |
+| Afficher le bureau | Show Desktop Plus | **Show Desktop Button** |
+| Voir CPU, mémoire et réseau | Resource Monitor | **Vitals** |
+| Tuilage enrichi | Tiling Assistant | compatibilité à prouver |
+| Applications en barre système | AppIndicator | compatibilité GNOME 51 à prouver |
+
+Les noms sont ceux des **rôles fonctionnels** : le verrou `profiles/fedora45/gnome-extensions.lock` fixe les identités, archives et SHA-256 exacts. Les six extensions GNOME 50 appartiennent au profil Fedora 44 ; le laboratoire natif GNOME 51 **ne certifie pas encore le profil personnalisé final avec ses six extensions actives**.
+
+L'écran QD-OLED 1440p/240 Hz exige également une attention à la rémanence, au dock, au blanc, à la reprise d'affichage et aux artefacts : les mesures restent physiques sur l'Arc B580. Voir [GNOME_EXTENSIONS.md](GNOME_EXTENSIONS.md), [GNOME_POLISH.md](GNOME_POLISH.md) et [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+
 
 ## Les briques et leur document
 
@@ -52,4 +70,4 @@ Tous les réglages se changent dans `config/local.conf` (jamais versionné), san
 
 - le thème Yaru et ses icônes ;
 - Blur My Shell, Just Perfection, Dash to Panel ;
-- toute extension qui n'est pas épinglée par URL et empreinte SHA-256 dans `config/gnome-extensions.lock`.
+- toute extension non vérifiée par URL, identité et empreinte SHA-256 dans le **verrou du profil actif** (Fedora 44 : `config/gnome-extensions.lock`, Fedora 45 après promotion : `profiles/fedora45/gnome-extensions.lock`).

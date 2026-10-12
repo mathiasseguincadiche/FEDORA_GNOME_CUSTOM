@@ -2,6 +2,27 @@
 
 Le portail documentaire est [`README.md`](README.md). Ce guide décrit le chemin **bare-metal de production** ; les validations WSL2/VirtualBox ne déverrouillent jamais l'APPLY réel.
 
+## Pourquoi ce guide reste Fedora 44 alors que la cible est Fedora 45
+
+Le projet sépare **l'installation de référence** de **la future Golden Fedora 45 / GNOME 51** :
+
+- **Aujourd'hui dans les verrous du dépôt :** Fedora 44 / GNOME 50 reste le chemin actuellement sélectionné.
+- **La cible :** Fedora 45 / GNOME 51, mais `profiles/fedora45/profile.json` est encore `pending`.
+- **Installation neuve Fedora 45 après promotion :** utiliser la procédure spécifique de [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md#installation-neuve-directement-en-fedora-45). Ne pas remplacer « 44 » par « 45 » dans les commandes de ce guide.
+
+### La méthode : observer, préparer, protéger, appliquer, certifier
+
+| Étape | Exemples | Preuve attendue |
+|---|---|---|
+| Observer | média, disque, configuration, doctors | identité authentifiée et composants reconnus |
+| Planifier | `./control.sh install dry-run` | plan du même commit, sans mutation |
+| Protéger | backup Borg pré-APPLY | archive vérifiée et restauration témoin |
+| Appliquer | `./control.sh install apply` **sur le PC réel uniquement** | modules convergés sans contourner les guards |
+| Certifier | Gate 3 | B580, écran, stockage, veille/réveil, KVM et backup vérifiés |
+
+**Règle de sécurité :** ne jamais passer à l'étape suivante sans pouvoir dire *ce qui change*, *ce qui prouve le résultat* et *quand s'arrêter*. Le [guide d'architecture illustré](ARCHITECTURE_PEDAGOGIQUE.md) explique le schéma global ; ce document reste la procédure de production.
+
+
 ## Avant de commencer
 
 **Public :** opérateur qui prépare ou installe la workstation physique cible.

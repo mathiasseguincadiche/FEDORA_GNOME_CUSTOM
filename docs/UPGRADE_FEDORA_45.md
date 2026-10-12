@@ -7,6 +7,41 @@
 
 La cible future est Fedora 45 Workstation avec GNOME 51. Le profil Fedora 44 / GNOME 50 déjà testé reste actif pendant la préparation. Une Beta ou un numéro de version changé dans un ancien verrou ne constitue pas un profil de production.
 
+## Fedora 45 : la destination, expliquée en cinq jalons
+
+La cible est **Fedora 45 Workstation + GNOME 51**, personnalisée pour le Ryzen 7 7700, l'Intel Arc B580, les deux Crucial T705 et le bureau GNOME/Wayland. La réussite signifie **un poste fiable, performant, sauvegardable et certifié**, pas seulement un installateur qui affiche Fedora 45.
+
+```mermaid
+flowchart TD
+  A["Prétests Fedora 45 / GNOME 51"] --> B["Média Workstation final et signé"]
+  B --> C["Promotion du profil et des extensions"]
+  C --> D["CI complète sur le nouveau commit"]
+  D --> E["Installation ou migration protégée"]
+  E --> F["Gate 1 + Gate 2 + Gate 3"]
+  F --> G["Golden Fedora 45 qualifiée"]
+```
+
+| Jalon | Ce qui existe | Condition de sortie |
+|---|---|---|
+| **Préparer** | code d'upgrade, manifestes, profil 45, laboratoire natif GNOME 51 | ne donne pas accès à l'APPLY 45 |
+| **Authentifier** | outil de vérification et clé épinglée | média **final** signé, nom et empreinte exacts |
+| **Promouvoir** | `promote-fedora45.py` et `fedora-profile.py` | `profile.json` passe de `pending` à `ready`, en PR revue |
+| **Déployer** | guides de réinstallation et de migration DNF5 | sauvegarde valide, guards et nouveau boot réellement observés |
+| **Certifier** | Gates et diagnostics | tests du nouveau commit, GNOME 51 et matériel physique qualifiés |
+
+**Quatre statuts différents :** `pending` = non autorisé en production ; `ready` = profil de release promu ; CI verte = code testé sur un SHA ; `Golden runtime-certified` = preuve Gate 3 sur le PC. Ils ne sont pas interchangeables.
+
+Pour voir l'état **sans modifier le poste** :
+
+```bash
+cat profiles/fedora45/profile.json
+./control.sh upgrade plan
+bash scripts/development/release-readiness.sh --report-only --pin
+```
+
+Un rapport `--report-only` produit avec succès ne vaut pas `OVERALL=READY`. Pour comprendre les composants et les gates, consulter le [schéma complet de l'architecture](ARCHITECTURE_PEDAGOGIQUE.md).
+
+
 ## État réel du profil
 
 `profiles/fedora45/profile.json` est **pending**. Il ne contient aucun faux SHA de média final ou d'extension. Fedora 45 est encore en préparation ; la disponibilité de GNOME 51 ne suffit pas à qualifier la combinaison Fedora, noyau, extensions, applications et matériel.
