@@ -118,6 +118,7 @@ bootstrap_b64="$(base64 -w0 "$bootstrap")"
 verify_b64="$(base64 -w0 "$verify")"
 service_b64="$(base64 -w0 "$REPO_ROOT/guest/rocky-devops/devops-bootstrap.service")"
 network_verify_b64="$(base64 -w0 "$REPO_ROOT/guest/rocky-devops/verify-docker-network.sh")"
+marker_verify_b64="$(base64 -w0 "$REPO_ROOT/guest/rocky-devops/verify-bootstrap-marker.py")"
 
 cat >"$tmpdir/user-data" <<EOF
 #cloud-config
@@ -146,6 +147,10 @@ write_files:
     permissions: '0755'
     encoding: b64
     content: ${network_verify_b64}
+  - path: /usr/local/sbin/devops-verify-bootstrap-marker.py
+    permissions: '0755'
+    encoding: b64
+    content: ${marker_verify_b64}
   - path: /etc/systemd/system/fgc-devops-bootstrap.service
     permissions: '0644'
     encoding: b64

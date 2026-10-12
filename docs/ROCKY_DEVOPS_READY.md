@@ -100,6 +100,12 @@ scripts/kvm/create_rocky_devops_vm.sh \
 
 Le bootstrap et le verify exacts du checkout HOST sont encodés dans cloud-init. Le premier démarrage exécute `/usr/local/sbin/devops-bootstrap.sh`.
 
+## Requalification de la preuve de provisioning
+
+Un marqueur `rocky-devops-bootstrap.env` simplement présent ne prouve pas que la VM restaurée est à jour. `devops-verify-bootstrap-marker.py` exige tous ses champs, refuse les doublons, clés inattendues et horodatages invalides, puis recoupe Rocky **10.2**, le Kubernetes minor, kind et Minikube avec les versions du contrat. **Le fichier de preuve n'est jamais exécuté ni sourcé**. Les binaires, les services et le réseau Docker restent vérifiés indépendamment par `devops-verify.sh` et les tests fonctionnels de réseau.
+
+Ce contrôle est installé aussi bien par cloud-init sur la VM réelle que dans la VM CI. Aucune donnée secrète n'est ajoutée au fichier. Il ne remplace pas une restauration complète et la qualification KVM sur le PC Fedora.
+
 ## Validation
 
 Dans la VM :
