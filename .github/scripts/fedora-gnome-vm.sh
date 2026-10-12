@@ -137,7 +137,11 @@ users:
       - $PUBKEY
 ssh_pwauth: false
 disable_root: true
-preserve_hostname: true
+# On a second fresh Fedora 45 image cloud-init can reset the hostname
+# during early boot. Seed the disposable hostname through cloud-init itself,
+# so the strict guest identity guard survives native OS reboot and rebuild.
+preserve_hostname: false
+hostname: fgc-fedora-ci
 write_files:
   - path: /etc/fgc-ci-lab
     content: disposable GitHub Actions VM

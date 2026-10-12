@@ -72,6 +72,28 @@ assert 'as_user systemctl --user stop "$unit"' in logout
 assert logout.index('as_user systemctl --user stop "$unit"') < logout.index("gnome-session-quit --logout --no-prompt")
 assert "require_session" in logout
 assert "journal_health 0" in logout
+# A software-rendered QEMU desktop needs bounded time to drain stopped window
+# clients; this cannot hide an ABRT or a failed GNOME systemd user unit.
+assert "TimeoutStopSec=30s" in guest
+assert "org.gnome.Shell@user.service.d" in guest
+assert guest.index("90-fgc-lab-shutdown.conf") < guest.index('as_user systemctl --user daemon-reload')
+assert logout.index('as_user systemctl --user stop "$unit"') < logout.index("sleep 3")
+assert logout.index("sleep 3") < logout.index("gnome-session-quit --logout --no-prompt")
+assert "journal_health 0" in logout
+# Root must not reopen a lab-user-owned file in /tmp: fs.protected_regular
+# rejects that under sticky directories. Package in root-owned private storage
+# and publish the complete archive with restrictive permissions for SCP.
+collect = guest.split("  collect)", 1)[1].split("  health|previous-health)", 1)[0]
+assert "mktemp /var/lib/fgc-lab/.evidence.XXXXXXXX.tar.gz" in collect
+assert 'tar -C /tmp/fgc-evidence -czf "$evidence_tmp" .' in collect
+assert 'chmod 0600 "$evidence_tmp"' in collect
+assert 'mv -f -- "$evidence_tmp" /tmp/fgc-evidence.tar.gz' in collect
+assert 'as_user test -r /tmp/fgc-evidence.tar.gz' in collect
+assert "tar -C /tmp/fgc-evidence -czf /tmp/fgc-evidence.tar.gz" not in collect
+host = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
+assert "preserve_hostname: false" in host
+assert "hostname: fgc-fedora-ci" in host
+assert "preserve_hostname: true" not in host
 # Current operator guide must match the configured default channel.
 assert 'KERNEL_CHANNEL="vanilla"' in (root / "config/kernel.conf").read_text()
 guide = (root / "docs/THREE_GATE_VALIDATION.md").read_text()

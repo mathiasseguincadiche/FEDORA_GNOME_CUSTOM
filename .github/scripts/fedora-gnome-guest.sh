@@ -214,6 +214,13 @@ Session=gnome
 SystemAccount=false
 CONF
     touch "$LAB_HOME/.config/gnome-initial-setup-done"
+    # GNOME Shell may need more than its default five-second systemd stop
+    # grace period when the disposable QEMU lab uses software rendering.
+    # This override is guest-local only. Any timeout, ABRT or core dump still
+    # fails journal_health; no failures are hidden or systemd states reset.
+    mkdir -p "$LAB_HOME/.config/systemd/user/org.gnome.Shell@user.service.d"
+    printf '[Service]\nTimeoutStopSec=30s\n' \
+      > "$LAB_HOME/.config/systemd/user/org.gnome.Shell@user.service.d/90-fgc-lab-shutdown.conf"
     chown -R "$LAB_USER:$LAB_USER" "$LAB_HOME/.config"
     # Use the reviewed production artifact installer, without loosening gates.
     if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
@@ -267,6 +274,9 @@ CONF
         exit 1
       fi
     done
+    # The unit stop returns before Mutter/Xwayland has necessarily drained
+    # queued window teardown events in a software-rendered guest.
+    sleep 3
     # Confirm the compositor still answers after its test clients have left.
     require_session
     # Close GNOME through its supported logout API before stopping system buses.
@@ -405,8 +415,20 @@ PY
     rpm -qa | sort > /tmp/fgc-evidence/packages.txt
     loginctl list-sessions > /tmp/fgc-evidence/sessions.txt
     lsblk -f > /tmp/fgc-evidence/lsblk.txt
-    tar -C /tmp/fgc-evidence -czf /tmp/fgc-evidence.tar.gz .
-    chown "$LAB_USER:$LAB_USER" /tmp/fgc-evidence.tar.gz
+    # Never open a lab-user-owned archive for writing as root in sticky /tmp:
+    # Linux fs.protected_regular may correctly deny that. Build the evidence
+    # in the root-owned lab state directory, then atomically replace the file
+    # served over SCP after the tar operation has completely succeeded.
+    evidence_tmp="$(mktemp /var/lib/fgc-lab/.evidence.XXXXXXXX.tar.gz)"
+    if ! tar -C /tmp/fgc-evidence -czf "$evidence_tmp" .; then
+      rm -f -- "$evidence_tmp"
+      echo 'Cannot package guest evidence; refusing success' >&2
+      exit 1
+    fi
+    chown "$LAB_USER:$LAB_USER" "$evidence_tmp"
+    chmod 0600 "$evidence_tmp"
+    mv -f -- "$evidence_tmp" /tmp/fgc-evidence.tar.gz
+    as_user test -r /tmp/fgc-evidence.tar.gz
     ;;
   health|previous-health)
     journal_boot=0
