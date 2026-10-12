@@ -25,6 +25,35 @@ done
 if python3 "$wol" aa:bb:cc:dd:ee:ff --broadcast not-an-ip --print-packet >/dev/null 2>&1; then fail 'invalid broadcast accepted'; fi
 if python3 "$wol" aa:bb:cc:dd:ee:ff --broadcast ::1 --print-packet >/dev/null 2>&1; then fail 'IPv6 broadcast accepted'; fi
 if python3 "$wol" aa:bb:cc:dd:ee:ff --repeat 99 --print-packet >/dev/null 2>&1; then fail 'out-of-range repeat accepted'; fi
+for invalid in -0.1 -1 nan inf -inf 5.001 1e999; do
+  if python3 "$wol" aa:bb:cc:dd:ee:ff --interval "$invalid" --print-packet >/dev/null 2>&1; then
+    fail "invalid Wake-on-LAN interval accepted: $invalid"
+  fi
+done
+python3 "$wol" aa:bb:cc:dd:ee:ff --interval 0 --print-packet >/dev/null || fail 'zero interval should be accepted'
+python3 "$wol" aa:bb:cc:dd:ee:ff --interval 5 --print-packet >/dev/null || fail 'five-second interval should be accepted'
+
+# Simulate a failed socket without generating any network packets. The CLI
+# must produce a bounded diagnostic, not a Python traceback or false success.
+python3 - "$wol" <<'PY_WOL_SOCKET'
+import contextlib
+import importlib.util
+import io
+import sys
+from unittest.mock import patch
+
+spec = importlib.util.spec_from_file_location("wol_sender", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+err = io.StringIO()
+with patch.object(module.socket, "socket", side_effect=OSError("offline")):
+    with contextlib.redirect_stderr(err):
+        code = module.main(["aa:bb:cc:dd:ee:ff"])
+assert code == 1, (code, err.getvalue())
+assert "envoi Wake-on-LAN impossible" in err.getvalue()
+assert "Traceback" not in err.getvalue()
+PY_WOL_SOCKET
+
 
 # --- GDM automatic login: idempotent, keeps comments and other sections, refuses root.
 conf="$tmp/custom.conf"

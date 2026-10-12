@@ -6,6 +6,7 @@ compatible), jamais sur le PC à réveiller : un PC éteint n'exécute rien.
 """
 import argparse
 import ipaddress
+import math
 import re
 import socket
 import sys
@@ -60,10 +61,17 @@ def main(argv=None) -> int:
     if not 1 <= args.port <= 65535 or not 1 <= args.repeat <= 10:
         print("ERREUR : port ou nombre d'envois hors limites", file=sys.stderr)
         return 2
+    if not math.isfinite(args.interval) or not 0 <= args.interval <= 5:
+        print("ERREUR : intervalle hors limites (0 à 5 secondes, valeur finie)", file=sys.stderr)
+        return 2
     if args.print_packet:
         print(packet.hex())
         return 0
-    send(packet, broadcast, args.port, args.repeat, args.interval)
+    try:
+        send(packet, broadcast, args.port, args.repeat, args.interval)
+    except OSError as error:
+        print(f"ERREUR : envoi Wake-on-LAN impossible : {error}", file=sys.stderr)
+        return 1
     print(f"Magic Packet envoyé vers {broadcast}:{args.port} pour {args.mac} ({args.repeat} fois)")
     return 0
 

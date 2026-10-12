@@ -199,6 +199,25 @@ Fourni avec Fedora, il sait ouvrir une **session distante depuis l'écran de con
 
 ## 7. Relais Wake-on-LAN
 
+### Vérification de l'outil de réveil avant usage sur le relais
+
+Le réveil du PC éteint dépend de la carte réseau, du firmware et d'un **relais LAN toujours allumé**. La tablette demande au relais d'envoyer le Magic Packet ; elle ne peut pas exécuter une commande sur le PC hors tension.
+
+```bash
+# Diagnostic sur le relais, aucun paquet réseau envoyé
+python3 scripts/remote/wol-send.py aa:bb:cc:dd:ee:ff --print-packet
+
+# Envoi réel sur le relais après validation de l'adresse de diffusion du LAN
+python3 scripts/remote/wol-send.py aa:bb:cc:dd:ee:ff \
+  --broadcast 192.168.1.255 --repeat 3 --interval 0.3
+```
+
+L'intervalle doit être **fini et compris entre 0 et 5 secondes**, le nombre d'envois entre 1 et 10 et le port UDP entre 1 et 65535. Un intervalle négatif, `nan` ou infini est **refusé avant tout envoi**, pour éviter une émission partielle suivie d'un plantage. Une erreur de socket doit produire un résultat non nul explicite.
+
+Les exemples de diffusion IPv4 doivent être adaptés au **véritable LAN** : ne pas recopier `192.168.1.255` sans vérifier la configuration réseau. Aucun succès logiciel du relais ne prouve que le PC s'est réellement réveillé ; seul le cycle de Gate 3 le démontre.
+
+
+
 Un appareil **toujours allumé** du LAN, avec Tailscale, envoie le Magic Packet. Au choix, selon le matériel disponible : routeur compatible, NAS, Raspberry Pi, mini-PC. Le plus simple à reproduire : un petit Raspberry Pi avec Tailscale.
 
 ```bash
