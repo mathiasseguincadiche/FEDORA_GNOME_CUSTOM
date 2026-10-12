@@ -5,7 +5,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/scripts/gnome" "$tmp/config" "$tmp/scripts/maintenance" "$tmp/scripts/backup" "$tmp/lib" "$tmp/bin" "$tmp/state" "$tmp/diagnostics"
+mkdir -p "$tmp/scripts/validation" "$tmp/scripts/gnome" "$tmp/config" "$tmp/scripts/maintenance" "$tmp/scripts/backup" "$tmp/lib" "$tmp/bin" "$tmp/state" "$tmp/diagnostics"
 cp "$ROOT/scripts/maintenance/upgrade-fedora.sh" "$tmp/scripts/maintenance/"
 cp "$ROOT/lib/evidence.sh" "$tmp/lib/"
 printf 'install_lock_acquire() { return 0; }\n' > "$tmp/lib/install_lock.sh"
@@ -67,6 +67,14 @@ cat > "$tmp/scripts/gnome/install-pinned-extension.sh" <<'SH'
 #!/usr/bin/env bash
 echo "extension:$1" >> "$FGC_TRACE"
 exit "${FAKE_EXTENSION_RC:-0}"
+SH
+cat > "$tmp/scripts/validation/gnome51-extension-audit.py" <<'SH'
+#!/usr/bin/env python3
+import os
+import sys
+with open(os.environ["FGC_TRACE"], "a", encoding="utf-8") as file:
+    file.write("gnome51-runtime-audit\n")
+raise SystemExit(int(os.environ.get("FAKE_GNOME_AUDIT_RC", "0")))
 SH
 cat > "$tmp/diagnostic.sh" <<'SH'
 #!/usr/bin/env bash
@@ -131,8 +139,15 @@ if [[ "$EUID" != 0 ]]; then
   grep -Fxq 'phase=extensions-installed' "$tmp/state/fedora45-upgrade.env"
   [[ "$(grep -c '^extension:' "$FGC_TRACE")" == 4 ]]
   if grep -Fq postcheck "$FGC_TRACE"; then exit 1; fi
+  export FAKE_GNOME_AUDIT_RC=1
+  run_expect 40 finalize
+  grep -Fxq 'phase=extensions-installed' "$tmp/state/fedora45-upgrade.env"
+  grep -Fxq gnome51-runtime-audit "$FGC_TRACE"
+  if grep -Fq postcheck "$FGC_TRACE"; then exit 1; fi
+  export FAKE_GNOME_AUDIT_RC=0
   run_expect 0 finalize
   grep -Fxq 'phase=completed' "$tmp/state/fedora45-upgrade.env"
+  grep -Fxq gnome51-runtime-audit "$FGC_TRACE"
   grep -Fxq postcheck "$FGC_TRACE"
 fi
 echo 'Fedora upgrade guards and preparation behavior: PASS'

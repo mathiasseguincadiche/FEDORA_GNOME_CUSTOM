@@ -170,6 +170,22 @@ Le projet ne désactive jamais les contrôles simplement pour contourner cette f
 
 Le GATE 2 utilise [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md). Son entrypoint séparé peut converger DING, Show Desktop Plus, Resource Monitor et les boutons de fenêtres dans une vraie session Fedora 44 GNOME 50/Wayland sous VirtualBox. `install.sh --apply` reste bloqué en VM. Les métriques CPU/RAM/réseau peuvent être observées dans le LAB ; la télémétrie physique Ryzen/B580 reste `EXPECTED` jusqu'au bare-metal.
 
+## GNOME 51 : prouver que les six rôles fonctionnent réellement
+
+Le laboratoire natif GNOME 51 et la vérification des archives épinglées ne garantissent **pas** à eux seuls qu'une session utilisateur dispose de toutes ses extensions actives. Le script `scripts/validation/gnome51-extension-audit.py` fournit désormais deux modes distincts :
+
+```bash
+# Sur le dépôt, lecture seule : affiche les candidats mais jamais un PASS de bureau
+python3 scripts/validation/gnome51-extension-audit.py --report
+
+# Après promotion Fedora 45 et reconnexion GNOME 51 Wayland, en utilisateur normal :
+python3 scripts/validation/gnome51-extension-audit.py --live
+```
+
+Le mode `--report` retourne toujours **DEFERRED**. Le mode `--live` refuse le profil `pending`, exige le validateur de profil promu, la session Wayland et le véritable GNOME Shell 51. Il contrôle ensuite les **six rôles** : Dash to Dock, AppIndicator, Gtk4 DING, Show Desktop Button, Vitals et Tiling Assistant. Chaque rôle doit être **activé et actif**, disposer d'une déclaration GNOME 51 cohérente ; les quatre archives installées depuis le verrou doivent aussi présenter la bonne empreinte SHA-256 de provenance. Un remplacement utilisateur non revu d'une extension RPM est refusé.
+
+**La finalisation de l'upgrade utilise cette vérification avant de marquer l'opération `completed`.** Un FAIL laisse la phase `extensions-installed` à diagnostiquer après reconnexion ; le script ne désactive, n'installe et n'active aucune extension. Un PASS logiciel ne remplace pas les essais visuels, le moniteur ou la Gate 3 physique.
+
 ## Diagnostic
 
 ```bash

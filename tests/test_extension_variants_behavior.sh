@@ -81,4 +81,5 @@ use_lock() { # use_lock FILE -> exports its variables for the next run
   [[ "$(run resource_monitor_label)" == 'Resource Monitor' ]] || fail 'resource monitor label'
 )
 
+python3 -B "$ROOT/tests/test_gnome51_extension_audit.py"
 echo 'extension variants behavior: PASS'

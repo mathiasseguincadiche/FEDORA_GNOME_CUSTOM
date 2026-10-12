@@ -120,6 +120,12 @@ case "$action" in
       printf 'Reviewed GNOME 51 extensions installed. Log out normally and log in again, then rerun ./control.sh upgrade finalize.\n'
       exit "$EXIT_PRECHECK_FAILED"
     fi
+    # A native GNOME 51 shell alone is insufficient: all six approved roles
+    # must be ACTIVE, including reviewed artifact provenance and RPM identities.
+    python3 "$REPO_ROOT/scripts/validation/gnome51-extension-audit.py" --live || {
+      ui_error 'GNOME 51 six-role runtime qualification failed; no upgrade completion recorded.'
+      exit "$EXIT_POSTCHECK_FAILED"
+    }
     "$REPO_ROOT/diagnostic.sh"
     write_state completed "$target" "$(value source_boot_id)"
     printf 'Fedora 45 / GNOME 51 upgrade checked. Previous Golden proofs are stale; repeat the three gates and hardware/restore qualification.\n'
