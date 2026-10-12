@@ -238,6 +238,14 @@ Ce générateur de plan exige `borgbackup`, `jq` et Python 3.
 
 Le script sélectionne uniquement la dernière archive **full**, valide son manifeste de récupération, puis relit ses données (`borg check --verify-data`) puis génère dans `state/` un plan de reconstruction ordonné : Fedora 44, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
 
+### Protection de la source au moment de la copie à froid
+
+Le plan de sauvegarde libvirt vérifie les chemins déclarés, mais cette validation **ne suffit pas**. Juste avant de copier, `backup-now.sh --include-vms` exige que le disque soit un fichier régulier au chemin canonique, sans lien symbolique sur le trajet. `qemu-img info --output=json` doit déclarer un QCOW2 **autonome**, sans `backing-filename` ni `full-backing-filename`. L'inventaire des états persistants UEFI NVRAM et TPM exige également des chemins canoniques réellement accessibles.
+
+Une chaîne QCOW2 dépendant d'une image de base est **refusée**, jamais copiée silencieusement avec une dépendance manquante. Arrêter la VM et consolider manuellement, de façon vérifiable, la chaîne selon la procédure libvirt/QEMU avant de demander un nouveau backup. Aucun snapshot, image de base ou disque n'est consolidé, écrasé ou supprimé automatiquement par ce contrôle.
+
+Les tests CI simulent une chaîne de backing, un chemin symbolique et un disque absent ; ils exigent un échec avant `qemu-img convert`. Ce sont des **preuves logicielles**, pas la restauration ni la qualification des disques sur la machine réelle (Gate 3). **Borg demeure non chiffré**, conformément au choix confirmé.
+
 ## Règle QCOW2
 
 ### Portée du plan de sauvegarde VM
