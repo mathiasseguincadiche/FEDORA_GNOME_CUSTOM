@@ -40,6 +40,7 @@ done
 grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
 
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
+grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install borgbackup jq acl xorriso dbus-daemon' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'scripts/kvm/verify_rocky_cloud_image.sh' "$ROOT/.github/scripts/vm-pretest.sh"
