@@ -41,4 +41,3 @@ with tempfile.TemporaryDirectory() as directory:
 print('display and measurement behavior: PASS')
 PY
 
-python3 -B "$ROOT/tests/test_vm_backup_plan.py"

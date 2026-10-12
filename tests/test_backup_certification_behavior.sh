@@ -83,7 +83,10 @@ manifest="$(backup_runtime_recovery_manifest "$archive")"
 [[ "$(jq -r '.vm_count' <<<"$manifest")" == 0 ]]
 [[ "$(jq -c '.vm_names' <<<"$manifest")" == '[]' ]]
 [[ "$(jq -r '.include_vms' <<<"$manifest")" == false ]]
-! borg list "::$archive" | grep -Fq 'manual-domain.xml'
+if borg list "::$archive" | grep -Fq 'manual-domain.xml'; then
+  echo 'Manual libvirt domain XML was archived by Borg' >&2
+  exit 1
+fi
 backup_runtime_full_vm_coverage_valid "$marker"
 # The VM-export policy cannot be enabled, even if a local override is set.
 for flag in BACKUP_VM_DISKS BACKUP_LIBVIRT_METADATA BACKUP_VM_CLOUD_INIT_METADATA; do

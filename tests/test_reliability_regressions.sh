@@ -92,7 +92,9 @@ PCI
   backup_kvm_precheck
   DRY_RUN=false
   assert_fails backup_repository_postcheck
-  assert_fails backup_kvm_precheck
+  # KVM metadata is strictly manual-only; no virsh probing is required.
+  backup_kvm_precheck
+  BACKUP_LIBVIRT_METADATA=true assert_fails backup_kvm_precheck
 )
 
 # Bootstrapping a nested entrypoint preserves its parent's logs.
