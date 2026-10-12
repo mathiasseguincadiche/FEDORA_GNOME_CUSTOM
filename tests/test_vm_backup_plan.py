@@ -29,7 +29,7 @@ class BackupPlanTests(unittest.TestCase):
         bad = ["/", "//data/disk.qcow2", "/data/../etc/shadow", "/data//vm.qcow2",
                "/data/./vm.qcow2", "/etc/shadow", "/root/private.qcow2",
                "/proc/self/environ", "/dev/sda", "/run/secrets/key",
-               "/data/a\nmultiline.qcow2", "relative.qcow2"]
+               "/data/a&#10;multiline.qcow2", "relative.qcow2"]
         for path in bad:
             with self.subTest(path=path):
                 modified = DISK.replace("/data/My VM.qcow2", path)
