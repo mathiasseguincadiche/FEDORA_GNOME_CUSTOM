@@ -37,6 +37,8 @@ Pour une lecture progressive avec objectifs d'apprentissage : [LEARNING_PATH.md]
 |---|---|---|
 | **Savoir pourquoi le projet existe** | [`VISION.md`](VISION.md) | [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) |
 | **Comprendre le projet et ses schémas** | **[`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md)** | [`LEARNING_PATH.md`](LEARNING_PATH.md), puis [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
+| **Évaluer les prochaines améliorations 2026** | [`ROADMAP_FEDORA45_2026.md`](ROADMAP_FEDORA45_2026.md) | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) |
+| **Diagnostiquer les couleurs et le blanc sur Intel Arc B580** | [`DISPLAY_COLOR_DIAGNOSTIC.md`](DISPLAY_COLOR_DIAGNOSTIC.md) | [`PHYSICAL_QUALIFICATION_CHECKLIST.md`](PHYSICAL_QUALIFICATION_CHECKLIST.md) |
 | **Utiliser la workstation** | [`CONTROL_CENTER.md`](CONTROL_CENTER.md) | guide spécialisé selon le besoin |
 | **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
 | **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |

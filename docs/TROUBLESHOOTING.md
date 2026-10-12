@@ -216,6 +216,10 @@ Ne pas ajouter `xe.force_probe` ou `i915.force_probe`. Le projet exige le suppor
 
 ---
 
+**Blanc grisâtre ou image délavée sans artefact :** avant de soupçonner un défaut `xe`, comparer la plage RGB complète/limitée, la conversion HDR/SDR, Night Light et le profil ICC. Ne modifier qu'un facteur à la fois. Le script [`diagnostics/display-color-audit.py`](../diagnostics/display-color-audit.py) fournit un inventaire DRM non intrusif ; voir [le protocole A/B](DISPLAY_COLOR_DIAGNOSTIC.md). La présence d'un mode dans sysfs **n'atteste pas sa fréquence active**.
+
+
+
 ## 8. Affichage ou polices dégradés après veille/power-cycle écran
 
 Ne modifier pas Fontconfig en premier.

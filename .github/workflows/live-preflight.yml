@@ -31,7 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Parse Bash
-        run: bash -n diagnostics/live-preflight.sh lib/live_preflight_probe.sh tests/test_live_preflight_probe.sh
+        run: |
+          for script in diagnostics/live-preflight.sh lib/live_preflight_probe.sh tests/test_live_preflight_probe.sh; do
+            bash -n "$script"
+          done
       - name: Hardware parser fixtures (never fake Live boot)
         run: bash tests/test_live_preflight_probe.sh
       - name: Display inventory fixtures and privacy contract
