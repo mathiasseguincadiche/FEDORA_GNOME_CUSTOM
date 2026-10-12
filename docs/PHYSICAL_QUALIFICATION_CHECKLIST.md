@@ -6,6 +6,22 @@ Cette fiche prépare les essais sur le PC cible. Les résultats physiques resten
 
 La procédure autoritaire reste [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md). Utiliser le profil Fedora/GNOME effectivement promu pour la production ; la préparation Fedora 45/GNOME 51 ne constitue pas cette promotion.
 
+## La machine cible : ce qu'il faudra pouvoir montrer
+
+**L'objectif Fedora 45 / GNOME 51 ne sera atteint que lorsque le profil final sera promu et que cette checklist aura été exécutée sur le PC réel.** Les workflows GitHub Fedora et Rocky ne vérifient pas le comportement physique de ces périphériques.
+
+| Composant | Ce qu'il faut observer sur place | Pourquoi |
+|---|---|---|
+| Ryzen 7 7700 et 48 Gio DDR5 | identité, fréquence, stabilité | éviter de certifier un profil appliqué à une autre machine |
+| Intel Arc B580 | pilote `xe`, ReBAR, rendu Vulkan/VA-API | mesurer les performances et l'accélération réelles |
+| Deux Crucial T705 | identité NVMe, SMART, emplacements, `/data` EXT4 | distinguer système réinstallable et données persistantes |
+| ASUS QD-OLED | EDID, 2560×1440/~240 Hz, veille/reprise | confirmer image et fréquence sans artefacts |
+| Wi-Fi 7 / 5 GbE / audio / webcam | connectivité et usage effectifs | ne pas confondre paquet pilote installé et matériel fonctionnel |
+| Backup Borg sur XS1000 | sauvegarde et vraie restauration en staging | prouver la récupération au-delà d'une simple archive créée |
+
+**État initial : `PENDING`.** Remplir les preuves observées, puis requalifier après tout changement majeur de noyau, version Fedora, profil GNOME ou matériel. Pour la procédure exacte et les gardes, voir [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md).
+
+
 ## Avant les charges
 
 1. Conserver le même commit Git propre et le même plan de modules pour les trois gates.

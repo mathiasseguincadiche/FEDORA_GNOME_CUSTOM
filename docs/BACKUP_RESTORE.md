@@ -2,6 +2,22 @@
 
 Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)) et applique un modèle fail-closed. Une sauvegarde n'est pas considérée valide parce qu'une commande `backup` a simplement terminé : le dépôt exige une preuve d'intégrité et, pour le pré-APPLY et le backup complet, un test réel de restauration d'un canary.
 
+## Comprendre la stratégie de récupération en trente secondes
+
+```mermaid
+flowchart TD
+  SYS["T705 nº1 : Fedora système / Btrfs"] --> REINSTALL["Réinstallation contrôlée depuis le dépôt"]
+  DATA["T705 nº2 : /data EXT4"] --> KEEP["Documents, Projets, ISO, Jeux, libvirt"]
+  FILES["Documents et Projets"] --> BORG["SSD externe Kingston XS1000 : Borg"]
+  KEEP --> FILES
+  BORG --> RESTORE["Restauration d'abord en staging, puis vérification"]
+```
+
+Le second SSD protège les données de travail lors d'une **réinstallation du premier**, mais **pas** contre la panne ou l'effacement du second SSD. Borg fournit la sauvegarde externe pour les jeux de données sélectionnés ; `ISO` et `Jeux` ne sont pas automatiquement inclus par défaut, et les VM nécessitent une sauvegarde cohérente à froid.
+
+Les dépôts Borg de ce projet sont **non chiffrés** par décision explicite (ADR 0014) : traiter le support externe comme une donnée confidentielle. Aucune restauration ne doit écraser directement le système en production sans inspection. [Schéma d'architecture détaillé](ARCHITECTURE_PEDAGOGIQUE.md).
+
+
 ## Contrat
 
 - cible locale pré-APPLY obligatoirement prouvée externe (USB/removable/hotplug), ou dépôt Borg distant `ssh://` ;

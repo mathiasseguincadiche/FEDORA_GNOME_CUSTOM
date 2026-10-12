@@ -3,7 +3,7 @@
 
 # Fedora Golden Workstation
 
-**Production-oriented · Reproductible · Récupérable · CI-gated**
+**Une Fedora Workstation sur mesure, expliquée, versionnée, sauvegardable et vérifiable**
 
 **Fedora 44 · GNOME 50 (référence testée) → Fedora 45 · GNOME 51 (en préparation)**
 
@@ -18,7 +18,7 @@
 
 **Golden Workstation 0.22.3**
 
-Une Fedora Workstation traitée comme une **infrastructure versionnée** : installation contrôlée, stockage persistant, rollback, sauvegarde, diagnostic et certification.
+**Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. La référence logicielle de production reste Fedora 44 / GNOME 50 tant que le profil Fedora 45 n'est pas promu.
 
 **État logiciel : CODE-READY** · **Certification matérielle : Gate 3 bare-metal à exécuter**
 
@@ -51,8 +51,31 @@ Une Fedora Workstation traitée comme une **infrastructure versionnée** : insta
 
 - **Quoi :** une Fedora Workstation installée, réglée, sauvegardée et diagnostiquée par scripts versionnés, avec un point d'entrée unique : `./control.sh`.
 - **Pour qui / quoi :** un PC précis (Ryzen 7 7700, Intel Arc B580, 48 Gio, deux SSD) pour le DevOps, le gaming et les VM KVM.
-- **Où on en est :** code prêt et CI verte ; Fedora 44 / GNOME 50 est la référence testée, Fedora 45 / GNOME 51 est préparé et s'active à la sortie de l'ISO finale.
+- **Où on en est :** code prêt et CI verte ; Fedora 44 / GNOME 50 est la référence testée, Fedora 45 / GNOME 51 est préparé, mais son activation exige un média final signé, la promotion explicite du profil et une nouvelle qualification.
 - **Par où commencer :** [Démarrage rapide](#démarrage-rapide), puis [l'installation bare-metal](#installation-bare-metal) et [la documentation](#documentation).
+
+## L'idée de la Golden, expliquée simplement
+
+**Imagine que tu réinstalles Fedora après une panne du SSD système.** Sur une installation traditionnelle, il faut se souvenir des commandes, des applications et de toutes les personnalisations. Ici, le dépôt devient **le plan vérifiable de la workstation** :
+
+1. **Décrire** la machine et le résultat attendu : Ryzen 7 7700, Arc B580, deux T705, GNOME, DevOps et gaming.
+2. **Préparer sans casser** : média Fedora authentifié, contrôles matériels, dry-run et sauvegarde Borg vérifiée.
+3. **Construire** : modules ordonnés pour GNOME, pilotes natifs, noyau Linux amont stable, logiciels, données et KVM.
+4. **Vérifier** : diagnostics, démarrage, récupération, tests CI et certification sur la vraie machine.
+5. **Entretenir** : mises à jour contrôlées, noyau N/N-1, sauvegardes et restauration documentée.
+
+La Golden **n'est pas** une distribution Fedora dérivée, une ISO personnalisée prête à flasher ou un simple thème GNOME. C'est une **méthode d'installation reproductible**, liée à un commit Git et à une configuration précise.
+
+| Je veux comprendre… | Réponse courte | Document |
+|---|---|---|
+| **Pourquoi ce projet ?** | Un poste Fedora récent, soigné, rapide et récupérable | [Vision](docs/VISION.md) |
+| **Comment ça marche ?** | Un plan Git → des préconditions → des modules → des preuves | [Architecture expliquée avec schémas](docs/ARCHITECTURE_PEDAGOGIQUE.md) |
+| **À quoi ressemblera GNOME 51 ?** | Bureau natif Wayland, ergonomie GNOME choisie et extensions compatibles | [Le bureau GNOME](docs/GNOME.md) |
+| **Pourquoi Fedora 44 est encore mentionné ?** | C'est la référence actuelle ; Fedora 45 est un profil à promouvoir | [Transition Fedora 45](docs/UPGRADE_FEDORA_45.md) |
+| **Puis-je installer tout de suite ?** | Seulement avec la release promue et les garde-fous de production | [Guide d'installation](docs/INSTALLATION_GUIDE.md) |
+| **Comment sait-on que c'est réussi ?** | La CI teste le code ; la Gate 3 certifie le vrai matériel | [Validation en trois gates](docs/THREE_GATE_VALIDATION.md) |
+
+> **Ce projet sert autant à obtenir une excellente workstation qu'à comprendre sa construction** : chaque composant a un rôle, chaque modification une raison, chaque réussite une preuve.
 
 ## Aperçu du bureau
 
@@ -143,16 +166,51 @@ Routes opérateur essentielles :
 ## Architecture globale
 
 <p align="center">
-  <img src="docs/assets/architecture-global-direct.svg" alt="Architecture globale directe de Fedora Golden Workstation : matériel cible, système Fedora, stockage, usages, sauvegarde, maintenance et certification" width="100%">
+  <img src="docs/assets/architecture-global-direct.svg" alt="Vue simplifiée des composants : matériel, Fedora, données, applications, sauvegardes et certification" width="100%">
 </p>
 
-**En une phrase :** Fedora 44 constitue le HOST, `/data` porte la persistance, Gaming et KVM sont les workloads, Borg assure la résilience et les Gates prouvent l'état obtenu.
+### Le trajet d'une installation Golden
 
-L'objectif n'est pas d'empiler des tweaks : le profil cherche une machine **stable, rapide, observable, réversible et reproductible**.
+```mermaid
+flowchart TD
+  A["Code Git + configuration + profil Fedora"] --> B["Tests CI : qualité, sécurité, VM"]
+  B --> C{"Profil valide + prérequis vérifiés ?"}
+  C -- non --> STOP["Stop : examiner et corriger"]
+  C -- oui --> D["Gate 1 + Gate 2 : logique et GNOME"]
+  D --> E["PC : média signé + matériel identifié"]
+  E --> F["Baseline + dry-run + backup Borg"]
+  F --> G["APPLY protégé : système, GNOME, stockage, KVM"]
+  G --> H["Redémarrage + diagnostics"]
+  H --> I["Gate 3 : B580, écran, réseau, veille, backup"]
+  I --> J{"Preuves physiques complètes ?"}
+  J -- non --> STOP
+  J -- oui --> K["Golden runtime-certified"]
+```
+
+**La logique en cinq phrases :**
+
+1. **Git est la recette** : code, configuration, manifestes et profils de release décrivent l'état recherché.
+2. **`./control.sh` est le tableau de bord** : il appelle les moteurs spécialisés, il ne remplace pas leur logique.
+3. **Les modules exécutent le travail** : système, matériel, GNOME, applications, performance, gaming, KVM, sauvegarde.
+4. **Le second T705 est le coffre de données** : `/data` survit à une réinstallation du premier T705 ; Borg protège les données sélectionnées sur un SSD externe.
+5. **Les tests ne sont pas interchangeables** : CI verte ≠ Gate 2 physique ≠ Golden runtime-certified.
+
+Pour retrouver **le rôle précis de chaque répertoire, de chaque couche et de chaque étape**, lire le [guide d'architecture pédagogique](docs/ARCHITECTURE_PEDAGOGIQUE.md), avec ses schémas détaillés et ses exemples.
 
 ---
 
 ## Fedora 45 / GNOME 51
+
+### Une cible et une référence, sans ambiguïté
+
+| | **Référence en vigueur** | **Cible du projet** |
+|---|---|---|
+| OS et bureau | Fedora 44 / GNOME 50 | **Fedora 45 Workstation / GNOME 51** |
+| Statut du profil | chemin actuel d'installation et de laboratoire | `profiles/fedora45/profile.json` = `pending` |
+| Ce que la CI montre | contrats, installation de paquets, labo GNOME et VM | préqualification Fedora 45, GNOME 51 natif et récupération en environnement isolé |
+| Ce qui reste | qualification physique Gate 3 | média final signé, promotion des verrous, six rôles d'extensions qualifiés et Gate 3 sur le PC |
+
+Le **PASS** du laboratoire GNOME 51 n'autorise pas à déclarer que le bureau Fedora 45 complet, avec toutes ses extensions personnalisées, est déjà certifié. Ce point est volontairement vérifié avant toute promotion.
 
 La transition est préparée par des profils versionnés, une CI Fedora 45 réelle et un parcours `plan → prepare → reboot → finalize`. Le profil Fedora 45 reste **pending** jusqu'à la vérification du média Workstation final signé, des extensions GNOME 51 et des preuves CI. Il est interdit de simplement changer les numéros des anciens verrous. Le profil actuel Fedora 44 / GNOME 50 reste la référence déjà testée pendant cette préparation.
 
@@ -452,7 +510,7 @@ Le README reste la **synthèse opérateur** ; les détails normatifs et runbooks
 | Comprendre pourquoi | [`docs/VISION.md`](docs/VISION.md) · [`docs/CAHIER_DES_CHARGES.md`](docs/CAHIER_DES_CHARGES.md) |
 | Installer | [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) · [`docs/HARDWARE_BASELINE_CERTIFICATION.md`](docs/HARDWARE_BASELINE_CERTIFICATION.md) |
 | Piloter | [`docs/CONTROL_CENTER.md`](docs/CONTROL_CENTER.md) |
-| Comprendre l'architecture | [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
+| Comprendre l'architecture | **[`docs/ARCHITECTURE_PEDAGOGIQUE.md`](docs/ARCHITECTURE_PEDAGOGIQUE.md)** · [`docs/GOLDEN_WORKSTATION.md`](docs/GOLDEN_WORKSTATION.md) · [`docs/adr/README.md`](docs/adr/README.md) |
 | Performance / Linux amont | [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) · [`docs/UPSTREAM_LINUX.md`](docs/UPSTREAM_LINUX.md) |
 | Bureau GNOME | [`docs/GNOME.md`](docs/GNOME.md) · [`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md) |
 | Gaming | [`docs/GAMING.md`](docs/GAMING.md) |

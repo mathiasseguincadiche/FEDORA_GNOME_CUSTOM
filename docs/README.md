@@ -8,6 +8,27 @@ La version active est celle de [`../VERSION`](../VERSION).
 
 ---
 
+## Première visite : un parcours en quatre questions
+
+Inutile de lire soixante fichiers pour comprendre l'idée. Suivre cet ordre :
+
+```mermaid
+flowchart LR
+  A["Pourquoi ? Vision"] --> B["Comment ? Architecture illustrée"]
+  B --> C["Qu'est-ce qui est prêt ? Fedora 45"]
+  C --> D["Comment agir ? Installation et Control Center"]
+  D --> E["Comment prouver ? Gates et CI"]
+```
+
+1. [**Pourquoi ? — Vision**](VISION.md) : les objectifs et les compromis de cette workstation.
+2. [**Comment ? — Architecture pédagogique**](ARCHITECTURE_PEDAGOGIQUE.md) : des schémas accompagnés de leur explication, du code jusqu'à la certification.
+3. [**Pour quelle Fedora ? — Fedora 45 / GNOME 51**](UPGRADE_FEDORA_45.md) : ce qui est déjà testé, ce qui reste `pending` et pourquoi.
+4. [**Comment agir en sécurité ? — Control Center**](CONTROL_CENTER.md), puis [installation](INSTALLATION_GUIDE.md) et [validation](THREE_GATE_VALIDATION.md).
+
+Pour une lecture progressive avec objectifs d'apprentissage : [LEARNING_PATH.md](LEARNING_PATH.md). Les termes inconnus sont expliqués dans [GLOSSARY.md](GLOSSARY.md).
+
+
+
 ## Commencer ici
 
 ### Je veux…
@@ -15,7 +36,7 @@ La version active est celle de [`../VERSION`](../VERSION).
 | Besoin | Lire d'abord | Puis |
 |---|---|---|
 | **Savoir pourquoi le projet existe** | [`VISION.md`](VISION.md) | [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) |
-| **Comprendre le projet** | [`LEARNING_PATH.md`](LEARNING_PATH.md) | [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
+| **Comprendre le projet et ses schémas** | **[`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md)** | [`LEARNING_PATH.md`](LEARNING_PATH.md), puis [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
 | **Utiliser la workstation** | [`CONTROL_CENTER.md`](CONTROL_CENTER.md) | guide spécialisé selon le besoin |
 | **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
 | **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
@@ -40,7 +61,7 @@ Utilisation quotidienne :
 ### Trois profondeurs de lecture
 
 **Découverte — 10 à 20 min**  
-[`../README.md`](../README.md) → [`LEARNING_PATH.md`](LEARNING_PATH.md) → [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md)
+[`../README.md`](../README.md) → [`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md) → [`LEARNING_PATH.md`](LEARNING_PATH.md)
 
 **Opérateur — lire avant d'agir**  
 [`CONTROL_CENTER.md`](CONTROL_CENTER.md) → guide spécialisé → runbook en cas de symptôme

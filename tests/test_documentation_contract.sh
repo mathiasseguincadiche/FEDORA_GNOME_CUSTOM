@@ -10,6 +10,7 @@ require_file() {
 
 for file in \
   docs/README.md \
+  docs/ARCHITECTURE_PEDAGOGIQUE.md \
   docs/LEARNING_PATH.md \
   docs/CONTROL_CENTER.md \
   docs/GLOSSARY.md \
@@ -264,5 +265,49 @@ for path in ("CONTRIBUTING.md", "SECURITY.md", "docs/adr/0002-no-secureboot-no-l
         raise SystemExit(f"{path}: obsolete active Restic policy")
 print("Documentation finish and current release sources: PASS")
 PY_FINISH
+
+# The illustrated entrypoint, Fedora 45 target and actual runtime contract
+# must tell a coherent story. The diagrams must not silently drift to Restic.
+python3 - "$ROOT" <<'PY_GOLDEN_ARCH'
+from pathlib import Path
+import json
+import sys
+
+root = Path(sys.argv[1])
+guide = (root / "docs/ARCHITECTURE_PEDAGOGIQUE.md").read_text()
+readme = (root / "README.md").read_text()
+portal = (root / "docs/README.md").read_text()
+upgrade = (root / "docs/UPGRADE_FEDORA_45.md").read_text()
+ci = (root / "docs/CI_VALIDATION.md").read_text()
+profile = json.loads((root / "profiles/fedora45/profile.json").read_text())
+
+assert guide.count("```mermaid") >= 3, "architecture guide needs independent explanatory diagrams"
+for section in (
+    "Ce que contient le dépôt",
+    "Deux SSD",
+    "trois formes de validation",
+    "Fedora 45 / GNOME 51",
+):
+    assert section.casefold() in guide.casefold(), f"missing architecture explanation: {section}"
+for text in (readme, portal):
+    assert "ARCHITECTURE_PEDAGOGIQUE.md" in text, "guide must be discoverable from each entrypoint"
+assert "registry.fedoraproject.org/fedora:44" in ci
+assert "Borg" in readme and "Golden runtime-certified" in guide
+assert "Gate 3" in readme and "Gate 3" in upgrade
+
+if profile["status"] == "pending":
+    for text in (readme, guide, upgrade):
+        assert "pending" in text, "pending Fedora 45 must not be advertised as production"
+else:
+    assert profile["status"] == "ready", "unknown Fedora 45 profile status"
+    assert "ready" in upgrade, "promoted Fedora 45 must be documented"
+
+for svg_name in ("architecture-global-direct.svg", "update-cycle-direct.svg", "validation-gates-direct.svg"):
+    image = (root / "docs/assets" / svg_name).read_text()
+    assert "Restic" not in image, f"obsolete Restic diagram: {svg_name}"
+assert "Borg non chiffré" in (root / "docs/assets/architecture-global-direct.svg").read_text()
+assert "Backup Borg" in (root / "docs/assets/update-cycle-direct.svg").read_text()
+print("Golden architecture and diagram consistency: PASS")
+PY_GOLDEN_ARCH
 
 echo 'documentation contract: PASS'

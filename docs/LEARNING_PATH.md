@@ -17,6 +17,18 @@ Si vous découvrez le projet, commencez ici avant de parcourir les références 
 
 ---
 
+## Les trois questions que le schéma doit résoudre
+
+En regardant le [schéma d'architecture](ARCHITECTURE_PEDAGOGIQUE.md), identifier :
+
+1. **Qui décide et qui agit ?** L'opérateur valide ; les fichiers versionnés définissent le plan ; les moteurs et modules réalisent la convergence ; les doctors contrôlent.
+2. **Où vont les données ?** Le système vit sur le T705 Btrfs ; `/data` est un second T705 EXT4 persistant ; Borg protège les données sélectionnées sur un SSD externe.
+3. **À partir de quand peut-on dire « c'est validé » ?** Une CI verte prouve les contrats logiciels. Une preuve Gate 3, sur le véritable PC et pour le commit/configuration courants, est nécessaire pour la certification Golden.
+
+**Question bonus :** pourquoi le dépôt décrit-il Fedora 44 alors que l'objectif est Fedora 45 ? Parce que `profiles/fedora45/profile.json` est encore `pending` : la promotion d'une release est une opération contrôlée, non une modification cosmétique.
+
+
+
 # Niveau 1 — Découvrir
 
 **Objectif :** comprendre le système avant d'exécuter des commandes de mutation.
@@ -27,8 +39,9 @@ Lire dans cet ordre :
 
 1. [`../README.md`](../README.md) — vue produit, statut et architecture ;
 2. [`README.md`](README.md) — carte de toute la documentation ;
-3. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et invariants ;
-4. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire lorsqu'un terme n'est pas clair.
+3. **[`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md)** — schéma du dépôt, de la machine et de la validation, expliqué ligne par ligne ;
+4. [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) — architecture et invariants ;
+5. [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire lorsqu'un terme n'est pas clair.
 
 ### À la fin de ce niveau, vous devez pouvoir expliquer
 

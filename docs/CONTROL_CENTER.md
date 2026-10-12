@@ -8,6 +8,29 @@
 
 `./menu.sh` lance la même interface pour compatibilité.
 
+## Le Control Center : une façade, des moteurs spécialisés
+
+```mermaid
+flowchart LR
+  U["Utilisateur"] --> C["./control.sh"]
+  C --> A["Installation et modules"]
+  C --> B["DNF5 + noyau"]
+  C --> D["Borg + restauration"]
+  C --> E["KVM + réseau"]
+  C --> F["Doctors + Gates"]
+```
+
+`control.sh` expose des commandes compréhensibles mais **n'élimine aucun garde-fou**. Les moteurs `install.sh`, mises à jour, sauvegardes, virtualisation et diagnostics restent séparés, vérifiables et soumis aux mêmes préconditions.
+
+| Intention | Exemple | Effet |
+|---|---|---|
+| Comprendre l'état | `./control.sh status` | observation |
+| Diagnostiquer | `./control.sh doctor all` | lecture / contrôles |
+| Préparer une installation | `./control.sh install dry-run` | plan non mutant |
+| Installer réellement | `./control.sh install apply` | **mutation protégée, bare-metal uniquement** |
+
+La cible Fedora 45 / GNOME 51 ne devient pas active via le menu : elle attend la promotion de son profil `pending`. Le [schéma d'architecture expliqué](ARCHITECTURE_PEDAGOGIQUE.md) détaille les relations entre commandes et moteurs.
+
 ## Tableau de bord
 
 ```bash

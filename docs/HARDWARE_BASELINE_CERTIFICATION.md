@@ -2,6 +2,20 @@
 
 > Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
 
+## Pourquoi le matériel est au centre du projet
+
+Ce dépôt n'est pas conçu comme une installation Fedora universelle. Il vise explicitement **le Ryzen 7 7700, l'Intel Arc B580, 48 Gio DDR5, les deux Crucial T705, le réseau et le moniteur QD-OLED du poste cible**.
+
+- **CPU/RAM** : identité, fréquence mémoire, stabilité ; ne pas « optimiser » à l'aveugle.
+- **Arc B580** : pilote natif `xe`, firmware, ReBAR, bus PCIe, accélération graphique et multimédia.
+- **T705** : un disque système Btrfs, un disque `/data` EXT4 ; identifier les disques par leur **vraie identité**, jamais au seul ordre `/dev/nvmeXnY`.
+- **Écran** : EDID, 2560×1440/~240 Hz, reprise d'affichage et précautions OLED.
+- **Réseau et périphériques** : Wi-Fi 7 / 6 GHz, Ethernet 5 GbE, Bluetooth, audio ALC4080 et webcam.
+
+Ces caractéristiques peuvent être **déclarées dans `config/hardware.conf`** sans être certifiées. Une preuve Gate 3 doit les **observer sur le PC réel**. [Vue générale des responsabilités](ARCHITECTURE_PEDAGOGIQUE.md) · [Checklist physique](PHYSICAL_QUALIFICATION_CHECKLIST.md).
+
+
+
 ## But
 
 La baseline pré-APPLY prouve uniquement que le matériel est suffisamment sain pour autoriser les mutations système. Elle ne certifie pas suspend/resume avant l'installation des corrections.

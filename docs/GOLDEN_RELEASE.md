@@ -23,6 +23,20 @@ gate2-proof.json
 MANIFEST.sha256
 ```
 
+## Golden Release, ISO Fedora et sauvegarde : trois objets différents
+
+| Objet | À quoi il sert | Ce qu'il n'est pas |
+|---|---|---|
+| **ISO Fedora signée** | installer le système d'exploitation de base | une workstation Golden déjà personnalisée |
+| **Dépôt Git + profil promu** | décrire précisément la convergence prévue | une preuve que le matériel fonctionne |
+| **Golden Release Manifest** | photographier les versions, identités et preuves d'un système **déjà certifié** | une sauvegarde complète des documents |
+| **Borg sur SSD externe** | restaurer les jeux de données sélectionnés | un certificat du GPU ou de GNOME |
+
+Le futur manifeste Fedora 45 ne doit être produit **qu'après** promotion du média final, tests logiciels au nouveau SHA et Gate 3 sur le véritable PC. Les exemples Fedora 44 de ce guide décrivent la référence actuelle et restent valides tant que le profil Fedora 45 est `pending`.
+
+Pour suivre le schéma de fonctionnement : [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md).
+
+
 ## Chaîne de validation embarquée
 
 `gate1-proof.json` provient de Fedora 44 sous WSL2 et porte explicitement :

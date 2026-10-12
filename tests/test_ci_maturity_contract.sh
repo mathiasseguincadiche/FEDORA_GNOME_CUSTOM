@@ -14,7 +14,7 @@ grep -Fq 'fedora:44' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 # Fedora 44 job containers use Fedora's official registry, as the installer audit
 # already does. Keep Docker Hub out of CI; guest-VM pulls are unaffected.
 if grep -nE '^[[:space:]]*container:[[:space:]]+fedora:' "$ROOT"/.github/workflows/*.yml; then
-  echo 'workflow containers must use public.ecr.aws/docker/library/fedora, not Docker Hub' >&2; exit 1
+  echo 'workflow containers must not use anonymous Docker Hub Fedora images' >&2; exit 1
 fi
 if grep -nE 'docker pull (busybox|hello-world)' "$ROOT/.github/workflows/tests.yml"; then
   echo 'tests.yml must pull probe images from public.ecr.aws/docker/library' >&2; exit 1
@@ -38,6 +38,20 @@ for workflow in desktop-integration-pretest fedora-appimage-pretest fedora-gamin
   }
 done
 grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+# This reusable kernel preflight accepts both Fedora 44 and 45. It must use
+# Fedora's official registry for either input; the old dynamic ECR reference
+# bypassed the fixed-image checks and could fail before running any test.
+grep -Fq 'container: registry.fedoraproject.org/fedora:' "$ROOT/.github/workflows/upstream-kernel.yml" || {
+  echo 'upstream kernel preflight must use the official Fedora registry' >&2; exit 1;
+}
+grep -Fq 'inputs.fedora_release' "$ROOT/.github/workflows/upstream-kernel.yml" || {
+  echo 'upstream kernel preflight must retain its release input' >&2; exit 1;
+}
+if grep -Fq 'public.ecr.aws/docker/library/fedora:' "$ROOT/.github/workflows/upstream-kernel.yml"; then
+  echo 'upstream kernel preflight may not fetch Fedora from ECR Public' >&2
+  exit 1
+fi
+
 
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install borgbackup jq acl xorriso dbus-daemon' "$ROOT/.github/workflows/fedora-host-pretest.yml"

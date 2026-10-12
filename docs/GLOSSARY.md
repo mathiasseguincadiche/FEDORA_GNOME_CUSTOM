@@ -4,6 +4,22 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 ## Système et projet
 
+**Golden / installation Golden** — recette versionnée d'un environnement, reproductible, récupérable et vérifiable. Ce n'est **pas** une distribution Fedora dérivée ni une ISO modifiée.
+
+**Profil de release** — combinaison approuvée de Fedora, GNOME, média signé, manifestes et verrou d'extensions.
+
+**`pending` (profil)** — release non encore autorisée en production : impossible de la promouvoir par simple changement de numéro.
+
+**`ready` (profil)** — identité finale et verrous promus ; ce n'est **ni un PASS CI, ni une qualification physique**.
+
+**`CODE-READY`** — niveau de préparation logicielle établi par les contrôles applicables ; distinct du matériel certifié.
+
+**`Golden runtime-certified`** — état du véritable PC après preuve Gate 3, lié à son commit et sa configuration.
+
+**`STALE`** — preuve devenue obsolète après changement significatif de code, matériel, noyau ou configuration : requalification nécessaire.
+
+**Gate 1 / 2 / 3** — logique sous WSL2, desktop GNOME sous VirtualBox, puis hardware en bare-metal.
+
 **HOST** — la machine Fedora physique. Ici, il s'agit de la workstation principale.
 
 **Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, par exemple `rocky-devops` ou `windows-11`.

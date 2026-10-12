@@ -2,6 +2,36 @@
 
 La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNOME et vraie VM Rocky Linux 10.2. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
 
+## Lire les workflows GitHub sans confondre les preuves
+
+| Contrôle | Ce qui est démontré | Ce qui ne l'est pas |
+|---|---|---|
+| Contrats et sécurité | cohérence du code, politiques, sources et guards | santé du vrai PC |
+| Conteneurs Fedora 44 | paquets RPM, manifestes et intégrations attendues | comportement sur l'écran physique |
+| `fedora-gnome-vm / lab` | bureau GNOME personnalisé, reboot, Borg, reprise et reconstruction | Gate 2 visuelle et matériel B580/T705 |
+| VM Rocky Linux | installation, accès réseau et récupération DevOps | disponibilité du KVM de l'hôte réel |
+| Préversion GNOME 51 | démarrage et récupération d'une session GNOME 51 native | activation finale des six extensions GNOME 51 |
+| Gate 3 | essais physiques liés au commit et à la configuration | validité automatique des versions suivantes |
+
+```mermaid
+flowchart TD
+  A["logic-contracts"] --> R["Tests / contracts"]
+  B["installer-audit"] --> R
+  C["borg-fedora"] --> R
+  D["fedora-gnome-vm"] --> R
+  E["upstream-kernel / rpm"] --> R
+  F["rocky-devops-vm"] --> R
+```
+
+**Pourquoi `contracts` peut être rouge alors que lui-même n'a aucun bug ?** Il attend strictement le succès de ses six dépendances. Si le laboratoire GNOME est en échec, le contrôle final est rouge **par conception**.
+
+### Après une fusion, regarder le `push` sur `main`
+
+La PR est vérifiée sur son propre SHA, puis GitHub relance la validation du **commit de fusion**. Ce sont deux validations distinctes. Après fusion, filtrer la page **Actions** sur `main`, vérifier le SHA puis consulter `Tests` et `contracts` : une PR toute verte n'autorise pas à affirmer que le nouveau HEAD est vert avant la fin du `push`.
+
+Un résultat rouge exige les journaux de **l'étape causale**, pas un `|| true` ou la désactivation de `journal_health`. Le [runbook CI](TROUBLESHOOTING.md#un-contrôle-github-actions-devient-rouge) explique les incidents courants.
+
+
 ## Tests de contrats
 
 `.github/workflows/tests.yml` valide notamment :
@@ -292,4 +322,8 @@ Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts
 
 ## Images de conteneur
 
-Les jobs CI tirent leurs images (`fedora:44`, `fedora:45`, `busybox`) du miroir officiel de la bibliothèque Docker sur ECR Public (`public.ecr.aws/docker/library/…`), pas de Docker Hub : les runners GitHub partagent le quota de téléchargements anonymes de Docker Hub, et son dépassement (`toomanyrequests`) fait échouer des séries entières sans rapport avec le code. Le contrat `tests/test_ci_maturity_contract.sh` refuse le retour à `container: fedora:…`. Le miroir est lui aussi limité (« Rate exceeded ») : la sonde Docker ne fait qu'un téléchargement, relancé jusqu'à 4 fois, et construit son image « sans shell » localement (`FROM scratch`).
+Les conteneurs **Fedora 44** des principaux workflows utilisent le registre officiel `registry.fedoraproject.org/fedora:44`, y compris le préflight réutilisable du noyau Linux amont dont l'image est paramétrée par la release Fedora. L'ancienne source ECR Public (`public.ecr.aws/docker/library/fedora:44`) a déjà provoqué `toomanyrequests: Data limit exceeded` avant même l'exécution de Nautilus/Ptyxis. Le contrat `tests/test_ci_maturity_contract.sh` interdit son retour pour les images Fedora 44 à référence fixe.
+
+Certains workflows Fedora **45** et le test de sonde Docker **busybox** utilisent encore ECR Public selon leur configuration. Les conteneurs ne tirent pas les images Fedora 44 anonymement de Docker Hub. La sonde construit son image vide localement (`FROM scratch`).
+
+Un autre blocage rencontré vient de `ciscobinary.openh264.org` : dans certains jobs d'installation Fedora, le dépôt Cisco OpenH264 est désactivé **uniquement pendant la transaction du laboratoire CI** lorsqu'il n'est pas nécessaire aux paquets du contrat. Cela ne supprime pas les fonctionnalités multimédias exigées sur la workstation de production.

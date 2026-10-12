@@ -19,8 +19,8 @@
 <g transform="translate(40 112)">
   <rect width="230" height="128" rx="18" fill="#fff4dc" stroke="#f0b34b"/>
   <circle cx="34" cy="34" r="22" fill="#f59e0b"/><text x="34" y="35" class="num">1</text>
-  <text x="68" y="36" class="step">Backup Restic</text>
-  <text x="24" y="76" class="sub">Snapshot vérifié avant</text>
+  <text x="68" y="36" class="step">Backup Borg</text>
+  <text x="24" y="76" class="sub">Archive vérifiée avant</text>
   <text x="24" y="100" class="sub">toute mutation système</text>
 </g>
 

@@ -11,6 +11,32 @@ Cette séparation est essentielle : un défaut que l'APPLY doit corriger ne doit
 
 La version applicable du projet est celle de [`../VERSION`](../VERSION).
 
+## Comment lire cette architecture
+
+Deux niveaux complémentaires sont disponibles : ce document présente **les invariants techniques** que la station doit respecter ; [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md) explique **leur enchaînement avec des exemples et des schémas**.
+
+```mermaid
+flowchart TB
+  P["Profil approuvé + matériel identifié"] --> C["Control Center / orchestrateur"]
+  C --> S["Modules système + noyau"]
+  C --> H["Modules hardware + GNOME"]
+  C --> W["Modules apps + Gaming + KVM"]
+  C --> B["Modules sauvegarde + performance"]
+  S --> V["Doctors, journaux et Gate 3"]
+  H --> V
+  W --> V
+  B --> V
+  V --> PASS{"Certification physique valide ?"}
+  PASS -- oui --> G["Golden runtime-certified"]
+  PASS -- non --> X["Diagnostic / remédiation / nouveau test"]
+```
+
+**Dans le schéma**, `control.sh` sert de façade. `install.sh` et `lib/` orchestrent les modules de `manifests/module-plan.conf`. Les `diagnostics/` vérifient l'état réellement observé : ils n'ont pas le droit de transformer un échec en succès artificiel. Les données de l'opérateur restent sur le T705 `/data`, et la récupération Borg utilise un support externe.
+
+**Distinguer les releases** : les normes de cette page s'appliquent à la référence Fedora 44 / GNOME 50 tant que le profil 45 n'est pas promu. Fedora 45 / GNOME 51 est la **cible future**, pas une certification matérielle implicite. Voir [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+
+
+
 ## Chaîne de confiance
 
 ```text

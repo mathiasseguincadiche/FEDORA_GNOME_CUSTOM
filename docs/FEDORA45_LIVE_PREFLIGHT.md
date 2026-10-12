@@ -2,6 +2,22 @@
 
 Cette étape se place **après les validations CI et avant toute installation sur NVMe**. Elle ne remplace ni la baseline physique complète ni la Gate 3 après installation. Le profil Fedora 45 reste `pending`.
 
+## Pourquoi ce préflight existe avant l'installation Fedora 45
+
+Une session **Live USB** est un moyen de vérifier les fondamentaux avant d'écrire sur les NVMe. C'est particulièrement utile avec la B580, l'écran QD-OLED, le Wi-Fi 7 et les deux SSD PCIe 5.0 : la compatibilité doit être constatée, pas déduite de la présence d'un paquet.
+
+```mermaid
+flowchart LR
+  A["ISO Fedora 45 vérifiée"] --> B["Session Try Fedora"]
+  B --> C["Script live-preflight : lecture seule"]
+  C --> D["Rapport PASS / FAIL / NOT_TESTED"]
+  D --> E["Décision humaine"]
+  E --> F["Plus tard : installation protégée et Gate 3"]
+```
+
+**Attention :** le script Live **ne formate rien, ne monte pas les disques en écriture et ne promeut pas le profil 45**. Son éventuel code retour zéro ne constitue jamais une autorisation automatique d'APPLY. Après la session Live, il reste à suivre [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md) et [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md).
+
+
 ## Procédure
 
 1. Télécharger le média Fedora Workstation 45 officiel et vérifier sa signature / somme de contrôle selon les instructions Fedora. Créer la clé USB bootable.

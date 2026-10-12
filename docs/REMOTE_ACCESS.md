@@ -8,6 +8,23 @@ Ce guide répond à trois questions : *qu'est-ce que le projet automatise*, *l'a
 
 ---
 
+## Le scénario : un PC puissant, une tablette comme terminal
+
+```mermaid
+flowchart LR
+  T["Tablette Android + Moonlight/SSH"] --> VPN["Tailscale : tunnel privé"]
+  VPN --> F["Fedora HOST : B580 + GNOME"]
+  R["Relais LAN toujours allumé"] --> W["Wake-on-LAN : Magic Packet"]
+  W --> F
+  F --> S["Sunshine : capture/encodage si activé"]
+  S --> VPN
+```
+
+Le PC fixe reste l'unique environnement de travail. La tablette n'héberge ni les projets DevOps ni les VM : elle devient **un écran et un dispositif de contrôle à distance**. Wake-on-LAN depuis l'arrêt complet demande un relais actif sur le LAN ; Sunshine et son encodage **AV1 ne sont pas activés automatiquement**. Tout cela reste **optionnel** et doit être validé à Gate 3, notamment après plusieurs cycles de réveil.
+
+Le profil reste désactivé par défaut et aucun port n'est ouvert à Internet pour simplement rendre la démonstration possible. Voir les décisions détaillées dans [ADR 0017](adr/0017-remote-access.md).
+
+
 ## 1. Verdict sur l'architecture demandée
 
 L'idée centrale est **bonne et conservée** : le PC Fedora reste l'unique vraie workstation, la tablette n'est qu'un terminal. Cela évite deux machines à maintenir, et tout (Git, clés, VM Rocky, conteneurs) reste au même endroit.

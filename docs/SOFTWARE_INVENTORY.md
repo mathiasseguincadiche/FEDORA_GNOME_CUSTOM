@@ -4,6 +4,25 @@ Ce document décrit le **contrat logiciel explicite** du projet. Il liste les pa
 
 Les dépendances transitives (`glibc`, bibliothèques GTK/Qt, bibliothèques Python, dépendances RPM, etc.) ne sont volontairement pas figées ici : DNF les résolvent au moment de l'installation et leur liste peut évoluer sans changement du projet.
 
+## À quoi servent les logiciels : comprendre avant la liste des paquets
+
+L'inventaire ci-dessous est détaillé volontairement. Pour le lire sans se perdre, commencer par les **sept familles d'usage** :
+
+| Famille | Outils principaux | Leur rôle pour la Golden |
+|---|---|---|
+| **Système Fedora** | DNF5, RPM, SELinux, firewalld, fwupd | mises à jour contrôlées, sécurité, diagnostics |
+| **Bureau GNOME** | GNOME Shell, Mutter/Wayland, Nautilus, Ptyxis | interface fluide et cohérente |
+| **Affichage Arc B580** | pilote `xe`, Mesa, Vulkan, VA-API | graphique et décodage/encodage sous Linux |
+| **DevOps et VM** | Git, Python, Bash, KVM, QEMU, libvirt, Rocky Linux | environnements de développement et d'automatisation isolés |
+| **Gaming** | Steam, Proton, GameMode, MangoHud | lancer et mesurer les jeux sous Fedora |
+| **Récupération** | Borg, EXT4 `/data`, vérification des archives | reprendre le travail après incident |
+| **Contrôle** | `control.sh`, doctors, CI, Gates | vérifier l'état réel avant d'annoncer Golden |
+
+**Important :** `SOFTWARE_INVENTORY.md` décrit le **catalogue**, pas le droit de lancer une installation. Ce droit dépend du profil Fedora promu, des guards, de la baseline, du dry-run et de la sauvegarde. Les paquets d'une VM Rocky Linux ne sont pas automatiquement installés sur le système Fedora HOST.
+
+Pour l'architecture d'ensemble : [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md). La transition Fedora 45 / GNOME 51 et ses différences de paquets sont traitées dans [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+
+
 ## 1. HOST — Fedora Golden Workstation
 
 ### 1.1 Socle système
