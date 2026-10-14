@@ -28,7 +28,13 @@ python3 "$repo/scripts/gnome/validate-extension-metadata.py" \
   "$tmp/metadata.json" "${!uuid_var}" "${!major_var}"
 gnome-extensions install --force "$zip"
 dir="$HOME/.local/share/gnome-shell/extensions/${!uuid_var}"
-[[ -d "$dir/schemas" && -f "$dir/schemas/${!schema_var}.gschema.xml" ]] || exit 1
+[[ -d "$dir/schemas" ]] || { echo 'Missing extension schema directory' >&2; exit 1; }
+# The Tiling Assistant lock intentionally has no *_SCHEMA key. Require an
+# exact schema XML when the reviewed lock declares one, as the production
+# installer does; always compile the complete schema directory.
+if [[ -n "${!schema_var:-}" ]]; then
+  [[ -f "$dir/schemas/${!schema_var}.gschema.xml" ]] || exit 1
+fi
 python3 "$repo/scripts/gnome/validate-extension-metadata.py" \
   "$dir/metadata.json" "${!uuid_var}" "${!major_var}"
 glib-compile-schemas "$dir/schemas"

@@ -23,10 +23,17 @@ for prefix in ("DING", "SHOW_DESKTOP_PLUS", "RESOURCE_MONITOR", "TILING_ASSISTAN
     if not re.fullmatch("[0-9a-f]{64}", lock.get(prefix + "_SHA256", "")):
         raise SystemExit("Invalid candidate digest: " + prefix)
     for suffix in ("UUID", "SCHEMA"):
-        allowed = {canonical[prefix + "_" + suffix]}
+        key = prefix + "_" + suffix
+        # Tiling Assistant has never defined a *_SCHEMA entry. This is a
+        # genuine optional field in both signed candidate and canonical locks.
+        if key not in canonical:
+            if key in lock:
+                raise SystemExit("Unexpected candidate schema: " + prefix)
+            continue
+        allowed = {canonical[key]}
         if prefix in module.REPLACEMENTS:
             allowed.add(module.REPLACEMENTS[prefix][0 if suffix == "UUID" else 1])
-        if lock[prefix + "_" + suffix] not in allowed:
+        if lock[key] not in allowed:
             raise SystemExit("Unreviewed candidate identity: " + prefix)
     url = lock.get(prefix + "_SOURCE_URL", "")
     if not url.startswith((

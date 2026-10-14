@@ -111,8 +111,9 @@ evidence image_sha256 "$FEDORA_CLOUD_SHA256"
 # Fetch reviewed bytes on the runner and transfer them to the guest. Both
 # sides enforce the lock hashes; guest TLS verification is never disabled.
 # shellcheck source=config/gnome-extensions.lock
-if [[ "$LAB_RELEASE" == 45 ]]; then
-  # A CI candidate check deliberately DOES NOT call the release promotion gate.
+if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
+  # Candidate validation is solely for the six-extension QEMU guest. The
+  # native GNOME 51 preview must remain independent from curated ZIPs.
   python3 "$ROOT/.github/scripts/fedora45-ci-validate-candidate.py" "$ROOT"
   source "$ROOT/profiles/fedora45/gnome-extensions.lock"
 else

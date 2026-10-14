@@ -74,6 +74,13 @@ for script in (".github/scripts/fedora45-ci-install-extension.sh", ".github/scri
     assert (root / script).is_file()
 guest = (root / ".github/scripts/fedora-gnome-guest.sh").read_text()
 host = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
+# The fourth extension has no dedicated *_SCHEMA identifier. Do not invent one.
+candidate_validator = (root / ".github/scripts/fedora45-ci-validate-candidate.py").read_text()
+candidate_installer = (root / ".github/scripts/fedora45-ci-install-extension.sh").read_text()
+assert 'if key not in canonical:' in candidate_validator
+assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
+assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
+assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest
 assert "fedora45-ci-extension-audit.py" in guest
 assert 'source "$REPO/profiles/fedora45/gnome-extensions.lock"' in guest
 assert 'source "$ROOT/profiles/fedora45/gnome-extensions.lock"' in host

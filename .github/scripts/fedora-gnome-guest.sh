@@ -21,9 +21,9 @@ source "$REPO/lib/backup_runtime.sh"
 # shellcheck source=.github/scripts/fedora-greeter-ready.sh
 source "$REPO/.github/scripts/fedora-greeter-ready.sh"
 # shellcheck source=config/gnome-extensions.lock
-if [[ "$LAB_RELEASE" == 45 ]]; then
-  # Reviewed GNOME 51 candidate is an inert data source while pending.
-  # This guest is restricted to a disposable QEMU VM before any execution.
+if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
+  # Reviewed GNOME 51 candidate is read only for the isolated curated lab.
+  # The native preview intentionally has no candidate dependency.
   source "$REPO/profiles/fedora45/gnome-extensions.lock"
 else
   source "$REPO/config/gnome-extensions.lock"
