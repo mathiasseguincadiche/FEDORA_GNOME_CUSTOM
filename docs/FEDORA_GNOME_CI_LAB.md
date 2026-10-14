@@ -3,7 +3,7 @@
 Ce prétest fonctionne exclusivement sur un runner GitHub jetable. Il ne lance
 aucune commande sur le PC de l'opérateur. Le job réutilisable
 `.github/workflows/fedora-gnome-vm.yml` est appelé par `Tests` sur les push vers `main` et les pull requests.
-Le contexte obligatoire `contracts` attend sa réussite et celle des cinq autres jobs :
+Le contexte obligatoire `contracts` attend les deux laboratoires GNOME et les autres validations :
 logic-contracts, installer-audit, borg-fedora, upstream-kernel / rpm et rocky-devops-vm. La publication attend donc aussi ce laboratoire.
 
 ## Les deux laboratoires Fedora/GNOME : ce que chacun prouve
@@ -12,6 +12,11 @@ logic-contracts, installer-audit, borg-fedora, upstream-kernel / rpm et rocky-de
 |---|---|---|
 | **Fedora 44 / GNOME 50** | session personnalisée et extensions, applications, fermeture, reboot, Borg, restauration/reconstruction | Intel Arc B580 et écran physiques |
 | **Fedora 45 / GNOME 51 native preview** | GNOME 51 Wayland, maintenance, bureautique, redémarrage et récupération | six extensions personnalisées finales, matériel réel |
+| **Fedora 45 / GNOME 51 candidate complet** | session Wayland avec les **six** extensions réellement actives, ZIP épinglés/empreintes, RPM Fedora réels, redémarrage et restauration QEMU | publication finale Fedora, installation ISO Workstation, tests visuels humains et matériel réel |
+
+La nouvelle CI obligatoire `.github/workflows/fedora45-gnome-vm.yml` ne modifie ni `profile.json` (`pending`), ni le média de production. Elle utilise le seed Cloud Fedora 45 Beta avec sa signature et son SHA verrouillés, puis installe les quatre ZIP candidats **uniquement dans une VM jetable** ; Dash to Dock et AppIndicator proviennent des RPM réellement fournis par les dépôts activés. Le contrôle exige les six rôles `ACTIVE`, `enabled`, des métadonnées GNOME 51 et la provenance SHA des quatre archives, puis rejoue redémarrage, restauration et reconstruction. Un RPM Dash to Dock incompatible produit **FAIL**, pas `DEFERRED` et pas de contournement via `updates-testing` silencieux.
+
+Le laboratoire natif sans extensions reste utile pour isoler les défauts GNOME, mais **son succès ne remplace pas** celui du laboratoire avec les six extensions. La CI donne une preuve logicielle QEMU seulement : rien ne qualifie le second T705, la B580 ou la certification physique.
 
 ```mermaid
 flowchart LR
@@ -140,7 +145,7 @@ Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et
 restants sur le même commit. Un PASS CI conserve toutes ces limites.
 
 Le check obligatoire `contracts` s'exécute avec `always()` puis contrôle
-explicitement que chacune des six dépendances a conclu `success`. Un job dépendant
+explicitement que chacune des sept dépendances a conclu `success`. Un job dépendant
 simplement sauté peut être accepté comme check requis par GitHub ; ici tout
 `skipped`, `failure` ou `cancelled` produit un véritable échec du check agrégé.
 Voir [les conditions GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions).
