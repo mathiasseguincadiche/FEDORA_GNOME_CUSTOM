@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 # Selected release contract; Fedora 45 requires a reviewed promoted profile.
+# The sole production target is independent of legacy HOST_RELEASE=44 CI labs.
+fedora_install_target_release() { printf '45\n'; }
+
+fedora_require_install_target() {
+  [[ "${HOST_RELEASE:-44}" == "$(fedora_install_target_release)" ]] || return 1
+  # Includes the actual OS identity and final signed-media/profile validation.
+  fedora_require_selected
+}
+
 fedora_actual_release() {
   local os_file="${FEDORA_OS_RELEASE_FILE:-/etc/os-release}"
   [[ -r "$os_file" ]] || return 1

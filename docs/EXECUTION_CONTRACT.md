@@ -19,13 +19,14 @@ Les paramètres spécifiques au poste réel sont placés dans `config/local.conf
 `./install.sh --apply` est exclusivement bare-metal et exige :
 
 1. runtime bare-metal réel ;
-2. approbation explicite de la machine réelle ;
-3. TTY interactif ;
-4. dépôt Git propre ;
-5. dry-run réussi du même commit ;
-6. baseline hardware valide pour le fingerprint courant ;
-7. marker de backup pré-APPLY récent, vérifié et lié au même commit si `REQUIRE_PREAPPLY_BACKUP=true` ;
-8. saisie exacte de la phrase de confirmation.
+2. Fedora 45 réellement démarré avec `HOST_RELEASE=45` et un profil final promu ; Fedora 44 et Fedora 45 pending sont refusés ;
+3. approbation explicite de la machine réelle ;
+4. TTY interactif ;
+5. dépôt Git propre ;
+6. dry-run réussi du même commit ;
+7. baseline hardware valide pour le fingerprint courant ;
+8. marker de backup pré-APPLY récent, vérifié et lié au même commit si `REQUIRE_PREAPPLY_BACKUP=true` ;
+9. saisie exacte de `APPLY FEDORA 45 WORKSTATION`.
 
 Une VM, WSL2, un conteneur ou la CI ne peuvent jamais ouvrir ce gate.
 

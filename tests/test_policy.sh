@@ -8,6 +8,8 @@ grep -Fq 'ALLOW_GPU_PASSTHROUGH="false"' "$ROOT/config/virtualization.conf"
 grep -Fq 'ALLOW_THIRD_PARTY_GPU_REPOS="false"' "$ROOT/config/graphics.conf"
 grep -Fq 'REQUIRE_HARDWARE_BASELINE_CERTIFIED="true"' "$ROOT/config/baseline.conf"
 grep -Fq 'apply_gate_require_baseline' "$ROOT/lib/apply_gate.sh"
+grep -Fq 'fedora_require_install_target' "$ROOT/lib/apply_gate.sh"
+grep -Fq 'APPLY_CONFIRMATION="APPLY FEDORA 45 WORKSTATION"' "$ROOT/config/apply-gate.conf"
 grep -Fq 'baseline.preflight|BASELINE|' "$ROOT/manifests/module-plan.conf"
 grep -Fq 'system.preflight|SYSTEM|baseline.validation|' "$ROOT/manifests/module-plan.conf"
 echo 'policy: PASS'

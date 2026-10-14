@@ -1,14 +1,14 @@
-# Guide d'installation — Fedora 44 GNOME 50 Golden Workstation
+# Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
 Le portail documentaire est [`README.md`](README.md). Ce guide décrit le chemin **bare-metal de production** ; les validations WSL2/VirtualBox ne déverrouillent jamais l'APPLY réel.
 
-## Pourquoi ce guide reste Fedora 44 alors que la cible est Fedora 45
+## Cible Fedora 45 et statut pending
 
 Le projet sépare **l'installation de référence** de **la future Golden Fedora 45 / GNOME 51** :
 
-- **Aujourd'hui dans les verrous du dépôt :** Fedora 44 / GNOME 50 reste le chemin actuellement sélectionné.
+- **Fedora 44 / GNOME 50 :** ancien laboratoire de validation uniquement ; le gate de production refuse Fedora 44.
 - **La cible :** Fedora 45 / GNOME 51, mais `profiles/fedora45/profile.json` est encore `pending`.
-- **Installation neuve Fedora 45 après promotion :** utiliser la procédure spécifique de [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md#installation-neuve-directement-en-fedora-45). Ne pas remplacer « 44 » par « 45 » dans les commandes de ce guide.
+- **Installation neuve Fedora 45 :** exiger l'ISO finale signée, le profil promu, la CI du commit exact et le chemin de [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md#installation-neuve-directement-en-fedora-45). Tant que le profil est `pending`, aucune installation réelle n'est autorisée.
 
 ### La méthode : observer, préparer, protéger, appliquer, certifier
 
@@ -34,7 +34,7 @@ Le projet sépare **l'installation de référence** de **la future Golden Fedora
 Avant toute mutation réelle, vous devez disposer :
 
 - du matériel cible identifié ;
-- d'un média Fedora 44 authentifié ;
+- d'un média final Fedora 45 authentifié et de son CHECKSUM signé ;
 - du dépôt sur un commit propre et audité ;
 - d'un second T705 identifié sans ambiguïté pour `/data` ;
 - d'une cible Borg externe/off-machine disponible pour le backup pré-APPLY (ext4, non chiffrée) ;
@@ -58,7 +58,7 @@ Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certi
 
 En particulier, ne pas poursuivre vers APPLY si :
 
-- le média n'est pas authentifié ;
+- le profil Fedora 45 est pending ou le média n'est pas authentifié ;
 - `/data` pointe vers un disque ambigu ou incorrect ;
 - la baseline n'est pas valide ;
 - le dry-run est périmé ;
@@ -70,35 +70,31 @@ Le résultat final recherché est explicite : **la workstation n'est `Golden run
 
 ---
 
-## 1. Vérifier le média Fedora 44
+## 1. Vérifier le média Fedora 45 final
 
-**But :** prouver que l'installation démarre depuis le média Fedora verrouillé par le projet.
+**But :** authentifier l'ISO Workstation Fedora 45 final et son CHECKSUM signé, jamais une Beta ou une RC.
 
-La source approuvée est versionnée dans :
+Le fichier `installer/fedora45-media.lock` n'existe qu'après promotion officielle du profil. Lorsque `profiles/fedora45/profile.json` est `pending`, cette étape reste **BLOCKED**.
 
-```text
-installer/fedora44-media.lock
-```
-
-Conserver ensemble l'ISO Fedora Workstation, le fichier CHECKSUM officiel et un keyring Fedora obtenu par un canal de confiance, puis :
+Après authentification et promotion du média final :
 
 ```bash
-installer/verify-fedora44-media.sh \
-  --iso Fedora-Workstation-Live-44-1.7.x86_64.iso \
-  --checksum Fedora-Workstation-44-1.7-x86_64-CHECKSUM \
-  --keyring /chemin/vers/fedora-gpg-keyring.gpg
+installer/verify-fedora-media.sh --release 45 \
+  --iso /chemin/Fedora-Workstation-Live-45-COMPOSE.x86_64.iso \
+  --checksum /chemin/Fedora-Workstation-45-COMPOSE-x86_64-CHECKSUM \
+  --keyring /chemin/fedora.gpg
 ```
 
-La vérification exige la signature du CHECKSUM et le SHA-256 verrouillé. Ne pas installer depuis un ISO de même nom mais de hash différent.
+`COMPOSE` est à remplacer par le numéro réel du média promu. Le vérificateur exige signature GPG et SHA-256 exacts.
 
-**Checkpoint :** ne passer à l'étape 2 que si le média exact est authentifié.
+**Checkpoint :** ne pas continuer si le profil est pending, si la signature est invalide ou si l'ISO ne correspond pas au verrou.
 
 ## 2. Générer le Kickstart depuis le commit exact
 
 ```bash
 ls -l /dev/disk/by-id/nvme-*
 # Choisir l'identifiant du T705 système, vérifié par son numéro de série.
-installer/generate-fedora44-kickstart.sh --disk /dev/disk/by-id/nvme-IDENTIFIANT_SYSTEME
+installer/generate-fedora-kickstart.sh --release 45 --disk /dev/disk/by-id/nvme-IDENTIFIANT_SYSTEME
 ```
 
 Le générateur :

@@ -25,13 +25,16 @@ effective_config_sha256() { printf '%s\n' "${T_CONFIG:-aaaa}"; }
 module_plan_sha256() { printf 'bbbb\n'; }
 baseline_fingerprint() { printf '%s\n' "${T_HARDWARE:-hw-1}"; }
 source "$ROOT/lib/apply_gate.sh"
+# Only this prerequisite is simulated to exercise the other gate stages.
+# Actual target/profile/os-release selection is tested in test_fedora_release_behavior.sh.
+fedora_require_install_target() { [[ "${T_TARGET_READY:-true}" == true ]]; }
 # Git and the two heavier proofs are isolated here; the dry-run proof is real.
 apply_gate_require_clean_git() { [[ "${T_CLEAN:-true}" == true ]]; }
 apply_gate_require_baseline() { [[ "${T_BASELINE:-true}" == true ]]; }
 apply_gate_require_backup() { [[ "${T_BACKUP:-true}" == true ]]; }
 REAL_APPLY_FEATURE_ENABLED="${T_FEATURE:-true}"
 REAL_MACHINE_APPROVED="${T_APPROVED:-true}"
-APPLY_CONFIRMATION='APPLY FEDORA 44 WORKSTATION'
+APPLY_CONFIRMATION='APPLY FEDORA 45 WORKSTATION'
 if [[ "${T_WRITE_PROOF:-false}" == true ]]; then apply_gate_write_dryrun_proof; exit 0; fi
 rc=0; apply_gate_open || rc=$?
 printf '\nGATE-RC=%s\n' "$rc"
@@ -44,7 +47,7 @@ run_gate() {   # run_gate <stdin answer> [VAR=value...] -> output in $out
 }
 expect_block() {   # expect_block <message fragment> [VAR=value...]
   local fragment="$1"; shift
-  run_gate 'APPLY FEDORA 44 WORKSTATION' "$@"
+  run_gate 'APPLY FEDORA 45 WORKSTATION' "$@"
   grep -Fq 'GATE-RC=50' <<<"$out" || fail "not blocked ($*): $out"
   grep -Fq "$fragment" <<<"$out" || fail "blocked for the wrong reason ($*), expected '$fragment': $out"
 }
@@ -55,6 +58,7 @@ env T_WRITE_PROOF=true bash "$tmp/driver.sh" "$ROOT" "$state"
 
 # 1. Every precondition blocks on its own, with its own message.
 expect_block 'forbidden outside bare-metal' T_RUNTIME=vm
+expect_block 'Production APPLY requires running Fedora 45' T_TARGET_READY=false
 expect_block 'REAL APPLY feature disabled' T_FEATURE=false
 expect_block 'REAL_MACHINE_APPROVED=false' T_APPROVED=false
 expect_block 'Git working tree must be clean' T_CLEAN=false
@@ -67,14 +71,16 @@ expect_block 'dry-run proof is missing/stale' T_CONFIG=changed
 expect_block 'dry-run proof is missing/stale' T_HARDWARE=hw-2
 
 # 3. No terminal, no APPLY (e.g. a cron job or a pipe).
-out="$(printf 'APPLY FEDORA 44 WORKSTATION\n' | bash "$tmp/driver.sh" "$ROOT" "$state" 2>&1)"
+out="$(printf 'APPLY FEDORA 45 WORKSTATION\n' | bash "$tmp/driver.sh" "$ROOT" "$state" 2>&1)"
 grep -Fq 'GATE-RC=50' <<<"$out" || fail "non-interactive APPLY not refused: $out"
 grep -Fq 'interactive TTY required' <<<"$out" || fail "non-interactive APPLY refused for the wrong reason: $out"
 
 # 4. Everything valid: only the exact typed phrase opens the gate.
-run_gate 'apply fedora 44 workstation'
-grep -Fq 'GATE-RC=50' <<<"$out" || fail "approximate confirmation accepted: $out"
 run_gate 'APPLY FEDORA 44 WORKSTATION'
+grep -Fq 'GATE-RC=50' <<<"$out" || fail "historic Fedora 44 confirmation accepted: $out"
+run_gate 'apply fedora 45 workstation'
+grep -Fq 'GATE-RC=50' <<<"$out" || fail "approximate confirmation accepted: $out"
+run_gate 'APPLY FEDORA 45 WORKSTATION'
 grep -Fq 'GATE-RC=0' <<<"$out" || fail "valid APPLY refused: $out"
 
 echo 'apply gate behavior: PASS'
