@@ -206,6 +206,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_release_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_fedora45_install_entrypoints.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_media_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_upgrade_behavior.sh
