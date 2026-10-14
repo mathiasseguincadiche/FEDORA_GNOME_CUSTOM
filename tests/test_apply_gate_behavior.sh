@@ -76,7 +76,9 @@ grep -Fq 'GATE-RC=50' <<<"$out" || fail "non-interactive APPLY not refused: $out
 grep -Fq 'interactive TTY required' <<<"$out" || fail "non-interactive APPLY refused for the wrong reason: $out"
 
 # 4. Everything valid: only the exact typed phrase opens the gate.
-run_gate 'apply fedora 44 workstation'
+run_gate 'APPLY FEDORA 44 WORKSTATION'
+grep -Fq 'GATE-RC=50' <<<"$out" || fail "historic Fedora 44 confirmation accepted: $out"
+run_gate 'apply fedora 45 workstation'
 grep -Fq 'GATE-RC=50' <<<"$out" || fail "approximate confirmation accepted: $out"
 run_gate 'APPLY FEDORA 45 WORKSTATION'
 grep -Fq 'GATE-RC=0' <<<"$out" || fail "valid APPLY refused: $out"
