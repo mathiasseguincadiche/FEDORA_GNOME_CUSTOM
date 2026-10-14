@@ -80,23 +80,50 @@ rm -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
 [[ "$DEVOPS_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || fail 'invalid DevOps user'
 getent passwd "$DEVOPS_USER" >/dev/null || fail "expected user $DEVOPS_USER is missing"
 [[ "$(getenforce)" == Enforcing ]] || fail 'SELinux must remain enforcing'
+
+# A qualified two-boot bootstrap pins the kernel chosen during the first pass.
+# Repositories can publish a newer kernel between guest boots (observed in CI
+# when .64.1 was prepared and .65.1 arrived immediately afterwards). The
+# second pass must prove it actually booted the first-pass version, and must
+# not silently select a moving target or enter a reboot loop.
+reboot_pending=/var/lib/fedora-gnome-custom/rocky-devops-reboot-required
+prepared_kernel=''
+kernel_dnf_options=()
+if [[ -e "$reboot_pending" || -L "$reboot_pending" ]]; then
+  [[ -f "$reboot_pending" && ! -L "$reboot_pending" ]] || fail 'invalid kernel reboot marker'
+  prepared_kernel="$(cat "$reboot_pending")"
+  [[ "$prepared_kernel" =~ ^[0-9][a-zA-Z0-9._+-]*$ ]] || fail 'invalid prepared Rocky kernel version'
+  [[ "$(uname -r)" == "$prepared_kernel" ]] ||
+    fail "the prepared kernel did not boot; refusing a reboot loop (running=$(uname -r), expected=$prepared_kernel)"
+  [[ -f "/boot/vmlinuz-$prepared_kernel" ]] || fail 'prepared kernel boot image missing'
+  # Only for the second provisioning pass; do not freeze the normal rolling
+  # channel or skip any other signed package transaction or verification.
+  kernel_dnf_options=(--exclude='kernel*')
+  log "Confirmed reboot into $prepared_kernel; hold kernel RPMs for this provisioning pass"
+fi
+
 log 'configure Rocky 10 CRB and EPEL 10'
-dnf -y install dnf-plugins-core ca-certificates curl wget gnupg2
+dnf -y install "${kernel_dnf_options[@]}" dnf-plugins-core ca-certificates curl wget gnupg2
 dnf config-manager --set-enabled crb
 # Official Fedora EPEL release package installs its RPM trust/repository policy.
-dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+dnf -y install "${kernel_dnf_options[@]}" https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
 # Rocky CRB can lag BaseOS on selinux-policy-targeted-extra (pulled in by
 # epel-release), which makes the whole upgrade unsolvable. Retry once without
 # selinux-policy*: it stays on the installed, mutually consistent version until
 # CRB catches up. Any other failure still aborts.
-if ! dnf -y upgrade --refresh; then
+if ! dnf -y upgrade --refresh "${kernel_dnf_options[@]}"; then
   log 'upgrade blocked by BaseOS/CRB selinux-policy skew; retrying without selinux-policy*'
-  dnf -y upgrade --refresh --exclude='selinux-policy*'
+  dnf -y upgrade --refresh "${kernel_dnf_options[@]}" --exclude='selinux-policy*'
 fi
 # Cloud Base initially lacks some container networking modules. Install the
 # complete supported Rocky kernel/module set, then boot it before Docker.
-dnf -y install kernel kernel-modules kernel-modules-extra grubby kmod
-dnf -y install \
+if [[ -z "$prepared_kernel" ]]; then
+  dnf -y install kernel kernel-modules kernel-modules-extra grubby kmod
+else
+  # The first pass already installed and booted the exact reviewed kernel.
+  dnf -y install "${kernel_dnf_options[@]}" grubby kmod
+fi
+dnf -y install "${kernel_dnf_options[@]}" \
   git git-lfs jq unzip zip rsync openssh-server qemu-guest-agent \
   python3 python3-pip python3-devel pipx ansible-core \
   gcc gcc-c++ make shellcheck bash-completion \
@@ -149,7 +176,7 @@ repo_gpgcheck=1
 gpgkey=https://pkgs.k8s.io/core:/stable:/${KUBERNETES_MINOR}/rpm/repodata/repomd.xml.key
 EOF
 # No EL9/EL8 compatibility fallback, --nogpgcheck or --skip-broken.
-dnf -y install \
+dnf -y install "${kernel_dnf_options[@]}" \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
   gh terraform azure-cli kubectl
 
@@ -169,18 +196,19 @@ for tool in kubectx kubens; do
 done
 rm -rf "$kubectx_tmp"
 
-reboot_pending=/var/lib/fedora-gnome-custom/rocky-devops-reboot-required
 default_kernel="$(basename "$(grubby --default-kernel)")"
 default_kernel="${default_kernel#vmlinuz-}"
 [[ "$default_kernel" =~ ^[0-9][a-zA-Z0-9._+-]*$ ]] || fail 'invalid default Rocky kernel'
+if [[ -n "$prepared_kernel" && "$default_kernel" != "$prepared_kernel" ]]; then
+  fail "kernel default changed after a verified reboot (booted=$prepared_kernel, default=$default_kernel)"
+fi
 if [[ "$(uname -r)" != "$default_kernel" ]]; then
-  [[ ! -e "$reboot_pending" ]] || fail "the prepared kernel did not boot; refusing a reboot loop (running=$(uname -r), expected=$default_kernel)"
+  [[ -z "$prepared_kernel" ]] || fail 'kernel identity drift on resumed bootstrap'
   install -d -m 0755 /var/lib/fedora-gnome-custom
   printf '%s\n' "$default_kernel" >"$reboot_pending"
   log "Packages prepared; reboot onto Rocky kernel $default_kernel before Docker (exit 75). No success marker written."
   exit 75
 fi
-rm -f "$reboot_pending"
 
 log 'install Corepack at an explicit npm version (registry integrity checked by npm)'
 npm install --global corepack@0.34.5
@@ -302,4 +330,7 @@ rpm -qa --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' | sort >/var/lib/fedora-g
 } >/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp
 chmod 0644 /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp
 mv -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env
+# Clear the planned-reboot sentinel only after the full DevOps toolchain and
+# marker are committed. A failed second pass retains its exact kernel target.
+rm -f -- "$reboot_pending"
 log 'bootstrap completed: clone -> build/test -> containerize -> deploy toolchain is ready'
