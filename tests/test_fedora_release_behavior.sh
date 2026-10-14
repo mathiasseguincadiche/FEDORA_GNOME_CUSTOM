@@ -63,3 +63,12 @@ extensions.write_text(reviewed);seal()
 extensions.write_text(extensions.read_text()+"# changed after qualification\n");rejected()
 print("Fedora release behavior: PASS")
 PY
+
+# The real validator is tested above. Simulate a validated final profile ONLY
+# for these isolated OS identity checks; no production lock is changed.
+fedora_require_profile() { [[ "${1:-${HOST_RELEASE:-}}" == 45 ]]; }
+HOST_RELEASE=45
+printf 'ID=fedora\\nVERSION_ID="44"\\n' > "$FEDORA_OS_RELEASE_FILE"
+if fedora_require_install_target; then echo 'Fedora 44 runtime accepted for production Fedora 45' >&2; exit 1; fi
+printf 'ID=fedora\\nVERSION_ID="45"\\n' > "$FEDORA_OS_RELEASE_FILE"
+fedora_require_install_target || { echo 'simulated ready Fedora 45 runtime refused' >&2; exit 1; }
