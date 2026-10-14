@@ -38,6 +38,12 @@ fi
 python3 "$repo/scripts/gnome/validate-extension-metadata.py" \
   "$dir/metadata.json" "${!uuid_var}" "${!major_var}"
 glib-compile-schemas "$dir/schemas"
+if [[ "$prefix" == DING ]]; then
+  # GitLab upstream fix-mutter-crash: never respawn Adw-DING from a queued
+  # callback after extension disable/session teardown. Verify original ZIP
+  # and every byte of the fixed result; QEMU only, not a production override.
+  python3 "$repo/.github/scripts/fedora45-ci-ding-shutdown-fix.py" apply
+fi
 printf 'source_url=%s\nshell_version=%s\nsha256=%s\nsite_version=%s\n' \
   "${!url_var}" "${!major_var}" "${!sha_var}" "${!version_var}" \
   > "$dir/.fedora-gnome-custom-source"
