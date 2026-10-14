@@ -63,7 +63,15 @@ assert "async _launchDesktop() {\n        if (!this.isEnabled)" in result
 for damaged in (
     source.replace("if (!client || this.waylandClient !== client)", "if (true)"),
     source.replace("console.log('Launching Adw-DING process');", ""),
-    source.replace("this.launchDesktop = 0;", "this.launchDesktop = 0;\n        this.launchDesktop = 0;", 1),
+    # Duplicate the *complete* unique upstream anchor, not merely a statement.
+    # A duplicate statement inside one block must not falsely signal a failure:
+    # byte-for-byte comparison with the SHA-pinned ZIP enforces that separately.
+    source.replace(
+        "    _init() {\n        this.launchDesktop = 0;",
+        "    _init() {\n        this.launchDesktop = 0;\n"
+        "    _init() {\n        this.launchDesktop = 0;",
+        1,
+    ),
 ):
     try:
         module.patched_source(damaged.encode("utf-8"))
