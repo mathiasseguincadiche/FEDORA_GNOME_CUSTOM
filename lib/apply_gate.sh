@@ -55,6 +55,10 @@ apply_gate_open() {
     ui_error "REAL APPLY is forbidden outside bare-metal; detected runtime=$(runtime_environment)"
     return "$EXIT_SECURITY_BLOCK"
   }
+  fedora_require_install_target || {
+    ui_error 'Production APPLY requires running Fedora 45 with HOST_RELEASE=45 and a promoted, authenticated Fedora 45 profile; Fedora 44 and pending Fedora 45 are blocked.'
+    return "$EXIT_SECURITY_BLOCK"
+  }
   is_true "${REAL_APPLY_FEATURE_ENABLED:-false}" || { ui_error 'REAL APPLY feature disabled'; return "$EXIT_SECURITY_BLOCK"; }
   is_true "${REAL_MACHINE_APPROVED:-false}" || { ui_error 'REAL_MACHINE_APPROVED=false; use config/local.conf after reviewing the target machine'; return "$EXIT_SECURITY_BLOCK"; }
   [[ -t 0 && -t 1 ]] || { ui_error 'interactive TTY required'; return "$EXIT_SECURITY_BLOCK"; }

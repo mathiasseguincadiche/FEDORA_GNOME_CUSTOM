@@ -7,14 +7,17 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 REPO_ROOT="$ROOT"
 source "$ROOT/lib/fedora_release.sh"
+[[ "$(fedora_install_target_release)" == 45 ]] || { echo "wrong production target" >&2; exit 1; }
 FEDORA_OS_RELEASE_FILE="$tmp/os-release"
 printf 'ID=fedora\nVERSION_ID="44"\n' > "$FEDORA_OS_RELEASE_FILE"
 HOST_RELEASE=44
 fedora_require_selected
+if fedora_require_install_target; then echo 'Fedora 44 accepted as production target' >&2; exit 1; fi
 fedora_shell_matches 'GNOME Shell 50.4'
 if fedora_shell_matches 'GNOME Shell 51.0'; then exit 1; fi
 HOST_RELEASE=45
 if fedora_require_selected; then echo 'pending Fedora 45 accepted' >&2; exit 1; fi
+if fedora_require_install_target; then echo 'pending Fedora 45 accepted for production' >&2; exit 1; fi
 HOST_RELEASE=46
 if fedora_require_profile; then exit 1; fi
 python3 - "$ROOT" "$tmp" <<'PY'
