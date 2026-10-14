@@ -149,3 +149,21 @@ explicitement que chacune des sept dépendances a conclu `success`. Un job dépe
 simplement sauté peut être accepté comme check requis par GitHub ; ici tout
 `skipped`, `failure` ou `cancelled` produit un véritable échec du check agrégé.
 Voir [les conditions GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions).
+
+### Protection contre le crash de déconnexion de Gtk4-DING (GNOME 51)
+
+La qualification Fedora 45 applique **uniquement dans la VM jetable** le garde-fou
+issu de l'exploration amont `fix-mutter-crash` de Gtk4 Desktop Icons NG : un
+sous-processus d'icônes ne doit jamais être relancé si l'extension est en cours
+de désactivation. Le ZIP EGO officiel reste intact, épinglé par SHA-256 et
+recontrôlé avant installation. Le fichier `dingManager.js` installé doit être
+exactement le résultat déterministe du correctif ; l'audit indépendant
+reconstruit et vérifie ses octets contre le ZIP revu. Un changement amont non
+revu ou un fichier modifié entraîne un échec, pas une tolérance implicite.
+
+Ce correctif **n'est pas encore une promotion production Fedora 45** : une
+version upstream publiée et auditée, ou une décision explicite de distribution
+d'un correctif local validé, reste nécessaire pour l'installation finale.
+Le test continue à exiger la vraie déconnexion GNOME, six extensions actives,
+zéro coredump et une reprise après redémarrage et restauration. Un unique
+passage vert ne prouve pas à lui seul la disparition d'une panne intermittente.
