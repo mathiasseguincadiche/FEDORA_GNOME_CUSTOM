@@ -72,6 +72,8 @@ assert "uses: ./.github/workflows/fedora-gnome-vm.yml" in tests
 assert "uses: ./.github/workflows/fedora45-gnome-vm.yml" in tests
 for script in (".github/scripts/fedora45-ci-install-extension.sh", ".github/scripts/fedora45-ci-extension-audit.py", ".github/scripts/fedora45-ci-validate-candidate.py"):
     assert (root / script).is_file()
+guest = (root / ".github/scripts/fedora-gnome-guest.sh").read_text()
+host = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
 assert "fedora45-ci-extension-audit.py" in guest
 assert 'source "$REPO/profiles/fedora45/gnome-extensions.lock"' in guest
 assert 'source "$ROOT/profiles/fedora45/gnome-extensions.lock"' in host
