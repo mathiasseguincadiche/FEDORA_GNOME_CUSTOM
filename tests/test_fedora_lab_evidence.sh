@@ -82,6 +82,17 @@ assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest
 assert "fedora45-ci-extension-audit.py" in guest
+# The GTK4-DING subprocess race must be fixed inside the signed-archive
+# descendant, not by disabling any extension during logout or silencing cores.
+ding_fix = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
+assert 'def patched_source(original: bytes)' in ding_fix
+assert '"    disable() {\\n        this.isEnabled = false;' in ding_fix
+assert 'if (!this.isEnabled || !client || this.waylandClient !== client)' in ding_fix
+assert 'if (!this.isEnabled)\\n            return;' in ding_fix
+assert 'hashlib.sha256(archive.read_bytes()).hexdigest() != profile["DING_SHA256"]' in ding_fix
+assert 'if current != expected:' in ding_fix
+assert 'fedora45-ci-ding-shutdown-fix.py" apply' in candidate_installer
+assert 'fedora45-ci-ding-shutdown-fix.py"), "verify"' in (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
 assert 'source "$REPO/profiles/fedora45/gnome-extensions.lock"' in guest
 assert 'source "$ROOT/profiles/fedora45/gnome-extensions.lock"' in host
 # The real GNOME lab must close CI-owned GUI clients before logging out.
