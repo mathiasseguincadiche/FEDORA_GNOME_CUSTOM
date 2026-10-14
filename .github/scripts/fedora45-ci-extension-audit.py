@@ -48,6 +48,12 @@ for role, uuid in roles.items():
             hashes = [line.removeprefix("sha256=") for line in marker.read_text().splitlines() if line.startswith("sha256=")]
             if len(hashes) == 1:
                 provenance[uuid] = hashes[0]
+# A nominal ACTIVE state cannot prove this crash-race correction. Reconstruct
+# dingManager.js from the reviewed ZIP and compare every byte after patching.
+subprocess.run(
+    [sys.executable, str(root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py"), "verify"],
+    check=True, stdout=subprocess.DEVNULL,
+)
 result = audit.assess(roles, active, enabled, metadata, provenance, lock)
 result.update(lab_scope="disposable-qemu-only", profile_status="pending",
               production_apply="BLOCKED", physical_gate3="DEFERRED")
