@@ -7,14 +7,17 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 REPO_ROOT="$ROOT"
 source "$ROOT/lib/fedora_release.sh"
+[[ "$(fedora_install_target_release)" == 45 ]] || { echo "wrong production target" >&2; exit 1; }
 FEDORA_OS_RELEASE_FILE="$tmp/os-release"
 printf 'ID=fedora\nVERSION_ID="44"\n' > "$FEDORA_OS_RELEASE_FILE"
 HOST_RELEASE=44
 fedora_require_selected
+if fedora_require_install_target; then echo 'Fedora 44 accepted as production target' >&2; exit 1; fi
 fedora_shell_matches 'GNOME Shell 50.4'
 if fedora_shell_matches 'GNOME Shell 51.0'; then exit 1; fi
 HOST_RELEASE=45
 if fedora_require_selected; then echo 'pending Fedora 45 accepted' >&2; exit 1; fi
+if fedora_require_install_target; then echo 'pending Fedora 45 accepted for production' >&2; exit 1; fi
 HOST_RELEASE=46
 if fedora_require_profile; then exit 1; fi
 python3 - "$ROOT" "$tmp" <<'PY'
@@ -60,3 +63,12 @@ extensions.write_text(reviewed);seal()
 extensions.write_text(extensions.read_text()+"# changed after qualification\n");rejected()
 print("Fedora release behavior: PASS")
 PY
+
+# The real validator is tested above. Simulate a validated final profile ONLY
+# for these isolated OS identity checks; no production lock is changed.
+fedora_require_profile() { [[ "${1:-${HOST_RELEASE:-}}" == 45 ]]; }
+HOST_RELEASE=45
+printf 'ID=fedora\nVERSION_ID="44"\n' > "$FEDORA_OS_RELEASE_FILE"
+if fedora_require_install_target; then echo 'Fedora 44 runtime accepted for production Fedora 45' >&2; exit 1; fi
+printf 'ID=fedora\nVERSION_ID="45"\n' > "$FEDORA_OS_RELEASE_FILE"
+fedora_require_install_target || { echo 'simulated ready Fedora 45 runtime refused' >&2; exit 1; }

@@ -18,7 +18,7 @@
 
 **Golden Workstation 0.22.3**
 
-**Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. La référence logicielle de production reste Fedora 44 / GNOME 50 tant que le profil Fedora 45 n'est pas promu.
+**Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. Fedora 44 / GNOME 50 demeure un laboratoire historique, **pas un chemin autorisé d'installation neuve**. Fedora 45 reste bloqué jusqu'à la promotion de son profil `pending`.
 
 **État logiciel : CODE-READY** · **Certification matérielle : Gate 3 bare-metal à exécuter**
 
@@ -71,7 +71,7 @@ La Golden **n'est pas** une distribution Fedora dérivée, une ISO personnalisé
 | **Pourquoi ce projet ?** | Un poste Fedora récent, soigné, rapide et récupérable | [Vision](docs/VISION.md) |
 | **Comment ça marche ?** | Un plan Git → des préconditions → des modules → des preuves | [Architecture expliquée avec schémas](docs/ARCHITECTURE_PEDAGOGIQUE.md) |
 | **À quoi ressemblera GNOME 51 ?** | Bureau natif Wayland, ergonomie GNOME choisie et extensions compatibles | [Le bureau GNOME](docs/GNOME.md) |
-| **Pourquoi Fedora 44 est encore mentionné ?** | C'est la référence actuelle ; Fedora 45 est un profil à promouvoir | [Transition Fedora 45](docs/UPGRADE_FEDORA_45.md) |
+| **Pourquoi Fedora 44 est encore mentionné ?** | C'est une référence historique de tests ; seule Fedora 45 est ciblée en installation neuve | [Transition Fedora 45](docs/UPGRADE_FEDORA_45.md) |
 | **Puis-je installer tout de suite ?** | Seulement avec la release promue et les garde-fous de production | [Guide d'installation](docs/INSTALLATION_GUIDE.md) |
 | **Comment sait-on que c'est réussi ?** | La CI teste le code ; la Gate 3 certifie le vrai matériel | [Validation en trois gates](docs/THREE_GATE_VALIDATION.md) |
 
