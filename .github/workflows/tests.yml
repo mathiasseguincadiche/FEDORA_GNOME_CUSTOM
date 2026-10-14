@@ -24,6 +24,9 @@ jobs:
           python3 tests/test_portal_stream_behavior.py
           python3 tests/test_portal_evidence_invalidation.py
           python3 tests/test_fedora45_preview_media.py
+          python3 -m py_compile .github/scripts/fedora45-ci-validate-candidate.py .github/scripts/fedora45-ci-extension-audit.py
+          python3 .github/scripts/fedora45-ci-validate-candidate.py .
+          bash -n .github/scripts/fedora45-ci-install-extension.sh
 
       - name: Install real Borg integration-test dependency
         shell: bash
