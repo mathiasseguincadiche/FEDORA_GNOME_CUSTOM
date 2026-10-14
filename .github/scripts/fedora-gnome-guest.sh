@@ -13,7 +13,7 @@ EXPECTED_COMMIT="${2:-}"
 LAB_RELEASE="${3:-44}"
 LAB_EXTENSION_MODE="${4:-curated}"
 printf 'Guest profile release=%s extensions=%s action=%s\n' "$LAB_RELEASE" "$LAB_EXTENSION_MODE" "${1:-missing}"
-case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native|45:curated) ;; *) echo 'Unsupported guest profile' >&2; exit 50;; esac
+case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) echo 'Unsupported guest profile' >&2; exit 50;; esac
 EXPECTED_GNOME_MAJOR="$((LAB_RELEASE+6))"
 [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$(cat "$REPO/CI_COMMIT")" == "$EXPECTED_COMMIT" ]] || { echo "Guest commit guard failed: expected=$EXPECTED_COMMIT actual=$(cat "$REPO/CI_COMMIT")" >&2; exit 50; }
 # shellcheck source=lib/backup_runtime.sh
@@ -21,13 +21,7 @@ source "$REPO/lib/backup_runtime.sh"
 # shellcheck source=.github/scripts/fedora-greeter-ready.sh
 source "$REPO/.github/scripts/fedora-greeter-ready.sh"
 # shellcheck source=config/gnome-extensions.lock
-if [[ "$LAB_RELEASE" == 45 ]]; then
-  # Reviewed GNOME 51 candidate is an inert data source while pending.
-  # This guest is restricted to a disposable QEMU VM before any execution.
-  source "$REPO/profiles/fedora45/gnome-extensions.lock"
-else
-  source "$REPO/config/gnome-extensions.lock"
-fi
+source "$REPO/config/gnome-extensions.lock"
 # shellcheck source=config/gnome.conf
 source "$REPO/config/gnome.conf"
 
@@ -128,11 +122,6 @@ check_extensions() {
     grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output"
     grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"
   done
-  if [[ "$LAB_RELEASE" == 45 ]]; then
-    require_session
-    as_user python3 "$REPO/.github/scripts/fedora45-ci-extension-audit.py" \
-      | tee /var/lib/fgc-lab/gnome51-curated-runtime.json
-  fi
 }
 settle_session() {
   require_session
@@ -236,12 +225,8 @@ CONF
     # Use the reviewed production artifact installer, without loosening gates.
     if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
     for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
-      if [[ "$LAB_RELEASE" == 45 ]]; then
-        as_user bash "$REPO/.github/scripts/fedora45-ci-install-extension.sh" "$prefix"
-      else
-        as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
-          bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
-      fi
+      as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
+        bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
     done
     fi
     # Use the persistent user bus: multiple private dconf daemons can race.
@@ -430,10 +415,6 @@ PY
     rpm -qa | sort > /tmp/fgc-evidence/packages.txt
     loginctl list-sessions > /tmp/fgc-evidence/sessions.txt
     lsblk -f > /tmp/fgc-evidence/lsblk.txt
-    if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
-      [[ -s /var/lib/fgc-lab/gnome51-curated-runtime.json ]] || exit 1
-      cp /var/lib/fgc-lab/gnome51-curated-runtime.json /tmp/fgc-evidence/gnome51-curated-runtime.json
-    fi
     # Never open a lab-user-owned archive for writing as root in sticky /tmp:
     # Linux fs.protected_regular may correctly deny that. Build the evidence
     # in the root-owned lab state directory, then atomically replace the file

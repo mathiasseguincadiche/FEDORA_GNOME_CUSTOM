@@ -9,7 +9,7 @@ ROOT="$GITHUB_WORKSPACE"
 bash -n "$ROOT/.github/scripts/fedora-gnome-guest.sh"
 LAB_RELEASE="${FGC_LAB_RELEASE:-44}"
 LAB_EXTENSION_MODE="${FGC_LAB_EXTENSION_MODE:-curated}"
-case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native|45:curated) ;; *) echo 'Unsupported lab profile' >&2; exit 50;; esac
+case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native) ;; *) echo 'Unsupported lab profile' >&2; exit 50;; esac
 
 LAB="$ROOT/.fedora-gnome-lab"
 [[ ! -e "$LAB" ]] || { echo 'Refusing to reuse an existing lab directory.' >&2; exit 50; }
@@ -111,13 +111,7 @@ evidence image_sha256 "$FEDORA_CLOUD_SHA256"
 # Fetch reviewed bytes on the runner and transfer them to the guest. Both
 # sides enforce the lock hashes; guest TLS verification is never disabled.
 # shellcheck source=config/gnome-extensions.lock
-if [[ "$LAB_RELEASE" == 45 ]]; then
-  # A CI candidate check deliberately DOES NOT call the release promotion gate.
-  python3 "$ROOT/.github/scripts/fedora45-ci-validate-candidate.py" "$ROOT"
-  source "$ROOT/profiles/fedora45/gnome-extensions.lock"
-else
-  source "$ROOT/config/gnome-extensions.lock"
-fi
+source "$ROOT/config/gnome-extensions.lock"
 mkdir extensions
 if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
 for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do

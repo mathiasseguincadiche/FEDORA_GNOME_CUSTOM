@@ -1,0 +1,41 @@
+name: Fedora 45 GNOME 51 six-extension QEMU lab
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify independently pinned signed Fedora 45 Beta seed
+        run: python3 .github/scripts/fedora45-preview-media.py
+      - name: Boot GNOME 51 with six active extensions, reboot and recover VM
+        shell: bash
+        env:
+          FGC_LAB_RELEASE: '45'
+          FGC_LAB_EXTENSION_MODE: curated
+        run: timeout --signal=TERM --kill-after=60s 80m bash .github/scripts/fedora-gnome-vm.sh
+      - name: Document strict boundaries
+        if: always()
+        run: |
+          echo 'Candidate QEMU preview only. No Fedora 45 media promotion, production APPLY or hardware Gate 3.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Only Fedora 45 packages actually resolved from enabled repositories are accepted. Never silently enable updates-testing to mask an incompatible Dash to Dock package.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain session and recovery evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fedora45-gnome51-six-extensions-${{ github.run_id }}
+          path: |
+            .fedora45-preview/signature.log
+            .fedora45-preview/fedora45-cloud.lock
+            .fedora-gnome-lab/report.json
+            .fedora-gnome-lab/evidence/
+          if-no-files-found: error
+          retention-days: 14

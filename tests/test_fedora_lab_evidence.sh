@@ -50,12 +50,6 @@ preview = copy.deepcopy(r)
 preview.update(release=45, gnome_major=51, extension_mode="native")
 preview["evidence"].update(fedora_release="45", gnome_major="51", extension_mode="native", curated_extensions="DEFERRED")
 assert lab.finalize(copy.deepcopy(preview))["verdict"] == "PASS"
-candidate = copy.deepcopy(r)
-candidate.update(release=45, gnome_major=51, extension_mode="curated")
-candidate["evidence"].update(fedora_release="45", gnome_major="51", extension_mode="curated")
-assert lab.finalize(copy.deepcopy(candidate))["verdict"] == "PASS"
-candidate["evidence"]["curated_extensions"] = "DEFERRED"
-rejected(candidate)
 preview["evidence"]["curated_extensions"] = "six-active"
 rejected(preview)
 for gate in lab.DEFERRED:
@@ -65,16 +59,10 @@ for gate in lab.DEFERRED:
 rejected(lab.initialize("a" * 40))
 # The mandatory contracts context must actually wait for the reusable VM job.
 tests = (root / ".github/workflows/tests.yml").read_text()
-assert "needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, fedora45-gnome-vm, upstream-kernel, rocky-devops-vm]" in tests
+assert "needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, upstream-kernel, rocky-devops-vm]" in tests
 assert "if: ${{ always() }}" in tests.split("\n  contracts:\n", 1)[1]
-assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm fedora45-gnome-vm upstream-kernel rocky-devops-vm" in tests
+assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm upstream-kernel rocky-devops-vm" in tests
 assert "uses: ./.github/workflows/fedora-gnome-vm.yml" in tests
-assert "uses: ./.github/workflows/fedora45-gnome-vm.yml" in tests
-for script in (".github/scripts/fedora45-ci-install-extension.sh", ".github/scripts/fedora45-ci-extension-audit.py", ".github/scripts/fedora45-ci-validate-candidate.py"):
-    assert (root / script).is_file()
-assert "fedora45-ci-extension-audit.py" in guest
-assert 'source "$REPO/profiles/fedora45/gnome-extensions.lock"' in guest
-assert 'source "$ROOT/profiles/fedora45/gnome-extensions.lock"' in host
 # The real GNOME lab must close CI-owned GUI clients before logging out.
 # Keep both the actual logout and the strict post-logout journal gate.
 guest = (root / ".github/scripts/fedora-gnome-guest.sh").read_text()
@@ -116,7 +104,7 @@ assert "Linux amont" in guide
 spec = importlib.util.spec_from_file_location("jobs", root / ".github/scripts/require-jobs-success.py")
 jobs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(jobs)
-required = ["logic-contracts", "installer-audit", "borg-fedora", "fedora-gnome-vm", "fedora45-gnome-vm", "upstream-kernel", "rocky-devops-vm"]
+required = ["logic-contracts", "installer-audit", "borg-fedora", "fedora-gnome-vm", "upstream-kernel", "rocky-devops-vm"]
 needs = {name: {"result": "success"} for name in required}
 assert jobs.successful(needs, required)
 for name in required:
