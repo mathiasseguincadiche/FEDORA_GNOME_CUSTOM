@@ -14,7 +14,7 @@ DEFERRED = ("gate1_wsl2", "gate2_visual", "gate3_hardware",
 def initialize(commit, release=44, extension_mode="curated"):
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("exact Git commit required")
-    if (release, extension_mode) not in ((44, "curated"), (45, "native")):
+    if (release, extension_mode) not in ((44, "curated"), (45, "native"), (45, "curated")):
         raise ValueError("unsupported laboratory target")
     return dict(schema=2, release=release, gnome_major=release+6, extension_mode=extension_mode, scope="fedora-gnome-qemu-pretest", commit=commit,
                 verdict="PENDING", checks={k: "PENDING" for k in REQUIRED},
@@ -26,7 +26,7 @@ def finalize(report):
         raise ValueError("all exercises must pass")
     e = report["evidence"]
     target = (report["release"], report["extension_mode"])
-    if target not in ((44, "curated"), (45, "native")) or report["gnome_major"] != report["release"] + 6:
+    if target not in ((44, "curated"), (45, "native"), (45, "curated")) or report["gnome_major"] != report["release"] + 6:
         raise ValueError("invalid laboratory target")
     if (e.get("fedora_release"), e.get("gnome_major"), e.get("extension_mode")) != (str(report["release"]), str(report["gnome_major"]), report["extension_mode"]):
         raise ValueError("guest target evidence missing")
