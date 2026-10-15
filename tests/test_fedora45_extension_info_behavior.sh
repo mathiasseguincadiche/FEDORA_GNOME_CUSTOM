@@ -19,8 +19,10 @@ check_extension_settings() { :; }
 sleep() { :; } # Remove 2-second waits in the isolated negative fixture.
 
 as_user() {
-  [[ "${1:-}" == gnome-extensions && "${2:-}" == info ]] || return 90
-  local count=0 uuid="${3:-}"
+  [[ "${1:-}" == timeout && "${2:-}" == --signal=TERM &&
+     "${3:-}" == --kill-after=5s && "${4:-}" == 20s &&
+     "${5:-}" == gnome-extensions && "${6:-}" == info ]] || return 90
+  local count=0 uuid="${7:-}"
   [[ -f "$STATE_FILE" ]] && count="$(cat "$STATE_FILE")"
   count=$((count + 1))
   printf '%s\n' "$count" > "$STATE_FILE"
