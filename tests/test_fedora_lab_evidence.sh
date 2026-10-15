@@ -82,6 +82,17 @@ assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest
 assert "fedora45-ci-extension-audit.py" in guest
+# The restored GNOME 51 session occasionally returns a non-zero list query.
+# A bounded retry is allowed only as transport, never as certification.
+extension_audit = (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
+extension_list = (root / ".github/scripts/fedora45-ci-extension-list.py").read_text()
+assert 'extension_list.list_extensions("--active")' in extension_audit
+assert 'extension_list.list_extensions("--enabled")' in extension_audit
+assert 'if completed.returncode == 0:' in extension_list
+assert 'if attempt < attempts:' in extension_list
+assert 'raise RuntimeError(' in extension_list
+assert 'gnome-extensions", "list"' in extension_list
+assert "journal_health 0" in guest
 # The GTK4-DING subprocess race must be fixed inside the signed-archive
 # descendant, not by disabling any extension during logout or silencing cores.
 ding_fix = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
