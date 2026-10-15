@@ -22,48 +22,99 @@ UUID = "gtk4-ding@smedius.gitlab.com"
 def patched_source(original: bytes) -> bytes:
     code = original.decode("utf-8")
 
+    def require_once(anchor: str) -> None:
+        if code.count(anchor) != 1:
+            raise ValueError(f"upstream Gtk4-DING v145 changed; fix needs review: {anchor[:80]!r}")
+
     def replace_once(old: str, new: str) -> None:
         nonlocal code
-        if code.count(old) != 1:
-            raise ValueError(f"upstream Gtk4-DING changed; fix needs review: {old[:80]!r}")
+        require_once(old)
         code = code.replace(old, new, 1)
 
-    # Upstream's fix-mutter-crash experiment introduced isEnabled to prevent
-    # restart when disable() races with an asynchronous child exit. The
-    # version-145 candidate still re-spawns from a queued GLib callback even
-    # while the shell/session is being torn down.
+    # The reviewed GNOME 51 v145 ZIP already implements isEnabled and clears
+    # it at disable(). Do not insert duplicate fields. Assert the exact
+    # lifecycle shape from the Gtk4-100.29 release tag (not later main).
+    require_once("    _init() {\n        this.isEnabled = false;")
+    require_once("    disable() {\n        this.isEnabled = false;")
+
+    # Set the flag before _activateDelayedLaunch() can run synchronously;
+    # previously the flag became true only after this callback returned.
     replace_once(
-        "    _init() {\n        this.launchDesktop = 0;",
-        "    _init() {\n        this.isEnabled = false;\n        this.launchDesktop = 0;",
+        "        if (!this.settings)\n            this.settings = this._getSettings();\n\n        if (!this.killingProcess)",
+        "        if (!this.settings)\n            this.settings = this._getSettings();\n\n        this.isEnabled = true;\n        if (!this.killingProcess)",
     )
     replace_once(
-        "    enable() {\n        if (typeof Meta.is_wayland_compositor",
-        "    enable() {\n        if (typeof Meta.is_wayland_compositor",
-    )
-    replace_once(
-        "            return;\n        }\n\n        if (!this.settings)",
-        "            return;\n        }\n\n        this.isEnabled = true;\n        if (!this.settings)",
+        "        this.isEnabled = true;\n\n        if (this.launchDesktop)",
+        "        if (this.launchDesktop)",
     )
     replace_once(
         "    _activateDelayedLaunch() {\n        if (this.killingProcess) {",
         "    _activateDelayedLaunch() {\n        if (!this.isEnabled)\n            return;\n        if (this.killingProcess) {",
     )
+    # The release tag had a startup-complete handler spelling mismatch.
     replace_once(
-        "    disable() {\n        this.DesktopIconsUsableArea = null;",
-        "    disable() {\n        this.isEnabled = false;\n        this.DesktopIconsUsableArea = null;",
+        "            this.startupPrepareId = null;\n            this._activateDelayedLaunch();",
+        "            this.startupPreparedId = null;\n            this._activateDelayedLaunch();",
     )
     replace_once(
-        "    _doRelaunch(reloadTime, client) {\n        if (!client || this.waylandClient !== client)",
-        "    _doRelaunch(reloadTime, client) {\n        if (!this.isEnabled || !client || this.waylandClient !== client)",
+        "        if (this.startupPrepareId) {\n            Main.layoutManager.disconnect(this.startupPreparedId);",
+        "        if (this.startupPreparedId) {\n            Main.layoutManager.disconnect(this.startupPreparedId);",
+    )
+
+    # Old child completions must not invalidate a newer Wayland client; most
+    # importantly, neither a queued GLib timeout nor an asynchronous callback
+    # may start a new process after the shell begins disabling the extension.
+    replace_once(
+        "    _doRelaunch(reloadTime) {\n        this.waylandClient = null;",
+        "    _doRelaunch(reloadTime, client) {\n"
+        "        if (!this.isEnabled || !client || this.waylandClient !== client)\n"
+        "            return;\n"
+        "        this.waylandClient = null;",
     )
     replace_once(
-        "                    this.launchDesktop = 0;\n                    this._launchDesktop().catch(e => console.error(e));",
-        "                    this.launchDesktop = 0;\n                    if (this.isEnabled)\n                        this._launchDesktop().catch(e => console.error(e));",
+        "                        this.launchDesktop = 0;\n"
+        "                        this._launchDesktop().catch(e => console.error(e));",
+        "                        this.launchDesktop = 0;\n"
+        "                        if (this.isEnabled)\n"
+        "                            this._launchDesktop().catch(e => console.error(e));",
     )
     replace_once(
         "    async _launchDesktop() {\n        console.log('Launching Adw-DING process');",
-        "    async _launchDesktop() {\n        if (!this.isEnabled)\n            return;\n        console.log('Launching Adw-DING process');",
+        "    async _launchDesktop() {\n"
+        "        if (!this.isEnabled)\n            return;\n"
+        "        console.log('Launching Adw-DING process');",
     )
+    replace_once(
+        "        this.waylandClient = new LaunchSubprocess(0, 'Adw-DING');\n"
+        "        this.waylandClient.set_cwd(GLib.get_home_dir());\n"
+        "        this.windowTypeManager.set_wayland_client(this.waylandClient);",
+        "        const client = new LaunchSubprocess(0, 'Adw-DING');\n"
+        "        this.waylandClient = client;\n"
+        "        client.set_cwd(GLib.get_home_dir());\n"
+        "        this.windowTypeManager.set_wayland_client(client);",
+    )
+    replace_once(
+        "            subprocess = await this.waylandClient.spawnv(argv);",
+        "            subprocess = await client.spawnv(argv);",
+    )
+    replace_once(
+        "        } catch (e) {\n            if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {",
+        "        } catch (e) {\n"
+        "            if (this.waylandClient !== client)\n                return;\n"
+        "            if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {",
+    )
+    replace_once("                this._doRelaunch(1000);",
+                 "                this._doRelaunch(1000, client);")
+    replace_once(
+        "        if (!this.waylandClient ||\n"
+        "            subprocess !== this.waylandClient.subprocess\n"
+        "        )",
+        "        if (this.waylandClient !== client ||\n"
+        "            subprocess !== client.subprocess\n"
+        "        )",
+    )
+    replace_once("        this._doRelaunch(reloadTime);",
+                 "        this._doRelaunch(reloadTime, client);")
     return code.encode("utf-8")
 
 
