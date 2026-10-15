@@ -19,11 +19,12 @@ flowchart TD
   B["installer-audit"] --> R
   C["borg-fedora"] --> R
   D["fedora-gnome-vm"] --> R
+  G["fedora45-gnome-vm / six extensions"] --> R
   E["upstream-kernel / rpm"] --> R
   F["rocky-devops-vm"] --> R
 ```
 
-**Pourquoi `contracts` peut être rouge alors que lui-même n'a aucun bug ?** Il attend strictement le succès de ses six dépendances. Si le laboratoire GNOME est en échec, le contrôle final est rouge **par conception**.
+**Pourquoi `contracts` peut être rouge alors que lui-même n'a aucun bug ?** Il attend strictement le succès de ses sept dépendances. Si un laboratoire GNOME est en échec, le contrôle final est rouge **par conception**.
 
 ### Après une fusion, regarder le `push` sur `main`
 

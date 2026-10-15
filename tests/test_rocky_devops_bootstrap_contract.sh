@@ -73,4 +73,30 @@ grep -Fq 'devops-verify-bootstrap-marker.py' "$VERIFY"
 grep -Fq 'devops-verify-bootstrap-marker.py' "$CREATE"
 grep -Fq 'verify-bootstrap-marker.py' "$VM_PRETEST"
 python3 -B "$ROOT/tests/test_rocky_bootstrap_marker.py"
+# Regression: Rocky's mirrors can publish a new kernel between the two guest
+# boots. The second provisioning pass must validate the *first* kernel target,
+# not install a newer default kernel and misreport the successful boot as FAIL.
+python3 - "$BOOT" <<'PY'
+from pathlib import Path
+import sys
+source = Path(sys.argv[1]).read_text()
+checks = (
+    "prepared_kernel=''",
+    'if [[ -e "$reboot_pending" || -L "$reboot_pending" ]]; then',
+    '"$(uname -r)" == "$prepared_kernel"',
+    '[[ -f "/boot/vmlinuz-$prepared_kernel" ]]',
+    'kernel_dnf_options=(--exclude=\'kernel*\')',
+    'dnf -y upgrade --refresh "${kernel_dnf_options[@]}"',
+    'dnf -y install "${kernel_dnf_options[@]}" grubby kmod',
+    '[[ -n "$prepared_kernel" && "$default_kernel" != "$prepared_kernel" ]]',
+    'rm -f -- "$reboot_pending"',
+)
+for check in checks:
+    assert check in source, f"Rocky kernel transaction invariant missing: {check}"
+assert source.index("prepared_kernel=''") < source.index("dnf -y upgrade --refresh")
+assert source.index('rm -f -- "$reboot_pending"') > source.index(
+    'mv -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp')
+assert 'SuccessExitStatus=75' in Path(
+    sys.argv[1]).with_name("devops-bootstrap.service").read_text()
+PY
 echo 'rocky devops ready-to-work bootstrap contract: PASS'
