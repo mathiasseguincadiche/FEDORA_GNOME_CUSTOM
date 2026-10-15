@@ -93,6 +93,12 @@ assert 'if attempt < attempts:' in extension_list
 assert 'raise RuntimeError(' in extension_list
 assert 'gnome-extensions", "list"' in extension_list
 assert "journal_health 0" in guest
+# A non-zero gnome-extensions info probe must never abort all of session
+# validation before the next bounded attempt or be considered ACTIVE.
+assert 'if output="$(as_user gnome-extensions info "$uuid" 2>&1)"; then' in guest
+assert "for attempt in {1..60}; do" in guest
+assert "if (( attempt < 60 )); then sleep 2; fi" in guest
+assert 'echo "GNOME extension $uuid not confirmed enabled and ACTIVE' in guest
 # The GTK4-DING subprocess race must be fixed inside the signed-archive
 # descendant, not by disabling any extension during logout or silencing cores.
 ding_fix = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
