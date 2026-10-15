@@ -114,19 +114,39 @@ check_extension_settings() {
 check_extensions() {
   check_extension_settings
   [[ "$LAB_EXTENSION_MODE" == curated ]] || { echo 'DEFERRED: six curated extensions; Fedora 45 native GNOME preview only'; return 0; }
-  local uuid output
+  local uuid output info_rc attempt
   for uuid in "$DASH_TO_DOCK_UUID" "$APPINDICATOR_UUID" "$DING_UUID" "$SHOW_DESKTOP_PLUS_UUID" "$RESOURCE_MONITOR_UUID" "$TILING_ASSISTANT_UUID"; do
-    # Shell activation is asynchronous. Observe it; never repair a reboot here.
-    for _ in {1..60}; do
-      output="$(as_user gnome-extensions info "$uuid")"
-      if grep -Eq 'State:[[:space:]]+ERROR([[:space:]]|$)' <<<"$output"; then break; fi
-      if grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output" &&
-         grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"; then break; fi
-      sleep 1
+    # GNOME Shell starts asynchronously and its D-Bus name can briefly be
+    # unavailable even after earlier extensions answered. A failed info call
+    # is not evidence that the extension is active: keep polling, with a hard
+    # upper bound, until a successful CLI response proves ACTIVE and enabled.
+    # Never auto-enable extensions or hide persistent errors and coredumps.
+    output=''
+    for attempt in {1..60}; do
+      if output="$(as_user gnome-extensions info "$uuid" 2>&1)"; then
+        # An actual extension ERROR is fatal, not a transient connection issue.
+        if grep -Eq 'State:[[:space:]]+ERROR([[:space:]]|$)' <<<"$output"; then
+          echo "GNOME extension $uuid entered ERROR state" >&2
+          break
+        fi
+        if grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output" &&
+           grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"; then
+          break
+        fi
+      else
+        info_rc=$?
+        echo "GNOME extension $uuid: info query failed ($attempt/60, exit=$info_rc): $output" >&2
+        # Only a completed, zero-exit info query can establish a PASS.
+        output=''
+      fi
+      if (( attempt < 60 )); then sleep 2; fi
     done
     printf '%s\n' "$output"
-    grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output"
-    grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"
+    if ! grep -Eq 'Enabled:[[:space:]]+Yes([[:space:]]|$)' <<<"$output" ||
+       ! grep -Eq 'State:[[:space:]]+ACTIVE([[:space:]]|$)' <<<"$output"; then
+      echo "GNOME extension $uuid not confirmed enabled and ACTIVE after $attempt/60 probes" >&2
+      return 1
+    fi
   done
   if [[ "$LAB_RELEASE" == 45 ]]; then
     require_session
