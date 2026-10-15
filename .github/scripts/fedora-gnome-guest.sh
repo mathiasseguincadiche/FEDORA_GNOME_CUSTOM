@@ -123,7 +123,7 @@ check_extensions() {
     # Never auto-enable extensions or hide persistent errors and coredumps.
     output=''
     for attempt in {1..60}; do
-      if output="$(as_user gnome-extensions info "$uuid" 2>&1)"; then
+      if output="$(as_user timeout --signal=TERM --kill-after=5s 20s gnome-extensions info "$uuid" 2>&1)"; then
         # An actual extension ERROR is fatal, not a transient connection issue.
         if grep -Eq 'State:[[:space:]]+ERROR([[:space:]]|$)' <<<"$output"; then
           echo "GNOME extension $uuid entered ERROR state" >&2
