@@ -82,6 +82,24 @@ assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest
 assert "fedora45-ci-extension-audit.py" in guest
+# The restored GNOME 51 session occasionally returns a non-zero list query.
+# A bounded retry is allowed only as transport, never as certification.
+extension_audit = (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
+extension_list = (root / ".github/scripts/fedora45-ci-extension-list.py").read_text()
+assert 'extension_list.list_extensions("--active")' in extension_audit
+assert 'extension_list.list_extensions("--enabled")' in extension_audit
+assert 'if completed.returncode == 0:' in extension_list
+assert 'if attempt < attempts:' in extension_list
+assert 'raise RuntimeError(' in extension_list
+assert 'gnome-extensions", "list"' in extension_list
+assert "journal_health 0" in guest
+# A non-zero gnome-extensions info probe must never abort all of session
+# validation before the next bounded attempt or be considered ACTIVE.
+assert 'if output="$(as_user timeout --signal=TERM --kill-after=5s 20s gnome-extensions info "$uuid" 2>&1)"; then' in guest
+assert "for attempt in {1..60}; do" in guest
+assert "as_user timeout --signal=TERM --kill-after=5s 20s gnome-extensions info" in guest
+assert "if (( attempt < 60 )); then sleep 2; fi" in guest
+assert 'echo "GNOME extension $uuid not confirmed enabled and ACTIVE' in guest
 # The GTK4-DING subprocess race must be fixed inside the signed-archive
 # descendant, not by disabling any extension during logout or silencing cores.
 ding_fix = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
@@ -112,6 +130,24 @@ assert guest.index("90-fgc-lab-shutdown.conf") < guest.index('as_user systemctl 
 assert logout.index('as_user systemctl --user stop "$unit"') < logout.index("sleep 3")
 assert logout.index("sleep 3") < logout.index("gnome-session-quit --logout --no-prompt")
 assert "journal_health 0" in logout
+# A reboot request must not tear down its own SSH session before it replies.
+# Never change to host QMP system_reset or discard previous-health evidence.
+host_reboot = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
+scheduled = "sudo systemd-run --on-active=5s --unit=fgc-lab-reboot /usr/bin/systemctl reboot"
+assert host_reboot.count(scheduled) == 2
+assert "lab@127.0.0.1 'sudo systemctl reboot'" not in host_reboot
+assert host_reboot.count('fedora-qmp-reboot.py') == 2
+assert "guest_action previous-health" in host_reboot
+# The real Docker probe must exercise an actual pulled BusyBox image. Registry
+# throttling may switch the source, but missing images can never produce PASS.
+workflow = (root / ".github/workflows/tests.yml").read_text()
+for registry in ("mirror.gcr.io/library/busybox:1.37.0",
+                 "docker.io/library/busybox:1.37.0",
+                 "public.ecr.aws/docker/library/busybox:1.37.0"):
+    assert registry in workflow
+assert "timeout 120 docker pull" in workflow
+assert "[[ -n \"$image_ref\" ]] ||" in workflow
+assert 'verify-docker-network.sh "$image"' in workflow
 # Root must not reopen a lab-user-owned file in /tmp: fs.protected_regular
 # rejects that under sticky directories. Package in root-owned private storage
 # and publish the complete archive with restrictive permissions for SCP.

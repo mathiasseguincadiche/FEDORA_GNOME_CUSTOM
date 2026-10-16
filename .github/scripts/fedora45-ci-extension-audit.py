@@ -29,8 +29,17 @@ spec.loader.exec_module(audit)
 roles = audit.selected_roles(root)
 if not re.fullmatch(r"GNOME Shell 51(?:[.][0-9]+)*", audit.run("gnome-shell", "--version").strip()):
     raise SystemExit("GNOME Shell 51 is not running")
-active = set(audit.run("gnome-extensions", "list", "--active").splitlines())
-enabled = set(audit.run("gnome-extensions", "list", "--enabled").splitlines())
+# Individual extension info checks have already confirmed all six ACTIVE;
+# re-query all enabled/active IDs so the strict audit can reject unexpected
+# extensions. Require a successful CLI response rather than interpreting a
+# transient D-Bus exit=2 as an empty or healthy list.
+list_spec = importlib.util.spec_from_file_location(
+    "gnome51_lab_extension_list", root / ".github/scripts/fedora45-ci-extension-list.py"
+)
+extension_list = importlib.util.module_from_spec(list_spec)
+list_spec.loader.exec_module(extension_list)
+active = extension_list.list_extensions("--active")
+enabled = extension_list.list_extensions("--enabled")
 lock = audit.load_profile_module(root).assignments(root / "profiles/fedora45/gnome-extensions.lock")
 user_dir = Path.home() / ".local/share/gnome-shell/extensions"
 system_dir = Path("/usr/share/gnome-shell/extensions")

@@ -27,6 +27,8 @@ jobs:
           python3 -m py_compile .github/scripts/fedora45-ci-validate-candidate.py .github/scripts/fedora45-ci-extension-audit.py
           python3 .github/scripts/fedora45-ci-validate-candidate.py .
           python3 tests/test_fedora45_ding_shutdown_fix.py
+          python3 tests/test_fedora45_extension_list_behavior.py
+          bash tests/test_fedora45_extension_info_behavior.sh
           bash -n .github/scripts/fedora45-ci-install-extension.sh
 
       - name: Install real Borg integration-test dependency
@@ -48,13 +50,28 @@ jobs:
           application="fgc-existing-application-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           trap 'docker network rm "$application" >/dev/null 2>&1 || true' EXIT
           docker network create "$application" >/dev/null
-          # Registries throttle shared runner IPs; retry the one pull this probe needs.
-          for attempt in 1 2 3 4; do
-            docker pull public.ecr.aws/docker/library/busybox:1.37.0 >/dev/null && break
-            [[ $attempt -lt 4 ]] || { echo 'busybox pull failed after 4 attempts' >&2; exit 1; }
-            sleep $((attempt * 15))
+          # ECR throttled GitHub runner IPs with "toomanyrequests". Exercise
+          # the same real BusyBox 1.37.0 container, not a synthetic mock.
+          # Try independent image registries; all attempts and timeouts are
+          # bounded and none turns an unavailable image into a PASS.
+          image_ref=''
+          for candidate in \
+            mirror.gcr.io/library/busybox:1.37.0 \
+            docker.io/library/busybox:1.37.0 \
+            public.ecr.aws/docker/library/busybox:1.37.0; do
+            for attempt in 1 2; do
+              if timeout 120 docker pull "$candidate" >/dev/null; then
+                image_ref="$candidate"
+                break
+              fi
+              echo "Failed to pull $candidate (attempt $attempt/2)" >&2
+              if [[ "$attempt" -lt 2 ]]; then sleep 5; fi
+            done
+            [[ -z "$image_ref" ]] || break
           done
-          image="$(docker image inspect --format '{{.Id}}' public.ecr.aws/docker/library/busybox:1.37.0)"
+          [[ -n "$image_ref" ]] || { echo 'BusyBox 1.37.0 unavailable from all three registries' >&2; exit 1; }
+          image="$(docker image inspect --format '{{.Id}}' "$image_ref")"
+          [[ -n "$image" ]]
           guest/rocky-devops/verify-docker-network.sh "$image"
           docker network inspect "$application" >/dev/null
           test -z "$(docker network ls --filter label=fgc.network-probe --format '{{.ID}}')"
