@@ -235,8 +235,10 @@ provision() {
     guest 'sudo journalctl --no-pager -b' > "$LAB/evidence/$PHASE-maintenance-journal.log"
     # No graphical session exists yet. Observe a normal QMP reboot, then prove
     # both a new boot identity and the updated Fedora kernel in install().
+    # A delayed, detached reboot lets sshd close this command cleanly first;
+    # its fatal connection-reset journal was otherwise caught by previous-health.
     python3 "$ROOT/.github/scripts/fedora-qmp-reboot.py" "$LAB/qmp.sock" \
-      ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemctl reboot'
+      ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemd-run --on-active=5s --unit=fgc-lab-reboot /usr/bin/systemctl reboot'
     wait_ssh
     maintenance_after="$(boot_id)"
     [[ -n "$maintenance_after" && "$maintenance_after" != "$maintenance_boot" ]]
@@ -283,8 +285,11 @@ boot_id() { guest cat /proc/sys/kernel/random/boot_id; }
 reboot_vm() {
   guest_action end-session
   # Subscribe before requesting a normal OS reboot; never poll SSH on shutdown.
+  # Schedule the guest reboot after SSH has exited, to avoid an sshd-session
+  # fatal connection-reset entry in the previous boot's critical journal.
+  # A real guest-originated QMP RESET and a distinct boot ID remain mandatory.
   python3 "$ROOT/.github/scripts/fedora-qmp-reboot.py" "$LAB/qmp.sock" \
-    ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemctl reboot'
+    ssh "${SSH_OPTS[@]}" lab@127.0.0.1 'sudo systemd-run --on-active=5s --unit=fgc-lab-reboot /usr/bin/systemctl reboot'
   wait_ssh
 }
 
