@@ -95,7 +95,7 @@ assert 'gnome-extensions", "list"' in extension_list
 assert "journal_health 0" in guest
 # A non-zero gnome-extensions info probe must never abort all of session
 # validation before the next bounded attempt or be considered ACTIVE.
-assert 'if output="$(as_user gnome-extensions info "$uuid" 2>&1)"; then' in guest
+assert 'if output="$(as_user timeout --signal=TERM --kill-after=5s 20s gnome-extensions info "$uuid" 2>&1)"; then' in guest
 assert "for attempt in {1..60}; do" in guest
 assert "as_user timeout --signal=TERM --kill-after=5s 20s gnome-extensions info" in guest
 assert "if (( attempt < 60 )); then sleep 2; fi" in guest
