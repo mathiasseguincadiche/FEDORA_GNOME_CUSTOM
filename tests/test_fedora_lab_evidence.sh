@@ -130,6 +130,24 @@ assert guest.index("90-fgc-lab-shutdown.conf") < guest.index('as_user systemctl 
 assert logout.index('as_user systemctl --user stop "$unit"') < logout.index("sleep 3")
 assert logout.index("sleep 3") < logout.index("gnome-session-quit --logout --no-prompt")
 assert "journal_health 0" in logout
+# A reboot request must not tear down its own SSH session before it replies.
+# Never change to host QMP system_reset or discard previous-health evidence.
+host_reboot = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
+scheduled = "sudo systemd-run --on-active=5s --unit=fgc-lab-reboot /usr/bin/systemctl reboot"
+assert host_reboot.count(scheduled) == 2
+assert "lab@127.0.0.1 'sudo systemctl reboot'" not in host_reboot
+assert host_reboot.count('fedora-qmp-reboot.py') == 2
+assert "guest_action previous-health" in host_reboot
+# The real Docker probe must exercise an actual pulled BusyBox image. Registry
+# throttling may switch the source, but missing images can never produce PASS.
+workflow = (root / ".github/workflows/tests.yml").read_text()
+for registry in ("mirror.gcr.io/library/busybox:1.37.0",
+                 "docker.io/library/busybox:1.37.0",
+                 "public.ecr.aws/docker/library/busybox:1.37.0"):
+    assert registry in workflow
+assert "timeout 120 docker pull" in workflow
+assert "[[ -n \"$image_ref\" ]] ||" in workflow
+assert 'verify-docker-network.sh "$image"' in workflow
 # Root must not reopen a lab-user-owned file in /tmp: fs.protected_regular
 # rejects that under sticky directories. Package in root-owned private storage
 # and publish the complete archive with restrictive permissions for SCP.
