@@ -92,8 +92,8 @@ assert curated_step.count("dnf -y --enablerepo=updates-testing install 'gnome-sh
 assert "'%{VERSION}-%{RELEASE}' gnome-shell-extension-dash-to-dock" in curated_step
 assert '== 110-1.fc45' in curated_step
 assert "'51' not in [str(v) for v in metadata.get('shell-version', [])]" in curated_step
-assert "'dash-to-dock@micxgx.gmail.com/metadata.json'" in curated_step
-assert "allow-unsupported-extensions" not in guest
+assert "dash-to-dock@micxgx.gmail.com/metadata.json" in curated_step
+assert "disable-extension-version-validation true" not in guest
 assert "dnf config-manager" not in curated_step
 # The restored GNOME 51 session occasionally returns a non-zero list query.
 # A bounded retry is allowed only as transport, never as certification.
