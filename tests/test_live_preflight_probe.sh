@@ -49,7 +49,7 @@ live_script="$(cat "$ROOT/diagnostics/live-preflight.sh")"
 [[ "$live_script" == *'REFUSED: no evidence of a Live environment'* ]]
 [[ "$live_script" == *'manual_check display'* ]]
 [[ "$live_script" == *'manual_check network'* ]]
-[[ "$live_script" == *'[[ "$verdict" == GO ]]'* ]]
+[[ "$live_script" == *"[[ \"\$verdict\" == GO ]]"* ]]
 [[ "$live_script" != *'sudo '* ]]
 [[ "$live_script" != *'mount '* ]]
 [[ "$live_script" != *'mkfs'* ]]
