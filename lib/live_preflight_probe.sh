@@ -45,3 +45,25 @@ live_t705_status() {
     }
   ' <<<"$1"
 }
+
+# Manual checks are never inferred from lspci or a connection icon.
+live_manual_status() {
+  local answer="$1"
+  case "$answer" in
+    o|O|oui|Oui|OUI|y|Y|yes|Yes|YES) printf 'PASS\n';;
+    n|N|non|Non|NON|no|No|NO) printf 'FAIL\n';;
+    *) printf 'NOT_TESTED\n';;
+  esac
+}
+
+# A missing proof is not a GO, even with zero observed FAILs.
+live_go_decision() {
+  local failed="$1" untested="$2"
+  if (( failed > 0 )); then
+    printf 'NO-GO\n'
+  elif (( untested > 0 )); then
+    printf 'A_VERIFIER\n'
+  else
+    printf 'GO\n'
+  fi
+}
