@@ -2,6 +2,8 @@
 
 Ce portail est la **carte officielle** de la documentation de `FEDORA_GNOME_CUSTOM`.
 
+**Traçabilité :** [correspondance entre code, scripts, tests et guides](CODE_DOCUMENTATION_TRACEABILITY.md). Ce registre permet de retrouver la source de vérité et les vérifications associées à chaque parcours.
+
 Le README racine présente le produit. Ici, l'objectif est différent : **trouver immédiatement le bon document selon ce que vous voulez comprendre, exécuter ou diagnostiquer**.
 
 La version active est celle de [`../VERSION`](../VERSION).
