@@ -340,6 +340,9 @@ jobs:
 
   upstream-kernel:
     uses: ./.github/workflows/upstream-kernel.yml
+    with:
+      # Fedora 45 is the installation target; Fedora 44 remains a legacy lab.
+      fedora_release: '45'
     permissions:
       contents: read
 

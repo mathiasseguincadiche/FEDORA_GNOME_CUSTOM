@@ -5,7 +5,7 @@
 
 **Une Fedora Workstation sur mesure, expliquée, versionnée, sauvegardable et vérifiable**
 
-**Fedora 44 · GNOME 50 (référence testée) → Fedora 45 · GNOME 51 (en préparation)**
+**Cible : Fedora 45 · GNOME 51 | Laboratoire historique : Fedora 44 · GNOME 50**
 
 **Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
 
@@ -92,7 +92,7 @@ La Golden **n'est pas** une distribution Fedora dérivée, une ISO personnalisé
 | Contrôle | État |
 |---|---|
 | **Code / contrats** | `CODE-READY` |
-| **CI de `main`** | 6 checks obligatoires avant fusion : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration`, `nautilus-ptyxis` |
+| **CI et protection de `main`** | Les contextes obligatoires du ruleset et les workflows exécutés sont distincts : voir [gouvernance](docs/GITHUB_GOVERNANCE.md) et [Actions](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions). Ne pas déduire le statut courant d'une ancienne PR. |
 | **Matériel cible** | MSI MAG B850M MORTAR WIFI · Ryzen 7 7700 · Arc B580 · 48 Gio · 2× Crucial T705 |
 | **Fedora 45 / GNOME 51** | Préparé et vérifié en CI ; profil `pending` jusqu'à l'ISO finale signée ([détails](docs/UPGRADE_FEDORA_45.md)) |
 | **Certification physique** | **PENDING** — Gate 3 bare-metal |
@@ -105,6 +105,8 @@ Les badges ci-dessus donnent l'état live des principaux workflows. La CI prouve
 ---
 
 ## Démarrage rapide
+
+**Avant une installation neuve :** commencer par le [contrôle USB Live Fedora 45 en cinq vérifications](docs/FEDORA45_LIVE_PREFLIGHT.md). Un résultat GO autorise uniquement la poursuite de la préparation, jamais une installation automatique. Le profil Fedora 45 reste `pending` tant que les conditions de promotion ne sont pas réunies.
 
 Le point d'entrée public est le **Workstation Control Center**.
 
@@ -182,7 +184,7 @@ Pour les responsabilités des composants, les conditions d'installation et les n
 | | **Référence en vigueur** | **Cible du projet** |
 |---|---|---|
 | OS et bureau | Fedora 44 / GNOME 50 | **Fedora 45 Workstation / GNOME 51** |
-| Statut du profil | chemin actuel d'installation et de laboratoire | `profiles/fedora45/profile.json` = `pending` |
+| Statut du profil | laboratoire historique, non autorisé pour une installation neuve de production | `profiles/fedora45/profile.json` = `pending` |
 | Ce que la CI montre | contrats, installation de paquets, labo GNOME et VM | préqualification Fedora 45, GNOME 51 natif et récupération en environnement isolé |
 | Ce qui reste | qualification physique Gate 3 | média final signé, promotion des verrous, six rôles d'extensions qualifiés et Gate 3 sur le PC |
 

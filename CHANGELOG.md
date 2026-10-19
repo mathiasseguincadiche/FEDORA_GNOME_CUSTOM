@@ -1,5 +1,12 @@
 # Changelog
 
+## En préparation — PR #122 (non publié)
+
+- Noyau : résolution du dernier Linux stable à partir de la version officielle kernel.org **avant** de sélectionner les RPM du COPR autorisé. Un paquet de numéro supérieur encore en développement ne masque plus un paquet exact déjà disponible ; si aucun RPM exact n'existe, le refus sécurisé reste obligatoire.
+- CI : le test bloquant des RPM du noyau utilise Fedora 45, cible prévue de l'installation, au lieu du laboratoire historique Fedora 44. La validation RPM reste réelle et bloquante ; elle ne certifie pas le matériel.
+- Fedora 45 : image de conteneur prise depuis le registre officiel Fedora à la place du miroir ECR soumis à des quotas de téléchargement.
+- Documentation : navigation, préflight USB Live, gouvernance et traçabilité code ↔ guides ↔ tests remis en cohérence. Aucun GO physique ni installation Fedora 45 n'est revendiqué.
+
 ## 0.22.3 — Durcissement de l'accès distant et vérification des preuves
 
 - Tailscale : signatures des métadonnées ET des RPM exigées (`repo_gpgcheck=1`, `gpgcheck=1`) ; présence d'une véritable clé SSH publique testée par `ssh-keygen`.

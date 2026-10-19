@@ -2,6 +2,8 @@
 
 Ce portail est la **carte officielle** de la documentation de `FEDORA_GNOME_CUSTOM`.
 
+**Traçabilité :** [correspondance entre code, scripts, tests et guides](CODE_DOCUMENTATION_TRACEABILITY.md). Ce registre permet de retrouver la source de vérité et les vérifications associées à chaque parcours.
+
 Le README racine présente le produit. Ici, l'objectif est différent : **trouver immédiatement le bon document selon ce que vous voulez comprendre, exécuter ou diagnostiquer**.
 
 La version active est celle de [`../VERSION`](../VERSION).
@@ -24,6 +26,8 @@ flowchart LR
 2. [**Comment ? — Architecture pédagogique**](ARCHITECTURE_PEDAGOGIQUE.md) : des schémas accompagnés de leur explication, du code jusqu'à la certification.
 3. [**Pour quelle Fedora ? — Fedora 45 / GNOME 51**](UPGRADE_FEDORA_45.md) : ce qui est déjà testé, ce qui reste `pending` et pourquoi.
 4. [**Comment agir en sécurité ? — Control Center**](CONTROL_CENTER.md), puis [installation](INSTALLATION_GUIDE.md) et [validation](THREE_GATE_VALIDATION.md).
+
+**Avant toute installation sur le PC :** [prévalidation USB Live Fedora 45 (cinq contrôles, 10 à 15 minutes)](FEDORA45_LIVE_PREFLIGHT.md). Le GO Live ne vaut ni promotion du profil, ni certification Gate 3.
 
 Pour une lecture progressive avec objectifs d'apprentissage : [LEARNING_PATH.md](LEARNING_PATH.md). Les termes inconnus sont expliqués dans [GLOSSARY.md](GLOSSARY.md).
 

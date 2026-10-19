@@ -39,6 +39,17 @@ kernel_channel_require_platform
 [[ "$(kernel_lifecycle_previous_installed)" == 7.2.8-200.vanilla.fc44.x86_64 ]]
 kernel_lifecycle_upstream_latest() { printf '7.2.9\n'; }
 [[ "$(kernel_lifecycle_resolve_latest_stable)" == 7.2.9-200.vanilla.fc44.x86_64 ]]
+# The repo can publish a numerically higher 7.3.0 (pre-release) before
+# kernel.org declares 7.3 stable. Select exact stable 7.2.9, not max-version.
+export FAKE_CANDIDATE=$'7.3.0-363.vanilla.fc44.x86_64\n7.2.9-201.vanilla.fc44.x86_64\n7.2.9-200.vanilla.fc44.x86_64'
+[[ "$(kernel_lifecycle_resolve_latest_stable)" == 7.2.9-201.vanilla.fc44.x86_64 ]]
+# If no exact stable RPM is available, defer and preserve fail-closed policy.
+export FAKE_CANDIDATE=7.3.0-363.vanilla.fc44.x86_64
+kernel_rc=0
+kernel_lifecycle_resolve_latest_stable >"$tmp/deferred.out" 2>"$tmp/deferred.err" || kernel_rc=$?
+[[ "$kernel_rc" == "$EXIT_KERNEL_DEFERRED" ]]
+[[ ! -s "$tmp/deferred.out" ]]
+grep -Fq 'exact stable RPM unavailable' "$tmp/deferred.err"
 KERNEL_MIN_VERSION=7.2.2
 export FAKE_CANDIDATE=7.2.8-200.vanilla.fc44.x86_64
 if kernel_lifecycle_resolve_latest_stable; then exit 1; fi

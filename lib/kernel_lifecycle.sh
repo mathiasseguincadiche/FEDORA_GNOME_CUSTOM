@@ -162,6 +162,27 @@ kernel_lifecycle_latest_available() {
     | sort -V | tail -n1
 }
 
+# Select the exact kernel.org stable version among allowed COPR packages. A
+# numerically higher RPM version can be a pre-release that Fedora packages
+# without an rc marker, so it must never hide an available stable build.
+kernel_lifecycle_available_for_upstream() {
+  local upstream="$1" core candidate
+  local -a repo_args=() matches=()
+  mapfile -t repo_args < <(kernel_lifecycle_repo_args)
+  (( ${#repo_args[@]} > 0 )) || return 1
+  core="$(kernel_channel_core_package)" || return 1
+  while IFS= read -r candidate; do
+    kernel_channel_release_matches "$candidate" || continue
+    kernel_lifecycle_version_matches_upstream "$candidate" "$upstream" || continue
+    matches+=("$candidate")
+  done < <(
+    kernel_lifecycle_query_dnf --refresh "${repo_args[@]}" repoquery --available \
+      --qf $'%{VERSION}-%{RELEASE}.%{ARCH}\n' "$core" 2>/dev/null
+  )
+  (( ${#matches[@]} > 0 )) || return 1
+  printf '%s\n' "${matches[@]}" | sort -V | tail -n1
+}
+
 kernel_lifecycle_latest_nevras() {
   local release="$1" pkg found vr
   local -a required=() optional=() repo_args=()
@@ -298,18 +319,19 @@ kernel_lifecycle_resolve_latest_stable() {
     ui_error 'Cannot verify the current kernel.org release feed; refusing a stale target.'
     return "$EXIT_KERNEL_DEFERRED"
   }
-  available="$(kernel_lifecycle_latest_available)" || return "$EXIT_POSTCHECK_FAILED"
-  [[ -n "$available" ]] || { ui_error 'No upstream RPM candidate available'; return "$EXIT_POSTCHECK_FAILED"; }
+  available="$(kernel_lifecycle_available_for_upstream "$upstream")" || {
+    local highest
+    highest="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
+    ui_error "kernel.org stable=$upstream; highest RPM candidate=${highest:-none}; exact stable RPM unavailable. Packaging is pending; no other kernel is called latest."
+    return "$EXIT_KERNEL_DEFERRED"
+  }
   if ! kernel_lifecycle_release_is_stable "$available" ||
      ! kernel_lifecycle_version_at_least "$available" ||
-     ! kernel_channel_release_matches "$available"; then
+     ! kernel_channel_release_matches "$available" ||
+     ! kernel_lifecycle_version_matches_upstream "$available" "$upstream"; then
       ui_error "Refusing unstable, custom or unsupported kernel: $available"
       return "$EXIT_SECURITY_BLOCK"
   fi
-  kernel_lifecycle_version_matches_upstream "$available" "$upstream" || {
-    ui_error "kernel.org stable=$upstream; RPM candidate=$available. Packaging is pending; no older kernel is called latest."
-    return "$EXIT_KERNEL_DEFERRED"
-  }
   printf '%s\n' "$available"
 }
 
