@@ -82,6 +82,9 @@ assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest
 assert "fedora45-ci-extension-audit.py" in guest
+# Strict pipefail must not turn a successful gsettings key lookup into SIGPIPE 141.
+assert 'gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fx -- custom-accel-config >/dev/null' in guest
+assert 'grep -Fxq custom-accel-config' not in guest
 # Official Fedora 45 base currently ships Dash to Dock 105 (GNOME 50).
 # The curated Fedora 45 GNOME 51 lab must use the exact reviewed Fedora RPM
 # rather than disabling compatibility or globally enabling testing repos.
