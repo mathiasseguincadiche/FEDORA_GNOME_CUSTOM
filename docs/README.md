@@ -25,6 +25,8 @@ flowchart LR
 3. [**Pour quelle Fedora ? — Fedora 45 / GNOME 51**](UPGRADE_FEDORA_45.md) : ce qui est déjà testé, ce qui reste `pending` et pourquoi.
 4. [**Comment agir en sécurité ? — Control Center**](CONTROL_CENTER.md), puis [installation](INSTALLATION_GUIDE.md) et [validation](THREE_GATE_VALIDATION.md).
 
+**Avant toute installation sur le PC :** [prévalidation USB Live Fedora 45 (cinq contrôles, 10 à 15 minutes)](FEDORA45_LIVE_PREFLIGHT.md). Le GO Live ne vaut ni promotion du profil, ni certification Gate 3.
+
 Pour une lecture progressive avec objectifs d'apprentissage : [LEARNING_PATH.md](LEARNING_PATH.md). Les termes inconnus sont expliqués dans [GLOSSARY.md](GLOSSARY.md).
 
 
