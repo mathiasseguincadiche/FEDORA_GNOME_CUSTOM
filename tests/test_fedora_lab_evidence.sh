@@ -82,6 +82,29 @@ assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest
 assert "fedora45-ci-extension-audit.py" in guest
+# Strict pipefail must not turn a successful gsettings key lookup into SIGPIPE 141.
+assert 'gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fx -- custom-accel-config >/dev/null' in guest
+assert 'grep -Fxq custom-accel-config' not in guest
+# Official Fedora 45 base currently ships Dash to Dock 105 (GNOME 50).
+# The curated Fedora 45 GNOME 51 lab must use the exact reviewed Fedora RPM
+# rather than disabling compatibility or globally enabling testing repos.
+curated_pin = "if [[ \"$LAB_RELEASE:$LAB_EXTENSION_MODE\" == 45:curated ]]; then"
+curated_step = guest.split("  install)", 1)[1].split("  session)", 1)[0]
+assert curated_pin.replace('\\"', '"') in curated_step
+assert curated_step.count("dnf -y --enablerepo=updates-testing install 'gnome-shell-extension-dash-to-dock-110-1.fc45'") == 1
+assert "'%{VERSION}-%{RELEASE}' gnome-shell-extension-dash-to-dock" in curated_step
+assert '== 110-1.fc45' in curated_step
+assert "'51' not in [str(v) for v in metadata.get('shell-version', [])]" in curated_step
+assert "dash-to-dock@micxgx.gmail.com/metadata.json" in curated_step
+# AppIndicator 64-2.fc45 reports OUT OF DATE on GNOME 51: require the exact
+# compatible Fedora 45 test RPM and inspected GNOME Shell metadata too.
+assert curated_step.count("dnf -y --enablerepo=updates-testing install 'gnome-shell-extension-appindicator-66-1.fc45'") == 1
+assert "'%{VERSION}-%{RELEASE}' gnome-shell-extension-appindicator" in curated_step
+assert '== 66-1.fc45' in curated_step
+assert "appindicatorsupport@rgcjonas.gmail.com/metadata.json" in curated_step
+assert "Fedora AppIndicator metadata does not certify GNOME 51" in curated_step
+assert "disable-extension-version-validation true" not in guest
+assert "dnf config-manager" not in curated_step
 # The restored GNOME 51 session occasionally returns a non-zero list query.
 # A bounded retry is allowed only as transport, never as certification.
 extension_audit = (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()

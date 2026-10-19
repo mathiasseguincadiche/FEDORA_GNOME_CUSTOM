@@ -30,4 +30,27 @@ nvme1n1 nvme CT1000T705SSD3'
 nvme1n1 nvme CT1000T700SSD3')" == model-mismatch ]]
 [[ "$(live_t705_status 'nvme0n1 nvme CT1000T705SSD3
 nvme1n1 nvme')" == model-unverified ]]
-echo 'Live Fedora 45 hardware parser contract: PASS'
+# Five checks must never silently certify missing human evidence.
+[[ "$(live_manual_status o)" == PASS ]]
+[[ "$(live_manual_status oui)" == PASS ]]
+[[ "$(live_manual_status N)" == FAIL ]]
+[[ "$(live_manual_status non)" == FAIL ]]
+[[ "$(live_manual_status '?')" == NOT_TESTED ]]
+[[ "$(live_manual_status '')" == NOT_TESTED ]]
+[[ "$(live_manual_status 'perhaps')" == NOT_TESTED ]]
+[[ "$(live_go_decision 0 0)" == GO ]]
+[[ "$(live_go_decision 1 0)" == NO-GO ]]
+[[ "$(live_go_decision 1 1)" == NO-GO ]]
+[[ "$(live_go_decision 0 1)" == A_VERIFIER ]]
+[[ "$(live_go_decision 0 2)" == A_VERIFIER ]]
+# The real Live-only entrypoint stays guarded, with no fake Live boot.
+live_script="$(cat "$ROOT/diagnostics/live-preflight.sh")"
+[[ "$live_script" == *'if (( EUID == 0 ))'* ]]
+[[ "$live_script" == *'REFUSED: no evidence of a Live environment'* ]]
+[[ "$live_script" == *'manual_check display'* ]]
+[[ "$live_script" == *'manual_check network'* ]]
+[[ "$live_script" == *"[[ \"\$verdict\" == GO ]]"* ]]
+[[ "$live_script" != *'sudo '* ]]
+[[ "$live_script" != *'mount '* ]]
+[[ "$live_script" != *'mkfs'* ]]
+echo 'Live Fedora 45 hardware and five-check GO/NO-GO contract: PASS'

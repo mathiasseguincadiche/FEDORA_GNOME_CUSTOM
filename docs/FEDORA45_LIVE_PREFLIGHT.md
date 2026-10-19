@@ -1,80 +1,51 @@
-# Fedora 45 Live USB — préqualification matérielle non destructive
+# Fedora 45 — contrôle rapide sur clé USB Live (10 à 15 minutes)
 
-Cette étape se place **après les validations CI et avant toute installation sur NVMe**. Elle ne remplace ni la baseline physique complète ni la Gate 3 après installation. Le profil Fedora 45 reste `pending`.
+**But unique :** décider si Fedora 45 Workstation / GNOME 51 démarre et fonctionne suffisamment bien sur le PC réel pour **préparer son installation neuve**. Ce n'est ni une certification matérielle, ni un test de performance, ni une autorisation automatique de modifier un SSD.
 
-## Pourquoi ce préflight existe avant l'installation Fedora 45
+La CI du dépôt vérifie les scripts ; **elle ne remplace pas les observations physiques**. La configuration personnalisée et la Gate 3 seront vérifiées sur le système installé. Le profil Fedora 45 est actuellement **pending** : aucun GO Live ne contourne cette protection, la vérification de l'ISO finale, le choix explicite du disque ni la sauvegarde préalable.
 
-Une session **Live USB** est un moyen de vérifier les fondamentaux avant d'écrire sur les NVMe. C'est particulièrement utile avec la B580, l'écran QD-OLED, le Wi-Fi 7 et les deux SSD PCIe 5.0 : la compatibilité doit être constatée, pas déduite de la présence d'un paquet.
+## Les cinq contrôles — et pas davantage
 
-```mermaid
-flowchart LR
-  A["ISO Fedora 45 vérifiée"] --> B["Session Try Fedora"]
-  B --> C["Script live-preflight : lecture seule"]
-  C --> D["Rapport PASS / FAIL / NOT_TESTED"]
-  D --> E["Décision humaine"]
-  E --> F["Plus tard : installation protégée et Gate 3"]
-```
+| # | Contrôle | Comment vérifier | Critère |
+|---|---|---|---|
+| 1 | **Démarrage Fedora 45 / GNOME 51 / Wayland** | Ouvrir « Try Fedora », vérifier que le bureau est utilisable ; identification par script | Session correcte, aucun gel ou écran noir |
+| 2 | **Intel Arc B580** | Script : PCI 8086:e20b réellement lié au pilote xe | B580 et pilote actif reconnus |
+| 3 | **2 SSD Crucial T705** | Script : inventaire non destructif avec lsblk | Les deux modèles reconnus, sans écrire |
+| 4 | **Affichage** | Paramètres GNOME → Écrans : vérifier 2560 × 1440, sélectionner 240 Hz ; regarder une fenêtre blanche et déplacer une fenêtre | Image normale, pas d'artefacts ni d'instabilité visible |
+| 5 | **Internet** | La commande git clone a réussi, ou une page HTTPS s'ouvre réellement | Accès Internet utilisable (Wi-Fi **ou** Ethernet) |
 
-**Attention :** le script Live **ne formate rien, ne monte pas les disques en écriture et ne promeut pas le profil 45**. Son éventuel code retour zéro ne constitue jamais une autorisation automatique d'APPLY. Après la session Live, il reste à suivre [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md) et [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md).
+**Les contrôles 1 à 3 sont automatiques.** Pour 4 et 5, le script demande une réponse **o** (oui), **n** (non) ou **?** (non vérifié). On ne prétend pas mesurer ce qui demande une observation humaine. Si le 240 Hz manque ou si les blancs semblent gris, répondre **n** et examiner le cas au lieu de déclarer le contrôle réussi.
 
+## Exécution dans « Try Fedora »
 
-## Procédure
+1. Démarrer sur une **clé Live officielle Fedora Workstation 45 finale**, téléchargée et authentifiée, sans installer ni modifier les partitions. Si la version finale n'est pas publiée/authentifiée, ne pas traiter une Beta comme le média final.
+2. Ouvrir **Paramètres → Écrans** et vérifier résolution, fréquence et image. Connecter Internet, puis ouvrir un terminal.
+3. En utilisateur ordinaire (**jamais sudo**) :
 
-1. Télécharger le média Fedora Workstation 45 officiel et vérifier sa signature / somme de contrôle selon les instructions Fedora. Créer la clé USB bootable.
-2. Démarrer sur **Try Fedora** (session Live), sans lancer l'installateur ni monter les partitions internes en écriture.
-3. Se connecter à Internet, puis récupérer le dépôt à un **SHA explicitement choisi et vérifié**. Ne jamais exécuter de script distant avec `curl | bash`.
-4. Dans le terminal Live, en utilisateur normal (sans `sudo`) :
-
-```bash
+~~~bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
 git rev-parse HEAD
+set -o pipefail
 bash diagnostics/live-preflight.sh | tee "$HOME/fedora45-live-preflight.tsv"
-```
+~~~
 
-Le code de sortie de la commande de diagnostic peut être conservé avec `set -o pipefail` avant le pipeline. Le rapport enregistré dans le HOME Live est **temporaire** : le copier manuellement sur un support externe autorisé, après revue et suppression des identifiants sensibles. Ne pas pousser automatiquement des informations matérielles vers GitHub.
+La commande imprime exactement **cinq lignes de contrôles**, puis un résumé et une décision. Les deux questions interactives sont affichées dans le terminal même si le rapport est envoyé à tee.
 
-## Contrôles matériels renforcés
+### Lire la décision
 
-Le script distingue désormais les **identités réellement vérifiées** des propriétés nécessitant la Gate 3 :
+- **GO (5 PASS)** : compatibilité Live de base vérifiée. Passer ensuite à la **préparation sécurisée** de l'installation (média final, profil Fedora 45 promu, sauvegarde, identification du SSD système). Ce n'est pas un APPLY automatique.
+- **NO-GO (au moins un FAIL)** : ne pas installer avant d'avoir compris et corrigé le défaut constaté.
+- **A_VERIFIER (aucun FAIL mais un contrôle non testé)** : ce n'est pas un GO. Confirmer le point manquant ; si aucune console interactive n'est disponible, les confirmations humaines resteront NOT_TESTED.
 
-| Ligne du rapport | `PASS` signifie | Cela ne certifie pas |
-|---|---|---|
-| `os` / `gnome` | Fedora 45 et GNOME Shell 51 identifiés | intégration finale de toutes les extensions |
-| `motherboard` / `cpu` | MSI MAG B850M MORTAR WIFI et Ryzen 7 7700 observés | stabilité RAM, BIOS, performance |
-| `gpu` | identifiant PCI **8086:e20b** et pilote **actif** `xe` sur le même périphérique | Vulkan, OpenCL, accélération AV1 ou couleurs |
-| `nvme` | **deux** périphériques NVMe de modèle Crucial T705 recensés | numéros de série, températures, performance, système de fichiers |
-| `display` | toujours `NOT_TESTED` | blanc, HDR/SDR, RGB complet/limité, 240 Hz, EDID |
-| `suspend`, `installed` | restent `NOT_TESTED` | veille/réveil, sauvegarde, installation et certification matérielle |
+Le script renvoie le code **0 seulement pour GO** ; un FAIL ou un contrôle non vérifié donne un code non nul. Le rapport se trouve uniquement dans le HOME temporaire de la session Live. Ne pas le publier automatiquement : vérifier les informations matérielles avant tout partage.
 
-Si `lspci` ou `lsblk` n'est pas disponible dans l'ISO Live, le rapport affiche un contrôle non testé plutôt que de prétendre avoir mesuré le matériel.
+### Ce qui est volontairement hors périmètre
 
-**Le script n'est pas un utilitaire de configuration.** Il refuse `root`, les arguments non autorisés, un autre OS et l'absence d'indices Live. Aucun « mode test » ne permet de contourner ces refus. Les parseurs sont testés à part avec des fixtures sans simuler un faux démarrage Live.
+**Ne pas faire sur le Live USB :** benchmarks et stress tests CPU/RAM/GPU/SSD, montage des SSD en écriture, vérification KVM/Docker/VM, tests prolongés de veille/réveil, installation des six extensions, mesure HDR/ICC/AV1 ou certification complète de l'audio et des périphériques.
 
-### Diagnostic complémentaire des blancs et de la chaîne d'affichage
+Les vérifications détaillées des services personnalisés, extensions, sauvegardes, noyau, KVM, pilotes de calcul, périphériques et persistance appartiennent **au système installé**, selon les contrôles de production du dépôt. La prévalidation courte ne les supprime pas et ne change pas les garde-fous de ./install.sh --apply.
 
-Dans le dépôt vérifié, toujours **sans `sudo`** :
+**Attention aux SSD :** voir deux T705 en Live n'identifie **pas** le SSD à effacer. Avant toute installation, utiliser les identifiants persistants /dev/disk/by-id et vérifier les numéros de série, les sauvegardes et la cible prévue dans [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md).
 
-```bash
-./diagnostics/display-color-audit
-./diagnostics/display-color-audit --format json
-```
-
-Ce diagnostic ne lit que l'état des connecteurs DRM, sans numéro de série ni EDID brut, et ne modifie rien. Les modes listés sont les modes **pris en charge**, pas ceux actuellement activés. Les niveaux RGB, le HDR, les profils ICC et la fidélité du blanc restent explicitement `NOT_TESTED` : leur mesure exige la comparaison visuelle [décrite ici](DISPLAY_COLOR_DIAGNOSTIC.md).
-
-Les rapports stockés dans le HOME Live sont éphémères et ne doivent être publiés qu'après revue des informations qu'ils contiennent.
-
-
-## Contrat de sécurité
-
-- Le script refuse `root`, les systèmes non-Fedora et les environnements qui ne présentent aucun indice de session Live.
-- Il n'exécute aucune installation, modification de partition, montage, écriture EFI, changement de firmware, de service ou de configuration du système.
-- `PASS` signifie uniquement que le contrôle indiqué a été observé ; `FAIL` signale un écart ; `NOT_TESTED` interdit de considérer l'élément comme certifié.
-- Le script ne lance pas les doctors de convergence de l'installation existante : certains exigent des verrous d'identité, des chemins persistants ou des actions qui n'ont pas de sens en Live.
-- Un code retour 0 signifie **absence d'échec détecté dans les contrôles exécutés**, et non autorisation automatique d'installer.
-
-## Vérifications manuelles complémentaires
-
-Contrôler GNOME/Wayland, résolution et fréquence 2560×1440/240 Hz, blancs et artefacts de la B580, audio lecture/capture, Wi-Fi 7/6 GHz, Ethernet 5 GbE, USB, températures, ainsi que veille/réveil (la clé Live peut modifier le comportement). Documenter les écarts et leurs preuves.
-
-**Décision :** n'autoriser l'installation qu'après examen humain des FAIL et NOT_TESTED critiques. Après installation, exécuter les contrôles de baseline, de sauvegarde, de persistance et la certification Gate 3 sur le vrai PC. Aucune promotion automatique de Fedora 45 n'est permise.
+Le script refuse les machines non Fedora, une session non Live, l'exécution en root et les arguments non reconnus. Il ne lance ni installation, ni formatage, ni montage de partitions, ni modification du firmware ou de l'EFI.

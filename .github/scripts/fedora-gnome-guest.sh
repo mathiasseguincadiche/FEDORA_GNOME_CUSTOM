@@ -216,9 +216,55 @@ case "${1:-}" in
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
       tpm2-tools firewalld python3 curl gjs gnome-shell-extension-dash-to-dock \
       gnome-shell-extension-appindicator gnome-text-editor libreoffice poppler-utils gnome-software dconf
+    if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
+      # Fedora 45's base RPM 105 lacks GNOME 51 support. The reviewed,
+      # Fedora-signed 110-1.fc45 package was published in updates-testing.
+      # Opt in to these two exact RPMs in the disposable curated VM only:
+      # neither the native preview nor the installed host enables testing.
+      # No global repository configuration and no allow-unsupported-extensions.
+      echo 'GNOME 51 curated CI: selecting Fedora 45 Dash to Dock 110-1.fc45 via one-shot updates-testing'
+      dnf -y --enablerepo=updates-testing install 'gnome-shell-extension-dash-to-dock-110-1.fc45'
+      [[ "$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell-extension-dash-to-dock)" == 110-1.fc45 ]] || {
+        echo 'GNOME 51 curated CI: wrong Dash to Dock RPM; refusing ACTIVE certification' >&2
+        exit 1
+      }
+      python3 - <<'PY'
+import json
+from pathlib import Path
+metadata = json.loads(Path(
+    '/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json'
+).read_text())
+if metadata.get('uuid') != 'dash-to-dock@micxgx.gmail.com' or \
+        '51' not in [str(v) for v in metadata.get('shell-version', [])]:
+    raise SystemExit('Fedora Dash to Dock metadata does not certify GNOME 51')
+print('PASS: Fedora-signed RPM 110-1.fc45 explicitly declares GNOME 51')
+PY
+      # Fedora 45 base AppIndicator 64-2.fc45 declares GNOME 50 at most.
+      # Fedora 45 updates-testing provides 66-1.fc45 for GNOME 51.
+      # Select only this signed Fedora RPM in the same disposable curated VM.
+      echo 'GNOME 51 curated CI: selecting Fedora 45 AppIndicator 66-1.fc45 via one-shot updates-testing'
+      dnf -y --enablerepo=updates-testing install 'gnome-shell-extension-appindicator-66-1.fc45'
+      [[ "$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell-extension-appindicator)" == 66-1.fc45 ]] || {
+        echo 'GNOME 51 curated CI: wrong AppIndicator RPM; refusing ACTIVE certification' >&2
+        exit 1
+      }
+      python3 - <<'PY'
+import json
+from pathlib import Path
+metadata = json.loads(Path(
+    '/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json'
+).read_text())
+if metadata.get('uuid') != 'appindicatorsupport@rgcjonas.gmail.com' or \
+        '51' not in [str(v) for v in metadata.get('shell-version', [])]:
+    raise SystemExit('Fedora AppIndicator metadata does not certify GNOME 51')
+print('PASS: Fedora-signed AppIndicator 66-1.fc45 declares GNOME 51')
+PY
+    fi
     if [[ "$LAB_RELEASE" == 45 ]]; then
       rpm -q gsettings-desktop-schemas gnome-shell mutter
-      gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fxq custom-accel-config
+      # Read the complete gsettings output under pipefail. grep -q exits early,
+      # making gsettings receive SIGPIPE (exit=141) despite a matching key.
+      gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fx -- custom-accel-config >/dev/null
     fi
     # Exercise the production lifecycle writer in this disposable Fedora only.
     (
