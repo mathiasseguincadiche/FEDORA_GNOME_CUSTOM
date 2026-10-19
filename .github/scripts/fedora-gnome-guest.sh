@@ -242,7 +242,9 @@ PY
     fi
     if [[ "$LAB_RELEASE" == 45 ]]; then
       rpm -q gsettings-desktop-schemas gnome-shell mutter
-      gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fxq custom-accel-config
+      # Read the complete gsettings output under pipefail. grep -q exits early,
+      # making gsettings receive SIGPIPE (exit=141) despite a matching key.
+      gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fx -- custom-accel-config >/dev/null
     fi
     # Exercise the production lifecycle writer in this disposable Fedora only.
     (
