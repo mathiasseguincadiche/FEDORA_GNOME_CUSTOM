@@ -24,6 +24,8 @@ flowchart TD
   F["rocky-devops-vm"] --> R
 ```
 
+Le job bloquant `upstream-kernel / rpm` valide une transaction de paquets noyau **réelle sur Fedora 45**, cible du poste de travail. Il ne considère comme recevable que la version exacte annoncée stable par kernel.org et présente dans les dépôts COPR autorisés. Une publication COPR anticipée de la série suivante ne prouve pas sa stabilité ; sans RPM exact, le job échoue volontairement, et `contracts` reste rouge. Les essais Fedora 44 restent historiques et distincts.
+
 **Pourquoi `contracts` peut être rouge alors que lui-même n'a aucun bug ?** Il attend strictement le succès de ses sept dépendances. Si un laboratoire GNOME est en échec, le contrôle final est rouge **par conception**.
 
 ### Après une fusion, regarder le `push` sur `main`
