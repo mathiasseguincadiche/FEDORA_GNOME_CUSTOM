@@ -4,6 +4,8 @@
 
 ## Ruleset attendu sur `main`
 
+**Attention :** les six noms ci-dessous sont les contextes attendus par la politique documentée, et non le nombre total de workflows d'une PR. Une vérification du ruleset GitHub effectif est nécessaire avant de les présenter comme des réglages actuellement actifs. Les workflows supplémentaires doivent également être terminés en succès avant toute fusion manuelle.
+
 Configurer dans GitHub un ruleset ciblant `refs/heads/main` avec :
 
 - pull request obligatoire avant fusion ;
