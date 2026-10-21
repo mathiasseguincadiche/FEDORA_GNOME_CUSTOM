@@ -39,6 +39,7 @@ repo="$(backup_runtime_resolve_repository)" || { echo 'Cannot resolve backup rep
 backup_engine_env "$repo"
 backup_engine_repo_ready || { echo 'Borg repository is not initialized/reachable, or is encrypted (policy: unencrypted).' >&2; exit 20; }
 
+backup_identity="$(backup_runtime_identity_payload)"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$staging_root"
 staging_root="$(readlink -f -- "$staging_root")"
@@ -112,14 +113,14 @@ restore_test="$(mktemp -d "$staging/restore-proof.XXXXXX")"
 backup_engine_extract "$archive" "$restore_test" "$staging/restore-canary.txt" || exit 40
 cmp -s "$staging/restore-canary.txt" "$restore_test/${staging#/}/restore-canary.txt" || { echo 'Full backup restore canary mismatch.' >&2; exit 40; }
 backup_runtime_verify_local_config_restore "$archive" "$staging/inventory" "$restore_test" || { echo 'Local configuration restore proof failed.' >&2; exit 40; }
+[[ "$backup_identity" == "$(backup_runtime_identity_payload)" ]] || { echo 'Identity changed during full backup; no current certificate written.' >&2; exit 40; }
 marker="$STATE_ROOT/last-full-backup.ok"
 {
   printf 'verdict=PASS\nengine=borg\nencryption=none\nintegrity_check=PASS\nrestore_test=PASS\n'
-  printf 'snapshot=%s\narchive=%s\nrepository=%s\ncommit=%s\nutc=%s\ninclude_vms=%s\nvm_count=%s\n' \
-    "$snap" "$archive" "$repo" "$(repo_commit)" "$(date -u +%FT%TZ)" "$include_vms" "$vm_count"
+  printf 'snapshot=%s\narchive=%s\nrepository=%s\nutc=%s\ninclude_vms=%s\nvm_count=%s\n' \
+    "$snap" "$archive" "$repo" "$(date -u +%FT%TZ)" "$include_vms" "$vm_count"
   printf 'vm_names_sha256=%s\n' "$vm_names_sha256"
-  printf 'effective_config_sha256=%s\nmodule_plan_sha256=%s\nhardware_fingerprint=%s\n' \
-    "$(effective_config_sha256)" "$(module_plan_sha256)" "$(evidence_hardware_fingerprint)"
+  printf '%s\n' "$backup_identity"
 } | evidence_atomic_write "$marker" 0600
 if ! backup_runtime_validate_full_marker "$marker"; then
   rm -f "$marker"

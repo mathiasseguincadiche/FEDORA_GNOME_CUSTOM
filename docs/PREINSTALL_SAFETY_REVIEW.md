@@ -40,7 +40,7 @@ Le module prépare les dossiers sans supprimer leur contenu, avec droits `0750` 
 4. Exécuter le dry-run final puis la sauvegarde pré-APPLY avec preuve de restauration.
 5. Exécuter APPLY sur ce même état, redémarrer puis réaliser la qualification matérielle Gate 3.
 
-Toute modification de configuration ou de commit impose de refaire les preuves concernées. Une identité de stockage restaurée sert à comparer les disques ; elle ne remplace pas le contrôle du montage actuel.
+Toute modification de configuration ou de commit impose de refaire les preuves concernées. Une modification pendant la sauvegarde refuse également la création d’une nouvelle preuve actuelle. Une identité de stockage restaurée sert à comparer les disques ; elle ne remplace pas le contrôle du montage actuel.
 
 ## Promotion Fedora 45 encore conditionnelle
 
@@ -51,3 +51,5 @@ Le laboratoire peut sélectionner explicitement les deux RPM Fedora signés depu
 Le [ZIP Gtk4-DING v145](https://extensions.gnome.org/review/download/75162.shell-extension.zip) reste inchangé et authentifié par son SHA-256. Le correctif local produit un `dingManager.js` de SHA-256 `09a128df98fec26550e9dd259b6dd712cd7bb3e0da059f1e82ee5befc623447f`, vérifié à l’installation et pendant l’audit runtime. Une évolution amont nécessite une nouvelle revue de ce contrat.
 
 La finalisation DNF5 utilise la description de commande de l’historique : le [service offline DNF5](https://github.com/rpm-software-management/dnf5/blob/main/dnf5/commands/offline/offline.cpp) préserve cette description, sans recopier le champ `comment` séparé. Un ancien journal lisible ne vaut donc pas preuve d’exécution de la nouvelle transaction.
+
+Les laboratoires téléchargent les certificats depuis les deux encodages officiels décrits dans la [procédure Fedora](https://fedoraproject.org/security/). Un 404 sur `.pgp` peut utiliser `.gpg` ; l’export de la seule empreinte approuvée et la vérification du CHECKSUM signé restent obligatoires. Le workflow de readiness utilise le registre officiel Fedora pour éviter le quota du miroir ECR.

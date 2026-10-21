@@ -52,6 +52,9 @@ cat > "$tmp/bin/sudo" <<'MOCK'
 [[ "${1:-}" != -n ]] || shift
 if [[ "$1" == du && "$*" == *'/etc /boot'* ]]; then echo '4096 total'; exit; fi
 if [[ "$1" == tar ]]; then
+  if [[ "${TEST_MUTATE_LOCAL_CONFIG:-false}" == true ]]; then
+    printf '# edited during backup\n' >> "$REPO_ROOT/config/local.conf"
+  fi
   while (($#)); do
     if [[ "$1" == -czf ]]; then printf 'fixture system configuration\n' > "$2"; exit; fi
     shift
@@ -160,4 +163,14 @@ if bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms > "$tmp/unsuppor
   echo 'Deprecated VM automatic backup flag unexpectedly succeeded' >&2; exit 1
 fi
 grep -Fq 'owner-managed' "$tmp/unsupported-flag.log"
+# Editing the Git-ignored overlay while an archive is being captured must
+# refuse a new certificate, even when the restored archive is byte-correct.
+cp "$marker" "$tmp/marker-before-edit"
+cp "$REPO_ROOT/config/local.conf" "$tmp/local-before-edit"
+rc=0
+TEST_MUTATE_LOCAL_CONFIG=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --staging-root "$tmp/edited-staging" > "$tmp/edited.log" 2>&1 || rc=$?
+[[ "$rc" == 40 ]]
+grep -Fq 'Local configuration restore proof failed' "$tmp/edited.log"
+cmp "$marker" "$tmp/marker-before-edit"
+cp "$tmp/local-before-edit" "$REPO_ROOT/config/local.conf"
 echo 'Backup certification behavior: PASS'

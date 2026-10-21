@@ -43,6 +43,7 @@ if ! borg info >/dev/null 2>&1; then
 fi
 backup_engine_repo_ready || fail 'repository unreachable, or encrypted: the Golden policy requires an unencrypted Borg repository'
 
+backup_identity="$(backup_runtime_identity_payload)"
 staging="$STATE_ROOT/preapply-staging/$RUN_ID"
 rm -rf "$staging"
 mkdir -p "$staging/inventory"
@@ -84,16 +85,14 @@ cmp -s "$staging/restore-canary.txt" "$restored_canary" || fail 'restore canary 
 
 backup_runtime_verify_local_config_restore "$archive" "$staging/inventory" "$restore_test" || fail 'local configuration restore proof failed'
 
+[[ "$backup_identity" == "$(backup_runtime_identity_payload)" ]] || fail 'commit/configuration/module-plan/hardware changed during backup'
 marker="$STATE_ROOT/preapply-backup.ok"
 {
   printf 'verdict=PASS\n'
   printf 'snapshot=%s\n' "$snap"
   printf 'archive=%s\n' "$archive"
   printf 'engine=borg\nencryption=none\n'
-  printf 'commit=%s\n' "$(repo_commit)"
-  printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
-  printf 'module_plan_sha256=%s\n' "$(module_plan_sha256)"
-  printf 'hardware_fingerprint=%s\n' "$(evidence_hardware_fingerprint)"
+  printf '%s\n' "$backup_identity"
   printf 'utc=%s\n' "$(date -u +%FT%TZ)"
   printf 'repository=%s\n' "$repo"
   printf 'restore_test=PASS\n'

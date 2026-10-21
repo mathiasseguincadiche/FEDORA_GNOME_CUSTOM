@@ -305,6 +305,11 @@ backup_engine_pending_count() {
 
 backup_engine_compact() { borg compact; }
 
+backup_runtime_identity_payload() {
+  printf 'commit=%s\neffective_config_sha256=%s\nmodule_plan_sha256=%s\nhardware_fingerprint=%s\n' \
+    "$(repo_commit)" "$(effective_config_sha256)" "$(module_plan_sha256)" "$(evidence_hardware_fingerprint)"
+}
+
 backup_runtime_capture_inventory() {
   local out="$1"; mkdir -p "$out"
   # Machine overrides are Git-ignored and may live outside every user-data root.
@@ -338,6 +343,7 @@ backup_runtime_verify_local_config_restore() {
   backup_engine_extract "$archive" "$restore_root" "$inventory/local.conf" "$inventory/local.conf.sha256" || return 1
   recovered="$restore_root/${inventory#/}"
   cmp -s "$inventory/local.conf" "$recovered/local.conf" || return 1
+  cmp -s "$REPO_ROOT/config/local.conf" "$recovered/local.conf" || return 1
   (cd "$recovered" && sha256sum --check --status local.conf.sha256)
 }
 
