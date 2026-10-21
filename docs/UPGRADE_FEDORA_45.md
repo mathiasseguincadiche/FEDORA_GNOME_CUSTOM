@@ -7,6 +7,20 @@
 
 La cible future est Fedora 45 Workstation avec GNOME 51. Le profil Fedora 44 / GNOME 50 déjà testé reste actif pendant la préparation. Une Beta ou un numéro de version changé dans un ancien verrou ne constitue pas un profil de production.
 
+## Point de contrôle release — 21 octobre 2026
+
+**BLOCKED : ne pas promouvoir Fedora 45 en production.** La publication finale prévue le 20 octobre a reçu un verdict NO-GO ; le prochain objectif annoncé est le **27 octobre 2026**, sous réserve d'un nouveau GO officiel. La page Fedora Beta n'est pas une preuve de publication finale. Vérifier à nouveau l'annonce de release, la disponibilité de l'ISO Workstation **finale**, le CHECKSUM signé et la chaîne cryptographique avant de créer `installer/fedora45-media.lock`.
+
+Références à consulter le jour de la promotion :
+- [Annonces Fedora (Planet)](https://planet.apps.ocp.fedoraproject.org/)
+- [Téléchargement Fedora Workstation](https://fedoraproject.org/workstation/download/)
+- [Fedora Packages — Dash to Dock](https://packages.fedoraproject.org/pkgs/gnome-shell-extension-dash-to-dock/gnome-shell-extension-dash-to-dock/)
+- [Fedora Packages — AppIndicator](https://packages.fedoraproject.org/pkgs/gnome-shell-extension-appindicator/gnome-shell-extension-appindicator/)
+
+**Compatibilité des extensions :** au contrôle du 21 octobre, Fedora 45 stable présente Dash to Dock 105 et AppIndicator 64, tandis que les versions 110 et 66 figurent en updates-testing. Les versions 105/64 ne doivent pas être considérées compatibles GNOME 51 simplement parce que le paquet RPM s'installe. Vérifier les métadonnées `shell-version`, les versions effectivement fournies par les dépôts stables et l'activation réelle en session GNOME 51 ; ne pas activer updates-testing globalement pour contourner le contrôle. Les versions compatibles publiées sur extensions.gnome.org constituent des candidates à épingler, **pas** une preuve de stabilité fonctionnelle. En particulier, des signalements de régression existent pour Dash to Dock 110 : tester son autohide et les applications plein écran avant adoption.
+
+**Décision :** conserver `profiles/fedora45/profile.json` en `pending`, conserver les hashes existants, ne pas créer de verrou ISO fictif et ne pas lancer `install apply`. La PR documentaire peut être examinée indépendamment ; une future PR de promotion devra embarquer les verrous authentifiés et les résultats de tests sur son propre SHA.
+
 ## Fedora 45 : la destination, expliquée en cinq jalons
 
 La cible est **Fedora 45 Workstation + GNOME 51**, personnalisée pour le Ryzen 7 7700, l'Intel Arc B580, les deux Crucial T705 et le bureau GNOME/Wayland. La réussite signifie **un poste fiable, performant, sauvegardable et certifié**, pas seulement un installateur qui affiche Fedora 45.

@@ -1,6 +1,6 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-Le portail documentaire est [`README.md`](README.md). Ce guide décrit le chemin **bare-metal de production** ; les validations WSL2/VirtualBox ne déverrouillent jamais l'APPLY réel.
+Le portail documentaire est [`README.md`](../README.md). Ce guide décrit le chemin **bare-metal de production** ; les validations WSL2/VirtualBox ne déverrouillent jamais l'APPLY réel.
 
 ## Cible Fedora 45 et statut pending
 
