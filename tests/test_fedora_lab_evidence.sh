@@ -4,6 +4,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 python3 - "$ROOT" <<'PY'
 import copy
 import importlib.util
+import json
+import subprocess
 import pathlib
 import sys
 root = pathlib.Path(sys.argv[1])
@@ -85,24 +87,21 @@ assert "fedora45-ci-extension-audit.py" in guest
 # Strict pipefail must not turn a successful gsettings key lookup into SIGPIPE 141.
 assert 'gsettings list-keys org.gnome.desktop.peripherals.mouse | grep -Fx -- custom-accel-config >/dev/null' in guest
 assert 'grep -Fxq custom-accel-config' not in guest
-# Official Fedora 45 base currently ships Dash to Dock 105 (GNOME 50).
-# The curated Fedora 45 GNOME 51 lab must use the exact reviewed Fedora RPM
-# rather than disabling compatibility or globally enabling testing repos.
-curated_pin = "if [[ \"$LAB_RELEASE:$LAB_EXTENSION_MODE\" == 45:curated ]]; then"
+# The curated lab and production use the same reviewed version lock and
+# verifier. Repository testing is explicit and confined to the QEMU branch;
+# promotion separately requires these exact RPMs in stable repositories.
 curated_step = guest.split("  install)", 1)[1].split("  session)", 1)[0]
-assert curated_pin.replace('\\"', '"') in curated_step
-assert curated_step.count("dnf -y --enablerepo=updates-testing install 'gnome-shell-extension-dash-to-dock-110-1.fc45'") == 1
-assert "'%{VERSION}-%{RELEASE}' gnome-shell-extension-dash-to-dock" in curated_step
-assert '== 110-1.fc45' in curated_step
-assert "'51' not in [str(v) for v in metadata.get('shell-version', [])]" in curated_step
-assert "dash-to-dock@micxgx.gmail.com/metadata.json" in curated_step
-# AppIndicator 64-2.fc45 reports OUT OF DATE on GNOME 51: require the exact
-# compatible Fedora 45 test RPM and inspected GNOME Shell metadata too.
-assert curated_step.count("dnf -y --enablerepo=updates-testing install 'gnome-shell-extension-appindicator-66-1.fc45'") == 1
-assert "'%{VERSION}-%{RELEASE}' gnome-shell-extension-appindicator" in curated_step
-assert '== 66-1.fc45' in curated_step
-assert "appindicatorsupport@rgcjonas.gmail.com/metadata.json" in curated_step
-assert "Fedora AppIndicator metadata does not certify GNOME 51" in curated_step
+assert curated_step.count('bash "$REPO/scripts/gnome/install-fedora45-rpm-extensions.sh" --lab-testing') == 1
+rpm_installer=(root / "scripts/gnome/install-fedora45-rpm-extensions.sh").read_text()
+assert "--disablerepo='*' --enablerepo=fedora --enablerepo=updates" in rpm_installer
+assert '--lab-testing)' in rpm_installer and '/opt/fgc-lab/repo' in rpm_installer
+assert 'python3 "$helper" --verify' in rpm_installer
+expected={'gnome-shell-extension-dash-to-dock':'110-1.fc45',
+          'gnome-shell-extension-appindicator':'66-1.fc45'}
+lock=json.loads((root / "profiles/fedora45/gnome-rpms.json").read_text())['packages']
+assert {name:row['version_release'] for name,row in lock.items()} == expected
+specs=subprocess.check_output([sys.executable,str(root/'scripts/gnome/fedora45-rpm-extensions.py'),'--specs'],text=True).splitlines()
+assert set(specs) == {name+'-'+version for name,version in expected.items()}
 assert "disable-extension-version-validation true" not in guest
 assert "dnf config-manager" not in curated_step
 # The restored GNOME 51 session occasionally returns a non-zero list query.
@@ -125,14 +124,16 @@ assert "if (( attempt < 60 )); then sleep 2; fi" in guest
 assert 'echo "GNOME extension $uuid not confirmed enabled and ACTIVE' in guest
 # The GTK4-DING subprocess race must be fixed inside the signed-archive
 # descendant, not by disabling any extension during logout or silencing cores.
-ding_fix = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
+ding_fix = (root / "scripts/gnome/ding-shutdown-fix.py").read_text()
+ding_wrapper = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
 assert 'def patched_source(original: bytes)' in ding_fix
 assert '"    disable() {\\n        this.isEnabled = false;' in ding_fix
 assert 'if (!this.isEnabled || !client || this.waylandClient !== client)' in ding_fix
 assert 'if (!this.isEnabled)\\n            return;' in ding_fix
-assert 'hashlib.sha256(archive.read_bytes()).hexdigest() != profile["DING_SHA256"]' in ding_fix
-assert 'if current != expected:' in ding_fix
-assert 'fedora45-ci-ding-shutdown-fix.py" apply' in candidate_installer
+assert 'hashlib.sha256(archive.read_bytes()).hexdigest() != profile["DING_SHA256"]' in ding_wrapper
+assert 'if current != expected:' in ding_wrapper
+assert 'scripts/gnome/ding-shutdown-fix.py" apply' in candidate_installer
+assert 'scripts/gnome/ding-shutdown-fix.py" apply' in (root/'scripts/gnome/install-pinned-extension.sh').read_text()
 assert 'fedora45-ci-ding-shutdown-fix.py"), "verify"' in (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
 assert 'source "$REPO/profiles/fedora45/gnome-extensions.lock"' in guest
 assert 'source "$ROOT/profiles/fedora45/gnome-extensions.lock"' in host
