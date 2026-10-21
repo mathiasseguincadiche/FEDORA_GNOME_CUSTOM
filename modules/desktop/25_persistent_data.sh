@@ -14,6 +14,10 @@ desktop_persistent_data_precheck() {
     log_error DESKTOP '/data must be the dedicated EXT4 second T705 and distinct from root'
     return "$EXIT_PRECHECK_FAILED"
   }
+  local path
+  while IFS= read -r path; do
+    [[ ! -L "$path" && "$(readlink -m -- "$path")" == "$path" ]] || return "$EXIT_PRECHECK_FAILED"
+  done < <(persistent_data_layout_paths)
   persistent_data_owner_user >/dev/null || return "$EXIT_PRECHECK_FAILED"
   command_exists semanage || return "$EXIT_PRECHECK_FAILED"
   command_exists restorecon || return "$EXIT_PRECHECK_FAILED"
@@ -24,10 +28,11 @@ desktop_persistent_data_plan() {
 PERSISTENT DATA LAYOUT ON SECOND T705:
 - preserve /data as an operator-prepared EXT4 mount; never partition or format it
 - create /data/Documents, /data/Projets, /data/ISO and /data/Jeux without deleting existing contents
+- create /data/IA/Openclaw for the owner's persistent AI project sources
 - keep /data/libvirt reserved for KVM/libvirt
 - make /data/Documents the XDG Documents directory
-- apply persistent SELinux user_home_t labels to the four user-data roots
-- daily/full Borg archives protect Documents and Projets; ISO and Jeux remain excluded by default
+- apply persistent SELinux user_home_t labels to all user-data roots
+- daily/full Borg archives protect Documents, Projets and IA/Openclaw; ISO and Jeux remain excluded by default
 EOF
 }
 

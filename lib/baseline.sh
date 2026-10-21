@@ -29,6 +29,7 @@ baseline_fingerprint_payload(){
   printf '[memory]\n%s\n' "$(baseline_memory_inventory)"
   printf '[nvme]\n%s\n' "$(baseline_nvme_inventory)"
   printf '[edid]\n%s\n' "$(baseline_edid_hashes)"
+  printf 'persistent_data=%s\n' "$(persistent_data_probe 2>/dev/null || echo unavailable)"
 }
 baseline_fingerprint(){ baseline_fingerprint_payload | sha256sum | awk '{print $1}'; }
 
@@ -50,6 +51,7 @@ baseline_evidence_device(){ awk -F'device=' '/^detail=/ {split($2,a," "); print 
 
 baseline_automatic_health_check(){
   runtime_is_baremetal || return 1
+  persistent_data_validate_mount || return 1
   fedora_require_selected || return 1
   lscpu 2>/dev/null | grep -Fq "${EXPECTED_CPU:-AMD Ryzen 7 7700}" || return 1
   hardware_platform_validate_dmi || { log_error BASELINE 'MSI MAG B850M MORTAR WIFI DMI/AMI BIOS validation failed'; return 1; }
@@ -88,6 +90,7 @@ baseline_certify(){
 
 baseline_certification_valid(){
   runtime_is_baremetal || return 1
+  persistent_data_validate_mount || return 1
   local marker; marker="$(baseline_certification_path)"; [[ -s "$marker" ]] || return 1
   for required in verdict=PASS dmi_platform=PASS amd_pstate=PASS cpu_boost=PASS wifi_identity_lock=PASS bluetooth_identity_lock=PASS nct6687_hwmon=PASS cooling_channels=PASS driver_contract=PASS cpu_soak=PASS; do grep -Fxq "$required" "$marker" || return 1; done
   grep -Fxq "fingerprint=$(baseline_fingerprint)" "$marker" || return 1

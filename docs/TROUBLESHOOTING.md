@@ -38,6 +38,8 @@ Enfin, sur la machine réelle uniquement, vérifier `config/local.conf` :
 REAL_MACHINE_APPROVED=true
 ```
 
+Après ce changement, refaire le dry-run final puis le backup pré-APPLY vérifié avant de relancer APPLY. Le drapeau fait partie de la configuration liée aux preuves.
+
 ### Causes courantes
 
 - environnement WSL2/VM/conteneur au lieu du bare-metal ;

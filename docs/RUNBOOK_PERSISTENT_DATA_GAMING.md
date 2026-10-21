@@ -10,6 +10,7 @@ Ce runbook couvre le contrat `/data` et le socle Gaming. Il complète [`INSTALLA
 ├── Projets            0750 / user_home_t
 ├── ISO                0750 / user_home_t
 ├── Jeux               0750 / user_home_t
+├── IA/Openclaw        0750 / user_home_t ; Borg
 └── libvirt            contexte libvirt dédié
 ```
 
@@ -36,7 +37,7 @@ findmnt -n -T /data -o SOURCE,TARGET,FSTYPE,OPTIONS
 findmnt -n -T / -o SOURCE,TARGET,FSTYPE
 ```
 
-Le doctor exige `FSTYPE=ext4` pour `/data` et refuse que `/data` corresponde au filesystem racine.
+Le doctor exige `FSTYPE=ext4` et l’identité physique préalablement approuvée. Deux partitions d’un même NVMe sont refusées. Après une réinstallation, contrôler `baseline-doctor storage-identity` et approuver de nouveau le numéro de série avec `baseline-doctor enroll-data NUMERO_DE_SERIE` ; l’ancien fichier d’identité seul ne prouve pas le montage actuel.
 
 Ne convertir ni reformater automatiquement un volume contenant des données.
 
@@ -44,7 +45,7 @@ Ne convertir ni reformater automatiquement un volume contenant des données.
 
 ```bash
 ./control.sh doctor data
-ls -ld /data/Documents /data/Projets /data/ISO /data/Jeux
+ls -ld /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux
 ```
 
 Le module `desktop.persistent_data` crée idempotemment les quatre racines pendant APPLY sans supprimer leur contenu existant.
@@ -54,7 +55,7 @@ Ne créer aucun lien symbolique vers `/data/libvirt` et ne déplacer pas les don
 ## Owner ou mode incorrect
 
 ```bash
-stat -c '%U:%G %a %n' /data/Documents /data/Projets /data/ISO /data/Jeux
+stat -c '%U:%G %a %n' /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux
 ```
 
 Attendu pour chaque racine utilisateur : propriétaire workstation et mode `750`.
@@ -64,7 +65,7 @@ Le projet ne fait jamais de `chmod 777` et ne doit pas appliquer un `chown -R` a
 ## Label SELinux incorrect
 
 ```bash
-ls -Zd /data/Documents /data/Projets /data/ISO /data/Jeux /data/libvirt
+ls -Zd /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux /data/libvirt
 ```
 
 Les racines utilisateur doivent exposer `user_home_t`. `/data/libvirt` conserve sa politique `virt_image_t`.
@@ -72,7 +73,7 @@ Les racines utilisateur doivent exposer `user_home_t`. `/data/libvirt` conserve 
 Si les règles `semanage fcontext` du projet sont déjà installées, réappliquer les labels est préférable à désactiver SELinux :
 
 ```bash
-sudo restorecon -RFv /data/Documents /data/Projets /data/ISO /data/Jeux /data/libvirt
+sudo restorecon -RFv /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux /data/libvirt
 ./control.sh doctor data
 ```
 
@@ -104,6 +105,7 @@ Par défaut :
 ```text
 /data/Documents  → Borg
 /data/Projets    → Borg
+/data/IA/Openclaw → Borg
 /data/ISO        → pas de backup automatique
 /data/Jeux       → pas de backup automatique
 ```

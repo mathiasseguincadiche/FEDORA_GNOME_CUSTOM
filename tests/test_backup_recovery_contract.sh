@@ -15,7 +15,7 @@ for expected in \
   'BACKUP_PRUNE_AUTOMATICALLY="true"' \
   'BACKUP_RETENTION_TIMER_ENABLED="true"' \
   'DAILY_BACKUP_XDG_DIRS="DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC"' \
-  'DAILY_BACKUP_EXTRA_PATHS="/data/Projets Development .config .ssh .gnupg .mozilla .var/app .local/share"'; do
+  'DAILY_BACKUP_EXTRA_PATHS="/data/Projets /data/IA/Openclaw Development .config .ssh .gnupg .mozilla .var/app .local/share"'; do
   grep -Fq "$expected" "$ROOT/config/backup.conf" || { echo "missing backup policy: $expected" >&2; exit 1; }
 done
 for entry in \

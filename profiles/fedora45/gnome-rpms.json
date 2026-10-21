@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "packages": {
+    "gnome-shell-extension-dash-to-dock": {
+      "version_release": "110-1.fc45",
+      "uuid": "dash-to-dock@micxgx.gmail.com"
+    },
+    "gnome-shell-extension-appindicator": {
+      "version_release": "66-1.fc45",
+      "uuid": "appindicatorsupport@rgcjonas.gmail.com"
+    }
+  }
+}

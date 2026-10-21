@@ -243,7 +243,7 @@ qemu-img convert vers staging
 Borg
 ```
 
-`/data/Documents` et `/data/Projets` sont protégés automatiquement par Borg. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut.
+`/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` sont protégés automatiquement par Borg. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut.
 
 Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 

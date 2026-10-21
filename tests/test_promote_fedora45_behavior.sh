@@ -15,10 +15,20 @@ done
 fingerprint="$(gpg --homedir "$tmp/keys" --with-colons --fingerprint fixture-approved@example.invalid 2>/dev/null | awk -F: '$1=="fpr"{print $10; exit}')"
 gpg --homedir "$tmp/keys" --batch --export > "$tmp/fedora.gpg"
 
+mkdir -p "$tmp/bin"
+cat > "$tmp/bin/dnf5" <<'MOCK'
+#!/usr/bin/env bash
+[[ "${T_STABLE_RPMS:-true}" == true ]] || exit 0
+printf '%s\n' gnome-shell-extension-dash-to-dock-110-1.fc45 gnome-shell-extension-appindicator-66-1.fc45
+MOCK
+chmod +x "$tmp/bin/dnf5"
+export PATH="$tmp/bin:$PATH"
 repo="$tmp/repo"
-mkdir -p "$repo/scripts/development" "$repo/profiles/fedora45" "$repo/installer" "$repo/config"
+mkdir -p "$repo/scripts/development" "$repo/profiles/fedora45" "$repo/installer" "$repo/config" "$repo/scripts/gnome"
 cp "$ROOT/scripts/development/promote-fedora45.py" "$ROOT/scripts/development/fedora-profile.py" "$repo/scripts/development/"
 cp "$ROOT/profiles/fedora45/gnome-extensions.lock" "$ROOT/profiles/fedora45/packages-nautilus.txt" "$repo/profiles/fedora45/"
+cp "$ROOT/scripts/gnome/ding-shutdown-fix.py" "$ROOT/scripts/gnome/fedora45-rpm-extensions.py" "$ROOT/scripts/gnome/install-fedora45-rpm-extensions.sh" "$repo/scripts/gnome/"
+cp "$ROOT/profiles/fedora45/gnome-rpms.json" "$repo/profiles/fedora45/"
 cp "$ROOT/installer/fedora44-media.lock" "$repo/installer/"
 cp "$ROOT/config/gnome-extensions.lock" "$repo/config/"
 real='4F50A6114CD5C6976A7F1179655A4B02F577861E'
@@ -59,6 +69,7 @@ sign approved
 echo dirty > "$repo/untracked"; refused 'dirty tree' 'not clean'; rm "$repo/untracked"
 cp "$tmp/$iso" "$tmp/iso.bak"; printf 'x' >> "$tmp/$iso"; refused 'modified ISO bytes' 'exact ISO hash'; mv "$tmp/iso.bak" "$tmp/$iso"
 
+(export T_STABLE_RPMS=false; refused 'missing stable GNOME RPMs' 'not available from stable')
 promote >/dev/null
 python3 - "$repo" "$digest" "$head" <<'PY'
 import json, pathlib, sys

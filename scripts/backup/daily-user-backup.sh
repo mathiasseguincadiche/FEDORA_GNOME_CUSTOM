@@ -12,6 +12,12 @@ fi
 # shellcheck disable=SC1090
 source "$helper"
 backup_runtime_bundle_init
+# The same physical mount validator is shipped inside the immutable runtime.
+# shellcheck disable=SC1091
+source "$(dirname "$helper")/persistent_data.sh"
+if [[ -n "${FEDORA_GNOME_CUSTOM_RUNTIME_ROOT:-}" ]]; then
+  export PERSISTENT_DATA_IDENTITY_FILE="$FEDORA_GNOME_CUSTOM_RUNTIME_ROOT/runtime/data-storage-identity.json"
+fi
 # A previous success cannot stand in for this attempt.
 rm -f "$STATE_ROOT/last-daily-backup.ok"
 daily_finish() {
@@ -36,14 +42,9 @@ fi
 
 data_mount_validated=false
 require_persistent_data_mount() {
-  local target fstype root_source data_source
   [[ "$data_mount_validated" == true ]] && return 0
   command -v findmnt >/dev/null 2>&1 || { echo 'findmnt is required for persistent-data backup validation.' >&2; exit "$EXIT_PRECHECK_FAILED"; }
-  target="$(findmnt -n -T /data -o TARGET 2>/dev/null || true)"
-  fstype="$(findmnt -n -T /data -o FSTYPE 2>/dev/null || true)"
-  root_source="$(findmnt -n -T / -o SOURCE 2>/dev/null || true)"
-  data_source="$(findmnt -n -T /data -o SOURCE 2>/dev/null || true)"
-  [[ "$target" == /data && "$fstype" == ext4 && -n "$data_source" && "$data_source" != "$root_source" ]] || {
+  persistent_data_validate_mount || {
     echo 'Refusing persistent-data backup: /data is not the dedicated EXT4 second T705.' >&2
     exit "$EXIT_PRECHECK_FAILED"
   }
@@ -56,7 +57,10 @@ add_source() {
   [[ -n "$candidate" ]] || return 0
   case "$candidate" in
     "$HOME"/*) ;;
-    /data/Documents|/data/Projets) require_persistent_data_mount ;;
+    /data/Documents|/data/Projets|/data/IA/Openclaw)
+      require_persistent_data_mount
+      persistent_data_validate_user_path "$candidate" || { echo "Unsafe persistent-data path: $candidate" >&2; exit "$EXIT_PRECHECK_FAILED"; }
+      ;;
     *)
       echo "Refusing daily backup source outside approved user-data roots: $candidate" >&2
       exit "$EXIT_CONFIG_FAILED"
@@ -93,12 +97,12 @@ if [[ -n "$configured_xdg" ]]; then
   done
 fi
 
-configured_extra="${DAILY_BACKUP_EXTRA_PATHS:-${DAILY_BACKUP_PATHS:-/data/Projets Development .config .ssh .gnupg .mozilla .var/app .local/share}}"
+configured_extra="${DAILY_BACKUP_EXTRA_PATHS:-${DAILY_BACKUP_PATHS:-/data/Projets /data/IA/Openclaw Development .config .ssh .gnupg .mozilla .var/app .local/share}}"
 read -r -a configured_paths <<<"$configured_extra"
 for entry in "${configured_paths[@]}"; do
   if [[ "$entry" == /* ]]; then
     case "$entry" in
-      /data/Documents|/data/Projets) add_source "$entry" ;;
+      /data/Documents|/data/Projets|/data/IA/Openclaw) add_source "$entry" ;;
       *) echo "Refusing unsafe absolute DAILY_BACKUP_EXTRA_PATHS entry: $entry" >&2; exit "$EXIT_CONFIG_FAILED" ;;
     esac
   else

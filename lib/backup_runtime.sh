@@ -307,6 +307,15 @@ backup_engine_compact() { borg compact; }
 
 backup_runtime_capture_inventory() {
   local out="$1"; mkdir -p "$out"
+  # Machine overrides are Git-ignored and may live outside every user-data root.
+  # The source has already passed config_load's declarative schema validation.
+  if [[ -r "$REPO_ROOT/config/local.conf" ]]; then
+    install -m 0600 "$REPO_ROOT/config/local.conf" "$out/local.conf"
+    (cd "$out" && sha256sum local.conf) > "$out/local.conf.sha256"
+  fi
+  if declare -F persistent_data_identity_path >/dev/null && [[ -r "$(persistent_data_identity_path)" ]]; then
+    install -m 0600 "$(persistent_data_identity_path)" "$out/data-storage-identity.json"
+  fi
   {
     printf 'commit=%s\n' "$(repo_commit)"; printf 'run_id=%s\n' "$RUN_ID"; printf 'utc=%s\n' "$(date -u +%FT%TZ)"; printf 'hostname=%s\n' "$(hostname)"
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"; printf 'module_plan_sha256=%s\n' "$(module_plan_sha256)"
@@ -319,6 +328,17 @@ backup_runtime_capture_inventory() {
   ip -4 route show > "$out/ip-route.txt" 2>/dev/null || true
   ip -4 rule show > "$out/ip-rule.txt" 2>/dev/null || true
   lspci -nnk > "$out/lspci-nnk.txt" 2>/dev/null || true
+}
+
+# Restore the Git-ignored machine overlay as well as the generic canary before
+# granting a verified pre-APPLY/full marker. The SHA file uses a portable basename.
+backup_runtime_verify_local_config_restore() {
+  local archive="$1" inventory="$2" restore_root="$3" recovered
+  [[ -r "$inventory/local.conf" ]] || return 0
+  backup_engine_extract "$archive" "$restore_root" "$inventory/local.conf" "$inventory/local.conf.sha256" || return 1
+  recovered="$restore_root/${inventory#/}"
+  cmp -s "$inventory/local.conf" "$recovered/local.conf" || return 1
+  (cd "$recovered" && sha256sum --check --status local.conf.sha256)
 }
 
 backup_runtime_require_free_space() {

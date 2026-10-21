@@ -1,9 +1,10 @@
-# Copiez ce fichier vers config/local.conf (ignoré par Git) pour les valeurs propres à la machine.
+# Créez config/local.conf (ignoré par Git) avec cet exemple uniquement si le fichier est absent.
 # Ne placez jamais de mot de passe dans ce fichier : indiquez uniquement le chemin d'un fichier protégé.
 #
 # IMPORTANT: la copie de cet exemple n'approuve jamais automatiquement la machine.
-# Passez explicitement REAL_MACHINE_APPROVED à "true" uniquement sur selected Fedora release bare-metal,
-# après revue de la cible, dry-run, baseline et backup pré-APPLY du même commit.
+# Conservez un local.conf créé par Kickstart. Finalisez ces valeurs après revue
+# de la cible, AVANT le dry-run final et le backup pré-APPLY du même commit.
+HOST_RELEASE="45"
 REAL_MACHINE_APPROVED="false"
 
 # Dépôt Borg NON chiffré (ADR 0014) : chemin sur le disque externe, ou ssh://user@hote/chemin

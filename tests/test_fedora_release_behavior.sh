@@ -36,12 +36,17 @@ reviewed=(root/"profiles/fedora45/gnome-extensions.lock").read_text()
 extensions.write_text(reviewed)
 media=work/"installer/fedora45-media.lock"
 media.write_text('FEDORA_RELEASE=45\nFEDORA_COMPOSE=1.1\nCHECKSUM_FILENAME=Fedora-Workstation-45-1.1-x86_64-CHECKSUM\nSOURCE_URL=https://fedoraproject.org/workstation/download/\nVERIFIED_UTC=2026-10-20T00:00:00Z\nRELEASE_STATUS=final\nISO_FILENAME=Fedora-Workstation-Live-45-1.1.x86_64.iso\nISO_SHA256='+ "a"*64+'\nSIGNING_FINGERPRINT=4F50A6114CD5C6976A7F1179655A4B02F577861E\n')
+for relative in ("profiles/fedora45/gnome-rpms.json", "scripts/gnome/ding-shutdown-fix.py"):
+    target=work/relative; target.parent.mkdir(parents=True,exist_ok=True)
+    target.write_bytes((root/relative).read_bytes())
 manifest=work/"profiles/fedora45/profile.json"
 def seal():
     manifest.write_text(json.dumps({"schema":1,"release":45,"gnome_major":51,"status":"ready",
         "media_lock_sha256":hashlib.sha256(media.read_bytes()).hexdigest(),
         "extensions_lock_sha256":hashlib.sha256(extensions.read_bytes()).hexdigest(),
         "packages_lock_sha256":hashlib.sha256(packages.read_bytes()).hexdigest(),
+        "gnome_rpms_lock_sha256":hashlib.sha256((work/"profiles/fedora45/gnome-rpms.json").read_bytes()).hexdigest(),
+        "ding_patch_sha256":hashlib.sha256((work/"scripts/gnome/ding-shutdown-fix.py").read_bytes()).hexdigest(),
         "promotion_source_commit":"b"*40}))
 seal(); m.validate(work,45)
 def rejected():
@@ -61,6 +66,9 @@ extensions.write_text(reviewed.replace("gtk4-ding@smedius.gitlab.com","evil@exam
 extensions.write_text(reviewed.replace('DING_SCHEMA="org.gnome.shell.extensions.gtk4-ding"','DING_SCHEMA="org.gnome.shell.extensions.ding"'));seal();rejected()
 extensions.write_text(reviewed);seal()
 extensions.write_text(extensions.read_text()+"# changed after qualification\n");rejected()
+for relative in ("profiles/fedora45/gnome-rpms.json", "scripts/gnome/ding-shutdown-fix.py"):
+    path=work/relative; original=path.read_bytes()
+    path.write_bytes(original+b"\n"); rejected(); path.write_bytes(original)
 print("Fedora release behavior: PASS")
 PY
 

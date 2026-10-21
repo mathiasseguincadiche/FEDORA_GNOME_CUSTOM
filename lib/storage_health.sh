@@ -25,11 +25,15 @@ storage_nvme_health_json() {
 storage_nvme_health_summary() {
   python3 -c 'import json,sys
 j=json.load(sys.stdin)
-n=j.get("nvme_smart_health_information_log") or {}
-def v(name, default=0):
-    x=n.get(name, default)
+n=j.get("nvme_smart_health_information_log")
+if not isinstance(n,dict):
+    raise ValueError("NVMe SMART section missing")
+def v(name):
+    x=n[name]
     if isinstance(x, dict):
-        x=x.get("current", x.get("value", default))
+        x=x["current"] if "current" in x else x["value"]
+    if type(x) is not int or x < 0:
+        raise ValueError("Invalid SMART measurement: " + name)
     return x
 fields=(
     ("critical_warning", v("critical_warning")),
@@ -78,6 +82,7 @@ storage_nvme_validate_controller() {
   (( critical == 0 )) || return 1
   (( media == 0 )) || return 1
   (( spare >= threshold )) || return 1
+  (( temp > 0 && spare <= 100 && threshold <= 100 )) || return 1
   (( used <= ${NVME_MAX_PERCENTAGE_USED:-90} )) || return 1
   (( temp <= ${NVME_MAX_TEMP_C:-85} )) || return 1
   storage_nvme_pcie_validate "$dev"

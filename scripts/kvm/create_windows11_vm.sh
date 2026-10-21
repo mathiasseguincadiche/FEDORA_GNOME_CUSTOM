@@ -2,9 +2,9 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-source "$REPO_ROOT/config/virtualization.conf"
-source "$REPO_ROOT/config/hardware-components.conf"
-source "$REPO_ROOT/config/vm-profiles.conf"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_load_libraries
+config_load
 
 usage() {
   cat <<'TXT'
@@ -73,6 +73,7 @@ nautilus_helper="$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh"
   || fail "$data_mount is not a dedicated mounted target"
 [[ "$(findmnt -n -T "$data_mount" -o FSTYPE 2>/dev/null || true)" == "${KVM_DATA_FSTYPE:-ext4}" ]] \
   || fail "$data_mount must be ${KVM_DATA_FSTYPE:-ext4}"
+persistent_data_validate_mount "$data_mount" || fail 'physical /data identity is missing or changed'
 [[ -r "$smb_source" && -r "$integration_source" ]] || fail 'Windows integration scripts missing'
 
 sudo virsh --connect "$uri" pool-info "$pool" >/dev/null || fail "libvirt pool missing: $pool"

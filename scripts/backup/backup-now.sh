@@ -74,8 +74,12 @@ for user_path in .config .local/share .var/app .mozilla .ssh .gnupg; do
 done
 if runtime_is_baremetal; then
   persistent_data_validate_mount || { echo 'Refusing full backup: /data is not the dedicated EXT4 second T705.' >&2; exit 20; }
+  for path in "$(persistent_data_documents)" "$(persistent_data_projects)" "$(persistent_data_openclaw)"; do
+    persistent_data_validate_user_path "$path" || { echo "Unsafe persistent-data source: $path" >&2; exit 20; }
+  done
   [[ -d "$(persistent_data_documents)" ]] && sources+=("$(persistent_data_documents)")
   [[ -d "$(persistent_data_projects)" ]] && sources+=("$(persistent_data_projects)")
+  [[ -d "$(persistent_data_openclaw)" ]] && sources+=("$(persistent_data_openclaw)")
 fi
 while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(git -C "$REPO_ROOT" ls-files -z)
 # A readable inventory of actual source roots, preserved inside the archive.
@@ -107,6 +111,7 @@ fi
 restore_test="$(mktemp -d "$staging/restore-proof.XXXXXX")"
 backup_engine_extract "$archive" "$restore_test" "$staging/restore-canary.txt" || exit 40
 cmp -s "$staging/restore-canary.txt" "$restore_test/${staging#/}/restore-canary.txt" || { echo 'Full backup restore canary mismatch.' >&2; exit 40; }
+backup_runtime_verify_local_config_restore "$archive" "$staging/inventory" "$restore_test" || { echo 'Local configuration restore proof failed.' >&2; exit 40; }
 marker="$STATE_ROOT/last-full-backup.ok"
 {
   printf 'verdict=PASS\nengine=borg\nencryption=none\nintegrity_check=PASS\nrestore_test=PASS\n'

@@ -102,7 +102,7 @@ Le premier T705 est le disque système Fedora Btrfs. Le second T705 est un EXT4 
 
 L'APPLY ne partitionne et ne formate jamais le second SSD. Il crée les répertoires manquants sans supprimer leur contenu, normalise uniquement leurs racines et applique les labels SELinux attendus.
 
-`/data/Documents` et `/data/Projets` sont aussi protégés par Borg externe. `/data/ISO` et `/data/Jeux` restent hors backups automatiques par défaut afin d'éviter de dupliquer des payloads volumineux généralement reproductibles ou retéléchargeables. La séparation des SSD protège contre une réinstallation du disque système ; Borg protège les données importantes contre la panne du second SSD lui-même.
+`/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` sont aussi protégés par Borg externe. `/data/ISO` et `/data/Jeux` restent hors backups automatiques par défaut afin d'éviter de dupliquer des payloads volumineux généralement reproductibles ou retéléchargeables. La séparation des SSD protège contre une réinstallation du disque système ; Borg protège les données importantes contre la panne du second SSD lui-même.
 
 Voir ADR 0011 et [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
@@ -204,7 +204,7 @@ Le pré-APPLY Borg exige :
 - `borg check --verify-data` ;
 - restauration réelle d'un canary.
 
-Le backup quotidien protège notamment `/data/Documents` et `/data/Projets`. Le backup full les inclut également. `/data/ISO` et `/data/Jeux` restent hors sauvegarde automatique par défaut.
+Le backup quotidien protège notamment `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw`. Le backup full les inclut également. `/data/ISO` et `/data/Jeux` restent hors sauvegarde automatique par défaut.
 
 Les disques QCOW2, les définitions XML libvirt et les états NVRAM/TPM **ne sont pas sauvegardés automatiquement**. Le propriétaire choisit personnellement quand exporter ses VM, indépendamment de Borg.
 

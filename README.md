@@ -251,7 +251,7 @@ Le premier T705 contient le système. Le second protège les données de travail
 
 ```text
 Crucial T705 #1
-└── Fedora 44 / Btrfs
+└── Fedora 45 / Btrfs (après promotion du profil)
     └── système, applications, HOME système
 
 Crucial T705 #2
@@ -260,12 +260,17 @@ Crucial T705 #2
     ├── Projets/        → travail / Git / DevOps
     ├── ISO/            → bibliothèque ISO
     ├── Jeux/           → bibliothèque Steam / jeux
+    ├── IA/Openclaw/    → projets et sources Openclaw IA
     └── libvirt/        → images et données KVM
 ```
 
+L’identité de `/data` est approuvée explicitement avec `baseline-doctor storage-identity` puis `enroll-data NUMERO_DE_SERIE`. Les contrôles suivants comparent les UUID des filesystems et les numéros de série des deux NVMe ; deux partitions du même disque ne sont pas acceptées.
+
+Les corrections et leurs tests sont détaillés dans la [revue avant installation](docs/PREINSTALL_SAFETY_REVIEW.md).
+
 Le dépôt **ne formate jamais automatiquement le second T705**. Une réinstallation doit remonter `/data` et réutiliser son contenu existant.
 
-`Documents` et `Projets` sont protégés par Borg. `ISO`, `Jeux` et **les VM** restent hors des sauvegardes automatiques. Le propriétaire exporte lui-même ses VM lorsqu'il en a besoin.
+`Documents`, `Projets` et `IA/Openclaw` sont protégés par Borg. `ISO`, `Jeux` et **les VM** restent hors des sauvegardes automatiques. Le propriétaire exporte lui-même ses VM lorsqu'il en a besoin.
 
 ---
 
@@ -561,11 +566,11 @@ Gate 2 valide GNOME 50/Wayland, Nautilus, Ptyxis, extensions et contrôle visuel
 La procédure détaillée est dans [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md). Le chemin normal est :
 
 ```text
-média Fedora 44 vérifié
+média final Fedora 45 vérifié + profil promu
       ↓
-second T705 /data préparé
+second T705 /data préparé et identité physique approuvée
       ↓
-baseline hardware
+baseline hardware + configuration définitive approuvée
       ↓
 ./control.sh install dry-run
       ↓
@@ -574,6 +579,8 @@ baseline hardware
 ./control.sh install apply
       ↓
 reboot sur le dernier Linux amont stable N
+      ↓
+qualification matérielle Gate 3
 ```
 
 ## Gate 3 — certification physique

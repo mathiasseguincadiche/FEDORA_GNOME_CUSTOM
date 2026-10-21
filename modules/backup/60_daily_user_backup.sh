@@ -16,6 +16,8 @@ backup_daily_precheck() {
     scripts/backup/backup-retention.sh \
     lib/backup_runtime.sh \
     lib/backup_runtime_bundle.sh \
+    lib/persistent_data.sh \
+    lib/persistent_data_identity.py \
     systemd/user/fedora-gnome-daily-backup.timer; do
     [[ -r "$REPO_ROOT/$file" ]] || return "$EXIT_PRECHECK_FAILED"
   done
@@ -28,7 +30,10 @@ backup_daily_plan() {
 }
 
 backup_daily_config_payload() {
-  local var
+  local var identity
+  printf 'EXPECTED_NVME_MODEL=%q\n' "${EXPECTED_NVME_MODEL:-CT1000T705SSD3}"
+  identity="$(persistent_data_identity_path)"
+  printf 'PERSISTENT_DATA_APPROVED_SHA256=%q\n' "$(sha256sum "$identity" | awk '{print $1}')"
   while IFS= read -r var; do
     [[ -v "$var" ]] || continue
     case "$var" in
@@ -79,6 +84,9 @@ backup_daily_install_runtime() {
   if (( rc == 0 )); then install -m 0755 "$REPO_ROOT/scripts/backup/backup-retention.sh" "$tmp/bin/backup-retention" || rc=$?; fi
   if (( rc == 0 )); then install -m 0644 "$REPO_ROOT/lib/backup_runtime.sh" "$tmp/lib/backup_runtime.sh" || rc=$?; fi
   if (( rc == 0 )); then install -m 0644 "$REPO_ROOT/lib/backup_runtime_bundle.sh" "$tmp/lib/backup_runtime_bundle.sh" || rc=$?; fi
+  if (( rc == 0 )); then install -m 0644 "$REPO_ROOT/lib/persistent_data.sh" "$tmp/lib/persistent_data.sh" || rc=$?; fi
+  if (( rc == 0 )); then install -m 0644 "$REPO_ROOT/lib/persistent_data_identity.py" "$tmp/lib/persistent_data_identity.py" || rc=$?; fi
+  if (( rc == 0 )); then install -m 0600 "$(persistent_data_identity_path)" "$tmp/runtime/data-storage-identity.json" || rc=$?; fi
   if (( rc == 0 )); then backup_daily_write_config_snapshot "$tmp/runtime/backup-runtime.conf" || rc=$?; fi
   if (( rc == 0 )); then install -m 0644 /dev/null "$tmp/runtime/APPLIED_SHA" || rc=$?; fi
   if (( rc == 0 )); then printf '%s\n' "$applied_sha" > "$tmp/runtime/APPLIED_SHA" || rc=$?; fi

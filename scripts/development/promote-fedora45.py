@@ -65,6 +65,13 @@ def clean_tree(root):
         raise ValueError("working tree is not clean; commit or stash first (the qualification commit must be exact)")
 
 
+def verify_stable_rpms(root):
+    result = subprocess.run(["bash", str(root / "scripts/gnome/install-fedora45-rpm-extensions.sh"), "--stable-check"],
+                            capture_output=True, text=True, check=False)
+    if result.returncode:
+        raise ValueError("reviewed GNOME 51 RPMs are not available from stable Fedora 45 repositories: " + result.stderr[-1000:])
+
+
 def promote(root, iso, checksum, keyring, commit, now=None):
     root = pathlib.Path(root)
     iso, checksum, keyring = map(pathlib.Path, (iso, checksum, keyring))
@@ -96,6 +103,8 @@ def promote(root, iso, checksum, keyring, commit, now=None):
     digest = sha256_file(iso)
     verify_signed_checksum(checksum, keyring, fingerprint, iso.name, digest)
 
+    verify_stable_rpms(root)
+
     stamp = (now or datetime.datetime.now(datetime.timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
     values = {
         "FEDORA_RELEASE": "45", "FEDORA_COMPOSE": compose, "ISO_FILENAME": iso.name, "ISO_SHA256": digest,
@@ -113,6 +122,8 @@ def promote(root, iso, checksum, keyring, commit, now=None):
             "media_lock_sha256": sha256_file(media_path),
             "extensions_lock_sha256": sha256_file(extensions_path),
             "packages_lock_sha256": sha256_file(packages_path),
+            "gnome_rpms_lock_sha256": sha256_file(root / "profiles/fedora45/gnome-rpms.json"),
+            "ding_patch_sha256": sha256_file(root / "scripts/gnome/ding-shutdown-fix.py"),
             # This SHA predates the new media lock: it is NOT CI evidence on the promoted tree.
             "promotion_source_commit": commit,
         }

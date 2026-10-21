@@ -82,6 +82,8 @@ restored_canary="$(find "$restore_test" -type f -name restore-canary.txt -print 
 [[ -n "$restored_canary" ]] || fail 'restore canary was not recovered'
 cmp -s "$staging/restore-canary.txt" "$restored_canary" || fail 'restore canary content mismatch'
 
+backup_runtime_verify_local_config_restore "$archive" "$staging/inventory" "$restore_test" || fail 'local configuration restore proof failed'
+
 marker="$STATE_ROOT/preapply-backup.ok"
 {
   printf 'verdict=PASS\n'

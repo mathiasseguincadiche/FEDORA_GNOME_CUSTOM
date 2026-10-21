@@ -1,6 +1,14 @@
 # Changelog
 
-## En préparation — PR #122 (non publié)
+## En préparation — corrections avant installation (non publié)
+
+- Installation : préserver la configuration Kickstart et placer l’approbation définitive avant le dernier dry-run et le backup vérifié.
+- Stockage : lier `/` et `/data` à deux T705 physiques distincts, avec approbation explicite du numéro de série et revalidation des UUID, modèles, séries et WWN.
+- Données : préparer `/data/IA/Openclaw` avec les droits et labels utilisateur ; le protéger par Borg daily/full comme `/data/Projets`, sans modifier les exclusions VM.
+- Sauvegardes : accepter les URI SSH Borg, inclure la configuration locale ignorée par Git et vérifier sa restauration ; embarquer l’identité approuvée dans le runtime quotidien immuable.
+- Maintenance et certification : exiger un nouveau démarrage et l’historique de la transaction DNF5 exacte ; refuser les mesures SMART absentes et les cycles de veille liés à une ancienne configuration ou chaîne de preuves.
+- KVM : fusionner les intervalles réseau chevauchants dans nftables et charger les overrides locaux dans les assistants publics.
+- GNOME 51 : partager le correctif de fermeture Gtk4-DING et les versions RPM entre CI et installation. La promotion reste bloquée tant que les RPM exacts ne sont pas disponibles en stable et que le média final signé manque.
 
 - Noyau : résolution du dernier Linux stable à partir de la version officielle kernel.org **avant** de sélectionner les RPM du COPR autorisé. Un paquet de numéro supérieur encore en développement ne masque plus un paquet exact déjà disponible ; si aucun RPM exact n'existe, le refus sécurisé reste obligatoire.
 - CI : le test bloquant des RPM du noyau utilise Fedora 45, cible prévue de l'installation, au lieu du laboratoire historique Fedora 44. La validation RPM reste réelle et bloquante ; elle ne certifie pas le matériel.

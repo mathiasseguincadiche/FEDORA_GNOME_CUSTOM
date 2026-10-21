@@ -45,6 +45,7 @@ mkdir -p "$tmp/lib" "$tmp/diagnostics" "$tmp/bin" "$tmp/reports"
 source "$ROOT/lib/baseline.sh"
 STATE_ROOT="$tmp/state"
 runtime_is_baremetal() { :; }
+persistent_data_validate_mount() { [[ "${FIXTURE_STORAGE_VALID:-true}" == true ]]; }
 baseline_fingerprint() { echo fixture; }
 physical_runtime_fingerprint() { echo fixture; }
 effective_config_sha256() { echo fixture; }
@@ -75,6 +76,7 @@ for field in verdict=PASS dmi_platform=PASS amd_pstate=PASS cpu_boost=PASS wifi_
 if baseline_certification_valid; then echo 'certified baseline accepted missing RAM proof' >&2; exit 1; fi
 cp "$(baseline_evidence_dir)/memory-5600.ok" "$(baseline_evidence_dir)/memory-6000.ok"
 baseline_certification_valid
+if FIXTURE_STORAGE_VALID=false baseline_certification_valid; then echo 'changed data disk accepted by baseline revalidation' >&2; exit 1; fi
 sed -i 's/qualification_policy=2/qualification_policy=1/' "$(baseline_evidence_dir)/memory-6000.ok"
 if baseline_certification_valid; then echo 'certified baseline accepted old RAM policy' >&2; exit 1; fi
 
