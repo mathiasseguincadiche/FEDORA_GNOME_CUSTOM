@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 fail() { echo "update kernel deferral behavior: FAIL: $*" >&2; exit 1; }
-mkdir -p "$tmp/bin" "$tmp/runtime"
+mkdir -p "$tmp/bin" "$tmp/runtime" "$tmp/logs" "$tmp/reports" "$tmp/state"
 
 # Fake privileged tools: record every DNF5 call, never touch the system.
 cat > "$tmp/bin/sudo" <<'SH'
@@ -45,9 +45,11 @@ run_update() {
   local kernel_rc="$1"; shift
   (
     export PATH="$tmp/bin:$PATH" XDG_RUNTIME_DIR="$tmp/runtime" DNF_LOG="$tmp/dnf.log" RUN_ID="deferral-$RANDOM"
+    # Keep diagnostic output inside the fixture even with a read-only checkout.
+    STATE_ROOT="$tmp/state"; REPORT_ROOT="$tmp/reports"; LOG_DIR="$tmp/logs"; MAIN_LOG="$LOG_DIR/main.log"
     # Load every function of the real entrypoint, without its final dispatcher.
     # shellcheck disable=SC1090
-    source <(sed -e '/^mode="\${1:---check}"$/,$d' \
+    source <(sed -e 's/^engine_bootstrap$/engine_load_libraries; config_load/' -e '/^mode="\${1:---check}"$/,$d' \
       -e "s|^REPO_ROOT=.*|REPO_ROOT='$ROOT'|" "$ROOT/scripts/maintenance/update-system.sh")
     UPDATE_STATE_FILE="$tmp/update.status"
     export T_STATE="$UPDATE_STATE_FILE"
