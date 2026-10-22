@@ -87,8 +87,8 @@ PKG
 printf '#!/usr/bin/env bash\n[[ "$1" == 10 ]]\n' > "$tmp/retry-bin/sleep"
 chmod +x "$tmp/retry-bin/"*
 export RETRY_COUNTER="$tmp/retry-count" RETRY_ARGS="$tmp/retry-args"
-env PATH="$tmp/retry-bin:$PATH" RETRY_SUCCESS_AFTER=3 bash "$ROOT/.github/scripts/dnf-retry.sh" dnf5 --setopt=gpgcheck=1 install fixture >/dev/null 2>&1
-[[ "$(cat "$RETRY_COUNTER")" == 3 && "$(sort -u "$RETRY_ARGS")" == '--setopt=gpgcheck=1 install fixture' ]]
+env PATH="$tmp/retry-bin:$PATH" RETRY_SUCCESS_AFTER=3 bash "$ROOT/.github/scripts/dnf-retry.sh" dnf5 --refresh --setopt=gpgcheck=1 install fixture >/dev/null 2>&1
+[[ "$(cat "$RETRY_COUNTER")" == 3 && "$(sort -u "$RETRY_ARGS")" == '--refresh --setopt=gpgcheck=1 install fixture' ]]
 rm "$RETRY_COUNTER" "$RETRY_ARGS"
 rc=0
 env PATH="$tmp/retry-bin:$PATH" RETRY_SUCCESS_AFTER=99 bash "$ROOT/.github/scripts/dnf-retry.sh" dnf5 install fixture >/dev/null 2>&1 || rc=$?
