@@ -7,7 +7,7 @@ step=0
 quit_requested=false
 mode=delayed
 as_user() {
-  [[ "$*" == 'timeout --signal=TERM --kill-after=5s 25s systemd-run --user --wait --collect --pipe --unit=fgc-lab-nautilus-quit --property=RuntimeMaxSec=20s -- nautilus --quit' ]] || return 99
+  [[ "$*" == 'timeout --signal=TERM --kill-after=5s 20s gapplication action org.gnome.Nautilus quit' ]] || return 99
   quit_requested=true
   [[ "$mode" != quit-failure ]]
 }

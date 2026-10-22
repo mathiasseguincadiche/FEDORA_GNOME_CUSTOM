@@ -6,11 +6,12 @@ fedora_lab_close_clients() {
   # to an existing FileManager1 process and let our transient launcher exit.
   # Stopping that launcher does not close the actual application.
   if pgrep -u "$lab_uid" -x nautilus >/dev/null; then
-    # A plain SSH command lacks WAYLAND_DISPLAY and XDG_SESSION_TYPE. Run
-    # the quit client in the same user manager as the graphical launcher.
-    as_user timeout --signal=TERM --kill-after=5s 25s systemd-run \
-      --user --wait --collect --pipe --unit=fgc-lab-nautilus-quit \
-      --property=RuntimeMaxSec=20s -- nautilus --quit || return
+    # Nautilus --quit intentionally returns -1 (shell status255), even after
+    # a successful request. Its exported quit action closes the windows via
+    # the existing session bus, requires no display in the SSH environment
+    # and does not create an artificially failed transient user service.
+    as_user timeout --signal=TERM --kill-after=5s 20s \
+      gapplication action org.gnome.Nautilus quit || return
   else
     rc=$?
     if (( rc != 1 )); then

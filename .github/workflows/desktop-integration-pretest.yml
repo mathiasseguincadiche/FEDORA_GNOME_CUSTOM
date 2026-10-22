@@ -36,8 +36,10 @@ jobs:
             manifests/packages-nautilus.txt \
             manifests/packages-nautilus-optional.txt \
             manifests/packages-applications-gtk4.txt | sed '/^[[:space:]]*#/d;/^[[:space:]]*$/d' | sort -u)
-          dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon "${packages[@]}"
+          dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon python3-gobject-base procps-ng "${packages[@]}"
           rpm -q nautilus localsearch xdg-user-dirs-gtk gvfs gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus ptyxis
+      - name: Exercise actual GApplication quit protocol without a display
+        run: bash tests/integration/gnome-lab-client-close-dbus.sh
       - name: Validate File Roller Nautilus extension payload
         shell: bash
         run: |
