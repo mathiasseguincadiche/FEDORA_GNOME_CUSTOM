@@ -5,7 +5,19 @@ fedora_lab_close_clients() {
   # Nautilus is a D-Bus single-instance application: --new-window may forward
   # to an existing FileManager1 process and let our transient launcher exit.
   # Stopping that launcher does not close the actual application.
-  as_user timeout --signal=TERM --kill-after=5s 20s nautilus --quit || return
+  if pgrep -u "$lab_uid" -x nautilus >/dev/null; then
+    # A plain SSH command lacks WAYLAND_DISPLAY and XDG_SESSION_TYPE. Run
+    # the quit client in the same user manager as the graphical launcher.
+    as_user timeout --signal=TERM --kill-after=5s 25s systemd-run \
+      --user --wait --collect --pipe --unit=fgc-lab-nautilus-quit \
+      --property=RuntimeMaxSec=20s -- nautilus --quit || return
+  else
+    rc=$?
+    if (( rc != 1 )); then
+      echo "Cannot inspect Nautilus before quit (pgrep=$rc)" >&2
+      return 1
+    fi
+  fi
   for _ in {1..30}; do
     remaining=false
     for client in nautilus ptyxis; do
