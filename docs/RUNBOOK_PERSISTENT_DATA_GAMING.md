@@ -48,7 +48,7 @@ Ne convertir ni reformater automatiquement un volume contenant des données.
 ls -ld /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux
 ```
 
-Le module `desktop.persistent_data` crée idempotemment les quatre racines pendant APPLY sans supprimer leur contenu existant.
+Le module `desktop.persistent_data` crée idempotemment les racines utilisateur, dont `IA/Openclaw`, pendant APPLY sans supprimer leur contenu existant.
 
 Ne créer aucun lien symbolique vers `/data/libvirt` et ne déplacer pas les données utilisateur sous le sous-arbre KVM.
 

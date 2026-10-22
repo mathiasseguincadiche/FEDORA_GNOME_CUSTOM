@@ -309,7 +309,7 @@ Après démarrage sur N :
 ./diagnostics/arc-compute-doctor
 ```
 
-Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les quatre répertoires persistants, leurs droits/labels et le mapping XDG Documents.
+Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les répertoires persistants dont `IA/Openclaw`, leurs droits/labels et le mapping XDG Documents.
 
 **Checkpoint :** le runtime actif doit réellement être N et les doctors bare-metal doivent être conformes avant la certification finale.
 

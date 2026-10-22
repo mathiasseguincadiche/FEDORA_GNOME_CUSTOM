@@ -20,11 +20,11 @@
 
 **Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. Fedora 44 / GNOME 50 demeure un laboratoire historique, **pas un chemin autorisé d'installation neuve**. Fedora 45 reste bloqué jusqu'à la promotion de son profil `pending`.
 
-**État logiciel : CODE-READY** · **Certification matérielle : Gate 3 bare-metal à exécuter**
+**État logiciel : CODE-READY seulement après CI verte du commit exact** · **Certification matérielle : Gate 3 bare-metal à exécuter**
 
 </div>
 
-> **Pourquoi ce projet existe, ses quatre piliers et les décisions du propriétaire : [docs/VISION.md](docs/VISION.md).** État : code prêt (CI verte), machine pas encore certifiée (Gate 2 puis Gate 3).
+> **Pourquoi ce projet existe, ses quatre piliers et les décisions du propriétaire : [docs/VISION.md](docs/VISION.md).** Vérifier les contrôles du commit exact ; la machine reste à certifier (Gate 2 puis Gate 3).
 > Les sauvegardes utilisent Borg **sans chiffrement**, par décision du propriétaire (ADR 0014). Un PASS CI ne certifie pas le poste physique.
 > La [fiche d'exécution physique](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) prépare les mesures sur le PC. La [qualification réseau Docker](docs/ROCKY_DEVOPS_READY.md#qualification-réseau-docker) couvre redémarrage/restauration (les notices de maintenance du labo Rocky Linux 10 restent visibles dans ces guides).
 
@@ -51,7 +51,7 @@
 
 - **Quoi :** une Fedora Workstation installée, réglée, sauvegardée et diagnostiquée par scripts versionnés, avec un point d'entrée unique : `./control.sh`.
 - **Pour qui / quoi :** un PC précis (Ryzen 7 7700, Intel Arc B580, 48 Gio, deux SSD) pour le DevOps, le gaming et les VM KVM.
-- **Où on en est :** code prêt et CI verte ; Fedora 44 / GNOME 50 est la référence testée, Fedora 45 / GNOME 51 est préparé, mais son activation exige un média final signé, la promotion explicite du profil et une nouvelle qualification.
+- **Où on en est :** Fedora 44 / GNOME 50 est la référence testée ; Fedora 45 / GNOME 51 est préparé, mais son activation exige un média final signé, la promotion explicite du profil, une CI verte sur le commit exact et une nouvelle qualification.
 - **Par où commencer :** [Démarrage rapide](#démarrage-rapide), puis [l'installation bare-metal](#installation-bare-metal) et [la documentation](#documentation).
 
 ## L'idée de la Golden, expliquée simplement
