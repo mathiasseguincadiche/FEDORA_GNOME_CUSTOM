@@ -74,7 +74,7 @@ use_lock() { # use_lock FILE -> exports its variables for the next run
 
 # --- Fedora 44 identities keep the original paths -------------------------------------------
 (
-  use_lock "$ROOT/config/gnome-extensions.lock"
+  use_lock "$ROOT/profiles/fedora44/gnome-extensions.lock"
   if run gnome_show_desktop_is_button; then fail 'Fedora 44 lock selected the Button variant'; fi
   if run resource_monitor_is_vitals; then fail 'Fedora 44 lock selected the Vitals variant'; fi
   [[ "$(run gnome_show_desktop_label)" == 'Show Desktop Plus' ]] || fail 'plus label'

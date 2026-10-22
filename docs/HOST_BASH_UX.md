@@ -1,6 +1,6 @@
 # Fedora Host Bash UX
 
-La machine hôte Fedora 44 conserve Bash comme shell de travail et Ptyxis comme terminal GNOME. La couche gérée fournit une expérience terminal professionnelle sans remplacer Bash par Zsh et sans framework de prompt.
+La machine hôte Fedora 45 conserve Bash comme shell de travail et Ptyxis comme terminal GNOME. La couche gérée fournit une expérience terminal professionnelle sans remplacer Bash par Zsh et sans framework de prompt.
 
 La version applicable est celle de [`../VERSION`](../VERSION).
 
@@ -20,7 +20,7 @@ Toolbx/Podman ne sont pas ajoutés implicitement au HOST. KVM reste l'environnem
 - `zoxide` ;
 - `direnv`.
 
-Ils proviennent des dépôts Fedora 44 et sont vérifiés par le package preflight.
+Ils proviennent des dépôts Fedora 45 et sont vérifiés par le package preflight.
 
 ## Arborescence utilisateur
 

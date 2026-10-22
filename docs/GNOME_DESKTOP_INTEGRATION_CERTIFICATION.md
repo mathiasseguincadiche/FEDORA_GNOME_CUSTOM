@@ -1,8 +1,8 @@
 # Certification GNOME Desktop Integration
 
-Ce runbook ferme la couche d'intégration entre **GNOME Shell 50, Nautilus, Ptyxis, LocalSearch, XDG Portals, applications par défaut et accès fichiers aux VM**.
+Ce runbook ferme la couche d'intégration entre **GNOME Shell 51, Nautilus, Ptyxis, LocalSearch, XDG Portals, applications par défaut et accès fichiers aux VM**.
 
-L'objectif n'est pas d'ajouter des effets ou de remplacer les composants GNOME natifs. Le profil reste Fedora 44 + GNOME 50 + Wayland + Adwaita/libadwaita.
+L'objectif n'est pas d'ajouter des effets ou de remplacer les composants GNOME natifs. Le profil reste Fedora 45 + GNOME 51 + Wayland + Adwaita/libadwaita.
 
 ## Contrats automatisés
 
@@ -73,7 +73,7 @@ Pour chacun : listing, écriture d'un canari, relecture puis suppression. Le doc
 ./control.sh validate gate2 sign
 ```
 
-`sign` lance la matrice interactive GNOME. Elle couvre Overview, dock, DING, Show Desktop Plus/Super+D, Resource Monitor, Nautilus/recherche, `Open in Console → Ptyxis`, applications par défaut et Portals.
+`sign` lance la matrice interactive GNOME. Elle couvre Overview, dock, DING, Show Desktop Button/Super+D, Vitals, Nautilus/recherche, `Open in Console → Ptyxis`, applications par défaut et Portals.
 
 La preuve Gate 2 n'est créée qu'après cette matrice et la phrase historique :
 

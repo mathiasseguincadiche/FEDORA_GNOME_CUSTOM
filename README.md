@@ -5,20 +5,20 @@
 
 **Une Fedora Workstation sur mesure, expliquée, versionnée, sauvegardable et vérifiable**
 
-**Cible : Fedora 45 · GNOME 51 | Laboratoire historique : Fedora 44 · GNOME 50**
+**Installation neuve : Fedora 45 Workstation · GNOME 51**
 
 **Ryzen 7 7700 · Intel Arc B580 · DevOps · Gaming · KVM**
 
 [![Tests](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml)
 [![Shell quality](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/shell-quality.yml)
-[![Fedora 44 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
-[![Fedora 44 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
+[![Fedora 45 package preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-package-preflight.yml)
+[![Fedora 45 gaming pretest](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora-gaming-pretest.yml)
 [![Fedora 45 package and driver preflight](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora45-package-preflight.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/fedora45-package-preflight.yml)
 [![Fedora 45 GNOME 51 preview readiness](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/release-readiness.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/release-readiness.yml)
 
 **Golden Workstation 0.22.3**
 
-**Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. Fedora 44 / GNOME 50 demeure un laboratoire historique, **pas un chemin autorisé d'installation neuve**. Fedora 45 reste bloqué jusqu'à la promotion de son profil `pending`.
+**Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. Fedora 45 / GNOME 51 est la référence de configuration et de CI. Fedora 44 est réservé au [laboratoire historique facultatif](docs/HISTORICAL_FEDORA44.md). Fedora 45 reste bloqué jusqu'à la promotion de son profil `pending`.
 
 **État logiciel : CODE-READY seulement après CI verte du commit exact** · **Certification matérielle : Gate 3 bare-metal à exécuter**
 
@@ -51,7 +51,7 @@
 
 - **Quoi :** une Fedora Workstation installée, réglée, sauvegardée et diagnostiquée par scripts versionnés, avec un point d'entrée unique : `./control.sh`.
 - **Pour qui / quoi :** un PC précis (Ryzen 7 7700, Intel Arc B580, 48 Gio, deux SSD) pour le DevOps, le gaming et les VM KVM.
-- **Où on en est :** Fedora 44 / GNOME 50 est la référence testée ; Fedora 45 / GNOME 51 est préparé, mais son activation exige un média final signé, la promotion explicite du profil, une CI verte sur le commit exact et une nouvelle qualification.
+- **Où on en est :** configuration et contrôles principaux sur Fedora 45 / GNOME 51 ; production verrouillée jusqu’au média final signé, à la promotion du profil et aux preuves du commit exact.
 - **Par où commencer :** [Démarrage rapide](#démarrage-rapide), puis [l'installation bare-metal](#installation-bare-metal) et [la documentation](#documentation).
 
 ## L'idée de la Golden, expliquée simplement
@@ -71,7 +71,7 @@ La Golden **n'est pas** une distribution Fedora dérivée, une ISO personnalisé
 | **Pourquoi ce projet ?** | Un poste Fedora récent, soigné, rapide et récupérable | [Vision](docs/VISION.md) |
 | **Comment ça marche ?** | Un plan Git → des préconditions → des modules → des preuves | [Architecture expliquée avec schémas](docs/ARCHITECTURE_PEDAGOGIQUE.md) |
 | **À quoi ressemblera GNOME 51 ?** | Bureau natif Wayland, ergonomie GNOME choisie et extensions compatibles | [Le bureau GNOME](docs/GNOME.md) |
-| **Pourquoi Fedora 44 est encore mentionné ?** | C'est une référence historique de tests ; seule Fedora 45 est ciblée en installation neuve | [Transition Fedora 45](docs/UPGRADE_FEDORA_45.md) |
+| **Pourquoi reste-t-il des fichiers Fedora 44 ?** | Ils servent uniquement au laboratoire historique lancé explicitement | [Historique Fedora 44](docs/HISTORICAL_FEDORA44.md) |
 | **Puis-je installer tout de suite ?** | Seulement avec la release promue et les garde-fous de production | [Guide d'installation](docs/INSTALLATION_GUIDE.md) |
 | **Comment sait-on que c'est réussi ?** | La CI teste le code ; la Gate 3 certifie le vrai matériel | [Validation en trois gates](docs/THREE_GATE_VALIDATION.md) |
 
@@ -94,7 +94,7 @@ La Golden **n'est pas** une distribution Fedora dérivée, une ISO personnalisé
 | **Code / contrats** | `CODE-READY` |
 | **CI et protection de `main`** | Les contextes obligatoires du ruleset et les workflows exécutés sont distincts : voir [gouvernance](docs/GITHUB_GOVERNANCE.md) et [Actions](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions). Ne pas déduire le statut courant d'une ancienne PR. |
 | **Matériel cible** | MSI MAG B850M MORTAR WIFI · Ryzen 7 7700 · Arc B580 · 48 Gio · 2× Crucial T705 |
-| **Fedora 45 / GNOME 51** | Préparé et vérifié en CI ; profil `pending` jusqu'à l'ISO finale signée ([détails](docs/UPGRADE_FEDORA_45.md)) |
+| **Fedora 45 / GNOME 51** | Préparé et vérifié en CI ; profil `pending` jusqu'à l'ISO finale signée ([détails](docs/FEDORA45_PRIMARY.md)) |
 | **Certification physique** | **PENDING** — Gate 3 bare-metal |
 | **Golden runtime-certified** | Non, tant que `gate3 certify` n'a pas réussi sur la machine cible |
 
@@ -137,7 +137,7 @@ Routes opérateur essentielles :
 ══════════════════════════════════════════════════════════════════════════════════════
   FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE
 ══════════════════════════════════════════════════════════════════════════════════════
-  Projet      0.22.3      Fedora 44      Runtime BAREMETAL
+  Projet      0.22.3      Fedora 45      Runtime BAREMETAL
   Kernel      <kernel actif>             N / N-1 · max 2
   GPU         Arc B580 / xe              Git      [CLEAN]
   Data        /data EXT4                 Gaming   [PASS]
@@ -179,25 +179,13 @@ Pour les responsabilités des composants, les conditions d'installation et les n
 
 ## Fedora 45 / GNOME 51
 
-### Une cible et une référence, sans ambiguïté
+### Installation neuve directe
 
-| | **Référence en vigueur** | **Cible du projet** |
-|---|---|---|
-| OS et bureau | Fedora 44 / GNOME 50 | **Fedora 45 Workstation / GNOME 51** |
-| Statut du profil | laboratoire historique, non autorisé pour une installation neuve de production | `profiles/fedora45/profile.json` = `pending` |
-| Ce que la CI montre | contrats, installation de paquets, labo GNOME et VM | préqualification Fedora 45, GNOME 51 natif et récupération en environnement isolé |
-| Ce qui reste | qualification physique Gate 3 | média final signé, promotion des verrous, six rôles d'extensions qualifiés et Gate 3 sur le PC |
+La référence du projet est **Fedora 45 Workstation / GNOME 51** : configuration par défaut, paquets, extensions, diagnostics et contrôles principaux. Aucun passage par Fedora 44 ni commande `upgrade` n’est requis pour une installation neuve.
 
-Le **PASS** du laboratoire GNOME 51 n'autorise pas à déclarer que le bureau Fedora 45 complet, avec toutes ses extensions personnalisées, est déjà certifié. Ce point est volontairement vérifié avant toute promotion.
+Le profil reste **pending** jusqu’à l’authentification du média final et à la disponibilité des composants retenus dans les dépôts de production. Choisir Fedora 45 ne supprime pas ces conditions. La CI exerce aussi les six extensions dans un laboratoire QEMU isolé ; une réussite en VM ne certifie pas le PC.
 
-La transition est préparée par des profils versionnés, une CI Fedora 45 réelle et un parcours `plan → prepare → reboot → finalize`. Le profil Fedora 45 reste **pending** jusqu'à la vérification du média Workstation final signé, des extensions GNOME 51 et des preuves CI. Il est interdit de simplement changer les numéros des anciens verrous. Le profil actuel Fedora 44 / GNOME 50 reste la référence déjà testée pendant cette préparation.
-
-```bash
-./control.sh upgrade plan
-bash scripts/development/release-readiness.sh --report-only
-```
-
-Voir [la migration et l'installation Fedora 45](docs/UPGRADE_FEDORA_45.md) pour les conditions de promotion, la sauvegarde du HOST et la nouvelle qualification. **Les exports de VM restent exclusivement manuels.**
+Commencer par le [guide d’installation neuve](docs/INSTALLATION_GUIDE.md). La [migration d’un ancien système Fedora 44](docs/UPGRADE_FEDORA_45.md) et le [laboratoire historique](docs/HISTORICAL_FEDORA44.md) sont des parcours facultatifs séparés. **Les exports de VM restent exclusivement manuels.**
 
 ## Les quatre piliers
 
@@ -214,7 +202,7 @@ Le projet poursuit quatre objectifs **d'importance égale** ; aucun n'a le droit
 
 | Couche | Contrat |
 |---|---|
-| **HOST** | Fedora Linux 44 Workstation · GNOME 50 · Wayland · SELinux Enforcing · firewalld |
+| **HOST** | Fedora Linux 45 Workstation · GNOME 51 · Wayland · SELinux Enforcing · firewalld |
 | **Kernel & hardware** | Linux amont officiel, dernière stable vérifiée sur kernel.org · politique **N / N-1** · Arc B580 sur `xe` · hardware cible mesuré |
 | **Données & recovery** | T705 système Btrfs · T705 `/data` EXT4 · Borg non chiffré (ADR 0014) · restauration staging-first |
 | **Workloads** | Desktop GNOME · applications pro · Steam/Proton · bibliothèque `/data/Jeux` · QEMU/KVM/libvirt |
@@ -348,7 +336,7 @@ Tout est réglable dans `config/local.conf`, sans toucher au code.
 
 GNOME Logiciels reste le catalogue d’applications ; ses mises à jour sont verrouillées pour conserver la sauvegarde préalable et la transaction système via `./control.sh update all`. Les Flatpak se mettent à jour explicitement avec `flatpak update`. Après APPLY, ouvrir une nouvelle session puis vérifier `diagnostics/lifecycle-doctor`.
 
-GNOME Disques et Flatseal sont intégrés au catalogue. Le laboratoire Fedora 44 teste les six extensions actives et un aller-retour bureautique réel. Les contrôles de présence/sandbox ne remplacent pas les essais d’usage, de partage d’écran ou de webcam. Les identités audio de la carte mère et Brio 100 sont enrôlées séparément ; les capacités Wi-Fi déclarées obligatoires bloquent si elles ne sont pas prouvées.
+GNOME Disques et Flatseal sont intégrés au catalogue. Le laboratoire Fedora 45 teste les six extensions actives et un aller-retour bureautique réel. Les contrôles de présence/sandbox ne remplacent pas les essais d’usage, de partage d’écran ou de webcam. Les identités audio de la carte mère et Brio 100 sont enrôlées séparément ; les capacités Wi-Fi déclarées obligatoires bloquent si elles ne sont pas prouvées.
 
 L’afficheur DeepCool LD240 dispose d’une intégration **facultative**, communautaire et épinglée, inactive par défaut. Voir [le guide d’intégration et de qualification](docs/DESKTOP_COMPLETION.md). La qualification matérielle reste à exécuter sur le PC.
 
@@ -559,7 +547,7 @@ Importer la preuve Gate 1 puis exécuter :
 ./control.sh validate export 2 /chemin/export
 ```
 
-Gate 2 valide GNOME 50/Wayland, Nautilus, Ptyxis, extensions et contrôle visuel, sans déverrouiller l'APPLY bare-metal.
+Gate 2 valide GNOME 51/Wayland, Nautilus, Ptyxis, extensions et contrôle visuel, sans déverrouiller l'APPLY bare-metal.
 
 ## Installation bare-metal
 

@@ -6,6 +6,8 @@ trap 'rm -rf "$tmp"' EXIT
 REPO_ROOT="$ROOT"
 source "$ROOT/lib/config.sh"
 config_load
+HOST_RELEASE=44; export HOST_RELEASE
+fedora_load_profile_extensions
 for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
   sha_key="${prefix}_SHA256"; url_key="${prefix}_SOURCE_URL"; uuid_key="${prefix}_UUID"
   [[ "${!sha_key}" =~ ^[0-9a-f]{64}$ && "${!url_key}" == https://* && -n "${!uuid_key}" ]]
@@ -16,7 +18,8 @@ rc=0
 bash "$ROOT/scripts/config/validate-config.sh" "$tmp/config" >/dev/null 2>&1 || rc=$?
 [[ "$rc" == 60 ]]
 rm "$tmp/config/local.conf"
-mkdir -p "$tmp/scripts/gnome" "$tmp/bin" "$tmp/data"
+mkdir -p "$tmp/scripts/gnome" "$tmp/bin" "$tmp/data" "$tmp/profiles/fedora44"
+cp "$ROOT/profiles/fedora44/gnome-extensions.lock" "$tmp/profiles/fedora44/"
 cp "$ROOT/scripts/gnome/"*.sh "$ROOT/scripts/gnome/validate-extension-metadata.py" "$tmp/scripts/gnome/"
 export FGC_TEST_ZIP="$tmp/fixture.zip" XDG_DATA_HOME="$tmp/data" FGC_TEST_UUID="$DING_UUID"
 python3 - <<'PY'
@@ -31,7 +34,7 @@ mkdir -p "$tmp/manifests" "$tmp/virtualization/xml"
 source "$ROOT/lib/evidence.sh"
 old_hash="$(effective_config_sha256)"
 fixture_sha="$(sha256sum "$FGC_TEST_ZIP" | cut -d' ' -f1)"
-sed -i "s/^DING_SHA256=.*/DING_SHA256=\"$fixture_sha\"/" "$tmp/config/gnome-extensions.lock"
+sed -i "s/^DING_SHA256=.*/DING_SHA256=\"$fixture_sha\"/" "$tmp/profiles/fedora44/gnome-extensions.lock"
 [[ "$(effective_config_sha256)" != "$old_hash" ]]
 cat > "$tmp/bin/curl" <<'SH'
 #!/usr/bin/env bash

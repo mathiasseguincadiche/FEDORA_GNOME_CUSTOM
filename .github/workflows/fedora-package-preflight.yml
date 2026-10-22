@@ -1,4 +1,4 @@
-name: Fedora 44 package preflight
+name: Fedora 45 package preflight
 on:
   push:
   pull_request:
@@ -11,10 +11,12 @@ permissions:
 jobs:
   packages:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:44
+    container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify strict Flathub bootstrap behavior offline
         shell: bash
         run: bash tests/test_ci_flathub_bootstrap.sh
@@ -76,17 +78,19 @@ jobs:
             grep -Eqi 'gtk4|libgtk-4\.so\.1' <<<"$requirements" || { echo "GTK4 REQUIREMENT MISSING: $pkg"; exit 1; }
             grep -Eqi 'libadwaita|libadwaita-1\.so\.0' <<<"$requirements" || { echo "LIBADWAITA REQUIREMENT MISSING: $pkg"; exit 1; }
           done < manifests/packages-applications-gtk4.txt
-      - name: Verify Fedora GNOME 50 extension packages
+      - name: Inspect GNOME 51 extension roles and production gate
         run: |
-          set -euo pipefail
-          dnf -y install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
+          dnf -y --refresh install gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator python3
           rpm -q gnome-shell-extension-dash-to-dock gnome-shell-extension-blur-my-shell gnome-shell-extension-appindicator
-          test -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com
-          test -d /usr/share/gnome-shell/extensions/blur-my-shell@aunetx
-          test -d /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com
-          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/metadata.json
-          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/blur-my-shell@aunetx/metadata.json
-          grep -Eq '"50"|50' /usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com/metadata.json
+          python3 scripts/validation/gnome51-extension-audit.py --report
+          python3 scripts/development/fedora-profile.py candidate . 45
+          if python3 scripts/development/fedora-profile.py validate . 45; then
+            bash scripts/gnome/install-fedora45-rpm-extensions.sh
+            python3 scripts/gnome/fedora45-rpm-extensions.py --verify
+          else
+            test "$(python3 -c 'import json; print(json.load(open("profiles/fedora45/profile.json"))["status"])')" = pending
+            echo 'Pending: exact compatible stable RPMs must be available before production promotion.'
+          fi
       - name: Verify reviewed extension artifacts from the canonical lock
         shell: bash
         run: |

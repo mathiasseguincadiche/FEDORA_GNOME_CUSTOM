@@ -23,7 +23,7 @@ r["evidence"] = {
     "disk_sha256": "c" * 64, "nvram_sha256": "d" * 64,
     "recovery_network": "restrict=on", "encryption": "none", "tpm_canary": "PASS",
     "session_shutdown": "gnome-logout",
-    "fedora_release": "44", "gnome_major": "50", "extension_mode": "curated", "curated_extensions": "six-active",
+    "fedora_release": "45", "gnome_major": "51", "extension_mode": "curated", "curated_extensions": "six-active",
 }
 assert lab.finalize(copy.deepcopy(r))["verdict"] == "PASS"
 def rejected(changed):
@@ -79,7 +79,8 @@ host = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
 # The fourth extension has no dedicated *_SCHEMA identifier. Do not invent one.
 candidate_validator = (root / ".github/scripts/fedora45-ci-validate-candidate.py").read_text()
 candidate_installer = (root / ".github/scripts/fedora45-ci-install-extension.sh").read_text()
-assert 'if key not in canonical:' in candidate_validator
+assert 'module.candidate(root, 45)' in candidate_validator
+assert 'if key not in canonical:' in (root / 'scripts/development/fedora-profile.py').read_text()
 assert 'if [[ -n "${!schema_var:-}" ]]' in candidate_installer
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in host
 assert 'if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]' in guest

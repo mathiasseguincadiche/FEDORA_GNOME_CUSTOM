@@ -1,5 +1,6 @@
-# Selected GNOME Shell extensions available from Fedora 44 repositories.
-# DING and Show Desktop Plus are installed from exact GNOME-reviewed artifacts.
+# Selected GNOME Shell extensions available from Fedora 45 repositories.
+# Gtk4-DING, Show Desktop Button, Vitals and Tiling Assistant are reviewed GNOME 51 artifacts.
+# Exact compatible RPM versions are pinned in profiles/fedora45/gnome-rpms.json.
 gnome-shell-extension-dash-to-dock
 gnome-shell-extension-blur-my-shell
 gnome-shell-extension-appindicator

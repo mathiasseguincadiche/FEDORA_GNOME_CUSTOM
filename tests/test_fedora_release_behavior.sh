@@ -19,15 +19,16 @@ HOST_RELEASE=45
 if fedora_require_selected; then echo 'pending Fedora 45 accepted' >&2; exit 1; fi
 if fedora_require_install_target; then echo 'pending Fedora 45 accepted for production' >&2; exit 1; fi
 HOST_RELEASE=46
-if fedora_require_profile; then exit 1; fi
+if fedora_require_profile "$HOST_RELEASE"; then exit 1; fi
 python3 - "$ROOT" "$tmp" <<'PY'
 import hashlib, importlib.util, json, pathlib, sys
 root, work=map(pathlib.Path,sys.argv[1:])
 spec=importlib.util.spec_from_file_location("profile",root/"scripts/development/fedora-profile.py")
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
-for directory in ("profiles/fedora45","installer","config"): (work/directory).mkdir(parents=True,exist_ok=True)
+for directory in ("profiles/fedora45","installer","config","manifests"): (work/directory).mkdir(parents=True,exist_ok=True)
 packages=work/"profiles/fedora45/packages-nautilus.txt"
 packages.write_bytes((root/"profiles/fedora45/packages-nautilus.txt").read_bytes())
+(work/"manifests/packages-nautilus.txt").write_bytes(packages.read_bytes())
 canonical=(root/"config/gnome-extensions.lock").read_text()
 (work/"config/gnome-extensions.lock").write_text(canonical)
 (work/"installer/fedora44-media.lock").write_bytes((root/"installer/fedora44-media.lock").read_bytes())
@@ -59,9 +60,9 @@ media.write_text(media.read_text().replace("RELEASE_STATUS=final","RELEASE_STATU
 media.write_text(media.read_text().replace("RELEASE_STATUS=beta","RELEASE_STATUS=final"));seal()
 extensions.write_text(extensions.read_text().replace('DING_SHELL_VERSION="51"','DING_SHELL_VERSION="50"'));seal();rejected()
 extensions.write_text(reviewed);seal()
-# The original identities stay acceptable (a native build may appear), unreviewed ones never are.
-original=canonical.replace('_SHELL_VERSION="50"','_SHELL_VERSION="51"')
-extensions.write_text(original);seal();m.validate(work,45)
+# A historical identity is refused until its complete GNOME 51 artifact is reviewed.
+original=(root/"profiles/fedora44/gnome-extensions.lock").read_text().replace('_SHELL_VERSION="50"','_SHELL_VERSION="51"')
+extensions.write_text(original);seal();rejected()
 extensions.write_text(reviewed.replace("gtk4-ding@smedius.gitlab.com","evil@example.com"));seal();rejected()
 extensions.write_text(reviewed.replace('DING_SCHEMA="org.gnome.shell.extensions.gtk4-ding"','DING_SCHEMA="org.gnome.shell.extensions.ding"'));seal();rejected()
 extensions.write_text(reviewed);seal()

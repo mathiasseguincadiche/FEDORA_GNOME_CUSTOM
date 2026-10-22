@@ -22,6 +22,8 @@ jobs:
       - name: Install preview dependencies
         run: dnf5 -y install git python3 borgbackup jq dnf5-plugins curl gnome-shell gnome-shell-extension-dash-to-dock gnome-shell-extension-appindicator
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Check the actual preview release
         shell: bash

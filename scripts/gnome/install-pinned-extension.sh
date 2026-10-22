@@ -4,7 +4,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 prefix="${1:-}"
 case "$prefix" in DING|SHOW_DESKTOP_PLUS|RESOURCE_MONITOR|TILING_ASSISTANT) ;; *) exit 2 ;; esac
 shift
-release="${HOST_RELEASE:-44}"
+release="${HOST_RELEASE:-45}"
 # The child installer must select the same lock as the parent engine.
 if [[ -r "$root/config/local.conf" ]]; then
   bash "$root/scripts/config/validate-config.sh" "$root/config" >/dev/null
@@ -12,7 +12,7 @@ if [[ -r "$root/config/local.conf" ]]; then
   [[ -z "$configured" ]] || release="$configured"
 fi
 case "$release" in
-  44) source "$root/config/gnome-extensions.lock" ;;
+  44) source "$root/profiles/fedora44/gnome-extensions.lock" ;;
   45)
     python3 "$root/scripts/development/fedora-profile.py" validate "$root" 45
     source "$root/profiles/fedora45/gnome-extensions.lock"

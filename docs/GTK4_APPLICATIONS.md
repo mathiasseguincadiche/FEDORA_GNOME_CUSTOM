@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Le bureau doit rester visuellement et fonctionnellement cohérent avec GNOME 50. Les applications graphiques **du bureau général** gérées automatiquement par le projet sont donc limitées à une sélection dont la pile Fedora 44 repose sur GTK4/libadwaita lorsqu'une solution GNOME de qualité existe.
+Le bureau doit rester visuellement et fonctionnellement cohérent avec GNOME 51. Les applications graphiques **du bureau général** gérées automatiquement par le projet sont donc limitées à une sélection dont la pile Fedora 45 repose sur GTK4/libadwaita lorsqu'une solution GNOME de qualité existe.
 
 Les outils CLI, services système et outils DevOps sans interface graphique ne sont pas concernés par cette règle.
 
@@ -78,6 +78,6 @@ Ptyxis est le terminal de référence. L'administration système et la virtualis
 
 ## Contrat de conformité
 
-La CI refuse une application ajoutée au manifeste desktop GNOME si son paquet Fedora 44 ne respecte pas le contrat GTK4/libadwaita attendu. Les applications professionnelles suivent un contrat distinct : source explicite, paquet/App ID exact, disponibilité vérifiée et absence d'installateur non maîtrisé de type `curl | bash`.
+La CI refuse une application ajoutée au manifeste desktop GNOME si son paquet Fedora 45 ne respecte pas le contrat GTK4/libadwaita attendu. Les applications professionnelles suivent un contrat distinct : source explicite, paquet/App ID exact, disponibilité vérifiée et absence d'installateur non maîtrisé de type `curl | bash`.
 
 La virtualisation suit son propre contrat de complétude et de stabilité dans [`VIRTUALIZATION.md`](VIRTUALIZATION.md).

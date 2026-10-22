@@ -6,7 +6,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 mkdir -m 700 "$tmp/keys"
-mkdir "$tmp/installer"
+mkdir -p "$tmp/installer/lib"
+cp "$ROOT/installer/lib/verify-media.sh" "$tmp/installer/lib/"
 cp "$ROOT/installer/verify-fedora44-media.sh" "$tmp/installer/"
 for cmd in gpg gpgv python3 sha256sum; do command -v "$cmd" >/dev/null; done
 for key in approved other; do

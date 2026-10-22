@@ -7,7 +7,7 @@ Ce registre indique **où se trouve la source de vérité** de chaque parcours. 
 | Point d'entrée | `control.sh`, `lib/control_center.sh` | [Control Center](CONTROL_CENTER.md) | `tests/test_workstation_control_center_contract.sh` |
 | USB Live Fedora 45 | `diagnostics/live-preflight.sh` | [Préflight Live](FEDORA45_LIVE_PREFLIGHT.md) | `.github/workflows/live-preflight.yml` |
 | Installation sécurisée | `install.sh`, `installer/` | [Installation](INSTALLATION_GUIDE.md) | `.github/workflows/fedora-installer-audit.yml` |
-| Promotion Fedora 45 | `scripts/development/promote-fedora45.py`, `profiles/fedora45/` | [Transition Fedora 45](UPGRADE_FEDORA_45.md) | `tests/test_promote_fedora45_behavior.sh` |
+| Promotion Fedora 45 | `scripts/development/promote-fedora45.py`, `profiles/fedora45/` | [Référence Fedora 45](FEDORA45_PRIMARY.md) | `tests/test_promote_fedora45_behavior.sh` |
 | Qualité et gates | `scripts/validation/`, `.github/workflows/` | [Trois gates](THREE_GATE_VALIDATION.md), [CI](CI_VALIDATION.md) | `tests/test_three_gate_validation_contract.sh` |
 | GNOME | `modules/gnome/`, `profiles/fedora45/gnome-extensions.lock` | [GNOME](GNOME.md), [extensions](GNOME_EXTENSIONS.md) | Tests d'intégration GNOME |
 | Sauvegarde et restauration | `modules/backup/`, `scripts/backup/` | [Backup et restauration](BACKUP_RESTORE.md) | Contrats backup et preuve réelle de restauration |
@@ -21,7 +21,7 @@ Ce registre indique **où se trouve la source de vérité** de chaque parcours. 
 2. **Préflight Live GO :** cinq observations préinstallation réussies sur le matériel, sans autorisation d'écrire sur les SSD.
 3. **Golden runtime-certified :** qualification Gate 3 réussie sur la workstation installée.
 
-Un PASS à une étape ne vaut pas PASS aux autres. Fedora 44 reste un laboratoire historique et ne constitue pas une voie autorisée pour une installation neuve. Le profil Fedora 45 `pending` interdit de décrire l'installation de production comme déjà autorisée.
+Un PASS à une étape ne vaut pas PASS aux autres. Fedora 45 / GNOME 51 est la référence d’installation neuve ; Fedora 44 reste un laboratoire historique facultatif. Le profil Fedora 45 `pending` interdit de décrire l'installation de production comme déjà autorisée.
 
 ## Règles de maintenance
 
@@ -37,6 +37,6 @@ Un PASS à une étape ne vaut pas PASS aux autres. Fedora 44 reste un laboratoir
 - Liens relatifs et ancres Markdown dans le README, les guides, les ADR et les modèles d'issues.
 - Chemins documentaires référencés par les tests de contrat et les scripts.
 - Éventuels doublons entre guides opérateur, normes et notes historiques.
-- Cohérence des informations sur Fedora 44/45, les six rôles d'extensions GNOME 51 et les protections de `main`.
+- Cohérence des informations sur Fedora 45/45, les six rôles d'extensions GNOME 51 et les protections de `main`.
 
 **Politique de migration :** ne pas déplacer un document si son nouveau chemin risque de casser une procédure ou un test sans migration atomique des références.

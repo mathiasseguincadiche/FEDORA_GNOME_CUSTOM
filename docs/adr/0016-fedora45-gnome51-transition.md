@@ -1,5 +1,7 @@
 # ADR 0016 — Profils de transition Fedora 45 / GNOME 51
 
+> Sélection active précisée par [ADR 0018](0018-fedora45-primary.md) : configuration et CI principales Fedora 45, promotion toujours contrôlée.
+
 Statut : accepté pour la préparation ; promotion Fedora 45 encore pending. Précise ADR 0001.
 
 Chaque release associe OS, major GNOME, média signé, archives d'extensions et preuves CI. Fedora 44/GNOME 50 reste actif jusqu'à la promotion d'un profil Fedora 45 final vérifié. Un conteneur Beta ou un candidat d'extension ne devient pas une certification de production.

@@ -7,7 +7,7 @@ umask 077
 }
 ROOT="$GITHUB_WORKSPACE"
 bash -n "$ROOT/.github/scripts/fedora-gnome-guest.sh"
-LAB_RELEASE="${FGC_LAB_RELEASE:-44}"
+LAB_RELEASE="${FGC_LAB_RELEASE:-45}"
 LAB_EXTENSION_MODE="${FGC_LAB_EXTENSION_MODE:-curated}"
 case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native|45:curated) ;; *) echo 'Unsupported lab profile' >&2; exit 50;; esac
 
@@ -86,10 +86,10 @@ curl --fail --location --proto '=https' --proto-redir '=https' --retry 4 \
 python3 "$ROOT/.github/scripts/fedora-keyring.py" "$LAB/fedora.pgp"
 mkdir -m 700 gnupg
 gpg --homedir "$LAB/gnupg" --batch --import fedora.pgp
-# Export ONLY the independently pinned Fedora 44 key into the verification ring.
-gpg --homedir "$LAB/gnupg" --batch --export "$FEDORA_SIGNING_FINGERPRINT" > fedora44.gpg
-[[ -s fedora44.gpg ]]
-gpgv --keyring "$LAB/fedora44.gpg" --status-fd 2 --output signed-checksums.txt \
+# Export ONLY the independently pinned selected Fedora key into the verification ring.
+gpg --homedir "$LAB/gnupg" --batch --export "$FEDORA_SIGNING_FINGERPRINT" > fedora-lab.gpg
+[[ -s fedora-lab.gpg ]]
+gpgv --keyring "$LAB/fedora-lab.gpg" --status-fd 2 --output signed-checksums.txt \
   "$FEDORA_CLOUD_CHECKSUM" 2> "$LAB/evidence/signature.log"
 grep -Fq "[GNUPG:] VALIDSIG $FEDORA_SIGNING_FINGERPRINT " "$LAB/evidence/signature.log"
 python3 - "$FEDORA_CLOUD_IMAGE" "$FEDORA_CLOUD_SHA256" <<'PY'
@@ -115,8 +115,8 @@ if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
   # native GNOME 51 preview must remain independent from curated ZIPs.
   python3 "$ROOT/.github/scripts/fedora45-ci-validate-candidate.py" "$ROOT"
   source "$ROOT/profiles/fedora45/gnome-extensions.lock"
-else
-  source "$ROOT/config/gnome-extensions.lock"
+elif [[ "$LAB_RELEASE" == 44 ]]; then
+  source "$ROOT/profiles/fedora44/gnome-extensions.lock"
 fi
 mkdir extensions
 if [[ "$LAB_EXTENSION_MODE" == curated ]]; then

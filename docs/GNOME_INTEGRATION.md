@@ -1,6 +1,6 @@
 # GNOME / Nautilus — intégration Golden Workstation
 
-Le bureau reste Fedora GNOME 50/Wayland proche de l'upstream, avec la finition fonctionnelle façon Ubuntu décrite dans [`GNOME_POLISH.md`](GNOME_POLISH.md) (sans le thème Yaru). Ce document couvre l'intégration : une pile GNOME maintenable, mesurable et complète pour un OS principal. Vue d'ensemble : [`GNOME.md`](GNOME.md).
+Le bureau reste Fedora GNOME 51/Wayland proche de l'upstream, avec la finition fonctionnelle façon Ubuntu décrite dans [`GNOME_POLISH.md`](GNOME_POLISH.md) (sans le thème Yaru). Ce document couvre l'intégration : une pile GNOME maintenable, mesurable et complète pour un OS principal. Vue d'ensemble : [`GNOME.md`](GNOME.md).
 
 La version applicable est celle de [`../VERSION`](../VERSION).
 
@@ -10,7 +10,7 @@ Nautilus possède désormais un socle dédié distinct du GNOME core. Le manifes
 
 - Nautilus + GVfs ;
 - caméra/GPhoto2 et FUSE ;
-- archives via `gvfs-archive` ;
+- archives via File Roller et son extension Nautilus ;
 - appareils Apple/AFC via `gvfs-afc` ;
 - fichiers GNOME Online Accounts via `gvfs-goa` ;
 - NFS via `gvfs-nfs` ;
@@ -39,12 +39,12 @@ Extensions fonctionnelles gérées :
 
 - **Dash to Dock** — activé depuis le RPM Fedora ;
 - **AppIndicator** — activé depuis le RPM Fedora pour les logiciels utilisant AppIndicator/KStatusNotifierItem ;
-- **Desktop Icons NG (DING)** — installé depuis l'artefact GNOME Extensions review `74408`/version `95`, compatible GNOME Shell 50 ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
-- **Show Desktop Plus** — installé depuis l'artefact GNOME Extensions review `70326`/version `8`, avec bouton `left-end`, clic gauche `toggle-desktop` et raccourci `Super+D` ;
-- **Resource Monitor** — télémétrie CPU/RAM/réseau/B580 depuis l'artefact GNOME Extensions review piné.
+- **Desktop Icons NG (DING)** — installé depuis l'artefact GNOME Extensions review `75162`/version `145`, compatible GNOME Shell 51 ; `~/Bureau` est le dossier XDG Desktop, son contenu est affiché sur le fond d'écran et la Corbeille est visible ;
+- **Show Desktop Button** — installé depuis l'artefact GNOME Extensions review `75965`/version `59`, avec bouton `left-end`, action Afficher le bureau et raccourci `Super+D` ;
+- **Vitals** — télémétrie CPU/RAM/réseau depuis l'artefact GNOME Extensions review piné.
 - **Tiling Assistant** — sixième extension du profil canonique, release GitHub officielle épinglée, installée et contrôlée par la couche gnome.polish.
 
-Fedora 44 ne fournit pas DING dans le manifest RPM du projet. DING et Show Desktop Plus utilisent donc deux installateurs étroits qui valident les artefacts GNOME-reviewed pinés, leurs UUID, leur compatibilité GNOME 50 et leur provenance.
+Fedora 45 ne fournit pas DING dans le manifest RPM du projet. DING et Show Desktop Button utilisent donc deux installateurs étroits qui valident les artefacts GNOME-reviewed pinés, leurs UUID, leur compatibilité GNOME 51 et leur provenance.
 
 Extensions/outils complémentaires :
 
@@ -52,7 +52,7 @@ Extensions/outils complémentaires :
 - **Extension Manager** — installé comme outil d'administration ;
 - **Just Perfection / Dash to Panel** — non imposés.
 
-DING conserve Home, volumes externes et volumes réseau masqués par défaut. Le couple DING + Show Desktop Plus fournit une action cohérente : masquer les fenêtres révèle immédiatement le contenu réel de `~/Bureau` et la Corbeille ; le second toggle restaure les fenêtres suivies par l'extension.
+DING conserve Home, volumes externes et volumes réseau masqués par défaut. Le couple DING + Show Desktop Button fournit une action cohérente : masquer les fenêtres révèle immédiatement le contenu réel de `~/Bureau` et la Corbeille ; le second toggle restaure les fenêtres suivies par l'extension.
 
 Une extension ne doit jamais servir à masquer un problème Mutter/Wayland/GPU.
 
@@ -143,4 +143,4 @@ Le LAB VirtualBox ne remplace jamais `install.sh --apply` et n'ouvre aucun gate 
 
 Ces contrôles sont repris dans la certification bare-metal finale selon leur scope.
 
-Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le ancien montage GIO des archives. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).

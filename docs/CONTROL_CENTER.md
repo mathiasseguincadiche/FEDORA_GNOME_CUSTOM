@@ -57,13 +57,13 @@ Une certification dont le fingerprint runtime, la configuration effective ou le 
 ## Validation en trois gates
 
 ```text
-Gate 1 — Fedora 44 / WSL2
+Gate 1 — Fedora 45 / WSL2
   système + logique, hardware DEFERRED
         ↓
-Gate 2 — Fedora 44 GNOME / VirtualBox
+Gate 2 — Fedora 45 GNOME / VirtualBox
   GNOME + UX, hardware DEFERRED
         ↓
-Installation Fedora 44 bare-metal
+Installation Fedora 45 bare-metal
         ↓
 Gate 3 — vraie workstation
   hardware + runtime + Performance + KVM + Gaming + backup

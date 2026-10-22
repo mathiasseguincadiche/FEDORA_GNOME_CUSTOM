@@ -1,4 +1,4 @@
-# AppImage — compatibilité complète Fedora 44
+# AppImage — compatibilité complète Fedora 45
 
 ## Objectif
 
@@ -127,11 +127,11 @@ Le doctor vérifie :
 
 L'absence de `/dev/fuse` dans un conteneur ou certaines VM est un avertissement et non une preuve de panne bare-metal.
 
-## CI Fedora 44
+## CI Fedora 45
 
-Le workflow `Fedora 44 AppImage compatibility pretest` vérifie :
+Le workflow `Fedora 45 AppImage compatibility pretest` vérifie :
 
-- résolution de tous les RPM sur Fedora 44 ;
+- résolution de tous les RPM sur Fedora 45 ;
 - installation simultanée FUSE 2/FUSE 3 et multilib ;
 - disponibilité des extracteurs Type 1/Type 2 ;
 - reconnaissance des marqueurs Type 1 (`AI\\x01`) et Type 2 (`AI\\x02`) ;
@@ -142,6 +142,6 @@ La CI **n'exécute aucun AppImage téléchargé depuis Internet**. La compatibil
 
 ## Limites réelles de « prise en charge totale »
 
-Le système fournit toutes les briques génériques raisonnables pour exécuter les formats AppImage Type 1 et Type 2 sur Fedora 44. Il ne peut toutefois pas garantir qu'un binaire arbitraire datant de plusieurs décennies fonctionnera si celui-ci dépend d'un ABI retiré, d'un pilote propriétaire obsolète, d'une architecture CPU non supportée ou d'un comportement incompatible avec un kernel moderne.
+Le système fournit toutes les briques génériques raisonnables pour exécuter les formats AppImage Type 1 et Type 2 sur Fedora 45. Il ne peut toutefois pas garantir qu'un binaire arbitraire datant de plusieurs décennies fonctionnera si celui-ci dépend d'un ABI retiré, d'un pilote propriétaire obsolète, d'une architecture CPU non supportée ou d'un comportement incompatible avec un kernel moderne.
 
 Dans ce cas, le problème appartient au payload spécifique, pas au socle AppImage Golden.

@@ -3,6 +3,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 source "$REPO_ROOT/lib/persistent_data.sh"
+source "$REPO_ROOT/lib/gaming_repositories.sh"
 quiet=false
 [[ "${1:-}" == '--quiet' ]] && quiet=true
 ok=0; warn=0; ko=0
@@ -60,7 +61,8 @@ for pkg in mesa-vulkan-drivers.x86_64 mesa-vulkan-drivers.i686 mesa-dri-drivers.
 done
 
 repo_payload="$(dnf repolist --all 2>/dev/null || true)"
-if rpm -q fedora-workstation-repositories >/dev/null 2>&1 && [[ -r /etc/yum.repos.d/rpmfusion-nonfree-steam.repo ]] && grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload"; then
+repo_file="$(gaming_steam_repository_file / || true)"
+if [[ -n "$repo_file" ]] && [[ "$(rpm -qf --qf '%{NAME}\n' "$repo_file" 2>/dev/null)" == fedora-workstation-repositories ]] && grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload"; then
   emit OK 'Steam repository' 'Fedora workstation repository definition exposes rpmfusion-nonfree-steam'
 else
   emit KO 'Steam repository' 'fedora-workstation-repositories or rpmfusion-nonfree-steam definition unavailable'

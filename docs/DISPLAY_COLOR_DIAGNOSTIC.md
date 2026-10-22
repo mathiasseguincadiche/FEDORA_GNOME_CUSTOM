@@ -80,4 +80,4 @@ Dans l'OSD du moniteur, relever **la plage RGB d'entrée** (Auto/Full/Limited), 
 
 La certification physique est régie par [PHYSICAL_QUALIFICATION_CHECKLIST.md](PHYSICAL_QUALIFICATION_CHECKLIST.md). Le travail prioritaire global est suivi dans [ROADMAP_FEDORA45_2026.md](ROADMAP_FEDORA45_2026.md).
 
-**Sources :** [GNOME 51 — notes de version](https://release.gnome.org/51/) et [GNOME 50 — gestion des couleurs et VRR](https://release.gnome.org/50/).
+**Sources :** [GNOME 51 — notes de version](https://release.gnome.org/51/) et [GNOME 51 — gestion des couleurs et VRR](https://release.gnome.org/50/).

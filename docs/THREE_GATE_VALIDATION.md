@@ -5,17 +5,17 @@
 Cette procédure est l'ordre officiel de qualification de la Golden Workstation.
 
 ```text
-GATE 1 — Fedora 44 / WSL2
+GATE 1 — Fedora 45 / WSL2
 Prévalidation système + logique
         │
         │ preuve JSON portable Gate 1
         ▼
-GATE 2 — Fedora 44 / VirtualBox
+GATE 2 — Fedora 45 / VirtualBox
 Validation GNOME / Nautilus / Ptyxis + contrôle visuel humain
         │
         │ preuve JSON portable Gate 2 liée au SHA-256 de Gate 1
         ▼
-GATE 3 — Fedora 44 / BARE-METAL
+GATE 3 — Fedora 45 / BARE-METAL
 Installation réelle + certification matérielle/logicielle complète
         │
         ▼
@@ -39,7 +39,7 @@ flowchart TD
   P -. "ne remplace pas" .-> G
 ```
 
-Le parcours détaillé ci-dessous concerne **Fedora 44 / GNOME 50**, référence active. Pour **Fedora 45 / GNOME 51**, le profil reste `pending` : média signé, promotion des verrous et nouvelles preuves sont nécessaires. Une ancienne Gate 2 GNOME 50 ne certifie pas automatiquement un bureau GNOME 51. [Architecture et exemples](ARCHITECTURE_PEDAGOGIQUE.md) · [Transition Fedora 45](UPGRADE_FEDORA_45.md).
+Le parcours détaillé ci-dessous concerne **Fedora 45 / GNOME 51**, référence active. Pour **Fedora 45 / GNOME 51**, le profil reste `pending` : média signé, promotion des verrous et nouvelles preuves sont nécessaires. Une ancienne Gate 2 GNOME 50 ne certifie pas un bureau GNOME 51. [Architecture et exemples](ARCHITECTURE_PEDAGOGIQUE.md) · [Référence Fedora 45](FEDORA45_PRIMARY.md).
 
 ## Règles absolues
 
@@ -77,7 +77,7 @@ Chaque export est accompagné d'un fichier `.sha256`.
 
 ---
 
-# Gate 1 — Fedora 44 sous WSL2
+# Gate 1 — Fedora 45 sous WSL2
 
 ## Objectif
 
@@ -85,7 +85,7 @@ Gate 1 valide le **code de validation**, la cohérence système et les décision
 
 ### Validé
 
-- Fedora 44 userland ;
+- Fedora 45 userland ;
 - détection WSL2 ;
 - outils système requis ;
 - schéma de configuration ;
@@ -115,7 +115,7 @@ Gate 1 valide le **code de validation**, la cohérence système et les décision
 
 ## Exécution
 
-Dans Fedora 44 WSL2 :
+Dans Fedora 45 WSL2 :
 
 ```bash
 git switch main
@@ -145,7 +145,7 @@ Exporter la preuve vers Windows ou un support partagé :
 
 ---
 
-# Gate 2 — Fedora 44 GNOME sous VirtualBox
+# Gate 2 — Fedora 45 GNOME sous VirtualBox
 
 > Guide pratique pas à pas depuis Windows (installation WSL2 et VirtualBox, dossier partagé, checklist, dépannage) : [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md).
 
@@ -158,8 +158,8 @@ Le laboratoire VirtualBox est volontairement séparé du `install.sh --apply` de
 ## Pré-requis VM
 
 - Oracle VirtualBox ;
-- Fedora Linux 44 ;
-- GNOME Shell 50 ;
+- Fedora Linux 45 ;
+- GNOME Shell 51 ;
 - session Wayland ;
 - utilisateur desktop non-root ;
 - D-Bus utilisateur actif ;
@@ -197,8 +197,8 @@ Le LAB installe/valide notamment :
 - applications GTK4/libadwaita gérées ;
 - Ptyxis natif ;
 - DING ;
-- Show Desktop Plus ;
-- Resource Monitor ;
+- Show Desktop Button ;
+- Vitals ;
 - réglages GNOME ciblés.
 
 Si GNOME demande une reconnexion après installation d'extensions : se déconnecter/reconnecter puis relancer `gate2 check`.
@@ -212,13 +212,13 @@ Si GNOME demande une reconnexion après installation d'extensions : se déconnec
 Ces contrôles couvrent notamment :
 
 - identité VirtualBox ;
-- Fedora 44 ;
-- GNOME Shell 50 ;
+- Fedora 45 ;
+- GNOME Shell 51 ;
 - Wayland ;
 - production APPLY toujours bloqué ;
 - baseline bare-metal toujours bloquée ;
 - extensions installées, épinglées et activées ;
-- réglages DING / Show Desktop Plus / Resource Monitor ;
+- réglages DING / Show Desktop Button / Vitals ;
 - Nautilus/GVfs ;
 - Ptyxis ;
 - XDG portals.
@@ -230,9 +230,9 @@ Vérifier réellement à l'écran :
 - GNOME Shell sans crash ni défaut graphique évident ;
 - icônes DING conformes ;
 - corbeille visible selon la politique ;
-- bouton Show Desktop Plus fonctionnel ;
+- bouton Show Desktop Button fonctionnel ;
 - `Super+D` fonctionnel ;
-- Resource Monitor lisible dans la barre supérieure ;
+- Vitals lisible dans la barre supérieure ;
 - Nautilus se lance et navigue correctement ;
 - intégration archives/prévisualisation cohérente ;
 - Ptyxis se lance normalement ;
@@ -262,7 +262,7 @@ Exporter ensuite les deux preuves :
 
 ---
 
-# Gate 3 — Fedora 44 réellement installé sur le PC
+# Gate 3 — Fedora 45 réellement installé sur le PC
 
 ## Objectif
 
@@ -278,12 +278,12 @@ Elle doit être exécutée sur la machine physique cible :
 - pile KVM/libvirt ;
 - stockage/backup réels.
 
-## 1. Installer Fedora 44 avec le média verrouillé
+## 1. Installer Fedora 45 avec le média verrouillé
 
 Suivre `INSTALLATION_GUIDE.md` et vérifier le média avec :
 
 ```bash
-installer/verify-fedora44-media.sh ...
+installer/verify-fedora-media.sh ...
 ```
 
 Conserver les invariants :

@@ -31,10 +31,10 @@ check_value() {
 
 if ! $quiet; then ui_banner 'GNOME RESOURCE MONITOR' 'CPU / RAM / GPU / NETWORK TELEMETRY'; fi
 
-uuid="${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
+uuid="${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
 extension_dir="$(resource_monitor_extension_dir)"
 schema_dir="$(resource_monitor_schema_dir)"
-schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}"
+schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.vitals}"
 marker="$extension_dir/.fedora-gnome-custom-source"
 
 if [[ -r "$extension_dir/metadata.json" ]]; then emit OK 'Resource Monitor payload' installed; else emit KO 'Resource Monitor payload' missing; fi

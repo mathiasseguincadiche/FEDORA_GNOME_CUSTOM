@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 resource_monitor_extension_dir() {
-  printf '%s/%s' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
+  printf '%s/%s' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
 }
 
 resource_monitor_schema_dir() {
@@ -86,13 +86,13 @@ PY
 resource_monitor_set() {
   local key="$1" value="$2"
   run_mutating GNOME gsettings --schemadir "$(resource_monitor_schema_dir)" set \
-    "${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}" "$key" "$value"
+    "${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.vitals}" "$key" "$value"
 }
 
 # Fedora 45 / GNOME 51: Resource Monitor has no GNOME 51 build, Vitals replaces it.
 # The role prefix RESOURCE_MONITOR_* is unchanged; the reviewed lock decides the identity.
 resource_monitor_is_vitals() {
-  [[ "${RESOURCE_MONITOR_UUID:-}" == "Vitals@CoreCoding.com" ]]
+  [[ "${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}" == "Vitals@CoreCoding.com" ]]
 }
 
 resource_monitor_label() {
@@ -177,13 +177,13 @@ EOF
 }
 
 gnome_telemetry_apply() {
-  local uuid="${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
+  local uuid="${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
   local cpu_sensor cpu_path cpu_label cpu_json
   local gpu_card gpu_json gpu_thermal_json
   is_true "${ENABLE_RESOURCE_MONITOR:-false}" || return 0
 
   run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-resource-monitor.sh" \
-    "${RESOURCE_MONITOR_SOURCE_URL:-}" "$uuid" "${RESOURCE_MONITOR_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+    "${RESOURCE_MONITOR_SOURCE_URL:-}" "$uuid" "${RESOURCE_MONITOR_SHELL_VERSION:-51}" || return "$EXIT_APPLY_FAILED"
 
   if resource_monitor_is_vitals; then
     resource_monitor_vitals_apply || return "$EXIT_APPLY_FAILED"
@@ -253,8 +253,8 @@ gnome_telemetry_apply() {
 }
 
 gnome_telemetry_postcheck() {
-  local uuid="${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
-  local schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}"
+  local uuid="${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
+  local schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.vitals}"
   local schema_dir extension_dir gpu_card
   is_true "${DRY_RUN:-true}" && return 0
   is_true "${ENABLE_RESOURCE_MONITOR:-false}" || return 0

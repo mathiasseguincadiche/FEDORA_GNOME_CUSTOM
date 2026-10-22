@@ -87,7 +87,7 @@ Slack, MarkText et draw.io restent volontairement classés `community-unverified
 - les manifestes paquets/Flatpak/provenance/runtime ;
 - le plan de modules ;
 - les XML de politique de virtualisation ;
-- le lock média Fedora 44.
+- le lock média Fedora 45.
 
 Une modification de ces politiques rend donc les anciennes preuves dry-run/APPLY obsolètes.
 

@@ -1,17 +1,17 @@
-# GATE 1 — Fedora 44 sous WSL2
+# GATE 1 — Fedora 45 sous WSL2
 
 ## Objectif
 
-Fedora 44 sous WSL2 est le **GATE 1 officiel** de la chaîne de validation :
+Fedora 45 sous WSL2 est le **GATE 1 officiel** de la chaîne de validation :
 
 ```text
 GitHub Actions
       ↓
-GATE 1 — Fedora 44 / WSL2
+GATE 1 — Fedora 45 / WSL2
       ↓ preuve JSON portable
-GATE 2 — Fedora 44 GNOME / VirtualBox
+GATE 2 — Fedora 45 GNOME / VirtualBox
       ↓ preuve JSON liée à Gate 1
-GATE 3 — Fedora 44 / bare-metal
+GATE 3 — Fedora 45 / bare-metal
       ↓
 Golden Workstation
 ```
@@ -22,7 +22,7 @@ Le protocole complet est défini dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VA
 
 ## Ce que Gate 1 valide
 
-- identité Fedora 44 ;
+- identité Fedora 45 ;
 - détection explicite WSL2 ;
 - visibilité CPU/mémoire disponible dans WSL2 ;
 - systemd sous WSL2 ;
@@ -63,7 +63,7 @@ Un `GATE 1 PASS` signifie donc : **la logique est saine dans son périmètre**. 
 
 ## Préparer WSL2
 
-Depuis Windows 11 Pro, installer/mettre à jour WSL2 et Fedora 44. Vérifier que la distribution s'exécute bien en WSL 2.
+Depuis Windows 11 Pro, installer/mettre à jour WSL2 et Fedora 45. Vérifier que la distribution s'exécute bien en WSL 2.
 
 Dans Fedora :
 

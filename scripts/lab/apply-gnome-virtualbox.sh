@@ -42,9 +42,9 @@ lab_require_virtualbox() {
   fi
 }
 
-lab_require_fedora44() {
-  if ! grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || ! fedora_require_selected; then
-    ui_error 'VIRTUALBOX GNOME LAB requires the selected promoted Fedora release'
+lab_require_fedora45() {
+  if ! grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || ! fedora_require_install_target; then
+    ui_error 'VIRTUALBOX GNOME LAB requires promoted Fedora 45 / GNOME 51'
     return "$EXIT_PRECHECK_FAILED"
   fi
 }
@@ -71,13 +71,13 @@ VIRTUALBOX GNOME LAB SCOPE
 - Install the full Fedora-native Nautilus/GVfs/Sushi/File Roller integration.
 - Install the curated GTK4/libadwaita application set, including native Ptyxis.
 - Apply GNOME window buttons: minimize, maximize, close on the right.
-- Install pinned GNOME-reviewed Desktop Icons NG (DING) v95.
+- Install pinned GNOME-reviewed Gtk4 Desktop Icons NG (DING) v145.
 - Set XDG Desktop to ~/Bureau; show Trash; hide Home/external/network volumes.
-- Install pinned GNOME-reviewed Show Desktop Plus v8.
-- Configure top-left toggle-desktop button and Super+D.
-- Install pinned GNOME-reviewed Resource Monitor v28.
+- Install pinned GNOME-reviewed Show Desktop Button v59.
+- Configure top-left show-desktop button and Super+D.
+- Install pinned GNOME-reviewed Vitals v85.
 - Configure compact top-bar CPU/RAM/network/GPU telemetry; physical Ryzen/B580 sensors remain deferred in VirtualBox.
-- Enable DING, Show Desktop Plus and Resource Monitor in the current GNOME user session.
+- Enable DING, Show Desktop Button and Vitals in the current GNOME user session.
 - Validate Nautilus, Ptyxis and XDG portal integration.
 - Run the read-only LAB doctor.
 
@@ -89,8 +89,8 @@ PLAN
 }
 
 lab_apply() {
-  local ding_uuid="${DING_UUID:-ding@rastersoft.com}"
-  local show_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
+  local ding_uuid="${DING_UUID:-gtk4-ding@smedius.gitlab.com}"
+  local show_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-button@amivaleo}"
   local proof
 
   command_exists sudo || { ui_error 'sudo is required to install the Gate 2 desktop packages'; return "$EXIT_PRECHECK_FAILED"; }
@@ -116,9 +116,9 @@ lab_apply() {
   gnome_settings_apply || return "$EXIT_APPLY_FAILED"
 
   run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-ding.sh" \
-    "${DING_SOURCE_URL:-}" "$ding_uuid" "${DING_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+    "${DING_SOURCE_URL:-}" "$ding_uuid" "${DING_SHELL_VERSION:-51}" || return "$EXIT_APPLY_FAILED"
   run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-show-desktop-plus.sh" \
-    "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "$show_uuid" "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+    "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "$show_uuid" "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-51}" || return "$EXIT_APPLY_FAILED"
 
   gnome_ding_settings_apply || return "$EXIT_APPLY_FAILED"
   gnome_show_desktop_plus_settings_apply || return "$EXIT_APPLY_FAILED"
@@ -158,7 +158,7 @@ lab_apply() {
 }
 
 lab_require_virtualbox || exit "$?"
-lab_require_fedora44 || exit "$?"
+lab_require_fedora45 || exit "$?"
 lab_require_gnome_session || exit "$?"
 
 case "$MODE" in

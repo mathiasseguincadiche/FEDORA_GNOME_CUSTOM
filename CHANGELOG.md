@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Laboratoire GNOME : fermer l’instance D-Bus réelle de Nautilus et vérifier la fin des processus avant déconnexion ; conserver les diagnostics de fermeture et refuser les clients bloqués. L’essai interactif avec applications ouvertes reste requis.
+- Détection de la définition Steam déplacée dans `/usr/share/dnf5/repos.d/` sur Fedora 45, avec vérification du propriétaire RPM, compatibilité du chemin historique et test de comportement.
+
+- Fedora 45 / GNOME 51 devient la référence d’installation neuve, de configuration et de CI principale. Les entrées Kickstart et de vérification de média restent bloquées sur un profil non promu.
+- Verrous canoniques Gtk4 DING, Show Desktop Button, Vitals et Tiling Assistant alignés sur le profil 45 ; manifestes Nautilus sans le backend `gvfs-archive` supprimé.
+- Préférences GNOME 51 vérifiées sur les vrais schémas ; laboratoires principaux natif et personnalisé sous Fedora 45. Fedora 44 reste disponible par lancement manuel historique.
+- Guides d’installation neuve, migration facultative et statut de promotion séparés ; données `/data/IA/Openclaw` et politique Borg conservées.
+
 ## En préparation — corrections avant installation (non publié)
 
 - Installation : préserver la configuration Kickstart et placer l’approbation définitive avant le dernier dry-run et le backup vérifié.

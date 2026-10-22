@@ -43,7 +43,7 @@ Le postcheck refuse la validation si :
 
 Les lanceurs Flatpak sont recherchés dans les exports utilisateur et système. L'App ID Bitwarden étant `com.bitwarden.desktop`, son fichier desktop exporté est `com.bitwarden.desktop.desktop`.
 
-## CI Fedora 44
+## CI Fedora 45
 
 Le host integration pretest :
 

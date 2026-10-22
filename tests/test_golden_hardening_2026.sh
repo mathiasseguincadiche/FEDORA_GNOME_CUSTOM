@@ -11,7 +11,7 @@ for file in \
   scripts/hardware/vaapi-smoke.sh \
   scripts/release/capture-golden-release.sh \
   installer/fedora44-media.lock \
-  installer/verify-fedora44-media.sh \
+  installer/lib/verify-media.sh \
   docs/GOLDEN_RELEASE.md \
   docs/RUNBOOK_GOLDEN_HARDWARE.md \
   docs/adr/README.md; do
@@ -115,7 +115,7 @@ grep -Fq 'diff)' "$ROOT/diagnostics/software-matrix-doctor"
 grep -Fxq 'FEDORA_RELEASE=44' "$ROOT/installer/fedora44-media.lock"
 grep -Fxq 'FEDORA_COMPOSE=1.7' "$ROOT/installer/fedora44-media.lock"
 grep -Fxq 'ISO_SHA256=1620295f6a00c27c3208f0c00b8ece4eab1ec69b9002152d97488bf26a426ddf' "$ROOT/installer/fedora44-media.lock"
-grep -Fq 'gpgv' "$ROOT/installer/verify-fedora44-media.sh"
+grep -Fq 'gpgv' "$ROOT/installer/lib/verify-media.sh"
 
 # Architecture decisions are explicit and discoverable. ADR 0003 and 0004 are
 # historical; ADR 0010 and 0011 are their current replacements.

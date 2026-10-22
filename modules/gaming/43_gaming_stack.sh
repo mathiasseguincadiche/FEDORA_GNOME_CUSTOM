@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 source "$REPO_ROOT/lib/persistent_data.sh"
+source "$REPO_ROOT/lib/gaming_repositories.sh"
 
 gaming_stack_enabled() { is_true "${GAMING_ENABLE:-false}"; }
 
@@ -25,17 +26,23 @@ gaming_stack_plan() {
 }
 
 gaming_stack_apply() {
-  local pkg repo_payload
+  local pkg repo_payload repo_file
   gaming_stack_enabled || return 0
 
   install_manifest_packages GAMING "$REPO_ROOT/manifests/packages-gaming.txt" || return "$EXIT_APPLY_FAILED"
 
   # Fedora owns the repository definition for the dedicated RPM Fusion Steam
   # channel. RPM Fusion's release package supplies the signing material, while
-  # fedora-workstation-repositories supplies rpmfusion-nonfree-steam.repo.
+  # fedora-workstation-repositories supplies rpmfusion-nonfree-steam.repo in
+  # /usr/share/dnf5/repos.d on Fedora 45, or /etc/yum.repos.d on older installs.
   run_mutating GAMING sudo dnf -y install fedora-workstation-repositories || return "$EXIT_APPLY_FAILED"
 
   if ! is_true "${DRY_RUN:-true}"; then
+    repo_file="$(gaming_steam_repository_file /)" || {
+      log_error GAMING 'Fedora workstation Steam repository definition is missing'
+      return "$EXIT_APPLY_FAILED"
+    }
+    [[ "$(rpm -qf --qf '%{NAME}\n' "$repo_file")" == fedora-workstation-repositories ]] || return "$EXIT_APPLY_FAILED"
     repo_payload="$(dnf repolist --all 2>/dev/null || true)"
     grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload" || {
       log_error GAMING 'rpmfusion-nonfree-steam repository is unavailable after Fedora workstation/RPM Fusion repository setup'

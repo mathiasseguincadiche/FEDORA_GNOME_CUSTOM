@@ -1,11 +1,6 @@
 # Supply-chain et provenance
 
-Les archives d'extensions de la référence **Fedora 44 / GNOME 50** sont
-épinglées dans [`config/gnome-extensions.lock`](../config/gnome-extensions.lock).
-La cible **Fedora 45 / GNOME 51** possède un verrou séparé,
-[`profiles/fedora45/gnome-extensions.lock`](../profiles/fedora45/gnome-extensions.lock),
-dont la promotion reste conditionnée au média final signé et au profil
-[`pending`](../profiles/fedora45/profile.json).
+Les archives d’extensions de la référence **Fedora 45 / GNOME 51** sont centralisées dans `config/gnome-extensions.lock`, identique à `profiles/fedora45/gnome-extensions.lock`. Ces verrous sélectionnent les artefacts revus pour la préparation ; l’APPLY exige toujours le profil promu. Les verrous Fedora 44 sont réservés au [parcours historique](HISTORICAL_FEDORA44.md).
 
 La version actuelle du projet se lit dans [`VERSION`](../VERSION), jamais
 dans une ancienne notice historique. Les verrous sont des constantes de
@@ -110,9 +105,10 @@ Activé seulement par `REMOTE_ENABLE="true"` ; rien n'est téléchargé sinon.
 Les extensions téléchargées directement depuis GNOME Extensions sont verrouillées par review, version **et SHA-256** :
 
 ```text
-DING 74408 / v95             48175f0b5c1f8a1a724d761198c91d6994e91e28aec685605ae6a240b0a95aae
-Show Desktop Plus 70326 / v8 9ceab00be63b93c4eade16cf804bf4edd587632750aa89b78e317673fd6016a9
-Resource Monitor 70909 / v28  18f49cf20bd8f96f22f6048d7404e51cb414c1aea94ca16d0c2ad3634e9d8bf2
+Gtk4 DING 75162 / v145          4a884fa3976aeb814726fd96428c09cfeca2da01aec3ac8629ddd6cd22bff2c1
+Show Desktop Button 75965 / v59 76411e57bf5402c54bc04e5a94700c62dfb71b094ed6eac48509f609c07f6000
+Vitals 74743 / v85             899e5ffe27d1793cf13db069d835c11136cec816717e4e450a56f08bcf976b2f
+Tiling Assistant v56          961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a
 ```
 
 Un changement de contenu derrière une URL review existante est refusé **avant** `gnome-extensions install`.

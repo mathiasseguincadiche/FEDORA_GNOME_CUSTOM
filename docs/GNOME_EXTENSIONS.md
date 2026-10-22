@@ -1,219 +1,59 @@
-# Extensions GNOME 50 — politique Golden Workstation
+# Extensions GNOME 51 — politique Golden Workstation
 
-> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+> Vue d’ensemble : [GNOME.md](GNOME.md). Référence : Fedora 45 Workstation + GNOME 51 + Wayland.
 
-Les références exécutables des quatre extensions téléchargées sont centralisées dans
-[`config/gnome-extensions.lock`](../config/gnome-extensions.lock). Les numéros cités
-ci-dessous décrivent le profil actif ; le lock reste la référence à mettre à jour.
-Les clés de ce fichier sont des constantes vérifiées, pas des options `local.conf`.
+Le profil est sélectionné par défaut et reste `pending` jusqu’à sa [promotion](FEDORA45_PRIMARY.md). Les constantes des quatre archives téléchargées sont dans [`config/gnome-extensions.lock`](../config/gnome-extensions.lock), identique au verrou du profil Fedora 45. URL, version, UUID, compatibilité et SHA-256 sont contrôlés ensemble ; ce ne sont pas des options `local.conf`.
 
+## Les six extensions fonctionnelles
 
-Référence : Fedora Linux 44 Workstation + GNOME 50 + Wayland.
-
-Le projet distingue les extensions **fonctionnelles** des extensions purement cosmétiques. L'objectif est de conserver un bureau proche de l'upstream, stable à 240 Hz et simple à diagnostiquer après une mise à jour ou un suspend/resume.
-
-## Les six rôles GNOME et la transition vers GNOME 51
-
-Le projet conserve les **mêmes besoins fonctionnels**, pas forcément les mêmes extensions à chaque version de GNOME :
-
-| Rôle attendu | Fedora 44 / GNOME 50 | Cible Fedora 45 / GNOME 51 |
+| Rôle | Composant / identité | Source retenue |
 |---|---|---|
-| Dock | Dash to Dock | Dash to Dock, après validation de compatibilité |
-| Icônes et Corbeille | Desktop Icons NG (DING) | Gtk4 DING |
-| Afficher le bureau | Show Desktop Plus | Show Desktop Button |
-| Informations CPU/RAM/réseau | Resource Monitor | Vitals |
-| Tuilage | Tiling Assistant | compatibilité à prouver |
-| AppIndicator | AppIndicator | compatibilité à prouver |
+| Dock | Dash to Dock / `dash-to-dock@micxgx.gmail.com` | RPM Fedora, version exacte dans `profiles/fedora45/gnome-rpms.json` |
+| AppIndicator | `appindicatorsupport@rgcjonas.gmail.com` | RPM Fedora, même verrou |
+| Icônes | Gtk4 Desktop Icons NG (DING) / `gtk4-ding@smedius.gitlab.com` | version 145, review 75162 |
+| Afficher le bureau | Show Desktop Button / `show-desktop-button@amivaleo` | version 59, review 75965 |
+| Télémétrie | Vitals / `Vitals@CoreCoding.com` | version 85, review 74743 |
+| Tuilage | Tiling Assistant / `tiling-assistant@leleat-on-github` | release GitHub v56 |
 
-**Ne pas confondre** : le laboratoire Fedora 45 a prouvé GNOME 51 Wayland, le redémarrage et la récupération, mais **pas encore le profil intégral de six extensions qualifiées en GNOME 51**. Les URLs, hashes et identités du profil promu sont vérifiés séparément ; la Gate 2 et la Gate 3 devront être rejouées. Voir [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md) et [GNOME.md](GNOME.md).
+Gtk4 DING, Show Desktop Button et Vitals remplacent les implémentations GNOME 50 Desktop Icons NG, Show Desktop Plus et Resource Monitor. Les préfixes internes `DING_*`, `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` gardent leur rôle pour préserver la configuration. Les anciens réglages ne sont pas transposés à une clé GSettings inexistante.
 
+## Bureau et Corbeille
 
-## Profil Fedora 45 / GNOME 51 (en préparation)
-
-Trois des quatre extensions téléchargées n'ont **aucun build GNOME 51** sur extensions.gnome.org. Le profil Fedora 45 les remplace ; Fedora 44 / GNOME 50 garde les extensions ci-dessous inchangées. Le verrou du profil est `profiles/fedora45/gnome-extensions.lock` (inerte tant que `profiles/fedora45/profile.json` reste `pending`).
-
-| Rôle (préfixe du verrou) | Fedora 44 / GNOME 50 | Fedora 45 / GNOME 51 |
-|---|---|---|
-| Icônes du bureau (`DING_*`) | Desktop Icons NG, `ding@rastersoft.com` | Gtk4 Desktop Icons NG (smedius) v145, `gtk4-ding@smedius.gitlab.com` |
-| Bouton bureau (`SHOW_DESKTOP_PLUS_*`) | Show Desktop Plus v8 | Show Desktop Button (amivaleo) v59, `show-desktop-button@amivaleo` |
-| Télémétrie (`RESOURCE_MONITOR_*`) | Resource Monitor v28 | Vitals (corecoding) v85, `Vitals@CoreCoding.com` |
-| Tuilage (`TILING_ASSISTANT_*`) | Tiling Assistant v55 | Tiling Assistant v56 |
-
-Ce qui change à l'usage :
-
-- **Icônes du bureau** : mêmes réglages (`~/Bureau`, Corbeille visible, Home, volumes et réseau masqués) ; le fork GTK4 expose les mêmes clés.
-- **Bouton bureau** : indicateur à l'extrémité gauche et raccourci Super+D. L'action du clic gauche/milieu, l'icône « bureau » et le badge de fenêtres cachées de Show Desktop Plus n'existent pas dans Show Desktop Button ; l'icône se change dans les préférences de l'extension.
-- **Télémétrie** : Vitals affiche en haut à droite l'usage CPU, la RAM et le débit réseau, rafraîchis toutes les 2 s. Les identifiants de ses capteurs de température dépendent des puces détectées : épinglez la température CPU/GPU depuis son menu. Vitals **ne garantit pas** la charge de l'Intel Arc B580 dans la barre ; les sources `xe` (`gpu_busy_percent`) restent contrôlées comme santé matérielle sur le poste physique.
-- **Dash to Dock** reste fourni par le RPM Fedora ; la readiness signale que le paquet de la Beta 45 n'est pas encore déclaré compatible GNOME 51.
-
-Chaque installation reste épinglée par URL, review, version et SHA256 ; le validateur n'accepte, pour ces trois rôles, que l'identité Fedora 44 ou son remplaçant revu, avec UUID et schéma cohérents. Le workflow de readiness télécharge les archives épinglées et vérifie leur empreinte, leur UUID et le major 51.
-
-## Extensions fonctionnelles activées
-
-### Dash to Dock
-
-**Activé par défaut** depuis le paquet Fedora officiel.
-
-La couche gnome.polish configure le dock depuis config/gnome-polish.conf : à gauche, icônes 48 px, masquage intelligent OLED et clic focus/réduire/aperçus. Voir [GNOME_POLISH.md](GNOME_POLISH.md).
-
-### AppIndicator
-
-**Activé par défaut** depuis le paquet Fedora officiel pour les logiciels utilisant AppIndicator/KStatusNotifierItem.
-
-AppIndicator fait partie du contrat fonctionnel courant au même titre que Dash to Dock.
-
-### Desktop Icons NG (DING)
-
-**Activé par défaut** depuis l'artefact GNOME Extensions **review `74408` / version de site `95`**, UUID `ding@rastersoft.com`, déclaré compatible GNOME Shell 50.
-
-Fedora 44 ne fournit pas DING dans le manifest RPM du projet. Le téléchargement est donc volontairement limité à l'URL GNOME-reviewed exacte inscrite dans `config/gnome.conf`. L'installateur contrôle l'UUID, la compatibilité GNOME 50, compile le schéma GSettings et écrit un marqueur de provenance.
-
-DING répond au besoin fonctionnel de disposer d'un vrai bureau de travail visible sur le fond d'écran. L'état Golden impose :
+DING affiche le contenu réel du dossier XDG Desktop `~/Bureau`, créé et enregistré par le module. Le schéma `org.gnome.shell.extensions.gtk4-ding` impose :
 
 ```text
-Dossier XDG Desktop   ~/Bureau
-Contenu de ~/Bureau   visible sur le bureau
-Corbeille             visible
-Dossier personnel     masqué
-Volumes externes      masqués
-Volumes réseau        masqués
+show-trash             true
+show-home              false
+show-volumes           false
+show-network-volumes   false
 ```
 
-Le dossier `~/Bureau` est créé si nécessaire et enregistré comme répertoire XDG `DESKTOP`. DING affiche donc le **contenu réel** de ce dossier ; le projet ne crée pas une copie ou un pseudo-bureau parallèle.
+Le téléchargement est limité à l’artefact revu. L’installateur vérifie l’UUID, GNOME 51 et l’empreinte, compile les schémas et conserve `.fedora-gnome-custom-source`. Le correctif d’arrêt Gtk4 DING versionné est également contrôlé ; il ne vaut pas validation sur le PC réel.
 
-Réglages certifiés :
+## Afficher le bureau
 
-```text
-org.gnome.shell.extensions.ding show-trash           true
-org.gnome.shell.extensions.ding show-home            false
-org.gnome.shell.extensions.ding show-volumes         false
-org.gnome.shell.extensions.ding show-network-volumes false
-```
+Show Desktop Button utilise `org.gnome.shell.extensions.show-desktop-button` : position `LEFT_END` et raccourci `Super+D`. Les réglages d’actions de clic, de badge ou d’icône propres à Show Desktop Plus ne sont pas appliqués à cette extension. Le comportement visible doit être vérifié avec plusieurs fenêtres en Gate 2, puis confirmé sur la workstation.
 
-### Show Desktop Plus
+## Télémétrie
 
-**Activé par défaut** comme contrôle fonctionnel « Afficher le bureau ».
+Vitals affiche CPU, RAM et débits réseau en haut à droite, toutes les deux secondes. Les températures CPU/GPU dépendent des capteurs détectés : on les épingle depuis le menu Vitals. L’affichage de la charge B580 dans la barre n’est pas garanti par Vitals.
 
-Source gérée : artefact **version 8 / review GNOME Extensions `70326`**, déclaré compatible GNOME Shell 50. Le projet n'utilise pas une URL `latest` flottante : l'URL versionnée est inscrite dans `config/gnome.conf` et l'installateur vérifie l'UUID et la déclaration GNOME 50 avant installation.
+Le doctor conserve les contrôles matériels indépendants sur la B580 `8086:e20b`, ses compteurs `gpu_busy_percent` / `gt_busy_percent` et ses températures hwmon. Une absence de vraie source reste un KO de télémétrie physique ; aucune VM ne certifie ces sources. Voir [RESOURCE_MONITOR.md](RESOURCE_MONITOR.md).
 
-État Golden :
+## Dock, AppIndicator et tuilage
 
-```text
-UUID                   show-desktop-plus@attentivecoder
-Position panneau       left-end (haut/gauche)
-Clic gauche            toggle-desktop
-Clic milieu            hide-focused
-Workspace              workspace courant
-Moniteur actif seul    false
-Raccourci               Super+D
-Style d'icône          desktop
-Badge fenêtres         false
-```
+La couche `gnome.polish` configure Dash to Dock à gauche, icônes de 48 px et masquage intelligent OLED, puis Tiling Assistant pour les quarts d’écran, le remplissage et les groupes. Les réglages sont documentés dans [GNOME_POLISH.md](GNOME_POLISH.md).
 
-Un clic gauche masque les fenêtres du workspace courant pour dégager immédiatement le bureau DING ; un second clic restaure les fenêtres suivies par l'extension. `Super+D` fournit le même accès au clavier.
+Les deux RPM doivent déclarer GNOME 51 compatible. Leur présence seule ne suffit pas. Le laboratoire candidat peut utiliser les versions exactes signées depuis `updates-testing` dans sa VM ; la promotion de production exige leur disponibilité stable.
 
-### Resource Monitor
+## Preuves et première session
 
-**Activé par défaut** pour la télémétrie lisible en permanence dans la barre supérieure.
+La CI vérifie les archives, métadonnées, schémas et préférences réelles. Le laboratoire Fedora 45 personnalisé exige les **six extensions actives** après boot, reboot, restauration et reconstruction. Le laboratoire natif permet d’isoler GNOME sans extensions.
 
-Source gérée : artefact GNOME Extensions **review `70909` / version de site `28`**, UUID `Resource_Monitor@Ory0n`, déclaré compatible GNOME Shell 50. Comme DING et Show Desktop Plus, le projet utilise l'artefact GNOME-reviewed exact et conserve un marqueur de provenance.
-
-Profil Golden volontairement compact :
-
-```text
-CPU                  utilisation % + température Ryzen Tctl
-RAM                  pourcentage utilisé
-Ethernet             débit descendant | montant, auto-hide si inactif
-Wi-Fi                débit descendant | montant, auto-hide si inactif
-GPU Intel Arc B580   charge % + température si exposée par xe/hwmon
-Rafraîchissement     2 secondes
-Position             zone droite du panneau
-Disque               masqué dans le panneau
-Swap                  masquée dans le panneau
-```
-
-Le code de Resource Monitor v28 détecte les GPU Intel via DRM/sysfs. Pour la B580, le projet exige le PCI `8086:e20b` et tente les compteurs `gpu_busy_percent` puis `gt_busy_percent`. La température GPU est lue via le `hwmon` DRM lorsqu'il est exposé.
-
-Le choix est **fail-closed** sur le bare-metal : si la B580 est présente mais qu'aucune vraie source de charge GPU n'est lisible, `gnome.telemetry`/`resource-monitor-doctor` passent en KO. Le projet n'affiche jamais un faux `0 %` pour contourner une limitation de télémétrie `xe`. L'absence de température GPU peut rester WARN si le compteur de charge est valide.
-
-Le Ryzen 7 7700 utilise en priorité le capteur `k10temp`/`Tctl` (ou `zenpower` lorsqu'il est exposé). Aucun daemon de monitoring supplémentaire n'est requis : les données CPU/RAM/réseau viennent des interfaces kernel et les données GPU de DRM/sysfs.
-
-### Tiling Assistant
-
-**Activé par défaut** par la couche gnome.polish : quarts d'écran, popup de remplissage et groupes de fenêtres.
-
-L'UUID tiling-assistant@leleat-on-github et la release officielle GitHub v55 sont épinglés avec leur SHA-256 dans config/gnome-extensions.lock. Le script scripts/gnome/install-tiling-assistant.sh vérifie URL, UUID, hash, compatibilité GNOME 50 et schémas avant installation. diagnostics/polish-doctor contrôle l'activation et le marqueur de provenance.
-
-Le profil canonique comprend donc six extensions fonctionnelles : deux RPM Fedora et quatre archives épinglées. Fedora 45/GNOME 51 reste en préparation ; ce verrou GNOME 50 ne vaut pas qualification GNOME 51.
-
-## Blur My Shell
-
-Installable, mais **désactivé dans l'état Golden certifié**. Il ajoute un chemin de rendu cosmétique sans bénéfice fonctionnel nécessaire et complique l'analyse des régressions à 240 Hz ou après reprise de veille.
-
-Il peut être testé manuellement A/B après certification, mais son activation ne fait pas partie de la baseline Golden.
-
-## Extension Manager
-
-`com.mattjakeman.ExtensionManager` reste installé depuis Flathub comme interface d'administration des extensions.
+Une CI verte ne promeut pas automatiquement le profil et ne produit aucune preuve physique. La Gate 2 vérifie visuellement le bureau et ses interactions ; la Gate 3 confirme le résultat sur le matériel. Sous Wayland, ouvrir une nouvelle session si l’activation initiale des extensions le nécessite, puis exécuter `diagnostics/gnome-doctor` et `diagnostics/polish-doctor`.
 
 ## Exclusions
 
-Just Perfection et Dash to Panel ne sont pas imposés par le projet. Les anciennes extensions Desktop Icons autres que DING ne font pas partie du profil. Astra Monitor n'est pas retenu pour le Golden : son monitoring GPU documenté ne couvre pas la cible Intel Arc du projet aussi directement que Resource Monitor.
+Blur My Shell reste installable mais désactivé dans la baseline. Just Perfection et Dash to Panel ne sont pas imposés. Extension Manager reste une interface d’administration ; une extension ajoutée manuellement ne devient pas un élément certifié du profil.
 
-## Convergence et première session
-
-Les RPM Dash to Dock/AppIndicator peuvent être installés alors que GNOME Shell tourne déjà. DING, Show Desktop Plus, Resource Monitor et Tiling Assistant sont ajoutés dans le répertoire d'extensions utilisateur depuis leurs archives épinglées : GNOME-reviewed pour les trois premiers, release GitHub officielle pour Tiling Assistant. Si la session GNOME courante ne voit pas encore un nouvel UUID, APPLY échoue volontairement et demande une déconnexion/reconnexion ; après reconnexion, relancer APPLY permet l'activation et le postcheck.
-
-Le projet ne désactive jamais les contrôles simplement pour contourner cette frontière de session Wayland.
-
-## Validation VirtualBox avant bare-metal
-
-Le GATE 2 utilise [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md). Son entrypoint séparé peut converger DING, Show Desktop Plus, Resource Monitor et les boutons de fenêtres dans une vraie session Fedora 44 GNOME 50/Wayland sous VirtualBox. `install.sh --apply` reste bloqué en VM. Les métriques CPU/RAM/réseau peuvent être observées dans le LAB ; la télémétrie physique Ryzen/B580 reste `EXPECTED` jusqu'au bare-metal.
-
-## GNOME 51 : prouver que les six rôles fonctionnent réellement
-
-Le laboratoire natif GNOME 51 et la vérification des archives épinglées ne garantissent **pas** à eux seuls qu'une session utilisateur dispose de toutes ses extensions actives. Le script `scripts/validation/gnome51-extension-audit.py` fournit désormais deux modes distincts :
-
-```bash
-# Sur le dépôt, lecture seule : affiche les candidats mais jamais un PASS de bureau
-python3 scripts/validation/gnome51-extension-audit.py --report
-
-# Après promotion Fedora 45 et reconnexion GNOME 51 Wayland, en utilisateur normal :
-python3 scripts/validation/gnome51-extension-audit.py --live
-```
-
-Le mode `--report` retourne toujours **DEFERRED**. Le mode `--live` refuse le profil `pending`, exige le validateur de profil promu, la session Wayland et le véritable GNOME Shell 51. Il contrôle ensuite les **six rôles** : Dash to Dock, AppIndicator, Gtk4 DING, Show Desktop Button, Vitals et Tiling Assistant. Chaque rôle doit être **activé et actif**, disposer d'une déclaration GNOME 51 cohérente ; les quatre archives installées depuis le verrou doivent aussi présenter la bonne empreinte SHA-256 de provenance. Un remplacement utilisateur non revu d'une extension RPM est refusé.
-
-**La finalisation de l'upgrade utilise cette vérification avant de marquer l'opération `completed`.** Un FAIL laisse la phase `extensions-installed` à diagnostiquer après reconnexion ; le script ne désactive, n'installe et n'active aucune extension. Un PASS logiciel ne remplace pas les essais visuels, le moniteur ou la Gate 3 physique.
-
-## Diagnostic
-
-```bash
-./diagnostics/gnome-doctor
-bash ./diagnostics/resource-monitor-doctor
-./diagnostics/virtualbox-gnome-lab-doctor   # uniquement dans le LAB VirtualBox
-```
-
-Le doctor GNOME vérifie notamment :
-
-- installation, provenance et activation de DING ;
-- `~/Bureau` comme XDG Desktop ;
-- Corbeille visible et volumes masqués ;
-- présence/provenance/activation de Show Desktop Plus ;
-- position gauche, action toggle et `Super+D` ;
-- absence de badge de fenêtres ;
-- présence/provenance/réglages de Resource Monitor ;
-- sur bare-metal, capteur Ryzen et vraie télémétrie de charge de l'Arc B580 ;
-- les autres extensions fonctionnelles du profil.
-
-## Ajouter une extension
-
-Une nouvelle extension doit :
-
-- répondre à un besoin fonctionnel explicite ;
-- être compatible GNOME 50 ;
-- provenir d'une source gérée et reproductible ;
-- être testée par rapport à l'état certifié ;
-- ne jamais être utilisée pour masquer un problème Mutter/Wayland/GPU.
-
-La source de vérité détaillée du profil est [`GNOME_PROFILE.md`](GNOME_PROFILE.md).
+Les sources GNOME 50 sont conservées uniquement dans [le profil historique Fedora 44](HISTORICAL_FEDORA44.md).

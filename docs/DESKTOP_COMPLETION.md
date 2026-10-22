@@ -70,7 +70,7 @@ Vérifier visuellement les valeurs puis la reprise après veille. Une incompatib
 
 ## Laboratoires et limites
 
-Le laboratoire Fedora 44 contrôle Dash to Dock, AppIndicator, DING, Show Desktop Plus, Resource Monitor et Tiling Assistant dans la session Wayland après démarrage, reboot, restauration de VM et reconstruction. Il vérifie la politique GNOME Logiciels et un aller-retour LibreOffice TXT → ODT → PDF avec contrôle du contenu.
+Le laboratoire Fedora 45 contrôle Dash to Dock, AppIndicator, DING, Show Desktop Button, Vitals et Tiling Assistant dans la session Wayland après démarrage, reboot, restauration de VM et reconstruction. Il vérifie la politique GNOME Logiciels et un aller-retour LibreOffice TXT → ODT → PDF avec contrôle du contenu.
 
 Fedora 45/GNOME 51 reste un profil de production pending tant que les médias finaux, extensions et preuves ne sont pas prêts. Le laboratoire natif de préversion utilise une image Beta signée et épinglée : il exerce GNOME 51, redémarrage et restauration isolée avec les extensions personnalisées marquées DEFERRED. Le contrôle de leur compatibilité reste séparé. Un résultat natif vert ne promeut pas le profil de production et ne certifie pas les six extensions sous GNOME 51.
 

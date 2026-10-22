@@ -6,7 +6,7 @@
 
 Une installation Fedora classique se personnalise souvent « au fil de l'eau » : quelques logiciels, des commandes, des extensions et des réglages dont on oublie ensuite l'origine. Ici, **la configuration souhaitée est décrite dans Git** et le système doit converger vers cette description, sous contrôle.
 
-La cible à terme est **Fedora 45 Workstation + GNOME 51, sur un PC bien précis**. Le profil de production actuellement qualifié par les contrats logiciels reste **Fedora 44 + GNOME 50** : `profiles/fedora45/profile.json` est encore `pending`. Le passage à 45 ne consiste donc **pas** à changer un numéro dans le README.
+La référence d’installation neuve est **Fedora 45 Workstation + GNOME 51, sur le PC cible**. La configuration et la CI utilisent cette version ; le profil de production reste `pending` jusqu’à la validation du média final signé et des composants stables.
 
 **Golden** signifie *installation de référence reproductible et vérifiable*, **pas** « ISO modifiée », « image magique » ou « certification déjà acquise ». Le dépôt utilise des scripts, des configurations, des manifestes, des preuves et des procédures. La certification physique est à produire sur le matériel réel.
 
@@ -59,9 +59,9 @@ L'ordre exact et les commandes autorisées sont dans [THREE_GATE_VALIDATION.md](
 | `README.md` et `docs/` | Expliquer la vision, la procédure, les limites et les symptômes | ce document, [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) |
 | `config/` | Paramètres attendus du système et du matériel | `config/hardware.conf`, `config/kernel.conf` |
 | `config/local.conf` | Choix locaux propres au PC (non versionnés) | autorisation explicite de machine réelle |
-| `profiles/fedora45/` | Identité et verrous de la future release GNOME 51 | `profile.json`, `gnome-extensions.lock` |
+| `profiles/fedora45/` | Identité et verrous de la référence GNOME 51 | `profile.json`, `gnome-extensions.lock` |
 | `manifests/` | Liste des paquets, ordre des modules et logiciels | `module-plan.conf`, manifestes GNOME |
-| `installer/` | Média Fedora vérifié, générateur Kickstart ciblant un disque explicite | `generate-fedora44-kickstart.sh` |
+| `installer/` | Média Fedora vérifié, générateur Kickstart ciblant un disque explicite | `generate-fedora45-kickstart.sh` |
 | `control.sh` / `install.sh` | Interface opérateur / orchestration du dry-run et de l'APPLY | `./control.sh status` |
 | `lib/` | Moteurs communs, verrouillages, politique d'exécution | protection du gate APPLY |
 | `modules/` | Étapes spécialisées avec préconditions et validations | `modules/gnome/`, `modules/backup/` |
@@ -105,7 +105,7 @@ La **Intel Arc B580** fournit le bureau, le rendu Vulkan/Steam et les travaux gr
 
 ### GNOME n'est pas « une extension »
 
-Fedora livre les composants natifs GNOME/Wayland. Le projet y ajoute une **ergonomie voulue** : dock, tuilage, icônes du bureau, télémétrie et terminal. Le profil Fedora 44 utilise six extensions précises. Pour Fedora 45 / GNOME 51, les rôles restent comparables, mais certaines identités sont remplacées par des extensions compatibles et doivent être qualifiées séparément. Voir [GNOME.md](GNOME.md) et [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+Fedora livre les composants natifs GNOME/Wayland. Le projet y ajoute une **ergonomie voulue** : dock, tuilage, icônes du bureau, télémétrie et terminal. Le profil Fedora 45 utilise six extensions précises dont les remplaçants GNOME 51 Gtk4 DING, Show Desktop Button et Vitals. Voir [GNOME.md](GNOME.md) et [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
 
 ## 5. Exemple pratique : « j'installe, je mets à jour, je restaure »
 
@@ -137,25 +137,19 @@ flowchart LR
 
 Lorsqu'une mise à jour change le noyau ou une brique critique, une preuve peut devenir `STALE` : le bon réflexe est de **requalifier**, pas de réécrire un marqueur.
 
-## 7. Fedora 45 / GNOME 51 : l'ambition et la condition de réussite
+## 7. Fedora 45 / GNOME 51 : cible sélectionnée, promotion contrôlée
 
-| Dimension | Fedora 44 / GNOME 50 | Fedora 45 / GNOME 51 |
-|---|---|---|
-| Rôle | Référence opérationnelle et labo GNOME personnalisé | Cible de la prochaine Golden |
-| Profil | Chemin d'installation et de validation documenté | `profiles/fedora45/profile.json` = `pending` |
-| GNOME | Six extensions fonctionnelles testées en VM | Session native GNOME 51 en labo ; extensions personnalisées à qualifier |
-| Média | Verrou Fedora 44 versionné | Média **final signé** et empreinte exacte à promouvoir |
-| Installation physique | Gate 3 encore à produire | Gate 3 à refaire pour la nouvelle release |
+La configuration par défaut et les contrôles principaux utilisent Fedora 45 / GNOME 51. Le profil `pending` permet la préparation et le dry-run ; l’APPLY exige le profil `ready`, le média Workstation final signé et les verrous revus. Les contrôles QEMU ne certifient pas le PC physique.
 
-Le parcours de migration détaillé est dans [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md). Les tests Fedora 45 ne changent pas automatiquement le profil sélectionné. La promotion doit être explicite, revue et suivie de contrôles sur **le commit exact**.
+Le [parcours Fedora 45](FEDORA45_PRIMARY.md) décrit cette frontière. Fedora 44 est conservé dans un laboratoire historique manuel ; la migration 44 → 45 est facultative et concerne uniquement un ancien système installé.
 
 ## 8. Comment approfondir sans se perdre
 
 1. [VISION.md](VISION.md) : pourquoi ce projet existe.
 2. [GNOME.md](GNOME.md) : ce que verra l'utilisateur sur son bureau.
 3. [CONTROL_CENTER.md](CONTROL_CENTER.md) : comment l'opérateur interagit avec le système.
-4. [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) : installation **actuellement autorisée** et conditions d'arrêt.
-5. [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md) : ce qui manque pour l'objectif Fedora 45.
+4. [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) : installation neuve et conditions d’arrêt.
+5. [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md) : sélection, promotion et preuves.
 6. [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md) : la différence entre préparer et certifier.
 7. [GLOSSARY.md](GLOSSARY.md) : les termes techniques expliqués simplement.
 

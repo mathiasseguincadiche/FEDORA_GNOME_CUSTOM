@@ -1,4 +1,4 @@
-name: Fedora 44 installer audit
+name: Fedora 45 installer audit
 on:
   push:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 jobs:
   installer-audit:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:44
+    container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 20
     steps:
       # Git must exist BEFORE actions/checkout: without it, checkout silently
@@ -19,6 +19,8 @@ jobs:
       - name: Configure the real Flatpak remote for provenance prechecks
         run: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Trust the checkout inside the container
         # The workspace is owned by the runner user, not by root in the
         # container: without this, every git call fails ("dubious ownership").

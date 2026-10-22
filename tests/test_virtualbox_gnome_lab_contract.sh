@@ -13,7 +13,7 @@ grep -Fq 'runtime_is_virtualbox()' "$ROOT/lib/common.sh"
 grep -Fq '== oracle' "$ROOT/lib/common.sh"
 grep -Fq "grep -Eqi 'VirtualBox|Oracle|innotek'" "$ROOT/lib/common.sh"
 grep -Fq 'runtime_is_virtualbox' "$LAB"
-grep -Fq 'fedora_require_selected' "$LAB"
+grep -Fq 'fedora_require_install_target' "$LAB"
 grep -Fq 'fedora_shell_matches' "$LAB"
 grep -Fq 'Wayland is required for GATE 2' "$LAB"
 grep -Fq 'sudo dnf -y install curl unzip xdg-user-dirs glib2' "$LAB"
@@ -57,7 +57,7 @@ for doc in README.md CHANGELOG.md docs/VIRTUALBOX_GNOME_LAB.md docs/GNOME_INTEGR
   [[ -f "$ROOT/$doc" ]] || { echo "missing LAB documentation: $doc" >&2; exit 1; }
 done
 
-grep -Fq 'Resource Monitor' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
+grep -Fq 'Vitals' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 

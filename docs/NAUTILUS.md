@@ -23,7 +23,7 @@ Le manifeste [`../manifests/packages-nautilus.txt`](../manifests/packages-nautil
 - `gvfs` ;
 - `gvfs-gphoto2` pour les appareils photo ;
 - `gvfs-fuse` pour l'exposition FUSE des montages GIO ;
-- `gvfs-archive` pour ZIP/TAR/ISO ;
+- File Roller et son extension Nautilus pour les archives prises en charge ;
 - `gvfs-afc` pour les appareils Apple/AFC ;
 - `gvfs-goa` pour l'intégration des services de fichiers GNOME Online Accounts lorsqu'un compte est configuré ;
 - `gvfs-nfs` pour les partages NFS ;
@@ -56,7 +56,7 @@ Si `NAUTILUS_ENABLE_PREVIEWS=false`, le module converge explicitement `show-imag
 
 ## Archives et aperçu rapide
 
-`file-roller-nautilus` fournit l'extension Nautilus native de File Roller et `gvfs-archive` permet l'accès GIO aux archives prises en charge.
+`file-roller-nautilus` fournit l’extension native de File Roller pour ouvrir et extraire les archives prises en charge.
 
 `Sushi` est le previewer GNOME de référence. Son paquet est obligatoire dans le Golden ; aucune extension Nautilus tierce n'est nécessaire pour cette fonction.
 
@@ -121,4 +121,4 @@ Commencer par :
 
 Puis consulter [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant de modifier GVfs, portals, SELinux ou les services de session.
 
-Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le ancien montage GIO des archives. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).

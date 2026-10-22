@@ -10,11 +10,10 @@ logic-contracts, installer-audit, borg-fedora, upstream-kernel / rpm et rocky-de
 
 | Profil laboratoire | Exercices | Non certifié |
 |---|---|---|
-| **Fedora 44 / GNOME 50** | session personnalisée et extensions, applications, fermeture, reboot, Borg, restauration/reconstruction | Intel Arc B580 et écran physiques |
 | **Fedora 45 / GNOME 51 native preview** | GNOME 51 Wayland, maintenance, bureautique, redémarrage et récupération | six extensions personnalisées finales, matériel réel |
 | **Fedora 45 / GNOME 51 candidate complet** | session Wayland avec les **six** extensions réellement actives, ZIP épinglés/empreintes, RPM Fedora réels, redémarrage et restauration QEMU | publication finale Fedora, installation ISO Workstation, tests visuels humains et matériel réel |
 
-La nouvelle CI obligatoire `.github/workflows/fedora45-gnome-vm.yml` ne modifie ni `profile.json` (`pending`), ni le média de production. Elle utilise le seed Cloud Fedora 45 Beta avec sa signature et son SHA verrouillés, puis installe les quatre ZIP candidats **uniquement dans une VM jetable** ; En date du 18 octobre 2026, les RPM Fedora 45 standards **Dash to Dock 105-2.fc45** et **AppIndicator 64-2.fc45** ne déclarent pas GNOME 51 compatible. Le laboratoire **Fedora 45 / curated uniquement** installe explicitement les deux RPM officiels Fedora **Dash to Dock 110-1.fc45** et **AppIndicator 66-1.fc45** depuis `updates-testing` avec `dnf --enablerepo=updates-testing install`, sans activer ce dépôt globalement. Leurs versions RPM exactes et leurs déclarations GNOME 51 dans `metadata.json` sont vérifiées avant le démarrage de GNOME ; aucune tolérance aux extensions incompatibles n'est activée. Le laboratoire natif, Fedora 44 et surtout la configuration du PC de production ne changent pas. Ce choix de paquet de **test** ne prouve pas qu'il appartient à la version stable finale ; une nouvelle validation des paquets Fedora officiels sera nécessaire lors de la promotion du profil Fedora 45. Le contrôle exige les six rôles `ACTIVE`, `enabled`, des métadonnées GNOME 51 et la provenance SHA des quatre archives, puis rejoue redémarrage, restauration et reconstruction. Un paquet incompatible reste **FAIL**, jamais `DEFERRED`.
+La nouvelle CI obligatoire `.github/workflows/fedora45-gnome-vm.yml` ne modifie ni `profile.json` (`pending`), ni le média de production. Elle utilise le seed Cloud Fedora 45 Beta avec sa signature et son SHA verrouillés, puis installe les quatre ZIP candidats **uniquement dans une VM jetable** ; En date du 18 octobre 2026, les RPM Fedora 45 standards **Dash to Dock 105-2.fc45** et **AppIndicator 64-2.fc45** ne déclarent pas GNOME 51 compatible. Le laboratoire **Fedora 45 / curated uniquement** installe explicitement les deux RPM officiels Fedora **Dash to Dock 110-1.fc45** et **AppIndicator 66-1.fc45** depuis `updates-testing` avec `dnf --enablerepo=updates-testing install`, sans activer ce dépôt globalement. Leurs versions RPM exactes et leurs déclarations GNOME 51 dans `metadata.json` sont vérifiées avant le démarrage de GNOME ; aucune tolérance aux extensions incompatibles n'est activée. Ce choix ne change ni le laboratoire natif ni les dépôts du PC de production. Ce choix de paquet de **test** ne prouve pas qu'il appartient à la version stable finale ; une nouvelle validation des paquets Fedora officiels sera nécessaire lors de la promotion du profil Fedora 45. Le contrôle exige les six rôles `ACTIVE`, `enabled`, des métadonnées GNOME 51 et la provenance SHA des quatre archives, puis rejoue redémarrage, restauration et reconstruction. Un paquet incompatible reste **FAIL**, jamais `DEFERRED`.
 
 Le laboratoire natif sans extensions reste utile pour isoler les défauts GNOME, mais **son succès ne remplace pas** celui du laboratoire avec les six extensions. La CI donne une preuve logicielle QEMU seulement : rien ne qualifie le second T705, la B580 ou la certification physique.
 
@@ -33,14 +32,9 @@ Pour voir comment la VM et les preuves se rattachent à la machine physique, con
 
 ## Image et démarrage
 
-L'image Fedora Cloud Base 44 compose 1.7 est verrouillée dans
-`.github/fedora44-cloud.lock` par nom et SHA-256. Son CHECKSUM est vérifié par
-la seule clé Fedora 44 dont l'empreinte est épinglée. Un changement de média
-demande une modification revue de ce verrou.
+Les deux laboratoires principaux utilisent le seed Fedora Cloud 45 Beta verrouillé et signé, contrôlé par `.github/scripts/fedora45-preview-media.py`. Le laboratoire historique manuel utilise seul `.github/fedora44-cloud.lock` et la clé Fedora 44. Les images de laboratoire ne remplacent jamais le média Workstation final de production.
 
-Sources officielles :
-[Fedora Cloud](https://www.fedoraproject.org/cloud/download/) et
-[empreinte Fedora 44](https://fedoraproject.org/security/).
+Sources officielles : [Fedora Cloud](https://www.fedoraproject.org/cloud/download/) et [clés Fedora](https://fedoraproject.org/security/).
 
 QEMU démarre un disque autonome, UEFI OVMF, TPM logiciel swtpm et un GPU virtio.
 L'accélération disponible est enregistrée ; TCG permet l'émulation lorsque
@@ -55,7 +49,7 @@ la virtualisation imbriquée est techniquement possible mais non officiellement
 prise en charge : [documentation des runners](https://docs.github.com/en/actions/concepts/runners/github-hosted-runners).
 Le laboratoire ne nécessite aucun runner installé chez l'utilisateur.
 
-GNOME 50 est installé sur Fedora Cloud, puis lancé par GDM en session Wayland
+GNOME 51 est installé sur Fedora Cloud, puis lancé par GDM en session Wayland
 réelle. L'autologin et les réglages empêchant la veille sont propres à cette
 image éphémère. Avant chaque arrêt/redémarrage, le laboratoire attend que
 GNOME retire lui-même son marqueur de protection d'initialisation (environ
@@ -81,7 +75,7 @@ GNOME Shell et SIGABRT dans le laboratoire ; le contrôle du boot précédent
 les a rendus bloquants. Il reste à qualifier sur les autres environnements.
 Aucun timeout de GNOME, mécanisme de protection ni contrôle des coredumps
 n'est affaibli pour faire réussir ce parcours. SELinux reste enforcing et firewalld actif. Les quatre extensions utilisateur
-DING, Show Desktop Plus, Resource Monitor et Tiling Assistant utilisent leurs installateurs de
+DING, Show Desktop Button, Vitals et Tiling Assistant utilisent leurs installateurs de
 production et les artefacts/hash du verrou existant. Les trois premières viennent de GNOME Extensions ; Tiling Assistant vient de sa release GitHub officielle. Avec Dash to Dock et AppIndicator fournis par RPM, les six extensions doivent être ACTIVE. Les ZIP sont téléchargés
 avec TLS strict par le runner, vérifiés puis transférés dans la VM ; le même
 installateur revérifie leur hash et leurs métadonnées depuis ce cache absolu.
@@ -91,8 +85,8 @@ Aucun téléchargement non authentifié ni option curl insecure n'est utilisé.
 
 | Exercice | Résultat requis |
 |---|---|
-| Média | Signature de la clé Fedora 44 + paire nom/SHA exacte |
-| Démarrage | Fedora 44, SSH, cloud-init terminé, identité du boot enregistrée |
+| Média | Signature de la clé Fedora 45 + paire nom/SHA exacte |
+| Démarrage | Fedora 45, SSH, cloud-init terminé, identité du boot enregistrée |
 | GNOME | GDM, Shell 50, session logind Wayland active, bus Shell, extensions ACTIVE, processus Nautilus/Ptyxis et portal |
 | Redémarrage | Identifiant du boot différent, GNOME et données/TPM persistants |
 | Fichiers Borg | Vrai moteur du projet, dépôt non chiffré, archive exacte vérifiée ; roundtrip quotidien existant rejoué dans Fedora |

@@ -41,10 +41,10 @@ grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.
 grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
 grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
 
-grep -Fq "repo_sha=\"\$(git -C \"\$REPO_ROOT\" rev-parse HEAD" "$ROOT/installer/generate-fedora44-kickstart.sh"
-grep -Fq "fetch --depth 1 origin \${repo_sha}" "$ROOT/installer/generate-fedora44-kickstart.sh"
-grep -Fq 'checkout --detach FETCH_HEAD' "$ROOT/installer/generate-fedora44-kickstart.sh"
-if grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' "$ROOT/installer/generate-fedora44-kickstart.sh"; then
+grep -Fq "repo_sha=\"\$(git -C \"\$REPO_ROOT\" rev-parse HEAD" "$ROOT/installer/lib/generate-kickstart.sh"
+grep -Fq "fetch --depth 1 origin \${repo_sha}" "$ROOT/installer/lib/generate-kickstart.sh"
+grep -Fq 'checkout --detach FETCH_HEAD' "$ROOT/installer/lib/generate-kickstart.sh"
+if grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' "$ROOT/installer/lib/generate-kickstart.sh"; then
   echo 'Kickstart must fetch and checkout the audited SHA instead of cloning mutable main' >&2
   exit 1
 fi

@@ -3,12 +3,20 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [[ "${CI:-false}" == true && -f /.dockerenv ]] || { echo 'Disposable CI container only' >&2; exit 50; }
-grep -Eq '^VERSION_ID="?(44|45)"?$' /etc/os-release
+grep -Eq '^VERSION_ID="?45"?$' /etc/os-release
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 DRY_RUN=false; export DRY_RUN
 module_catalog_load "$REPO_ROOT/manifests/module-plan.conf"
-orchestrator_run_module system.updates
+if orchestrator_run_module system.updates; then
+  :
+else
+  rc=$?
+  printf 'Fresh Fedora system module failed (rc=%s):\n' "$rc" >&2
+  printf '%s\n' "${ORCH_RESULTS[@]}" >&2
+  [[ ! -r "$MODULE_LOG" ]] || tail -n 160 "$MODULE_LOG" >&2
+  exit "$rc"
+fi
 rpm -q python3 python3-pip python3-devel pipx dmidecode python3-gobject
 python3 -m pip --version
 venv_root="$(mktemp -d)"

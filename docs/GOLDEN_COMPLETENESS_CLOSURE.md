@@ -2,7 +2,7 @@
 
 > Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
 
-Ce runbook comble les derniers écarts entre un déploiement Fedora 44 correct et une **Golden Workstation certifiée physiquement**. Aucun des tests longs ou interactifs ci-dessous ne s'exécute automatiquement pendant l'APPLY.
+Ce runbook comble les derniers écarts entre un déploiement Fedora 45 correct et une **Golden Workstation certifiée physiquement**. Aucun des tests longs ou interactifs ci-dessous ne s'exécute automatiquement pendant l'APPLY.
 
 ## Périmètre
 
@@ -24,7 +24,7 @@ Toutes les preuves physiques sont liées à l'empreinte matériel/noyau/pilote e
 
 ## 1. Compléments de la baseline matérielle avant APPLY
 
-À exécuter sur l'hôte physique Fedora 44 final.
+À exécuter sur l'hôte physique Fedora 45 final.
 
 ### Identité Bluetooth
 

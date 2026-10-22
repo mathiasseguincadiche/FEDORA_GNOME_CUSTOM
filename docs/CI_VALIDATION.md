@@ -1,16 +1,16 @@
 # CI et validation bout-en-bout
 
-La CI combine contrats statiques, intégration Fedora 44, laboratoire Fedora/GNOME et vraie VM Rocky Linux 10.2. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
+La CI combine contrats statiques, intégration Fedora 45, laboratoire Fedora/GNOME et vraie VM Rocky Linux 10.2. Elle complète les certifications sur la machine physique ; elle ne les remplace pas.
 
 ## Lire les workflows GitHub sans confondre les preuves
 
 | Contrôle | Ce qui est démontré | Ce qui ne l'est pas |
 |---|---|---|
 | Contrats et sécurité | cohérence du code, politiques, sources et guards | santé du vrai PC |
-| Conteneurs Fedora 44 | paquets RPM, manifestes et intégrations attendues | comportement sur l'écran physique |
-| `fedora-gnome-vm / lab` | bureau GNOME personnalisé, reboot, Borg, reprise et reconstruction | Gate 2 visuelle et matériel B580/T705 |
+| Conteneurs Fedora 45 | paquets RPM, manifestes et intégrations attendues | comportement sur l'écran physique |
+| `fedora-gnome-vm / lab` | GNOME 51 natif, reboot, Borg, reprise et reconstruction | activation des six extensions et matériel B580/T705 |
 | VM Rocky Linux | installation, accès réseau et récupération DevOps | disponibilité du KVM de l'hôte réel |
-| Préversion GNOME 51 | démarrage et récupération d'une session GNOME 51 native | activation finale des six extensions GNOME 51 |
+| `fedora45-gnome-vm / lab` | six extensions GNOME 51 actives, reboot et récupération | promotion du média final, Gate 2 visuelle et matériel réel |
 | Gate 3 | essais physiques liés au commit et à la configuration | validité automatique des versions suivantes |
 
 ```mermaid
@@ -24,13 +24,13 @@ flowchart TD
   F["rocky-devops-vm"] --> R
 ```
 
-Le job bloquant `upstream-kernel / rpm` valide une transaction de paquets noyau **réelle sur Fedora 45**, cible du poste de travail. Il ne considère comme recevable que la version exacte annoncée stable par kernel.org et présente dans les dépôts COPR autorisés. Une publication COPR anticipée de la série suivante ne prouve pas sa stabilité ; sans RPM exact, le job échoue volontairement, et `contracts` reste rouge. Les essais Fedora 44 restent historiques et distincts.
+Le job bloquant `upstream-kernel / rpm` valide une transaction de paquets noyau **réelle sur Fedora 45**, cible du poste de travail. Il ne considère comme recevable que la version exacte annoncée stable par kernel.org et présente dans les dépôts COPR autorisés. Une publication COPR anticipée de la série suivante ne prouve pas sa stabilité ; sans RPM exact, le job échoue volontairement, et `contracts` reste rouge. Les essais Fedora 44 restent historiques, manuels et distincts.
 
 **Pourquoi `contracts` peut être rouge alors que lui-même n'a aucun bug ?** Il attend strictement le succès de ses sept dépendances. Si un laboratoire GNOME est en échec, le contrôle final est rouge **par conception**.
 
 ### Après une fusion, regarder le `push` sur `main`
 
-La PR est vérifiée sur son propre SHA, puis GitHub relance la validation du **commit de fusion**. Ce sont deux validations distinctes. Après fusion, filtrer la page **Actions** sur `main`, vérifier le SHA puis consulter `Tests` et `contracts` : une PR toute verte n'autorise pas à affirmer que le nouveau HEAD est vert avant la fin du `push`.
+Les workflows de PR extraient explicitement le SHA de tête proposé (`github.event.pull_request.head.sha`). La PR est vérifiée sur son propre SHA, puis GitHub relance la validation du **commit de fusion**. Ce sont deux validations distinctes. Après fusion, filtrer la page **Actions** sur `main`, vérifier le SHA puis consulter `Tests` et `contracts` : une PR toute verte n'autorise pas à affirmer que le nouveau HEAD est vert avant la fin du `push`.
 
 Un résultat rouge exige les journaux de **l'étape causale**, pas un `|| true` ou la désactivation de `journal_health`. Le [runbook CI](TROUBLESHOOTING.md#un-contrôle-github-actions-devient-rouge) explique les incidents courants.
 
@@ -50,7 +50,7 @@ Un résultat rouge exige les journaux de **l'étape causale**, pas un `|| true` 
 - Bash UX et dock ;
 - **Nautilus complet / GVfs / Sushi / File Roller** ;
 - **Ptyxis natif et séparation terminal/Bash** ;
-- **ergonomie desktop DING + Show Desktop Plus** ;
+- **ergonomie desktop DING + Show Desktop Button** ;
 - **LAB GNOME VirtualBox fail-closed** ;
 - durcissement pré-1.0 ;
 - **fail-closed du guard KVM** ;
@@ -65,10 +65,10 @@ La documentation est testée comme une partie du produit.
 La CI bloque notamment :
 
 - retour d'anciennes commandes `baseline-doctor record-*` ;
-- profil GNOME qui oublierait l'une des **six extensions fonctionnelles** : Dash to Dock, AppIndicator, Desktop Icons NG, Show Desktop Plus, Resource Monitor ou Tiling Assistant ;
+- profil GNOME qui oublierait l'une des **six extensions fonctionnelles** : Dash to Dock, AppIndicator, Desktop Icons NG, Show Desktop Button, Vitals ou Tiling Assistant ;
 - documentation qui exclurait encore Desktop Icons alors que DING est désormais Golden ;
 - disparition de `~/Bureau`, de la Corbeille ou de `Super+D` du contrat ergonomique documenté ;
-- retour de l'ancienne affirmation selon laquelle Fedora 44 fournirait DING comme RPM ;
+- retour de l'ancienne affirmation selon laquelle Fedora 45 fournirait DING comme RPM ;
 - disparition de draw.io du catalogue documentaire alors qu'il reste géré ;
 - valeurs `devops-nat`/`virbr50`/CIDR incohérentes avec la configuration ;
 - suppression du portail débutant/glossaire/runbook ;
@@ -115,12 +115,12 @@ Ce test ne remplace pas la relecture éditoriale humaine, mais empêche les dive
 
 `tests/test_desktop_ergonomics_contract.sh` exige :
 
-- DING lié à l'artefact GNOME Extensions review `74408`, version de site `95`, GNOME Shell `50` ;
-- absence de faux paquet `gnome-shell-extension-desktop-icons-ng` dans le manifest Fedora 44 ;
+- DING lié à l'artefact GNOME Extensions review `75162`, version de site `145`, GNOME Shell `51` ;
+- absence de faux paquet `gnome-shell-extension-desktop-icons-ng` dans le manifest Fedora 45 ;
 - `~/Bureau` comme dossier XDG Desktop ;
 - Corbeille visible, Home/volumes externes/volumes réseau masqués ;
-- Show Desktop Plus lié à l'artefact GNOME Extensions review `70326`, version de site `8`, GNOME Shell `50` ;
-- UUID `show-desktop-plus@attentivecoder` ;
+- Show Desktop Button lié à l'artefact GNOME Extensions review `75965`, version de site `59`, GNOME Shell `51` ;
+- UUID `show-desktop-button@amivaleo` ;
 - bouton `left-end`, clic gauche `toggle-desktop`, `Super+D`, badge désactivé ;
 - diagnostic GNOME et workflows Fedora couvrant ces invariants.
 
@@ -131,10 +131,10 @@ Cette CI valide configuration, provenance et schémas. Elle ne prétend pas prou
 `tests/test_virtualbox_gnome_lab_contract.sh` protège le LAB GATE 2 :
 
 - identité VirtualBox doublement validée par `systemd-detect-virt --vm = oracle` et DMI ;
-- Fedora 44, GNOME Shell 50 et Wayland requis ;
+- Fedora 45, GNOME Shell 51 et Wayland requis ;
 - entrypoint limité aux modules GNOME settings/extensions ;
 - dépendances système limitées à `curl`, `unzip`, `xdg-user-dirs`, `glib2` ;
-- DING et Show Desktop Plus installés depuis leurs artefacts GNOME-reviewed pinés ;
+- DING et Show Desktop Button installés depuis leurs artefacts GNOME-reviewed pinés ;
 - doctor LAB strictement read-only ;
 - interdiction de charger l'orchestrateur complet ou les modules kernel/hardware/KVM/backup ;
 - rejet dynamique de la CI avec code sécurité `50` ;
@@ -156,11 +156,11 @@ Le helper conserve une politique fail-closed : il tente d'abord les endpoints Mi
 
 `tests/test_rpmfusion_ci_bootstrap_contract.sh` verrouille ce comportement et interdit le retour à un bootstrap mono-endpoint dans les workflows Package, Host et Gaming.
 
-## Fedora 44 package preflight
+## Fedora 45 package preflight
 
-Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 50 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Rocky.
+Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 51 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Rocky.
 
-Pour l'ergonomie desktop, il télécharge et valide les archives gérées : DING review `74408`/version `95`, Show Desktop Plus review `70326`/version `8` et Resource Monitor review `70909`/version `28`, ainsi que la release GitHub officielle Tiling Assistant v55. Le workflow contrôle les UUID, la compatibilité GNOME Shell 50 et les payloads attendus.
+Pour l'ergonomie desktop, il télécharge et valide les archives gérées : DING review `75162`/version `145`, Show Desktop Button review `75965`/version `59` et Vitals review `74743`/version `85`, ainsi que la release GitHub officielle Tiling Assistant v56. Le workflow contrôle les UUID, la compatibilité GNOME Shell 51 et les payloads attendus.
 
 Ce workflow tourne sur push/PR et périodiquement afin de détecter une rupture externe sans commit. Son activation RPM Fusion passe par le bootstrap partagé ci-dessus.
 
@@ -180,11 +180,11 @@ Le contrat `tests/test_performance_runtime_contract.sh` verrouille la couche de 
 
 La CI vérifie la présence/résolution des paquets et les contrats statiques. Le smoke test SCX, les EPP réellement exposés, les schedulers NVMe et les frametimes restent des preuves bare-metal.
 
-## Fedora 44 Gaming pretest
+## Fedora 45 Gaming pretest
 
-`.github/workflows/fedora-gaming-pretest.yml` est le gate dédié au profil Gaming. Dans un conteneur Fedora 44, il :
+`.github/workflows/fedora-gaming-pretest.yml` est le gate dédié au profil Gaming. Dans un conteneur Fedora 45, il :
 
-1. active les métadonnées RPM Fusion Fedora 44 via le bootstrap résilient partagé ;
+1. active les métadonnées RPM Fusion Fedora 45 via le bootstrap résilient partagé ;
 2. résout et installe le manifeste Gaming Fedora natif ;
 3. vérifie la présence du dépôt `rpmfusion-nonfree-steam` ;
 4. résout et installe le RPM Steam depuis ce dépôt dédié ;
@@ -194,11 +194,11 @@ La CI vérifie la présence/résolution des paquets et les contrats statiques. L
 8. refuse les dépôts GPU tiers inattendus ;
 9. exécute `tests/test_gaming_contract.sh`.
 
-Ce gate prouve la disponibilité et la cohérence du userspace Gaming Fedora 44. Il ne simule pas une Arc B580, un rendu Vulkan physique, le VRR, 240 Hz, l'authentification Steam ou le lancement d'un jeu.
+Ce gate prouve la disponibilité et la cohérence du userspace Gaming Fedora 45. Il ne simule pas une Arc B580, un rendu Vulkan physique, le VRR, 240 Hz, l'authentification Steam ou le lancement d'un jeu.
 
-## Fedora 44 desktop integration pretest
+## Fedora 45 desktop integration pretest
 
-`.github/workflows/desktop-integration-pretest.yml` est un gate ciblé Files/terminal. Dans un conteneur Fedora 44, il :
+`.github/workflows/desktop-integration-pretest.yml` est un gate ciblé Files/terminal. Dans un conteneur Fedora 45, il :
 
 1. installe réellement GNOME core, les manifests Nautilus base/optionnels et le catalogue GTK4 ;
 2. exige les RPM Nautilus/GVfs/Sushi/File Roller/Ptyxis ;
@@ -210,11 +210,11 @@ Ce gate prouve la disponibilité et la cohérence du userspace Gaming Fedora 44.
 
 Ce workflow ne prétend pas mesurer le cold-start graphique réel ni la perception utilisateur. Ces preuves restent au GATE runtime.
 
-## Fedora 44 host integration pretest
+## Fedora 45 host integration pretest
 
-Dans un conteneur Fedora 44, installe réellement le contrat HOST/GNOME/KVM/backup, teste Bash UX et dock via un utilisateur normal, valide RPM Fusion, vendor RPM, Flathub et extensions. L'activation RPM Fusion utilise le même bootstrap résilient que Package et Gaming.
+Dans un conteneur Fedora 45, installe réellement le contrat HOST/GNOME/KVM/backup, teste Bash UX et dock via un utilisateur normal, valide RPM Fusion, vendor RPM, Flathub et extensions. L'activation RPM Fusion utilise le même bootstrap résilient que Package et Gaming.
 
-Un utilisateur de test installe DING et Show Desktop Plus depuis leurs artefacts GNOME-reviewed, converge `~/Bureau` et les préférences, puis relit les GSettings et les marqueurs de provenance.
+Un utilisateur de test installe DING et Show Desktop Button depuis leurs artefacts GNOME-reviewed, converge `~/Bureau` et les préférences, puis relit les GSettings et les marqueurs de provenance.
 
 Ce workflow ne simule pas VirtualBox ou une session GNOME graphique : le LAB GATE 2 reste une preuve runtime distincte.
 
@@ -301,7 +301,7 @@ Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTI
 ## Fedora/GNOME : boot et reprise isolée
 
 Le job réutilisable `fedora-gnome-vm.yml`, appelé par `Tests`, exerce de vrais
-boots QEMU Fedora 44/GNOME 50, le reboot, Borg et une restauration à froid
+boots QEMU Fedora 45/GNOME 51, le reboot, Borg et une restauration à froid
 UEFI/TPM logiciel suivie d'une reconstruction sur image neuve. `contracts` dépend
 de ce job : un échec ou un skip bloque le contexte obligatoire et la publication.
 Voir [la portée exacte et les rapports](FEDORA_GNOME_CI_LAB.md).
@@ -315,7 +315,7 @@ les régressions de code sans attendre les boots VM.
 
 ## Linux amont officiel
 
-Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 44 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.
+Le contexte obligatoire `contracts` attend aussi `upstream-kernel / rpm` : Fedora 45 réel, dépôts Vanilla autorisés, candidate égale à kernel.org, cinq RPM exacts, verrou DNF5 appliqué et transaction réellement résolue/téléchargée. Ce preflight ne démarre pas le noyau ; son boot et le matériel restent DEFERRED. Une publication COPR en retard bloque ce contrôle.
 
 Le laboratoire attend aussi le scope actif et le bus GNOME de l'écran de connexion après la déconnexion. Un essai a identifié une course entre la création de ce scope et l'arrêt immédiat de GDM (`Result=resources`, PID disparu avant rattachement). L'attente observe l'état réel ; les unités échouées, journaux et coredumps restent bloquants, sans remise à zéro.
 
@@ -325,14 +325,14 @@ Le job réutilisable vm-pretest.yml est une dépendance obligatoire de contracts
 
 ## Flathub : fournisseur externe, erreurs de réseau et preuve
 
-Les prétests Fedora 44/45 vérifient toujours les identifiants des applications Flatpak sur le vrai catalogue Flathub. Les workflows concernés utilisent désormais le même bootstrap strict `scripts/ci/ensure-flathub.sh` : dépôt stable officiel sous `https://dl.flathub.org/repo/flathub.flatpakrepo`, tentatives limitées, **échec obligatoire si le dépôt reste inaccessible**. Aucun `--no-gpg-verify` ni liste d'applications fictive ne transforme un incident réseau en PASS.
+Les prétests Fedora 45/45 vérifient toujours les identifiants des applications Flatpak sur le vrai catalogue Flathub. Les workflows concernés utilisent désormais le même bootstrap strict `scripts/ci/ensure-flathub.sh` : dépôt stable officiel sous `https://dl.flathub.org/repo/flathub.flatpakrepo`, tentatives limitées, **échec obligatoire si le dépôt reste inaccessible**. Aucun `--no-gpg-verify` ni liste d'applications fictive ne transforme un incident réseau en PASS.
 
 Le module de production utilise également cette adresse CDN officielle, mais reste soumis aux guards d'APPLY et à la gestion du remote par Flatpak. Le téléchargement du fichier .flatpakrepo n'est pas une preuve de disponibilité de toutes les applications : chaque `flatpak remote-info` reste obligatoire.
 
 ## Images de conteneur
 
-Les conteneurs **Fedora 44** des principaux workflows utilisent le registre officiel `registry.fedoraproject.org/fedora:44`, y compris le préflight réutilisable du noyau Linux amont dont l'image est paramétrée par la release Fedora. L'ancienne source ECR Public (`public.ecr.aws/docker/library/fedora:44`) a déjà provoqué `toomanyrequests: Data limit exceeded` avant même l'exécution de Nautilus/Ptyxis. Le contrat `tests/test_ci_maturity_contract.sh` interdit son retour pour les images Fedora 44 à référence fixe.
+Les conteneurs **Fedora 45** des principaux workflows utilisent le registre officiel `registry.fedoraproject.org/fedora:45`, y compris le préflight réutilisable du noyau Linux amont dont l'image est paramétrée par la release Fedora. L'ancienne source ECR Public (`public.ecr.aws/docker/library/fedora:45`) a déjà provoqué `toomanyrequests: Data limit exceeded` avant même l'exécution de Nautilus/Ptyxis. Le contrat `tests/test_ci_maturity_contract.sh` interdit son retour pour les images Fedora 45 à référence fixe.
 
-Certains workflows Fedora **45** et le test de sonde Docker **busybox** utilisent encore ECR Public selon leur configuration. Les conteneurs ne tirent pas les images Fedora 44 anonymement de Docker Hub. La sonde construit son image vide localement (`FROM scratch`).
+Certains workflows Fedora **45** et le test de sonde Docker **busybox** utilisent encore ECR Public selon leur configuration. Les conteneurs ne tirent pas les images Fedora 45 anonymement de Docker Hub. La sonde construit son image vide localement (`FROM scratch`).
 
 Un autre blocage rencontré vient de `ciscobinary.openh264.org` : dans certains jobs d'installation Fedora, le dépôt Cisco OpenH264 est désactivé **uniquement pendant la transaction du laboratoire CI** lorsqu'il n'est pas nécessaire aux paquets du contrat. Cela ne supprime pas les fonctionnalités multimédias exigées sur la workstation de production.

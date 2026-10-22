@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Cette couche importe dans Fedora 44 les mécanismes de réactivité utiles d'une workstation orientée performance **sans transformer Fedora en distribution dérivée** et sans toucher aveuglément aux paramètres kernel, GPU, NVMe ou réseau.
+Cette couche importe dans Fedora 45 les mécanismes de réactivité utiles d'une workstation orientée performance **sans transformer Fedora en distribution dérivée** et sans toucher aveuglément aux paramètres kernel, GPU, NVMe ou réseau.
 
 La règle est :
 
@@ -91,7 +91,7 @@ Smoke test explicite, borné et bare-metal :
 
 Le doctor exige notamment `CONFIG_SCHED_CLASS_EXT`, le BTF du noyau et un binaire SCX. Le smoke utilise `timeout`, puis rend la main au scheduler du noyau. Une erreur BPF/BTF ou un échec de chargement est un KO du test, mais `sched_ext_policy=auto` laisse le runtime Golden sur le scheduler standard.
 
-Cette prudence est volontaire : Fedora 44 a connu en septembre 2026 un problème BTF empêchant le chargement de schedulers `sched_ext` sur certains noyaux (Bugzilla #2514913). Le projet teste donc **le noyau réellement démarré** au lieu de supposer la compatibilité.
+Cette prudence est volontaire : Fedora 45 a connu en septembre 2026 un problème BTF empêchant le chargement de schedulers `sched_ext` sur certains noyaux (Bugzilla #2514913). Le projet teste donc **le noyau réellement démarré** au lieu de supposer la compatibilité.
 
 ## ZRAM
 

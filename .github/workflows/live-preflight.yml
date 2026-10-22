@@ -32,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Parse Bash
         run: |
           for script in diagnostics/live-preflight.sh lib/live_preflight_probe.sh tests/test_live_preflight_probe.sh; do

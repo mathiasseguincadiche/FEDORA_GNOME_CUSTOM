@@ -12,7 +12,7 @@ kernel_lifecycle_require_host_gate
 fedora_require_selected
 command -v dnf5 >/dev/null
 command -v grubby >/dev/null || sudo dnf5 -y install grubby
-printf 'Recovery to Fedora %s RPMs. Upstream repositories will be disabled; installed kernels remain until a successful reboot.\nType exactly ROLLBACK FEDORA KERNEL: ' "${HOST_RELEASE:-44}"
+printf 'Recovery to Fedora %s RPMs. Upstream repositories will be disabled; installed kernels remain until a successful reboot.\nType exactly ROLLBACK FEDORA KERNEL: ' "${HOST_RELEASE:-45}"
 read -r answer
 [[ "$answer" == 'ROLLBACK FEDORA KERNEL' ]] || { echo 'Cancelled.'; exit 2; }
 for copr in @kernel-vanilla/stable @kernel-vanilla/fedora; do
@@ -24,7 +24,7 @@ mapfile -t names < <(rpm -qa --qf '%{NAME}\n' 'kernel*' 'libperf*' perf python3-
 # Restrict RPM provenance even if unrelated third-party repositories are enabled.
 sudo dnf5 -y --repo=fedora --repo=updates --setopt=allow_vendor_change=1 distro-sync "${names[@]}"
 fedora_latest="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core \
-  | grep -E "^[0-9]+[.][0-9]+([.][0-9]+)?-[0-9.]+[.]fc${HOST_RELEASE:-44}[.]x86_64$" | sort -V | tail -n1)"
+  | grep -E "^[0-9]+[.][0-9]+([.][0-9]+)?-[0-9.]+[.]fc${HOST_RELEASE:-45}[.]x86_64$" | sort -V | tail -n1)"
 [[ -n "$fedora_latest" && -e "/boot/vmlinuz-$fedora_latest" ]]
 sudo grubby --set-default "/boot/vmlinuz-$fedora_latest"
 [[ "$(kernel_lifecycle_default_release)" == "$fedora_latest" ]]

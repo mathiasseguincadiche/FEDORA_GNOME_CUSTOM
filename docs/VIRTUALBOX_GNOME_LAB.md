@@ -1,4 +1,4 @@
-# GATE 2 — Fedora 44 GNOME sous VirtualBox
+# GATE 2 — Fedora 45 GNOME sous VirtualBox
 
 Ce document définit le **GATE 2 graphique officiel** utilisé après Gate 1 WSL2 et avant toute certification bare-metal.
 
@@ -10,8 +10,8 @@ Le protocole complet est défini dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VA
 
 Gate 2 valide de vraies fonctions desktop qui ne sont pas prouvables sous WSL2 ou en CI :
 
-- Fedora 44 ;
-- GNOME Shell 50 ;
+- Fedora 45 ;
+- GNOME Shell 51 ;
 - session Wayland ;
 - GNOME core et portals ;
 - Nautilus/GVfs/Sushi/File Roller ;
@@ -20,10 +20,10 @@ Gate 2 valide de vraies fonctions desktop qui ne sont pas prouvables sous WSL2 o
 - Corbeille DING visible ;
 - Home, volumes externes et volumes réseau masqués ;
 - bouton **Afficher le bureau** dans la zone gauche du panneau supérieur ;
-- clic gauche `toggle-desktop` ;
+- action Afficher le bureau ;
 - raccourci `Super+D` ;
 - restauration des fenêtres après un second toggle ;
-- Resource Monitor visible dans la zone droite du panneau ;
+- Vitals visible dans la zone droite du panneau ;
 - CPU, RAM et débit réseau lisibles en temps réel dans la VM ;
 - persistance après déconnexion/reconnexion et reboot ;
 - validation visuelle humaine explicite avant création de la preuve Gate 2.
@@ -63,8 +63,8 @@ Le LAB est accepté uniquement si toutes les preuves suivantes concordent :
 1. `runtime_environment=vm` ;
 2. `systemd-detect-virt --vm` renvoie `oracle` ;
 3. les informations DMI correspondent à VirtualBox/Oracle/innotek ;
-4. Fedora Linux 44 est installé ;
-5. GNOME Shell 50 est actif ;
+4. Fedora Linux 45 est installé ;
+5. GNOME Shell 51 est actif ;
 6. la session courante est GNOME sous Wayland ;
 7. l'exécution est faite par l'utilisateur graphique, jamais par root ;
 8. une preuve Gate 1 actuelle a été importée avant la signature Gate 2.
@@ -80,18 +80,18 @@ Un simple override de variable d'environnement ne peut pas autoriser ce LAB : l'
 - applications GTK4/libadwaita prévues par le projet, dont Ptyxis natif ;
 - utilitaires `curl`, `unzip`, `xdg-user-dirs`, `glib2` ;
 - boutons GNOME `minimize,maximize,close` à droite ;
-- DING depuis l'artefact GNOME Extensions review `74408`, version de site `95`, UUID `ding@rastersoft.com`, compatible GNOME Shell 50 ;
+- DING depuis l'artefact GNOME Extensions review `75162`, version de site `145`, UUID `gtk4-ding@smedius.gitlab.com`, compatible GNOME Shell 51 ;
 - XDG Desktop vers `~/Bureau` ;
 - Corbeille visible, Home/volumes externes/volumes réseau masqués ;
-- Show Desktop Plus depuis l'artefact GNOME Extensions review `70326`, version de site `8`, UUID `show-desktop-plus@attentivecoder`, compatible GNOME Shell 50 ;
-- `left-end`, `toggle-desktop`, `Super+D` et badge masqué ;
-- Resource Monitor depuis l'artefact GNOME Extensions review `70909`, version de site `28`, UUID `Resource_Monitor@Ory0n`, compatible GNOME Shell 50 ;
-- CPU, RAM, Ethernet/Wi-Fi et GPU guest activés, disque/swap masqués, rafraîchissement 2 s ;
+- Show Desktop Button depuis l'artefact GNOME Extensions review `75965`, version de site `59`, UUID `show-desktop-button@amivaleo`, compatible GNOME Shell 51 ;
+- position `LEFT_END` et raccourci `Super+D` ;
+- Vitals depuis l'artefact GNOME Extensions review `74743`, version de site `85`, UUID `Vitals@CoreCoding.com`, compatible GNOME Shell 51 ;
+- CPU, RAM et débit réseau ; rafraîchissement 2 s ; capteurs supplémentaires sélectionnés depuis Vitals ;
 - activation des trois extensions utilisateur ;
 - doctors Nautilus, Ptyxis, portals et VirtualBox GNOME LAB ;
 - marqueur LAB lié au commit après postchecks réussis.
 
-DING, Show Desktop Plus et Resource Monitor sont installés depuis des **artefacts GNOME-reviewed pinés**.
+DING, Show Desktop Button et Vitals sont installés depuis des **artefacts GNOME-reviewed pinés**.
 
 ## Surface interdite
 
@@ -161,7 +161,7 @@ Après les checks automatisés sans KO :
 9. cliquer sur Afficher le bureau : les fenêtres doivent être masquées ;
 10. recliquer : les fenêtres doivent être restaurées ;
 11. répéter avec `Super+D` ;
-12. vérifier Resource Monitor : **CPU %**, **RAM %** et débit réseau ;
+12. vérifier Vitals : **CPU %**, **RAM %** et débit réseau ;
 13. générer du trafic (`curl` ou téléchargement d'un paquet) et constater la variation download/upload ;
 14. vérifier qu'aucune extension n'affiche d'erreur répétée et qu'il n'y a pas de régression visuelle évidente ;
 15. accepter comme `EXPECTED` l'absence de température Ryzen physique et de métriques Arc B580 ;
@@ -191,10 +191,10 @@ La preuve créée contient le SHA-256 exact de la preuve Gate 1 importée dans `
 
 Dans VirtualBox :
 
-- Fedora 44 / GNOME 50 / Wayland : **PASS** ;
+- Fedora 45 / GNOME 51 / Wayland : **PASS** ;
 - Nautilus/GVfs et Ptyxis : **PASS** ;
 - DING / Show Desktop / XDG Desktop : **PASS** si réellement observés ;
-- Resource Monitor installé/activé/configuré : **PASS** ;
+- Vitals installé/activé/configuré : **PASS** ;
 - CPU %, RAM % et débit réseau du guest : **PASS** si observés ;
 - contrôle visuel humain : **PASS** après signature ;
 - température physique Ryzen `k10temp/Tctl` : **EXPECTED** ;
