@@ -38,7 +38,7 @@ gaming_stack_apply() {
   run_mutating GAMING sudo dnf -y install fedora-workstation-repositories || return "$EXIT_APPLY_FAILED"
 
   if ! is_true "${DRY_RUN:-true}"; then
-    repo_file="$(gaming_steam_repository_file)" || {
+    repo_file="$(gaming_steam_repository_file /)" || {
       log_error GAMING 'Fedora workstation Steam repository definition is missing'
       return "$EXIT_APPLY_FAILED"
     }

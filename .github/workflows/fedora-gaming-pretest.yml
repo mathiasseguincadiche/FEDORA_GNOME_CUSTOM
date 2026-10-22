@@ -54,7 +54,7 @@ jobs:
           set -Eeuo pipefail
           dnf -y install fedora-workstation-repositories
           source lib/gaming_repositories.sh
-          repo_file="$(gaming_steam_repository_file)"
+          repo_file="$(gaming_steam_repository_file /)"
           test "$(rpm -qf --qf '%{NAME}\n' "$repo_file")" = fedora-workstation-repositories
           repos="$(dnf repolist --all)"
           grep -Fq 'rpmfusion-nonfree-steam' <<<"$repos"

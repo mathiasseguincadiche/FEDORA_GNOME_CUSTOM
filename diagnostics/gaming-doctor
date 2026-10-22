@@ -61,7 +61,7 @@ for pkg in mesa-vulkan-drivers.x86_64 mesa-vulkan-drivers.i686 mesa-dri-drivers.
 done
 
 repo_payload="$(dnf repolist --all 2>/dev/null || true)"
-repo_file="$(gaming_steam_repository_file || true)"
+repo_file="$(gaming_steam_repository_file / || true)"
 if [[ -n "$repo_file" ]] && [[ "$(rpm -qf --qf '%{NAME}\n' "$repo_file" 2>/dev/null)" == fedora-workstation-repositories ]] && grep -Fq 'rpmfusion-nonfree-steam' <<<"$repo_payload"; then
   emit OK 'Steam repository' 'Fedora workstation repository definition exposes rpmfusion-nonfree-steam'
 else
