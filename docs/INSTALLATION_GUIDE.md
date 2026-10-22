@@ -119,10 +119,12 @@ Le préparer manuellement en EXT4 et le monter durablement sur `/data` (de préf
 
 ```bash
 findmnt /data
+./diagnostics/baseline-doctor storage-identity
+./diagnostics/baseline-doctor enroll-data NUMERO_DE_SERIE_DU_T705_DATA
 lsblk -f
 ```
 
-Le root et `/data` doivent être deux NVMe physiques distincts.
+Le root et `/data` doivent être deux T705 physiques distincts. Recopier le numéro de série de la cible `/data` observé dans `storage-identity` pour l’approuver ; ne pas deviner ce numéro. L’enrôlement enregistre les modèles, numéros de série, WWN et UUID. Un changement de montage ou de disque invalide ensuite la baseline et bloque les écritures et sauvegardes sur `/data`.
 
 L'APPLY crée ou normalise ensuite cette structure **sans supprimer le contenu existant** :
 
@@ -132,6 +134,7 @@ L'APPLY crée ou normalise ensuite cette structure **sans supprimer le contenu e
 ├── Projets/            # projets de travail persistants
 ├── ISO/                # bibliothèque ISO persistante, hors backup automatique par défaut
 ├── Jeux/               # bibliothèque de jeux persistante, hors backup automatique par défaut
+├── IA/Openclaw/        # projets et sources Openclaw IA ; protégés par Borg
 └── libvirt/
     ├── images/         # pool devops-data / disques qcow2
     ├── iso/
@@ -141,18 +144,18 @@ L'APPLY crée ou normalise ensuite cette structure **sans supprimer le contenu e
     └── exports/
 ```
 
-`Documents`, `Projets`, `ISO` et `Jeux` restent des répertoires utilisateur séparés de `/data/libvirt`. Une réinstallation du premier T705 doit **réutiliser le second T705 sans le reformater**.
+`Documents`, `Projets`, `ISO`, `Jeux` et `IA/Openclaw` restent des répertoires utilisateur séparés de `/data/libvirt`. Une réinstallation du premier T705 doit **réutiliser le second T705 sans le reformater**.
 
 **Checkpoint :** `findmnt` et `lsblk` doivent prouver que `/` et `/data` résident sur deux T705 physiques distincts avant de continuer.
 
 ## 4. Configuration locale
 
 ```bash
-cp config/local.conf.example config/local.conf
+test -e config/local.conf || cp config/local.conf.example config/local.conf
 $EDITOR config/local.conf
 ```
 
-Conserver :
+Conserver le fichier existant si Kickstart a déjà écrit `HOST_RELEASE="45"`. Pour une installation manuelle, l’exemple sélectionne également Fedora 45. Pendant la revue initiale, conserver :
 
 ```text
 REAL_MACHINE_APPROVED=false
@@ -207,6 +210,15 @@ Le profil EDID certifié est écrit dans :
 
 ## 6. Full dry-run
 
+Après revue du matériel, de `/data` et de tous les réglages, fixer **avant ce dry-run final** dans `config/local.conf` :
+
+```text
+HOST_RELEASE="45"
+REAL_MACHINE_APPROVED=true
+```
+
+La configuration est désormais définitive : **configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3**. Toute retouche, y compris du drapeau d’approbation, impose de refaire le dry-run puis le backup. Le profil Fedora 45 doit déjà être promu ; ce drapeau ne contourne aucun verrou.
+
 ```bash
 ./install.sh --dry-run
 ```
@@ -252,13 +264,7 @@ Au moment de l'APPLY, le projet **rouvre réellement le dépôt Borg** et vérif
 
 **Point de mutation principal :** cette étape modifie réellement la workstation.
 
-Après revue de la cible :
-
-```text
-REAL_MACHINE_APPROVED=true
-```
-
-puis :
+La configuration approuvée à l’étape 6 ne doit plus changer après la création des preuves. Exécuter :
 
 ```bash
 ./install.sh --apply
@@ -275,7 +281,7 @@ L'APPLY refuse notamment :
 
 Le module kernel installe **le dernier Linux amont officiel stable, après comparaison à kernel.org**, applique `DNF installonly_limit=2`, définit ce noyau comme défaut GRUB et conserve au maximum le noyau immédiatement précédent.
 
-Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO` et `/data/Jeux`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
+Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux` et `/data/IA/Openclaw`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
 
 **Checkpoint :** APPLY doit terminer sans garde-fou contourné. Un refus impose de corriger la précondition qui l'a déclenché.
 
@@ -303,7 +309,7 @@ Après démarrage sur N :
 ./diagnostics/arc-compute-doctor
 ```
 
-Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les quatre répertoires persistants, leurs droits/labels et le mapping XDG Documents.
+Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les répertoires persistants dont `IA/Openclaw`, leurs droits/labels et le mapping XDG Documents.
 
 **Checkpoint :** le runtime actif doit réellement être N et les doctors bare-metal doivent être conformes avant la certification finale.
 
@@ -353,7 +359,7 @@ La certification finale :
 3. génère un `golden-release.json` et ses inventaires ;
 4. lie la preuve au kernel/runtime courant.
 
-Le diagnostic desktop bare-metal inclut le contrat de données persistantes ; une Golden ne doit donc pas être considérée conforme si `/data/Documents`, `/data/Projets`, `/data/ISO` ou `/data/Jeux` dérivent de leur contrat.
+Le diagnostic desktop bare-metal inclut le contrat de données persistantes ; une Golden ne doit donc pas être considérée conforme si `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux` ou `/data/IA/Openclaw` dérivent de leur contrat.
 
 Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal. En revanche, une mise à jour kernel peut rendre l'ancienne Golden `STALE` jusqu'à une nouvelle certification.
 
@@ -411,7 +417,7 @@ Aucun firmware n'est flashé automatiquement.
 
 ## 15. Backup et récupération des données persistantes
 
-La sauvegarde quotidienne Borg protège les dossiers XDG habituels ; `DOCUMENTS` se résout désormais vers `/data/Documents`. `/data/Projets` est également ajouté explicitement aux sources quotidiennes. `/data/ISO` et `/data/Jeux` ne sont pas sauvegardés automatiquement par défaut afin d'éviter de dupliquer de gros payloads reproductibles ou retéléchargeables.
+La sauvegarde quotidienne Borg protège les dossiers XDG habituels ; `DOCUMENTS` se résout désormais vers `/data/Documents`. `/data/Projets` et `/data/IA/Openclaw` sont également ajoutés explicitement aux sources quotidiennes. `/data/ISO` et `/data/Jeux` ne sont pas sauvegardés automatiquement par défaut afin d'éviter de dupliquer de gros payloads reproductibles ou retéléchargeables.
 
 Le second T705 protège contre la perte/réinstallation du **disque système**, mais il ne remplace pas un backup externe : une panne physique du second T705 reste possible. Les données importantes conservent donc la protection Borg externe.
 

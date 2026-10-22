@@ -13,6 +13,11 @@ UPDATE_REBOOT_REQUIRED="unknown"
 UPDATE_KERNEL_TARGET=""
 UPDATE_KERNEL_PREVIOUS=""
 UPDATE_KERNEL_DEFERRED="false"
+UPDATE_SOURCE_BOOT_ID=""
+UPDATE_TRANSACTION_COMMENT=""
+UPDATE_PREPARED_TIMESTAMP=""
+
+update_current_boot_id() { cat /proc/sys/kernel/random/boot_id; }
 
 usage() {
   cat <<'EOF'
@@ -60,7 +65,7 @@ write_update_state() {
   [[ "$kernel_target" == none ]] || kernel_lifecycle_release_is_stable "$kernel_target" || { ui_error 'Invalid kernel target in update state'; return "$EXIT_CONFIG_FAILED"; }
   [[ "$kernel_previous" == none ]] || kernel_lifecycle_release_is_stable "$kernel_previous" || { ui_error 'Invalid previous kernel in update state'; return "$EXIT_CONFIG_FAILED"; }
   {
-    printf 'schema=2\n'
+    printf 'schema=3\n'
     printf 'utc=%s\n' "$(date -u +%FT%TZ)"
     printf 'commit=%s\n' "$(repo_commit)"
     printf 'effective_config_sha256=%s\n' "$(effective_config_sha256)"
@@ -75,6 +80,9 @@ write_update_state() {
     printf 'kernel_previous=%s\n' "$kernel_previous"
     printf 'kernel_lock_sha256=%s\n' "$(kernel_lifecycle_lock_hash)"
     printf 'kernel_max_installed=%s\n' "$(kernel_lifecycle_max_installed)"
+    printf 'source_boot_id=%s\n' "${UPDATE_SOURCE_BOOT_ID:-$(update_state_value source_boot_id)}"
+    printf 'transaction_comment=%s\n' "${UPDATE_TRANSACTION_COMMENT:-$(update_state_value transaction_comment)}"
+    printf 'prepared_timestamp=%s\n' "${UPDATE_PREPARED_TIMESTAMP:-$(update_state_value prepared_timestamp)}"
   } | evidence_atomic_write "$UPDATE_STATE_FILE" 0600
 }
 
@@ -184,11 +192,20 @@ prepare_dnf_offline() {
   fi
   ui_banner 'FEDORA WORKSTATION UPDATE' 'PREPARE DNF5 OFFLINE TRANSACTION'
   prepare_kernel_rolling_target || exit $?
+  UPDATE_SOURCE_BOOT_ID="$(update_current_boot_id)"
+  UPDATE_TRANSACTION_COMMENT="fgc-offline-$(python3 -c 'import uuid; print(uuid.uuid4())')"
+  UPDATE_PREPARED_TIMESTAMP="$(date +%s)"
   local -a kernel_exclusion=()
   if is_true "$UPDATE_KERNEL_DEFERRED"; then
     kernel_exclusion=(--exclude="$(kernel_lifecycle_managed_packages_csv)")
   fi
-  sudo dnf5 --refresh upgrade --offline -y "${kernel_exclusion[@]}"
+  sudo dnf5 --refresh upgrade --offline -y --comment="$UPDATE_TRANSACTION_COMMENT" "${kernel_exclusion[@]}"
+  if ! sudo test -e /usr/lib/sysimage/libdnf5/offline/transaction.json; then
+    UPDATE_REBOOT_REQUIRED=false
+    write_update_state no-transaction "$mode" not-run
+    ui_summary 'NO OFFLINE TRANSACTION PREPARED' 'NO STAGED DNF5 REQUEST; NO REBOOT OR OFFLINE COMPLETION TO CERTIFY' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    return 0
+  fi
   sudo dnf5 offline status
   UPDATE_REBOOT_REQUIRED=true
   write_update_state prepared "$mode" pending
@@ -234,6 +251,30 @@ capture_offline_log() {
   ui_check PASS 'DNF5 offline log' "$report"
 }
 
+require_applied_offline_transaction() {
+  local source_boot timestamp comment history current_boot
+  source_boot="$(update_state_value source_boot_id)"
+  timestamp="$(update_state_value prepared_timestamp)"
+  comment="$(update_state_value transaction_comment)"
+  current_boot="$(update_current_boot_id)" || return "$EXIT_PRECHECK_FAILED"
+  [[ "$current_boot" =~ ^[0-9a-f-]{36}$ && "$source_boot" =~ ^[0-9a-f-]{36}$ && "$timestamp" =~ ^[0-9]+$ &&
+     "$current_boot" != "$source_boot" ]] || {
+    ui_error 'No new normal boot since offline preparation; completion is unproven.'
+    return "$EXIT_PRECHECK_FAILED"
+  }
+  # A prepared request survives a normal reboot that never ran the offline
+  # service. A readable old journal cannot stand in for the exact transaction.
+  if sudo test -e /usr/lib/sysimage/libdnf5/offline/transaction.json; then
+    ui_error 'A DNF5 offline transaction is still staged; completion is unproven.'
+    return "$EXIT_PRECHECK_FAILED"
+  fi
+  history="$(sudo dnf5 history info 1..last --json)" || return "$EXIT_POSTCHECK_FAILED"
+  python3 "$REPO_ROOT/scripts/maintenance/verify-offline-history.py" "$comment" "$timestamp" <<<"$history" >/dev/null || {
+    ui_error 'The successful DNF5 history entry does not match the prepared transaction.'
+    return "$EXIT_POSTCHECK_FAILED"
+  }
+}
+
 finalize_offline_update() {
   require_dnf5
   require_current_update_state || exit $?
@@ -245,6 +286,7 @@ finalize_offline_update() {
   [[ "$UPDATE_KERNEL_DEFERRED" == true ]] || UPDATE_KERNEL_DEFERRED=false
   ui_banner 'FEDORA WORKSTATION UPDATE' 'POST-OFFLINE VALIDATION'
 
+  require_applied_offline_transaction || return $?
   capture_offline_log || exit $?
   sudo dnf5 check || { ui_error 'DNF5 packagedb/dependency validation failed after offline transaction'; write_update_state failed "$mode" 1; exit "$EXIT_POSTCHECK_FAILED"; }
   ui_check PASS 'DNF5 packagedb' 'dependency/database check PASS'

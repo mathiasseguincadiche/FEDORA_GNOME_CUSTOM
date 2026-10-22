@@ -21,6 +21,7 @@ engine_load_libraries() {
   source "$REPO_ROOT/lib/evidence.sh"
   source "$REPO_ROOT/lib/hardware_profile.sh"
   source "$REPO_ROOT/lib/storage_health.sh"
+  source "$REPO_ROOT/lib/persistent_data.sh"
   source "$REPO_ROOT/lib/backup_runtime.sh"
   source "$REPO_ROOT/lib/physical_certification.sh"
   source "$REPO_ROOT/lib/peripheral_identity.sh"

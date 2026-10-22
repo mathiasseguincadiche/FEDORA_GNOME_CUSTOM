@@ -126,6 +126,9 @@ def live_report(root: Path, profile: dict, roles: dict[str, str]) -> dict:
                 hashes = [row.removeprefix("sha256=") for row in rows if row.startswith("sha256=")]
                 if len(hashes) == 1:
                     provenance[uuid] = hashes[0]
+    run(sys.executable, str(root / "scripts/gnome/ding-shutdown-fix.py"),
+        "verify", str(user_base / roles["desktop_icons"]))
+    run(sys.executable, str(root / "scripts/gnome/fedora45-rpm-extensions.py"), "--verify")
     return assess(roles, active, enabled, metadata, provenance, lock)
 
 

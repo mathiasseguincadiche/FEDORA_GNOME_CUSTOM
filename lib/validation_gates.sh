@@ -230,6 +230,23 @@ validation_require_chain() {
   [[ "$predecessor" == "$expected" ]]
 }
 
+validation_suspend_evidence_valid() {
+  local file="$1" field expected
+  [[ -s "$file" ]] || return 1
+  for field in fingerprint effective_config_sha256 gate1_proof_sha256 gate2_proof_sha256 display_edid_sha256 driver_contract; do
+    case "$field" in
+      fingerprint) expected="$(workstation_runtime_fingerprint)" ;;
+      effective_config_sha256) expected="$(effective_config_sha256)" ;;
+      gate1_proof_sha256) expected="$(validation_file_sha256 "$(validation_imported_proof_path 1)")" || return 1 ;;
+      gate2_proof_sha256) expected="$(validation_file_sha256 "$(validation_imported_proof_path 2)")" || return 1 ;;
+      display_edid_sha256) expected="$(hardware_b580_expected_edid_sha256)" || return 1 ;;
+      driver_contract) expected=PASS ;;
+    esac
+    grep -Fxq "$field=$expected" "$file" || return 1
+  done
+  [[ "$(evidence_marker_value "$file" cycle_id)" =~ ^[0-9a-f]{64}$ ]]
+}
+
 validation_export_proof() {
   local gate="$1" destination_dir="$2" source destination
   case "$gate" in 1|2) ;; *) return "$EXIT_USAGE" ;; esac

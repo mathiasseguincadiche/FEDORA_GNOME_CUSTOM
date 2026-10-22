@@ -52,11 +52,11 @@ Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensi
 
 ## P1 — données persistantes
 
-- `/data/Documents`, `/data/Projets`, `/data/ISO` et `/data/Jeux` créés idempotemment sur le second T705 sans suppression du contenu existant ;
+- `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux` et `/data/IA/Openclaw` créés idempotemment sur le second T705 sans suppression du contenu existant ;
 - `Documents` XDG pointe vers `/data/Documents` ;
 - répertoires utilisateur en mode `0750`, propriétaire workstation et labels SELinux persistants adaptés aux données utilisateur ;
 - `/data/libvirt` reste un sous-arbre séparé avec son propre contexte SELinux ;
-- `/data/Documents` et `/data/Projets` sont protégés par la sauvegarde quotidienne Borg externe ;
+- `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` sont protégés par la sauvegarde quotidienne Borg externe ;
 - `/data/ISO` et `/data/Jeux` restent persistants mais hors backup automatique par défaut ;
 - le second T705 protège contre la perte/réinstallation du disque système, mais ne remplace jamais la sauvegarde off-machine.
 
@@ -108,7 +108,7 @@ Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensi
 - Borg, dépôt non chiffré (ADR 0014) ;
 - backup pré-APPLY lié au commit ;
 - `borg check --verify-data` et restore-canary ;
-- sauvegarde quotidienne de `/data/Documents` et `/data/Projets` en plus des données utilisateur configurées ;
+- sauvegarde quotidienne de `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` en plus des données utilisateur configurées ;
 - `/data/ISO` et `/data/Jeux` hors backup automatique par défaut pour éviter de dupliquer des payloads volumineux reproductibles ;
 - sauvegarde QCOW2 uniquement VM arrêtée ;
 - restauration staging-first ;

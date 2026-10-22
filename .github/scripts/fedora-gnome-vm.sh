@@ -83,8 +83,7 @@ curl --fail --location --proto '=https' --proto-redir '=https' --retry 4 \
   -o "$FEDORA_CLOUD_IMAGE" "$FEDORA_CLOUD_URL/$FEDORA_CLOUD_IMAGE"
 curl --fail --location --proto '=https' --proto-redir '=https' --retry 4 \
   -o "$FEDORA_CLOUD_CHECKSUM" "$FEDORA_CLOUD_URL/$FEDORA_CLOUD_CHECKSUM"
-curl --fail --location --proto '=https' --proto-redir '=https' --retry 4 \
-  -o fedora.pgp https://fedoraproject.org/fedora.pgp
+python3 "$ROOT/.github/scripts/fedora-keyring.py" "$LAB/fedora.pgp"
 mkdir -m 700 gnupg
 gpg --homedir "$LAB/gnupg" --batch --import fedora.pgp
 # Export ONLY the independently pinned Fedora 44 key into the verification ring.

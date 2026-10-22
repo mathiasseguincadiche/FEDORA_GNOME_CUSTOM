@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 kvm_storage_validate_mount() {
+  persistent_data_validate_mount_at "${KVM_DATA_MOUNT:-/data}" || return 1
   local mount="${KVM_DATA_MOUNT:-/data}" target fstype root_source data_source
   target="$(findmnt -n -T "$mount" -o TARGET 2>/dev/null || true)"
   fstype="$(findmnt -n -T "$mount" -o FSTYPE 2>/dev/null || true)"

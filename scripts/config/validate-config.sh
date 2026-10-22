@@ -97,7 +97,7 @@ validate_class_value() {
   local key="$1" expected="$2" value="$3" actual
   case "$expected" in
     repository)
-      [[ -z "$value" || "$value" == /* || "$value" =~ ^(sftp:|rest:|rest\+|s3:|b2:|azure:|gs:|rclone:) ]] || return 1
+      [[ -z "$value" || "$value" == /* || "$value" =~ ^ssh://[^[:space:]]+/[^[:space:]]+$ || "$value" =~ ^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+:[^[:space:]]+$ ]] || return 1
       ;;
     optional_path)
       [[ -z "$value" || "$value" == /* || "$value" == "$CONFIG_LITERAL_HOME"* || "$value" == "$CONFIG_LITERAL_BRACED_HOME"* ]] || return 1

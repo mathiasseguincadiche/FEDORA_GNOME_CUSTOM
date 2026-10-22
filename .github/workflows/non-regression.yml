@@ -123,7 +123,9 @@ jobs:
           grep -Fq 'backup_engine_archive_matches "$archive" "$snapshot" preapply' lib/backup_runtime.sh
           grep -Fq 'backup_engine_repo_ready' lib/backup_runtime.sh
           grep -Fq 'effective_config_sha256' prepare-preapply-backup.sh
-          grep -Fq 'hardware_fingerprint' prepare-preapply-backup.sh
+          grep -Fq 'backup_identity="$(backup_runtime_identity_payload)"' prepare-preapply-backup.sh
+          grep -Fq 'hardware_fingerprint' lib/backup_runtime.sh
+          grep -Fq '[[ "$backup_identity" == "$(backup_runtime_identity_payload)" ]]' prepare-preapply-backup.sh
       - name: No obvious committed secrets
         shell: bash
         run: |

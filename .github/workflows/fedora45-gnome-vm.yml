@@ -26,7 +26,7 @@ jobs:
         if: always()
         run: |
           echo 'Candidate QEMU preview only. No Fedora 45 media promotion, production APPLY or hardware Gate 3.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Only Fedora 45 packages actually resolved from enabled repositories are accepted. Never silently enable updates-testing to mask an incompatible Dash to Dock package.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The exact Fedora RPM candidates use explicit QEMU-only updates-testing. Production accepts stable repositories only; promotion refuses missing stable candidates. Shared lock, installer and runtime patch are verified.' >> "$GITHUB_STEP_SUMMARY"
       - name: Retain session and recovery evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -2,10 +2,9 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# shellcheck source=config/virtualization.conf
-source "$REPO_ROOT/config/virtualization.conf"
-# shellcheck source=config/vm-profiles.conf
-source "$REPO_ROOT/config/vm-profiles.conf"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_load_libraries
+config_load
 
 fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }

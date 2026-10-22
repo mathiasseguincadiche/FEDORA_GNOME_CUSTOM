@@ -6,6 +6,7 @@ import pathlib
 import re
 import shlex
 import subprocess
+import sys
 import urllib.request
 
 
@@ -33,7 +34,7 @@ def main():
     work.mkdir(mode=0o700, exist_ok=False)
     keyring = work / "gnupg"
     keyring.mkdir(mode=0o700)
-    download("https://fedoraproject.org/fedora.pgp", work / "fedora.pgp")
+    subprocess.run([sys.executable, str(root / ".github/scripts/fedora-keyring.py"), str(work / "fedora.pgp")], check=True)
     download(config["url"] + "/" + config["checksum"], work / "checksum")
     subprocess.run(["gpg", "--homedir", str(keyring), "--batch", "--import",
                     str(work / "fedora.pgp")], check=True)

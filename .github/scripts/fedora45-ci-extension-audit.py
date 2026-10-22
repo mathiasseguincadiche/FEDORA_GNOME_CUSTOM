@@ -63,6 +63,7 @@ subprocess.run(
     [sys.executable, str(root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py"), "verify"],
     check=True, stdout=subprocess.DEVNULL,
 )
+subprocess.run([sys.executable, str(root / "scripts/gnome/fedora45-rpm-extensions.py"), "--verify"], check=True)
 result = audit.assess(roles, active, enabled, metadata, provenance, lock)
 result.update(lab_scope="disposable-qemu-only", profile_status="pending",
               production_apply="BLOCKED", physical_gate3="DEFERRED")

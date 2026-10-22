@@ -206,7 +206,7 @@ Les mises à niveau majeures ont un parcours séparé : `./control.sh upgrade pl
 ./control.sh doctor backup
 ```
 
-`doctor data` contrôle le second T705 EXT4 et les racines `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`.
+`doctor data` contrôle le second T705 EXT4 et les racines `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`, `/data/IA/Openclaw`.
 
 `doctor gaming` contrôle le profil Gaming canonique, `/data/Jeux`, Steam/Vulkan et les invariants Arc/Wayland/display disponibles sur bare-metal.
 

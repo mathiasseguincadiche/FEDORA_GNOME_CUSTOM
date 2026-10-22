@@ -15,7 +15,7 @@ for expected in \
   'BACKUP_PRUNE_AUTOMATICALLY="true"' \
   'BACKUP_RETENTION_TIMER_ENABLED="true"' \
   'DAILY_BACKUP_XDG_DIRS="DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC"' \
-  'DAILY_BACKUP_EXTRA_PATHS="/data/Projets Development .config .ssh .gnupg .mozilla .var/app .local/share"'; do
+  'DAILY_BACKUP_EXTRA_PATHS="/data/Projets /data/IA/Openclaw Development .config .ssh .gnupg .mozilla .var/app .local/share"'; do
   grep -Fq "$expected" "$ROOT/config/backup.conf" || { echo "missing backup policy: $expected" >&2; exit 1; }
 done
 for entry in \
@@ -37,8 +37,9 @@ done
 grep -Fq 'evidence_require_current_identity' "$ROOT/lib/apply_gate.sh"
 grep -Fq 'backup_runtime_validate_preapply_marker' "$ROOT/lib/apply_gate.sh"
 grep -Fq 'effective_config_sha256' "$ROOT/prepare-preapply-backup.sh"
-grep -Fq 'module_plan_sha256' "$ROOT/prepare-preapply-backup.sh"
-grep -Fq 'hardware_fingerprint' "$ROOT/prepare-preapply-backup.sh"
+grep -Fq 'backup_runtime_identity_payload' "$ROOT/prepare-preapply-backup.sh"
+grep -Fq 'module_plan_sha256' "$ROOT/lib/backup_runtime.sh"
+grep -Fq 'hardware_fingerprint' "$ROOT/lib/backup_runtime.sh"
 grep -Fq 'backup_runtime_validate_preapply_marker' "$ROOT/prepare-preapply-backup.sh"
 grep -Fq 'backup_engine_archive_matches "$archive" "$snapshot" preapply' "$ROOT/lib/backup_runtime.sh"
 grep -Fq 'restore-canary' "$ROOT/prepare-preapply-backup.sh"

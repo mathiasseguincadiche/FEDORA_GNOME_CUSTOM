@@ -119,6 +119,9 @@ PCI
 (
   REPO_ROOT="$ROOT"; HOME="$tmp/home"
   EXIT_APPLY_FAILED=30
+  source "$ROOT/lib/persistent_data.sh"
+  PERSISTENT_DATA_IDENTITY_FILE="$tmp/storage-identity.json"
+  printf '{}\n' > "$PERSISTENT_DATA_IDENTITY_FILE"
   source "$ROOT/modules/backup/60_daily_user_backup.sh"
   BACKUP_REPOSITORY=ssh://backup@nas.example/./first
   BORG_PASSPHRASE='must-never-be-serialized'; export BORG_PASSPHRASE

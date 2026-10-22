@@ -7,11 +7,14 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 export HOME="$tmp/home" BORG_BASE_DIR="$tmp/borg-base"
+export RUN_ID=full-backup-fixture
 export BACKUP_REPOSITORY="$tmp/borg" STATE_ROOT="$tmp/state"
 # Host-independent: the 20 GiB production reserve would make this test depend
 # on the free space of whoever runs it. Staging capacity is still exercised.
 export BACKUP_PREAPPLY_MIN_FREE_GIB=1
 export REPO_ROOT="$tmp/fixture"
+mkdir -p "$REPO_ROOT/config"
+printf 'ROCKY_SERVER_NAME="owner-local-machine"\n' > "$REPO_ROOT/config/local.conf"
 mkdir -p "$HOME/.config" "$STATE_ROOT" "$REPO_ROOT/lib" "$REPO_ROOT/scripts/backup" "$tmp/bin"
 cp "$ROOT/lib/backup_runtime.sh" "$REPO_ROOT/lib/"
 cp "$ROOT/lib/evidence.sh" "$REPO_ROOT/lib/"
@@ -42,7 +45,6 @@ is_true() { [[ "$1" == true ]]; }
 MOCK
 cat >> "$REPO_ROOT/lib/backup_runtime.sh" <<'MOCK'
 backup_runtime_validate_local_target() { [[ "$1" == "$BACKUP_REPOSITORY" ]]; }
-backup_runtime_capture_inventory() { mkdir -p "$1"; printf 'inventory\n' > "$1/metadata.txt"; }
 backup_runtime_export_libvirt() { echo 'Unexpected automatic libvirt export' >&2; exit 99; }
 MOCK
 cat > "$tmp/bin/sudo" <<'MOCK'
@@ -50,6 +52,9 @@ cat > "$tmp/bin/sudo" <<'MOCK'
 [[ "${1:-}" != -n ]] || shift
 if [[ "$1" == du && "$*" == *'/etc /boot'* ]]; then echo '4096 total'; exit; fi
 if [[ "$1" == tar ]]; then
+  if [[ "${TEST_MUTATE_LOCAL_CONFIG:-false}" == true ]]; then
+    printf '# edited during backup\n' >> "$REPO_ROOT/config/local.conf"
+  fi
   while (($#)); do
     if [[ "$1" == -czf ]]; then printf 'fixture system configuration\n' > "$2"; exit; fi
     shift
@@ -78,6 +83,14 @@ marker="$STATE_ROOT/last-full-backup.ok"
 backup_runtime_validate_full_marker "$marker"
 archive="$(evidence_marker_value "$marker" archive)"
 snapshot="$(evidence_marker_value "$marker" snapshot)"
+# The Git-ignored overlay is recoverable even when this checkout is outside
+# every user-data root. Restore the actual archive bytes and verify its digest.
+mkdir -p "$tmp/restored-overlay"
+(cd "$tmp/restored-overlay" && borg extract "::$archive")
+restored_overlay="$(find "$tmp/restored-overlay" -path '*/inventory/local.conf' -print -quit)"
+[[ -n "$restored_overlay" ]]
+cmp "$REPO_ROOT/config/local.conf" "$restored_overlay"
+(cd "$(dirname "$restored_overlay")" && sha256sum --check local.conf.sha256)
 manifest="$(backup_runtime_recovery_manifest "$archive")"
 [[ "$(jq -r '.include_vms' <<<"$manifest")" == false ]]
 [[ "$(jq -r '.vm_count' <<<"$manifest")" == 0 ]]
@@ -150,4 +163,14 @@ if bash "$REPO_ROOT/scripts/backup/backup-now.sh" --include-vms > "$tmp/unsuppor
   echo 'Deprecated VM automatic backup flag unexpectedly succeeded' >&2; exit 1
 fi
 grep -Fq 'owner-managed' "$tmp/unsupported-flag.log"
+# Editing the Git-ignored overlay while an archive is being captured must
+# refuse a new certificate, even when the restored archive is byte-correct.
+cp "$marker" "$tmp/marker-before-edit"
+cp "$REPO_ROOT/config/local.conf" "$tmp/local-before-edit"
+rc=0
+TEST_MUTATE_LOCAL_CONFIG=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --staging-root "$tmp/edited-staging" > "$tmp/edited.log" 2>&1 || rc=$?
+[[ "$rc" == 40 ]]
+grep -Fq 'Local configuration restore proof failed' "$tmp/edited.log"
+cmp "$marker" "$tmp/marker-before-edit"
+cp "$tmp/local-before-edit" "$REPO_ROOT/config/local.conf"
 echo 'Backup certification behavior: PASS'

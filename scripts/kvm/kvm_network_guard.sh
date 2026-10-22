@@ -211,6 +211,7 @@ apply_normal_guard() {
     printf '  set blocked_host_ipv4 {\n'
     printf '    type ipv4_addr\n'
     printf '    flags interval\n'
+    printf '    auto-merge\n'
     if ((${#protected_cidrs[@]} > 0)); then
       printf '    elements = { '
       first=true

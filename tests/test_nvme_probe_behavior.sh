@@ -19,6 +19,7 @@ set -Eeuo pipefail
 REPORT_ROOT="$PROBE_TMP/reports"; RUN_ID="$PROBE_RESULT"
 EXIT_USAGE=2; EXIT_PRECHECK_FAILED=20
 require_baremetal() { :; }
+persistent_data_validate_mount() { :; }
 command_exists() { :; }
 mountpoint() { :; }
 mount_source_device() { printf '/dev/nvme0n1\n'; }

@@ -53,6 +53,9 @@ if [[ -n "${!schema_key:-}" ]]; then
   [[ -r "$schema_dir/${!schema_key}.gschema.xml" ]] || exit 1
 fi
 glib-compile-schemas "$schema_dir"
+if [[ "$release:$prefix" == 45:DING ]]; then
+  python3 "$root/scripts/gnome/ding-shutdown-fix.py" apply "$zip" "$extension_dir"
+fi
 {
   printf 'source_url=%s\nshell_version=%s\nsha256=%s\n' "$url" "$shell_version" "$expected_sha256"
   if [[ -n "${!review_key:-}" ]]; then

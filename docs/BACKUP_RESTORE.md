@@ -47,7 +47,7 @@ La fiche matérielle prévoit un troisième support de ~1,8 To, le **Kingston XS
 
 Le contrat `BACKUP_VM_DISKS=false`, `BACKUP_LIBVIRT_METADATA=false` et `BACKUP_VM_CLOUD_INIT_METADATA=false` est imposé. Les anciens overrides `true` échouent explicitement, `--include-vms` est refusé et le Control Center ne propose plus de sauvegarde VM. Les exclusions s'appliquent aux sauvegardes quotidiennes, complètes et pré-APPLY. Les VM n'entrent **pas** dans le périmètre de certification Borg.
 
-Borg continue de protéger le HOST, les données personnelles, `/data/Documents` et `/data/Projets`. Le backup complet ajoute aussi les dossiers XDG localisés (Bureau, Documents, Images, Vidéos, Musique) et `~/Development`. Une résolution XDG inconnue ou ambiguë bloque la sauvegarde plutôt que d'archiver un emplacement imprévu.
+Borg continue de protéger le HOST, les données personnelles, `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw`. Le backup complet ajoute aussi les dossiers XDG localisés (Bureau, Documents, Images, Vidéos, Musique) et `~/Development`. Une résolution XDG inconnue ou ambiguë bloque la sauvegarde plutôt que d'archiver un emplacement imprévu.
 
 ## Deux niveaux de protection des données
 
@@ -64,7 +64,7 @@ Le second T705 monté sur `/data` fournit une première protection contre la per
 
 Ce disque n'est jamais formaté automatiquement par le projet. Une réinstallation du premier T705 doit donc remonter le même `/data` et conserver ces données.
 
-Ce mécanisme n'est toutefois **pas un backup** contre la panne du second T705. Les données irremplaçables restent protégées par Borg sur une cible externe/off-machine : `/data/Documents` via XDG Documents et `/data/Projets` explicitement. `/data/ISO` et `/data/Jeux` sont exclus des backups automatiques par défaut car ces payloads sont généralement volumineux et reproductibles/retéléchargeables.
+Ce mécanisme n'est toutefois **pas un backup** contre la panne du second T705. Les données irremplaçables restent protégées par Borg sur une cible externe/off-machine : `/data/Documents` via XDG Documents et `/data/Projets` ainsi que `/data/IA/Openclaw` explicitement. `/data/ISO` et `/data/Jeux` sont exclus des backups automatiques par défaut car ces payloads sont généralement volumineux et reproductibles/retéléchargeables.
 
 Les sauvegardes de jeux non reproductibles, mods rares ou autres contenus importants stockés directement sous `/data/Jeux` doivent donc être ajoutées par une politique opérateur explicite si nécessaire. Les sauvegardes de parties placées dans les chemins utilisateur/XDG restent couvertes normalement par Borg.
 
@@ -116,9 +116,9 @@ ${XDG_STATE_HOME:-~/.local/state}/fedora-gnome-custom/
 
 Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment de l'exécution. Les clés `DESKTOP`, `DOCUMENTS`, `PICTURES`, `VIDEOS` et `MUSIC` suivent donc la configuration XDG réelle de l'utilisateur. Dans le profil Golden, `DOCUMENTS` pointe vers `/data/Documents`; les autres dossiers restent résolus selon la locale utilisateur.
 
-Le chemin supplémentaire persistant `/data/Projets` est sauvegardé avec `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
+Les chemins persistants `/data/Projets` et `/data/IA/Openclaw` sont sauvegardés avec `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
 
-La surface absolue autorisée est volontairement étroite : le script accepte `/data/Documents` et `/data/Projets`, mais refuse tout autre chemin absolu. `/data/ISO`, `/data/Jeux` et `/data/libvirt` ne peuvent donc pas être ajoutés accidentellement au backup quotidien par une dérive de configuration.
+La surface absolue autorisée est volontairement étroite : le script accepte `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw`, mais refuse tout autre chemin absolu. `/data/ISO`, `/data/Jeux` et `/data/libvirt` ne peuvent donc pas être ajoutés accidentellement au backup quotidien par une dérive de configuration.
 
 Le script refuse une source XDG ambiguë qui résoudrait directement vers `$HOME`, refuse les chemins contenant `..`, et enregistre le nombre ainsi que la liste exacte des sources incluses dans l'archive.
 
@@ -324,3 +324,9 @@ Pour Gate 3, la certification Borg vérifie **le HOST et les données protégée
 ainsi que `include_vms=false`, `vm_count=0` et l'interdiction des overrides VM.
 Elle ne doit jamais demander un export de VM. Les exports personnels de
 Rocky Linux ou Windows restent totalement indépendants de cette Gate Borg.
+
+## Configuration locale et sources Openclaw
+
+`/data/IA/Openclaw` est une racine utilisateur persistante, protégée par les sauvegardes quotidiennes et complètes comme `/data/Projets`. Les exclusions existantes des images et métadonnées de VM restent actives, y compris dans cette racine. Le projet prépare ce répertoire ; il n’installe pas Openclaw.
+
+L’inventaire pré-APPLY et full inclut une copie privée de `config/local.conf` et son SHA-256, même si le clone Git se trouve hors des dossiers utilisateur sauvegardés. Après restauration en staging, vérifier `sha256sum --check local.conf.sha256` depuis son dossier d’inventaire, puis revoir les chemins de la nouvelle machine avant de remettre l’overlay en place. L’identité approuvée de `/data` est également conservée pour comparaison ; elle ne doit pas autoriser automatiquement un autre disque.

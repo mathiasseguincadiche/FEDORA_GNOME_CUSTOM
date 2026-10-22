@@ -164,6 +164,10 @@ gnome_extensions_apply() {
     install_manifest_packages GNOME "$REPO_ROOT/manifests/packages-gnome-extensions.txt" || return "$EXIT_APPLY_FAILED"
   fi
 
+  if [[ "${HOST_RELEASE:-44}" == 45 ]]; then
+    run_mutating GNOME sudo bash "$REPO_ROOT/scripts/gnome/install-fedora45-rpm-extensions.sh" || return "$EXIT_APPLY_FAILED"
+  fi
+
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
     run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-ding.sh" \
       "${DING_SOURCE_URL:-}" "$ding_uuid" "${DING_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"

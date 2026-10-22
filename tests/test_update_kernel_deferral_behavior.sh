@@ -11,16 +11,31 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 fail() { echo "update kernel deferral behavior: FAIL: $*" >&2; exit 1; }
-mkdir -p "$tmp/bin" "$tmp/runtime"
+mkdir -p "$tmp/bin" "$tmp/runtime" "$tmp/logs" "$tmp/reports" "$tmp/state"
 
 # Fake privileged tools: record every DNF5 call, never touch the system.
 cat > "$tmp/bin/sudo" <<'SH'
 #!/usr/bin/env bash
+if [[ "$*" == 'test -e /usr/lib/sysimage/libdnf5/offline/transaction.json' ]]; then
+  [[ "${T_PENDING:-false}" == true || -e "$T_STATE.staged" ]]; exit $?
+fi
 exec "$@"
 SH
 cat > "$tmp/bin/dnf5" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$DNF_LOG"
+if [[ "$*" == *'upgrade --offline'* && "${T_NO_PLAN:-false}" != true ]]; then touch "$T_STATE.staged"; fi
+if [[ "$*" == 'history info 1..last --json' ]]; then
+  python3 - "$T_STATE" "${T_HISTORY:-good}" <<'PYH'
+import json,sys
+state=dict(line.strip().split('=',1) for line in open(sys.argv[1]))
+row=dict(id=42, start_time=int(state['prepared_timestamp']), end_time=int(state['prepared_timestamp'])+1,
+         status='Ok', description='dnf5 upgrade --offline --comment='+state['transaction_comment'])
+if sys.argv[2] == 'old': row['description']='dnf5 upgrade --offline --comment=old'
+if sys.argv[2] == 'failed': row['status']='Error'
+print(json.dumps([row]))
+PYH
+fi
 exit 0
 SH
 chmod +x "$tmp/bin/"*
@@ -30,11 +45,16 @@ run_update() {
   local kernel_rc="$1"; shift
   (
     export PATH="$tmp/bin:$PATH" XDG_RUNTIME_DIR="$tmp/runtime" DNF_LOG="$tmp/dnf.log" RUN_ID="deferral-$RANDOM"
+    # Keep diagnostic output inside the fixture even with a read-only checkout.
+    STATE_ROOT="$tmp/state"; REPORT_ROOT="$tmp/reports"; LOG_DIR="$tmp/logs"; MAIN_LOG="$LOG_DIR/main.log"
     # Load every function of the real entrypoint, without its final dispatcher.
     # shellcheck disable=SC1090
-    source <(sed -e '/^mode="\${1:---check}"$/,$d' \
+    source <(sed -e 's/^engine_bootstrap$/engine_load_libraries; config_load/' -e '/^mode="\${1:---check}"$/,$d' \
       -e "s|^REPO_ROOT=.*|REPO_ROOT='$ROOT'|" "$ROOT/scripts/maintenance/update-system.sh")
     UPDATE_STATE_FILE="$tmp/update.status"
+    export T_STATE="$UPDATE_STATE_FILE"
+    boot_id=00000000-0000-4000-8000-000000000001
+    update_current_boot_id() { echo "$boot_id"; }
     KERNEL_DEFER_WHEN_UNAVAILABLE="${T_DEFER:-true}"
     require_dnf5() { :; }
     # Identity is pinned so the finalize step can use a stub diagnostic root.
@@ -55,18 +75,19 @@ run_update() {
       case "$action" in
         prepare) prepare_dnf_offline dnf-only ;;
         reboot) request_offline_reboot ;;
-        finalize) REPO_ROOT="$tmp/fake-root"; mkdir -p "$REPO_ROOT"; printf '#!/usr/bin/env bash\nexit 0\n' > "$REPO_ROOT/diagnostic.sh"; chmod +x "$REPO_ROOT/diagnostic.sh"; finalize_offline_update ;;
+        newboot) boot_id=00000000-0000-4000-8000-000000000002; rm -f "$T_STATE.staged" ;;
+        finalize) REPO_ROOT="$tmp/fake-root"; mkdir -p "$REPO_ROOT/scripts/maintenance"; cp "$ROOT/scripts/maintenance/verify-offline-history.py" "$REPO_ROOT/scripts/maintenance/"; printf '#!/usr/bin/env bash\nexit 0\n' > "$REPO_ROOT/diagnostic.sh"; chmod +x "$REPO_ROOT/diagnostic.sh"; finalize_offline_update ;;
       esac
     done
   ) > "$tmp/out.log" 2>&1
 }
 state() { awk -F= -v k="$1" '$1==k {print $2}' "$tmp/update.status"; }
-reset() { rm -f "$tmp/dnf.log" "$tmp/update.status" "$tmp/pinned" "$tmp/finalized"; }
+reset() { rm -f "$tmp/dnf.log" "$tmp/update.status" "$tmp/update.status.staged" "$tmp/pinned" "$tmp/finalized"; }
 
 # 1. Packaging pending / kernel.org unreachable: everything except the kernel.
 reset
-run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare reboot finalize || fail "deferred update failed: $(tail -5 "$tmp/out.log")"
-grep -Fxq -- '--refresh upgrade --offline -y --exclude=kernel,kernel-core,kernel-modules,kernel-modules-core,kernel-modules-extra' "$tmp/dnf.log" \
+run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare reboot newboot finalize || fail "deferred update failed: $(tail -5 "$tmp/out.log")"
+grep -Eq -- '^--refresh upgrade --offline -y --comment=fgc-offline-[0-9a-f-]{36} --exclude=kernel,kernel-core,kernel-modules,kernel-modules-core,kernel-modules-extra$' "$tmp/dnf.log" \
   || fail "kernel packages not excluded from the transaction: $(cat "$tmp/dnf.log")"
 [[ ! -e "$tmp/pinned" && ! -e "$tmp/finalized" ]] || fail 'a deferred kernel was pinned or finalized'
 [[ "$(state kernel_target)" == none && "$(state kernel_deferred)" == true ]] || fail 'deferral not recorded'
@@ -86,7 +107,22 @@ rc=0; run_update 50 prepare || rc=$?
 # 4. Normal case: the kernel target is pinned, nothing is excluded.
 reset
 run_update 0 prepare || fail "normal update failed: $(tail -5 "$tmp/out.log")"
-grep -Fxq -- '--refresh upgrade --offline -y' "$tmp/dnf.log" || fail "unexpected transaction: $(cat "$tmp/dnf.log")"
+grep -Eq -- '^--refresh upgrade --offline -y --comment=fgc-offline-[0-9a-f-]{36}$' "$tmp/dnf.log" || fail "unexpected transaction: $(cat "$tmp/dnf.log")"
 [[ "$(cat "$tmp/pinned")" == 7.2.10-200.vanilla.fc44.x86_64 && "$(state kernel_deferred)" == false ]] || fail 'normal kernel target not pinned'
 
-echo 'update kernel deferral behavior: PASS'
+# A previous offline journal and a clean packagedb cannot prove this update ran.
+for scenario in same-boot staged old-history failed-history; do
+  reset
+  rc=0
+  case "$scenario" in
+    same-boot) run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare finalize || rc=$? ;;
+    staged) T_PENDING=true run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare newboot finalize || rc=$? ;;
+    old-history) T_HISTORY=old run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare newboot finalize || rc=$? ;;
+    failed-history) T_HISTORY=failed run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare newboot finalize || rc=$? ;;
+  esac
+  [[ "$rc" != 0 && "$(state phase)" != completed ]] || fail "false completion: $scenario"
+done
+reset
+T_NO_PLAN=true run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare
+[[ "$(state phase)" == no-transaction && "$(state reboot_required)" == false ]] || fail 'no-op request was marked prepared or completed'
+echo 'update kernel deferral and exact offline completion behavior: PASS'

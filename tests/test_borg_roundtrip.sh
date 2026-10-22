@@ -13,7 +13,7 @@ export BORG_BASE_DIR="$tmp/borg-base"
 fixture="$tmp/checkout"
 mkdir -p "$fixture/scripts/backup" "$fixture/lib" "$fixture/config" "$fixture/systemd/user" "$HOME/.config/fedora-gnome-custom/secrets" "$HOME/.var/app/demo/data" "$HOME/.local/share/demo" "$HOME/.mozilla"
 cp "$ROOT"/scripts/backup/{daily-user-backup.sh,backup-retention.sh,restore.sh} "$fixture/scripts/backup/"
-cp "$ROOT"/lib/{backup_runtime.sh,backup_runtime_bundle.sh} "$fixture/lib/"
+cp "$ROOT"/lib/{backup_runtime.sh,backup_runtime_bundle.sh,persistent_data.sh,persistent_data_identity.py} "$fixture/lib/"
 cp "$ROOT/config/backup.conf" "$fixture/config/"
 cp "$ROOT/systemd/user/fedora-gnome-daily-backup.timer" "$fixture/systemd/user/"
 # The only mocked condition: no physical USB disk exists in CI. Scope it to
@@ -37,6 +37,9 @@ ln -s test.conf "$HOME/.config/link"
 cat > "$fixture/lib/bootstrap.sh" <<'BOOT'
 engine_bootstrap() { :; }
 BOOT
+source "$ROOT/lib/persistent_data.sh"
+PERSISTENT_DATA_IDENTITY_FILE="$tmp/approved-storage.json"
+printf '{}\n' > "$PERSISTENT_DATA_IDENTITY_FILE"
 source "$ROOT/modules/backup/60_daily_user_backup.sh"
 REPO_ROOT="$fixture"
 EXIT_APPLY_FAILED=30

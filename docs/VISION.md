@@ -70,4 +70,4 @@ Ces choix sont volontaires. Ils ne doivent pas être « corrigés » par une mai
 
 ## Où en est le projet
 
-Le dépôt est **prêt côté code** (CI verte). La machine n'est pas encore certifiée : il reste la Gate 2 (VM GNOME, voir [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md)), puis l'installation réelle et la Gate 3.
+Le statut **prêt côté code** exige une CI verte sur le commit exact, à vérifier dans les contrôles GitHub. La machine n'est pas encore certifiée : il reste la Gate 2 (VM GNOME, voir [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md)), puis l'installation réelle et la Gate 3.
