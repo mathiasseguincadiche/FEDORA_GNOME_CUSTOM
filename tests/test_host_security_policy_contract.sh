@@ -4,7 +4,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 policy="$ROOT/config/golden-host.policy"
 doctor="$ROOT/diagnostics/host-security-policy-doctor"
-kickstart="$ROOT/installer/generate-fedora44-kickstart.sh"
+kickstart="$ROOT/installer/lib/generate-kickstart.sh"
 
 [[ -r "$policy" ]]
 grep -Fxq 'HOST_SECURE_BOOT_POLICY=disabled-required' "$policy"

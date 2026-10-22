@@ -35,7 +35,7 @@ documenter tout remplacement ; une ancienne fiche matérielle ne suffit pas.
 
 Suivre [les gates](THREE_GATE_VALIDATION.md) et
 [la reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md). Archiver les erreurs aussi.
-La matrice UX inclut DING/Corbeille, Show Desktop Plus/Super+D, Resource
+La matrice UX inclut DING/Corbeille, Show Desktop Button/Super+D, Resource
 Monitor, Nautilus/prévisualisation/recherche, Ptyxis et les portals.
 Une capture d'écran seule ne démontre pas les interactions.
 

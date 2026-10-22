@@ -33,14 +33,14 @@ flowchart TB
 
 **Dans le schéma**, `control.sh` sert de façade. `install.sh` et `lib/` orchestrent les modules de `manifests/module-plan.conf`. Les `diagnostics/` vérifient l'état réellement observé : ils n'ont pas le droit de transformer un échec en succès artificiel. Les données de l'opérateur restent sur le T705 `/data`, et la récupération Borg utilise un support externe.
 
-**Distinguer les releases** : les normes de cette page s'appliquent à la référence Fedora 44 / GNOME 50 tant que le profil 45 n'est pas promu. Fedora 45 / GNOME 51 est la **cible future**, pas une certification matérielle implicite. Voir [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+**Cible et autorisation** : Fedora 45 / GNOME 51 est la référence unique. Le profil `pending` bloque la production jusqu’à promotion du média final signé et des composants stables ; la Gate 3 certifie ensuite le matériel. Voir [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
 
 
 
 ## Chaîne de confiance
 
 ```text
-Fedora 44 fraîche
+Fedora 45 fraîche
       ↓
 baseline RAM / NVMe / hardware
       ↓
@@ -151,8 +151,8 @@ Extensions fonctionnelles gérées :
 - Dash to Dock ;
 - AppIndicator ;
 - Desktop Icons NG ;
-- Show Desktop Plus ;
-- Resource Monitor.
+- Show Desktop Button ;
+- Vitals.
 
 Blur My Shell reste désactivé dans l'état Golden afin de réduire les variables de rendu/compositor.
 

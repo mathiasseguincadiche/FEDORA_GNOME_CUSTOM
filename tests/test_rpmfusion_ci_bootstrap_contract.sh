@@ -8,7 +8,7 @@ helper="$ROOT/scripts/ci/enable-rpmfusion.sh"
 [[ -s "$helper" ]] || { echo 'RPM Fusion CI bootstrap helper missing' >&2; exit 1; }
 bash -n "$helper"
 
-grep -Fq 'RPMFUSION_FEDORA_RELEASE:-44' "$helper"
+grep -Fq 'RPMFUSION_FEDORA_RELEASE:-45' "$helper"
 grep -Fq 'RPMFUSION_BOOTSTRAP_ATTEMPTS:-3' "$helper"
 grep -Fq 'https://mirrors.rpmfusion.org/${channel}/fedora/${filename}' "$helper"
 grep -Fq 'https://download1.rpmfusion.org/${channel}/fedora/${filename}' "$helper"

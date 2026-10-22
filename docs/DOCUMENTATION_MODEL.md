@@ -159,7 +159,7 @@ Les diagrammes du [README](../README.md) et du [guide d'architecture](ARCHITECTU
 - les composants correspondent aux vrais répertoires et moteurs ;
 - les **flux de données**, **commandes** et **preuves** sont clairement distingués ;
 - `CI PASS`, `Gate 2` et `Gate 3` ne sont jamais confondus ;
-- les versions `Fedora 44 actif` / `Fedora 45 pending` sont actualisées ensemble ;
+- la cible unique `Fedora 45 / GNOME 51` et le statut de promotion `pending` / `ready` sont actualisés ensemble ;
 - une **explication textuelle sous le schéma** aide à lire le diagramme et reste accessible sur mobile.
 
 Les ADR historiques ne sont pas réécrites : une évolution doit être assumée et documentée.

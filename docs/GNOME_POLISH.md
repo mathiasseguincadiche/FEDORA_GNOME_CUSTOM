@@ -53,7 +53,7 @@ Les apps GNOME modernes (libadwaita) suivent seules le mode sombre. Les apps GTK
 
 ### Tiling Assistant épinglé
 
-L'extension vient de la release GitHub officielle v55 (le projet qu'Ubuntu embarque). Le script `scripts/gnome/install-tiling-assistant.sh` refuse l'installation si l'URL, l'UUID, le SHA-256 ou la compatibilité GNOME 50 ne correspondent pas exactement.
+L'extension vient de la release GitHub officielle v56 (le projet qu'Ubuntu embarque). Le script `scripts/gnome/install-tiling-assistant.sh` refuse l'installation si l'URL, l'UUID, le SHA-256 ou la compatibilité GNOME 51 ne correspondent pas exactement.
 
 ## Personnaliser
 

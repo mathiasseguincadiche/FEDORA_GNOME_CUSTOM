@@ -8,10 +8,10 @@ for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-p
   [[ -f "$ROOT/$file" ]] || { echo "missing CI maturity file: $file" >&2; exit 1; }
 done
 
-grep -Fq 'fedora:44' "$ROOT/.github/workflows/fedora-host-pretest.yml"
+grep -Fq 'fedora:45' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 
 # Hosted runners may hit both Docker Hub and ECR Public anonymous pull limits.
-# Fedora 44 job containers use Fedora's official registry, as the installer audit
+# Fedora 45 job containers use Fedora's official registry, as the installer audit
 # already does. Keep Docker Hub out of CI; guest-VM pulls are unaffected.
 if grep -nE '^[[:space:]]*container:[[:space:]]+fedora:' "$ROOT"/.github/workflows/*.yml; then
   echo 'workflow containers must not use anonymous Docker Hub Fedora images' >&2; exit 1
@@ -25,16 +25,16 @@ grep -Fq 'FROM scratch' "$ROOT/.github/workflows/tests.yml"
 if grep -n 'hello-world' "$ROOT/.github/workflows/tests.yml"; then
   echo 'tests.yml must not pull hello-world for the probe' >&2; exit 1
 fi
-grep -Fq 'container: registry.fedoraproject.org/fedora:44' "$ROOT/.github/workflows/fedora-installer-audit.yml"
-# Every Fedora 44 workflow container must avoid ECR Public's data cap as well
+grep -Fq 'container: registry.fedoraproject.org/fedora:45' "$ROOT/.github/workflows/fedora-installer-audit.yml"
+# Every Fedora 45 workflow container must avoid ECR Public's data cap as well
 # as Docker Hub's rate limit. Regressions fail before expensive VM jobs launch.
-if grep -nE '^[[:space:]]*container:[[:space:]]+(public[.]ecr[.]aws/docker/library/fedora:44|fedora:44)([[:space:]]|$)' "$ROOT"/.github/workflows/*.yml; then
-  echo 'Fedora 44 workflow containers must use registry.fedoraproject.org/fedora:44' >&2
+if grep -nE '^[[:space:]]*container:[[:space:]]+(public[.]ecr[.]aws/docker/library/fedora:45|fedora:45)([[:space:]]|$)' "$ROOT"/.github/workflows/*.yml; then
+  echo 'Fedora 45 workflow containers must use registry.fedoraproject.org/fedora:45' >&2
   exit 1
 fi
 for workflow in desktop-integration-pretest fedora-appimage-pretest fedora-gaming-pretest fedora-host-pretest fedora-installer-audit fedora-package-preflight resource-monitor-fedora-pretest tests; do
-  grep -Fq 'container: registry.fedoraproject.org/fedora:44' "$ROOT/.github/workflows/$workflow.yml" || {
-    echo "missing official Fedora 44 registry for $workflow" >&2; exit 1;
+  grep -Fq 'container: registry.fedoraproject.org/fedora:45' "$ROOT/.github/workflows/$workflow.yml" || {
+    echo "missing official Fedora 45 registry for $workflow" >&2; exit 1;
   }
 done
 grep -Fq 'dnf -y --disablerepo=fedora-cisco-openh264 install dbus-daemon' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
@@ -51,7 +51,7 @@ if grep -Eq -- '--no-gpg-verify|--disable-gpg-verify|--no-verify' "$ROOT/scripts
   echo 'Flathub bootstrap must never bypass signatures' >&2; exit 1;
 fi
 
-# This reusable kernel preflight accepts both Fedora 44 and 45. It must use
+# This reusable kernel preflight accepts both Fedora 45 and 45. It must use
 # Fedora's official registry for either input; the old dynamic ECR reference
 # bypassed the fixed-image checks and could fail before running any test.
 grep -Fq 'container: registry.fedoraproject.org/fedora:' "$ROOT/.github/workflows/upstream-kernel.yml" || {

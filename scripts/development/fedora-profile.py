@@ -9,7 +9,7 @@ import sys
 PREFIXES = ("DING", "SHOW_DESKTOP_PLUS", "RESOURCE_MONITOR", "TILING_ASSISTANT")
 
 # DING, Show Desktop Plus and Resource Monitor publish no GNOME 51 build. The prefix stays a role
-# name; the Fedora 45 lock may keep the Fedora 44 identity or use exactly one reviewed replacement.
+# name; the Fedora 45 lock selects exactly the reviewed GNOME 51 replacement.
 REPLACEMENTS = {
     "DING": ("gtk4-ding@smedius.gitlab.com", "org.gnome.shell.extensions.gtk4-ding"),
     "SHOW_DESKTOP_PLUS": ("show-desktop-button@amivaleo", "org.gnome.shell.extensions.show-desktop-button"),
@@ -29,6 +29,51 @@ def assignments(path):
     return result
 
 
+def validate_extensions(root):
+    """Validate reviewed configuration only; this never authorizes installation."""
+    lock = assignments(root / "profiles/fedora45/gnome-extensions.lock")
+    canonical = assignments(root / "config/gnome-extensions.lock")
+    expected_keys = {p + "_" + suffix for p in PREFIXES for suffix in
+                     ("UUID", "SOURCE_URL", "VERSION", "SHELL_VERSION", "SHA256")}
+    expected_keys |= {p + "_" + suffix for p in REPLACEMENTS for suffix in ("SCHEMA", "REVIEW_ID")}
+    if set(lock) != expected_keys or set(canonical) != expected_keys:
+        raise ValueError("extension lock contains unknown or missing keys")
+    if lock != canonical:
+        raise ValueError("canonical and Fedora 45 extension locks differ")
+    for prefix in PREFIXES:
+        for suffix in ("UUID", "SCHEMA"):
+            key = prefix + "_" + suffix
+            if key not in canonical:
+                continue
+            expected = REPLACEMENTS[prefix][0 if suffix == "UUID" else 1] if prefix in REPLACEMENTS else "tiling-assistant@leleat-on-github"
+            if lock[key] != expected:
+                raise ValueError("extension identity changed: " + key)
+        if lock.get(prefix + "_SHELL_VERSION") != "51":
+            raise ValueError("unported GNOME extension: " + prefix)
+        if not re.fullmatch(r"[0-9a-f]{64}", lock.get(prefix + "_SHA256", "")):
+            raise ValueError("missing extension digest")
+        if not re.fullmatch(r"[1-9][0-9]*", lock.get(prefix + "_VERSION", "")):
+            raise ValueError("extension version missing")
+        if prefix != "TILING_ASSISTANT":
+            review = lock.get(prefix + "_REVIEW_ID", "")
+            if not re.fullmatch(r"[1-9][0-9]*", review) or lock[prefix + "_SOURCE_URL"] != "https://extensions.gnome.org/review/download/" + review + ".shell-extension.zip":
+                raise ValueError("extension URL/review mismatch")
+        if not lock.get(prefix + "_SOURCE_URL", "").startswith(("https://extensions.gnome.org/review/download/", "https://github.com/Leleat/Tiling-Assistant/releases/download/", "https://github.com/ubuntu/Tiling-Assistant/releases/download/")):
+            raise ValueError("unreviewed extension source")
+    if (root / "manifests/packages-nautilus.txt").read_bytes() != (root / "profiles/fedora45/packages-nautilus.txt").read_bytes():
+        raise ValueError("canonical and Fedora 45 Nautilus manifests differ")
+
+
+def candidate(root, release):
+    profile = json.loads((root / "profiles/fedora45/profile.json").read_text())
+    if release != 45 or (profile.get("schema"), profile.get("release"), profile.get("gnome_major")) != (1,45,51) or profile.get("status") not in ("pending", "ready"):
+        raise ValueError("unexpected Fedora 45 candidate profile")
+    validate_extensions(root)
+    if profile["status"] == "ready":
+        validate(root, release)
+    return profile
+
+
 def validate(root, release):
     if release != 45:
         raise ValueError("only the reviewed Fedora 45 transition is supported")
@@ -46,7 +91,7 @@ def validate(root, release):
         if hashlib.sha256(path.read_bytes()).hexdigest() != profile.get(key):
             raise ValueError("reviewed profile digest mismatch: " + key)
     media = assignments(media_path)
-    expected_keys = set(assignments(root / "installer/fedora44-media.lock"))
+    expected_keys = {"FEDORA_RELEASE", "FEDORA_COMPOSE", "CHECKSUM_FILENAME", "SOURCE_URL", "VERIFIED_UTC", "RELEASE_STATUS", "ISO_FILENAME", "ISO_SHA256", "SIGNING_FINGERPRINT"}
     if set(media) != expected_keys:
         raise ValueError("media lock contains unknown or missing keys")
     compose = media.get("FEDORA_COMPOSE", "")
@@ -68,44 +113,16 @@ def validate(root, release):
         raise ValueError("missing final media identity")
     if media.get("SIGNING_FINGERPRINT") != "4F50A6114CD5C6976A7F1179655A4B02F577861E":
         raise ValueError("Fedora 45 signing key is not pinned")
-    lock = assignments(extensions_path)
-    canonical = assignments(root / "config/gnome-extensions.lock")
-    if set(lock) != set(canonical):
-        raise ValueError("extension lock contains unknown or missing keys")
-    for prefix in PREFIXES:
-        for suffix in ("UUID", "SCHEMA"):
-            key = prefix + "_" + suffix
-            if key not in canonical:
-                continue
-            allowed = {canonical[key]}
-            if prefix in REPLACEMENTS:
-                allowed.add(REPLACEMENTS[prefix][0 if suffix == "UUID" else 1])
-            if lock[key] not in allowed:
-                raise ValueError("extension identity changed: " + key)
-        if prefix in REPLACEMENTS and (lock[prefix + "_UUID"] == canonical[prefix + "_UUID"]) != \
-                (lock[prefix + "_SCHEMA"] == canonical[prefix + "_SCHEMA"]):
-            raise ValueError("extension UUID and schema must come from the same reviewed identity: " + prefix)
-        if lock.get(prefix + "_SHELL_VERSION") != "51":
-            raise ValueError("unported GNOME extension: " + prefix)
-        if not re.fullmatch(r"[0-9a-f]{64}", lock.get(prefix + "_SHA256", "")):
-            raise ValueError("missing extension digest")
-        if not re.fullmatch(r"[1-9][0-9]*", lock.get(prefix + "_VERSION", "")):
-            raise ValueError("extension version missing")
-        if prefix != "TILING_ASSISTANT":
-            review = lock.get(prefix + "_REVIEW_ID", "")
-            if not re.fullmatch(r"[1-9][0-9]*", review) or lock[prefix + "_SOURCE_URL"] != "https://extensions.gnome.org/review/download/" + review + ".shell-extension.zip":
-                raise ValueError("extension URL/review mismatch")
-        if not lock.get(prefix + "_SOURCE_URL", "").startswith(("https://extensions.gnome.org/review/download/", "https://github.com/Leleat/Tiling-Assistant/releases/download/", "https://github.com/ubuntu/Tiling-Assistant/releases/download/")):
-            raise ValueError("unreviewed extension source")
+    validate_extensions(root)
     if not re.fullmatch(r"[0-9a-f]{40}", profile.get("promotion_source_commit", "")):
         raise ValueError("missing pre-promotion source commit (not CI evidence)")
     return profile
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4 or sys.argv[1] != "validate":
-        raise SystemExit("Usage: fedora-profile.py validate REPO_ROOT 45")
+    if len(sys.argv) != 4 or sys.argv[1] not in ("validate", "candidate"):
+        raise SystemExit("Usage: fedora-profile.py {validate|candidate} REPO_ROOT 45")
     try:
-        validate(pathlib.Path(sys.argv[2]), int(sys.argv[3]))
+        (validate if sys.argv[1] == "validate" else candidate)(pathlib.Path(sys.argv[2]), int(sys.argv[3]))
     except (ValueError, KeyError, FileNotFoundError) as error:
         raise SystemExit(str(error))

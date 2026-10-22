@@ -15,7 +15,7 @@ Configurer dans GitHub un ruleset ciblant `refs/heads/main` avec :
 - contextes obligatoires : **contracts**, **shellcheck**, **guards**, **packages**, **packages-and-integration**, **nautilus-ptyxis** ;
 - le job Rocky Linux 10.2 est une dépendance de contracts sur chaque PR et push main ; son échec, annulation ou absence bloque le contrôle agrégé.
 
-Tout check configuré comme obligatoire dans le ruleset doit produire un contexte sur **chaque pull request**. En particulier, le job `nautilus-ptyxis` du workflow Fedora 44 desktop integration pretest est volontairement déclenché sans filtre `paths:` sur les pull requests afin qu'une modification non Desktop ne reste jamais bloquée dans l'état `Expected — Waiting for status to be reported`.
+Tout check configuré comme obligatoire dans le ruleset doit produire un contexte sur **chaque pull request**. En particulier, le job `nautilus-ptyxis` du workflow Fedora 45 desktop integration pretest est volontairement déclenché sans filtre `paths:` sur les pull requests afin qu'une modification non Desktop ne reste jamais bloquée dans l'état `Expected — Waiting for status to be reported`.
 
 Le dépôt contient `scripts/development/check-main-protection.sh` pour vérifier l'état public attendu de la protection. Ce script ne modifie aucun réglage GitHub.
 

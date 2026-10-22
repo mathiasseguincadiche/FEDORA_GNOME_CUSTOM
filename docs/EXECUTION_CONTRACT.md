@@ -19,7 +19,7 @@ Les paramètres spécifiques au poste réel sont placés dans `config/local.conf
 `./install.sh --apply` est exclusivement bare-metal et exige :
 
 1. runtime bare-metal réel ;
-2. Fedora 45 réellement démarré avec `HOST_RELEASE=45` et un profil final promu ; Fedora 44 et Fedora 45 pending sont refusés ;
+2. Fedora 45 réellement démarré avec `HOST_RELEASE=45` et un profil final promu ; Fedora 45 et Fedora 45 pending sont refusés ;
 3. approbation explicite de la machine réelle ;
 4. TTY interactif ;
 5. dépôt Git propre ;
@@ -40,9 +40,9 @@ scripts/lab/apply-gnome-virtualbox.sh --apply
 scripts/lab/apply-gnome-virtualbox.sh --check
 ```
 
-Ce LAB n'appelle ni l'orchestrateur complet ni `apply_gate_open`. Il exige Fedora 44, GNOME Shell 50, Wayland et une identité Oracle VirtualBox concordante entre `systemd-detect-virt` et DMI.
+Ce LAB n'appelle ni l'orchestrateur complet ni `apply_gate_open`. Il exige Fedora 45, GNOME Shell 51, Wayland et une identité Oracle VirtualBox concordante entre `systemd-detect-virt` et DMI.
 
-Sa surface de mutation est limitée aux utilitaires nécessaires et à l'ergonomie GNOME du GATE 2 : boutons de fenêtres, DING, `~/Bureau`, Corbeille et Show Desktop Plus. Kernel, firmware, hardware, stockage, KVM/libvirt, firewall et backup production restent exclus.
+Sa surface de mutation est limitée aux utilitaires nécessaires et à l'ergonomie GNOME du GATE 2 : boutons de fenêtres, DING, `~/Bureau`, Corbeille et Show Desktop Button. Kernel, firmware, hardware, stockage, KVM/libvirt, firewall et backup production restent exclus.
 
 Le doctor LAB vérifie explicitement que le gate production et la baseline bare-metal sont toujours refusés en VirtualBox.
 

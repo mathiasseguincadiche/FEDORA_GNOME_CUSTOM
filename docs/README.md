@@ -222,13 +222,13 @@ Ne pas désactiver SELinux, firewalld ou les garde-fous fail-closed pour masquer
 La validation est une chaîne de preuves. Elle ne remplace pas l'installation ; elle encadre ce qui peut être affirmé comme Golden.
 
 ```text
-Gate 1 — Fedora 44 / WSL2
+Gate 1 — Fedora 45 / WSL2
   système + contrats, hardware DEFERRED
         ↓
-Gate 2 — Fedora 44 GNOME / VirtualBox
+Gate 2 — Fedora 45 GNOME / VirtualBox
   desktop + UX, hardware DEFERRED
         ↓
-Installation Fedora 44 bare-metal
+Installation Fedora 45 bare-metal
         ↓
 Gate 3 — vraie machine
   hardware + runtime + KVM + Gaming + backup
@@ -278,6 +278,10 @@ Une contradiction active entre code, configuration et documentation est un bug.
 - [Qualification de fiabilité après audit](RELIABILITY_QUALIFICATION.md) : correctifs, preuves et parcours restant.
 
 ---
+
+## Référence Fedora 45
+
+[Installation neuve et promotion du profil](FEDORA45_PRIMARY.md) · [Fedora 44 historique](HISTORICAL_FEDORA44.md) · [Migration facultative 44 → 45](UPGRADE_FEDORA_45.md).
 
 ## Notes historiques
 

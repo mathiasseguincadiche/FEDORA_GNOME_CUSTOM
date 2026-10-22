@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Real-machine gate remains closed in Git
         run: |
           grep -F 'REAL_MACHINE_APPROVED="false"' config/apply-gate.conf
@@ -106,9 +108,9 @@ jobs:
           grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' guest/rocky-devops/bootstrap-devops.sh
       - name: Immutable installer source
         run: |
-          grep -Fq 'repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD' installer/generate-fedora44-kickstart.sh
-          grep -Fq 'checkout --detach FETCH_HEAD' installer/generate-fedora44-kickstart.sh
-          ! grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' installer/generate-fedora44-kickstart.sh
+          grep -Fq 'repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD' installer/lib/generate-kickstart.sh
+          grep -Fq 'checkout --detach FETCH_HEAD' installer/lib/generate-kickstart.sh
+          ! grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' installer/lib/generate-kickstart.sh
       - name: Backup fail-closed invariants
         run: |
           grep -F 'BACKUP_FAIL_CLOSED="true"' config/backup.conf

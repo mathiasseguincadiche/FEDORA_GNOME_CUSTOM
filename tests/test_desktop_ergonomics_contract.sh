@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 version="$(<"$ROOT/VERSION")"
 [[ "$(printf '%s\n%s\n' '0.12.0' "$version" | sort -V | head -n1)" == "0.12.0" ]]
 
-# Fedora 44 does not package DING; the Golden profile pins GNOME Extensions v95/review 74408.
+# Fedora 45 does not package DING; the Golden profile pins GNOME Extensions v145/review 75162.
 for expected in \
   'ENABLE_DESKTOP_ICONS_NG="true"' \
   'DING_DESKTOP_DIR_NAME="Bureau"' \
@@ -16,7 +16,7 @@ for expected in \
   grep -Fq "$expected" "$ROOT/config/gnome.conf"
 done
 if grep -Fxq 'gnome-shell-extension-desktop-icons-ng' "$ROOT/manifests/packages-gnome-extensions.txt"; then
-  echo 'DING must not be declared as a Fedora RPM on Fedora 44' >&2
+  echo 'DING must not be declared as a Fedora RPM on Fedora 45' >&2
   exit 1
 fi
 grep -Fxq 'xdg-user-dirs' "$ROOT/manifests/packages-gnome.txt"
@@ -28,7 +28,7 @@ grep -Fq 'show-network-volumes' "$ROOT/modules/gnome/24_gnome_extensions.sh"
 
 grep -Fq 'install-ding.sh' "$ROOT/modules/gnome/24_gnome_extensions.sh"
 
-# Show Desktop Plus is pinned to the one GNOME-reviewed v8 artifact approved for GNOME 50.
+# Show Desktop Button is selected by the GNOME 51 lock.
 for expected in \
   'ENABLE_SHOW_DESKTOP_PLUS="true"' \
   'SHOW_DESKTOP_PLUS_BUTTON_POSITION="left-end"' \
@@ -52,10 +52,11 @@ grep -Fq 'Show Desktop position' "$ROOT/diagnostics/gnome-doctor"
 
 # The two features must be documented and covered by Fedora host/package CI.
 grep -Fq 'Desktop Icons NG' "$ROOT/docs/GNOME_EXTENSIONS.md"
-grep -Fq 'Show Desktop Plus' "$ROOT/docs/GNOME_EXTENSIONS.md"
+grep -Fq 'Show Desktop Button' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'source config/gnome-extensions.lock' "$ROOT/.github/workflows/fedora-package-preflight.yml"
-grep -Fq 'ding@rastersoft.com' "$ROOT/.github/workflows/fedora-host-pretest.yml"
-grep -Fq 'show-desktop-plus@attentivecoder' "$ROOT/.github/workflows/fedora-host-pretest.yml"
+grep -Fq 'bash .github/scripts/gnome51-settings-pretest.sh' "$ROOT/.github/workflows/fedora-host-pretest.yml"
+grep -Fq 'gnome_ding_settings_apply' "$ROOT/.github/scripts/gnome51-settings-pretest.sh"
+grep -Fq 'gnome_show_desktop_button_settings_check' "$ROOT/.github/scripts/gnome51-settings-pretest.sh"
 grep -Fq 'test_desktop_ergonomics_contract.sh' "$ROOT/.github/workflows/tests.yml"
 
 echo 'Desktop ergonomics contract: PASS'

@@ -1,4 +1,4 @@
-name: Fedora 44 gaming pretest
+name: Fedora 45 gaming pretest
 
 on:
   workflow_dispatch:
@@ -31,16 +31,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: fedora-44-gaming-${{ github.ref }}
+  group: fedora-45-gaming-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   gaming-stack:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:44
+    container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Enable RPM Fusion metadata
         shell: bash

@@ -44,7 +44,7 @@ gnome_extensions_precheck() {
 gnome_extensions_plan() {
   cat <<EOF
 GNOME EXTENSIONS PLAN:
-- Fedora ${HOST_RELEASE:-44} / GNOME $(fedora_expected_gnome_major 2>/dev/null || printf '50') extension profile (Fedora 44 / GNOME 50 remains the tested reference)
+- Fedora ${HOST_RELEASE:-45} / GNOME $(fedora_expected_gnome_major 2>/dev/null || printf '51') extension profile (Fedora 45 / GNOME 51 is the fresh-install target)
 - Dash to Dock is enabled from the official Fedora RPM
 - AppIndicator is enabled from the official Fedora RPM for functional tray compatibility
 - Desktop Icons NG (DING) v${DING_VERSION} is installed from the exact GNOME-reviewed artifact ${DING_REVIEW_ID}; XDG Desktop is ~/Bureau, Trash is visible, Home/external/network volumes are hidden
@@ -68,11 +68,11 @@ gnome_extension_enable_checked() {
 }
 
 gnome_ding_schema_dir() {
-  printf '%s/%s/schemas' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${DING_UUID:-ding@rastersoft.com}"
+  printf '%s/%s/schemas' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${DING_UUID:-gtk4-ding@smedius.gitlab.com}"
 }
 
 gnome_ding_settings_apply() {
-  local schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+  local schema="${DING_SCHEMA:-org.gnome.shell.extensions.gtk4-ding}"
   local schema_dir desktop_dir
   schema_dir="$(gnome_ding_schema_dir)"
   desktop_dir="$HOME/${DING_DESKTOP_DIR_NAME:-Bureau}"
@@ -87,7 +87,7 @@ gnome_ding_settings_apply() {
 # Fedora 45 / GNOME 51 replaces Show Desktop Plus (no GNOME 51 build) by Show Desktop Button.
 # The role prefix SHOW_DESKTOP_PLUS_* is unchanged; the reviewed lock decides the identity.
 gnome_show_desktop_is_button() {
-  [[ "${SHOW_DESKTOP_PLUS_UUID:-}" == "show-desktop-button@amivaleo" ]]
+  [[ "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-button@amivaleo}" == "show-desktop-button@amivaleo" ]]
 }
 
 gnome_show_desktop_label() {
@@ -129,12 +129,12 @@ gnome_show_desktop_button_settings_check() {
 }
 
 gnome_show_desktop_plus_schema_dir() {
-  printf '%s/%s/schemas' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
+  printf '%s/%s/schemas' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${SHOW_DESKTOP_PLUS_UUID:-show-desktop-button@amivaleo}"
 }
 
 gnome_show_desktop_plus_settings_apply() {
   if gnome_show_desktop_is_button; then gnome_show_desktop_button_settings_apply; return $?; fi
-  local schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
+  local schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-button}"
   local schema_dir
   schema_dir="$(gnome_show_desktop_plus_schema_dir)"
   local position="'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'"
@@ -156,25 +156,25 @@ gnome_extensions_apply() {
   local dash_uuid="${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"
   local blur_uuid="${BLUR_MY_SHELL_UUID:-blur-my-shell@aunetx}"
   local indicator_uuid="${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
-  local ding_uuid="${DING_UUID:-ding@rastersoft.com}"
-  local show_desktop_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
+  local ding_uuid="${DING_UUID:-gtk4-ding@smedius.gitlab.com}"
+  local show_desktop_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-button@amivaleo}"
   is_true "${ENABLE_GNOME_EXTENSIONS:-false}" || return 0
 
   if is_true "${ENABLE_DASH_TO_DOCK:-false}" || is_true "${ENABLE_BLUR_MY_SHELL:-false}" || is_true "${ENABLE_APPINDICATOR:-false}"; then
     install_manifest_packages GNOME "$REPO_ROOT/manifests/packages-gnome-extensions.txt" || return "$EXIT_APPLY_FAILED"
   fi
 
-  if [[ "${HOST_RELEASE:-44}" == 45 ]]; then
+  if [[ "${HOST_RELEASE:-45}" == 45 ]]; then
     run_mutating GNOME sudo bash "$REPO_ROOT/scripts/gnome/install-fedora45-rpm-extensions.sh" || return "$EXIT_APPLY_FAILED"
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
     run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-ding.sh" \
-      "${DING_SOURCE_URL:-}" "$ding_uuid" "${DING_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+      "${DING_SOURCE_URL:-}" "$ding_uuid" "${DING_SHELL_VERSION:-51}" || return "$EXIT_APPLY_FAILED"
   fi
   if is_true "${ENABLE_SHOW_DESKTOP_PLUS:-false}"; then
     run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-show-desktop-plus.sh" \
-      "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "$show_desktop_uuid" "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+      "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "$show_desktop_uuid" "${SHOW_DESKTOP_PLUS_SHELL_VERSION:-51}" || return "$EXIT_APPLY_FAILED"
   fi
 
   if is_true "${ENABLE_DESKTOP_ICONS_NG:-false}"; then
@@ -212,11 +212,11 @@ gnome_extensions_postcheck() {
   local dash_uuid="${DASH_TO_DOCK_UUID:-dash-to-dock@micxgx.gmail.com}"
   local blur_uuid="${BLUR_MY_SHELL_UUID:-blur-my-shell@aunetx}"
   local indicator_uuid="${APPINDICATOR_UUID:-appindicatorsupport@rgcjonas.gmail.com}"
-  local ding_uuid="${DING_UUID:-ding@rastersoft.com}"
-  local ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+  local ding_uuid="${DING_UUID:-gtk4-ding@smedius.gitlab.com}"
+  local ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.gtk4-ding}"
   local ding_schema_dir
-  local show_desktop_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
-  local show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
+  local show_desktop_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-button@amivaleo}"
+  local show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-button}"
   local show_schema_dir
   ding_schema_dir="$(gnome_ding_schema_dir)"
   show_schema_dir="$(gnome_show_desktop_plus_schema_dir)"

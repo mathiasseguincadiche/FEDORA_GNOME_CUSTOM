@@ -44,7 +44,7 @@ case "$action" in
   prepare)
     require_host
     fedora_require_selected
-    [[ "$(fedora_actual_release)" == 44 && "${HOST_RELEASE:-44}" == 44 ]] || exit "$EXIT_PRECHECK_FAILED"
+    [[ "$(fedora_actual_release)" == 44 && "${HOST_RELEASE:-45}" == 44 ]] || exit "$EXIT_PRECHECK_FAILED"
     apply_gate_require_clean_git || exit "$EXIT_SECURITY_BLOCK"
     [[ "$(value phase)" != prepared && "$(value phase)" != reboot-requested ]] || {
       ui_error 'A release upgrade is already pending'; exit "$EXIT_SECURITY_BLOCK";

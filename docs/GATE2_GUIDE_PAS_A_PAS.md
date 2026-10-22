@@ -1,4 +1,4 @@
-# Gate 2 — Guide pas à pas (Fedora 44 GNOME sous VirtualBox)
+# Gate 2 — Guide pas à pas (Fedora 45 GNOME sous VirtualBox)
 
 Guide pratique pour réaliser la Gate 1 puis la Gate 2 depuis un PC Windows 11, sans risque pour Windows ni pour les disques. La procédure normative reste [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) et [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) : en cas de différence, ces deux documents font foi.
 
@@ -8,7 +8,7 @@ La Gate 2 prouve que le **bureau GNOME du projet fonctionne vraiment**, dans une
 
 Ce qu'elle prouve :
 
-- Fedora 44, GNOME Shell 50 et la session Wayland démarrent et fonctionnent ;
+- Fedora 45, GNOME Shell 51 et la session Wayland démarrent et fonctionnent ;
 - Nautilus, Ptyxis, les portails et les extensions du projet s'installent, s'activent et se comportent comme prévu ;
 - les réglages tiennent après une déconnexion et un redémarrage ;
 - **un humain** a regardé l'écran et valide ce qu'il voit.
@@ -19,9 +19,9 @@ Ce qu'elle ne prouve pas : rien du matériel réel. La B580, les T705, l'écran 
 
 La Gate 2 se place entre deux autres étapes. Chaque gate produit un petit fichier de preuve (JSON) que la suivante exige.
 
-1. **Gate 1 — Fedora 44 dans WSL2, sous Windows.** Vérifie la logique du projet (tests, configuration, garde-fous). Produit `gate1-<commit>.json`.
-2. **Gate 2 — Fedora 44 GNOME dans VirtualBox.** Vérifie le bureau réel et la validation visuelle. Exige la preuve Gate 1 et produit `gate2-<commit>.json`, qui contient l'empreinte exacte de la preuve Gate 1.
-3. **Gate 3 — Fedora 44 installée sur le vrai PC.** Vérifie le matériel et délivre la certification finale. Exige les deux preuves précédentes.
+1. **Gate 1 — Fedora 45 dans WSL2, sous Windows.** Vérifie la logique du projet (tests, configuration, garde-fous). Produit `gate1-<commit>.json`.
+2. **Gate 2 — Fedora 45 GNOME dans VirtualBox.** Vérifie le bureau réel et la validation visuelle. Exige la preuve Gate 1 et produit `gate2-<commit>.json`, qui contient l'empreinte exacte de la preuve Gate 1.
+3. **Gate 3 — Fedora 45 installée sur le vrai PC.** Vérifie le matériel et délivre la certification finale. Exige les deux preuves précédentes.
 
 La règle d'or : **les trois gates utilisent exactement le même commit Git.** Si le projet change entre deux gates, les anciennes preuves deviennent invalides et il faut les refaire. Le projet le vérifie tout seul : il refuse une preuve qui ne correspond pas.
 
@@ -33,7 +33,7 @@ Prévoir **2 à 3 heures** la première fois, téléchargements compris. Tout se
 | --- | --- | --- |
 | WSL2 | Windows 11 à jour, droits administrateur | Gate 1 |
 | Oracle VirtualBox | Version 7.1 ou plus récente | Gate 2 |
-| Image Fedora 44 Workstation | Fichier `Fedora-Workstation-Live-44-1.7.x86_64.iso`, depuis fedoraproject.org | Installer la VM |
+| Image Fedora 45 Workstation | Fichier `Fedora-Workstation-Live-44-1.7.x86_64.iso`, depuis fedoraproject.org | Installer la VM |
 | Espace disque libre | Environ 80 Go | VM (60 Go) + WSL + téléchargements |
 | Un dossier d'échange | `C:\GoldenValidation` | Faire passer la preuve Gate 1 dans la VM |
 
@@ -46,7 +46,7 @@ Deux points à connaître avant de se lancer :
 
 La Gate 2 exige la preuve de la Gate 1 : on commence donc par elle.
 
-1. **Installer Fedora 44 dans WSL2.** Ouvrir PowerShell en administrateur et taper :
+1. **Installer Fedora 45 dans WSL2.** Ouvrir PowerShell en administrateur et taper :
 
     ```powershell
     wsl --install FedoraLinux-44
@@ -91,9 +91,9 @@ La Gate 2 exige la preuve de la Gate 1 : on commence donc par elle.
 
     Le dossier `C:\GoldenValidation` doit contenir un fichier `gate1-<commit>.json` et son `.sha256`.
 
-## Étape B — Créer la VM Fedora 44 dans VirtualBox
+## Étape B — Créer la VM Fedora 45 dans VirtualBox
 
-Les réglages ci-dessous sont des recommandations pour la machine cible (48 Go de RAM, 8 cœurs) : le projet n'impose que Fedora 44, GNOME 50 et Wayland.
+Les réglages ci-dessous sont des recommandations pour la machine cible (48 Go de RAM, 8 cœurs) : le projet n'impose que Fedora 45, GNOME 51 et Wayland.
 
 | Réglage VirtualBox | Valeur conseillée |
 | --- | --- |
@@ -165,7 +165,7 @@ Le labo est un programme séparé, réservé à VirtualBox. L'installation réel
     ./control.sh validate gate2 plan
     ```
 
-2. **Appliquer le labo.** Il installe GNOME et ses portails, Nautilus et ses intégrations, Ptyxis, les extensions du projet (DING, Show Desktop Plus, Resource Monitor) et les réglages GNOME ciblés :
+2. **Appliquer le labo.** Il installe GNOME et ses portails, Nautilus et ses intégrations, Ptyxis, les extensions du projet (DING, Show Desktop Button, Vitals) et les réglages GNOME ciblés :
 
     ```bash
     ./control.sh validate gate2 apply
@@ -207,7 +207,7 @@ Le bouton « Afficher le bureau » :
 
 La barre du haut :
 
-- [ ] Resource Monitor affiche le CPU %, la RAM % et le débit réseau
+- [ ] Vitals affiche le CPU %, la RAM % et le débit réseau
 - [ ] Pendant un téléchargement (par exemple `curl -O` d'un gros fichier), le débit réseau varie
 - [ ] Aucune extension n'affiche de message d'erreur répété, aucun défaut d'affichage évident
 - [ ] L'absence de température du Ryzen et des mesures de la B580 est normale dans une VM (**EXPECTED**)
@@ -256,7 +256,7 @@ La Gate 2 est réussie quand les deux preuves signées sont dans `C:\GoldenValid
 
 La suite, sur le vrai PC :
 
-1. Installer Fedora 44 avec le média vérifié par le projet.
+1. Installer Fedora 45 avec le média vérifié par le projet.
 2. Récupérer le projet au **même commit**, puis importer les preuves Gate 1 et Gate 2, dans cet ordre.
 3. Faire la sauvegarde Borg d'avant installation, la répétition à blanc, puis l'installation réelle.
 4. Passer les preuves physiques (écran 240 Hz, B580, veille, températures) et la certification finale.

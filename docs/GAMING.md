@@ -1,4 +1,4 @@
-# Gaming — Fedora 44 / GNOME 50 / Intel Arc B580
+# Gaming — Fedora 45 / GNOME 51 / Intel Arc B580
 
 ## Périmètre
 
@@ -93,7 +93,7 @@ Les options Gamescope dépendent du titre et de l'affichage et ne doivent pas de
 
 ## CI versus preuve bare-metal
 
-Le pretest Gaming Fedora 44 valide en conteneur headless :
+Le pretest Gaming Fedora 45 valide en conteneur headless :
 
 - disponibilité des paquets Fedora/RPM Fusion ;
 - définition du dépôt `rpmfusion-nonfree-steam` ;

@@ -5,19 +5,19 @@ on:
       fedora_release:
         description: Fedora release of the disposable container
         type: string
-        default: '44'
+        default: '45'
   workflow_dispatch:
     inputs:
       fedora_release:
         description: Fedora release of the disposable container
         type: string
-        default: '44'
+        default: '45'
 permissions:
   contents: read
 jobs:
   rpm:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:${{ inputs.fedora_release || '44' }}
+    container: registry.fedoraproject.org/fedora:${{ inputs.fedora_release || '45' }}
     timeout-minutes: 20
     steps:
       - name: Install disposable preflight dependencies

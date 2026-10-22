@@ -14,13 +14,13 @@
 </defs>
 <rect width="1400" height="300" fill="#fff"/>
 <text x="35" y="48" class="title">Validation complète</text>
-<text x="35" y="78" class="kicker">Actuel : Fedora 44 / GNOME 50 · Cible : Fedora 45 / GNOME 51 (pending)</text>
+<text x="35" y="78" class="kicker">Cible unique : Fedora 45 / GNOME 51 · Profil de production : pending</text>
 
 <g transform="translate(30 112)">
   <rect width="175" height="128" rx="18" fill="#eaf4ff" stroke="#7bb8ed"/>
   <circle cx="30" cy="30" r="20" fill="#2385d8"/><text x="30" y="31" class="badge">G1</text>
   <text x="59" y="34" class="head">Gate 1</text>
-  <text x="20" y="76" class="sub">Fedora 44 / WSL2</text>
+  <text x="20" y="76" class="sub">Fedora 45 / WSL2</text>
   <text x="20" y="100" class="sub">Système + contrats</text>
 </g>
 <line x1="218" y1="176" x2="248" y2="176" stroke="#4f6f98" stroke-width="4" marker-end="url(#arrow)"/>
@@ -38,7 +38,7 @@
   <rect width="195" height="128" rx="18" fill="#edf8f2" stroke="#75c59a"/>
   <circle cx="30" cy="30" r="20" fill="#20a46f"/><text x="30" y="31" class="badge">3</text>
   <text x="59" y="34" class="head">Installation</text>
-  <text x="20" y="76" class="sub">Fedora 44 bare-metal</text>
+  <text x="20" y="76" class="sub">Fedora 45 bare-metal</text>
   <text x="20" y="100" class="sub">machine cible</text>
 </g>
 <line x1="703" y1="176" x2="733" y2="176" stroke="#4f6f98" stroke-width="4" marker-end="url(#arrow)"/>

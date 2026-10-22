@@ -1,4 +1,4 @@
-name: Fedora 44 GNOME boot and recovery lab
+name: Fedora 45 native GNOME 51 boot and recovery lab
 
 on:
   workflow_call:
@@ -15,8 +15,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify signed Fedora 45 seed
+        run: python3 .github/scripts/fedora45-preview-media.py
       - name: Boot GNOME, reboot, recover VM and rebuild Fedora
         shell: bash
+        env:
+          FGC_LAB_RELEASE: '45'
+          FGC_LAB_EXTENSION_MODE: native
         run: timeout --signal=TERM --kill-after=60s 80m bash .github/scripts/fedora-gnome-vm.sh
       - name: Preserve pretest evidence
         if: always()

@@ -70,7 +70,7 @@ PY
 
 # Documentation portal must also keep runtime certification at the end of the journey.
 grep -Fq '# Validation officielle' "$ROOT/docs/README.md" || fail 'docs validation section missing'
-grep -Fq 'Installation Fedora 44 bare-metal' "$ROOT/docs/README.md" || fail 'bare-metal placement missing in docs portal'
+grep -Fq 'Installation Fedora 45 bare-metal' "$ROOT/docs/README.md" || fail 'bare-metal placement missing in docs portal'
 grep -Fq "ne déverrouille jamais \`install.sh --apply\`" "$ROOT/docs/README.md" || fail 'VirtualBox safety statement missing'
 
 # Contribution and issue intake must preserve Golden invariants and avoid public secrets.

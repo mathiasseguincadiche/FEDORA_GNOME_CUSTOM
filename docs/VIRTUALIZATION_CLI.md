@@ -1,4 +1,4 @@
-# Virtualisation CLI — Fedora 44 / KVM / libvirt
+# Virtualisation CLI — Fedora 45 / KVM / libvirt
 
 ## Positionnement
 

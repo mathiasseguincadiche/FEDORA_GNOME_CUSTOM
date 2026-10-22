@@ -1,144 +1,32 @@
-# Resource Monitor — télémétrie de la Golden Workstation
+# Vitals — télémétrie de la Golden Workstation
 
-> Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
+> Vue d’ensemble : [GNOME.md](GNOME.md). Le nom de module `gnome.telemetry` et les clés `RESOURCE_MONITOR_*` sont conservés comme interface de configuration.
 
-## Objectif
+Fedora 45 / GNOME 51 utilise **Vitals v85, review 74743**, UUID `Vitals@CoreCoding.com`, schéma `org.gnome.shell.extensions.vitals`. L’archive exacte, son URL et son SHA-256 sont dans `config/gnome-extensions.lock`. `scripts/gnome/install-resource-monitor.sh` vérifie ce verrou, les métadonnées et la provenance ; la production reste bloquée si le profil est `pending`.
 
-Resource Monitor est l'extension GNOME 50 retenue pour afficher dans la barre supérieure les métriques utiles au quotidien sans ouvrir un outil de diagnostic :
+## Réglages appliqués
 
-```text
-CPU     utilisation % + température
-RAM     utilisation %
-NET     download | upload sur Ethernet ou Wi-Fi actif
-GPU     charge Intel Arc B580 + température si hwmon l'expose
-```
+| Réglage Vitals | Valeur du profil |
+|---|---|
+| `update-time` | 2 secondes |
+| `position-in-panel` | 2, zone droite |
+| `show-processor`, `show-memory`, `show-network` | true |
+| `show-temperature`, `show-gpu` | selon les options correspondantes |
+| `hot-sensors` | CPU utilisé, RAM utilisée, débit descendant maximal, débit montant maximal |
 
-Le profil privilégie une lecture compacte. Les statistiques disque et swap restent disponibles dans les doctors/outils système mais ne sont pas affichées en permanence dans le panneau.
+Les identifiants stables sont `_processor_usage_`, `_memory_usage_`, `__network-rx_max__` et `__network-tx_max__`. Le module applique et relit ces valeurs. Les anciennes clés GSettings de Resource Monitor v28 ne sont pas utilisées pour Vitals.
 
-## Source gérée
+Les températures dépendent des identifiants hwmon réellement découverts : les épingler depuis le menu Vitals sur le poste. Vitals ne garantit pas l’affichage de la charge Intel Arc B580 dans le panneau. Les détails propres aux interfaces réseau et aux capteurs doivent être contrôlés visuellement en Gate 2, puis sur le matériel en Gate 3.
 
-```text
-Extension       Resource Monitor
-UUID            Resource_Monitor@Ory0n
-Version site    28
-Review GNOME     70909
-GNOME Shell      50
-Schema          org.gnome.shell.extensions.resource-monitor
-```
+## Contrôles matériels indépendants
 
-Artefact exact :
+`diagnostics/resource-monitor-doctor` et le module conservent les contrôles de santé physique : capteur Ryzen `k10temp` / `zenpower`, label `Tctl` préféré ; GPU Intel Arc B580 PCI `8086:e20b` ; vraie source de charge `gpu_busy_percent` ou `gt_busy_percent` ; température DRM hwmon si disponible.
 
-```text
-https://extensions.gnome.org/review/download/70909.shell-extension.zip
-```
-
-`scripts/gnome/install-resource-monitor.sh` refuse toute autre URL, UUID ou cible GNOME Shell. Il compile le schéma GSettings et écrit `.fedora-gnome-custom-source` dans le répertoire de l'extension.
-
-## Profil visuel Golden
-
-```text
-Position               droite
-Rafraîchissement       2 s
-Icônes                  oui
-Ordre                   CPU | RAM | Ethernet | Wi-Fi | GPU
-CPU %                   oui
-CPU fréquence           non
-Load average            non
-CPU température         oui
-RAM                     % utilisée
-Swap                    masquée
-Débit réseau            B/s auto-scale
-Interface inactive      auto-hide
-GPU charge              oui
-GPU température         oui si disponible
-Nom complet GPU         masqué dans le panneau
-Disque I/O              masqué
-Espace disque           masqué
-```
-
-Les interfaces Ethernet et Wi-Fi restent toutes deux activées dans le profil mais `netautohidestatus=true` masque automatiquement celle qui n'est pas active. Cela évite de devoir modifier le profil quand le HOST passe du LAN 5G au Wi-Fi.
-
-## Ryzen 7 7700
-
-Le module cherche les capteurs `k10temp` ou `zenpower` dans `/sys/class/hwmon` et préfère le label `Tctl` lorsqu'il existe. La source exacte est écrite dans la liste de capteurs Resource Monitor au moment de l'APPLY bare-metal.
-
-La température physique Ryzen n'est jamais certifiée en VirtualBox/WSL2.
-
-## Intel Arc B580 / xe
-
-La carte cible doit être le périphérique DRM dont :
-
-```text
-vendor = 0x8086
-device = 0xe20b
-```
-
-Pour la charge GPU, Resource Monitor v28 sait rechercher les compteurs sysfs Intel :
-
-```text
-gpu_busy_percent
-gt_busy_percent
-```
-
-Le module Golden reprend exactement cette frontière. Sur bare-metal :
-
-- B580 absente → `KO` ;
-- B580 présente + compteur de charge lisible → `PASS` ;
-- B580 présente sans compteur de charge → `KO` ;
-- température DRM hwmon absente mais charge valide → `WARN`.
-
-Cette règle évite qu'une absence de télémétrie `xe` soit présentée comme un faux `0 %`.
-
-Si le kernel/driver B580 ne publie finalement aucun de ces deux compteurs lors du GATE 3, le projet ne contournera pas le problème. Un backend Intel supplémentaire devra être qualifié séparément avant d'entrer dans le Golden.
-
-## Réseau
-
-Resource Monitor lit les compteurs réseau du système et affiche deux valeurs par interface :
-
-```text
-download | upload
-```
-
-Le GATE 2 VirtualBox doit prouver visuellement que ces valeurs changent lorsqu'un trafic réel est généré. Le GATE 3 confirme ensuite le comportement sur le LAN 5G/Wi-Fi de la workstation.
-
-## Validation
-
-Doctor dédié :
+Sur bare-metal, B580 absente ou sans compteur de charge lisible signifie KO. Une température GPU absente peut rester WARN si la charge est réellement lisible. L’absence de source n’est jamais présentée comme un faux 0 %. Si `xe` ne fournit aucun compteur compatible, un backend supplémentaire devra être qualifié séparément.
 
 ```bash
 bash diagnostics/resource-monitor-doctor
-```
-
-Doctor GNOME global :
-
-```bash
 ./diagnostics/gnome-doctor
 ```
 
-Le doctor dédié vérifie :
-
-- payload ;
-- provenance GNOME review ;
-- activation ;
-- réglages GSettings ;
-- CPU/RAM/réseau ;
-- sur bare-metal, capteur Ryzen ;
-- B580 `8086:e20b` ;
-- source de charge B580 ;
-- source de température B580 si exposée.
-
-## GATE 2 VirtualBox
-
-Dans le LAB GNOME :
-
-```text
-CPU % / RAM % / débit réseau     preuve visuelle requise
-Température Ryzen physique       EXPECTED
-Arc B580 charge/température      EXPECTED
-```
-
-Voir [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md).
-
-## GATE 3 bare-metal
-
-Le GATE 3 exige `resource-monitor-doctor` sans KO. La télémétrie B580 n'est donc jamais considérée certifiée à partir d'une VM ou d'une CI.
+La CI vérifie les vrais schémas et préférences Vitals dans Fedora 45, et son activation dans la VM GNOME 51. WSL2, conteneur et [Gate 2 VirtualBox](VIRTUALBOX_GNOME_LAB.md) ne certifient pas les capteurs physiques. La Gate 3 exige le doctor sans KO.

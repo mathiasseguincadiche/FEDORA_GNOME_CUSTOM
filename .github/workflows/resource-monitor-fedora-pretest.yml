@@ -1,4 +1,4 @@
-name: Fedora 44 Resource Monitor pretest
+name: Fedora 45 Vitals telemetry pretest
 
 on:
   push:
@@ -32,52 +32,13 @@ permissions:
 jobs:
   telemetry-profile:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:44
+    container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Install GNOME telemetry test dependencies
-        run: dnf -y install gnome-shell curl unzip glib2 python3 dbus-daemon
-      - name: Install and configure locked Resource Monitor
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          useradd -m telemetrytest
-          runuser -u telemetrytest -- env \
-            HOME=/home/telemetrytest \
-            XDG_DATA_HOME=/home/telemetrytest/.local/share \
-            dbus-run-session -- bash -Eeuo pipefail -c '
-              source "$GITHUB_WORKSPACE/config/gnome-extensions.lock"
-              bash "$GITHUB_WORKSPACE/scripts/gnome/install-resource-monitor.sh"
-              schema_dir="$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/schemas"
-              schema=org.gnome.shell.extensions.resource-monitor
-              gsettings --schemadir "$schema_dir" set "$schema" refreshtime 2
-              gsettings --schemadir "$schema_dir" set "$schema" extensionposition "'"'right'"'"
-              gsettings --schemadir "$schema_dir" set "$schema" displaymode "'"'primary'"'"
-              gsettings --schemadir "$schema_dir" set "$schema" itemsposition "['"'cpu'"', '"'ram'"', '"'eth'"', '"'wlan'"', '"'gpu'"']"
-              gsettings --schemadir "$schema_dir" set "$schema" cpustatus true
-              gsettings --schemadir "$schema_dir" set "$schema" thermalcputemperaturestatus true
-              gsettings --schemadir "$schema_dir" set "$schema" ramstatus true
-              gsettings --schemadir "$schema_dir" set "$schema" ramunit "'"'perc'"'"
-              gsettings --schemadir "$schema_dir" set "$schema" netautohidestatus true
-              gsettings --schemadir "$schema_dir" set "$schema" netethstatus true
-              gsettings --schemadir "$schema_dir" set "$schema" netwlanstatus true
-              gsettings --schemadir "$schema_dir" set "$schema" gpustatus true
-              gsettings --schemadir "$schema_dir" set "$schema" thermalgputemperaturestatus true
-              gsettings --schemadir "$schema_dir" set "$schema" diskstatsstatus false
-              gsettings --schemadir "$schema_dir" set "$schema" diskspacestatus false
-              gsettings --schemadir "$schema_dir" set "$schema" swapstatus false
-
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" refreshtime)" = 2
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" = true
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" = true
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" ramunit)" = "'"'perc'"'"
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" = true
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" = true
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" = true
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" diskstatsstatus)" = false
-              test "$(gsettings --schemadir "$schema_dir" get "$schema" swapstatus)" = false
-              grep -Fxq "source_url=$RESOURCE_MONITOR_SOURCE_URL" "$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/.fedora-gnome-custom-source"
-              grep -Fxq "review_id=$RESOURCE_MONITOR_REVIEW_ID" "$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/.fedora-gnome-custom-source"
-              grep -Fxq "site_version=$RESOURCE_MONITOR_VERSION" "$HOME/.local/share/gnome-shell/extensions/Resource_Monitor@Ory0n/.fedora-gnome-custom-source"
-            '
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Install GNOME 51 telemetry test dependencies
+        run: dnf -y --refresh install gnome-shell curl unzip glib2 python3 dbus-daemon xdg-user-dirs
+      - name: Validate reviewed GNOME 51 Vitals settings
+        run: bash .github/scripts/gnome51-settings-pretest.sh

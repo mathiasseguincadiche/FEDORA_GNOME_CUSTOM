@@ -25,7 +25,7 @@ En regardant le [schéma d'architecture](ARCHITECTURE_PEDAGOGIQUE.md), identifie
 2. **Où vont les données ?** Le système vit sur le T705 Btrfs ; `/data` est un second T705 EXT4 persistant ; Borg protège les données sélectionnées sur un SSD externe.
 3. **À partir de quand peut-on dire « c'est validé » ?** Une CI verte prouve les contrats logiciels. Une preuve Gate 3, sur le véritable PC et pour le commit/configuration courants, est nécessaire pour la certification Golden.
 
-**Question bonus :** pourquoi le dépôt décrit-il Fedora 44 alors que l'objectif est Fedora 45 ? Parce que `profiles/fedora45/profile.json` est encore `pending` : la promotion d'une release est une opération contrôlée, non une modification cosmétique.
+**Question bonus :** pourquoi le dépôt décrit-il Fedora 45 alors que l'objectif est Fedora 45 ? Parce que `profiles/fedora45/profile.json` est encore `pending` : la promotion d'une release est une opération contrôlée, non une modification cosmétique.
 
 
 

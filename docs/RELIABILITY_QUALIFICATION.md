@@ -21,7 +21,7 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 - Test fio sur fichier temporaire unique, même pour la racine non inscriptible
   par l'utilisateur ; aucune écriture sur le périphérique brut.
 - Preuves réseau liées à l'interface testée (DNS et HTTPS), sorties analysées en locale C.
-- État GNOME 50 `ACTIVE` réellement exigé pour les extensions attendues.
+- État GNOME 51 `ACTIVE` réellement exigé pour les extensions attendues.
 - Reprise écran conservant les choix utilisateur et tous les moniteurs.
 - Kickstart lié à `/dev/disk/by-id` et au numéro de série, revérifiés en `%pre`.
 
@@ -30,7 +30,7 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 | Étape | Preuve requise | Limite des tests automatisés |
 |---|---|---|
 | Code | Tests comportementaux + ShellCheck + syntaxe | Ne démontre pas un démarrage |
-| Installation vierge | Fedora 44 GNOME 50 neuve, APPLY, reboot, diagnostics et second APPLY | Le prétest Fedora exécute le module système réel en conteneur ; pas l'installation complète |
+| Installation vierge | Fedora 45 GNOME 51 neuve, APPLY, reboot, diagnostics et second APPLY | Le prétest Fedora exécute le module système réel en conteneur ; pas l'installation complète |
 | Restauration fichiers | Archive exacte, `borg check --verify-data`, extraction vérifiée, contenu/permissions | Le roundtrip CI utilise un vrai Borg et un disque externe simulé |
 | Reprise OS/VM | Démarrage de Fedora et d'une VM récupérée isolée, données accessibles | Non démontrable par un test de fichiers |
 | Matériel | Gate 3 sur le Ryzen 7700 / B580 / B850M / T705 | Aucun résultat matériel issu d'un conteneur |
@@ -64,7 +64,7 @@ machine Fedora ou d'un laboratoire isolé. Les rapports GitHub ne les remplacent
 
 | Exercice | Critère d'acceptation | Preuves à conserver |
 |---|---|---|
-| Installation GNOME neuve | Fedora 44 / GNOME 50 / Wayland démarre après APPLY et reboot ; second APPLY convergent | SHA, ISO vérifiée, rapports des trois gates, journaux |
+| Installation GNOME neuve | Fedora 45 / GNOME 51 / Wayland démarre après APPLY et reboot ; second APPLY convergent | SHA, ISO vérifiée, rapports des trois gates, journaux |
 | Session GNOME réelle | Extensions ACTIVE, Nautilus/Ptyxis, changement d'écran et reprise sans perte de réglages | Diagnostics avant/après, observations de session |
 | Restauration fichiers isolée | Archive exacte et données identiques, modes/liens conservés | Nom/id/dépôt, vérification intégrale et comparaison |
 | Reprise Fedora isolée | Système reconstruit et données accessibles sans toucher aux disques originaux | SHA de récupération, étapes et journal de démarrage |

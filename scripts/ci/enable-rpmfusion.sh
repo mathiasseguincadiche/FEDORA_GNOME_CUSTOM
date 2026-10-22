@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # CI-only RPM Fusion bootstrap for the requested Fedora release. MirrorManager remains the primary
 # endpoint; download1.rpmfusion.org is the official direct fallback when a
 # selected mirror/CDN is temporarily unreachable.
-release="${RPMFUSION_FEDORA_RELEASE:-44}"
+release="${RPMFUSION_FEDORA_RELEASE:-45}"
 attempts="${RPMFUSION_BOOTSTRAP_ATTEMPTS:-3}"
 
 [[ "$release" =~ ^[0-9]+$ ]] || { echo "Invalid Fedora release: $release" >&2; exit 2; }

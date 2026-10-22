@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Peripheral identity and portal cancellation regressions
         run: |
           bash tests/test_peripheral_identity_behavior.sh
@@ -234,6 +236,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora45_install_entrypoints.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_fedora45_primary_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_media_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_upgrade_behavior.sh
@@ -282,7 +286,7 @@ jobs:
 
   installer-audit:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:44
+    container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 20
     steps:
       # Git must exist BEFORE actions/checkout: without it, checkout silently
@@ -293,6 +297,8 @@ jobs:
       - name: Configure the real Flatpak remote for provenance prechecks
         run: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Trust the checkout inside the container
         # The workspace is owned by the runner user, not by root in the
         # container: without this, every git call fails ("dubious ownership").
@@ -331,12 +337,14 @@ jobs:
 
   borg-fedora:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:44
+    container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 15
     steps:
       - name: Install Fedora Borg and test dependencies
         run: dnf -y install borgbackup jq python3 git util-linux coreutils findutils diffutils hostname
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: bash tests/test_borg_roundtrip.sh
       - run: bash tests/test_backup_certification_behavior.sh
@@ -347,7 +355,7 @@ jobs:
   upstream-kernel:
     uses: ./.github/workflows/upstream-kernel.yml
     with:
-      # Fedora 45 is the installation target; Fedora 44 remains a legacy lab.
+      # Fedora 45 is the primary fresh-install target.
       fedora_release: '45'
     permissions:
       contents: read
@@ -375,6 +383,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Require every dependency to succeed
         env:
           DEPENDENCY_RESULTS: ${{ toJSON(needs) }}

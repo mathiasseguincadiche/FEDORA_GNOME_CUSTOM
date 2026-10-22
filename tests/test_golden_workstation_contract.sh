@@ -52,8 +52,8 @@ grep -Fq 'subsystem-match=drm' "$ROOT/scripts/gnome/display-watch.sh"
 grep -Fq 'FINAL_CERT_MIN_SUSPEND_CYCLES="5"' "$ROOT/config/performance.conf"
 grep -Fq 'record-suspend' "$ROOT/diagnostics/final-certification"
 grep -Fq 'diagnostics/virtualization-doctor' "$ROOT/diagnostics/final-certification"
-grep -Fq 'EFFACER' "$ROOT/installer/generate-fedora44-kickstart.sh"
-grep -Fq 'ignoredisk --only-use=' "$ROOT/installer/generate-fedora44-kickstart.sh"
-grep -Fq 'Repository SHA:' "$ROOT/installer/generate-fedora44-kickstart.sh"
+grep -Fq 'EFFACER' "$ROOT/installer/lib/generate-kickstart.sh"
+grep -Fq 'ignoredisk --only-use=' "$ROOT/installer/lib/generate-kickstart.sh"
+grep -Fq 'Repository SHA:' "$ROOT/installer/lib/generate-kickstart.sh"
 ! grep -RInE 'mem_sleep_default=|xe\.force_probe|i915\.force_probe|pcie_aspm=off|nvme_core\.default_ps_max_latency_us' "$ROOT/config" "$ROOT/modules" "$ROOT/scripts" || { echo 'blind kernel/power quirk found' >&2; exit 1; }
 echo 'golden workstation contract: PASS'

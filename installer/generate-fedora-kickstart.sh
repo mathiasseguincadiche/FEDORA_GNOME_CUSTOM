@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Fresh-install default: Fedora 45. The selected release remains blocked while pending.
+# Primary fresh-install target: Fedora 45.
 set -Eeuo pipefail
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-exec bash "$root/installer/generate-fedora45-kickstart.sh" "$@"
+if [[ "${1:-}" == --release ]]; then
+  [[ "${2:-}" == 45 ]] || { echo 'This entrypoint targets Fedora 45 only.' >&2; exit 2; }
+  shift 2
+fi
+exec bash "$(dirname "${BASH_SOURCE[0]}")/lib/generate-kickstart.sh" --release 45 "$@"

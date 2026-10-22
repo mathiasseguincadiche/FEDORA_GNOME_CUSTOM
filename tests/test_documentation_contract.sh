@@ -99,7 +99,7 @@ if grep -RInE --include='*.md' 'baseline-doctor[[:space:]]+(record-memory|record
 fi
 
 # GNOME docs must match the canonical six-extension functional contract.
-for expected in 'Dash to Dock' 'AppIndicator' 'Desktop Icons NG' 'Show Desktop Plus' 'Resource Monitor' 'Tiling Assistant'; do
+for expected in 'Dash to Dock' 'AppIndicator' 'Desktop Icons NG' 'Show Desktop Button' 'Vitals' 'Tiling Assistant'; do
   grep -Fq "$expected" "$ROOT/docs/GNOME_PROFILE.md" || { echo "GNOME_PROFILE missing functional extension: $expected" >&2; exit 1; }
   grep -Fq "$expected" "$ROOT/docs/GNOME_EXTENSIONS.md" || { echo "GNOME_EXTENSIONS missing functional extension: $expected" >&2; exit 1; }
 done
@@ -134,7 +134,7 @@ done
 grep -Fq 'VIRTUALBOX_GNOME_LAB.md' "$ROOT/docs/README.md"
 grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
-grep -Fq 'Resource Monitor' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
+grep -Fq 'Vitals' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
 grep -Fq 'APPLY production' "$ROOT/docs/EXECUTION_CONTRACT.md"
 grep -Fq 'LAB GNOME VirtualBox' "$ROOT/docs/EXECUTION_CONTRACT.md"
 grep -Fq 'ne déverrouille jamais' "$ROOT/docs/README.md"
@@ -291,7 +291,7 @@ for section in (
     assert section.casefold() in guide.casefold(), f"missing architecture explanation: {section}"
 for text in (readme, portal):
     assert "ARCHITECTURE_PEDAGOGIQUE.md" in text, "guide must be discoverable from each entrypoint"
-assert "registry.fedoraproject.org/fedora:44" in ci
+assert "registry.fedoraproject.org/fedora:45" in ci
 assert "Borg" in readme and "Golden runtime-certified" in guide
 assert "Gate 3" in readme and "Gate 3" in upgrade
 

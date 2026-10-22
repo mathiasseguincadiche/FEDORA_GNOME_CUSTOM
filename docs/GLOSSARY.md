@@ -40,7 +40,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **RPM** — format et écosystème de paquets natifs Fedora.
 
-**DNF5** — gestionnaire de paquets de Fedora 44 utilisé pour installer et résoudre les RPM.
+**DNF5** — gestionnaire de paquets de Fedora 45 utilisé pour installer et résoudre les RPM.
 
 **RPM Fusion** — dépôts complémentaires utilisés notamment pour certains codecs multimédias non fournis directement par Fedora.
 

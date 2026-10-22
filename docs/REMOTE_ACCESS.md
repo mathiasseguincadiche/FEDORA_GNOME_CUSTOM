@@ -50,7 +50,7 @@ Tailscale comme réseau privé, SSH par clés comme mode léger, Wake-on-LAN sur
 | Besoin | Choix retenu | Alternative | Pourquoi pas (pour l'instant) |
 |---|---|---|---|
 | Réseau privé | Tailscale | WireGuard auto-hébergé, Headscale | Plus de contrôle, mais NAT, ACL et client Android sont à construire et à maintenir. À reconsidérer si dépendre d'un plan de contrôle tiers pose problème. |
-| Bureau distant | Sunshine + Moonlight (latence, AV1, 120 FPS) | **GNOME Remote Desktop** (RDP), fourni avec Fedora | Intégré, signé Fedora, **ouverture de session distante sans connexion automatique**. Moins de fluidité ; l'accélération matérielle n'est pas confirmée pour GNOME 50. **Repli recommandé si Sunshine échoue au Gate 3.** |
+| Bureau distant | Sunshine + Moonlight (latence, AV1, 120 FPS) | **GNOME Remote Desktop** (RDP), fourni avec Fedora | Intégré, signé Fedora, **ouverture de session distante sans connexion automatique**. Moins de fluidité ; l'accélération matérielle n'est pas confirmée pour GNOME 51. **Repli recommandé si Sunshine échoue au Gate 3.** |
 | SSH | OpenSSH durci | Tailscale SSH | Un seul mécanisme, mais le cahier des charges et le reste du projet (Ansible, clés) reposent sur OpenSSH. |
 | Réveil sans relais | — | Prise connectée + « restaurer après coupure secteur » | Fonctionne sans NIC ni relais réseau, mais dépend d'un cloud tiers et coupe le courant d'une machine éteinte proprement. Dernier recours. |
 

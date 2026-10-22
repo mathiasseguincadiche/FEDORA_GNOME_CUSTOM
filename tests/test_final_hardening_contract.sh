@@ -11,9 +11,9 @@ grep -Fq "**Golden Workstation $version**" "$ROOT/README.md"
 grep -Fq "## $version —" "$ROOT/CHANGELOG.md"
 
 # User-decided HOST policy.
-grep -Fq 'services --enabled=NetworkManager,firewalld --disabled=sshd' "$ROOT/installer/generate-fedora44-kickstart.sh"
-grep -Fq 'openssh-clients' "$ROOT/installer/generate-fedora44-kickstart.sh"
-if grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/generate-fedora44-kickstart.sh"; then
+grep -Fq 'services --enabled=NetworkManager,firewalld --disabled=sshd' "$ROOT/installer/lib/generate-kickstart.sh"
+grep -Fq 'openssh-clients' "$ROOT/installer/lib/generate-kickstart.sh"
+if grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/lib/generate-kickstart.sh"; then
   echo 'Kickstart must not silently introduce LUKS into the chosen Golden policy' >&2
   exit 1
 fi

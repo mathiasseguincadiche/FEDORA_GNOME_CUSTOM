@@ -38,7 +38,7 @@ fi
 
 grep -Fq 'manifests/packages-appimage.txt' "$workflow" || fail 'AppImage CI must consume RPM manifest'
 grep -Fq 'manifests/flatpaks-appimage.txt' "$workflow" || fail 'AppImage CI must validate integration Flatpak'
-grep -Fq 'fedora:44' "$workflow" || fail 'AppImage CI must run on Fedora 44'
+grep -Fq 'fedora:45' "$workflow" || fail 'AppImage CI must run on Fedora 45'
 grep -Fq -- '--identify' "$workflow" || fail 'AppImage CI must validate Type 1/Type 2 detection without launching untrusted payloads'
 
 echo 'appimage contract: PASS'

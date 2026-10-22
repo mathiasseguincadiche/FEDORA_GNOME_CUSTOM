@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Permettre depuis Fedora 44 de parcourir, ouvrir, copier et glisser-déposer des fichiers des deux VM sans partager un répertoire HOST dans les invités.
+Permettre depuis Fedora 45 de parcourir, ouvrir, copier et glisser-déposer des fichiers des deux VM sans partager un répertoire HOST dans les invités.
 
 Le design est volontairement asymétrique :
 

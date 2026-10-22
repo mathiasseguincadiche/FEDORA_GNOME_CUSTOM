@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
 <title id="title">Fedora Golden Workstation — architecture directe</title>
-<desc id="desc">Vue directe du matériel cible, du socle Fedora 44 et de la cible Fedora 45 / GNOME 51, du stockage persistant, des usages, de la sauvegarde, de la maintenance et de la certification.</desc>
+<desc id="desc">Vue directe du matériel cible, du socle cible Fedora 45 / GNOME 51, du stockage persistant, des usages, de la sauvegarde, de la maintenance et de la certification.</desc>
 <defs>
   <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#6d829d"/></marker>
   <style>
@@ -24,10 +24,10 @@
 <text x="58" y="394" class="card">48 Gio DDR5</text>
 <text x="58" y="441" class="card">2 × Crucial T705</text><text x="58" y="465" class="small">PCIe 5.0</text>
 <rect x="335" y="115" width="670" height="290" rx="18" fill="#eaf4ff" stroke="#83b9e8"/>
-<text x="370" y="158" class="section">Système Fedora 44</text>
+<text x="370" y="158" class="section">Système Fedora 45</text>
 <text x="370" y="184" class="subtitle">Cible : Fedora 45 / GNOME 51 (pending)</text>
 <rect x="370" y="215" width="185" height="90" rx="14" fill="#fff" stroke="#cbd9e7"/>
-<text x="390" y="250" class="card">GNOME 50</text><text x="390" y="277" class="small">Wayland</text>
+<text x="390" y="250" class="card">GNOME 51</text><text x="390" y="277" class="small">Wayland</text>
 <rect x="575" y="215" width="195" height="90" rx="14" fill="#fff" stroke="#cbd9e7"/>
 <text x="595" y="250" class="card">Kernel Vanilla</text><text x="595" y="277" class="small">latest-stable · N/N-1</text>
 <rect x="790" y="215" width="180" height="90" rx="14" fill="#fff" stroke="#cbd9e7"/>

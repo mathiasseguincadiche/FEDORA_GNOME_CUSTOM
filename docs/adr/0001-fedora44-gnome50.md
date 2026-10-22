@@ -1,5 +1,7 @@
 # ADR 0001 — Fedora 44 + GNOME 50
 
+> Choix de version remplacé par [ADR 0018](0018-fedora45-primary.md). Conservé pour l’historique.
+
 **Statut : accepté**
 
 ## Contexte

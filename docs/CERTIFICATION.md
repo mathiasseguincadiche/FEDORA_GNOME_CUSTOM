@@ -32,8 +32,8 @@ Le projet distingue donc deux états :
 | Étape | Où | Ce qu'elle prouve | Document |
 | --- | --- | --- | --- |
 | 0. CI | GitHub, automatiquement | Contrats, tests, vraie VM Fedora GNOME, vraie VM Rocky | [`CI_VALIDATION.md`](CI_VALIDATION.md), [`FEDORA_GNOME_CI_LAB.md`](FEDORA_GNOME_CI_LAB.md) |
-| 1. Gate 1 | Fedora 44 dans WSL2 | Logique du projet, garde-fous | [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) |
-| 2. Gate 2 | Fedora 44 GNOME dans VirtualBox | Bureau réel et validation visuelle humaine | [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) |
+| 1. Gate 1 | Fedora 45 dans WSL2 | Logique du projet, garde-fous | [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) |
+| 2. Gate 2 | Fedora 45 GNOME dans VirtualBox | Bureau réel et validation visuelle humaine | [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) |
 | 3. Baseline | Vrai PC, avant toute modification | Matériel assez sain pour autoriser l'installation | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
 | 4. Installation | Vrai PC | Dry-run, sauvegarde, APPLY protégé | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md), [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) |
 | 5. Gate 3 | Vrai PC, après installation | Matériel, logiciels, bureau, stabilité | [`PHYSICAL_QUALIFICATION_CHECKLIST.md`](PHYSICAL_QUALIFICATION_CHECKLIST.md), [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md), [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) |

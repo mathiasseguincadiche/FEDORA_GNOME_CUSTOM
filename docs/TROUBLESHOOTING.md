@@ -86,7 +86,7 @@ dnf repoquery --available code
 dnf repoquery --available brave-browser
 ```
 
-Le preflight Fedora 44 CI valide aussi ces dépôts. Une rupture externe peut donc être un problème éditeur temporaire.
+Le preflight Fedora 45 CI valide aussi ces dépôts. Une rupture externe peut donc être un problème éditeur temporaire.
 
 ---
 
@@ -730,7 +730,7 @@ Le commit Git doit toujours accompagner les rapports : les diagnostics et les co
 
 | Erreur affichée | Ce qui s'est réellement passé | Réflexe correct |
 |---|---|---|
-| `Initialize containers` + `toomanyrequests` | registre de conteneurs limité | vérifier la source d'image ; les jobs Fedora 44 utilisent `registry.fedoraproject.org/fedora:44` |
+| `Initialize containers` + `toomanyrequests` | registre de conteneurs limité | vérifier la source d'image ; les jobs Fedora 45 utilisent `registry.fedoraproject.org/fedora:45` |
 | `Cannot download openh264` | dépôt tiers Cisco injoignable depuis un runner | inspecter la transaction ; si ce dépôt n'est pas nécessaire au contrat de CI, l'isoler sans retirer les paquets requis |
 | `fedora-gnome-vm / lab` + coredump | vrai crash ou blocage de fermeture GNOME/Mutter | lire les journaux GDM, Wayland/XWayland, unités utilisateur et `systemd-coredump` |
 | `Tests / contracts` rouge | l'une des six dépendances a échoué ou été sautée | corriger d'abord le job amont ; laisser `contracts` fail-closed |

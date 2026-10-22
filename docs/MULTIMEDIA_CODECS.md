@@ -1,4 +1,4 @@
-# Multimédia et codecs — Fedora 44
+# Multimédia et codecs — Fedora 45
 
 ## Objectif
 

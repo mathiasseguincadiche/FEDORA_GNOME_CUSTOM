@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ubuntu-grade finishing layer on top of upstream GNOME 50 (ADR 0013).
+# Ubuntu-grade finishing layer on top of upstream GNOME 51 (ADR 0013).
 # Every setting is declared in config/gnome-polish.conf, applied here and
 # re-verified by postcheck and diagnostics/polish-doctor.
 set -Eeuo pipefail
@@ -82,7 +82,7 @@ gnome_polish_apply() {
   fi
   if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
     run_mutating GNOME bash "$REPO_ROOT/scripts/gnome/install-tiling-assistant.sh" \
-      "${TILING_ASSISTANT_SOURCE_URL:-}" "${TILING_ASSISTANT_UUID:-}" "${TILING_ASSISTANT_SHELL_VERSION:-50}" || return "$EXIT_APPLY_FAILED"
+      "${TILING_ASSISTANT_SOURCE_URL:-}" "${TILING_ASSISTANT_UUID:-}" "${TILING_ASSISTANT_SHELL_VERSION:-51}" || return "$EXIT_APPLY_FAILED"
   fi
 
   while IFS='|' read -r schema key value; do

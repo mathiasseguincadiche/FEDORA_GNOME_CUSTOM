@@ -104,10 +104,10 @@ else
   emit OK 'Bare-metal baseline guard' 'hardware certification remains unavailable in VirtualBox'
 fi
 
-ding_uuid="${DING_UUID:-ding@rastersoft.com}"
+ding_uuid="${DING_UUID:-gtk4-ding@smedius.gitlab.com}"
 ding_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$ding_uuid"
 ding_schema_dir="$ding_dir/schemas"
-ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.ding}"
+ding_schema="${DING_SCHEMA:-org.gnome.shell.extensions.gtk4-ding}"
 if [[ -r "$ding_dir/metadata.json" ]]; then emit OK 'Desktop Icons NG payload' installed; else emit KO 'Desktop Icons NG payload' missing; fi
 check_source_marker 'Desktop Icons NG' "$ding_dir" "${DING_SOURCE_URL:-}" "${DING_REVIEW_ID:-}" "${DING_VERSION:-}"
 check_extension_state 'Desktop Icons NG' "$ding_uuid"
@@ -124,10 +124,10 @@ check_value 'DING Home' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_s
 check_value 'DING external volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-volumes 2>/dev/null || true)" false
 check_value 'DING network volumes' "$(gsettings --schemadir "$ding_schema_dir" get "$ding_schema" show-network-volumes 2>/dev/null || true)" false
 
-show_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-plus@attentivecoder}"
+show_uuid="${SHOW_DESKTOP_PLUS_UUID:-show-desktop-button@amivaleo}"
 show_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$show_uuid"
 show_schema_dir="$show_dir/schemas"
-show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-plus}"
+show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop-button}"
 if [[ -r "$show_dir/metadata.json" ]]; then emit OK 'Show Desktop Plus payload' installed; else emit KO 'Show Desktop Plus payload' missing; fi
 check_source_marker 'Show Desktop Plus' "$show_dir" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "${SHOW_DESKTOP_PLUS_REVIEW_ID:-}" "${SHOW_DESKTOP_PLUS_VERSION:-}"
 check_extension_state 'Show Desktop Plus' "$show_uuid"
@@ -137,10 +137,10 @@ check_value 'Show Desktop hotkey enabled' "$(gsettings --schemadir "$show_schema
 check_value 'Show Desktop Super+D' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey 2>/dev/null || true)" "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']"
 check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count 2>/dev/null || true)" false
 
-resource_uuid="${RESOURCE_MONITOR_UUID:-Resource_Monitor@Ory0n}"
+resource_uuid="${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
 resource_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$resource_uuid"
 resource_schema_dir="$resource_dir/schemas"
-resource_schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.resource-monitor}"
+resource_schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.vitals}"
 if [[ -r "$resource_dir/metadata.json" ]]; then emit OK 'Resource Monitor payload' installed; else emit KO 'Resource Monitor payload' missing; fi
 check_source_marker 'Resource Monitor' "$resource_dir" "${RESOURCE_MONITOR_SOURCE_URL:-}" "${RESOURCE_MONITOR_REVIEW_ID:-}" "${RESOURCE_MONITOR_VERSION:-}"
 check_extension_state 'Resource Monitor' "$resource_uuid"

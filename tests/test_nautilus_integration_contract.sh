@@ -6,9 +6,10 @@ optional="$ROOT/manifests/packages-nautilus-optional.txt"
 module="$ROOT/modules/gnome/21_nautilus_integration.sh"
 doctor="$ROOT/diagnostics/nautilus-integration-doctor"
 
-for pkg in nautilus gvfs gvfs-gphoto2 gvfs-fuse gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus; do
+for pkg in nautilus gvfs gvfs-gphoto2 gvfs-fuse file-roller gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus; do
   grep -Fxq "$pkg" "$base" || { echo "missing Nautilus Golden package: $pkg" >&2; exit 1; }
 done
+if grep -Fxq gvfs-archive "$base"; then echo "removed Fedora 45 archive backend requested" >&2; exit 1; fi
 for pkg in gvfs-smb gvfs-mtp; do
   grep -Fxq "$pkg" "$optional" || { echo "missing optional Nautilus backend: $pkg" >&2; exit 1; }
 done

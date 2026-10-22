@@ -1,4 +1,4 @@
-# Inventaire logiciel — HOST Fedora 44 et VM Rocky DevOps
+# Inventaire logiciel — HOST Fedora 45 et VM Rocky DevOps
 
 Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora ou par le bootstrap Rocky Linux.
 
@@ -20,7 +20,7 @@ L'inventaire ci-dessous est détaillé volontairement. Pour le lire sans se perd
 
 **Important :** `SOFTWARE_INVENTORY.md` décrit le **catalogue**, pas le droit de lancer une installation. Ce droit dépend du profil Fedora promu, des guards, de la baseline, du dry-run et de la sauvegarde. Les paquets d'une VM Rocky Linux ne sont pas automatiquement installés sur le système Fedora HOST.
 
-Pour l'architecture d'ensemble : [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md). La transition Fedora 45 / GNOME 51 et ses différences de paquets sont traitées dans [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+Pour l'architecture d'ensemble : [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md). La référence Fedora 45 / GNOME 51 et ses conditions de promotion sont décrites dans [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
 
 
 ## 1. HOST — Fedora Golden Workstation
@@ -122,7 +122,7 @@ Socle Golden obligatoire :
 - gvfs
 - gvfs-gphoto2
 - gvfs-fuse
-- gvfs-archive
+- file-roller
 - gvfs-afc
 - gvfs-goa
 - gvfs-nfs
@@ -146,7 +146,7 @@ RPM Fedora :
 - gnome-shell-extension-blur-my-shell — installé mais désactivé dans le Golden courant
 - gnome-shell-extension-appindicator
 
-DING, Show Desktop Plus et Resource Monitor utilisent des artefacts GNOME Extensions revus. Tiling Assistant utilise la release GitHub officielle v55. Ces quatre archives sont épinglées dans config/gnome-extensions.lock et contrôlées par le projet ; avec les deux extensions RPM activées, elles forment les six extensions fonctionnelles du profil canonique.
+DING, Show Desktop Button et Vitals utilisent des artefacts GNOME Extensions revus. Tiling Assistant utilise la release GitHub officielle v56. Ces quatre archives sont épinglées dans config/gnome-extensions.lock et contrôlées par le projet ; avec les deux extensions RPM activées, elles forment les six extensions fonctionnelles du profil canonique.
 
 ### 1.8 Intégration desktop
 
@@ -532,7 +532,7 @@ rpm -qa | sort
 
 Après installation, ces sorties peuvent être archivées comme inventaire runtime ; elles complètent le contrat versionné de ce document.
 
-Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le montage GIO des archives de Fedora 44. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le ancien montage GIO des archives. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
 
 Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
 

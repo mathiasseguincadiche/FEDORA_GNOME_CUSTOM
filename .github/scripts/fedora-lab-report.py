@@ -11,7 +11,7 @@ DEFERRED = ("gate1_wsl2", "gate2_visual", "gate3_hardware",
             "production_apply", "windows_vm", "upstream_kernel_boot")
 
 
-def initialize(commit, release=44, extension_mode="curated"):
+def initialize(commit, release=45, extension_mode="curated"):
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("exact Git commit required")
     if (release, extension_mode) not in ((44, "curated"), (45, "native"), (45, "curated")):
@@ -61,7 +61,7 @@ def main():
     parser.add_argument("value", nargs="?")
     a = parser.parse_args()
     if a.action == "init":
-        release, mode = (a.value or "44:curated").split(":")
+        release, mode = (a.value or "45:curated").split(":")
         r = initialize(a.key, int(release), mode)
     else:
         r = json.loads(a.path.read_text())

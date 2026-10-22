@@ -1,4 +1,4 @@
-# Virtualisation — Fedora 44 / KVM / libvirt
+# Virtualisation — Fedora 45 / KVM / libvirt
 
 ## Rôle du document
 
@@ -14,7 +14,7 @@ Une contradiction entre ces fichiers, les scripts et ce document est un bug.
 ## Architecture de référence
 
 ```text
-Fedora 44 HOST
+Fedora 45 HOST
 │
 ├── KVM / QEMU / libvirt : qemu:///system
 │   ├── domaine rocky-devops

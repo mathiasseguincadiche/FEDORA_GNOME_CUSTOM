@@ -1,4 +1,4 @@
-# Cahier des charges — Golden Workstation Fedora 44
+# Cahier des charges — Golden Workstation Fedora 45
 
 **Révision documentaire : 1.9**  
 **Version du projet : voir [`../VERSION`](../VERSION)**
@@ -62,13 +62,13 @@ Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensi
 
 ## P1 — GNOME
 
-- GNOME 50 / Wayland / GTK4 / libadwaita ;
+- GNOME 51 / Wayland / GTK4 / libadwaita ;
 - Nautilus complet : GVfs SMB/MTP/GPhoto/FUSE/Archive/AFC/GOA/NFS, Sushi et intégration File Roller ;
 - vrai cold-start Files mesuré, cible 1200 ms, hard limit 2000 ms ;
 - doctor Nautilus fonctionnel distinct du benchmark cold-start ;
 - prewarm Portal/GIO sans pré-démarrer Nautilus ;
 - Dash to Dock **et AppIndicator** activés comme extensions fonctionnelles ;
-- DING, Show Desktop Plus et Resource Monitor intégrés au contrat Golden ;
+- DING, Show Desktop Button et Vitals intégrés au contrat Golden ;
 - Blur My Shell désactivé dans l'état Golden certifié ;
 - Ptyxis comme terminal Fedora natif avec Bash géré ; Toolbx non imposé au HOST Golden.
 

@@ -4,24 +4,9 @@ Le portail documentaire est [`README.md`](../README.md). Ce guide décrit le che
 
 ## Cible Fedora 45 et statut pending
 
-Le projet sépare **l'installation de référence** de **la future Golden Fedora 45 / GNOME 51** :
+La référence unique de cette procédure est **Fedora 45 Workstation / GNOME 51**, installée directement. La configuration centrale sélectionne `HOST_RELEASE="45"` ; aucune installation préalable de Fedora 44 ni migration n’est nécessaire.
 
-- **Fedora 44 / GNOME 50 :** ancien laboratoire de validation uniquement ; le gate de production refuse Fedora 44.
-- **La cible :** Fedora 45 / GNOME 51, mais `profiles/fedora45/profile.json` est encore `pending`.
-- **Installation neuve Fedora 45 :** exiger l'ISO finale signée, le profil promu, la CI du commit exact et le chemin de [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md#installation-neuve-directement-en-fedora-45). Tant que le profil est `pending`, aucune installation réelle n'est autorisée.
-
-### La méthode : observer, préparer, protéger, appliquer, certifier
-
-| Étape | Exemples | Preuve attendue |
-|---|---|---|
-| Observer | média, disque, configuration, doctors | identité authentifiée et composants reconnus |
-| Planifier | `./control.sh install dry-run` | plan du même commit, sans mutation |
-| Protéger | backup Borg pré-APPLY | archive vérifiée et restauration témoin |
-| Appliquer | `./control.sh install apply` **sur le PC réel uniquement** | modules convergés sans contourner les guards |
-| Certifier | Gate 3 | B580, écran, stockage, veille/réveil, KVM et backup vérifiés |
-
-**Règle de sécurité :** ne jamais passer à l'étape suivante sans pouvoir dire *ce qui change*, *ce qui prouve le résultat* et *quand s'arrêter*. Le [guide d'architecture illustré](ARCHITECTURE_PEDAGOGIQUE.md) explique le schéma global ; ce document reste la procédure de production.
-
+Le profil de production reste `pending` jusqu’à la promotion du média final signé et des composants revus. La configuration et le dry-run restent consultables pendant la préparation ; l’APPLY et la génération du Kickstart de production refusent un profil non promu. Les scripts historiques Fedora 44 sont décrits séparément dans [HISTORICAL_FEDORA44.md](HISTORICAL_FEDORA44.md).
 
 ## Avant de commencer
 

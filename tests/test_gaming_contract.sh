@@ -54,7 +54,7 @@ grep -Fq 'manifests/packages-gaming.txt' "$workflow" || fail 'gaming CI must con
 grep -Fq 'manifests/packages-gaming-rpmfusion.txt' "$workflow" || fail 'gaming CI must consume Steam manifest'
 grep -Fq 'fedora-workstation-repositories' "$workflow" || fail 'gaming CI must provision Fedora Steam repository definition'
 grep -Fq '/etc/yum.repos.d/rpmfusion-nonfree-steam.repo' "$workflow" || fail 'gaming CI must verify the Steam repository definition file'
-grep -Fq 'fedora:44' "$workflow" || fail 'gaming CI must run against Fedora 44'
+grep -Fq 'fedora:45' "$workflow" || fail 'gaming CI must run against Fedora 45'
 if grep -Eq '^[[:space:]]*steam([[:space:]]|$)' "$workflow"; then
   fail 'CI must not launch Steam in a headless container'
 fi

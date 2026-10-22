@@ -4,7 +4,7 @@
 fedora_install_target_release() { printf '45\n'; }
 
 fedora_require_install_target() {
-  [[ "${HOST_RELEASE:-44}" == "$(fedora_install_target_release)" ]] || return 1
+  [[ "${HOST_RELEASE:-45}" == "$(fedora_install_target_release)" ]] || return 1
   # Includes the actual OS identity and final signed-media/profile validation.
   fedora_require_selected
 }
@@ -16,10 +16,10 @@ fedora_actual_release() {
   awk -F= '$1=="VERSION_ID" {gsub(/"/,"",$2); print $2; exit}' "$os_file"
 }
 fedora_expected_gnome_major() {
-  case "${HOST_RELEASE:-44}" in 44) printf '50\n' ;; 45) printf '51\n' ;; *) return 1 ;; esac
+  case "${HOST_RELEASE:-45}" in 44) printf '50\n' ;; 45) printf '51\n' ;; *) return 1 ;; esac
 }
 fedora_require_profile() {
-  local release="${1:-${HOST_RELEASE:-44}}"
+  local release="${1:-${HOST_RELEASE:-45}}"
   case "$release" in
     44) return 0 ;;
     45) python3 "$REPO_ROOT/scripts/development/fedora-profile.py" validate "$REPO_ROOT" 45 ;;
@@ -28,7 +28,7 @@ fedora_require_profile() {
 }
 fedora_require_selected() {
   fedora_require_profile || return 1
-  [[ "$(fedora_actual_release)" == "${HOST_RELEASE:-44}" ]]
+  [[ "$(fedora_actual_release)" == "${HOST_RELEASE:-45}" ]]
 }
 fedora_shell_matches() {
   local major
@@ -36,20 +36,22 @@ fedora_shell_matches() {
   [[ "$1" =~ ^GNOME[[:space:]]Shell[[:space:]]([0-9]+)([.]|$) &&
      "${BASH_REMATCH[1]}" == "$major" ]]
 }
+# Configuration/manifest selection is read-only and may inspect a pending profile.
+# Production mutation remains guarded by fedora_require_install_target/profile.
 fedora_load_profile_extensions() {
-  [[ "${HOST_RELEASE:-44}" != 45 ]] || {
-    fedora_require_profile 45 || return 60
-    # The Python validator checks the SHA and assignment grammar before sourcing.
-    # shellcheck disable=SC1091
-    source "$REPO_ROOT/profiles/fedora45/gnome-extensions.lock"
-  }
+  case "${HOST_RELEASE:-45}" in
+    45)
+      source "$REPO_ROOT/config/gnome-extensions.lock"
+      ;;
+    44) source "$REPO_ROOT/profiles/fedora44/gnome-extensions.lock" ;;
+    *) return 60 ;;
+  esac
 }
 
 fedora_manifest_path() {
   local manifest="$1"
-  if [[ "${HOST_RELEASE:-44}" == 45 && "$manifest" == "$REPO_ROOT/manifests/packages-nautilus.txt" ]]; then
-    fedora_require_profile 45 || return 60
-    printf '%s\n' "$REPO_ROOT/profiles/fedora45/packages-nautilus.txt"
+  if [[ "$manifest" == "$REPO_ROOT/manifests/packages-nautilus.txt" && "${HOST_RELEASE:-45}" == 44 ]]; then
+    printf '%s\n' "$REPO_ROOT/profiles/fedora44/packages-nautilus.txt"
   else
     printf '%s\n' "$manifest"
   fi

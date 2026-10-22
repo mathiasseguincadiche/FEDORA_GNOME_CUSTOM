@@ -145,7 +145,7 @@ fi
 } > "$hardware_file"
 
 fedora_require_selected || exit "$EXIT_PRECHECK_FAILED"
-cp "$REPO_ROOT/installer/fedora${HOST_RELEASE:-44}-media.lock" "$media_file"
+cp "$REPO_ROOT/installer/fedora${HOST_RELEASE:-45}-media.lock" "$media_file"
 cp "$(validation_imported_proof_path 1)" "$gate1_file"
 cp "$(validation_imported_proof_path 2)" "$gate2_file"
 cp "$REPO_ROOT/config/performance-runtime.policy" "$performance_policy_file"

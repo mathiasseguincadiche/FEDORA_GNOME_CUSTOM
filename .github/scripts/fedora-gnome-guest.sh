@@ -10,7 +10,7 @@ LAB_USER=lab
 LAB_HOME=/home/lab
 LAB_UID="$(id -u "$LAB_USER")"
 EXPECTED_COMMIT="${2:-}"
-LAB_RELEASE="${3:-44}"
+LAB_RELEASE="${3:-45}"
 LAB_EXTENSION_MODE="${4:-curated}"
 printf 'Guest profile release=%s extensions=%s action=%s\n' "$LAB_RELEASE" "$LAB_EXTENSION_MODE" "${1:-missing}"
 case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native|45:curated) ;; *) echo 'Unsupported guest profile' >&2; exit 50;; esac
@@ -25,8 +25,8 @@ if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
   # Reviewed GNOME 51 candidate is read only for the isolated curated lab.
   # The native preview intentionally has no candidate dependency.
   source "$REPO/profiles/fedora45/gnome-extensions.lock"
-else
-  source "$REPO/config/gnome-extensions.lock"
+elif [[ "$LAB_RELEASE" == 44 ]]; then
+  source "$REPO/profiles/fedora44/gnome-extensions.lock"
 fi
 # shellcheck source=config/gnome.conf
 source "$REPO/config/gnome.conf"
@@ -266,7 +266,7 @@ CONF
       if [[ "$LAB_RELEASE" == 45 ]]; then
         as_user bash "$REPO/.github/scripts/fedora45-ci-install-extension.sh" "$prefix"
       else
-        as_user env FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
+        as_user env HOST_RELEASE="$LAB_RELEASE" FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
           bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
       fi
     done
