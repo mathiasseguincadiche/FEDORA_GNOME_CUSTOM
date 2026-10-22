@@ -25,11 +25,33 @@ fedora_lab_wait_greeter() {
           org.gnome.SettingsDaemon.UsbProtection 2>/dev/null | grep -Fxq '(true,)'; then
         continue
       fi
+      # Owning the Shell/USB names does not prove the Power process has
+      # finished startup. Exercise its own main-loop property handler before
+      # stopping this newly created greeter. GNOME 51 exports keyboard
+      # Brightness here; screen brightness moved to Shell. The keyboard value
+      # can be -1 in QEMU without a real backlight; only a successful reply
+      # is required, never a hardware brightness level.
+      if ! sudo -u "#$uid" env XDG_RUNTIME_DIR="/run/user/$uid" \
+          DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+          gdbus call --session --dest org.freedesktop.DBus \
+          --object-path /org/freedesktop/DBus \
+          --method org.freedesktop.DBus.NameHasOwner \
+          org.gnome.SettingsDaemon.Power 2>/dev/null | grep -Fxq '(true,)'; then
+        continue
+      fi
+      if ! sudo -u "#$uid" env XDG_RUNTIME_DIR="/run/user/$uid" \
+          DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+          gdbus call --session --timeout=2 --dest org.gnome.SettingsDaemon.Power \
+          --object-path /org/gnome/SettingsDaemon/Power \
+          --method org.freedesktop.DBus.Properties.Get \
+          org.gnome.SettingsDaemon.Power.Keyboard Brightness >/dev/null 2>&1; then
+        continue
+      fi
       if sudo -u "#$uid" env XDG_RUNTIME_DIR="/run/user/$uid" \
           DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
           gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell \
           --method org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1; then
-        printf 'Greeter ready: session=%s scope=active GNOME bus=ready USB protection bus=ready\n' "$sid"
+        printf 'Greeter ready: session=%s scope=active GNOME bus=ready USB protection bus=ready Power property=ready\n' "$sid"
         return 0
       fi
     done < <(loginctl list-sessions --no-legend | awk '{print $1}')
