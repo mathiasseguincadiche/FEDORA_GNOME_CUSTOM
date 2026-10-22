@@ -19,7 +19,7 @@ HOST_RELEASE=45
 if fedora_require_selected; then echo 'pending Fedora 45 accepted' >&2; exit 1; fi
 if fedora_require_install_target; then echo 'pending Fedora 45 accepted for production' >&2; exit 1; fi
 HOST_RELEASE=46
-if fedora_require_profile; then exit 1; fi
+if fedora_require_profile "$HOST_RELEASE"; then exit 1; fi
 python3 - "$ROOT" "$tmp" <<'PY'
 import hashlib, importlib.util, json, pathlib, sys
 root, work=map(pathlib.Path,sys.argv[1:])

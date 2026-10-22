@@ -20,9 +20,17 @@ jobs:
     container: registry.fedoraproject.org/fedora:45
     timeout-minutes: 60
     steps:
+      - name: Install Git before checkout
+        run: dnf -y --disablerepo=fedora-cisco-openh264 install git
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify the exact proposed source commit
+        env:
+          EXPECTED_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_COMMIT"
       - name: Exercise the production base installer in the fresh container
         shell: bash
         run: |
@@ -70,8 +78,15 @@ jobs:
           NO_COLOR=1 ./control.sh update all > /tmp/control-update-blocked.log 2>&1
           rc=$?
           set -e
-          test "$rc" -eq 50
-          grep -Fq 'Mutating updates are bare-metal only' /tmp/control-update-blocked.log
+          profile_status="$(python3 -c 'import json; print(json.load(open("profiles/fedora45/profile.json"))["status"])')"
+          if [[ "$profile_status" == pending ]]; then
+            test "$rc" -eq 20
+            grep -Fq 'Fedora 45 profile is pending' /tmp/control-update-blocked.log
+          else
+            test "$profile_status" = ready
+            test "$rc" -eq 50
+            grep -Fq 'Mutating updates are bare-metal only' /tmp/control-update-blocked.log
+          fi
       - name: Validate Fedora host Bash UX
         shell: bash
         run: |

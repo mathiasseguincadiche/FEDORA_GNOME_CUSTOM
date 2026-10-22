@@ -27,7 +27,7 @@ fedora_require_profile() {
   esac
 }
 fedora_require_selected() {
-  fedora_require_profile || return 1
+  fedora_require_profile "${HOST_RELEASE:-45}" || return 1
   [[ "$(fedora_actual_release)" == "${HOST_RELEASE:-45}" ]]
 }
 fedora_shell_matches() {

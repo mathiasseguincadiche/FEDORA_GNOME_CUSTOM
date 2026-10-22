@@ -23,7 +23,7 @@ fedora_shell_matches 'GNOME Shell 51.0' || fail 'GNOME 51 refused'
 if fedora_shell_matches 'GNOME Shell 50.5'; then fail 'GNOME 50 accepted for primary'; fi
 python3 "$REPO_ROOT/scripts/development/fedora-profile.py" candidate "$REPO_ROOT" 45
 [[ "$(fedora_manifest_path "$REPO_ROOT/manifests/packages-nautilus.txt")" == "$REPO_ROOT/manifests/packages-nautilus.txt" ]] || fail 'primary manifest not selected'
-if fedora_require_profile; then fail 'pending profile accepted for production'; fi
+if fedora_require_profile "$HOST_RELEASE"; then fail 'pending profile accepted for production'; fi
 # Installer refuses before a download or activation, even when called outside install.sh.
 cat > "$tmp/bin/curl" <<'STUB'
 #!/usr/bin/env bash

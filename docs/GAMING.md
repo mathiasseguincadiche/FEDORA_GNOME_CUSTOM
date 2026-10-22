@@ -147,3 +147,9 @@ La Golden Gaming ne :
 - installe pas Heroic/Lutris/Wine dans le socle Steam initial.
 
 Heroic ou Lutris pourront être évalués plus tard comme intégrations optionnelles après certification de la base Steam/Proton sur bare-metal.
+
+## Définition du dépôt Steam sur Fedora 45
+
+Le RPM Fedora `fedora-workstation-repositories` fournit maintenant `rpmfusion-nonfree-steam.repo` dans `/usr/share/dnf5/repos.d/`. L’installation et le doctor utilisent le fichier réellement fourni, vérifient son propriétaire RPM et la visibilité du dépôt par DNF5. Les systèmes ayant encore la définition dans `/etc/yum.repos.d/` restent reconnus. Le dépôt Steam est activé uniquement pour la transaction demandée. Aucun fichier de dépôt de remplacement n’est fabriqué.
+
+Source : [paquet officiel Fedora](https://packages.fedoraproject.org/pkgs/fedora-third-party-repos/fedora-workstation-repositories/fedora-45.html).
