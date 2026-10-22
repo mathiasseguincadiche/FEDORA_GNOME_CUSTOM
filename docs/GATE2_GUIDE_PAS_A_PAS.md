@@ -197,6 +197,7 @@ Les applications :
 - [ ] Nautilus s'ouvre et navigue correctement dans plusieurs dossiers
 - [ ] La prévisualisation des fichiers et l'ouverture des archives fonctionnent
 - [ ] Ptyxis se lance normalement depuis GNOME et s'affiche bien
+- [ ] Avec Nautilus et Ptyxis ouverts, sans document non enregistré, se déconnecter puis se reconnecter : aucune session figée, aucune unité utilisateur en échec et aucun coredump GNOME dans les journaux ; vérifier ensuite à nouveau les six extensions. Ce contrôle reste requis même si le scénario QEMU, qui ferme d’abord ses applications de test, réussit.
 
 Le bouton « Afficher le bureau » :
 

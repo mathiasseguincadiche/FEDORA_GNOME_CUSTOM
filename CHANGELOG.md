@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Laboratoire GNOME : fermer l’instance D-Bus réelle de Nautilus et vérifier la fin des processus avant déconnexion ; conserver les diagnostics de fermeture et refuser les clients bloqués. L’essai interactif avec applications ouvertes reste requis.
 - Détection de la définition Steam déplacée dans `/usr/share/dnf5/repos.d/` sur Fedora 45, avec vérification du propriétaire RPM, compatibilité du chemin historique et test de comportement.
 
 - Fedora 45 / GNOME 51 devient la référence d’installation neuve, de configuration et de CI principale. Les entrées Kickstart et de vérification de média restent bloquées sur un profil non promu.

@@ -100,6 +100,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_fedora_greeter_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_fedora_lab_close_clients_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_backup_certification_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_ci_gates_behavior.sh

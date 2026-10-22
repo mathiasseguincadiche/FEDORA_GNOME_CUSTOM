@@ -20,6 +20,8 @@ EXPECTED_GNOME_MAJOR="$((LAB_RELEASE+6))"
 source "$REPO/lib/backup_runtime.sh"
 # shellcheck source=.github/scripts/fedora-greeter-ready.sh
 source "$REPO/.github/scripts/fedora-greeter-ready.sh"
+# shellcheck source=.github/scripts/fedora-lab-close-clients.sh
+source "$REPO/.github/scripts/fedora-lab-close-clients.sh"
 # shellcheck source=config/gnome-extensions.lock
 if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
   # Reviewed GNOME 51 candidate is read only for the isolated curated lab.
@@ -293,6 +295,10 @@ CONF
     ;;
   end-session)
     settle_session
+    ps -u "$LAB_UID" -o pid,ppid,stat,comm,cgroup > /var/lib/fgc-lab/logout-processes-before.txt
+    as_user systemctl --user show org.gnome.Shell@user.service \
+      --property=MainPID,KillMode,TimeoutStopUSec,ControlGroup \
+      > /var/lib/fgc-lab/logout-shell-service.txt
     # The lab opens Nautilus and Ptyxis as dedicated transient user units.
     # Stop these test clients before ending GNOME: tearing down their Wayland
     # windows concurrently with Shell/Xwayland shutdown can stall Mutter's X11
@@ -316,6 +322,12 @@ CONF
         exit 1
       fi
     done
+    # A transient Nautilus launcher may already be inactive while the D-Bus
+    # application still owns its windows. Quit that instance and observe both
+    # actual client processes; unit state alone is insufficient evidence.
+    fedora_lab_close_clients "$LAB_UID" > /var/lib/fgc-lab/logout-clients-closed.txt
+    cat /var/lib/fgc-lab/logout-clients-closed.txt
+    ps -u "$LAB_UID" -o pid,ppid,stat,comm,cgroup > /var/lib/fgc-lab/logout-processes-after.txt
     # The unit stop returns before Mutter/Xwayland has necessarily drained
     # queued window teardown events in a software-rendered guest.
     sleep 3
@@ -457,6 +469,9 @@ PY
     rpm -qa | sort > /tmp/fgc-evidence/packages.txt
     loginctl list-sessions > /tmp/fgc-evidence/sessions.txt
     lsblk -f > /tmp/fgc-evidence/lsblk.txt
+    for logout_evidence in /var/lib/fgc-lab/logout-*.txt; do
+      [[ ! -f "$logout_evidence" ]] || cp "$logout_evidence" /tmp/fgc-evidence/
+    done
     if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
       [[ -s /var/lib/fgc-lab/gnome51-curated-runtime.json ]] || exit 1
       cp /var/lib/fgc-lab/gnome51-curated-runtime.json /tmp/fgc-evidence/gnome51-curated-runtime.json
