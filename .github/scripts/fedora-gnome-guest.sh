@@ -212,7 +212,7 @@ case "${1:-}" in
       as_user test -r "/opt/fgc-lab/extensions/$prefix.zip"
     done
     fi
-    dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
+    bash "$REPO/.github/scripts/dnf-retry.sh" dnf -y install @gnome-desktop ptyxis nautilus gvfs sushi file-roller \
       xdg-desktop-portal-gnome mesa-dri-drivers borgbackup jq git unzip \
       tpm2-tools firewalld python3 curl gjs gnome-shell-extension-dash-to-dock \
       gnome-shell-extension-appindicator gnome-text-editor libreoffice poppler-utils gnome-software dconf

@@ -29,10 +29,12 @@ persistent_data_owner_user() {
   printf '%s\n' "$candidate"
 }
 
-persistent_data_validate_mount() {
-  [[ "${1:-/data}" == /data ]] || return 1
+persistent_data_validate_mount_at() {
+  [[ "$1" == /data ]] || return 1
   python3 "$PERSISTENT_DATA_HELPER" validate --model "${EXPECTED_NVME_MODEL:-CT1000T705SSD3}" --identity "$(persistent_data_identity_path)" >/dev/null
 }
+
+persistent_data_validate_mount() { persistent_data_validate_mount_at /data; }
 
 persistent_data_path_allowed_for_daily_backup() {
   case "$1" in

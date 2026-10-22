@@ -74,6 +74,26 @@ if REPO_ROOT="$tmp/fixture" bash "$tmp/create_rocky_devops_vm.sh" >/dev/null 2>&
   echo 'KVM helper accepted executable local configuration' >&2; exit 1
 fi
 
+# A transient package mirror failure retries the exact command, at most three
+# times. Exhaustion must preserve the non-zero package-manager result.
+mkdir -p "$tmp/retry-bin"
+cat > "$tmp/retry-bin/dnf5" <<'PKG'
+#!/usr/bin/env bash
+n=0; [[ ! -r "$RETRY_COUNTER" ]] || n="$(cat "$RETRY_COUNTER")"
+n=$((n+1)); echo "$n" > "$RETRY_COUNTER"
+printf '%s\n' "$*" >> "$RETRY_ARGS"
+(( n >= RETRY_SUCCESS_AFTER )) || exit 37
+PKG
+printf '#!/usr/bin/env bash\n[[ "$1" == 10 ]]\n' > "$tmp/retry-bin/sleep"
+chmod +x "$tmp/retry-bin/"*
+export RETRY_COUNTER="$tmp/retry-count" RETRY_ARGS="$tmp/retry-args"
+env PATH="$tmp/retry-bin:$PATH" RETRY_SUCCESS_AFTER=3 bash "$ROOT/.github/scripts/dnf-retry.sh" dnf5 --setopt=gpgcheck=1 install fixture >/dev/null 2>&1
+[[ "$(cat "$RETRY_COUNTER")" == 3 && "$(sort -u "$RETRY_ARGS")" == '--setopt=gpgcheck=1 install fixture' ]]
+rm "$RETRY_COUNTER" "$RETRY_ARGS"
+rc=0
+env PATH="$tmp/retry-bin:$PATH" RETRY_SUCCESS_AFTER=99 bash "$ROOT/.github/scripts/dnf-retry.sh" dnf5 install fixture >/dev/null 2>&1 || rc=$?
+[[ "$rc" == 37 && "$(cat "$RETRY_COUNTER")" == 3 ]]
+
 # Count only unique cycles bound to the current configuration, proof chain,
 # display and graphics runtime. No simulated cycle certifies real hardware.
 source "$ROOT/lib/evidence.sh"

@@ -73,7 +73,7 @@ nautilus_helper="$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh"
   || fail "$data_mount is not a dedicated mounted target"
 [[ "$(findmnt -n -T "$data_mount" -o FSTYPE 2>/dev/null || true)" == "${KVM_DATA_FSTYPE:-ext4}" ]] \
   || fail "$data_mount must be ${KVM_DATA_FSTYPE:-ext4}"
-persistent_data_validate_mount "$data_mount" || fail 'physical /data identity is missing or changed'
+persistent_data_validate_mount_at "$data_mount" || fail 'physical /data identity is missing or changed'
 [[ -r "$smb_source" && -r "$integration_source" ]] || fail 'Windows integration scripts missing'
 
 sudo virsh --connect "$uri" pool-info "$pool" >/dev/null || fail "libvirt pool missing: $pool"
