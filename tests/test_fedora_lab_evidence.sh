@@ -152,6 +152,9 @@ assert "journal_health 0" in logout
 assert "TimeoutStopSec=30s" in guest
 assert "org.gnome.Shell@user.service.d" in guest
 assert guest.index("90-fgc-lab-shutdown.conf") < guest.index('as_user systemctl --user daemon-reload')
+assert 'configure-shell-lifecycle.sh" apply' in guest
+assert 'tests/integration/gnome-shell-child-lifecycle.py' in guest
+assert '50-fgc-child-lifecycle.conf' in guest
 assert logout.index('as_user systemctl --user stop "$unit"') < logout.index("sleep 3")
 assert logout.index("sleep 3") < logout.index("gnome-session-quit --logout --no-prompt")
 assert "journal_health 0" in logout

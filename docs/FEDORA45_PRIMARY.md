@@ -6,7 +6,7 @@ Fedora 45 Workstation et GNOME 51 sont la cible unique de l’installation neuve
 
 La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` reste `pending` : on peut consulter la configuration, le centre de contrôle et le dry-run, mais l’APPLY et les générateurs Kickstart de production refusent de continuer.
 
-Le 21 octobre 2026, la [page officielle Workstation](https://fedoraproject.org/workstation/download/) présente encore Fedora 44 comme téléchargement final. Aucun verrou de média final Fedora 45 n’est inventé. Les images Beta utilisées par les laboratoires restent des supports de test.
+La publication du média final se vérifie sur la [page officielle Workstation](https://fedoraproject.org/workstation/download/). Le statut de préparation du projet ne remplace pas cette vérification : aucun verrou final n’est créé avant authentification de l’ISO finale et de son CHECKSUM signé. Les images Beta utilisées par les laboratoires restent des supports de test.
 
 La promotion exige :
 
@@ -39,6 +39,8 @@ Les conteneurs principaux (paquets, installation en dry-run, Borg, bureau, jeux,
 Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même si le rapport d’état se termine correctement. Le laboratoire [Fedora 44 historique](HISTORICAL_FEDORA44.md) est facultatif et lancé manuellement.
 
 Le scénario QEMU ferme ses applications de test (action D-Bus `quit` de Nautilus) avant la déconnexion et vérifie l’absence réelle des processus Nautilus et Ptyxis. Nautilus utilise une instance D-Bus : l’arrêt de son seul lanceur ne suffit pas. Les journaux, les états de service et les processus avant/après fermeture sont conservés ; un blocage du compositeur, une unité en échec ou un coredump fait échouer le scénario. Cette vérification ne remplace pas l’essai de déconnexion avec des applications ouvertes lors de la qualification interactive.
+
+Le module `gnome.core` installe aussi un drop-in utilisateur `org.gnome.Shell@user.service.d/50-fgc-child-lifecycle.conf` et vérifie que `KillMode=mixed` est effectif. Le signal d’arrêt est d’abord envoyé à Shell pour que Mutter ferme ses enfants Xwayland dans son ordre normal ; systemd conserve le nettoyage final de tout le groupe. Le délai d’arrêt reste celui du paquet en production. Le laboratoire utilise exactement le même fichier et exerce cet ordre avec deux services de test réels, dont un témoin négatif reproduisant l’arrêt prématuré d’un enfant. Les déconnexions GNOME complètes restent contrôlées séparément.
 
 ## Données et parcours final
 

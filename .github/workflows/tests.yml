@@ -31,6 +31,7 @@ jobs:
           python3 tests/test_fedora45_ding_shutdown_fix.py
           python3 tests/test_fedora45_extension_list_behavior.py
           bash tests/test_fedora45_extension_info_behavior.sh
+          bash tests/test_gnome_shell_lifecycle_behavior.sh
           bash -n .github/scripts/fedora45-ci-install-extension.sh
 
       - name: Install real Borg integration-test dependency

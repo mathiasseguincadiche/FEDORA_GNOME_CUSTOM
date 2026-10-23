@@ -48,7 +48,7 @@ Le pourquoi, les piliers, le matériel complet et les décisions du propriétair
 - Secure Boot actif ou indéterminé bloque l'installation, sans désactivation automatique ;
 - après changement de noyau, la certification peut devenir `STALE` et doit être refaite.
 
-Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensions indépendant et une qualification du profil. Voir [UPGRADE_FEDORA_45.md](UPGRADE_FEDORA_45.md).
+Le profil Fedora 45 / GNOME 51 exige un média final signé, un verrou d'extensions indépendant et une qualification du profil. Voir [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
 
 ## P1 — données persistantes
 

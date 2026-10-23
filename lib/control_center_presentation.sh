@@ -313,7 +313,7 @@ Usage:
   ./control.sh install dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
   ./control.sh update status|log|reboot|finalize
-  ./control.sh backup now|now-with-vms|daily|list|check|deep|restore [snapshot]|dr-plan|prune
+  ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora

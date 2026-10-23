@@ -55,8 +55,7 @@ for doc in docs/VIRTUALIZATION.md docs/VM_PROFILES.md; do
 done
 
 # Every executable Windows creation example must include both mandatory trusted
-# publisher/source hashes. This catches drift in both direct-engine docs and the
-# public Control Center documentation.
+# publisher/source hashes and media paths, including the README quick examples.
 python3 - "$ROOT" <<'PY'
 from pathlib import Path
 import re
@@ -69,7 +68,8 @@ engine_docs = [
     root / "docs/VM_PROFILES.md",
     root / "docs/RUNBOOK_KVM.md",
 ]
-public_docs = [root / "docs/CONTROL_CENTER.md"]
+public_docs = [root / "README.md", root / "docs/CONTROL_CENTER.md"]
+required_options = ("--windows-iso", "--virtio-iso", "--windows-sha256", "--virtio-sha256")
 errors = []
 
 for path in engine_docs:
@@ -80,8 +80,9 @@ for path in engine_docs:
         errors.append(f"{path.name}: no executable direct Windows creation example")
         continue
     for block in windows:
-        if "--windows-sha256" not in block or "--virtio-sha256" not in block:
-            errors.append(f"{path.name}: direct Windows creation block omits mandatory trusted hashes")
+        missing = [option for option in required_options if option not in block]
+        if missing:
+            errors.append(f"{path.name}: direct Windows creation block omits {', '.join(missing)}")
 
 for path in public_docs:
     text = path.read_text(encoding="utf-8")
@@ -91,8 +92,9 @@ for path in public_docs:
         errors.append(f"{path.name}: no public Windows creation example")
         continue
     for block in windows:
-        if "--windows-sha256" not in block or "--virtio-sha256" not in block:
-            errors.append(f"{path.name}: public Windows creation block omits mandatory trusted hashes")
+        missing = [option for option in required_options if option not in block]
+        if missing:
+            errors.append(f"{path.name}: public Windows creation block omits {', '.join(missing)}")
 
 if errors:
     for error in errors:
