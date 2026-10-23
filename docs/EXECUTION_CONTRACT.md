@@ -19,7 +19,7 @@ Les paramètres spécifiques au poste réel sont placés dans `config/local.conf
 `./install.sh --apply` est exclusivement bare-metal et exige :
 
 1. runtime bare-metal réel ;
-2. Fedora 45 réellement démarré avec `HOST_RELEASE=45` et un profil final promu ; Fedora 45 et Fedora 45 pending sont refusés ;
+2. Fedora 45 réellement démarré avec `HOST_RELEASE=45` et un profil final promu `ready` ; une autre version ou un profil `pending` sont refusés ;
 3. approbation explicite de la machine réelle ;
 4. TTY interactif ;
 5. dépôt Git propre ;

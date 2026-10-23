@@ -24,7 +24,7 @@ flowchart LR
 
 1. [**Pourquoi ? — Vision**](VISION.md) : les objectifs et les compromis de cette workstation.
 2. [**Comment ? — Architecture pédagogique**](ARCHITECTURE_PEDAGOGIQUE.md) : des schémas accompagnés de leur explication, du code jusqu'à la certification.
-3. [**Pour quelle Fedora ? — Fedora 45 / GNOME 51**](UPGRADE_FEDORA_45.md) : ce qui est déjà testé, ce qui reste `pending` et pourquoi.
+3. [**Pour quelle Fedora ? — Fedora 45 / GNOME 51**](FEDORA45_PRIMARY.md) : la cible d'installation neuve, ce qui est testé et les conditions de promotion du profil `pending`.
 4. [**Comment agir en sécurité ? — Control Center**](CONTROL_CENTER.md), puis [installation](INSTALLATION_GUIDE.md) et [validation](THREE_GATE_VALIDATION.md).
 
 **Avant toute installation sur le PC :** [prévalidation USB Live Fedora 45 (cinq contrôles, 10 à 15 minutes)](FEDORA45_LIVE_PREFLIGHT.md). Le GO Live ne vaut ni promotion du profil, ni certification Gate 3.
@@ -41,13 +41,14 @@ Pour une lecture progressive avec objectifs d'apprentissage : [LEARNING_PATH.md]
 |---|---|---|
 | **Savoir pourquoi le projet existe** | [`VISION.md`](VISION.md) | [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) |
 | **Comprendre le projet et ses schémas** | **[`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md)** | [`LEARNING_PATH.md`](LEARNING_PATH.md), puis [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
-| **Évaluer les prochaines améliorations 2026** | [`ROADMAP_FEDORA45_2026.md`](ROADMAP_FEDORA45_2026.md) | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) |
+| **Évaluer les prochaines améliorations 2026** | [`ROADMAP_FEDORA45_2026.md`](ROADMAP_FEDORA45_2026.md) | [`FEDORA45_PRIMARY.md`](FEDORA45_PRIMARY.md) |
 | **Diagnostiquer les couleurs et le blanc sur Intel Arc B580** | [`DISPLAY_COLOR_DIAGNOSTIC.md`](DISPLAY_COLOR_DIAGNOSTIC.md) | [`PHYSICAL_QUALIFICATION_CHECKLIST.md`](PHYSICAL_QUALIFICATION_CHECKLIST.md) |
 | **Utiliser la workstation** | [`CONTROL_CENTER.md`](CONTROL_CENTER.md) | guide spécialisé selon le besoin |
 | **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
 | **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
 | **Utiliser KVM** | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
-| **Préparer Fedora 45 / GNOME 51** | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) | `./scripts/development/release-readiness.sh` |
+| **Préparer l'installation neuve Fedora 45 / GNOME 51** | [`FEDORA45_PRIMARY.md`](FEDORA45_PRIMARY.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
+| **Migrer un poste déjà sous Fedora 44** | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) |
 | **Comprendre le bureau GNOME** | [`GNOME.md`](GNOME.md) | [`GNOME_POLISH.md`](GNOME_POLISH.md) |
 | **Comprendre Linux amont** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-officiel-linux-amont) | [`UPSTREAM_LINUX.md`](UPSTREAM_LINUX.md) |
 | **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
@@ -290,6 +291,7 @@ Les comptes rendus d'étapes passées (non normatifs) sont rangés dans [`histor
 ## Transition de release
 
 - [Linux amont officiel et N/N-1](UPSTREAM_LINUX.md)
-- [Préparation Fedora 45 / GNOME 51 et mise à niveau](UPGRADE_FEDORA_45.md)
+- [Installation neuve Fedora 45 / GNOME 51 et promotion du profil](FEDORA45_PRIMARY.md)
+- [Migration facultative d'un poste déjà sous Fedora 44](UPGRADE_FEDORA_45.md)
 
 - [Complétion desktop, applications et périphériques](DESKTOP_COMPLETION.md) — maintenance GNOME, flux réels, Brio/ALC4080 et afficheur LD240 facultatif.

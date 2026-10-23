@@ -6,7 +6,7 @@ Fedora 45 Workstation et GNOME 51 sont la cible unique de l’installation neuve
 
 La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` reste `pending` : on peut consulter la configuration, le centre de contrôle et le dry-run, mais l’APPLY et les générateurs Kickstart de production refusent de continuer.
 
-Le 21 octobre 2026, la [page officielle Workstation](https://fedoraproject.org/workstation/download/) présente encore Fedora 44 comme téléchargement final. Aucun verrou de média final Fedora 45 n’est inventé. Les images Beta utilisées par les laboratoires restent des supports de test.
+La publication du média final se vérifie sur la [page officielle Workstation](https://fedoraproject.org/workstation/download/). Le statut de préparation du projet ne remplace pas cette vérification : aucun verrou final n’est créé avant authentification de l’ISO finale et de son CHECKSUM signé. Les images Beta utilisées par les laboratoires restent des supports de test.
 
 La promotion exige :
 

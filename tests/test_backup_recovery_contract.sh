@@ -62,6 +62,11 @@ fi
 if grep -Fq -- 'now-with-vms)' "$ROOT/lib/control_center.sh"; then
   echo 'Control Center still exposes VM backups' >&2; exit 1
 fi
+for file in README.md docs/CONTROL_CENTER.md lib/control_center_presentation.sh; do
+  if grep -Fq 'now-with-vms' "$ROOT/$file"; then
+    echo "Unsupported automatic VM backup advertised in $file" >&2; exit 1
+  fi
+done
 for p in scripts/backup/backup-now.sh prepare-preapply-backup.sh scripts/backup/daily-user-backup.sh; do
   grep -Fq -- 'libvirt/*' "$ROOT/$p" || {
     echo "Borg path lacks a libvirt exclusion: $p" >&2; exit 1;

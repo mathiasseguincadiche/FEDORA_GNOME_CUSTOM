@@ -289,7 +289,6 @@ Voir [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) et [`RUNBOOK_KVM.md`](RUNBOOK_KVM.
 
 ```bash
 ./control.sh backup now
-./control.sh backup now-with-vms
 ./control.sh backup daily
 ./control.sh backup list
 ./control.sh backup check
@@ -299,7 +298,7 @@ Voir [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) et [`RUNBOOK_KVM.md`](RUNBOOK_KVM.
 ./control.sh backup prune
 ```
 
-Les restores restent staging-first. Les VM doivent être arrêtées pour le backup de leurs disques.
+Les restaurations passent par une zone de staging à inspecter avant récupération. Borg protège le HOST et les données utilisateur, dont `/data/IA/Openclaw` ; les disques et métadonnées de VM restent exclus. Le propriétaire réalise ses exports de VM manuellement, hors des scripts de sauvegarde. Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 ## Certification
 

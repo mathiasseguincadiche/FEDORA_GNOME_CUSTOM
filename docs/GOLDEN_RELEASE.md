@@ -16,12 +16,14 @@ gnome-extensions.tsv
 runtime-stack.tsv
 enabled-repositories.txt
 hardware-ids.txt
-fedora44-media.lock
+fedora-media.lock
 performance-runtime.policy
 gate1-proof.json
 gate2-proof.json
 MANIFEST.sha256
 ```
+
+Le verrou du média de la release active (`installer/fedora45-media.lock` après promotion du profil 45) est copié dans le bundle sous le nom générique `fedora-media.lock`, inclus dans `MANIFEST.sha256`.
 
 ## Golden Release, ISO Fedora et sauvegarde : trois objets différents
 

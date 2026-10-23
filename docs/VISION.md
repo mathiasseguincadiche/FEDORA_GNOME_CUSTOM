@@ -6,7 +6,7 @@ Ce document est la **boussole** du projet. Il dit ce que le propriétaire veut o
 
 Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, et que ce soit la meilleure installation Fedora GNOME possible :
 
-- **la plus récente** : dernière Fedora et dernier GNOME stables (Fedora 45 / GNOME 51 aujourd'hui, Fedora 45 / GNOME 51 dès qu'ils sont finaux et qualifiés, voir [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md)) ;
+- **la plus récente** : cible Fedora 45 Workstation / GNOME 51, installable après qualification du média final et promotion du profil, voir [`FEDORA45_PRIMARY.md`](FEDORA45_PRIMARY.md) ;
 - **la plus finie** : Fedora livre GNOME brut, ce projet lui donne la finition qu'Ubuntu apporte à GNOME ;
 - **la plus performante et réactive** pour un usage de bureau quotidien ;
 - **reproductible et récupérable** : on peut tout réinstaller à l'identique, et ne rien perdre.
@@ -19,7 +19,7 @@ Pourquoi un dépôt plutôt qu'une installation à la main : pour que chaque ré
 
 **Avec la Golden** : les choix sont inscrits dans le dépôt ; l'installateur vérifie le média et la machine ; les modules installent les composants prévus ; `/data` conserve les fichiers ; Borg permet une récupération externe ; les diagnostics et les preuves montrent ce qui fonctionne réellement.
 
-La cible est **Fedora 45 Workstation + GNOME 51**, avec une ergonomie personnelle soignée et une pile matérielle adaptée au Ryzen 7 7700, à l'Arc B580 et aux deux Crucial T705. La stratégie reste progressive : **la référence actuellement disponible demeure Fedora 45 / GNOME 51 jusqu'à la promotion explicite et qualifiée du profil 45**. Le projet recherche une installation fiable, pas un affichage prématuré du dernier numéro de version.
+La cible est **Fedora 45 Workstation + GNOME 51**, avec une ergonomie personnelle soignée et une pile matérielle adaptée au Ryzen 7 7700, à l'Arc B580 et aux deux Crucial T705. Cette référence de configuration et de CI ne vaut pas autorisation d'installation : **le profil reste `pending` jusqu'à la qualification du média final signé et des paquets stables retenus, puis sa promotion revue**. La certification du matériel intervient ensuite sur le PC réel.
 
 Cette démarche est aussi un support d'apprentissage DevOps : versionner la configuration, séparer les environnements, automatiser les vérifications, comprendre les erreurs et conserver des preuves. Voir le [schéma pédagogique de bout en bout](ARCHITECTURE_PEDAGOGIQUE.md).
 

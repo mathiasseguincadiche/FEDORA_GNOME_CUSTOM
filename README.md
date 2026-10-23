@@ -18,7 +18,7 @@
 
 **Golden Workstation 0.22.3**
 
-**Mon objectif : une installation Golden de Fedora 45 Workstation + GNOME 51, pensée pour le matériel exact de mon PC.** Le dépôt décrit comment préparer, installer, personnaliser, maintenir, sauvegarder et qualifier le poste. Fedora 45 / GNOME 51 est la référence de configuration et de CI. Fedora 44 est réservé au [laboratoire historique facultatif](docs/HISTORICAL_FEDORA44.md). Fedora 45 reste bloqué jusqu'à la promotion de son profil `pending`.
+Le dépôt décrit comment préparer, personnaliser, maintenir, sauvegarder et qualifier ce poste. **L'installation de production reste bloquée** tant que le média final signé et les paquets stables requis ne sont pas qualifiés et que le profil `pending` n'est pas promu. [Conditions de promotion](docs/FEDORA45_PRIMARY.md).
 
 **État logiciel : CODE-READY seulement après CI verte du commit exact** · **Certification matérielle : Gate 3 bare-metal à exécuter**
 
@@ -94,7 +94,7 @@ La Golden **n'est pas** une distribution Fedora dérivée, une ISO personnalisé
 | **Code / contrats** | `CODE-READY` |
 | **CI et protection de `main`** | Les contextes obligatoires du ruleset et les workflows exécutés sont distincts : voir [gouvernance](docs/GITHUB_GOVERNANCE.md) et [Actions](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions). Ne pas déduire le statut courant d'une ancienne PR. |
 | **Matériel cible** | MSI MAG B850M MORTAR WIFI · Ryzen 7 7700 · Arc B580 · 48 Gio · 2× Crucial T705 |
-| **Fedora 45 / GNOME 51** | Préparé et vérifié en CI ; profil `pending` jusqu'à l'ISO finale signée ([détails](docs/FEDORA45_PRIMARY.md)) |
+| **Fedora 45 / GNOME 51** | Référence de configuration et de CI ; profil `pending` jusqu'à qualification du média final signé et des paquets stables, puis promotion revue ([détails](docs/FEDORA45_PRIMARY.md)) |
 | **Certification physique** | **PENDING** — Gate 3 bare-metal |
 | **Golden runtime-certified** | Non, tant que `gate3 certify` n'a pas réussi sur la machine cible |
 
@@ -179,13 +179,7 @@ Pour les responsabilités des composants, les conditions d'installation et les n
 
 ## Fedora 45 / GNOME 51
 
-### Installation neuve directe
-
-La référence du projet est **Fedora 45 Workstation / GNOME 51** : configuration par défaut, paquets, extensions, diagnostics et contrôles principaux. Aucun passage par Fedora 44 ni commande `upgrade` n’est requis pour une installation neuve.
-
-Le profil reste **pending** jusqu’à l’authentification du média final et à la disponibilité des composants retenus dans les dépôts de production. Choisir Fedora 45 ne supprime pas ces conditions. La CI exerce aussi les six extensions dans un laboratoire QEMU isolé ; une réussite en VM ne certifie pas le PC.
-
-Commencer par le [guide d’installation neuve](docs/INSTALLATION_GUIDE.md). La [migration d’un ancien système Fedora 44](docs/UPGRADE_FEDORA_45.md) et le [laboratoire historique](docs/HISTORICAL_FEDORA44.md) sont des parcours facultatifs séparés. **Les exports de VM restent exclusivement manuels.**
+L'installation neuve suit directement le [guide Fedora 45 / GNOME 51](docs/INSTALLATION_GUIDE.md), après [promotion du profil](docs/FEDORA45_PRIMARY.md). La [migration depuis Fedora 44](docs/UPGRADE_FEDORA_45.md) concerne uniquement les anciens postes ; le [laboratoire Fedora 44](docs/HISTORICAL_FEDORA44.md) reste historique et facultatif.
 
 ## Les quatre piliers
 
@@ -314,7 +308,7 @@ Le contrat interdit les tweaks globaux non mesurés : pas de `sysctl -w` de perf
 
 ---
 
-## Finition du bureau « Ubuntu-grade »
+## Finition du bureau Ubuntu-grade
 
 Fedora livre GNOME brut ; Ubuntu y ajoute une finition. Le module `gnome.polish` apporte **la même finition sur Fedora** ([`docs/GNOME_POLISH.md`](docs/GNOME_POLISH.md), [ADR 0013](docs/adr/0013-ubuntu-grade-gnome-polish.md)) :
 
@@ -393,11 +387,19 @@ Profils prévus :
 
 ```bash
 ./control.sh kvm status
-./control.sh kvm create-rocky
-./control.sh kvm create-windows
 ```
 
-Voir [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md) et [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md).
+Pour créer Windows, fournir les deux ISO et leurs empreintes SHA-256 issues des sources de confiance. Remplacer les valeurs d'exemple avant exécution :
+
+```bash
+./control.sh kvm create-windows \
+  --windows-iso /data/libvirt/iso/windows-11.iso \
+  --virtio-iso /data/libvirt/iso/virtio-win.iso \
+  --windows-sha256 '<sha256-windows-de-confiance>' \
+  --virtio-sha256 '<sha256-virtio-de-confiance>'
+```
+
+La préparation de l'image Rocky signée, les préconditions et les deux procédures de création sont dans [`docs/KVM_QUICKSTART.md`](docs/KVM_QUICKSTART.md). Voir [`docs/VIRTUALIZATION.md`](docs/VIRTUALIZATION.md) pour les contrats techniques.
 
 ---
 
@@ -439,7 +441,6 @@ T705 données perdu
 
 ```bash
 ./control.sh backup now
-./control.sh backup now-with-vms
 ./control.sh backup check
 ./control.sh backup deep
 ./control.sh backup restore latest
@@ -514,9 +515,7 @@ Lire [`CONTRIBUTING.md`](CONTRIBUTING.md) avant d'ouvrir une PR. Les bugs, probl
 
 ---
 
-# Validation complète — à lire avant l'installation de production
-
-La validation est volontairement placée en fin de README : elle **prouve** le projet, mais elle n'est pas son interface quotidienne.
+## Validation complète — à lire avant l'installation de production
 
 > Gate 1 et Gate 2 sont des prévalidations avant installation de production. **Gate 3 est la certification de la vraie machine après installation/APPLY** ; il ne peut donc pas être déclaré PASS à l'avance.
 
@@ -524,32 +523,15 @@ La validation est volontairement placée en fin de README : elle **prouve** le p
   <img src="docs/assets/validation-gates-direct.svg" alt="Validation complète : Gate 1 WSL2, Gate 2 VirtualBox, installation bare-metal, APPLY protégé, Gate 3 physique, Golden PASS" width="100%">
 </p>
 
-## Gate 1 — système / WSL2
+### Gate 1 — système / WSL2
 
-```bash
-./control.sh validate gate1 run
-./control.sh validate gate1 status
-./control.sh validate export 1 /chemin/export
-```
+Le [guide WSL2](docs/WSL2_VALIDATION.md) décrit l'exécution et l'export de la preuve portable, avec `hardware_certification=DEFERRED`.
 
-La preuve est portable et porte `hardware_certification=DEFERRED`.
+### Gate 2 — GNOME / VirtualBox
 
-## Gate 2 — GNOME / VirtualBox
+Après import de la preuve Gate 1, le [guide Gate 2 pas à pas](docs/GATE2_GUIDE_PAS_A_PAS.md) vérifie GNOME 51/Wayland, Nautilus, Ptyxis, extensions et contrôles visuels. La preuve ne déverrouille pas l'APPLY bare-metal.
 
-Importer la preuve Gate 1 puis exécuter :
-
-```bash
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate gate2 plan
-./control.sh validate gate2 apply
-./control.sh validate gate2 check
-./control.sh validate gate2 sign
-./control.sh validate export 2 /chemin/export
-```
-
-Gate 2 valide GNOME 51/Wayland, Nautilus, Ptyxis, extensions et contrôle visuel, sans déverrouiller l'APPLY bare-metal.
-
-## Installation bare-metal
+### Installation bare-metal
 
 La procédure détaillée est dans [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md). Le chemin normal est :
 
@@ -571,28 +553,8 @@ reboot sur le dernier Linux amont stable N
 qualification matérielle Gate 3
 ```
 
-## Gate 3 — certification physique
+### Gate 3 — certification physique
 
-Importer les preuves Gate 1 puis Gate 2 sur le HOST :
+Après installation et redémarrage, importer les preuves Gate 1 et Gate 2 sur le HOST, puis qualifier GPU/Vulkan, LAN, Wi-Fi, audio, affichage VRR/HDR, KVM/Windows et cinq cycles veille/réveil. Le [guide des trois gates](docs/THREE_GATE_VALIDATION.md) et le [runbook de clôture](docs/GOLDEN_COMPLETENESS_CLOSURE.md) donnent les commandes et preuves requises avant `./control.sh validate gate3 certify`.
 
-```bash
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate import /chemin/gate2-<commit>.json
-./control.sh validate gate3 status
-```
-
-Produire ensuite les preuves physiques prévues par le runbook : GPU/Vulkan, LAN, Wi-Fi, audio, affichage VRR/HDR, KVM/Windows et cinq cycles veille/réveil. Les commandes détaillées sont documentées dans [`docs/THREE_GATE_VALIDATION.md`](docs/THREE_GATE_VALIDATION.md) et [`docs/GOLDEN_COMPLETENESS_CLOSURE.md`](docs/GOLDEN_COMPLETENESS_CLOSURE.md).
-
-Après chaque vrai cycle suspend/resume :
-
-```bash
-./control.sh validate gate3 record-suspend
-```
-
-Certification finale :
-
-```bash
-./control.sh validate gate3 certify
-```
-
-Un PASS produit le marker Golden et [`golden-release.json`](docs/GOLDEN_RELEASE.md). Tant que cette commande n'a pas réussi sur le matériel cible, le dépôt est **code-ready**, mais la workstation physique n'est pas encore **Golden runtime-certified**.
+Un PASS produit le marker Golden et [`golden-release.json`](docs/GOLDEN_RELEASE.md). La workstation devient **Golden runtime-certified** uniquement après cette certification sur le matériel cible.

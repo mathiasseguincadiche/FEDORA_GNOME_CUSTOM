@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Documentation : orienter l'installation neuve vers le profil Fedora 45, harmoniser `pending`/`ready`, corriger le nom du verrou média dans le bundle et compléter les exemples de création Windows. Retirer l'ancienne commande de sauvegarde des VM des guides et de l'aide ; les exports restent manuels. Le README renvoie aux guides pour les procédures détaillées des trois gates.
+
 - Laboratoire GNOME : fermer l’instance D-Bus réelle de Nautilus et vérifier la fin des processus avant déconnexion ; conserver les diagnostics de fermeture et refuser les clients bloqués. L’essai interactif avec applications ouvertes reste requis.
 - Détection de la définition Steam déplacée dans `/usr/share/dnf5/repos.d/` sur Fedora 45, avec vérification du propriétaire RPM, compatibilité du chemin historique et test de comportement.
 
