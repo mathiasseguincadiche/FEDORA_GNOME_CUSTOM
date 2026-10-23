@@ -101,6 +101,9 @@ require_session() {
   as_user systemctl --user is-active --quiet graphical-session.target
   as_user gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell \
     --method org.freedesktop.DBus.Peer.Ping
+  if [[ "$LAB_RELEASE" == 45 ]]; then
+    as_user env HOST_RELEASE=45 bash "$REPO/scripts/gnome/configure-shell-lifecycle.sh" verify
+  fi
 }
 extension_settings() {
   for key in enabled-extensions disabled-extensions disable-user-extensions; do
@@ -275,6 +278,14 @@ CONF
     fi
     # Use the persistent user bus: multiple private dconf daemons can race.
     as_user systemctl --user daemon-reload
+    if [[ "$LAB_RELEASE" == 45 ]]; then
+      # Same owned-child shutdown policy as production, with real systemd
+      # negative/positive controls before the complete GNOME logout exercises.
+      as_user env HOST_RELEASE=45 bash "$REPO/scripts/gnome/configure-shell-lifecycle.sh" apply
+      as_user python3 "$REPO/tests/integration/gnome-shell-child-lifecycle.py" \
+        "$REPO/systemd/user/org.gnome.Shell@user.service.d/50-fgc-child-lifecycle.conf" \
+        | tee /var/lib/fgc-lab/shell-child-lifecycle-test.txt
+    fi
     as_user gsettings set org.gnome.desktop.session idle-delay 0
     as_user gsettings set org.gnome.desktop.screensaver lock-enabled false
     as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
@@ -469,7 +480,7 @@ PY
     rpm -qa | sort > /tmp/fgc-evidence/packages.txt
     loginctl list-sessions > /tmp/fgc-evidence/sessions.txt
     lsblk -f > /tmp/fgc-evidence/lsblk.txt
-    for logout_evidence in /var/lib/fgc-lab/logout-*.txt; do
+    for logout_evidence in /var/lib/fgc-lab/logout-*.txt /var/lib/fgc-lab/shell-child-lifecycle-test.txt; do
       [[ ! -f "$logout_evidence" ]] || cp "$logout_evidence" /tmp/fgc-evidence/
     done
     if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then

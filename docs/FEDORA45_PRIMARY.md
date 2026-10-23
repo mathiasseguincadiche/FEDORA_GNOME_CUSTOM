@@ -40,6 +40,8 @@ Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même s
 
 Le scénario QEMU ferme ses applications de test (action D-Bus `quit` de Nautilus) avant la déconnexion et vérifie l’absence réelle des processus Nautilus et Ptyxis. Nautilus utilise une instance D-Bus : l’arrêt de son seul lanceur ne suffit pas. Les journaux, les états de service et les processus avant/après fermeture sont conservés ; un blocage du compositeur, une unité en échec ou un coredump fait échouer le scénario. Cette vérification ne remplace pas l’essai de déconnexion avec des applications ouvertes lors de la qualification interactive.
 
+Le module `gnome.core` installe aussi un drop-in utilisateur `org.gnome.Shell@user.service.d/50-fgc-child-lifecycle.conf` et vérifie que `KillMode=mixed` est effectif. Le signal d’arrêt est d’abord envoyé à Shell pour que Mutter ferme ses enfants Xwayland dans son ordre normal ; systemd conserve le nettoyage final de tout le groupe. Le délai d’arrêt reste celui du paquet en production. Le laboratoire utilise exactement le même fichier et exerce cet ordre avec deux services de test réels, dont un témoin négatif reproduisant l’arrêt prématuré d’un enfant. Les déconnexions GNOME complètes restent contrôlées séparément.
+
 ## Données et parcours final
 
 Le second Crucial T705 reste monté en EXT4 sur `/data` : `Documents/`, `Projets/`, `ISO/`, `Jeux/`, `IA/Openclaw/` et `libvirt/`. Borg protège `/data/IA/Openclaw` comme `/data/Projets`, en conservant les exclusions des disques de VM. Aucune migration d’OS ne doit reformater ce disque.
