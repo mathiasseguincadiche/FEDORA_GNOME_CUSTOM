@@ -4,6 +4,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
+source "$REPO_ROOT/modules/gnome/24_gnome_extensions.sh"
 source "$REPO_ROOT/modules/gnome/24b_resource_monitor.sh"
 export LC_ALL=C
 
@@ -131,11 +132,19 @@ show_schema="${SHOW_DESKTOP_PLUS_SCHEMA:-org.gnome.shell.extensions.show-desktop
 if [[ -r "$show_dir/metadata.json" ]]; then emit OK 'Show Desktop Plus payload' installed; else emit KO 'Show Desktop Plus payload' missing; fi
 check_source_marker 'Show Desktop Plus' "$show_dir" "${SHOW_DESKTOP_PLUS_SOURCE_URL:-}" "${SHOW_DESKTOP_PLUS_REVIEW_ID:-}" "${SHOW_DESKTOP_PLUS_VERSION:-}"
 check_extension_state 'Show Desktop Plus' "$show_uuid"
-check_value 'Show Desktop position' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position 2>/dev/null || true)" "'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'"
-check_value 'Show Desktop left click' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action 2>/dev/null || true)" "'${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-toggle-desktop}'"
-check_value 'Show Desktop hotkey enabled' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey 2>/dev/null || true)" true
-check_value 'Show Desktop Super+D' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey 2>/dev/null || true)" "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']"
-check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count 2>/dev/null || true)" false
+if gnome_show_desktop_is_button; then
+  if gnome_show_desktop_button_settings_check; then
+    emit OK 'Show Desktop settings' 'reviewed Button position and shortcut'
+  else
+    emit KO 'Show Desktop settings' 'Button position or shortcut differs from the reviewed profile'
+  fi
+else
+  check_value 'Show Desktop position' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" button-position 2>/dev/null || true)" "'${SHOW_DESKTOP_PLUS_BUTTON_POSITION:-left-end}'"
+  check_value 'Show Desktop left click' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" left-click-action 2>/dev/null || true)" "'${SHOW_DESKTOP_PLUS_LEFT_CLICK_ACTION:-toggle-desktop}'"
+  check_value 'Show Desktop hotkey enabled' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" enable-hotkey 2>/dev/null || true)" true
+  check_value 'Show Desktop Super+D' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-desktop-hotkey 2>/dev/null || true)" "['${SHOW_DESKTOP_PLUS_HOTKEY:-<Super>d}']"
+  check_value 'Show Desktop badge' "$(gsettings --schemadir "$show_schema_dir" get "$show_schema" show-hidden-count 2>/dev/null || true)" false
+fi
 
 resource_uuid="${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
 resource_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$resource_uuid"
@@ -144,19 +153,27 @@ resource_schema="${RESOURCE_MONITOR_SCHEMA:-org.gnome.shell.extensions.vitals}"
 if [[ -r "$resource_dir/metadata.json" ]]; then emit OK 'Resource Monitor payload' installed; else emit KO 'Resource Monitor payload' missing; fi
 check_source_marker 'Resource Monitor' "$resource_dir" "${RESOURCE_MONITOR_SOURCE_URL:-}" "${RESOURCE_MONITOR_REVIEW_ID:-}" "${RESOURCE_MONITOR_VERSION:-}"
 check_extension_state 'Resource Monitor' "$resource_uuid"
-check_value 'Resource Monitor refresh' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" refreshtime 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
-check_value 'Resource Monitor CPU' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" cpustatus 2>/dev/null || true)" true
-check_value 'Resource Monitor RAM' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" ramstatus 2>/dev/null || true)" true
-check_value 'Resource Monitor Ethernet' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" netethstatus 2>/dev/null || true)" true
-check_value 'Resource Monitor Wi-Fi' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" netwlanstatus 2>/dev/null || true)" true
-check_value 'Resource Monitor GPU setting' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" gpustatus 2>/dev/null || true)" true
-check_value 'Resource Monitor disk hidden' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" diskstatsstatus 2>/dev/null || true)" false
-check_value 'Resource Monitor swap hidden' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" swapstatus 2>/dev/null || true)" false
+if resource_monitor_is_vitals; then
+  if resource_monitor_vitals_check; then
+    emit OK 'Vitals settings' 'reviewed refresh, panel position, CPU/RAM/network and sensors'
+  else
+    emit KO 'Vitals settings' 'settings differ from the reviewed profile'
+  fi
+else
+  check_value 'Resource Monitor refresh' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" refreshtime 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
+  check_value 'Resource Monitor CPU' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" cpustatus 2>/dev/null || true)" true
+  check_value 'Resource Monitor RAM' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" ramstatus 2>/dev/null || true)" true
+  check_value 'Resource Monitor Ethernet' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" netethstatus 2>/dev/null || true)" true
+  check_value 'Resource Monitor Wi-Fi' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" netwlanstatus 2>/dev/null || true)" true
+  check_value 'Resource Monitor GPU setting' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" gpustatus 2>/dev/null || true)" "${RESOURCE_MONITOR_GPU_USAGE:-false}"
+  check_value 'Resource Monitor disk hidden' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" diskstatsstatus 2>/dev/null || true)" false
+  check_value 'Resource Monitor swap hidden' "$(gsettings --schemadir "$resource_schema_dir" get "$resource_schema" swapstatus 2>/dev/null || true)" false
+fi
 
 check_value 'Window buttons' "$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || true)" "'${GNOME_WINDOW_BUTTON_LAYOUT:-:minimize,maximize,close}'"
 
 emit EXPECTED 'Ryzen CPU physical temperature' 'k10temp/Tctl proof remains bare-metal only'
-emit EXPECTED 'Arc B580 / xe telemetry' 'native PCI/load/temperature proof remains bare-metal only'
+emit EXPECTED 'Arc B580 / xe telemetry' 'PCI/temperature qualification remains bare-metal only; optional GPU load is unmeasured'
 emit EXPECTED 'Physical T705' 'NVMe/SMART/I/O proof remains bare-metal only'
 emit EXPECTED 'KVM host certification' 'qemu:///system and devops-nat remain bare-metal only'
 

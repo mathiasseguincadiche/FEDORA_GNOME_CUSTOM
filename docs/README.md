@@ -61,6 +61,8 @@ Lire dans cet ordre pour une installation bare-metal :
 5. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — LAB Gate 2 isolé de l'APPLY production ;
 6. [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md) — guide pratique Gate 1 + Gate 2 depuis Windows (WSL2, VirtualBox, checklist, dépannage).
 
+Les [corrections avant installation](PREINSTALL_SAFETY_REVIEW.md) relient les défauts déjà traités à leurs tests.
+
 **Résultat attendu :** une machine installée, diagnostiquée puis certifiée physiquement. Gate 1 et Gate 2 ne remplacent pas Gate 3.
 
 ---
@@ -173,16 +175,16 @@ L’installation neuve Fedora 45 ne passe pas par Fedora 44. Les anciens essais 
 <details>
 <summary>Autres références spécialisées</summary>
 
-- [Readme](../README.md)
-- [Certification](CERTIFICATION.md)
-- [Desktop Completion](DESKTOP_COMPLETION.md)
-- [Display Color Diagnostic](DISPLAY_COLOR_DIAGNOSTIC.md)
-- [Gnome Polish](GNOME_POLISH.md)
-- [Performance.Md#Noyau-Officiel-Linux-Amont](PERFORMANCE.md#noyau-officiel-linux-amont)
-- [Reliability Qualification](RELIABILITY_QUALIFICATION.md)
-- [Roadmap Fedora45 2026](ROADMAP_FEDORA45_2026.md)
-- [Upstream Linux](UPSTREAM_LINUX.md)
-- [Wsl2 Validation](WSL2_VALIDATION.md)
-- [0017-Remote-Access](adr/0017-remote-access.md)
+- [Accueil du projet](../README.md)
+- [Certification de la plateforme](CERTIFICATION.md)
+- [Intégration du bureau et des périphériques](DESKTOP_COMPLETION.md)
+- [Diagnostic des couleurs](DISPLAY_COLOR_DIAGNOSTIC.md)
+- [Finition du bureau](GNOME_POLISH.md)
+- [Noyau Linux amont](PERFORMANCE.md#noyau-officiel-linux-amont)
+- [Suivi de fiabilité](RELIABILITY_QUALIFICATION.md)
+- [Feuille de route Fedora 45](ROADMAP_FEDORA45_2026.md)
+- [Noyau amont et politique N/N-1](UPSTREAM_LINUX.md)
+- [Validation depuis WSL2](WSL2_VALIDATION.md)
+- [Décision sur l’accès distant](adr/0017-remote-access.md)
 
 </details>

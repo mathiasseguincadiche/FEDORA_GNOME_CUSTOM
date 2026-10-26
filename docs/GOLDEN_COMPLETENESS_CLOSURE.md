@@ -9,7 +9,7 @@ Ce runbook comble les derniers écarts entre un déploiement Fedora 45 correct e
 Cette fermeture rend les contrats suivants *fail-closed* (bloquants en cas de doute) sur la vraie machine :
 
 - `gaming-doctor` est obligatoire, car le Gaming fait partie du profil Golden canonique ;
-- la Gate 3 exige les deux invités KVM Golden (Rocky Linux et Windows 11) et une preuve vivante VirtIO/QEMU-GA de Windows ;
+- la Gate 3 exige les deux invités KVM Golden (Rocky Linux et Windows 11) ainsi que la disponibilité actuelle de QGA Windows et son dernier contrôle d’installation enregistré ;
 - la certification finale de la sauvegarde exige une archive Borg complète et récente, un dépôt joignable et un contrôle d'intégrité approfondi ;
 - le Ryzen 7 7700 passe un test de charge CPU prolongé dédié avant la certification de la baseline ;
 - la certification du refroidissement identifie trois canaux distincts et actifs : pompe de l'AIO, ventilateur CPU/radiateur, ventilateur système ;
@@ -71,7 +71,7 @@ Terminer ensuite les tests RAM/NVMe existants et certifier la baseline :
 
 Le certificat de baseline ne peut pas être créé sans le test de charge CPU, le verrou Bluetooth et le verrou des canaux de refroidissement.
 
-## 2. Preuve vivante de l'invité Windows 11
+## 2. QGA Windows actuel et contrôle d’intégration enregistré
 
 Dans l'invité Windows 11 final, attacher le média VirtIO de confiance et exécuter en administrateur :
 
@@ -200,7 +200,7 @@ Un PASS final exige désormais, en plus des contrats existants :
 - les cinq preuves physiques d'exécution ;
 - le Gaming activé et `gaming-doctor` en PASS sur la pile Arc B580/Wayland/240 Hz ;
 - les deux domaines KVM ;
-- la preuve vivante VirtIO/QGA de Windows ;
+- la disponibilité actuelle de QGA Windows et son dernier contrôle d’installation enregistré ;
 - l'activation complète des applications gérées ;
 - les cinq cycles de veille/réveil existants et la preuve de démarrage à froid de Nautilus.
 
