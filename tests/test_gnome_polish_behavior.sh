@@ -27,8 +27,15 @@ cat > "$tmp/bin/gnome-extensions" <<SH
 #!/usr/bin/env bash
 case "\$1" in
   list) echo 'tiling-assistant@leleat-on-github' ;;
-  info) [[ -e "$tmp/enabled" ]] && echo 'State: ENABLED' || echo 'State: INACTIVE' ;;
-  enable) touch "$tmp/enabled" ;;
+  info)
+    [[ "\${LC_ALL:-}" == C ]] || exit 91
+    if [[ -e "$tmp/enabled" ]]; then
+      state="\$(cat "$tmp/extension-state" 2>/dev/null || echo ACTIVE)"
+      printf 'Enabled: Yes\nState: %s\n' "\$state"
+    else
+      printf 'Enabled: No\nState: INACTIVE\n'
+    fi ;;
+  enable) touch "$tmp/enabled"; echo enable >> "$tmp/extension-enable.log" ;;
 esac
 SH
 printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp/bin/systemctl"
@@ -46,6 +53,7 @@ run_module() {
   (
     PATH="$tmp/bin:$PATH"; HOME="$tmp/home"; REPO_ROOT="$tmp/repo"
     source "$ROOT/lib/constants.sh"
+    source "$ROOT/lib/common.sh"
     is_true() { [[ "${1,,}" == true ]]; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     log_info() { :; }; log_warn() { :; }; log_error() { printf '%s\n' "$*" >> "$tmp/errors.log"; }
@@ -83,6 +91,41 @@ grep -Fq 'tiling-assistant@leleat-on-github' "$tmp/tiling-install.args" || fail 
 [[ -x "$tmp/home/.local/libexec/fedora-gnome-gtk3-theme-follow" ]] || fail 'light/dark watcher not installed'
 [[ -e "$tmp/enabled" ]] || fail 'Tiling Assistant not enabled'
 run_module postcheck DRY_RUN=false || fail 'postcheck rejected a converged desktop'
+
+# GNOME 51 ACTIVE is already converged: APPLY must not re-enable the extension.
+enable_count="$(wc -l < "$tmp/extension-enable.log")"
+run_module apply DRY_RUN=false
+[[ "$(wc -l < "$tmp/extension-enable.log")" == "$enable_count" ]] || fail 'ACTIVE extension was enabled again'
+
+# Run the actual doctor with an isolated bootstrap, not the host engine/session.
+mkdir -p "$tmp/repo/diagnostics" "$tmp/repo/lib" "$tmp/repo/modules/gnome"
+cp "$ROOT/diagnostics/polish-doctor" "$tmp/repo/diagnostics/"
+cp "$ROOT/modules/gnome/24c_ubuntu_polish.sh" "$tmp/repo/modules/gnome/"
+cat > "$tmp/repo/lib/bootstrap.sh" <<SH
+source "$ROOT/lib/constants.sh"
+source "$ROOT/lib/common.sh"
+engine_bootstrap() {
+  source "$ROOT/config/gnome-extensions.lock"
+  source "$ROOT/config/gnome.conf"
+  source "$ROOT/config/gnome-polish.conf"
+}
+SH
+source_dir="$tmp/data/gnome-shell/extensions/tiling-assistant@leleat-on-github"
+mkdir -p "$source_dir"
+source "$ROOT/config/gnome-extensions.lock"
+printf 'sha256=%s\n' "$TILING_ASSISTANT_SHA256" > "$source_dir/.fedora-gnome-custom-source"
+run_doctor() {
+  PATH="$tmp/bin:$PATH" HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CURRENT_DESKTOP=GNOME \
+    bash "$tmp/repo/diagnostics/polish-doctor" --quiet
+}
+run_doctor || fail 'doctor rejected GNOME 51 ACTIVE extension'
+for state in INACTIVE ERROR 'OUT OF DATE'; do
+  printf '%s\n' "$state" > "$tmp/extension-state"
+  rc=0; run_module postcheck DRY_RUN=false || rc=$?
+  [[ "$rc" -eq 40 ]] || fail "postcheck accepted $state extension (rc=$rc)"
+  if run_doctor; then fail "doctor accepted $state extension"; fi
+done
+rm "$tmp/extension-state"
 
 # 4. The user switches to light in GNOME Settings: GTK3 follows, it is NOT drift,
 #    and a later APPLY does not force dark mode back.

@@ -155,7 +155,7 @@ Quand Rocky Linux et Windows sont installés et démarrés :
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification contrôle notamment QEMU Guest Agent, VirtIO, Secure Boot/TPM Windows, réseau, stack DevOps Rocky Linux, Internet et guard KVM.
+La certification contrôle notamment QEMU Guest Agent, le contrat XML VirtIO/Secure Boot/TPM Windows, réseau, stack DevOps Rocky Linux, Internet et guard KVM. Le contrôle d’installation des pilotes Windows est lu depuis son dernier marqueur daté ; il ne constitue pas une interrogation actuelle des périphériques PnP. Relancer le script d’intégration dans Windows après une modification des pilotes.
 
 ## 7. Exports des VM : gestion personnelle
 

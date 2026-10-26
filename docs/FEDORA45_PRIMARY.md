@@ -8,6 +8,8 @@ La sélection du profil est distincte de sa promotion. `profiles/fedora45/profil
 
 La publication du média final se vérifie sur la [page officielle Workstation](https://fedoraproject.org/workstation/download/). Le statut de préparation du projet ne remplace pas cette vérification : aucun verrou final n’est créé avant authentification de l’ISO finale et de son CHECKSUM signé. Les images Beta utilisées par les laboratoires restent des supports de test.
 
+**Calendrier publié le 22 octobre 2026 :** Fedora a décidé un NO-GO, avec une nouvelle cible au 3 novembre et une prochaine réunion le 29 octobre. Voir le [compte rendu officiel](https://meetbot-raw.fedoraproject.org/teams/f45-final-go-no-go-meeting/f45-final-go-no-go-meeting.2026-10-22-17.00.html). Vérifier la disponibilité effective avant de fixer une date d’installation ; le 30 octobre précède cette nouvelle cible.
+
 La promotion exige :
 
 1. une ISO Workstation 45 finale, son CHECKSUM signé et la clé Fedora 45 épinglée ;

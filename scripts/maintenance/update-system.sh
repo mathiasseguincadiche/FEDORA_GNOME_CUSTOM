@@ -24,7 +24,7 @@ usage() {
 Usage: update-system.sh [ACTION]
 
   --check           Read-only overview: Fedora, Flatpak, firmware and offline state
-  --apply           Backup + prepare a full Fedora DNF5 offline transaction, latest stable kernel included
+  --apply           Backup + update Fedora and Flatpak; stage RPM changes offline when needed
   --dnf-only        Backup + prepare a Fedora-only DNF5 offline transaction, latest stable kernel included
   --offline-reboot  Reboot into the prepared DNF5 offline transaction
   --finalize        After normal boot: validate kernel N/N-1, DNF, Flatpak (full mode), firmware and doctor
@@ -202,6 +202,10 @@ prepare_dnf_offline() {
   sudo dnf5 --refresh upgrade --offline -y --comment="$UPDATE_TRANSACTION_COMMENT" "${kernel_exclusion[@]}"
   if ! sudo test -e /usr/lib/sysimage/libdnf5/offline/transaction.json; then
     UPDATE_REBOOT_REQUIRED=false
+    if [[ "$mode" == full ]]; then
+      complete_update "$mode" no-offline
+      return $?
+    fi
     write_update_state no-transaction "$mode" not-run
     ui_summary 'NO OFFLINE TRANSACTION PREPARED' 'NO STAGED DNF5 REQUEST; NO REBOOT OR OFFLINE COMPLETION TO CERTIFY' "$UPDATE_STATE_FILE" "$LOG_DIR"
     return 0
@@ -235,7 +239,7 @@ request_offline_reboot() {
 apply_flatpak() {
   if command_exists flatpak; then
     ui_banner 'FEDORA WORKSTATION UPDATE' 'FLATPAK APPLICATIONS'
-    flatpak update -y
+    flatpak update -y || return $?
     ui_check PASS 'Flatpak applications' 'update transaction completed'
   else
     ui_check EXPECTED 'Flatpak applications' 'flatpak unavailable'
@@ -275,10 +279,46 @@ require_applied_offline_transaction() {
   }
 }
 
+complete_update() {
+  local mode="$1" transaction="${2:-offline}" doctor_rc=0 flatpak_rc=0
+  UPDATE_REBOOT_REQUIRED=false
+  if [[ "$mode" == full ]]; then
+    apply_flatpak || flatpak_rc=$?
+    if (( flatpak_rc != 0 )); then
+      write_update_state failed "$mode" "$flatpak_rc"
+      ui_error "Flatpak update failed rc=$flatpak_rc"
+      return "$flatpak_rc"
+    fi
+  fi
+  check_firmware
+
+  if "$REPO_ROOT/diagnostic.sh"; then
+    ui_check PASS 'Post-update diagnostic' 'global doctor completed'
+  else
+    doctor_rc=$?
+    ui_check KO 'Post-update diagnostic' "doctor rc=$doctor_rc"
+  fi
+
+  if ((doctor_rc == 0)); then
+    write_update_state completed "$mode" 0
+    if is_true "$UPDATE_KERNEL_DEFERRED"; then
+      ui_summary 'UPDATE COMPLETED (KERNEL DEFERRED)' 'ALL OTHER PACKAGES UPDATED + POSTCHECK PASS; KERNEL STILL PENDING UPSTREAM PACKAGING: RERUN ./control.sh update LATER' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    elif [[ "$transaction" == no-offline ]]; then
+      ui_summary 'UPDATE COMPLETED' 'RPM PACKAGES ALREADY CURRENT; FLATPAK + POSTCHECK PASS; NO OFFLINE REBOOT REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    else
+      ui_summary 'UPDATE COMPLETED' 'LATEST STABLE KERNEL RUNNING + N/N-1 RETENTION + POSTCHECK PASS; GOLDEN RECERTIFICATION MAY NOW BE REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    fi
+  else
+    write_update_state failed "$mode" "$doctor_rc"
+    ui_summary 'UPDATE POSTCHECK FAILED' 'INSPECT UPDATE LOGS AND DIAGNOSTICS BEFORE CONTINUING' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    return "$EXIT_POSTCHECK_FAILED"
+  fi
+}
+
 finalize_offline_update() {
   require_dnf5
   require_current_update_state || exit $?
-  local mode doctor_rc=0 kernel_rc=0
+  local mode kernel_rc=0
   mode="$(update_state_value mode)"
   UPDATE_KERNEL_TARGET="$(update_state_value kernel_target)"
   UPDATE_KERNEL_PREVIOUS="$(update_state_value kernel_previous)"
@@ -304,30 +344,7 @@ finalize_offline_update() {
     UPDATE_KERNEL_PREVIOUS="$(kernel_lifecycle_previous_installed)"
   fi
 
-  if [[ "$mode" == full ]]; then apply_flatpak; fi
-  check_firmware
-
-  if "$REPO_ROOT/diagnostic.sh"; then
-    doctor_rc=0
-    ui_check PASS 'Post-update diagnostic' 'global doctor completed'
-  else
-    doctor_rc=$?
-    ui_check KO 'Post-update diagnostic' "doctor rc=$doctor_rc"
-  fi
-
-  UPDATE_REBOOT_REQUIRED=false
-  if ((doctor_rc == 0)); then
-    write_update_state completed "$mode" 0
-    if is_true "$UPDATE_KERNEL_DEFERRED"; then
-      ui_summary 'UPDATE COMPLETED (KERNEL DEFERRED)' 'ALL OTHER PACKAGES UPDATED + POSTCHECK PASS; KERNEL STILL PENDING UPSTREAM PACKAGING: RERUN ./control.sh update LATER' "$UPDATE_STATE_FILE" "$LOG_DIR"
-    else
-      ui_summary 'UPDATE COMPLETED' 'LATEST STABLE KERNEL RUNNING + N/N-1 RETENTION + POSTCHECK PASS; GOLDEN RECERTIFICATION MAY NOW BE REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"
-    fi
-  else
-    write_update_state failed "$mode" "$doctor_rc"
-    ui_summary 'UPDATE POSTCHECK FAILED' 'INSPECT DNF5 OFFLINE LOG AND DIAGNOSTICS BEFORE CONTINUING' "$UPDATE_STATE_FILE" "$LOG_DIR"
-    return "$EXIT_POSTCHECK_FAILED"
-  fi
+  complete_update "$mode" offline
 }
 
 mode="${1:---check}"

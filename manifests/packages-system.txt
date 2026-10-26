@@ -13,6 +13,7 @@ linux-firmware
 amd-ucode-firmware
 intel-gpu-firmware
 policycoreutils
+policycoreutils-python-utils
 firewalld
 dnf5-plugins
 mokutil

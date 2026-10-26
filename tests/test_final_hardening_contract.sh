@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
-grep -Fq "**Golden Workstation $version**" "$ROOT/README.md"
+grep -Fq '](VERSION)' "$ROOT/README.md"
 grep -Fq "## $version —" "$ROOT/CHANGELOG.md"
 
 # User-decided HOST policy.

@@ -46,8 +46,14 @@ jobs:
             sleep 10
           done
           timeout 600 sudo apt-get "${apt_opts[@]}" install -y borgbackup jq nftables
+      - name: CI assertions and recovery regressions
+        run: |
+          bash tests/test_gnome_telemetry_behavior.sh
+          python3 tests/test_ci_negative_assertions_behavior.py
+          python3 -B tests/test_recovery_kvm_regressions.py
       - name: Pre-install safety regressions
         run: |
+          bash tests/test_installation_prerequisites_behavior.sh
           python3 tests/test_preinstall_safety.py
           bash tests/test_preinstall_shell_behavior.sh
           bash tests/test_update_kernel_deferral_behavior.sh

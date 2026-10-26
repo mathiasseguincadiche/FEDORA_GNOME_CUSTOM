@@ -2,6 +2,8 @@
 
 > Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
 
+Avant tout enrôlement ou mesure, exécuter `./control.sh install prepare-tools` sur la Fedora cible. Cette préparation explicite installe les outils du manifeste `manifests/packages-baseline.txt`, notamment `smartctl` fourni par `smartmontools`. Elle ne produit aucune preuve matérielle.
+
 ## Pourquoi le matériel est au centre du projet
 
 Ce dépôt n'est pas conçu comme une installation Fedora universelle. Il vise explicitement **le Ryzen 7 7700, l'Intel Arc B580, 48 Gio DDR5, les deux Crucial T705, le réseau et le moniteur QD-OLED du poste cible**.

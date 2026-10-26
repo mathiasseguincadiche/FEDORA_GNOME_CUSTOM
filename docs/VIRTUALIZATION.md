@@ -227,7 +227,7 @@ Après installation des deux VM :
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification vérifie notamment domaines, QEMU Guest Agent, VirtIO RNG/balloon, Secure Boot+TPM Windows, réseau/disque VirtIO, guard KVM, IP guests, SSH Rocky Linux, stack DevOps, DNS/HTTPS et isolement LAN.
+La certification vérifie notamment domaines, QEMU Guest Agent, contrat XML VirtIO RNG/balloon et Secure Boot+TPM Windows, réseau/disque VirtIO, guard KVM, IP guests, SSH Rocky Linux, stack DevOps, DNS/HTTPS et isolement LAN. Pour Windows, le doctor vérifie QGA maintenant et lit le dernier contrôle d’installation enregistré, avec sa date ; il ne réinterroge pas les périphériques PnP. Relancer le script d’intégration dans l’invité après une modification des pilotes.
 
 Une preuve live complète `LAN → VM` nécessite un deuxième appareil du LAN ; la procédure est documentée dans [`KVM_NETWORK.md`](KVM_NETWORK.md).
 

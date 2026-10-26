@@ -71,7 +71,7 @@ elif [[ -r "$schema_dir/gschemas.compiled" ]]; then
   check_value 'RAM percent' "$(gsettings --schemadir "$schema_dir" get "$schema" ramunit 2>/dev/null || true)" "'perc'"
   check_value 'Ethernet throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus 2>/dev/null || true)" true
   check_value 'Wi-Fi throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus 2>/dev/null || true)" true
-  check_value 'GPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus 2>/dev/null || true)" true
+  check_value 'GPU usage indicator' "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus 2>/dev/null || true)" "${RESOURCE_MONITOR_GPU_USAGE:-false}"
   check_value 'Disk top-bar stats' "$(gsettings --schemadir "$schema_dir" get "$schema" diskstatsstatus 2>/dev/null || true)" false
   check_value 'Swap top-bar stats' "$(gsettings --schemadir "$schema_dir" get "$schema" swapstatus 2>/dev/null || true)" false
 else
@@ -87,12 +87,7 @@ if runtime_is_baremetal; then
 
   if gpu_card="$(resource_monitor_find_b580_card 2>/dev/null)"; then
     emit OK 'Intel Arc B580' "$gpu_card / 8086:e20b"
-    if usage_path="$(resource_monitor_gpu_usage_path "$gpu_card" 2>/dev/null)"; then
-      usage_value="$(cat "$usage_path" 2>/dev/null || true)"
-      if [[ "$usage_value" =~ ^[0-9]+$ ]]; then emit OK 'B580 GPU load source' "$usage_path value=${usage_value}%"; else emit KO 'B580 GPU load source' "$usage_path unreadable value"; fi
-    else
-      emit KO 'B580 GPU load source' 'xe exposes neither gpu_busy_percent nor gt_busy_percent'
-    fi
+    emit EXPECTED 'B580 GPU load source' 'unmeasured; optional until an xe backend is qualified'
     if temp_path="$(resource_monitor_gpu_temperature_path "$gpu_card" 2>/dev/null)"; then
       emit OK 'B580 temperature source' "$temp_path"
     else

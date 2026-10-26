@@ -20,9 +20,9 @@ body:
     attributes:
       label: Environnement
       options:
-        - Fedora 44 bare-metal
-        - Fedora 44 / VirtualBox Gate 2
-        - Fedora 44 / WSL2 Gate 1
+        - Fedora 45 bare-metal
+        - Fedora 45 / VirtualBox Gate 2
+        - Fedora 45 / WSL2 Gate 1
         - CI GitHub Actions
         - Autre
     validations:

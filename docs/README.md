@@ -1,101 +1,42 @@
 # Documentation — Fedora Golden Workstation
 
-Ce portail est la **carte officielle** de la documentation de `FEDORA_GNOME_CUSTOM`.
+Choisir le parcours correspondant à votre besoin. La cible d’installation neuve est **Fedora 45 Workstation / GNOME 51** ; l’état de promotion du profil est centralisé dans la [fiche Fedora 45](FEDORA45_PRIMARY.md).
 
-**Traçabilité :** [correspondance entre code, scripts, tests et guides](CODE_DOCUMENTATION_TRACEABILITY.md). Ce registre permet de retrouver la source de vérité et les vérifications associées à chaque parcours.
+## Commencer par son objectif
 
-Le README racine présente le produit. Ici, l'objectif est différent : **trouver immédiatement le bon document selon ce que vous voulez comprendre, exécuter ou diagnostiquer**.
-
-La version active est celle de [`../VERSION`](../VERSION).
-
----
-
-## Première visite : un parcours en quatre questions
-
-Inutile de lire soixante fichiers pour comprendre l'idée. Suivre cet ordre :
-
-```mermaid
-flowchart LR
-  A["Pourquoi ? Vision"] --> B["Comment ? Architecture illustrée"]
-  B --> C["Qu'est-ce qui est prêt ? Fedora 45"]
-  C --> D["Comment agir ? Installation et Control Center"]
-  D --> E["Comment prouver ? Gates et CI"]
-```
-
-1. [**Pourquoi ? — Vision**](VISION.md) : les objectifs et les compromis de cette workstation.
-2. [**Comment ? — Architecture pédagogique**](ARCHITECTURE_PEDAGOGIQUE.md) : des schémas accompagnés de leur explication, du code jusqu'à la certification.
-3. [**Pour quelle Fedora ? — Fedora 45 / GNOME 51**](FEDORA45_PRIMARY.md) : la cible d'installation neuve, ce qui est testé et les conditions de promotion du profil `pending`.
-4. [**Comment agir en sécurité ? — Control Center**](CONTROL_CENTER.md), puis [installation](INSTALLATION_GUIDE.md) et [validation](THREE_GATE_VALIDATION.md).
-
-**Avant toute installation sur le PC :** [prévalidation USB Live Fedora 45 (cinq contrôles, 10 à 15 minutes)](FEDORA45_LIVE_PREFLIGHT.md). Le GO Live ne vaut ni promotion du profil, ni certification Gate 3.
-
-Pour une lecture progressive avec objectifs d'apprentissage : [LEARNING_PATH.md](LEARNING_PATH.md). Les termes inconnus sont expliqués dans [GLOSSARY.md](GLOSSARY.md).
-
-
-
-## Commencer ici
-
-### Je veux…
-
-| Besoin | Lire d'abord | Puis |
+| Je veux… | Point de départ | Étape suivante |
 |---|---|---|
-| **Savoir pourquoi le projet existe** | [`VISION.md`](VISION.md) | [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) |
-| **Comprendre le projet et ses schémas** | **[`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md)** | [`LEARNING_PATH.md`](LEARNING_PATH.md), puis [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
-| **Évaluer les prochaines améliorations 2026** | [`ROADMAP_FEDORA45_2026.md`](ROADMAP_FEDORA45_2026.md) | [`FEDORA45_PRIMARY.md`](FEDORA45_PRIMARY.md) |
-| **Diagnostiquer les couleurs et le blanc sur Intel Arc B580** | [`DISPLAY_COLOR_DIAGNOSTIC.md`](DISPLAY_COLOR_DIAGNOSTIC.md) | [`PHYSICAL_QUALIFICATION_CHECKLIST.md`](PHYSICAL_QUALIFICATION_CHECKLIST.md) |
-| **Utiliser la workstation** | [`CONTROL_CENTER.md`](CONTROL_CENTER.md) | guide spécialisé selon le besoin |
-| **Installer sur le matériel cible** | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
-| **Comprendre dry-run / APPLY** | [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
-| **Utiliser KVM** | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
-| **Préparer l'installation neuve Fedora 45 / GNOME 51** | [`FEDORA45_PRIMARY.md`](FEDORA45_PRIMARY.md) | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) |
-| **Migrer un poste déjà sous Fedora 44** | [`UPGRADE_FEDORA_45.md`](UPGRADE_FEDORA_45.md) | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) |
-| **Comprendre le bureau GNOME** | [`GNOME.md`](GNOME.md) | [`GNOME_POLISH.md`](GNOME_POLISH.md) |
-| **Comprendre Linux amont** | [`PERFORMANCE.md`](PERFORMANCE.md#noyau-officiel-linux-amont) | [`UPSTREAM_LINUX.md`](UPSTREAM_LINUX.md) |
-| **Piloter la performance** | [`PERFORMANCE.md`](PERFORMANCE.md) | comparer les frametimes avant toute activation expérimentale |
-| **Utiliser Gaming** | [`GAMING.md`](GAMING.md) | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) en cas de problème |
-| **Piloter le PC à distance (tablette, réveil)** | [`REMOTE_ACCESS.md`](REMOTE_ACCESS.md) | [`adr/0017-remote-access.md`](adr/0017-remote-access.md) pour la décision |
-| **Sauvegarder / restaurer** | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) si échec |
-| **Dépanner** | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | runbook du domaine concerné |
-| **Certifier la machine** | [`CERTIFICATION.md`](CERTIFICATION.md) | [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) |
-| **Contribuer / maintenir** | [`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md) | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| Comprendre le projet | [Vision](VISION.md) | [Architecture expliquée](ARCHITECTURE_PEDAGOGIQUE.md) |
+| Installer ce PC | [Contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) | [Installation neuve](INSTALLATION_GUIDE.md) |
+| Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md) | [Maintenance](DESKTOP_LIFECYCLE.md) · [Sauvegardes](BACKUP_RESTORE.md) |
+| Configurer le bureau, jouer ou utiliser KVM | [GNOME](GNOME.md) · [Gaming](GAMING.md) | [Démarrage KVM](KVM_QUICKSTART.md) |
+| Résoudre un problème | [Dépannage](TROUBLESHOOTING.md) | Runbook du domaine concerné dans le catalogue ci-dessous |
+| Qualifier ou contribuer | [Validation en trois gates](THREE_GATE_VALIDATION.md) | [Fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) · [Contribution](../CONTRIBUTING.md) |
 
-Utilisation quotidienne :
+Le [parcours d’apprentissage](LEARNING_PATH.md) accompagne une découverte progressive. Le [glossaire](GLOSSARY.md) explique les termes techniques.
+
+## Installation et qualification
+
+Suivre le guide d’installation pour les commandes et leurs préconditions :
+
+**Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
+
+La CI vérifie le logiciel ; la Gate 2 vérifie le bureau dans un laboratoire ; la Gate 3 qualifie le PC réel. Le [laboratoire VirtualBox](VIRTUALBOX_GNOME_LAB.md) ne déverrouille jamais `install.sh --apply`. Le [guide Gate 2 pas à pas](GATE2_GUIDE_PAS_A_PAS.md) détaille ce parcours depuis Windows.
+
+## Utilisation quotidienne
 
 ```bash
 ./control.sh
 ```
 
-### Trois profondeurs de lecture
+Les procédures spécialisées précisent le résultat attendu et la conduite à tenir en cas d’échec. Les commandes détaillées restent dans leur guide canonique.
 
-**Découverte — 10 à 20 min**  
-[`../README.md`](../README.md) → [`ARCHITECTURE_PEDAGOGIQUE.md`](ARCHITECTURE_PEDAGOGIQUE.md) → [`LEARNING_PATH.md`](LEARNING_PATH.md)
+## Catalogue des guides et références
 
-**Opérateur — lire avant d'agir**  
-[`CONTROL_CENTER.md`](CONTROL_CENTER.md) → guide spécialisé → runbook en cas de symptôme
+<details>
+<summary>Afficher les références par domaine</summary>
 
-**Mainteneur / reviewer — comprendre les contrats**  
-[`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md) → [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) → [`CI_VALIDATION.md`](CI_VALIDATION.md) → ADR
-
-Le parcours guidé complet, avec objectifs de compréhension et critères pour passer au niveau suivant, se trouve dans [`LEARNING_PATH.md`](LEARNING_PATH.md).
-
----
-
-## Comment lire une procédure du projet
-
-Pour chaque opération importante, quatre questions doivent recevoir une réponse claire :
-
-1. **Pourquoi** cette étape existe ?
-2. **Quelles préconditions** doivent être vraies ?
-3. **Quel résultat observable** prouve la réussite ?
-4. **Quelle est l'étape suivante**, ou dans quel cas faut-il s'arrêter ?
-
-Les documents opérateur doivent distinguer autant que possible : **observation**, **plan/dry-run**, **mutation protégée** et **opération manuelle/destructive**.
-
-Le modèle documentaire, les exigences pédagogiques et l'ordre d'autorité sont définis dans [`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md).
-
----
-
-# 1. Normes — ce que la workstation doit être
+### Normes — ce que la workstation doit être
 
 Ces documents définissent les invariants. Ils répondent à **« qu'est-ce qui est autorisé ou obligatoire ? »**.
 
@@ -109,7 +50,7 @@ Ces documents définissent les invariants. Ils répondent à **« qu'est-ce qui 
 
 ---
 
-# 2. Installation — construire et préparer la machine
+### Installation — construire et préparer la machine
 
 Lire dans cet ordre pour une installation bare-metal :
 
@@ -124,7 +65,7 @@ Lire dans cet ordre pour une installation bare-metal :
 
 ---
 
-# 3. Guides opérateur — quoi lancer au quotidien
+### Usage quotidien — quoi lancer au quotidien
 
 Ces documents répondent à **« que dois-je lancer et quel résultat dois-je attendre ? »**.
 
@@ -140,17 +81,17 @@ Ces documents répondent à **« que dois-je lancer et quel résultat dois-je at
 
 ---
 
-# 4. Références techniques — comment c'est construit
+### Références techniques — comment c'est construit
 
 Les références répondent à **« comment ce contrat est-il implémenté ? »**. Elles servent surtout au diagnostic avancé, à la revue et à la maintenance.
 
-## Hardware / kernel / drivers
+#### Hardware / kernel / drivers
 
 - [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md) — contrat de stack ;
 - [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) — fermeture des socles ;
 - [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire.
 
-## GNOME / desktop
+#### GNOME / desktop
 
 - [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) ;
 - [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md) ;
@@ -160,12 +101,12 @@ Les références répondent à **« comment ce contrat est-il implémenté ? »*
 - [`NAUTILUS.md`](NAUTILUS.md) ;
 - [`PTYXIS.md`](PTYXIS.md).
 
-## Applications / multimédia
+#### Applications / multimédia
 
 - [`GTK4_APPLICATIONS.md`](GTK4_APPLICATIONS.md) ;
 - [`MULTIMEDIA_CODECS.md`](MULTIMEDIA_CODECS.md).
 
-## Virtualisation
+#### Virtualisation
 
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — architecture KVM/libvirt ;
 - [`VM_PROFILES.md`](VM_PROFILES.md) — profils exécutables Rocky Linux/Windows ;
@@ -177,7 +118,7 @@ Les références répondent à **« comment ce contrat est-il implémenté ? »*
 
 ---
 
-# 5. Runbooks — partir d'un symptôme
+### Runbooks — partir d'un symptôme
 
 Commencer par l'état réel :
 
@@ -190,7 +131,7 @@ Puis choisir le domaine :
 
 - [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — triage transversal ;
 - [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — BIOS, P-State, ReBAR, PCIe, NVMe, EDID, kernel, offline update ;
-- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Rocky Linux, Windows, QGA, TPM, sauvegarde VM ;
+- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Rocky Linux, Windows, QGA, TPM, exports VM manuels ;
 - [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) — `/data`, EXT4, ownership, SELinux, XDG Documents, Borg, Steam/Vulkan ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — restauration et DR ;
 - [`KVM_NETWORK.md`](KVM_NETWORK.md) — détails d'isolation réseau.
@@ -205,7 +146,7 @@ Ne pas désactiver SELinux, firewalld ou les garde-fous fail-closed pour masquer
 
 ---
 
-# 6. Certification, CI et gouvernance
+### Qualification et contribution
 
 - [`CI_VALIDATION.md`](CI_VALIDATION.md) — validation automatisée ;
 - [`FEDORA_GNOME_CI_LAB.md`](FEDORA_GNOME_CI_LAB.md) — démarrage GNOME et récupération QEMU sur GitHub ;
@@ -218,80 +159,30 @@ Ne pas désactiver SELinux, firewalld ou les garde-fous fail-closed pour masquer
 
 ---
 
-# Validation officielle
 
-La validation est une chaîne de preuves. Elle ne remplace pas l'installation ; elle encadre ce qui peut être affirmé comme Golden.
+</details>
 
-```text
-Gate 1 — Fedora 45 / WSL2
-  système + contrats, hardware DEFERRED
-        ↓
-Gate 2 — Fedora 45 GNOME / VirtualBox
-  desktop + UX, hardware DEFERRED
-        ↓
-Installation Fedora 45 bare-metal
-        ↓
-Gate 3 — vraie machine
-  hardware + runtime + KVM + Gaming + backup
-        ↓
-final-certification PASS
-```
+## Comprendre les décisions et contribuer
 
-### Gate 1
+Le [modèle documentaire](DOCUMENTATION_MODEL.md) définit les rôles des guides et l’ordre d’autorité. La [traçabilité code / documentation](CODE_DOCUMENTATION_TRACEABILITY.md) permet de retrouver l’implémentation et les tests d’un parcours. Les [décisions d’architecture](adr/README.md) expliquent les choix conservés.
 
-- [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) ;
-- [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
+## Historique et migrations
 
-### Gate 2
+L’installation neuve Fedora 45 ne passe pas par Fedora 44. Les anciens essais et migrations sont séparés : [Fedora 44 historique](HISTORICAL_FEDORA44.md), [mise à niveau facultative 44 → 45](UPGRADE_FEDORA_45.md), [comptes rendus passés](history/README.md).
 
-- [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) ;
-- [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md) ;
-- [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md).
+<details>
+<summary>Autres références spécialisées</summary>
 
-### Gate 3
+- [Readme](../README.md)
+- [Certification](CERTIFICATION.md)
+- [Desktop Completion](DESKTOP_COMPLETION.md)
+- [Display Color Diagnostic](DISPLAY_COLOR_DIAGNOSTIC.md)
+- [Gnome Polish](GNOME_POLISH.md)
+- [Performance.Md#Noyau-Officiel-Linux-Amont](PERFORMANCE.md#noyau-officiel-linux-amont)
+- [Reliability Qualification](RELIABILITY_QUALIFICATION.md)
+- [Roadmap Fedora45 2026](ROADMAP_FEDORA45_2026.md)
+- [Upstream Linux](UPSTREAM_LINUX.md)
+- [Wsl2 Validation](WSL2_VALIDATION.md)
+- [0017-Remote-Access](adr/0017-remote-access.md)
 
-- [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) ;
-- [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) ;
-- [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) ;
-- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) ;
-- [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md).
-
-Gate 1 et Gate 2 produisent des preuves JSON avec `hardware_certification=DEFERRED`. Gate 2 référence le SHA-256 exact de Gate 1. Gate 3 refuse `final-certification PASS` si la chaîne de preuves est absente, périmée ou si le runtime physique ne correspond plus.
-
-Le LAB VirtualBox reste strictement limité au desktop et **ne déverrouille jamais `install.sh --apply`**.
-
----
-
-## Ordre d'autorité
-
-```text
-code + config + tests CI
-        ↓
-document normatif courant
-        ↓
-guide / référence / runbook
-        ↓
-document historique / release note
-```
-
-Une contradiction active entre code, configuration et documentation est un bug.
-
-- [Qualification de fiabilité après audit](RELIABILITY_QUALIFICATION.md) : correctifs, preuves et parcours restant.
-
----
-
-## Référence Fedora 45
-
-[Installation neuve et promotion du profil](FEDORA45_PRIMARY.md) · [Fedora 44 historique](HISTORICAL_FEDORA44.md) · [Migration facultative 44 → 45](UPGRADE_FEDORA_45.md).
-
-## Notes historiques
-
-Les comptes rendus d'étapes passées (non normatifs) sont rangés dans [`history/`](history/README.md).
-
-## Transition de release
-
-- [Linux amont officiel et N/N-1](UPSTREAM_LINUX.md)
-- [Installation neuve Fedora 45 / GNOME 51 et promotion du profil](FEDORA45_PRIMARY.md)
-- [Migration facultative d'un poste déjà sous Fedora 44](UPGRADE_FEDORA_45.md)
-
-- [Complétion desktop, applications et périphériques](DESKTOP_COMPLETION.md) — maintenance GNOME, flux réels, Brio/ALC4080 et afficheur LD240 facultatif.
+</details>

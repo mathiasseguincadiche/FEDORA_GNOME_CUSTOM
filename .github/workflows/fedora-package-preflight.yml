@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for manifest in manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-nautilus.txt manifests/packages-nautilus-optional.txt manifests/packages-gnome-extensions.txt manifests/packages-desktop-integration.txt manifests/packages-performance.txt manifests/packages-shell.txt manifests/packages-remote-fedora.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-appimage.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
+          for manifest in manifests/packages-baseline.txt manifests/packages-system.txt manifests/packages-hardware.txt manifests/packages-gnome.txt manifests/packages-nautilus.txt manifests/packages-nautilus-optional.txt manifests/packages-gnome-extensions.txt manifests/packages-desktop-integration.txt manifests/packages-performance.txt manifests/packages-shell.txt manifests/packages-remote-fedora.txt manifests/packages-multimedia-fedora.txt manifests/packages-applications-gtk4.txt manifests/packages-applications-professional-fedora.txt manifests/packages-appimage.txt manifests/packages-virtualization.txt manifests/packages-rpmfusion.txt; do
             echo "== $manifest =="
             while IFS= read -r pkg; do
               [[ -z "$pkg" || "$pkg" == \#* ]] && continue
@@ -65,7 +65,7 @@ jobs:
           dnf -y install ffmpeg-free libva-intel-media-driver
           dnf -y swap ffmpeg-free ffmpeg --allowerasing
           rpm -q ffmpeg
-          ! rpm -q ffmpeg-free
+          bash scripts/ci/assert-absent.sh rpm -q ffmpeg-free
           dnf -y swap libva-intel-media-driver intel-media-driver --allowerasing
           rpm -q intel-media-driver
       - name: Verify GTK4 libadwaita application contract

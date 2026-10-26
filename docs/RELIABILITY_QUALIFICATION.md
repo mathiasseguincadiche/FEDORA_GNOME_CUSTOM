@@ -17,13 +17,26 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 - Journaux conservés lors des appels imbriqués et certificats invalidés par les
   identités configuration/matériel/runtime/chaîne de validation.
 - Bundles de sauvegarde identifiés par commit et configuration, jamais par le seul commit.
-- Restauration contrôlée par Borg, couverture NVRAM/swtpm et données applicatives.
+- Restauration contrôlée par Borg pour les données applicatives ; NVRAM/swtpm et disques des VM restent dans les exports manuels du propriétaire.
 - Test fio sur fichier temporaire unique, même pour la racine non inscriptible
   par l'utilisateur ; aucune écriture sur le périphérique brut.
 - Preuves réseau liées à l'interface testée (DNS et HTTPS), sorties analysées en locale C.
 - État GNOME 51 `ACTIVE` réellement exigé pour les extensions attendues.
 - Reprise écran conservant les choix utilisateur et tous les moniteurs.
 - Kickstart lié à `/dev/disk/by-id` et au numéro de série, revérifiés en `%pre`.
+
+## Corrections de la revue des 25–26 octobre 2026
+
+- Tiling Assistant utilise le même lecteur d’état `ACTIVE` que les autres contrôles GNOME 51.
+- CPU/RAM/réseau restent mesurés ; la charge B580 `xe` est optionnelle et annoncée non mesurée jusqu’à qualification d’un backend compatible.
+- Les outils de baseline sont préparés explicitement avant l’enrôlement, et inclus dans Kickstart ; le socle système fournit `semanage` avant `/data`.
+- Une mise à jour complète sans transaction RPM exécute Flatpak et ses postchecks sans demander de redémarrage.
+- Un LAN utilisant le même CIDR que KVM est distingué de son bridge et détecté comme conflit.
+- Windows distingue QGA actuel et dernier contrôle d’installation enregistré ; toute nouvelle tentative invalide le précédent marqueur.
+- Le pré-APPLY applique l’exclusion `secrets` des sauvegardes daily/full ; les métadonnées libvirt restent hors Borg.
+- Les assertions CI d’absence propagent les échecs et erreurs de lecture ; les scénarios de régression vérifient les défauts observés.
+
+Ces correctifs logiciels ne constituent ni une promotion du profil Fedora 45 ni une certification matérielle. Le média final signé, les composants stables et la Gate 3 restent à qualifier selon le parcours d’installation.
 
 ## Ce qui constitue une preuve
 

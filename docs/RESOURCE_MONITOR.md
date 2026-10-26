@@ -11,7 +11,8 @@ Fedora 45 / GNOME 51 utilise **Vitals v85, review 74743**, UUID `Vitals@CoreCodi
 | `update-time` | 2 secondes |
 | `position-in-panel` | 2, zone droite |
 | `show-processor`, `show-memory`, `show-network` | true |
-| `show-temperature`, `show-gpu` | selon les options correspondantes |
+| `show-temperature` | selon l’option correspondante |
+| `show-gpu` | false par défaut : mesure de charge `xe` non qualifiée |
 | `hot-sensors` | CPU utilisé, RAM utilisée, débit descendant maximal, débit montant maximal |
 
 Les identifiants stables sont `_processor_usage_`, `_memory_usage_`, `__network-rx_max__` et `__network-tx_max__`. Le module applique et relit ces valeurs. Les anciennes clés GSettings de Resource Monitor v28 ne sont pas utilisées pour Vitals.
@@ -20,9 +21,9 @@ Les températures dépendent des identifiants hwmon réellement découverts : le
 
 ## Contrôles matériels indépendants
 
-`diagnostics/resource-monitor-doctor` et le module conservent les contrôles de santé physique : capteur Ryzen `k10temp` / `zenpower`, label `Tctl` préféré ; GPU Intel Arc B580 PCI `8086:e20b` ; vraie source de charge `gpu_busy_percent` ou `gt_busy_percent` ; température DRM hwmon si disponible.
+`diagnostics/resource-monitor-doctor` et le module conservent la détection du capteur Ryzen `k10temp` / `zenpower` (label `Tctl` préféré) et de la B580 PCI `8086:e20b`. La température GPU DRM hwmon est signalée lorsqu’elle existe.
 
-Sur bare-metal, B580 absente ou sans compteur de charge lisible signifie KO. Une température GPU absente peut rester WARN si la charge est réellement lisible. L’absence de source n’est jamais présentée comme un faux 0 %. Si `xe` ne fournit aucun compteur compatible, un backend supplémentaire devra être qualifié séparément.
+La charge GPU reste **optionnelle et non mesurée** tant qu’aucun backend Intel `xe` n’a été qualifié. Son absence ne bloque ni la convergence du bureau ni la Gate 3 ; elle n’est jamais affichée comme un faux 0 %. Les attributs de charge d’autres pilotes ne sont pas requis pour la B580. Les mesures CPU, RAM et réseau restent attendues.
 
 ```bash
 bash diagnostics/resource-monitor-doctor

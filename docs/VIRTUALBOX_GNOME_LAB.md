@@ -221,6 +221,6 @@ Gate 3 vérifiera que Gate 2 référence exactement le SHA-256 de Gate 1.
 
 Sur la vraie workstation, `bash diagnostics/resource-monitor-doctor` doit obtenir `KO=0`.
 
-La cible B580 exacte `8086:e20b` doit être résolue dans `/sys/class/drm`. La charge GPU doit provenir d'un vrai compteur `gpu_busy_percent` ou `gt_busy_percent`. Si le kernel `xe` ne fournit pas l'un de ces compteurs sur la B580, le GATE 3 reste bloqué pour cette métrique : il faudra qualifier un backend Intel supplémentaire au lieu de fabriquer une valeur.
+La cible B580 exacte `8086:e20b` doit être résolue dans `/sys/class/drm` sur le poste physique. La charge GPU reste optionnelle et non mesurée jusqu’à qualification d’un backend `xe` ; elle ne bloque pas la Gate 3 et aucune valeur artificielle n’est affichée. Les mesures CPU, RAM et réseau restent attendues. Une VM ne certifie pas les capteurs physiques.
 
 La suite est décrite dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).

@@ -8,6 +8,8 @@
 
 `./menu.sh` lance la même interface pour compatibilité.
 
+Avant les premiers enrôlements matériels, `./control.sh install prepare-tools` installe explicitement les outils de baseline. Cette préparation est proposée dans le menu Installation ; elle ne lance aucune mesure ni certification.
+
 ## Le Control Center : une façade, des moteurs spécialisés
 
 ```mermaid

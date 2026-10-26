@@ -1,6 +1,13 @@
 #Requires -RunAsAdministrator
 $ErrorActionPreference = "Stop"
 
+$markerDir = 'C:\ProgramData\FedoraGnomeCustom'
+$markerPath = Join-Path $markerDir 'guest-integration.json'
+# A failed attempt must not leave an earlier installation check marked PASS.
+if (Test-Path -LiteralPath $markerPath) {
+    Remove-Item -LiteralPath $markerPath -Force
+}
+
 Write-Host "[FGC] Detecting VirtIO media..."
 $cdroms = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=5"
 $virtio = $null
@@ -29,8 +36,6 @@ if (-not $balloon) { throw "Healthy VirtIO balloon device not found." }
 $qgaService = Get-Service -Name QEMU-GA -ErrorAction Stop
 if ($qgaService.Status -ne 'Running') { throw "QEMU Guest Agent service is not running." }
 
-$markerDir = 'C:\ProgramData\FedoraGnomeCustom'
-$markerPath = Join-Path $markerDir 'guest-integration.json'
 New-Item -ItemType Directory -Force -Path $markerDir | Out-Null
 $marker = [ordered]@{
     schema = 2

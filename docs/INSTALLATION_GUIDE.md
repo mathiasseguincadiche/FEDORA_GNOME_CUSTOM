@@ -98,6 +98,14 @@ Le générateur :
 
 ## 3. Préparer le second T705 — stockage persistant + KVM
 
+Avant l’enrôlement et les mesures, préparer explicitement les outils nécessaires :
+
+```bash
+./control.sh install prepare-tools
+```
+
+Cette commande installe les paquets de baseline, dont `smartmontools`, sans mesurer ni certifier le matériel. Le Kickstart généré inclut le même manifeste ; cette étape prépare aussi une installation Fedora effectuée manuellement. Les consultations d’état restent sans installation de paquets.
+
 Le second Crucial T705 est le disque **persistant** de la workstation. Il ne sert plus uniquement à KVM : il protège les données de travail, la bibliothèque ISO et la bibliothèque de jeux d'une réinstallation ou d'une perte du disque système Btrfs. Le dépôt **ne partitionne et ne formate jamais ce disque**.
 
 Le préparer manuellement en EXT4 et le monter durablement sur `/data` (de préférence par UUID dans `/etc/fstab`), puis :

@@ -77,7 +77,7 @@ for token in 'Verdict sur l'"'"'architecture' 'relais' 'Gate 3' 'expiration' 'Fe
 done
 grep -Fq '0017-remote-access.md' docs/adr/README.md || fail 'ADR index missing 0017'
 grep -Fq 'REMOTE_ACCESS.md' docs/README.md || fail 'docs portal must link REMOTE_ACCESS.md'
-grep -Fq 'REMOTE_ACCESS.md' README.md || fail 'README must link REMOTE_ACCESS.md'
+grep -Fq 'docs/README.md' README.md || fail 'README must link the documentation portal'
 grep -Fq 'REMOTE_ENABLE' config/local.conf.example || fail 'local.conf.example must document the opt-in'
 [[ "$(tr -d '[:space:]' < VERSION)" =~ ^0\.(2[2-9]|[3-9][0-9])\.[0-9]+$ ]] || fail 'VERSION must be at least 0.22.0 (remote access profile shipped in 0.22.0)'
 grep -Fq "v$(tr -d '[:space:]' < VERSION)-rc." .github/release-manifest.env || fail 'release manifest must follow VERSION'

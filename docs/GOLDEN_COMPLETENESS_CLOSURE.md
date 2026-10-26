@@ -85,7 +85,7 @@ Le script refuse les périphériques VirtIO en mauvaise santé et exige explicit
 C:\ProgramData\FedoraGnomeCustom\guest-integration.json
 ```
 
-L'hôte récupère ce marqueur par le QEMU Guest Agent ; ni dossier partagé ni identifiant de l'invité ne sont utilisés.
+L’hôte vérifie la disponibilité actuelle du QEMU Guest Agent et récupère le dernier contrôle d’installation enregistré, avec sa date. Ce fichier ne prouve pas la santé actuelle des pilotes : après une modification des pilotes, relancer le script d’intégration dans Windows. Toute nouvelle tentative invalide l’ancien fichier avant ses opérations. Aucun dossier partagé ni identifiant de l’invité n’est utilisé.
 
 Vérification côté hôte :
 
@@ -175,7 +175,7 @@ Démarrer les deux invités Golden et vérifier que le marqueur Windows existe, 
 ./scripts/kvm/runtime_certification.sh
 ```
 
-La certification publique conserve les tests existants de l'hôte, de Rocky Linux, du XML et du réseau fail-closed, et ajoute la preuve stricte et vivante du QGA Windows.
+La certification publique conserve les tests existants de l'hôte, de Rocky Linux, du XML et du réseau fail-closed, et vérifie la disponibilité actuelle du QGA Windows ainsi que le dernier contrôle d’installation enregistré. La santé actuelle des pilotes doit être recontrôlée dans l’invité après leur modification.
 
 ## 6. Cinq cycles physiques de veille/réveil
 

@@ -30,17 +30,9 @@ for file in \
   require_file "$file"
 done
 
-# Pedagogical contract: the portal must orient by goal and the learning path
-# must distinguish discovery, operation, construction/certification and maintenance.
-for token in \
-  'Je veux…' \
-  'LEARNING_PATH.md' \
-  'Trois profondeurs de lecture' \
-  'Pourquoi' \
-  'préconditions' \
-  'résultat observable' \
-  "faut-il s'arrêter"; do
-  grep -Fq "$token" "$ROOT/docs/README.md" || fail "docs portal missing pedagogical token: $token"
+# The portal points to canonical journeys; teaching detail belongs in its guides.
+for target in ARCHITECTURE_PEDAGOGIQUE.md LEARNING_PATH.md INSTALLATION_GUIDE.md CONTROL_CENTER.md BACKUP_RESTORE.md TROUBLESHOOTING.md DOCUMENTATION_MODEL.md; do
+  grep -Fq "]($target)" "$ROOT/docs/README.md" || fail "docs portal missing journey: $target"
 done
 
 for token in \
@@ -109,8 +101,8 @@ grep -Fq 'XDG Desktop' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Corbeille' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'Super+D' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq '8086:e20b' "$ROOT/docs/RESOURCE_MONITOR.md"
-grep -Fq 'gpu_busy_percent' "$ROOT/docs/RESOURCE_MONITOR.md"
-grep -Fq 'gt_busy_percent' "$ROOT/docs/RESOURCE_MONITOR.md"
+grep -Fq 'optionnelle et non mesurée' "$ROOT/docs/RESOURCE_MONITOR.md"
+grep -Fq 'backend Intel' "$ROOT/docs/RESOURCE_MONITOR.md"
 if grep -Fqi 'unique extension' "$ROOT/docs/GNOME_PROFILE.md"; then
   echo 'GNOME profile still claims a single functional extension' >&2
   exit 1
@@ -249,9 +241,10 @@ import sys
 root = Path(sys.argv[1])
 version = (root / "VERSION").read_text().strip()
 readme = (root / "README.md").read_text()
-shown = re.search(r"^\s*Projet\s+(\S+)", readme, flags=re.M)
-if shown is None or shown.group(1) != version:
-    raise SystemExit("README Control Center version differs from VERSION")
+if "](VERSION)" not in readme:
+    raise SystemExit("README must link to the canonical version")
+if re.search(r"Golden Workstation [0-9]+\.[0-9]+\.[0-9]+", readme):
+    raise SystemExit("README contains a duplicate hardcoded release")
 governance = (root / "docs/GITHUB_GOVERNANCE.md").read_text()
 if "cat VERSION" not in governance or "cat .github/release-manifest.env" not in governance:
     raise SystemExit("Governance must point to current release sources")

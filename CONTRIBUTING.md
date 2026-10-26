@@ -1,6 +1,6 @@
 # Contribuer à Fedora Golden Workstation
 
-Merci de préserver l'objectif principal du dépôt : une Fedora 44 / GNOME 50 **stable, reproductible, mesurée, récupérable et adaptée au matériel cible**.
+Merci de préserver l'objectif principal du dépôt : une Fedora 45 / GNOME 51 **stable, reproductible, mesurée, récupérable et adaptée au matériel cible**.
 
 ## Avant de modifier le projet
 
@@ -62,10 +62,10 @@ La CI GitHub reste l'autorité avant fusion :
 - Tests ;
 - Shell quality ;
 - Architecture non-regression ;
-- Fedora 44 package preflight ;
-- Fedora 44 desktop integration pretest ;
-- Fedora 44 host integration pretest ;
-- Fedora 44 gaming pretest lorsque le périmètre le déclenche.
+- Fedora 45 package preflight ;
+- Fedora 45 desktop integration pretest ;
+- Fedora 45 host integration pretest ;
+- Fedora 45 gaming pretest lorsque le périmètre le déclenche.
 
 ## Shell
 

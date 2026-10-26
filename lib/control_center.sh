@@ -384,6 +384,7 @@ cc_install_menu() {
     cc_option 3 'Installation complète' 'APPLY réel protégé'
     cc_option 4 'État baseline matérielle' 'read-only'
     cc_option 5 'Plan des modules' 'ordre de convergence'
+    cc_option 6 'Préparer les outils de baseline' 'installation explicite des paquets'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
@@ -396,6 +397,7 @@ cc_install_menu() {
         ;;
       4) cc_interactive_exec 'BASELINE MATÉRIELLE' "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
       5) cc_interactive_exec 'PLAN DE CONVERGENCE' cc_show_module_plan ;;
+      6) cc_interactive_exec 'PRÉPARATION DES OUTILS BASELINE' "$REPO_ROOT/diagnostics/baseline-doctor" prepare-tools ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -741,7 +743,7 @@ FEDORA GOLDEN WORKSTATION — Workstation Control Center
 Usage:
   ./control.sh                         Menu interactif
   ./control.sh status                  Tableau de bord read-only
-  ./control.sh install dry-run|backup|apply
+  ./control.sh install prepare-tools|dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
@@ -764,6 +766,7 @@ cc_cli_dispatch() {
     status) cc_header ;;
     install)
       case "$action" in
+        prepare-tools) "$REPO_ROOT/diagnostics/baseline-doctor" prepare-tools ;;
         dry-run) "$REPO_ROOT/install.sh" --dry-run ;;
         backup) "$REPO_ROOT/prepare-preapply-backup.sh" ;;
         apply) "$REPO_ROOT/install.sh" --apply ;;

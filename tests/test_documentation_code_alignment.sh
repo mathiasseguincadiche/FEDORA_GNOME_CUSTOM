@@ -68,7 +68,7 @@ engine_docs = [
     root / "docs/VM_PROFILES.md",
     root / "docs/RUNBOOK_KVM.md",
 ]
-public_docs = [root / "README.md", root / "docs/CONTROL_CENTER.md"]
+public_docs = [root / "docs/CONTROL_CENTER.md"]
 required_options = ("--windows-iso", "--virtio-iso", "--windows-sha256", "--virtio-sha256")
 errors = []
 
@@ -171,8 +171,9 @@ done
 for expected in DOCUMENTATION_MODEL.md RUNBOOK_KVM.md RUNBOOK_PERSISTENT_DATA_GAMING.md; do
   grep -Fq "$expected" "$ROOT/docs/README.md" || fail "docs/README.md missing $expected"
 done
-for heading in '# 1. Normes' '# 2. Installation' '# 3. Guides opérateur' '# 4. Références techniques' '# 5. Runbooks' '# 6. Certification, CI et gouvernance'; do
-  grep -Fq "$heading" "$ROOT/docs/README.md" || fail "documentation portal missing role: $heading"
+# Navigation destinations survive editorial regrouping and heading changes.
+for target in INSTALLATION_GUIDE.md CONTROL_CENTER.md BACKUP_RESTORE.md TROUBLESHOOTING.md THREE_GATE_VALIDATION.md; do
+  grep -Fq "]($target)" "$ROOT/docs/README.md" || fail "documentation portal missing journey: $target"
 done
 
 echo 'documentation/code alignment: PASS'

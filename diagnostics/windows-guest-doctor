@@ -10,6 +10,7 @@ vsh(){ if virsh -c "$uri" list --all >/dev/null 2>&1; then virsh -c "$uri" "$@";
 
 vsh dominfo "$domain" >/dev/null 2>&1 || { emit KO Windows "domain $domain missing"; exit 1; }
 vsh qemu-agent-command "$domain" '{"execute":"guest-ping"}' >/dev/null 2>&1 || { emit KO QEMU-GA 'guest-ping failed'; exit 1; }
+emit OK QEMU-GA 'guest-ping responds now'
 if ! command -v jq >/dev/null || ! command -v base64 >/dev/null; then
   emit KO Tooling 'jq/base64 required'
   exit 1
@@ -27,8 +28,9 @@ read_resp="$(vsh qemu-agent-command "$domain" "$read_req" 2>/dev/null || true)"
 b64="$(jq -r '.return["buf-b64"] // empty' <<<"$read_resp" 2>/dev/null || true)"
 [[ -n "$b64" ]] || { emit KO Marker 'QGA returned no marker payload'; exit 1; }
 marker="$(printf '%s' "$b64" | base64 -d 2>/dev/null || true)"
-if jq -e '.schema == 2 and .verdict == "PASS" and .virtio_storage == "PASS" and .virtio_network == "PASS" and .virtio_balloon == "PASS" and .qemu_ga == "PASS" and .virtio_bad_count == 0' <<<"$marker" >/dev/null 2>&1; then
-  emit OK 'Windows guest integration' 'live VirtIO storage/network/balloon + QEMU-GA marker PASS'
+if jq -e '.schema == 2 and .verdict == "PASS" and .virtio_storage == "PASS" and .virtio_network == "PASS" and .virtio_balloon == "PASS" and .qemu_ga == "PASS" and .virtio_bad_count == 0 and (.generated_utc | type == "string" and length > 0)' <<<"$marker" >/dev/null 2>&1; then
+  recorded_utc="$(jq -r '.generated_utc' <<<"$marker")"
+  emit OK 'Recorded Windows integration' "last installation check PASS ($recorded_utc); current VirtIO health not rechecked"
 else
   emit KO 'Windows guest integration' 'marker missing required PASS fields; rerun Configure-GuestIntegration.ps1 as Administrator'
 fi

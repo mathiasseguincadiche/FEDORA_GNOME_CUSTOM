@@ -38,7 +38,7 @@ Show Desktop Button utilise `org.gnome.shell.extensions.show-desktop-button` : p
 
 Vitals affiche CPU, RAM et débits réseau en haut à droite, toutes les deux secondes. Les températures CPU/GPU dépendent des capteurs détectés : on les épingle depuis le menu Vitals. L’affichage de la charge B580 dans la barre n’est pas garanti par Vitals.
 
-Le doctor conserve les contrôles matériels indépendants sur la B580 `8086:e20b`, ses compteurs `gpu_busy_percent` / `gt_busy_percent` et ses températures hwmon. Une absence de vraie source reste un KO de télémétrie physique ; aucune VM ne certifie ces sources. Voir [RESOURCE_MONITOR.md](RESOURCE_MONITOR.md).
+Le doctor vérifie la présence de la B580 `8086:e20b` et signale les températures hwmon disponibles. La charge GPU est optionnelle et non mesurée tant qu’un backend `xe` n’a pas été qualifié ; son absence ne bloque pas le bureau. Les mesures CPU, RAM et réseau restent attendues. Voir [RESOURCE_MONITOR.md](RESOURCE_MONITOR.md).
 
 ## Dock, AppIndicator et tuilage
 
