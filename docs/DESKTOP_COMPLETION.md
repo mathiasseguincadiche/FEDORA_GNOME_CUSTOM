@@ -21,11 +21,10 @@ Elle ouvre de vraies applications, exige une modification/enregistrement et un P
 Les réponses ScreenCast/Camera doivent être autorisées. SelectSources et Start précèdent OpenPipeWireRemote ; le diagnostic consomme au moins dix images via GStreamer. Annuler, refuser ou ne recevoir aucun flux fait échouer le test. Aucune image n'est enregistrée.
 
 ~~~bash
-./diagnostics/portal-functional-doctor --interactive --gate2
 ./diagnostics/portal-functional-doctor --interactive --gate3
 ~~~
 
-Gate 2 teste le partage d'écran dans la VM ; Gate 3 exige aussi la caméra réelle. Les essais Slack/WebRTC et les confirmations humaines complètent ce contrôle du flux.
+Le système installé teste le partage d’écran et la caméra réelle en Gate 3. Les essais Slack/WebRTC et les confirmations humaines complètent ce contrôle du flux.
 
 ## Identités matérielles et reprise
 

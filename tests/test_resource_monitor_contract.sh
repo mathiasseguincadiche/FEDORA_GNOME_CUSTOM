@@ -25,11 +25,10 @@ grep -Fq 'gnome.display_repair|GNOME|gnome.polish|modules/gnome/25_display_repai
 
 
 for token in \
-  '0x8086' '0xe20b' 'gpu_busy_percent' 'gt_busy_percent' 'k10temp|zenpower' \
+  '0x8086' '0xe20b' 'k10temp|zenpower' \
   "itemsposition \"['cpu', 'ram', 'eth', 'wlan', 'gpu']\"" \
   'diskstatsstatus false' 'swapstatus false' 'netautohidestatus true' \
-  'thermaltemperatureunit' 'gpustatus' 'runtime_is_baremetal' \
-  'Resource Monitor has no readable B580 xe GPU load source'; do
+  'thermaltemperatureunit' 'gpustatus' 'runtime_is_baremetal'; do
   grep -Fq "$token" "$MODULE" || { echo "Resource Monitor module invariant missing: $token" >&2; exit 1; }
 done
 

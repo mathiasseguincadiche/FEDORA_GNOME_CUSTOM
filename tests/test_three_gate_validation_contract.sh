@@ -1,91 +1,106 @@
 #!/usr/bin/env bash
+# Public validation contract: software CI, native Live USB, installed Fedora.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+fail() { echo "native validation contract: FAIL: $*" >&2; exit 1; }
+# Exercise the real CLI with disposable logging/state. Source directories stay
+# read-only and a planning command cannot leave artifacts in the checkout.
+temporary="$(mktemp -d)"
+trap 'rm -rf -- "$temporary"' EXIT
+CLI_ROOT="$temporary/repo"
+mkdir -p "$CLI_ROOT/scripts/validation"
+cp "$ROOT/control.sh" "$CLI_ROOT/control.sh"
+cp "$ROOT/scripts/validation/live-usb.sh" "$CLI_ROOT/scripts/validation/live-usb.sh"
+for directory in lib config manifests profiles; do
+  ln -s "$ROOT/$directory" "$CLI_ROOT/$directory"
+done
+ln -s "$ROOT/VERSION" "$CLI_ROOT/VERSION"
+ln -s "$ROOT/scripts/config" "$CLI_ROOT/scripts/config"
 
 for file in \
   lib/validation_gates.sh \
-  scripts/validation/gate1-wsl2.sh \
-  scripts/validation/gate2-virtualbox.sh \
+  lib/live_validation.py \
+  scripts/validation/live-usb.sh \
   scripts/validation/gate3-baremetal.sh \
   scripts/validation/import-proof.sh \
   scripts/validation/export-proof.sh \
   scripts/validation/status.sh \
   manifests/validation-gate-proof.schema.json \
   docs/THREE_GATE_VALIDATION.md \
-  docs/adr/0009-three-gate-validation.md; do
-  [[ -s "$ROOT/$file" ]] || { echo "missing three-gate artifact: $file" >&2; exit 1; }
+  docs/FEDORA45_LIVE_PREFLIGHT.md; do
+  [[ -s "$ROOT/$file" ]] || fail "missing native validation artifact: $file"
 done
 
-python3 -m json.tool "$ROOT/manifests/validation-gate-proof.schema.json" >/dev/null
+# Obsolete operator paths must not remain callable or enter the public help.
+for removed in \
+  scripts/validation/gate1-wsl2.sh \
+  scripts/validation/gate2-virtualbox.sh \
+  scripts/lab/apply-gnome-virtualbox.sh \
+  diagnostics/wsl2-doctor \
+  diagnostics/virtualbox-gnome-lab-doctor; do
+  [[ ! -e "$ROOT/$removed" ]] || fail "obsolete operator entrypoint remains: $removed"
+done
+for command in gate1 gate2; do
+  if bash "$CLI_ROOT/control.sh" validate "$command" plan >/dev/null 2>&1; then
+    fail "obsolete validation command accepted: $command"
+  fi
+done
 
-# Gate 1 is WSL2-only and can never manufacture bare-metal certification.
-grep -Fq 'runtime_is_wsl2' "$ROOT/scripts/validation/gate1-wsl2.sh"
-grep -Fq 'diagnostics/wsl2-doctor' "$ROOT/scripts/validation/gate1-wsl2.sh"
-grep -Fq '.github/workflows/tests.yml' "$ROOT/scripts/validation/gate1-wsl2.sh"
-grep -Fq 'physical_hardware=DEFERRED' "$ROOT/scripts/validation/gate1-wsl2.sh"
-grep -Fq 'python3 sha256sum sed sort' "$ROOT/scripts/validation/gate1-wsl2.sh"
-if grep -Fq 'final-certification' "$ROOT/scripts/validation/gate1-wsl2.sh"; then
-  echo 'Gate 1 must never invoke final-certification' >&2
-  exit 1
+# The native Live path observes compatibility; it cannot apply or issue a final
+# certificate. Golden qualification explicitly requires an installed runtime.
+grep -Fq 'validation_require_live_runtime' "$ROOT/scripts/validation/live-usb.sh"
+grep -Fq 'validation_write_live_proof' "$ROOT/scripts/validation/live-usb.sh"
+grep -Fq 'diagnostics/live-preflight.sh' "$ROOT/scripts/validation/live-usb.sh"
+if grep -Eq 'final-certification|capture-golden-release|install.sh.*--apply' "$ROOT/scripts/validation/live-usb.sh"; then
+  fail 'Live observations invoke an installed-system action'
 fi
-if grep -Fq 'capture-golden-release.sh' "$ROOT/scripts/validation/gate1-wsl2.sh"; then
-  echo 'Gate 1 must never capture a Golden release' >&2
-  exit 1
-fi
-
-# Gate 2 requires Gate 1, VirtualBox, automated desktop doctors and human visual sign-off.
-grep -Fq 'runtime_is_virtualbox' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-grep -Fq 'validation_require_imported_gate 1' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-grep -Fq 'JE_VALIDE_VISUELLEMENT_GATE2' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-grep -Fq 'nautilus-integration-doctor' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-grep -Fq 'ptyxis-doctor' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-grep -Fq 'portal-doctor' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-grep -Fq 'predecessor' "$ROOT/scripts/validation/gate2-virtualbox.sh"
-if grep -Fq 'final-certification' "$ROOT/scripts/validation/gate2-virtualbox.sh"; then
-  echo 'Gate 2 must never invoke final-certification' >&2
-  exit 1
-fi
-
-# The VirtualBox LAB now converges the actual Nautilus and GTK4/Ptyxis desktop subset.
-grep -Fq 'modules/gnome/20_gnome_core.sh' "$ROOT/scripts/lab/apply-gnome-virtualbox.sh"
-grep -Fq 'modules/gnome/21_nautilus_integration.sh' "$ROOT/scripts/lab/apply-gnome-virtualbox.sh"
-grep -Fq 'modules/applications/40_gtk4_native_apps.sh' "$ROOT/scripts/lab/apply-gnome-virtualbox.sh"
-grep -Fq 'gnome_nautilus_apply' "$ROOT/scripts/lab/apply-gnome-virtualbox.sh"
-grep -Fq 'applications_gtk4_apply' "$ROOT/scripts/lab/apply-gnome-virtualbox.sh"
-grep -Fq 'ptyxis-doctor' "$ROOT/scripts/lab/apply-gnome-virtualbox.sh"
-
-# Portable proofs are bound to commit/module-plan and Gate 2 must hash-link Gate 1.
-grep -Fq 'project_commit' "$ROOT/lib/validation_gates.sh"
-grep -Fq 'module_plan_sha256' "$ROOT/lib/validation_gates.sh"
-grep -Fq 'hardware_certification' "$ROOT/lib/validation_gates.sh"
-grep -Fq 'DEFERRED' "$ROOT/lib/validation_gates.sh"
-grep -Fq 'predecessor_sha256' "$ROOT/lib/validation_gates.sh"
-grep -Fq 'validation_require_chain' "$ROOT/lib/validation_gates.sh"
-
-# Gate 3 and the underlying final-certification independently enforce the chain.
-grep -Fq 'runtime_is_baremetal' "$ROOT/scripts/validation/gate3-baremetal.sh"
+grep -Fq 'validation_require_installed_runtime' "$ROOT/scripts/validation/gate3-baremetal.sh"
 grep -Fq 'validation_require_chain' "$ROOT/scripts/validation/gate3-baremetal.sh"
-validation_source="source \"\$REPO_ROOT/lib/validation_gates.sh\""
-grep -Fq "$validation_source" "$ROOT/diagnostics/final-certification"
+grep -Fq 'validation_require_installed_runtime' "$ROOT/diagnostics/final-certification"
 grep -Fq 'require_validation_chain' "$ROOT/diagnostics/final-certification"
-grep -Fq 'gate1_proof_sha256=' "$ROOT/diagnostics/final-certification"
-grep -Fq 'gate2_proof_sha256=' "$ROOT/diagnostics/final-certification"
+grep -Fq 'live_proof_sha256=' "$ROOT/diagnostics/final-certification"
 grep -Fq 'validation_chain=PASS' "$ROOT/diagnostics/final-certification"
 
-# Golden release embeds the two portable proofs and their hashes.
-grep -Fq 'gate1-proof.json' "$ROOT/scripts/release/capture-golden-release.sh"
-grep -Fq 'gate2-proof.json' "$ROOT/scripts/release/capture-golden-release.sh"
-grep -Fq 'validation_gates' "$ROOT/scripts/release/capture-golden-release.sh"
-grep -Fq 'gate1_proof_sha256' "$ROOT/scripts/release/capture-golden-release.sh"
-grep -Fq 'gate2_proof_sha256' "$ROOT/scripts/release/capture-golden-release.sh"
+# A single native Live record is carried into the installed certificate and
+# Golden release. Historical VM predecessor proofs have no active authority.
+grep -Fq 'live-proof.json' "$ROOT/scripts/release/capture-golden-release.sh"
+grep -Fq 'live_proof_sha256' "$ROOT/scripts/release/capture-golden-release.sh"
+if grep -Eq 'gate[12]_proof_sha256|gate[12]-proof.json|predecessor_sha256' \
+    "$ROOT/lib/validation_gates.sh" "$ROOT/lib/live_validation.py" \
+    "$ROOT/diagnostics/final-certification" "$ROOT/scripts/release/capture-golden-release.sh"; then
+  fail 'obsolete predecessor proof remains in the active certification contract'
+fi
 
-# Operator CLI and documentation expose the same ordered workflow.
-grep -Fq 'validate gate1' "$ROOT/control.sh"
-grep -Fq 'validate gate2' "$ROOT/control.sh"
-grep -Fq 'validate gate3' "$ROOT/control.sh"
-grep -Fq 'THREE_GATE_VALIDATION.md' "$ROOT/README.md"
-grep -Fq 'Gate 1' "$ROOT/docs/THREE_GATE_VALIDATION.md"
-grep -Fq 'Gate 2' "$ROOT/docs/THREE_GATE_VALIDATION.md"
-grep -Fq 'Gate 3' "$ROOT/docs/THREE_GATE_VALIDATION.md"
+python3 - "$ROOT/manifests/validation-gate-proof.schema.json" <<'PY_SCHEMA'
+import json
+import sys
+schema = json.load(open(sys.argv[1]))
+properties = schema['properties']
+assert schema['additionalProperties'] is False
+assert properties['schema']['const'] == 2
+assert properties['environment']['const'] == 'live-usb'
+assert properties['hardware_certification']['const'] == 'PREINSTALL_ONLY'
+assert {'project_commit', 'module_plan_sha256', 'hardware_fingerprint_sha256',
+        'source_tree_clean', 'live_kernel', 'checks'} <= set(schema['required'])
+assert not {'predecessor_sha256', 'gate1_proof_sha256', 'gate2_proof_sha256'} & set(properties)
+PY_SCHEMA
 
-echo 'three-gate validation contract: PASS'
+# The public planning command must remain read-only and usable outside Fedora.
+plan="$(bash "$CLI_ROOT/control.sh" validate live plan)"
+grep -Fq 'CHECK' <<< "$plan" || fail 'Live plan omitted its check catalog'
+grep -Fq 'validate export live' <<< "$plan" || fail 'Live plan omitted external export'
+grep -Fq 'validate import' <<< "$plan" || fail 'Live plan omitted installed import'
+for check in session gpu storage display_mode display network; do
+  grep -Eq "^${check}[[:space:]]+required[[:space:]]" <<< "$plan" || fail "missing required Live check: $check"
+done
+help="$(bash "$CLI_ROOT/control.sh" validate help)"
+for route in 'validate live' 'validate export live' 'validate import' 'validate gate3'; do
+  grep -Fq "$route" <<< "$help" || fail "missing operator route: $route"
+done
+if grep -Eqi 'wsl2|virtualbox|validate gate[12]' <<< "$help"; then
+  fail 'public validation help still prescribes a removed operator environment'
+fi
+grep -Fq 'THREE_GATE_VALIDATION.md' "$ROOT/docs/README.md"
+grep -Fq 'FEDORA45_LIVE_PREFLIGHT.md' "$ROOT/docs/README.md"
+
+echo 'native Live USB and installed-system validation contract: PASS'

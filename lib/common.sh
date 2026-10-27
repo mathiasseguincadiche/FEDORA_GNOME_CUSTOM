@@ -117,6 +117,12 @@ runtime_environment() {
 }
 
 runtime_is_baremetal() { [[ "$(runtime_environment)" == baremetal ]]; }
+runtime_is_live() {
+  local cmdline
+  cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
+  [[ "$cmdline" == *rd.live.image* || "$cmdline" == *root=live:* || -d /run/initramfs/live ]]
+}
+
 runtime_is_wsl2() { [[ "$(runtime_environment)" == wsl2 ]]; }
 runtime_is_ci() { [[ "$(runtime_environment)" == ci ]]; }
 runtime_is_vm() { [[ "$(runtime_environment)" == vm ]]; }

@@ -2,9 +2,20 @@
 
 ## Unreleased
 
+- Validation : parcours natif Live USB Fedora 45 / GNOME 51, puis installation sur SSD et qualification Gate 3 ; retrait des étapes opérateur WSL2 et VirtualBox. Rapport portable à 16 points, export avant redémarrage et import sur le même PC/commit après installation ; aucune certification des services installés depuis le Live.
+- Preuves : propagation explicite des erreurs d’écriture et de checksum, refus d’une source modifiée et invalidation de l’ancien résultat avant un nouvel essai Live ou une nouvelle qualification GNOME.
+
+- Fiabilité de l’installation Fedora 45 / GNOME 51 : reconnaître l’état réel `ACTIVE` de Tiling Assistant et réutiliser le helper commun dans les contrôles ; conserver CPU/RAM/réseau sans imposer de faux compteurs de charge à la B580 `xe`.
+- Préparer les outils matériels avant leur premier usage via `control.sh install prepare-tools` et le manifeste inclus dans Kickstart ; fournir `semanage` dans le socle système avant `/data`.
+- Maintenance : mettre aussi à jour Flatpak si DNF ne prépare aucune transaction, sans redémarrage artificiel ; conserver la propagation des échecs.
+- KVM : détecter un LAN de même CIDR que le réseau invité et conserver le profil Rocky DevOps avec accès SFTP. Le profil Windows 11, ses scripts invités et ses obligations de certification sont retirés.
+- Sauvegardes : appliquer au pré-APPLY l’exclusion du dossier `secrets` déjà utilisée en daily/full ; conserver Borg non chiffré et les exports VM manuels.
+- CI : rendre les assertions d’absence réellement bloquantes, y compris en cas d’erreur de lecture, et couvrir les défauts par des scénarios de comportement.
+- Documentation : README concis, portail par parcours, guides canoniques alignés et installation neuve Fedora 45 clairement séparée de l’historique Fedora 44. Le profil reste `pending` jusqu’à la qualification du média final signé et des composants stables.
+
 - Fermeture GNOME 51 : appliquer `KillMode=mixed` au service utilisateur Shell pour laisser Mutter terminer ses enfants Xwayland avant le nettoyage final. Installation et laboratoire partagent le même drop-in et sa vérification effective ; test de l’ordre d’arrêt avec un vrai systemd et témoin négatif, sans changement du délai ni des contrôles de coredump.
 
-- Documentation : orienter l'installation neuve vers le profil Fedora 45, harmoniser `pending`/`ready`, corriger le nom du verrou média dans le bundle et compléter les exemples de création Windows. Retirer l'ancienne commande de sauvegarde des VM des guides et de l'aide ; les exports restent manuels. Le README renvoie aux guides pour les procédures détaillées des trois gates.
+- Documentation : orienter l'installation neuve vers le profil Fedora 45, harmoniser `pending`/`ready`, corriger le nom du verrou média dans le bundle et documenter Rocky après installation du host. Retirer l'ancienne commande de sauvegarde des VM des guides et de l'aide ; les exports restent manuels. Le README renvoie aux guides pour les procédures détaillées.
 
 - Laboratoire GNOME : fermer l’instance D-Bus réelle de Nautilus et vérifier la fin des processus avant déconnexion ; conserver les diagnostics de fermeture et refuser les clients bloqués. L’essai interactif avec applications ouvertes reste requis.
 - Détection de la définition Steam déplacée dans `/usr/share/dnf5/repos.d/` sur Fedora 45, avec vérification du propriétaire RPM, compatibilité du chemin historique et test de comportement.

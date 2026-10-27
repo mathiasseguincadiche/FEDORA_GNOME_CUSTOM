@@ -183,7 +183,6 @@ qemu:///system
 /data/libvirt/images = pool devops-data
 network devops-nat
 Rocky Linux 10.2
-Windows 11
 ```
 
 Le réseau KVM est IPv4-only tant qu'une isolation dual-stack équivalente n'est pas implémentée.

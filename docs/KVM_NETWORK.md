@@ -2,6 +2,8 @@
 
 Ce document explique le réseau KVM privé de la workstation. Il complète [`VIRTUALIZATION.md`](VIRTUALIZATION.md) avec un niveau de détail suffisant pour comprendre **qui fournit l'adresse IP, qui fait le NAT, qui filtre les réseaux protégés du HOST et ce qui se passe lors d'un changement Ethernet/Wi-Fi**.
 
+Le sous-réseau KVM ne doit chevaucher aucun LAN physique. Une route égale à `192.168.50.0/24` est acceptée uniquement si elle appartient au bridge KVM attendu (`virbr50`). Si le LAN utilise déjà cette plage, corriger le plan d’adressage KVM avant de continuer, avec un CIDR, une passerelle et une plage DHCP cohérents.
+
 ## Contrat réseau
 
 ```text
@@ -35,7 +37,7 @@ Internet → VM       aucun port-forward implicite
 ## Vue simple
 
 ```text
-rocky-devops / windows-11
+rocky-devops
           │
           │ VirtIO
           ▼
@@ -280,7 +282,7 @@ L'administration Rocky Linux se fait depuis le HOST :
 ssh mathias@192.168.50.x
 ```
 
-Windows est administré via sa console/GUI et les accès explicitement configurés dans le segment KVM.
+Rocky est administré par SSH dans le segment KVM ; les accès passent par les routes explicitement configurées.
 
 ## Dépannage
 

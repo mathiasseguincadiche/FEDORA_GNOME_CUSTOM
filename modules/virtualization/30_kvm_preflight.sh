@@ -19,12 +19,13 @@ kvm_preflight_arc_owned_by_host() {
 kvm_preflight_network_overlap() {
   local cidr="${KVM_NETWORK_CIDR:-192.168.50.0/24}"
   command_exists python3 || return 1
-  python3 - "$cidr" <<'PY'
+  python3 - "$cidr" "${KVM_BRIDGE_NAME:-virbr50}" <<'PY'
 import ipaddress
 import subprocess
 import sys
 
 wanted = ipaddress.ip_network(sys.argv[1], strict=False)
+bridge = sys.argv[2]
 out = subprocess.run(['ip', '-4', 'route', 'show', 'scope', 'link'], text=True, capture_output=True, check=True).stdout
 for line in out.splitlines():
     fields = line.split()
@@ -34,7 +35,8 @@ for line in out.splitlines():
         current = ipaddress.ip_network(fields[0], strict=False)
     except ValueError:
         continue
-    if current == wanted:
+    device = fields[fields.index('dev') + 1] if 'dev' in fields and fields.index('dev') + 1 < len(fields) else ''
+    if current == wanted and device == bridge:
         continue
     if wanted.overlaps(current):
         print(f'configured KVM subnet {wanted} overlaps host-connected route {current}', file=sys.stderr)

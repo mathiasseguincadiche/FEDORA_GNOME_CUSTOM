@@ -39,8 +39,10 @@ LIFECYCLE_FLATPAK_UPDATE_POLICY=manual
 Les applications Flatpak sont mises à jour volontairement via GNOME Software ou :
 
 ```bash
-flatpak update
+./control.sh update all
 ```
+
+Le mode complet met aussi à jour Flatpak lorsque les RPM sont déjà à jour, sans demander de redémarrage dans ce cas. Une transaction RPM préparée reste appliquée et finalisée après le redémarrage prévu.
 
 Le projet ne crée aucun timer/service d'installation Flatpak silencieuse.
 
@@ -52,7 +54,7 @@ Contrat :
 
 - dépôt non chiffré par décision du propriétaire (ADR 0014) ;
 - dossier `secrets` exclu des archives ;
-- pas de prune automatique ;
+- rétention automatique selon la politique configurée, séparée des archives pré-APPLY ;
 - absence du disque externe = skip propre ;
 - backup pré-APPLY indépendant et fail-closed.
 

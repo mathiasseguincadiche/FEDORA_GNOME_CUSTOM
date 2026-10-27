@@ -2,9 +2,10 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
-quiet=false; interactive=false; scope=''
+source "$REPO_ROOT/lib/validation_gates.sh"
+quiet=false; interactive=false
 screen_stream=false; camera_stream=false
-for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --interactive) interactive=true;; --gate2) scope=gate2;; --gate3) scope=gate3;; *) echo 'Usage: portal-functional-doctor [--quiet] [--interactive] [--gate2|--gate3]' >&2; exit "$EXIT_USAGE";; esac; done
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --interactive) interactive=true;; --gate3) :;; *) echo 'Usage: portal-functional-doctor [--quiet] [--interactive] [--gate3]' >&2; exit "$EXIT_USAGE";; esac; done
 ok=0; ko=0
 emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
 portal_call(){ gdbus call --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop --method "$@"; }
@@ -13,10 +14,8 @@ confirm(){ local label="$1" phrase="$2" answer; printf '%s\nTapez exactement %s 
 # Invalidate interactive evidence before session/service checks can fail.
 # Read-only checks preserve existing evidence.
 if $interactive; then
-  case "$scope" in
-    gate2) rm -f "$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok";;
-    gate3) rm -f "$(physical_runtime_evidence_path portal-functional)" "$STATE_ROOT/final/certified.ok";;
-  esac
+  rm -f "$(physical_runtime_evidence_path portal-functional)" "$STATE_ROOT/final/certified.ok"
+  validation_require_installed_runtime || exit $?
 fi
 
 if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || "${XDG_SESSION_TYPE:-}" != wayland ]]; then emit KO Session 'GNOME/Wayland required'; exit "$EXIT_PRECHECK_FAILED"; fi
@@ -49,25 +48,14 @@ if $interactive; then
      confirm "Confirmez que le partage réel s'est effectué, puis arrêté normalement." JE_CONFIRME_SCREENCAST; then
     screen_stream=true; emit OK ScreenCast '10 actual PipeWire frames consumed; stream closed'
   else emit KO ScreenCast 'sharing cancelled, denied or unusable'; fi
-  if [[ "$scope" == gate3 ]]; then
-    if python3 "$REPO_ROOT/scripts/validation/portal-stream-probe.py" camera; then
-      camera_stream=true; emit OK Camera '10 actual portal-authorized camera frames consumed'
-    else emit KO Camera 'camera permission/stream unusable'; fi
-  fi
+  if python3 "$REPO_ROOT/scripts/validation/portal-stream-probe.py" camera; then
+    camera_stream=true; emit OK Camera '10 actual portal-authorized camera frames consumed'
+  else emit KO Camera 'camera permission/stream unusable'; fi
 fi
 
 if (( ko == 0 )) && $interactive && $screen_stream; then
-  case "$scope" in
-    gate2)
-      marker="$STATE_ROOT/validation/portal-functional-gate2-$(repo_commit).ok"; mkdir -p "$(dirname "$marker")"
-      { printf 'schema=2\nstream_policy=2\nstatus=PASS\ncommit=%s\neffective_config_sha256=%s\nutc=%s\n' "$(repo_commit)" "$(effective_config_sha256)" "$(date -u +%FT%TZ)"; } | evidence_atomic_write "$marker" 0600
-      ;;
-    gate3)
-      if ! runtime_is_baremetal; then emit KO Gate3 'bare-metal required'; exit "$EXIT_SECURITY_BLOCK"; fi
-      $camera_stream || exit "$EXIT_POSTCHECK_FAILED"
-      physical_runtime_write_evidence portal-functional 'stream_policy=2 FileChooser=PASS OpenURI=PASS Notification=PASS ScreenCast=PASS Camera=PASS'
-      ;;
-  esac
+  $camera_stream || exit "$EXIT_POSTCHECK_FAILED"
+  physical_runtime_write_evidence portal-functional 'stream_policy=2 FileChooser=PASS OpenURI=PASS Notification=PASS ScreenCast=PASS Camera=PASS'
 fi
 $quiet || { ui_meta OK "$ok"; ui_meta KO "$ko"; }
 (( ko == 0 ))

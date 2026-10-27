@@ -192,23 +192,20 @@ if [[ "${ROCKY_SERVER_RELEASE:-}" == 10.2 \
    && "${ROCKY_SERVER_VCPU:-}" == 6 \
    && "${ROCKY_SERVER_RAM_MB:-}" == 16384 \
    && "${ROCKY_SERVER_DISK_GB:-}" == 160 \
-   && "${WINDOWS11_VCPU:-}" == 4 \
-   && "${WINDOWS11_RAM_MB:-}" == 12288 \
-   && "${WINDOWS11_DISK_GB:-}" == 128 \
    && -z "${FEDORA_VM_NAME:-}" ]]; then
-  record OK 'VM profiles' 'Rocky Linux 10.2 + Windows 11 final contract'
+  record OK 'VM profiles' 'Rocky Linux 10.2 profile'
 else
   record KO 'VM profiles' 'profile resources or guest set mismatch'
 fi
 
 for helper in \
   guest/rocky-devops/bootstrap-devops.sh guest/rocky-devops/verify-devops.sh \
-  scripts/kvm/create_rocky_devops_vm.sh scripts/kvm/create_windows11_vm.sh scripts/kvm/runtime_certification.sh; do
+  scripts/kvm/create_rocky_devops_vm.sh scripts/kvm/runtime_certification.sh; do
   if [[ -r "$REPO_ROOT/$helper" ]]; then record OK "$helper" present; else record KO "$helper" missing; fi
 done
 
 record OK 'Guest file access policy' 'SSH/SFTP only; no host-directory sharing layer configured'
-record WARN 'Runtime guest proof' 'run scripts/kvm/runtime_certification.sh after both real guests are created'
+record WARN 'Runtime guest proof' 'run scripts/kvm/runtime_certification.sh after the real Rocky guest is created'
 
 if [[ "$quiet" != true ]]; then
   ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"

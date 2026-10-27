@@ -29,7 +29,7 @@ else
     if systemctl --user is-active --quiet fedora-gnome-gtk3-theme-follow.service; then emit OK 'Light/dark sync' 'watcher active'; else emit KO 'Light/dark sync' 'fedora-gnome-gtk3-theme-follow.service inactive'; fi
   fi
   if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
-    if gnome-extensions info "${TILING_ASSISTANT_UUID:-}" 2>/dev/null | grep -Fq 'State: ENABLED'; then emit OK 'Tiling Assistant' 'enabled'; else emit KO 'Tiling Assistant' 'not enabled'; fi
+    if gnome_extension_active "${TILING_ASSISTANT_UUID:-}"; then emit OK 'Tiling Assistant' 'active'; else emit KO 'Tiling Assistant' 'not active'; fi
     src="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/${TILING_ASSISTANT_UUID:-}/.fedora-gnome-custom-source"
     if [[ -r "$src" ]] && grep -Fxq "sha256=${TILING_ASSISTANT_SHA256:-}" "$src"; then emit OK 'Tiling Assistant source' 'pinned release SHA-256 recorded'; else emit KO 'Tiling Assistant source' 'provenance marker missing or different'; fi
   fi

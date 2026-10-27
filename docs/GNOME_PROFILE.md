@@ -21,6 +21,6 @@ La charge B580 dans la barre Vitals n’est pas garantie. Les lectures matériel
 
 `diagnostics/gnome-doctor` vérifie les extensions du socle et appelle `diagnostics/resource-monitor-doctor`. `diagnostics/polish-doctor` vérifie Tiling Assistant et la finition. Le diagnostic global inclut les deux couches.
 
-La CI teste métadonnées GNOME 51, empreintes, schémas, réglages et activation des six extensions dans QEMU. La [Gate 2 VirtualBox](VIRTUALBOX_GNOME_LAB.md) impose une preuve visuelle. La Gate 3 reste l’autorité pour les températures Ryzen, la B580, l’écran et la veille.
+La CI teste métadonnées GNOME 51, empreintes, schémas, réglages et activation des six extensions dans QEMU. La matrice GNOME du [système installé](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) impose une preuve visuelle après APPLY et redémarrage. La Gate 3 reste l’autorité pour les températures Ryzen, la B580, l’écran et la veille.
 
 Une nouvelle extension exige un besoin identifié, une source et une identité revues, une compatibilité GNOME 51 vérifiée et une nouvelle qualification. Les anciens composants Show Desktop Plus et Resource Monitor appartiennent au [profil Fedora 44 historique](HISTORICAL_FEDORA44.md).

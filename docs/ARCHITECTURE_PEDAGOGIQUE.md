@@ -29,9 +29,8 @@ flowchart TD
   CI --> Q{"Contrôles logiciels réussis ?"}
   Q -- non --> STOP["STOP : corriger, documenter, relancer"]
   Q -- oui --> PROF["Profil de release approuvé"]
-  PROF --> G1["Gate 1 : logique système / WSL2"]
-  G1 --> G2["Gate 2 : bureau GNOME / VirtualBox"]
-  G2 --> P["PC physique : média vérifié + disque choisi"]
+  PROF --> LIVE["Live USB sur le PC : média vérifié et essais"]
+  LIVE --> P["Installer Fedora sur le SSD puis importer la preuve Live"]
   P --> B["Baseline matérielle + dry-run"]
   B --> SAVE["Sauvegarde Borg pré-APPLY vérifiée"]
   SAVE --> APPLY["APPLY protégé : modules ordonnés"]
@@ -45,7 +44,7 @@ flowchart TD
 **Pour lire le schéma :**
 
 1. **La CI vérifie du code et des environnements virtualisés.** Un résultat vert sur `main` n'installe rien sur le PC et ne signifie pas Gate 3 PASS.
-2. **Gate 1 et Gate 2 sont des prévalidations distinctes.** Elles produisent des preuves, mais la partie matérielle reste `DEFERRED`.
+2. **Le Live USB observe directement le PC avant installation.** Sa preuve `PREINSTALL_ONLY` ne certifie pas la configuration, les services et les usages du système final.
 3. **La baseline et le dry-run observent avant de modifier.** Un prérequis refusé bloque `APPLY` (*fail-closed*).
 4. **La sauvegarde externe précède les mutations.** Le système ne doit pas « réparer » une installation en risquant les fichiers.
 5. **Gate 3 teste la réalité du poste.** C'est seulement après cette étape qu'on peut employer le terme de machine certifiée.
@@ -84,7 +83,7 @@ flowchart TB
   HOST --> CORE["Noyau Linux amont stable : N / N-1"]
   HOST --> ROOT["Crucial T705 nº1 : système Btrfs"]
   HOST --> DATA["Crucial T705 nº2 : /data EXT4 persistant"]
-  DATA --> FILES["Documents + Projets"]
+  DATA --> FILES["Documents + Projets + IA/Openclaw"]
   DATA --> MEDIA["ISO + Jeux"]
   DATA --> VMS["libvirt : disques des VM"]
   FILES --> BORG["Borg : SSD Kingston XS1000 externe"]
@@ -94,14 +93,14 @@ flowchart TB
 ### Deux SSD ne veulent pas dire deux sauvegardes
 
 - **T705 système :** Fedora, le bureau et la base réinstallable. Il peut être reconstruit depuis le dépôt.
-- **T705 `/data` :** documents, projets, ISO, jeux et VM. Il est **préservé lors d'une réinstallation**, jamais formaté automatiquement par le dépôt.
+- **T705 `/data` :** documents, projets, IA/Openclaw, ISO, jeux et VM. Il est **préservé lors d'une réinstallation**, jamais formaté automatiquement par le dépôt.
 - **SSD Borg externe :** seconde protection contre la perte de données, notamment en cas de panne du disque `/data`. Les sauvegardes sont **non chiffrées** par choix explicite : ce support doit être protégé physiquement. Les dossiers `ISO` et `Jeux` sont exclus du backup automatique par défaut ; les VM sont exclues de Borg et exportées manuellement par leur propriétaire.
 
 Le fait d'avoir un second T705 ne protège pas contre sa propre panne, un effacement accidentel ou une compromission : c'est pourquoi [BACKUP_RESTORE.md](BACKUP_RESTORE.md) reste central.
 
 ### La carte graphique et les VM
 
-La **Intel Arc B580** fournit le bureau, le rendu Vulkan/Steam et les travaux graphiques de l'hôte ; elle n'est **pas** passée en VFIO aux machines virtuelles. Les VM Rocky Linux et Windows 11 utilisent QEMU/KVM/libvirt, avec un réseau `devops-nat` protégé. Voir [VIRTUALIZATION.md](VIRTUALIZATION.md) et [GAMING.md](GAMING.md).
+La **Intel Arc B580** fournit le bureau, le rendu Vulkan/Steam et les travaux graphiques de l'hôte ; elle n'est **pas** passée en VFIO aux machines virtuelles. La VM Rocky Linux utilise QEMU/KVM/libvirt, avec un réseau `devops-nat` protégé. Voir [VIRTUALIZATION.md](VIRTUALIZATION.md) et [GAMING.md](GAMING.md).
 
 ### GNOME n'est pas « une extension »
 
@@ -127,7 +126,7 @@ Fedora livre les composants natifs GNOME/Wayland. Le projet y ajoute une **ergon
 ```mermaid
 flowchart LR
   A["CI sur GitHub"] --> B["Preuves logicielles et machines virtuelles"]
-  C["Gates 1 + 2"] --> D["Système logique + bureau simulé"]
+  C["Live USB sur le PC"] --> D["Observations avant installation"]
   E["Gate 3 sur PC réel"] --> F["Qualification matérielle et runtime"]
   B -. "ne certifie pas" .-> F
   D -. "ne certifie pas" .-> F

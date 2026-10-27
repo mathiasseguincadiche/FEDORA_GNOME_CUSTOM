@@ -14,10 +14,10 @@ kvm_firmware_plan() {
   cat <<'EOF'
 UEFI / TPM PLAN:
 - use Fedora edk2-ovmf firmware metadata for x86_64 UEFI guests
-- retain UEFI Secure Boot as a per-VM profile choice, required for the Windows 11 profile
-- use swtpm + swtpm_setup for TPM 2.0 emulation
+- use UEFI for the Rocky Linux profile; Secure Boot is not required by this guest
+- retain generic swtpm tooling for optional Linux TPM experiments; Rocky does not require it
 - never share TPM state between guests
-- preserve NVRAM and TPM state in the backup contract
+- keep any guest NVRAM/TPM state in the owner's separate manual exports, outside Borg
 EOF
 }
 

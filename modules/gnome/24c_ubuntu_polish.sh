@@ -113,7 +113,7 @@ gnome_polish_apply() {
   fi
   if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
     if gnome-extensions list 2>/dev/null | grep -Fxq "${TILING_ASSISTANT_UUID:-}"; then
-      gnome-extensions info "${TILING_ASSISTANT_UUID:-}" 2>/dev/null | grep -Fq 'State: ENABLED' \
+      gnome_extension_active "${TILING_ASSISTANT_UUID:-}" \
         || run_mutating GNOME gnome-extensions enable "${TILING_ASSISTANT_UUID:-}" || return "$EXIT_APPLY_FAILED"
     else
       log_warn GNOME 'Tiling Assistant installed; log out/in once, then rerun APPLY to enable it'
@@ -140,7 +140,7 @@ gnome_polish_postcheck() {
     [[ "$(gsettings get "$POLISH_INTERFACE_SCHEMA" gtk-theme 2>/dev/null)" == "'$expected_theme'" ]] || { log_error GNOME "GTK3 theme is not $expected_theme"; failed=1; }
   fi
   if is_true "${ENABLE_TILING_ASSISTANT:-true}"; then
-    gnome-extensions info "${TILING_ASSISTANT_UUID:-}" 2>/dev/null | grep -Fq 'State: ENABLED' || { log_error GNOME 'Tiling Assistant is not enabled'; failed=1; }
+    gnome_extension_active "${TILING_ASSISTANT_UUID:-}" || { log_error GNOME 'Tiling Assistant is not active'; failed=1; }
   fi
   (( failed == 0 )) || return "$EXIT_POSTCHECK_FAILED"
 }

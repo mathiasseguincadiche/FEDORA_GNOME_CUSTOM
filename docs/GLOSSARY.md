@@ -18,11 +18,11 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **`STALE`** — preuve devenue obsolète après changement significatif de code, matériel, noyau ou configuration : requalification nécessaire.
 
-**Gate 1 / 2 / 3** — logique sous WSL2, desktop GNOME sous VirtualBox, puis hardware en bare-metal.
+**Validation / Gate 3** — la CI vérifie le logiciel ; le Live USB collecte des observations avant installation (`PREINSTALL_ONLY`) ; la Gate 3 qualifie le système installé sur le PC physique.
 
 **HOST** — la machine Fedora physique. Ici, il s'agit de la workstation principale.
 
-**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, par exemple `rocky-devops` ou `windows-11`.
+**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, ici `rocky-devops`.
 
 **Bare-metal** — système exécuté directement sur le matériel physique, et non dans une VM, un conteneur ou WSL2.
 
@@ -70,13 +70,13 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **OVMF** — implémentation UEFI utilisée par les VM QEMU/KVM.
 
-**swtpm** — émulation logicielle d'un TPM. Windows 11 utilise un TPM 2.0 émulé.
+**swtpm** — émulation logicielle d’un TPM, utilisée par certains exercices Linux de reprise CI. Le profil Rocky géré ne l’exige pas.
 
 **VirtIO** — familles de périphériques para-virtualisés performants pour disque, réseau, RNG, balloon mémoire, etc.
 
 **QEMU Guest Agent / QGA** — agent exécuté dans le guest permettant à libvirt/QEMU d'obtenir des informations et d'effectuer certaines opérations propres dans la VM.
 
-**SPICE** — protocole d'affichage/console utilisé pour la VM Windows. Il ne fournit pas les performances d'un GPU passé directement au guest.
+**SPICE** — protocole d’affichage/console de machines virtuelles. Le profil Rocky du projet est headless, administré par SSH.
 
 **GPU passthrough / VFIO** — attribution directe d'un GPU physique à une VM. Ce projet l'interdit pour l'Arc B580, qui reste au HOST.
 

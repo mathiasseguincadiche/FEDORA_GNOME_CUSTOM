@@ -30,7 +30,7 @@ source "$ROOT/config/vm-profiles.conf"
 source "$ROOT/config/gaming.conf"
 
 # KVM reference values must be visible in every operator/reference document that
-# can be used to create or inspect the two Golden guests.
+# can be used to create or inspect the Rocky guest.
 for doc in docs/KVM_QUICKSTART.md docs/VIRTUALIZATION.md docs/VM_PROFILES.md; do
   grep -Fq "$LIBVIRT_URI" "$ROOT/$doc" || fail "$doc missing LIBVIRT_URI=$LIBVIRT_URI"
   grep -Fq "$KVM_POOL_NAME" "$ROOT/$doc" || fail "$doc missing pool $KVM_POOL_NAME"
@@ -45,80 +45,76 @@ done
 for doc in docs/VIRTUALIZATION.md docs/VM_PROFILES.md; do
   grep -Fq "$ROCKY_SERVER_NAME" "$ROOT/$doc" || fail "$doc missing Rocky domain name"
   grep -Fq "$ROCKY_SERVER_RELEASE" "$ROOT/$doc" || fail "$doc missing Rocky release"
-  grep -Fq "$WINDOWS11_NAME" "$ROOT/$doc" || fail "$doc missing Windows domain name"
   grep -Fq "vCPU               $ROCKY_SERVER_VCPU" "$ROOT/$doc" || fail "$doc Rocky vCPU drift"
   grep -Fq 'RAM                16 Gio' "$ROOT/$doc" || fail "$doc Rocky RAM drift"
   grep -Fq "disque             $ROCKY_SERVER_DISK_GB Gio qcow2" "$ROOT/$doc" || fail "$doc Rocky disk drift"
-  grep -Fq "vCPU               $WINDOWS11_VCPU" "$ROOT/$doc" || fail "$doc Windows vCPU drift"
-  grep -Fq 'RAM                12 Gio' "$ROOT/$doc" || fail "$doc Windows RAM drift"
-  grep -Fq "disque             $WINDOWS11_DISK_GB Gio qcow2" "$ROOT/$doc" || fail "$doc Windows disk drift"
 done
 
-# Every executable Windows creation example must include both mandatory trusted
-# publisher/source hashes and media paths, including the README quick examples.
+# Every direct Rocky creation example must pass the real required image option;
+# signatures are mandatory even when their paths use the engine's defaults.
 python3 - "$ROOT" <<'PY'
 from pathlib import Path
 import re
+import shlex
 import sys
 
 root = Path(sys.argv[1])
-engine_docs = [
-    root / "docs/KVM_QUICKSTART.md",
-    root / "docs/VIRTUALIZATION.md",
-    root / "docs/VM_PROFILES.md",
-    root / "docs/RUNBOOK_KVM.md",
-]
-public_docs = [root / "README.md", root / "docs/CONTROL_CENTER.md"]
-required_options = ("--windows-iso", "--virtio-iso", "--windows-sha256", "--virtio-sha256")
+engine = root / "scripts/kvm/create_rocky_devops_vm.sh"
+supported = set(re.findall(r"^\s*(--[a-z0-9-]+)\)", engine.read_text(), re.M))
+engine_docs = ["KVM_QUICKSTART.md", "VIRTUALIZATION.md", "VM_PROFILES.md", "RUNBOOK_KVM.md"]
 errors = []
 
-for path in engine_docs:
+
+def check_examples(path, command):
     text = path.read_text(encoding="utf-8")
     blocks = re.findall(r"```bash\n(.*?)```", text, flags=re.S)
-    windows = [b for b in blocks if "create_windows11_vm.sh" in b]
-    if not windows:
-        errors.append(f"{path.name}: no executable direct Windows creation example")
-        continue
-    for block in windows:
-        missing = [option for option in required_options if option not in block]
-        if missing:
-            errors.append(f"{path.name}: direct Windows creation block omits {', '.join(missing)}")
+    examples = [block for block in blocks if command in block]
+    if not examples:
+        errors.append(f"{path.name}: no executable Rocky creation example")
+    for block in examples:
+        tokens = shlex.split(block.replace("\\\n", " "), comments=True)
+        for index, token in enumerate(tokens):
+            if not token.startswith("--"):
+                continue
+            if token not in supported:
+                errors.append(f"{path.name}: unknown Rocky creation option {token}")
+            if index + 1 >= len(tokens) or tokens[index + 1].startswith("--"):
+                errors.append(f"{path.name}: missing value for {token}")
+        if "--cloud-image" not in tokens:
+            errors.append(f"{path.name}: missing required --cloud-image")
+        else:
+            index = tokens.index("--cloud-image")
+            if index + 1 >= len(tokens) or not tokens[index + 1].endswith(".qcow2"):
+                errors.append(f"{path.name}: --cloud-image must name a qcow2 image")
+    return text
 
-for path in public_docs:
-    text = path.read_text(encoding="utf-8")
-    blocks = re.findall(r"```bash\n(.*?)```", text, flags=re.S)
-    windows = [b for b in blocks if "control.sh kvm create-windows" in b]
-    if not windows:
-        errors.append(f"{path.name}: no public Windows creation example")
-        continue
-    for block in windows:
-        missing = [option for option in required_options if option not in block]
-        if missing:
-            errors.append(f"{path.name}: public Windows creation block omits {', '.join(missing)}")
 
+for name in engine_docs:
+    path = root / "docs" / name
+    text = check_examples(path, "scripts/kvm/create_rocky_devops_vm.sh")
+    for member in ("CHECKSUM", "CHECKSUM.asc"):
+        if member not in text:
+            errors.append(f"{name}: authenticated image instructions omit {member}")
+
+check_examples(root / "docs/CONTROL_CENTER.md", "control.sh kvm create-rocky")
 if errors:
     for error in errors:
         print(error, file=sys.stderr)
     raise SystemExit(1)
 PY
 
-grep -Fq 'trusted SHA-256 is mandatory for both Windows and VirtIO media' "$ROOT/scripts/kvm/create_windows11_vm.sh" \
-  || fail 'Windows creation script no longer exposes the mandatory-hash contract'
-grep -Fq 'create_windows11_vm.sh` **exige**' "$ROOT/docs/SUPPLY_CHAIN.md" \
-  || fail 'SUPPLY_CHAIN does not state that Windows/VirtIO hashes are mandatory'
+grep -Fq 'ROCKY_SERVER_CLOUD_IMAGE_VERIFICATION_REQUIRED="true"' "$ROOT/config/vm-profiles.conf" \
+  || fail 'Rocky image authentication must remain mandatory'
+grep -Fq '"$signature" "$sums"' "$ROOT/scripts/kvm/verify_rocky_cloud_image.sh" \
+  || fail 'Rocky verifier no longer authenticates the checksum signature'
+verify_line="$(grep -n 'bash "$verifier"' "$ROOT/scripts/kvm/create_rocky_devops_vm.sh" | head -n1 | cut -d: -f1)"
+convert_line="$(grep -n 'sudo qemu-img convert' "$ROOT/scripts/kvm/create_rocky_devops_vm.sh" | head -n1 | cut -d: -f1)"
+[[ "$verify_line" =~ ^[0-9]+$ && "$convert_line" =~ ^[0-9]+$ && "$verify_line" -lt "$convert_line" ]] \
+  || fail 'Documented Rocky authentication must run before disk creation'
 
-if grep -Fq 'Création minimale' "$ROOT/docs/KVM_QUICKSTART.md"; then
-  fail 'KVM_QUICKSTART still advertises an obsolete hashless Windows creation mode'
-fi
-if grep -Fq 'Lorsque ces valeurs sont fournies' "$ROOT/docs/SUPPLY_CHAIN.md"; then
-  fail 'SUPPLY_CHAIN still describes mandatory Windows hashes as optional'
-fi
-
-# Public KVM creation routes must actually forward all remaining arguments to
-# the hardened engines.
+# The public Rocky route must forward the documented arguments to its engine.
 grep -Fq 'if [[ "${1:-}" == kvm ]]' "$ROOT/control.sh" || fail 'public KVM argument routing missing'
 grep -Fq 'create_rocky_devops_vm.sh" "$@"' "$ROOT/control.sh" || fail 'Rocky public route does not forward arguments'
-grep -Fq 'create_windows11_vm.sh" "$@"' "$ROOT/control.sh" || fail 'Windows public route does not forward arguments'
 
 # KVM runbook uses the public Control Center routes, which themselves map to the
 # real guard actions. This keeps docs stable if implementation details move.
@@ -171,8 +167,9 @@ done
 for expected in DOCUMENTATION_MODEL.md RUNBOOK_KVM.md RUNBOOK_PERSISTENT_DATA_GAMING.md; do
   grep -Fq "$expected" "$ROOT/docs/README.md" || fail "docs/README.md missing $expected"
 done
-for heading in '# 1. Normes' '# 2. Installation' '# 3. Guides opérateur' '# 4. Références techniques' '# 5. Runbooks' '# 6. Certification, CI et gouvernance'; do
-  grep -Fq "$heading" "$ROOT/docs/README.md" || fail "documentation portal missing role: $heading"
+# Navigation destinations survive editorial regrouping and heading changes.
+for target in INSTALLATION_GUIDE.md CONTROL_CENTER.md BACKUP_RESTORE.md TROUBLESHOOTING.md THREE_GATE_VALIDATION.md; do
+  grep -Fq "]($target)" "$ROOT/docs/README.md" || fail "documentation portal missing journey: $target"
 done
 
 echo 'documentation/code alignment: PASS'

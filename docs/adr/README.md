@@ -10,7 +10,7 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0006 — Pas de dépôt GPU tiers](0006-fedora-gpu-stack.md)
 - [0007 — KVM réseau fail-closed](0007-kvm-network-fail-closed.md)
 - [0008 — Aucun flash firmware automatique](0008-no-automatic-firmware-flash.md)
-- [0009 — Validation en trois gates WSL2 → VirtualBox → bare-metal](0009-three-gate-validation.md)
+- [0009 — Ancienne validation virtuelle — remplacée par ADR 0019](0009-three-gate-validation.md)
 - [0010 — Kernel Vanilla rolling N / N-1](0010-kernel-rolling-n-nminus1.md)
 - [0011 — Second T705 persistant : données utilisateur + KVM](0011-persistent-second-t705-data-layout.md)
 - [0012 — Canal noyau personnalisé — remplacé par ADR 0015](0012-kernel-channel-cachyos.md)
@@ -20,3 +20,4 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0016 — Transition Fedora 45 / GNOME 51](0016-fedora45-gnome51-transition.md)
 - [0017 — Accès distant : Tailscale, SSH, Wake-on-LAN, Sunshine en option](0017-remote-access.md)
 - [0018 — Installation neuve Fedora 45 / GNOME 51](0018-fedora45-primary.md)
+- [0019 — Validation native Live USB puis système installé](0019-native-live-usb-validation.md)

@@ -60,7 +60,7 @@ protected_host_routes() {
     case "$route_type" in default|local|broadcast|unreachable|prohibit|blackhole|throw|nat|multicast) continue ;; esac
     normalized="$(normalize_route_prefix "$prefix" 2>/dev/null || true)"
     [[ -n "$normalized" ]] || continue
-    [[ "$normalized" == "$KVM_CIDR" || "$normalized" == 127.0.0.0/8 || "$normalized" == 169.254.0.0/16 ]] && continue
+    [[ "$normalized" == 127.0.0.0/8 || "$normalized" == 169.254.0.0/16 ]] && continue
     dev="$(awk '{for (i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}' <<<"$route")"
     [[ "$dev" == "$BRIDGE_NAME" ]] && continue
 

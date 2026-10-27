@@ -22,56 +22,44 @@ done
 grep -Fq 'Apache License' "$ROOT/LICENSE" || fail 'Apache-2.0 license title missing'
 grep -Fq 'Version 2.0' "$ROOT/LICENSE" || fail 'Apache-2.0 version missing'
 
-# Landing page: identity, live CI badges, quick start and honest project status.
+# Landing page: product, public entrypoint and discoverable procedures.
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail 'VERSION is not semantic x.y.z'
 grep -Fq '# Fedora Golden Workstation' "$ROOT/README.md" || fail 'landing title missing'
-grep -Fq "**Golden Workstation $version**" "$ROOT/README.md" || fail 'version identity missing'
 grep -Fq 'actions/workflows/tests.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Tests badge missing'
-grep -Fq 'actions/workflows/shell-quality.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Shell quality badge missing'
-grep -Fq 'actions/workflows/fedora-package-preflight.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora package badge missing'
-grep -Fq 'actions/workflows/fedora-gaming-pretest.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Gaming badge missing'
-grep -Fq 'actions/workflows/fedora45-package-preflight.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora 45 preflight badge missing'
-grep -Fq 'actions/workflows/release-readiness.yml/badge.svg?branch=main' "$ROOT/README.md" || fail 'Fedora 45 readiness badge missing'
-# The desktop preview is an illustration and must say so.
+for target in LICENSE VERSION CONTRIBUTING.md docs/INSTALLATION_GUIDE.md docs/CONTROL_CENTER.md docs/BACKUP_RESTORE.md docs/GNOME.md docs/GAMING.md docs/KVM_QUICKSTART.md docs/TROUBLESHOOTING.md docs/README.md; do
+  grep -Fq "]($target)" "$ROOT/README.md" || fail "landing navigation missing $target"
+done
 [[ -s "$ROOT/docs/assets/desktop-preview.svg" ]] || fail 'desktop preview missing'
 grep -Fq 'docs/assets/desktop-preview.svg' "$ROOT/README.md" || fail 'README does not show the desktop preview'
 grep -Fq 'Maquette illustrative, pas une capture réelle' "$ROOT/README.md" || fail 'README must label the preview as a mockup'
 grep -Fq 'pas une capture réelle' "$ROOT/docs/assets/desktop-preview.svg" || fail 'preview image must label itself as a mockup'
-grep -Fq 'État logiciel : CODE-READY' "$ROOT/README.md" || fail 'honest code-ready status missing'
-grep -Fq 'Certification matérielle : Gate 3 bare-metal à exécuter' "$ROOT/README.md" || fail 'bare-metal status missing'
-if grep -Fq 'conçue et certifiée' "$ROOT/README.md"; then
-  fail 'README must not claim physical certification before Gate 3'
-fi
 
-# Quick start must be the public entrypoint, not internal engines.
-grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' "$ROOT/README.md" || fail 'clone quick start missing'
-grep -Fq './control.sh' "$ROOT/README.md" || fail 'Control Center quick start missing'
-grep -Fq './control.sh doctor gaming' "$ROOT/README.md" || fail 'Gaming operator route missing'
-grep -Fq '/data/Jeux' "$ROOT/README.md" || fail 'persistent Games storage missing'
-grep -Fq 'CONTRIBUTING.md' "$ROOT/README.md" || fail 'contribution guide link missing'
-grep -Fq 'docs/GOLDEN_RELEASE.md' "$ROOT/README.md" || fail 'Golden release documentation missing'
-grep -Fq 'THREE_GATE_VALIDATION.md' "$ROOT/README.md" || fail 'three-gate documentation missing'
-
-# The README must explain the product before the certification pipeline.
-python3 - "$ROOT/README.md" <<'PY'
+# Validate the preparation path and status, without fixing editorial section names.
+python3 - "$ROOT" <<'PY_LANDING'
 from pathlib import Path
+import json
+import re
 import sys
-text = Path(sys.argv[1]).read_text(encoding='utf-8')
-quick = text.index('## Démarrage rapide')
-architecture = text.index('## Architecture globale')
-validation = text.index('# Validation complète')
-assert quick < architecture < validation, 'README ordering must be quick start → architecture → validation'
-assert text.index('## Gaming') < validation, 'Gaming must be presented before validation'
-assert text.index('## Virtualisation') < validation, 'KVM must be presented before validation'
-assert text.index('## Sauvegarde et restauration') < validation, 'backup must be presented before validation'
-assert 'Gate 3 est la certification de la vraie machine après installation/APPLY' in text
-PY
-
-# Documentation portal must also keep runtime certification at the end of the journey.
-grep -Fq '# Validation officielle' "$ROOT/docs/README.md" || fail 'docs validation section missing'
-grep -Fq 'Installation Fedora 45 bare-metal' "$ROOT/docs/README.md" || fail 'bare-metal placement missing in docs portal'
-grep -Fq "ne déverrouille jamais \`install.sh --apply\`" "$ROOT/docs/README.md" || fail 'VirtualBox safety statement missing'
+root = Path(sys.argv[1])
+text = (root / 'README.md').read_text()
+assert len(re.findall(r'^# ', text, re.M)) == 1, 'landing needs one page title'
+assert 'Fedora 45' in text[:500] and 'GNOME 51' in text[:500], 'new-install target missing'
+assert 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' in text
+blocks = re.findall(r'```bash\n(.*?)```', text, re.S)
+commands = '\n'.join(blocks)
+assert './control.sh validate live plan' in commands and './control.sh validate live run' in commands
+assert 'FEDORA45_LIVE_PREFLIGHT.md' in text and 'Live USB → installation Fedora' in text
+assert not re.search(r'^\s*(?:sudo\s+)?(?:./control.sh install apply|./install.sh --apply)', commands, re.M), 'landing must link to the full procedure before APPLY'
+assert 'Gate 3' in text and 'ne certifie pas encore' in text, 'CI/physical distinction missing'
+assert 'FEDORA45_PRIMARY.md' in text, 'qualification status must be discoverable'
+if json.loads((root / 'profiles/fedora45/profile.json').read_text())['status'] == 'pending':
+    assert 'pending' in text, 'pending profile advertised as production'
+assert 'conçue et certifiée' not in text, 'unsupported physical-certification claim'
+portal = (root / 'docs/README.md').read_text()
+for target in ('INSTALLATION_GUIDE.md', 'CONTROL_CENTER.md', 'BACKUP_RESTORE.md', 'TROUBLESHOOTING.md', 'THREE_GATE_VALIDATION.md', 'DOCUMENTATION_MODEL.md'):
+    assert f']({target})' in portal, f'missing user journey: {target}'
+PY_LANDING
 
 # Contribution and issue intake must preserve Golden invariants and avoid public secrets.
 grep -Fq 'Ne pas affaiblir les garde-fous' "$ROOT/CONTRIBUTING.md" || fail 'contribution safeguards missing'

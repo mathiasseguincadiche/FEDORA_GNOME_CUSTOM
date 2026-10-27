@@ -8,6 +8,8 @@ La sélection du profil est distincte de sa promotion. `profiles/fedora45/profil
 
 La publication du média final se vérifie sur la [page officielle Workstation](https://fedoraproject.org/workstation/download/). Le statut de préparation du projet ne remplace pas cette vérification : aucun verrou final n’est créé avant authentification de l’ISO finale et de son CHECKSUM signé. Les images Beta utilisées par les laboratoires restent des supports de test.
 
+**Calendrier publié le 22 octobre 2026 :** Fedora a décidé un NO-GO, avec une nouvelle cible au 3 novembre et une prochaine réunion le 29 octobre. Voir le [compte rendu officiel](https://meetbot-raw.fedoraproject.org/teams/f45-final-go-no-go-meeting/f45-final-go-no-go-meeting.2026-10-22-17.00.html). Vérifier la disponibilité effective avant de fixer une date d’installation ; le 30 octobre précède cette nouvelle cible.
+
 La promotion exige :
 
 1. une ISO Workstation 45 finale, son CHECKSUM signé et la clé Fedora 45 épinglée ;
@@ -50,6 +52,6 @@ Après promotion du profil et contrôle du média :
 
 **Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
 
-Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) et la [Gate 2 visuelle](GATE2_GUIDE_PAS_A_PAS.md) précèdent l’APPLY selon les gardes du projet. Les mesures B580, écran, veille, réseau et T705 appartiennent ensuite à la Gate 3 physique.
+Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l’installation sur SSD. Son compte rendu est exporté puis importé au même commit. La configuration finale, le dry-run, la sauvegarde vérifiée et l’APPLY se font sur Fedora installé. Les mesures complètes B580, écran, veille, réseau et T705, ainsi que le bureau personnalisé et Rocky, appartiennent ensuite à la Gate 3 physique.
 
 La [mise à niveau 44 → 45](UPGRADE_FEDORA_45.md) ne concerne que les anciens systèmes déjà installés.

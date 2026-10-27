@@ -1,6 +1,6 @@
 # Contribuer à Fedora Golden Workstation
 
-Merci de préserver l'objectif principal du dépôt : une Fedora 44 / GNOME 50 **stable, reproductible, mesurée, récupérable et adaptée au matériel cible**.
+Merci de préserver l'objectif principal du dépôt : une Fedora 45 / GNOME 51 **stable, reproductible, mesurée, récupérable et adaptée au matériel cible**.
 
 ## Avant de modifier le projet
 
@@ -29,7 +29,7 @@ Une contradiction documentation/code est un bug.
 1. **Ne pas affaiblir les garde-fous** : bare-metal, dry-run, backup pré-APPLY, SELinux, firewalld, KVM fail-closed et vérifications de provenance restent obligatoires.
 2. **Ne pas introduire de tuning global non mesuré** : pas de `force_probe`, Mesa git/COPR, kernel gaming tiers ou `sysctl` global sans décision d'architecture explicite.
 3. **Réutiliser les moteurs existants** : `control.sh` reste une façade ; la logique métier appartient à `install.sh`, `scripts/`, `diagnostics/` et `lib/`.
-4. **Préserver la séparation des environnements** : WSL2, VirtualBox et CI ne doivent jamais être confondus avec le bare-metal.
+4. **Préserver la séparation des environnements** : les tests logiciels en CI, les observations du Live USB et la qualification du système installé ont des portées distinctes.
 5. **Documenter les changements opérateur** : toute nouvelle commande publique ou nouvelle contrainte Golden doit apparaître dans la documentation correspondante.
 6. **Ajouter ou renforcer un contrat de test** lorsqu'un invariant nouveau est introduit.
 
@@ -62,10 +62,10 @@ La CI GitHub reste l'autorité avant fusion :
 - Tests ;
 - Shell quality ;
 - Architecture non-regression ;
-- Fedora 44 package preflight ;
-- Fedora 44 desktop integration pretest ;
-- Fedora 44 host integration pretest ;
-- Fedora 44 gaming pretest lorsque le périmètre le déclenche.
+- Fedora 45 package preflight ;
+- Fedora 45 desktop integration pretest ;
+- Fedora 45 host integration pretest ;
+- Fedora 45 gaming pretest lorsque le périmètre le déclenche.
 
 ## Shell
 

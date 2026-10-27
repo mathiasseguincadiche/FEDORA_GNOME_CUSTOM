@@ -38,6 +38,13 @@ PYH
 fi
 exit 0
 SH
+cat > "$tmp/bin/flatpak" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FLATPAK_LOG"
+[[ "$*" == 'update -y' ]] || exit 99
+(( ${T_FLATPAK_RC:-0} == 0 )) || exit "$T_FLATPAK_RC"
+rm -f "$FLATPAK_PENDING"
+SH
 chmod +x "$tmp/bin/"*
 
 # run_update <scenario rc of kernel resolution> <action...>
@@ -45,6 +52,7 @@ run_update() {
   local kernel_rc="$1"; shift
   (
     export PATH="$tmp/bin:$PATH" XDG_RUNTIME_DIR="$tmp/runtime" DNF_LOG="$tmp/dnf.log" RUN_ID="deferral-$RANDOM"
+    export FLATPAK_LOG="$tmp/flatpak.log" FLATPAK_PENDING="$tmp/flatpak-pending"
     # Keep diagnostic output inside the fixture even with a read-only checkout.
     STATE_ROOT="$tmp/state"; REPORT_ROOT="$tmp/reports"; LOG_DIR="$tmp/logs"; MAIN_LOG="$LOG_DIR/main.log"
     # Load every function of the real entrypoint, without its final dispatcher.
@@ -66,23 +74,36 @@ run_update() {
     kernel_lifecycle_pin_target() { echo "$1" > "$tmp/pinned"; }
     kernel_lifecycle_finalize_update() { [[ "$1" == none ]] || echo "$1" > "$tmp/finalized"; }
     kernel_lifecycle_prepare_rolling_update() {
-      if (( kernel_rc == 0 )); then echo '7.2.10-200.vanilla.fc44.x86_64'; return 0; fi
+      if (( kernel_rc == 0 )); then
+        if [[ "${T_NO_PLAN:-false}" == true ]]; then
+          kernel_lifecycle_latest_installed
+        else
+          echo '7.2.10-200.vanilla.fc44.x86_64'
+        fi
+        return 0
+      fi
       return "$kernel_rc"
     }
     capture_offline_log() { :; }
     check_firmware() { :; }
+    mkdir -p "$tmp/fake-root/scripts/maintenance"
+    cp "$ROOT/scripts/maintenance/verify-offline-history.py" "$tmp/fake-root/scripts/maintenance/"
+    # shellcheck disable=SC2016 # evaluated by the disposable diagnostic process
+    printf '#!/usr/bin/env bash\nexit "${T_DOCTOR_RC:-0}"\n' > "$tmp/fake-root/diagnostic.sh"
+    chmod +x "$tmp/fake-root/diagnostic.sh"
     for action in "$@"; do
       case "$action" in
         prepare) prepare_dnf_offline dnf-only ;;
+        prepare-full) REPO_ROOT="$tmp/fake-root"; prepare_dnf_offline full ;;
         reboot) request_offline_reboot ;;
         newboot) boot_id=00000000-0000-4000-8000-000000000002; rm -f "$T_STATE.staged" ;;
-        finalize) REPO_ROOT="$tmp/fake-root"; mkdir -p "$REPO_ROOT/scripts/maintenance"; cp "$ROOT/scripts/maintenance/verify-offline-history.py" "$REPO_ROOT/scripts/maintenance/"; printf '#!/usr/bin/env bash\nexit 0\n' > "$REPO_ROOT/diagnostic.sh"; chmod +x "$REPO_ROOT/diagnostic.sh"; finalize_offline_update ;;
+        finalize) REPO_ROOT="$tmp/fake-root"; finalize_offline_update ;;
       esac
     done
   ) > "$tmp/out.log" 2>&1
 }
 state() { awk -F= -v k="$1" '$1==k {print $2}' "$tmp/update.status"; }
-reset() { rm -f "$tmp/dnf.log" "$tmp/update.status" "$tmp/update.status.staged" "$tmp/pinned" "$tmp/finalized"; }
+reset() { rm -f "$tmp/dnf.log" "$tmp/update.status" "$tmp/update.status.staged" "$tmp/pinned" "$tmp/finalized" "$tmp/flatpak.log" "$tmp/flatpak-pending"; }
 
 # 1. Packaging pending / kernel.org unreachable: everything except the kernel.
 reset
@@ -125,4 +146,42 @@ done
 reset
 T_NO_PLAN=true run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare
 [[ "$(state phase)" == no-transaction && "$(state reboot_required)" == false ]] || fail 'no-op request was marked prepared or completed'
+
+# RPMs already current: complete the pending Flatpak update without an offline
+# reboot. Exercise the real apply_flatpak function, not a replacement helper.
+reset
+touch "$tmp/flatpak-pending"
+T_NO_PLAN=true run_update 0 prepare-full || fail "Flatpak-only full update failed: $(tail -5 "$tmp/out.log")"
+[[ "$(cat "$tmp/flatpak.log")" == 'update -y' && ! -e "$tmp/flatpak-pending" ]] || fail 'pending Flatpak update was ignored'
+[[ "$(state phase)" == completed && "$(state mode)" == full && "$(state reboot_required)" == false && "$(state doctor_rc)" == 0 ]] || fail 'full update state is not complete without reboot'
+grep -Fq 'NO OFFLINE REBOOT REQUIRED' "$tmp/out.log" || fail 'full update summary incorrectly requests an offline reboot'
+if grep -Eq '^offline (reboot|log)' "$tmp/dnf.log"; then fail 'no-transaction update attempted offline operations'; fi
+rc=0
+run_update 0 reboot || rc=$?
+[[ "$rc" == 20 ]] || fail 'completed Flatpak update allowed an offline reboot'
+
+# A staged full update still waits for its exact offline transaction before
+# updating Flatpak, then executes that update once during finalization.
+reset
+touch "$tmp/flatpak-pending"
+run_update 0 prepare-full || fail 'staged full update failed'
+[[ ! -e "$tmp/flatpak.log" && -e "$tmp/flatpak-pending" && "$(state phase)" == prepared ]] || fail 'Flatpak ran before the staged RPM transaction'
+run_update 0 newboot finalize || fail 'staged full update did not finalize'
+[[ "$(cat "$tmp/flatpak.log")" == 'update -y' && ! -e "$tmp/flatpak-pending" && "$(state phase)" == completed ]] || fail 'staged full update did not update Flatpak exactly once'
+
+# Errors from Flatpak and the global diagnostic must stay failures, including
+# when the caller captures the function status with a conditional.
+for scenario in flatpak doctor; do
+  reset
+  touch "$tmp/flatpak-pending"
+  rc=0
+  if [[ "$scenario" == flatpak ]]; then
+    T_NO_PLAN=true T_FLATPAK_RC=33 run_update 0 prepare-full || rc=$?
+    [[ "$rc" == 33 && -e "$tmp/flatpak-pending" && "$(state doctor_rc)" == 33 ]] || fail 'Flatpak failure was hidden'
+  else
+    T_NO_PLAN=true T_DOCTOR_RC=41 run_update 0 prepare-full || rc=$?
+    [[ "$rc" == 40 && "$(state doctor_rc)" == 41 ]] || fail 'post-update diagnostic failure was hidden'
+  fi
+  [[ "$(state phase)" == failed && "$(state reboot_required)" == false ]] || fail "incorrect failed state: $scenario"
+done
 echo 'update kernel deferral and exact offline completion behavior: PASS'

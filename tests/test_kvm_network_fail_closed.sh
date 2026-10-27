@@ -12,9 +12,8 @@ for file in "$guard" "$unit" "$dispatcher" "$runtime" "$runtime_core"; do
   [[ -f "$file" ]] || { echo "missing KVM fail-closed file: $file" >&2; exit 1; }
 done
 
-# The public runtime wrapper must delegate to the strict core and add Windows live proof.
+# The public runtime wrapper must delegate to the strict core and certify the Rocky guest.
 grep -Fq 'runtime_certification_core.sh' "$runtime"
-grep -Fq 'windows-guest-doctor' "$runtime"
 
 # Guard must expose an explicit restrictive state and reconcile through it.
 grep -Fq 'emergency_guard()' "$guard"

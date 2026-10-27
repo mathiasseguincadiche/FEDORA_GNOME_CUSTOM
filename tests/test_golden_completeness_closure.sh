@@ -4,20 +4,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fail(){ echo "golden completeness: $*" >&2; exit 1; }
 
 [[ -x "$ROOT/diagnostics/gaming-doctor" ]] || fail 'gaming-doctor must be executable in Git'
-for f in lib/physical_certification.sh diagnostics/physical-runtime-doctor diagnostics/windows-guest-doctor guest/windows-11/configure-guest-integration.ps1 docs/GOLDEN_COMPLETENESS_CLOSURE.md; do [[ -s "$ROOT/$f" ]] || fail "missing $f"; done
+for f in lib/physical_certification.sh diagnostics/physical-runtime-doctor docs/GOLDEN_COMPLETENESS_CLOSURE.md; do [[ -s "$ROOT/$f" ]] || fail "missing $f"; done
 grep -Fq 'lib/physical_certification.sh' "$ROOT/lib/bootstrap.sh" || fail 'physical certification library not bootstrapped'
 
 final="$ROOT/diagnostics/final-certification"
-grep -Fq 'kvm-domain-doctor" --quiet --require-guests' "$final" || fail 'Gate3 KVM does not require both guests'
-grep -Fq 'windows-guest-doctor" --quiet' "$final" || fail 'Windows live contract absent from final certification'
+grep -Fq 'kvm-domain-doctor" --quiet --require-guests' "$final" || fail 'Gate3 KVM does not require the Rocky guest'
 grep -Fq 'backup-doctor" --certify --quiet' "$final" || fail 'strict deep backup contract absent from final certification'
 grep -Fq 'physical-runtime-doctor" --quiet status' "$final" || fail 'physical evidence absent from final certification'
-for marker in backup_runtime_contract=PASS physical_runtime_contract=PASS windows_guest_contract=PASS kvm_runtime_contract=PASS; do grep -Fq "$marker" "$final" || fail "missing final marker $marker"; done
+for marker in backup_runtime_contract=PASS physical_runtime_contract=PASS kvm_runtime_contract=PASS; do grep -Fq "$marker" "$final" || fail "missing final marker $marker"; done
 
-grep -Fq 'guest-integration.json' "$ROOT/guest/windows-11/configure-guest-integration.ps1" || fail 'Windows marker path missing'
-for key in virtio_storage virtio_network virtio_balloon qemu_ga; do grep -Fq "$key" "$ROOT/guest/windows-11/configure-guest-integration.ps1" || fail "Windows marker missing $key"; grep -Fq "$key" "$ROOT/diagnostics/windows-guest-doctor" || fail "host Windows doctor missing $key"; done
-grep -Fq 'guest-file-read' "$ROOT/diagnostics/windows-guest-doctor" || fail 'Windows marker is not retrieved with QGA'
-grep -Fq 'diagnostics/windows-guest-doctor' "$ROOT/scripts/kvm/runtime_certification.sh" || fail 'KVM runtime certification does not enforce Windows live proof'
 
 baseline="$ROOT/diagnostics/baseline-doctor"
 for token in run-cpu-soak enroll-bluetooth list-cooling enroll-cooling; do grep -Fq "$token" "$baseline" || fail "baseline missing $token"; done
@@ -40,5 +35,5 @@ grep -Fq -- '--certify-status' "$ROOT/diagnostics/backup-doctor" || fail 'backup
 grep -Fq 'last-full-backup.ok' "$ROOT/diagnostics/backup-doctor" || fail 'current full backup marker not required'
 grep -Fq 'borg check --verify-data' "$ROOT/diagnostics/backup-doctor" || fail 'deep Borg integrity check missing'
 
-for f in "$ROOT/lib/physical_certification.sh" "$ROOT/diagnostics/physical-runtime-doctor" "$ROOT/diagnostics/windows-guest-doctor" "$ROOT/diagnostics/final-certification" "$ROOT/diagnostics/baseline-doctor"; do bash -n "$f"; done
+for f in "$ROOT/lib/physical_certification.sh" "$ROOT/diagnostics/physical-runtime-doctor" "$ROOT/diagnostics/final-certification" "$ROOT/diagnostics/baseline-doctor"; do bash -n "$f"; done
 echo 'golden completeness closure: PASS'

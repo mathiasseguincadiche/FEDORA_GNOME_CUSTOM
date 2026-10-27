@@ -123,7 +123,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           repos="$(dnf repolist --all)"
-          ! grep -Eqi 'mesa-git|copr.*mesa|intel.*gpu.*repo|graphics.*driver.*repo' <<<"$repos"
+          bash scripts/ci/assert-absent.sh grep -Eqi 'mesa-git|copr.*mesa|intel.*gpu.*repo|graphics.*driver.*repo' <<<"$repos"
 
       - name: Validate static gaming contract
         shell: bash

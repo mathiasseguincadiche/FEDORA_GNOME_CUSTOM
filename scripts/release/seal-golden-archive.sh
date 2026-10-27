@@ -13,7 +13,7 @@ Create an integrity-sealed, off-repository archive containing the currently
 certified Golden release bundle plus one or more operator-supplied payloads.
 
 Recommended payloads include the certified Fedora ISO/CHECKSUM/keyring,
-offline RPM or Flatpak mirrors/caches, and Windows/VirtIO installation media.
+offline RPM or Flatpak mirrors/caches, and guest installation media.
 The script never downloads external payloads automatically.
 EOF
 }

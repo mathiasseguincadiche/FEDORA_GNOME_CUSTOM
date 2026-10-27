@@ -44,16 +44,6 @@ resource_monitor_find_b580_card() {
   return 1
 }
 
-resource_monitor_gpu_usage_path() {
-  local card="$1" candidate
-  for candidate in \
-    "/sys/class/drm/$card/device/gpu_busy_percent" \
-    "/sys/class/drm/$card/device/gt_busy_percent"; do
-    [[ -r "$candidate" ]] && { printf '%s\n' "$candidate"; return 0; }
-  done
-  return 1
-}
-
 resource_monitor_gpu_temperature_path() {
   local card="$1" path
   for path in "/sys/class/drm/$card/device/hwmon"/hwmon*/temp*_input; do
@@ -132,7 +122,7 @@ resource_monitor_vitals_apply() {
   resource_monitor_set show-memory "${RESOURCE_MONITOR_RAM:-true}" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set show-network "${RESOURCE_MONITOR_NETWORK:-true}" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set show-temperature "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}" || return "$EXIT_APPLY_FAILED"
-  resource_monitor_set show-gpu "${RESOURCE_MONITOR_GPU_USAGE:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set show-gpu "${RESOURCE_MONITOR_GPU_USAGE:-false}" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set hot-sensors "$(resource_monitor_vitals_hot_sensors)" || return "$EXIT_APPLY_FAILED"
 }
 
@@ -162,17 +152,17 @@ VITALS PLAN (Fedora 45 / GNOME 51 replacement of Resource Monitor):
 - install Vitals v${RESOURCE_MONITOR_VERSION} from reviewed artifact ${RESOURCE_MONITOR_REVIEW_ID} (GNOME Shell ${RESOURCE_MONITOR_SHELL_VERSION})
 - top-right compact telemetry: CPU usage, RAM used %, network download|upload, refreshed every ${RESOURCE_MONITOR_REFRESH_SECONDS:-2} s
 - CPU/GPU temperature sensors are discovered by Vitals from hwmon; pin them from the Vitals menu (their identifiers depend on the detected chips)
-- Intel Arc B580 load in the top bar is not guaranteed by Vitals; the xe load/temperature sources remain verified as hardware health on bare metal
+- Intel Arc B580 load is optional and unmeasured until an xe backend is qualified; no percentage is synthesized
 EOF
     return 0
   fi
   cat <<EOF
 RESOURCE MONITOR PLAN:
 - install Resource Monitor v${RESOURCE_MONITOR_VERSION} from reviewed artifact ${RESOURCE_MONITOR_REVIEW_ID} (GNOME Shell ${RESOURCE_MONITOR_SHELL_VERSION})
-- top-right compact telemetry: CPU usage + Ryzen Tctl, RAM used %, active Ethernet/Wi-Fi download|upload, Intel Arc B580 load + temperature
+- top-right compact telemetry: CPU usage + Ryzen Tctl, RAM used %, active Ethernet/Wi-Fi download|upload, optional Intel Arc B580 temperature
 - disk and swap indicators stay hidden from the top bar to keep the panel readable
 - network entries auto-hide when the corresponding interface is inactive
-- Intel B580 GPU load is fail-closed on bare metal: no readable xe usage source means postcheck failure, never a fake 0%
+- Intel Arc B580 load is optional and unmeasured until an xe backend is qualified; no percentage is synthesized
 EOF
 }
 
@@ -189,7 +179,7 @@ gnome_telemetry_apply() {
     resource_monitor_vitals_apply || return "$EXIT_APPLY_FAILED"
     if ! is_true "${DRY_RUN:-true}"; then
       if resource_monitor_find_b580_card >/dev/null 2>&1; then
-        log_warn GNOME 'Vitals: Intel Arc B580 load/temperature in the top bar depends on Vitals GPU support; pin the sensors from its menu'
+        log_warn GNOME 'Vitals: B580 GPU load is unmeasured until an xe backend is qualified; temperature sensors can be pinned from its menu'
       fi
       if declare -F gnome_extension_enable_checked >/dev/null; then
         gnome_extension_enable_checked Vitals "$uuid" || return "$EXIT_APPLY_FAILED"
@@ -222,7 +212,7 @@ gnome_telemetry_apply() {
   resource_monitor_set thermaltemperatureunit "'c'" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set thermalcputemperaturestatus "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set thermalgputemperaturestatus "${RESOURCE_MONITOR_GPU_TEMPERATURE:-true}" || return "$EXIT_APPLY_FAILED"
-  resource_monitor_set gpustatus "${RESOURCE_MONITOR_GPU_USAGE:-true}" || return "$EXIT_APPLY_FAILED"
+  resource_monitor_set gpustatus "${RESOURCE_MONITOR_GPU_USAGE:-false}" || return "$EXIT_APPLY_FAILED"
   resource_monitor_set gpudisplaydevicename false || return "$EXIT_APPLY_FAILED"
 
   if ! is_true "${DRY_RUN:-true}"; then
@@ -272,16 +262,16 @@ gnome_telemetry_postcheck() {
     [[ "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" == "${RESOURCE_MONITOR_GPU_USAGE:-false}" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if runtime_is_baremetal; then
     resource_monitor_find_cpu_sensor >/dev/null || { log_error GNOME 'Resource Monitor cannot resolve Ryzen CPU temperature sensor'; return "$EXIT_POSTCHECK_FAILED"; }
     gpu_card="$(resource_monitor_find_b580_card 2>/dev/null)" || { log_error GNOME 'Resource Monitor cannot resolve Intel Arc B580 8086:e20b'; return "$EXIT_POSTCHECK_FAILED"; }
-    resource_monitor_gpu_usage_path "$gpu_card" >/dev/null || { log_error GNOME 'Resource Monitor has no readable B580 xe GPU load source (gpu_busy_percent/gt_busy_percent)'; return "$EXIT_POSTCHECK_FAILED"; }
+    log_warn GNOME 'B580 GPU load is optional and unmeasured until an xe backend is qualified'
     if is_true "${RESOURCE_MONITOR_GPU_TEMPERATURE:-true}" && ! resource_monitor_gpu_temperature_path "$gpu_card" >/dev/null; then
-      log_warn GNOME 'Resource Monitor: B580 temperature hwmon source unavailable; GPU load remains mandatory'
+      log_warn GNOME 'Resource Monitor: optional B580 temperature hwmon source unavailable'
     fi
   fi
 }

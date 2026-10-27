@@ -107,53 +107,20 @@ La création exige l'image, `CHECKSUM` et `CHECKSUM.asc` authentifiés.
 bash scripts/kvm/verify_rocky_cloud_image.sh --help
 ```
 
-Ne contourner ni la signature Rocky Linux ni la comparaison SHA-256.
-
-## Windows 11 : création refusée avant le disque
-
-C'est normal si les hashes de confiance manquent. Les quatre entrées sont obligatoires :
+Après avoir préparé ensemble l’image, `CHECKSUM` et sa signature `CHECKSUM.asc`, la commande de création est :
 
 ```bash
-bash scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso \
-  --windows-sha256 '<sha256-windows-de-confiance>' \
-  --virtio-sha256 '<sha256-virtio-de-confiance>'
+bash scripts/kvm/create_rocky_devops_vm.sh \
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
+  --sha256sums /data/libvirt/iso/CHECKSUM \
+  --signature /data/libvirt/iso/CHECKSUM.asc
 ```
 
-Les deux SHA-256 doivent provenir de sources de confiance indépendantes. Un hash calculé uniquement après téléchargement ne prouve pas la provenance.
-
-## Windows ne voit pas le disque ou le réseau
-
-Monter `virtio-win.iso` dans l'installateur Windows et charger les pilotes VirtIO nécessaires. Après installation, ouvrir `FGC_TOOLS` puis lancer en PowerShell administrateur :
-
-```text
-Configure-GuestIntegration.ps1
-```
-
-Vérifier ensuite QEMU Guest Agent dans Windows et relancer :
-
-```bash
-bash scripts/kvm/runtime_certification.sh
-```
-
-## TPM / Secure Boot Windows en KO
-
-```bash
-virsh --connect qemu:///system dumpxml windows-11
-```
-
-Le profil attendu est Q35, UEFI Secure Boot avec clés enrôlées et TPM 2.0 `swtpm`. Ne remplacer pas ce profil par un BIOS legacy pour faire démarrer Windows.
-
-## Accès fichiers Windows depuis Nautilus
-
-Le partage SMB est facultatif et limité à `C:\VM-Share`. Après `Configure-GuestIntegration.ps1`, lancer `Configure-VMShare.ps1` uniquement si ce partage est souhaité.
-
-Aucun partage invité/anonyme et aucun VirtioFS automatique n'appartiennent au contrat Golden.
+Ne relancer la création que si le domaine et son disque n’existent pas encore. Ne contourner ni la signature Rocky Linux ni la comparaison SHA-256.
 
 ## Export manuel des VM
 
-Les VM Rocky Linux et Windows sont exportées **manuellement par le propriétaire**,
+La VM Rocky Linux est exportée **manuellement par le propriétaire**,
 quand il en a besoin. Les sauvegardes Borg du projet concernent uniquement le
 système Fedora et les données utilisateur. Ni le Control Center, ni l'upgrade
 Fedora 45, ni les timers Borg ne sauvegardent des disques QCOW2 ou XML libvirt.

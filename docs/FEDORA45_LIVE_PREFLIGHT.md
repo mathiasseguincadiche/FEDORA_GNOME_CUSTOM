@@ -1,51 +1,105 @@
-# Fedora 45 — contrôle rapide sur clé USB Live (10 à 15 minutes)
+# Fedora 45 / GNOME 51 — vérifier le PC depuis le Live USB
 
-**But unique :** décider si Fedora 45 Workstation / GNOME 51 démarre et fonctionne suffisamment bien sur le PC réel pour **préparer son installation neuve**. Ce n'est ni une certification matérielle, ni un test de performance, ni une autorisation automatique de modifier un SSD.
+Ce contrôle se fait directement sur le PC prévu pour l’installation neuve. Il vérifie le démarrage et les fonctions utilisables depuis **Try Fedora**, avant de toucher aux SSD. La CI Linux teste le code séparément ; aucune VM n’est à préparer pour suivre ce parcours.
 
-La CI du dépôt vérifie les scripts ; **elle ne remplace pas les observations physiques**. La configuration personnalisée et la Gate 3 seront vérifiées sur le système installé. Le profil Fedora 45 est actuellement **pending** : aucun GO Live ne contourne cette protection, la vérification de l'ISO finale, le choix explicite du disque ni la sauvegarde préalable.
+Un résultat Live réussi signifie **compatibilité de préinstallation observée** (`PREINSTALL_ONLY`). La configuration personnalisée, les services installés, les sauvegardes et Rocky Linux seront qualifiés après l’installation. Le profil Fedora 45 reste `pending` jusqu’à la qualification et la promotion du média final signé et des composants stables : le contrôle Live ne le promeut pas.
 
-## Les cinq contrôles — et pas davantage
+## 1. Préparer le média et le compte rendu
 
-| # | Contrôle | Comment vérifier | Critère |
-|---|---|---|---|
-| 1 | **Démarrage Fedora 45 / GNOME 51 / Wayland** | Ouvrir « Try Fedora », vérifier que le bureau est utilisable ; identification par script | Session correcte, aucun gel ou écran noir |
-| 2 | **Intel Arc B580** | Script : PCI 8086:e20b réellement lié au pilote xe | B580 et pilote actif reconnus |
-| 3 | **2 SSD Crucial T705** | Script : inventaire non destructif avec lsblk | Les deux modèles reconnus, sans écrire |
-| 4 | **Affichage** | Paramètres GNOME → Écrans : vérifier 2560 × 1440, sélectionner 240 Hz ; regarder une fenêtre blanche et déplacer une fenêtre | Image normale, pas d'artefacts ni d'instabilité visible |
-| 5 | **Internet** | La commande git clone a réussi, ou une page HTTPS s'ouvre réellement | Accès Internet utilisable (Wi-Fi **ou** Ethernet) |
+Utiliser le média officiel **Fedora 45 Workstation final**, avec son CHECKSUM signé vérifié, selon le [guide d’installation](INSTALLATION_GUIDE.md). Une Beta ou une RC ne constitue pas le média final du projet. Démarrer ce média puis choisir **Try Fedora**, sans lancer l’installation.
 
-**Les contrôles 1 à 3 sont automatiques.** Pour 4 et 5, le script demande une réponse **o** (oui), **n** (non) ou **?** (non vérifié). On ne prétend pas mesurer ce qui demande une observation humaine. Si le 240 Hz manque ou si les blancs semblent gris, répondre **n** et examiner le cas au lieu de déclarer le contrôle réussi.
+Prévoir aussi un **support externe accessible en écriture** pour conserver le compte rendu. Le HOME du Live est temporaire et disparaît au redémarrage ; la clé de démarrage peut être en lecture seule. Le support de transfert ne doit pas être l’un des SSD internes à installer ou à préserver.
 
-## Exécution dans « Try Fedora »
+Ouvrir les paramètres GNOME, connecter le réseau, vérifier l’écran et préparer les périphériques à essayer. Utiliser un terminal de la session graphique, en utilisateur ordinaire.
 
-1. Démarrer sur une **clé Live officielle Fedora Workstation 45 finale**, téléchargée et authentifiée, sans installer ni modifier les partitions. Si la version finale n'est pas publiée/authentifiée, ne pas traiter une Beta comme le média final.
-2. Ouvrir **Paramètres → Écrans** et vérifier résolution, fréquence et image. Connecter Internet, puis ouvrir un terminal.
-3. En utilisateur ordinaire (**jamais sudo**) :
+## 2. Utiliser le commit audité
 
-~~~bash
+Git et Python 3 sont nécessaires pour le dépôt et son rapport. Vérifier leur présence avec `command -v git python3`. Si Git manque, le préparer explicitement dans la session Live avec `sudo dnf install git`, puis reprendre ci-dessous. Cette installation d’outil utilise l’environnement temporaire du Live ; le contrôleur ne l’effectue pas automatiquement. La disponibilité des outils d’inventaire sera aussi vérifiée lors de la qualification du média final.
+
+```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
+git switch --detach SHA_DU_COMMIT_AUDITE
 git rev-parse HEAD
-set -o pipefail
-bash diagnostics/live-preflight.sh | tee "$HOME/fedora45-live-preflight.tsv"
-~~~
+./control.sh validate live plan
+```
 
-La commande imprime exactement **cinq lignes de contrôles**, puis un résumé et une décision. Les deux questions interactives sont affichées dans le terminal même si le rapport est envoyé à tee.
+Remplacer `SHA_DU_COMMIT_AUDITE` par le commit réellement retenu après revue et CI. Conserver ce SHA : le système installé devra utiliser **le même commit**, avec le même plan de modules et les mêmes identités matérielles. Ne pas modifier les fichiers versionnés pendant les essais. Si le dépôt a été préparé avant le démarrage Live, vérifier de la même manière le SHA et la propreté de cette copie.
 
-### Lire la décision
+## 3. Les 16 points observés
 
-- **GO (5 PASS)** : compatibilité Live de base vérifiée. Passer ensuite à la **préparation sécurisée** de l'installation (média final, profil Fedora 45 promu, sauvegarde, identification du SSD système). Ce n'est pas un APPLY automatique.
-- **NO-GO (au moins un FAIL)** : ne pas installer avant d'avoir compris et corrigé le défaut constaté.
-- **A_VERIFIER (aucun FAIL mais un contrôle non testé)** : ce n'est pas un GO. Confirmer le point manquant ; si aucune console interactive n'est disponible, les confirmations humaines resteront NOT_TESTED.
+Le catalogue affiché par `plan` fait foi. Il distingue les observations automatiques, les essais humains et les points non essayés.
 
-Le script renvoie le code **0 seulement pour GO** ; un FAIL ou un contrôle non vérifié donne un code non nul. Le rapport se trouve uniquement dans le HOME temporaire de la session Live. Ne pas le publier automatiquement : vérifier les informations matérielles avant tout partage.
+| Point | Niveau | Ce qui est réellement vérifié |
+| --- | --- | --- |
+| Session | Requis | Fedora 45, GNOME Shell 51 réellement démarré, Wayland, exécution native |
+| Intel Arc B580 | Requis | Carte `8086:e20b` réellement liée au pilote `xe` |
+| Stockage | Requis | Présence de deux Crucial T705 NVMe ; inventaire sans écriture |
+| Mode de l’écran | Requis | Mode actif 2560 × 1440 à 240 Hz, lu automatiquement ou confirmé dans Paramètres → Écrans |
+| Image affichée | Requis | Observation humaine : blancs lisibles, mouvements, absence d’artefacts ou d’écran noir |
+| Internet | Requis | Accès HTTPS réellement réussi, automatiquement ou confirmé après un essai |
+| Ethernet | Complémentaire | Requête HTTPS par l’interface Ethernet connectée |
+| Wi-Fi | Complémentaire | Requête HTTPS par l’interface Wi-Fi connectée |
+| Périphériques audio | Complémentaire | Inventaire PipeWire des sorties et entrées |
+| Sortie audio | Complémentaire | Son gauche/droite entendu sur la sortie choisie |
+| Microphone | Complémentaire | Réaction du niveau d’entrée à la voix et au silence |
+| Contrôleur Bluetooth | Complémentaire | Inventaire des contrôleurs BlueZ |
+| Usage Bluetooth | Complémentaire | Connexion et utilisation effective d’un périphérique |
+| Périphériques USB | Complémentaire | Inventaire USB ; la présence d’un appareil ne prouve pas son fonctionnement |
+| Usage USB | Complémentaire | Utilisation des périphériques prévus, sans ouvrir les SSD internes |
+| Veille/reprise | Complémentaire | Un cycle lancé manuellement, retour observé et traces noyau correspondantes |
 
-### Ce qui est volontairement hors périmètre
+Les points complémentaires permettent de distinguer un périphérique non essayé d’un échec. Ils ne sont jamais déclarés réussis par déduction à partir d’un simple inventaire. Aucun débit Wi-Fi/5GbE, benchmark, stress test, certification colorimétrique ou performance GPU n’est affirmé par ces observations.
 
-**Ne pas faire sur le Live USB :** benchmarks et stress tests CPU/RAM/GPU/SSD, montage des SSD en écriture, vérification KVM/Docker/VM, tests prolongés de veille/réveil, installation des six extensions, mesure HDR/ICC/AV1 ou certification complète de l'audio et des périphériques.
+## 4. Lancer les observations
 
-Les vérifications détaillées des services personnalisés, extensions, sauvegardes, noyau, KVM, pilotes de calcul, périphériques et persistance appartiennent **au système installé**, selon les contrôles de production du dépôt. La prévalidation courte ne les supprime pas et ne change pas les garde-fous de ./install.sh --apply.
+```bash
+./control.sh validate live run
+./control.sh validate live status
+```
 
-**Attention aux SSD :** voir deux T705 en Live n'identifie **pas** le SSD à effacer. Avant toute installation, utiliser les identifiants persistants /dev/disk/by-id et vérifier les numéros de série, les sauvegardes et la cible prévue dans [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md).
+Répondre aux questions depuis le terminal : **o** pour un essai réussi, **n** pour un défaut constaté, **?** pour un point non essayé. Pour la veille, utiliser le menu GNOME au moment indiqué ; le script ne met pas le PC en veille automatiquement. Une réponse positive sans trace noyau de reprise reste non vérifiée.
 
-Le script refuse les machines non Fedora, une session non Live, l'exécution en root et les arguments non reconnus. Il ne lance ni installation, ni formatage, ni montage de partitions, ni modification du firmware ou de l'EFI.
+Le rapport TSV est enregistré dans `state/validation/live-preflight.tsv`. Les statuts sont :
+
+- `PASS` : l’observation décrite a réussi ;
+- `FAIL` : un défaut a été constaté ;
+- `NOT_TESTED` : la preuve manque ou l’essai n’a pas été effectué.
+
+La décision est recalculée à partir des résultats :
+
+| Décision | Conditions | Suite |
+| --- | --- | --- |
+| `GO` | Les six points requis sont `PASS`, aucun des 16 points n’est `FAIL` | Enregistrer le compte rendu portable, puis suivre l’installation |
+| `NO-GO` | Au moins un `FAIL`, même sur un point complémentaire | Comprendre et corriger le défaut, puis refaire les observations |
+| `A_VERIFIER` | Aucun `FAIL`, mais un point requis reste `NOT_TESTED` | Effectuer le contrôle requis manquant et relancer |
+
+Un `GO` peut conserver des points complémentaires `NOT_TESTED` : ils restent explicitement visibles et ne deviennent pas des fonctions certifiées. La commande réussit seulement pour `GO` et produit alors un JSON portable `state/validation/outbox/live-COMMIT.json`.
+
+## 5. Exporter avant le redémarrage
+
+Adapter ce chemin au support externe réellement monté et accessible en écriture :
+
+```bash
+SUPPORT="/run/media/$USER/SUPPORT_FGC/preinstallation"
+./control.sh validate export live "$SUPPORT"
+```
+
+L’export copie le JSON et son fichier SHA-256. Vérifier dans Fichiers que ces deux fichiers sont bien sur le support externe, puis conserver aussi le SHA du commit. Le TSV peut être copié sur ce support pour relire les détails ; **le fichier à importer est le JSON**, pas le TSV.
+
+Les identités physiques du PC sont utilisées pour reconnaître la machine après installation. Ce compte rendu contient donc des informations de matériel ; le conserver personnellement et le relire avant un partage public.
+
+## 6. Après l’installation de Fedora
+
+Redémarrer sur le SSD, cloner le dépôt au **même SHA audité**, puis importer le fichier sauvegardé :
+
+```bash
+./control.sh validate import /chemin/du/support/live-COMMIT.json
+./control.sh validate status
+```
+
+L’import vérifie les résultats, le commit, le plan des modules et les identités physiques. Le noyau Live peut différer du noyau installé ; cela ne transforme pas le contrôle Live en preuve du noyau installé. Un autre commit ou un autre matériel demande un nouveau compte rendu Live correspondant.
+
+Poursuivre le [guide d’installation](INSTALLATION_GUIDE.md) : outils et configuration locale, `/data`, baseline, dry-run final, sauvegarde vérifiée, APPLY, redémarrage, contrôles du système installé, Rocky puis **Gate 3**.
+
+Le contrôle Live ne sélectionne pas le SSD à effacer et ne valide pas sa santé. Voir deux T705 ne suffit pas : identifier séparément le SSD système et le SSD `/data` par leurs numéros de série. Le script ne lance ni installation, ni formatage, ni montage des SSD, ni modification de firmware, ni installation de paquets.

@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || { echo 'VERSION must be semantic x.y.z' >&2; exit 1; }
-grep -Fq "**Golden Workstation $version**" "$ROOT/README.md"
+grep -Fq '](VERSION)' "$ROOT/README.md"
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center_presentation.sh" ]] || { echo 'control center presentation layer missing' >&2; exit 1; }
@@ -57,22 +57,20 @@ grep -Fq 'control_center_presentation.sh' "$ROOT/control.sh"
 grep -Fq 'diagnostics/data-storage-doctor' "$ROOT/control.sh"
 grep -Fq 'diagnostics/gaming-doctor' "$ROOT/control.sh"
 
-# KVM creation must be usable through both the interactive facade and the public
-# parameterized CLI. Windows media hashes are mandatory before the engine runs.
+# The sole supported guest profile is Rocky DevOps. Its parameterized CLI and
+# interactive facade both delegate to the same engine.
 grep -Fq 'cc_kvm_create_rocky_interactive' "$ROOT/lib/control_center_presentation.sh"
-grep -Fq 'cc_kvm_create_windows_interactive' "$ROOT/lib/control_center_presentation.sh"
 grep -Fq -- '--cloud-image "$cloud_image"' "$ROOT/lib/control_center_presentation.sh"
-grep -Fq -- '--windows-sha256 "$windows_sha"' "$ROOT/lib/control_center_presentation.sh"
-grep -Fq -- '--virtio-sha256 "$virtio_sha"' "$ROOT/lib/control_center_presentation.sh"
-grep -Fq 'Les deux ISO et les deux SHA-256 de confiance sont obligatoires.' "$ROOT/lib/control_center_presentation.sh"
 grep -Fq 'if [[ "${1:-}" == kvm ]]' "$ROOT/control.sh"
 grep -Fq 'create-rocky)' "$ROOT/control.sh"
-grep -Fq 'create-windows)' "$ROOT/control.sh"
 grep -Fq 'shift 2' "$ROOT/control.sh"
 grep -Fq 'create_rocky_devops_vm.sh" "$@"' "$ROOT/control.sh"
-grep -Fq 'create_windows11_vm.sh" "$@"' "$ROOT/control.sh"
 grep -Fq './control.sh kvm create-rocky --cloud-image PATH' "$ROOT/lib/control_center_presentation.sh"
-grep -Fq './control.sh kvm create-windows --windows-iso PATH --virtio-iso PATH --windows-sha256 HASH --virtio-sha256 HASH' "$ROOT/lib/control_center_presentation.sh"
+if grep -Eqi 'create-windows|create_windows11_vm|cc_kvm_create_windows|--windows-iso|--virtio-iso' \
+    "$ROOT/control.sh" "$ROOT/lib/control_center.sh" "$ROOT/lib/control_center_presentation.sh"; then
+  echo 'removed Windows guest remains available through the Control Center' >&2
+  exit 1
+fi
 
 # Dashboard truth must be based on real runtime data, not marker presence alone.
 grep -Fq 'os_id' "$ROOT/lib/control_center.sh"
@@ -198,10 +196,11 @@ grep -Fq './control.sh doctor gaming' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh perf status' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh perf sched-smoke' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh kvm create-rocky' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh kvm create-windows' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq -- '--windows-sha256' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq -- '--virtio-sha256' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'Installation Fedora 45 bare-metal' "$ROOT/docs/CONTROL_CENTER.md"
+if grep -Eq 'create-windows|--windows-sha256|--virtio-sha256' "$ROOT/docs/CONTROL_CENTER.md"; then
+  echo 'documentation still exposes the removed Windows profile' >&2; exit 1
+fi
+grep -Fq './control.sh validate live run' "$ROOT/docs/CONTROL_CENTER.md"
+grep -Fq './control.sh validate import' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh logs retention' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq './control.sh cert archive' "$ROOT/docs/CONTROL_CENTER.md"
 grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"

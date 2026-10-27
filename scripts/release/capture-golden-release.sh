@@ -9,8 +9,8 @@ source "$REPO_ROOT/lib/kernel_lifecycle.sh"
 source "$REPO_ROOT/lib/validation_gates.sh"
 source "$REPO_ROOT/lib/performance_runtime.sh"
 
-runtime_is_baremetal || { ui_error 'Golden release capture is bare-metal only'; exit "$EXIT_SECURITY_BLOCK"; }
-validation_require_chain || { ui_error 'Golden release capture requires the current Gate 1 → Gate 2 proof chain'; exit "$EXIT_PRECHECK_FAILED"; }
+validation_require_installed_runtime || exit $?
+validation_require_chain || { ui_error 'Golden release capture requires the current native Live USB proof'; exit "$EXIT_PRECHECK_FAILED"; }
 baseline_certification_valid || { ui_error 'A valid hardware baseline is required before Golden release capture'; exit "$EXIT_PRECHECK_FAILED"; }
 hardware_b580_pcie_validate || { ui_error 'Arc B580 PCIe/ReBAR qualification is not valid'; exit "$EXIT_POSTCHECK_FAILED"; }
 storage_nvme_validate_all_expected || { ui_error 'T705 SMART/PCIe qualification is not valid'; exit "$EXIT_POSTCHECK_FAILED"; }
@@ -40,8 +40,7 @@ runtime_file="$staging/runtime-stack.tsv"
 repos_file="$staging/enabled-repositories.txt"
 hardware_file="$staging/hardware-ids.txt"
 media_file="$staging/fedora-media.lock"
-gate1_file="$staging/gate1-proof.json"
-gate2_file="$staging/gate2-proof.json"
+live_file="$staging/live-proof.json"
 performance_policy_file="$staging/performance-runtime.policy"
 
 rpm -qa --qf '%{NAME}\t%{EPOCHNUM}\t%{VERSION}\t%{RELEASE}\t%{ARCH}\n' | sort -u > "$rpm_file"
@@ -146,13 +145,12 @@ fi
 
 fedora_require_selected || exit "$EXIT_PRECHECK_FAILED"
 cp "$REPO_ROOT/installer/fedora${HOST_RELEASE:-45}-media.lock" "$media_file"
-cp "$(validation_imported_proof_path 1)" "$gate1_file"
-cp "$(validation_imported_proof_path 2)" "$gate2_file"
+cp "$(validation_imported_proof_path 2)" "$live_file"
 cp "$REPO_ROOT/config/performance-runtime.policy" "$performance_policy_file"
 
 (
   cd "$staging"
-  sha256sum rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora-media.lock performance-runtime.policy gate1-proof.json gate2-proof.json > MANIFEST.sha256
+  sha256sum rpm-nevra.tsv flatpak-commits.tsv gnome-extensions.tsv runtime-stack.tsv enabled-repositories.txt hardware-ids.txt fedora-media.lock performance-runtime.policy live-proof.json > MANIFEST.sha256
 )
 
 media_value() {
@@ -193,8 +191,7 @@ data = {
     },
     "validation_gates": {
         "chain": "PASS",
-        "gate1_proof_sha256": "$(file_hash "$gate1_file")",
-        "gate2_proof_sha256": "$(file_hash "$gate2_file")",
+        "live_proof_sha256": "$(file_hash "$live_file")",
     },
     "arc_b580": {
         "pci_id": "8086:e20b",
@@ -220,8 +217,7 @@ data = {
         "hardware_ids_sha256": "$(file_hash "$hardware_file")",
         "fedora_media_lock_sha256": "$(file_hash "$media_file")",
         "performance_policy_sha256": "$(file_hash "$performance_policy_file")",
-        "gate1_proof_sha256": "$(file_hash "$gate1_file")",
-        "gate2_proof_sha256": "$(file_hash "$gate2_file")",
+        "live_proof_sha256": "$(file_hash "$live_file")",
         "manifest_sha256": "$(file_hash "$staging/MANIFEST.sha256")",
     },
     "captured_utc": "$(date -u +%FT%TZ)",

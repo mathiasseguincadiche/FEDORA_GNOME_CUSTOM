@@ -18,7 +18,7 @@ jobs:
         run: |
           grep -F 'REAL_MACHINE_APPROVED="false"' config/apply-gate.conf
           grep -F 'REAL_MACHINE_APPROVED="false"' config/local.conf.example
-          ! grep -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config/*.conf
+          bash scripts/ci/assert-absent.sh grep -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config/*.conf
       - name: Runtime isolation invariants
         run: |
           grep -Fq 'runtime_environment_detect' lib/common.sh
@@ -27,52 +27,30 @@ jobs:
           grep -Fq 'apply_gate_require_runtime' lib/apply_gate.sh
           grep -Fq 'runtime_is_baremetal' lib/apply_gate.sh
           grep -Fq 'runtime_is_baremetal' lib/baseline.sh
-          grep -Fq 'wsl2)' diagnostic.sh
-          grep -Fq 'vm|container)' diagnostic.sh
-          grep -Fq 'REAL APPLY is blocked outside bare-metal' diagnostics/wsl2-doctor
-      - name: VirtualBox GNOME LAB isolation invariants
-        shell: bash
+          grep -Fq 'wsl2|vm|container)' diagnostic.sh
+          grep -Fq 'runtime_is_live' lib/apply_gate.sh
+      - name: Native Live USB and installed-system separation
         run: |
-          set -Eeuo pipefail
-          lab=scripts/lab/apply-gnome-virtualbox.sh
-          doctor=diagnostics/virtualbox-gnome-lab-doctor
-          test -x "$lab"
-          test -x "$doctor"
-          grep -Fq 'runtime_is_virtualbox' lib/common.sh
-          grep -Fq '== oracle' lib/common.sh
-          grep -Fq "grep -Eqi 'VirtualBox|Oracle|innotek'" lib/common.sh
-          grep -Fq 'runtime_is_virtualbox' "$lab"
-          grep -Fq 'fedora_shell_matches' "$lab"
-          grep -Fq 'fedora_require_install_target' "$lab"
-          grep -Fq 'Wayland is required for GATE 2' "$lab"
-          grep -Fq 'modules/gnome/24b_resource_monitor.sh' "$lab"
-          grep -Fq 'gnome_telemetry_apply' "$lab"
-          ! grep -Fq 'orchestrator_run_all' "$lab"
-          ! grep -Fq 'apply_gate_open' "$lab"
-          ! grep -Fq 'modules/system/' "$lab"
-          ! grep -Fq 'modules/hardware/' "$lab"
-          ! grep -Fq 'modules/virtualization/' "$lab"
-          ! grep -Fq 'modules/backup/' "$lab"
-          ! grep -Fq 'run_mutating' "$doctor"
-          grep -Fq 'Production APPLY guard' "$doctor"
-          grep -Fq 'Bare-metal baseline guard' "$doctor"
+          bash tests/test_apply_gate_behavior.sh
+          bash tests/test_live_preflight_probe.sh
+          python3 tests/test_live_validation_behavior.py
+          bash tests/test_validation_gate_proof_behavior.sh
       - name: Fedora GNOME architecture invariants
         run: |
           grep -F 'REQUIRE_WAYLAND="true"' config/workstation.conf
           grep -F 'ENABLE_JUST_PERFECTION="false"' config/gnome.conf
           grep -F 'ALLOW_GPU_PASSTHROUGH="false"' config/virtualization.conf
           grep -F 'ALLOW_FORCE_PROBE="false"' config/graphics.conf
-          ! grep -RInEi --exclude-dir=.git 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' config manifests modules scripts guest diagnostics
+          bash scripts/ci/assert-absent.sh grep -RInEi --exclude-dir=.git 'virtiofs|virtiofsd|hostshare|/mnt/hostshare|/data/libvirt/shared' config manifests modules scripts guest diagnostics
       - name: Resource Monitor telemetry invariants
         run: |
           grep -Fq 'ENABLE_RESOURCE_MONITOR="true"' config/gnome.conf
           bash tests/test_fedora45_primary_behavior.sh
           grep -Fq 'gnome.telemetry|GNOME|gnome.extensions|modules/gnome/24b_resource_monitor.sh' manifests/module-plan.conf
           grep -Fq '0xe20b' modules/gnome/24b_resource_monitor.sh
-          grep -Fq 'gpu_busy_percent' modules/gnome/24b_resource_monitor.sh
-          grep -Fq 'gt_busy_percent' modules/gnome/24b_resource_monitor.sh
+          bash tests/test_resource_monitor_contract.sh
           grep -Fq 'runtime_is_baremetal' modules/gnome/24b_resource_monitor.sh
-          ! grep -RFiq 'Astra Monitor' config manifests modules/gnome scripts/gnome
+          bash scripts/ci/assert-absent.sh grep -RFiq 'Astra Monitor' config manifests modules/gnome scripts/gnome
       - name: Upstream workstation performance safety invariants
         shell: bash
         run: |
@@ -83,8 +61,8 @@ jobs:
           grep -Fq 'runtime_is_baremetal' scripts/performance/profile.sh
           grep -Fq 'trap restore EXIT INT TERM' scripts/performance/game-performance.sh
           grep -Fq 'trap restore EXIT INT TERM' scripts/performance/nvme-scheduler-benchmark.sh
-          ! grep -RInE 'sysctl[[:space:]]+-w|nohz_full|pcie_aspm=off|nvme_core\.default_ps_max_latency_us|xe\.force_probe|i915\.force_probe' config/performance-runtime.policy modules/performance scripts/performance
-          ! grep -RInEi '^[[:space:]]*(gpu_device|nv_core_clock_mhz_offset|nv_mem_clock_mhz_offset|amd_performance_level)[[:space:]]*=' modules/performance
+          bash scripts/ci/assert-absent.sh grep -RInE 'sysctl[[:space:]]+-w|nohz_full|pcie_aspm=off|nvme_core\.default_ps_max_latency_us|xe\.force_probe|i915\.force_probe' config/performance-runtime.policy modules/performance scripts/performance
+          bash scripts/ci/assert-absent.sh grep -RInEi '^[[:space:]]*(gpu_device|nv_core_clock_mhz_offset|nv_mem_clock_mhz_offset|amd_performance_level)[[:space:]]*=' modules/performance
 
       - name: KVM network ownership boundary
         run: |
@@ -93,14 +71,14 @@ jobs:
           grep -F 'KVM_BLOCK_PHYSICAL_LAN="true"' config/virtualization.conf
           grep -F 'KVM_ALLOW_INBOUND_FORWARDING="false"' config/virtualization.conf
           grep -F 'KVM_NFT_TABLE="fedora_gnome_custom_kvm"' config/virtualization.conf
-          ! grep -RInE 'nft[[:space:]]+flush[[:space:]]+ruleset|iptables[[:space:]]+-F' modules scripts
+          bash scripts/ci/assert-absent.sh grep -RInE 'nft[[:space:]]+flush[[:space:]]+ruleset|iptables[[:space:]]+-F' modules scripts
       - name: Storage and security destructive guards
         run: |
-          ! grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0|chmod[[:space:]]+777)' modules scripts install.sh
-      - name: Ubuntu guest authentication and supply chain
+          bash scripts/ci/assert-absent.sh grep -RInE '(mkfs\.|wipefs|parted[[:space:]]|sgdisk[[:space:]]|setenforce[[:space:]]+0|chmod[[:space:]]+777)' modules scripts install.sh
+      - name: Rocky guest authentication and supply chain
         run: |
           grep -Fq 'ssh_pwauth: false' scripts/kvm/create_rocky_devops_vm.sh
-          ! grep -Fq 'NOPASSWD:ALL' scripts/kvm/create_rocky_devops_vm.sh
+          bash scripts/ci/assert-absent.sh grep -Fq 'NOPASSWD:ALL' scripts/kvm/create_rocky_devops_vm.sh
           grep -Fq 'awscli-exe-linux-x86_64.zip.sig' guest/rocky-devops/bootstrap-devops.sh
           grep -Fq 'gpgv --keyring' guest/rocky-devops/bootstrap-devops.sh
           grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' guest/rocky-devops/bootstrap-devops.sh
@@ -108,7 +86,7 @@ jobs:
         run: |
           grep -Fq 'repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD' installer/lib/generate-kickstart.sh
           grep -Fq 'checkout --detach FETCH_HEAD' installer/lib/generate-kickstart.sh
-          ! grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' installer/lib/generate-kickstart.sh
+          bash scripts/ci/assert-absent.sh grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' installer/lib/generate-kickstart.sh
       - name: Backup fail-closed invariants
         run: |
           grep -F 'BACKUP_FAIL_CLOSED="true"' config/backup.conf

@@ -6,13 +6,15 @@
 > | --- | --- |
 > | Comprendre l'architecture KVM | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
 > | Comprendre le réseau privé des VM | [`KVM_NETWORK.md`](KVM_NETWORK.md) |
-> | Les deux VM de référence (Rocky, Windows 11) | [`VM_PROFILES.md`](VM_PROFILES.md) |
+> | Le profil Rocky Linux de référence | [`VM_PROFILES.md`](VM_PROFILES.md) |
 > | Le labo DevOps Rocky Linux | [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md), [`ROCKY_DEVOPS_PROVISIONING.md`](ROCKY_DEVOPS_PROVISIONING.md) |
 > | Accéder aux fichiers des VM depuis Fedora | [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) |
 > | Tout piloter en ligne de commande | [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) |
 > | Un problème | [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) |
 
 Ce document est le parcours opérateur court pour KVM/libvirt. Pour l'architecture détaillée, lire ensuite [`VIRTUALIZATION.md`](VIRTUALIZATION.md). Pour le dépannage, utiliser [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md).
+
+Rocky se crée **après l’installation de Fedora et les contrôles de base du HOST**, lorsque le stockage, le pool et le réseau KVM sont prêts, puis **avant la qualification Golden complète**. Le contrôle du média Live et la préparation de Fedora n’exigent aucune VM. Le projet ne crée pas Rocky automatiquement pendant l’APPLY.
 
 ## Les quatre objets à retenir
 
@@ -22,8 +24,7 @@ HOST Fedora
 ├── pool stockage     : devops-data → /data/libvirt/images
 ├── réseau            : devops-nat  → virbr50 → 192.168.50.0/24
 └── VM
-    ├── rocky-devops
-    └── windows-11
+    └── rocky-devops
 ```
 
 Une VM est un *domaine* libvirt. Le pool pointe vers le second T705. Le réseau `devops-nat` autorise HOST↔VM, VM↔VM et VM→Internet, tout en bloquant le forwarding vers le LAN physique.
@@ -55,8 +56,6 @@ Démarrer/arrêter proprement :
 ```bash
 virsh --connect qemu:///system start rocky-devops
 virsh --connect qemu:///system shutdown rocky-devops
-virsh --connect qemu:///system start windows-11
-virsh --connect qemu:///system shutdown windows-11
 ```
 
 `virsh destroy` équivaut à une coupure d'alimentation virtuelle et reste un geste de dépannage.
@@ -107,39 +106,7 @@ Le helper peut maintenir le favori :
 bash scripts/kvm/configure_nautilus_vm_access.sh refresh
 ```
 
-## 4. Créer Windows 11
-
-Préparer depuis des sources de confiance :
-
-```text
-Windows 11 ISO officiel Microsoft
-virtio-win.iso Fedora/Red Hat
-SHA-256 Windows obtenu depuis une source de confiance
-SHA-256 VirtIO obtenu depuis une source de confiance
-```
-
-Les **deux SHA-256 sont obligatoires**. Le script refuse toute création si l'un des deux manque.
-
-```bash
-bash scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso \
-  --windows-sha256 '<sha256-windows-de-confiance>' \
-  --virtio-sha256 '<sha256-virtio-de-confiance>'
-```
-
-Les médias sont vérifiés avant `qemu-img create`. Calculer soi-même le hash d'un fichier déjà téléchargé ne prouve que son intégrité locale, pas sa provenance.
-
-Le script génère également `windows-guest-tools.iso`. Après installation :
-
-1. ouvrir le CD `FGC_TOOLS` ;
-2. lancer PowerShell en administrateur ;
-3. exécuter `Configure-GuestIntegration.ps1` ;
-4. exécuter `Configure-VMShare.ps1` uniquement si l'accès SMB depuis Nautilus est souhaité.
-
-Windows utilise UEFI Secure Boot, TPM 2.0/swtpm, VirtIO, QEMU Guest Agent et `SPICE + virtio video`. L'Arc B580 reste réservée au HOST.
-
-## 5. Interface graphique
+## 4. Interface graphique
 
 ```bash
 virt-manager --connect qemu:///system
@@ -147,25 +114,25 @@ virt-manager --connect qemu:///system
 
 La GUI est un complément. Le cycle de vie de référence reste réalisable en CLI.
 
-## 6. Certifier les VM
+## 5. Qualifier Rocky et terminer la certification Golden
 
-Quand Rocky Linux et Windows sont installés et démarrés :
+Quand Rocky Linux est installé et démarré :
 
 ```bash
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification contrôle notamment QEMU Guest Agent, VirtIO, Secure Boot/TPM Windows, réseau, stack DevOps Rocky Linux, Internet et guard KVM.
+La qualification contrôle notamment QEMU Guest Agent, le contrat XML VirtIO/RNG/balloon de Rocky, le réseau, la stack DevOps, DNS/HTTPS et le guard KVM. Ce contrôle de l’invité précède la certification Golden complète, qui exige aussi les preuves matérielles du HOST. Suivre ensuite le [guide d’installation](INSTALLATION_GUIDE.md) pour terminer Gate 3.
 
-## 7. Exports des VM : gestion personnelle
+## 6. Exports des VM : gestion personnelle
 
 Les exports des VM sont réalisés **manuellement**, seulement quand le
 propriétaire le souhaite. Aucune commande du moteur Borg n'exporte
-Rocky Linux ou Windows, et le projet ne planifie aucun export automatique.
+Rocky Linux, et le projet ne planifie aucun export automatique.
 Pour un export personnel cohérent, il appartient au propriétaire de
 vérifier l'état de la VM et de conserver ensemble ses fichiers nécessaires.
 
-## 8. En cas de problème
+## 7. En cas de problème
 
 Ne pas désactiver SELinux, firewalld ou le guard pour contourner un symptôme.
 

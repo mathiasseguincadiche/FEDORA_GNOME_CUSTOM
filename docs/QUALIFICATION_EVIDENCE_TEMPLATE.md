@@ -2,7 +2,7 @@
 
 Copier cette fiche dans le dossier de preuves de l'essai. Toutes les cases
 commencent NON EXÉCUTÉ ; un résultat ne devient PASS qu'après l'exercice réel.
-Cette fiche de suivi ne remplace aucun fichier de preuve des trois gates.
+Cette fiche de suivi ne remplace aucun fichier de preuve Live ou de la Gate 3.
 
 ## Identités à figer
 
@@ -12,8 +12,8 @@ Cette fiche de suivi ne remplace aucun fichier de preuve des trois gates.
 - Rapport du laboratoire GitHub sur ce commit : NON RENSEIGNÉ
 - Média Fedora Workstation vérifié, nom et SHA-256 : NON RENSEIGNÉ
 - Numéros de série du T705 système, du T705 données et du support externe : NON RENSEIGNÉ
-- Dépôt Borg, nom et identifiant de l'archive complète incluant les VM : NON RENSEIGNÉ
-- SHA-256 des preuves Gate 1 et Gate 2 liées au même commit : NON RENSEIGNÉ
+- Dépôt Borg, nom et identifiant de l'archive complète HOST/données, hors VM : NON RENSEIGNÉ
+- SHA-256 de la preuve Live liée au même commit et au même PC : NON RENSEIGNÉ
 
 La cible matérielle est Ryzen 7 7700, MSI MAG B850M Mortar WiFi, Intel Arc
 B580, 48 Gio DDR5, deux Crucial T705, support externe XS1000 et écran ASUS
@@ -24,12 +24,10 @@ documenter tout remplacement ; une ancienne fiche matérielle ne suffit pas.
 
 | Essai | État initial | Acceptation / preuve |
 |---|---|---|
-| Gate 1 Fedora WSL2 | NON EXÉCUTÉ | Commande officielle réussie, JSON + SHA exportés |
-| Gate 2 Fedora GNOME/VirtualBox | NON EXÉCUTÉ | LAB, doctors, matrice UX réellement exécutée, signature humaine et référence Gate 1 |
+| Live USB Fedora 45 / GNOME 51 | NON EXÉCUTÉ | Essais directs sur le PC, JSON PREINSTALL_ONLY + SHA exportés hors du Live puis importés sur le SSD |
 | Fichiers isolés | NON EXÉCUTÉ | Archive exacte, verify-data, contenu/modes/liens comparés |
 | Fedora reconstruit | NON EXÉCUTÉ | Support cible distinct, boot, GNOME, données, diagnostics puis convergence répétée |
 | VM Rocky Linux récupérée | NON EXÉCUTÉ | Membres correspondants, boot, documents/services, redémarrage et isolation |
-| VM Windows récupérée | NON EXÉCUTÉ | Disque/NVRAM/swtpm/UUID, boot, TPM, documents et isolation |
 | Arrêt/reboot GNOME | NON EXÉCUTÉ | Fermeture normale, reboot direct avec bureau ouvert et reboot précoce : aucune désactivation d'extensions ni crash dans le journal du boot précédent |
 | APPLY réel et noyau | NON EXÉCUTÉ | Baseline + dry-run + backup + APPLY, démarrage Linux amont stable, entrée N-1 disponible |
 
@@ -57,7 +55,7 @@ Une capture d'écran seule ne démontre pas les interactions.
 
 Les doctors existants servent de points de contrôle : baseline, graphics,
 arc-compute, display, storage, hardware-components, suspend, usb-resume,
-virtualization, windows-guest, backup et performance. Leur PASS doit être
+virtualization, backup et performance. Leur PASS doit être
 accompagné des essais d'usage ci-dessus ; une lecture de journaux seule ne
 prouve pas stabilité, débit, fluidité ou silence.
 
@@ -68,5 +66,4 @@ prouve pas stabilité, débit, fluidité ou silence.
 - Gate 3 / final-certification / bundle Golden : NON EXÉCUTÉ
 - Mesures A/B avant toute optimisation supplémentaire : NON EXÉCUTÉ
 
-Tout nouveau commit ou plan de modules invalide les preuves Gate 1/Gate 2
-précédentes. Rejouer la chaîne officielle avant une certification finale.
+Tout nouveau commit ou plan de modules invalide la preuve Live précédente. Refaire le relevé natif avec cette source avant une certification finale ; requalifier aussi les preuves installées affectées par un changement de configuration ou de runtime.

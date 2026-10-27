@@ -1,0 +1,8 @@
+# Tools needed before pre-APPLY hardware enrollment and qualification.
+pciutils
+kmod
+util-linux
+smartmontools
+stress-ng
+dmidecode
+fio

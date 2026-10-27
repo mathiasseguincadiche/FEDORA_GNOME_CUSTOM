@@ -1,473 +1,88 @@
-# Validation en trois phases — WSL2 → VirtualBox → bare-metal
+# Validation : CI, Live USB et système installé
 
-> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
-
-Cette procédure est l'ordre officiel de qualification de la Golden Workstation.
-
-```text
-GATE 1 — Fedora 45 / WSL2
-Prévalidation système + logique
-        │
-        │ preuve JSON portable Gate 1
-        ▼
-GATE 2 — Fedora 45 / VirtualBox
-Validation GNOME / Nautilus / Ptyxis + contrôle visuel humain
-        │
-        │ preuve JSON portable Gate 2 liée au SHA-256 de Gate 1
-        ▼
-GATE 3 — Fedora 45 / BARE-METAL
-Installation réelle + certification matérielle/logicielle complète
-        │
-        ▼
-final-certification PASS
-        │
-        ▼
-golden-release.json
-```
-
-## Comprendre le parcours de certification
-
-La **CI GitHub** vérifie contrats, paquets et VM éphémères. Les **trois Gates** constituent une chaîne distincte de preuves opérateur, jusqu'au vrai PC.
+Ce guide définit le parcours de qualification de **Fedora 45 / GNOME 51**. La CI vérifie le logiciel. Les essais opérateur se font directement sur le PC : d'abord depuis le Live USB, puis après installation. Aucun parcours Windows ou VirtualBox n'est requis.
 
 ```mermaid
-flowchart TD
-  C["CI : code, conteneurs et VM"] --> P["Qualité logicielle du commit"]
-  A["Gate 1 : logique WSL2"] --> B["Gate 2 : GNOME VirtualBox"]
-  B --> I["Installation bare-metal protégée"]
-  I --> G["Gate 3 : matériel, veille, recovery"]
-  G --> S["Golden runtime-certified"]
-  P -. "ne remplace pas" .-> G
+flowchart LR
+  CI["CI : contrats et laboratoires Linux QEMU"] --> C["Commit vérifié"]
+  C --> L["Live USB sur le PC cible"]
+  L --> I["Installation Fedora sur SSD"]
+  I --> A["Configuration, baseline, dry-run, backup, APPLY"]
+  A --> R["Redémarrage, diagnostics et Rocky"]
+  R --> G["Gate 3 : qualification du système installé"]
 ```
 
-Le parcours détaillé ci-dessous concerne **Fedora 45 / GNOME 51**, référence active. Pour **Fedora 45 / GNOME 51**, le profil reste `pending` : média signé, promotion des verrous et nouvelles preuves sont nécessaires. Une ancienne Gate 2 GNOME 50 ne certifie pas un bureau GNOME 51. [Architecture et exemples](ARCHITECTURE_PEDAGOGIQUE.md) · [Référence Fedora 45](FEDORA45_PRIMARY.md).
+Le profil Fedora 45 reste `pending` tant que le média Workstation final signé et les dépendances stables n'ont pas été qualifiés puis promus. Les tests ne remplacent pas cette promotion : voir [la fiche Fedora 45](FEDORA45_PRIMARY.md).
 
-## Règles absolues
+## 1. Vérifier le commit
 
-1. Les trois phases doivent utiliser **le même commit Git** et le même `manifests/module-plan.conf`.
-2. Le worktree doit être propre lors de la création/importation d'une preuve.
-3. Une modification du projet après Gate 1 ou Gate 2 rend les anciennes preuves invalides : les gates doivent être rejouées.
-4. Gate 1 et Gate 2 portent explicitement `hardware_certification=DEFERRED`.
-5. Gate 1 et Gate 2 ne peuvent jamais produire `final-certification PASS` ni `golden-release.json`.
-6. Seul un runtime réellement détecté `baremetal` peut exécuter Gate 3.
-7. Gate 2 doit référencer exactement le SHA-256 de la preuve Gate 1 importée.
-8. Gate 3 refuse la certification si la chaîne Gate 1 → Gate 2 n'est pas présente, actuelle et intacte.
+Consulter les contrôles GitHub du **commit exact** à installer. Les laboratoires Linux QEMU testent des fonctions logicielles, des démarrages et des reprises avec des périphériques virtuels. Ils ne certifient ni la B580 ni les T705 ni l'écran physique. Voir [la CI](CI_VALIDATION.md) et [le laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md).
 
-## Commandes communes
+Conserver ce commit et le plan de modules pour le Live et le système installé. Le checkout doit être propre ; les résultats et réglages locaux restent dans les emplacements ignorés prévus par le projet.
+
+## 2. Observer le PC depuis le Live USB
+
+Démarrer le média Fedora 45 final authentifié en mode essai, directement sur le PC cible, avec GNOME 51/Wayland. Suivre [le guide Live USB](FEDORA45_LIVE_PREFLIGHT.md) pour la préparation et les essais.
 
 ```bash
-./control.sh validate help
+./control.sh validate live plan
+./control.sh validate live run
+./control.sh validate live status
+./control.sh validate export live /chemin/du/support-externe-inscriptible
+```
+
+Les contrôles distinguent inventaire, accès réseau et confirmations humaines. Tout `FAIL` bloque la validation ; tout contrôle obligatoire `NOT_TESTED` reste à vérifier. Les contrôles facultatifs non exécutés restent visibles dans le rapport. Un succès produit un JSON `live-<commit>.json` avec sa somme SHA-256 lors de l'export.
+
+La preuve native, au schéma 2, porte `environment=live-usb` et `hardware_certification=PREINSTALL_ONLY`. Elle est liée au commit, au plan de modules et à l'identité stable du PC, notamment les deux T705 de séries distinctes. Elle ne dépend pas de l'UUID racine ou du noyau qui changera à l'installation. Elle ne prouve pas les services installés, les extensions personnalisées, les sauvegardes ni KVM.
+
+**Avant de redémarrer, exporter hors du HOME temporaire du Live.** La clé qui porte l'ISO peut être en lecture seule : utiliser un emplacement externe réellement inscriptible et vérifier les fichiers exportés. Ne pas éditer une preuve pour transformer un échec en succès.
+
+## 3. Installer puis converger
+
+Suivre [le guide d'installation](INSTALLATION_GUIDE.md) : installation graphique sur le T705 système identifié par sa série, second T705 `/data` préservé, puis redémarrage sur le SSD. Le Kickstart reste une voie avancée documentée dans ce guide.
+
+Récupérer le **même commit**, puis importer le compte rendu :
+
+```bash
+./control.sh validate import /chemin/live-<commit>.json
 ./control.sh validate status
 ```
 
-Import d'une preuve portable :
+Une preuve d'une autre machine, d'un autre commit/plan ou d'un ancien schéma est refusée. Un changement de configuration locale nécessaire à l'installation ne la transforme pas en certificat du système installé.
+
+Le parcours de convergence reste :
+
+**Outils de baseline → configuration définitive et `/data` → baseline → dry-run final → sauvegarde vérifiée → APPLY → redémarrage.**
+
+`install.sh --apply` exige une Fedora installée sur matériel physique, avec le profil final promu. La session Live sert aux observations avant installation ; elle n'est pas la cible de l'APPLY. Voir [le contrat d'exécution](EXECUTION_CONTRACT.md).
+
+## 4. Qualifier le système installé — Gate 3
+
+Commencer par les diagnostics de l'hôte installé. Créer ensuite Rocky DevOps, vérifier son réseau et son accès SFTP selon [le guide KVM](KVM_QUICKSTART.md). Aucune VM n'est nécessaire avant l'installation de Fedora ; Rocky fait partie de la certification Golden complète lorsque KVM est activé.
+
+Suivre [la fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) et [la fermeture des contrats](GOLDEN_COMPLETENESS_CLOSURE.md). Elles décrivent les essais CPU/RAM/NVMe, B580, écran, réseau, audio, USB, sauvegarde et les cinq cycles physiques de veille/reprise.
 
 ```bash
-./control.sh validate import /chemin/vers/gate1-<commit>.json
-./control.sh validate import /chemin/vers/gate2-<commit>.json
-```
-
-Export vers un dossier partagé, une clé USB ou un autre support de transfert :
-
-```bash
-./control.sh validate export 1 /chemin/export
-./control.sh validate export 2 /chemin/export
-```
-
-Chaque export est accompagné d'un fichier `.sha256`.
-
----
-
-# Gate 1 — Fedora 45 sous WSL2
-
-## Objectif
-
-Gate 1 valide le **code de validation**, la cohérence système et les décisions fail-closed. Ce n'est pas une certification du matériel physique.
-
-### Validé
-
-- Fedora 45 userland ;
-- détection WSL2 ;
-- outils système requis ;
-- schéma de configuration ;
-- catalogue/modules et ordre des dépendances ;
-- syntaxe Bash ;
-- totalité de la suite de contrats déclarée dans `.github/workflows/tests.yml` ;
-- logique dry-run / mutation ;
-- guards runtime ;
-- Linux amont stable comparé à kernel.org, canal unique vanilla, rolling N / N-1 ;
-- logique Borg et APPLY gates ;
-- logique KVM fail-closed ;
-- logique B580/T705/EDID via les contrats et fixtures du dépôt.
-
-### Explicitement non certifié
-
-- PCI réel `8086:e20b` ;
-- pilote `xe` natif ;
-- ReBAR ;
-- PCIe x8 de la B580 ;
-- SMART/PCIe x4 des T705 ;
-- BIOS/UEFI ;
-- EDID physique ;
-- 1440p/~240 Hz ;
-- VA-API/OpenCL sur la B580 physique ;
-- suspend/resume firmware ;
-- KVM host réel.
-
-## Exécution
-
-Dans Fedora 45 WSL2 :
-
-```bash
-git switch main
-git pull --ff-only
-git status --short
-./control.sh validate gate1 run
-```
-
-Résultat attendu :
-
-```text
-GATE 1 PASS
-hardware_certification=DEFERRED
-```
-
-La preuve est créée dans :
-
-```text
-state/validation/outbox/gate1-<commit>.json
-```
-
-Exporter la preuve vers Windows ou un support partagé :
-
-```bash
-./control.sh validate export 1 /mnt/c/GoldenValidation
-```
-
----
-
-# Gate 2 — Fedora 45 GNOME sous VirtualBox
-
-> Guide pratique pas à pas depuis Windows (installation WSL2 et VirtualBox, dossier partagé, checklist, dépannage) : [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md).
-
-## Objectif
-
-Gate 2 valide le **desktop réel dans une VM graphique** sans prétendre certifier le matériel hôte.
-
-Le laboratoire VirtualBox est volontairement séparé du `install.sh --apply` de production.
-
-## Pré-requis VM
-
-- Oracle VirtualBox ;
-- Fedora Linux 45 ;
-- GNOME Shell 51 ;
-- session Wayland ;
-- utilisateur desktop non-root ;
-- D-Bus utilisateur actif ;
-- même commit Git que Gate 1.
-
-## 1. Importer Gate 1
-
-Copier la preuve Gate 1 dans la VM puis :
-
-```bash
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate gate2 status
-```
-
-## 2. Voir le périmètre exact
-
-```bash
-./control.sh validate gate2 plan
-```
-
-## 3. Converger le desktop de test
-
-```bash
-./control.sh validate gate2 apply
-```
-
-Le LAB installe/valide notamment :
-
-- GNOME core et portals ;
-- Nautilus ;
-- GVfs ;
-- Sushi ;
-- File Roller/Nautilus ;
-- préwarm utilisateur Nautilus ;
-- applications GTK4/libadwaita gérées ;
-- Ptyxis natif ;
-- DING ;
-- Show Desktop Button ;
-- Vitals ;
-- réglages GNOME ciblés.
-
-Si GNOME demande une reconnexion après installation d'extensions : se déconnecter/reconnecter puis relancer `gate2 check`.
-
-## 4. Contrôles automatisés
-
-```bash
-./control.sh validate gate2 check
-```
-
-Ces contrôles couvrent notamment :
-
-- identité VirtualBox ;
-- Fedora 45 ;
-- GNOME Shell 51 ;
-- Wayland ;
-- production APPLY toujours bloqué ;
-- baseline bare-metal toujours bloquée ;
-- extensions installées, épinglées et activées ;
-- réglages DING / Show Desktop Button / Vitals ;
-- Nautilus/GVfs ;
-- Ptyxis ;
-- XDG portals.
-
-## 5. Contrôle visuel humain obligatoire
-
-Vérifier réellement à l'écran :
-
-- GNOME Shell sans crash ni défaut graphique évident ;
-- icônes DING conformes ;
-- corbeille visible selon la politique ;
-- bouton Show Desktop Button fonctionnel ;
-- `Super+D` fonctionnel ;
-- Vitals lisible dans la barre supérieure ;
-- Nautilus se lance et navigue correctement ;
-- intégration archives/prévisualisation cohérente ;
-- Ptyxis se lance normalement ;
-- aucune bannière répétée d'erreur d'extension ;
-- aucune régression évidente de disposition.
-
-Puis signer Gate 2 :
-
-```bash
-./control.sh validate gate2 sign
-```
-
-Le script exige la phrase exacte :
-
-```text
-JE_VALIDE_VISUELLEMENT_GATE2
-```
-
-La preuve Gate 2 contient `manual_visual=PASS` et le SHA-256 exact de la preuve Gate 1.
-
-Exporter ensuite les deux preuves :
-
-```bash
-./control.sh validate export 1 /chemin/export
-./control.sh validate export 2 /chemin/export
-```
-
----
-
-# Gate 3 — Fedora 45 réellement installé sur le PC
-
-## Objectif
-
-Gate 3 est **la seule certification Golden autoritaire**.
-
-Elle doit être exécutée sur la machine physique cible :
-
-- Ryzen 7 7700 ;
-- MSI MAG B850M Mortar WiFi ;
-- Intel Arc B580 12 Go ;
-- deux Crucial T705 ;
-- écran ASUS OLED 2560×1440/~240 Hz ;
-- pile KVM/libvirt ;
-- stockage/backup réels.
-
-## 1. Installer Fedora 45 avec le média verrouillé
-
-Suivre `INSTALLATION_GUIDE.md` et vérifier le média avec :
-
-```bash
-installer/verify-fedora-media.sh ...
-```
-
-Conserver les invariants :
-
-```text
-Secure Boot           OFF
-LUKS local            interdit
-SELinux               enforcing
-firewalld             actif
-Arc B580              host-only
-Linux amont stable   vanilla uniquement, rolling N / N-1, max 2 kernel-core
-Firmware              aucun flash automatique
-```
-
-## 2. Utiliser exactement le même commit
-
-Après installation :
-
-```bash
-git switch main
-git pull --ff-only
-git status --short
-git rev-parse HEAD
-```
-
-Le SHA doit correspondre aux preuves Gate 1 et Gate 2.
-
-## 3. Importer les preuves dans l'ordre
-
-```bash
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate import /chemin/gate2-<commit>.json
 ./control.sh validate gate3 status
-```
-
-Gate 2 est rejetée si elle ne référence pas exactement la preuve Gate 1 importée.
-
-## 4. Convergence bare-metal
-
-Exécuter la séquence Golden habituelle. La sauvegarde pré-APPLY protège
-uniquement le HOST. Les VM sont exclues des archives Borg et sont exportées
-manuellement par leur propriétaire selon ses besoins, sans conditionner la
-certification du HOST :
-
-```bash
-./control.sh install dry-run
-./control.sh install backup
-./control.sh install apply
-```
-
-Le canal unique est `KERNEL_CHANNEL="vanilla"` dans `config/kernel.conf`. Le module exige le dernier Linux amont officiel stable de kernel.org, l'installe comme N et conserve N-1 ; aucune RC ni version obsolète n'est acceptée. Il n'existe aucun second canal de secours. Redémarrer puis contrôler :
-
-```bash
-sudo reboot
-./control.sh kernel status
-./diagnostics/kernel-doctor
-```
-
-La qualification Gate 3 porte donc sur le kernel N réellement utilisé ; il n'existe plus de promotion préalable `candidate → boot-candidate → certify`.
-
-La [fiche d'exécution physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) précise les charges minimales, les contrôles humains et les résultats à conserver. Une charge abrégée ne produit pas de preuve matérielle ; les preuves CPU/RAM/GPU antérieures à qualification_policy=2 doivent être rejouées.
-
-## 5. Preuves physiques obligatoires
-
-Gate 3 certifie notamment :
-
-- BIOS/UEFI et politique Secure Boot OFF ;
-- absence de chiffrement local LUKS ;
-- firmware/microcode runtime ;
-- kernel N stable, N-1 rollback et rétention maximum 2 ;
-- B580 `8086:e20b` ;
-- driver `xe` ;
-- ReBAR ;
-- PCIe x8 ;
-- Vulkan ;
-- vrai kernel OpenCL ;
-- vrai encode/decode VA-API ;
-- EDID physique ;
-- 2560×1440/~240 Hz ;
-- display repair lié à l'EDID ;
-- deux T705 ;
-- SMART strict ;
-- PCIe 5.0 x4 ;
-- absence d'erreur AER/NVMe critique ;
-- GNOME/Nautilus/Ptyxis/portals ;
-- contrat Performance Fedora Linux : AMD P-State, TuneD/tuned-ppd, zram, GameMode et politiques SCX/NVMe fail-safe ;
-- profil TuneD revenu au mode Golden normal `balanced` au moment de la certification ;
-- KVM/libvirt et isolation réseau fail-closed ;
-- Borg externe non chiffré (ADR 0014) + restore canary ;
-- cold-start Nautilus ;
-- cinq cycles physiques suspend/resume uniques.
-
-Enregistrer chaque cycle physique :
-
-```bash
 ./control.sh validate gate3 record-suspend
-```
-
-## 6. Sauvegarde et restauration avant certification
-
-Après convergence et avant la certification finale :
-
-```bash
-scripts/backup/backup-now.sh --staging-root /chemin/absolu/backup-staging
-./diagnostics/backup-doctor
-```
-
-Le staging et le support externe doivent disposer de la capacité requise. Le
-nom/id de l'archive HOST et son canary restauré sont contrôlés ; aucune
-couverture des domaines ou des disques VM n'est attendue. Suivre le
-[runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) pour une restauration
-sans toucher aux disques originaux. La vérification Borg ne prouve pas le
-démarrage de Fedora et **ne représente jamais un export de VM**.
-
-## 7. Certification finale
-
-Lorsque toutes les preuves sont présentes, vérifier au besoin l'état performance puis lancer la certification :
-
-```bash
-./control.sh perf status
+# Répéter l'enregistrement après chacun des cinq cycles physiques distincts.
+./scripts/validation/gnome-ux-matrix.sh gate3
 ./control.sh validate gate3 certify
-```
-
-Le `final-certification` vérifie lui-même la chaîne Gate 1 → Gate 2 : appeler directement le doctor ne permet pas de contourner cette règle.
-
-Résultat final :
-
-```text
-state/final/certified.ok
-state/releases/<timestamp>-<sha>/golden-release.json
-```
-
-Le bundle Golden contient aussi :
-
-```text
-gate1-proof.json
-gate2-proof.json
-MANIFEST.sha256
-```
-
-et `golden-release.json` enregistre les SHA-256 des deux preuves ainsi que l'état kernel N/N-1.
-
----
-
-# Lecture des statuts
-
-```bash
 ./control.sh validate status
 ```
 
-Exemple avant Gate 3 :
+La matrice GNOME s'exécute dans la vraie session du système installé. Elle vérifie les interactions bureau, applications, portals et accès Rocky. Un échec ou une partie non exécutée reste un résultat à traiter, sans fabriquer de marqueur PASS.
 
-```text
-runtime=baremetal
-project_commit=<sha>
-gate1=PASS
-gate2=PASS
-chain=PASS
-gate3_final=PENDING
-```
+Seule la certification finale réussie produit `state/final/certified.ok` et le [bundle Golden](GOLDEN_RELEASE.md), pour la configuration et le runtime mesurés. Une évolution du noyau, du pilote ou de la configuration peut rendre les preuves installées `STALE`. Une modification du commit ou du plan impose de refaire le relevé Live avec cette source.
 
-Après certification finale :
+## Lire le résultat sans surinterpréter
 
-```text
-gate1=PASS
-gate2=PASS
-chain=PASS
-gate3_final=PASS
-```
-
-# Ce que signifie réellement PASS
-
-| Gate | PASS signifie | PASS ne signifie pas |
+| Résultat | Ce qu'il démontre | Étape suivante |
 |---|---|---|
-| Gate 1 / WSL2 | code, contrats et logique système cohérents | matériel physique validé |
-| Gate 2 / VirtualBox | desktop GNOME/Nautilus/Ptyxis validé en VM + contrôle visuel | B580/T705/BIOS/EDID physiques validés |
-| Gate 3 / bare-metal | Golden Workstation matériel + logiciel certifiée | — |
+| CI verte au commit exact | Contrôles logiciels couverts réussis | Essais Live sur le PC |
+| Live `PREINSTALL_ONLY` | Observations avant installation sur ce matériel | Installer puis qualifier le système final |
+| Gate 3 `PASS` courant | Contrats Golden de la machine installée qualifiés | Conserver les preuves, maintenir et requalifier les changements |
 
-Cette séparation empêche une preuve virtuelle de devenir silencieusement une preuve matérielle.
+Utiliser [la fiche de preuves](QUALIFICATION_EVIDENCE_TEMPLATE.md) pour suivre les essais, et [la reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) pour distinguer une sauvegarde vérifiée d'un système effectivement récupéré.
 
-## Prétest GitHub complémentaire
-
-Le [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md) démarre une VM QEMU
-jetable, contrôle GNOME/Wayland, redémarre et restaure une copie à froid avec
-UEFI et TPM logiciel. Ses résultats restent des prétests CI : aucune preuve
-WSL2, aucune signature visuelle VirtualBox et aucune certification bare-metal
-ne sont produites. Les trois gates restent à exécuter sur le même commit.
+La qualification du système final inclut le noyau Linux amont stable retenu par le projet. Les VM restent hors Borg et sont exportées manuellement par leur propriétaire.

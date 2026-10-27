@@ -129,10 +129,6 @@ if [[ "${1:-}" == kvm ]]; then
       shift 2
       exec bash "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" "$@"
       ;;
-    create-windows)
-      shift 2
-      exec bash "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" "$@"
-      ;;
   esac
 fi
 
@@ -159,47 +155,31 @@ if [[ "${1:-}" == cert && "${2:-}" == archive ]]; then
   exec bash "$REPO_ROOT/scripts/release/seal-golden-archive.sh" "${@:3}"
 fi
 
-# Three-gate validation is intentionally routed to dedicated engines. Gate 1
-# and Gate 2 can never invoke production APPLY/final certification; Gate 3 is
-# the only path that delegates to the bare-metal final-certification engine.
+# Native Live observations are separate from installed-system qualification.
 if [[ "${1:-}" == validate ]]; then
   case "${2:-status}" in
-    status)
-      exec bash "$REPO_ROOT/scripts/validation/status.sh"
-      ;;
+    status) exec bash "$REPO_ROOT/scripts/validation/status.sh" ;;
+    live) exec bash "$REPO_ROOT/scripts/validation/live-usb.sh" "${3:-plan}" ;;
     import)
-      [[ -n "${3:-}" ]] || { echo 'Usage: ./control.sh validate import PROOF.json' >&2; exit "$EXIT_USAGE"; }
+      [[ -n "${3:-}" ]] || { echo 'Usage: ./control.sh validate import LIVE_PROOF.json' >&2; exit "$EXIT_USAGE"; }
       exec bash "$REPO_ROOT/scripts/validation/import-proof.sh" "$3"
       ;;
     export)
-      [[ -n "${3:-}" && -n "${4:-}" ]] || { echo 'Usage: ./control.sh validate export GATE DESTINATION_DIR' >&2; exit "$EXIT_USAGE"; }
-      exec bash "$REPO_ROOT/scripts/validation/export-proof.sh" "$3" "$4"
+      [[ "${3:-}" == live && -n "${4:-}" ]] || { echo 'Usage: ./control.sh validate export live DESTINATION_DIR' >&2; exit "$EXIT_USAGE"; }
+      exec bash "$REPO_ROOT/scripts/validation/export-proof.sh" 2 "$4"
       ;;
-    gate1)
-      exec bash "$REPO_ROOT/scripts/validation/gate1-wsl2.sh" "${3:-run}"
-      ;;
-    gate2)
-      exec bash "$REPO_ROOT/scripts/validation/gate2-virtualbox.sh" "${3:-status}"
-      ;;
-    gate3)
-      exec bash "$REPO_ROOT/scripts/validation/gate3-baremetal.sh" "${3:-status}"
-      ;;
+    gate3) exec bash "$REPO_ROOT/scripts/validation/gate3-baremetal.sh" "${3:-status}" ;;
     help|-h|--help)
       cat <<'EOF'
-Three-gate validation commands:
+Native Fedora validation:
+  ./control.sh validate live [plan|run|status]
+  ./control.sh validate export live DESTINATION_DIR
+  ./control.sh validate import LIVE_PROOF.json
   ./control.sh validate status
-  ./control.sh validate gate1 [run|status]
-  ./control.sh validate import PROOF.json
-  ./control.sh validate gate2 [plan|apply|check|sign|status]
-  ./control.sh validate export GATE DESTINATION_DIR
   ./control.sh validate gate3 [status|record-suspend|certify]
 EOF
-      exit 0
-      ;;
-    *)
-      echo 'Unknown validation command. Use: ./control.sh validate help' >&2
-      exit "$EXIT_USAGE"
-      ;;
+      exit 0 ;;
+    *) echo 'Unknown validation command. Use: ./control.sh validate help' >&2; exit "$EXIT_USAGE" ;;
   esac
 fi
 

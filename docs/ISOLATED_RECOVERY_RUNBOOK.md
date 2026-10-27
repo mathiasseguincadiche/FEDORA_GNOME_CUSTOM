@@ -8,7 +8,7 @@ la vraie configuration et les archives de production.
 ## Préparer la preuve
 
 Conserver hors de la workstation le commit exact, la configuration effective,
-le plan de modules, la preuve Gate 1 et la preuve Gate 2 correspondantes,
+le plan de modules et la preuve Live native correspondante,
 l'identité du dépôt et le nom/id de l'archive. Borg doit être non chiffré.
 Il ne faut aucune clé de chiffrement ; il faut conserver les accès au dépôt,
 le média Fedora verrouillé et le support physique de sauvegarde.
@@ -37,9 +37,9 @@ reste distinct du disque cible. Ne réutiliser aucun Kickstart visant un numéro
 de série de production.
 
 Pour la copie VM, arrêter l'originale et utiliser un hôte libvirt de laboratoire
-séparé. Conserver les UUID lorsqu'ils sont nécessaires au TPM/Windows sans
-définir deux domaines portant cet UUID sur le même hôte. Aucun réseau de
-production, partage de données, SFTP/SMB ou périphérique passthrough ne doit
+séparé. Conserver les identités de l’export sans
+définir deux domaines portant le même UUID sur le même hôte. Aucun réseau de
+production, partage de données, SFTP ou périphérique passthrough ne doit
 être attaché à la copie. Démarrer sans carte réseau, ou dans un réseau de
 laboratoire sans routage sortant, NAT ni accès LAN.
 
@@ -79,8 +79,7 @@ en respectant propriétaires et labels SELinux, sans écraser globalement
 Sur le matériel physique autorisé, suivre la baseline, le dry-run, la sauvegarde
 pré-APPLY et l'APPLY du guide. Redémarrer, vérifier le noyau réellement utilisé,
 GNOME/Wayland, Nautilus/Ptyxis, données et services. Rejouer la convergence et
-archiver les diagnostics. Sur une VM, suivre exclusivement le parcours LAB
-autorisé ; l'APPLY de production reste bloqué.
+archiver les diagnostics. Une VM peut servir à des exercices de fichiers et de démarrage isolés ; l’APPLY de production y reste bloqué.
 
 **Acceptation :** démarrage autonome du disque de récupération, données
 accessibles, diagnostics cohérents et convergence répétable. Documenter les
@@ -94,7 +93,7 @@ les composants de cet export (hors Borg) :
 - XML/définition et UUID du domaine ;
 - disques autonomes ou toutes les dépendances de leur backing chain ;
 - NVRAM UEFI associée ;
-- état swtpm associé et propriétaire correct.
+- état swtpm associé et propriétaire correct uniquement si cet export comporte un TPM émulé.
 
 Ne mélanger aucun état TPM/NVRAM d'une autre date ou d'un autre domaine.
 Remettre ces membres ensemble, VM arrêtée, puis contrôler droits et labels
@@ -102,13 +101,11 @@ SELinux avant démarrage. Adapter les chemins vers le stockage du laboratoire
 et supprimer les interfaces/partages de production avant de définir le domaine.
 
 Démarrer la copie isolée. Vérifier système invité, documents et applications.
-Pour Windows, contrôler également le TPM et les fonctions qui en dépendent.
 Effectuer un redémarrage supplémentaire et revérifier les données. Préserver
 l'original jusqu'à la fin de l'essai.
 
-**Acceptation :** invité amorçable, état UEFI/TPM correspondant, données
-accessibles et isolation effective. Le canary TPM Linux du CI ne prouve pas
-une récupération Windows.
+**Acceptation :** invité amorçable, état UEFI correspondant (et TPM si présent), données
+accessibles et isolation effective. Le canary TPM Linux du CI reste un test logiciel distinct ; Rocky ne nécessite pas de TPM émulé.
 
 ## Preuves minimales et arrêt sur échec
 
@@ -124,5 +121,5 @@ preuves d'échec et corriger avant reprise ; aucun statut ne devient PASS sur
 la seule absence d'erreur dans un ancien rapport.
 
 Après ces essais, exécuter [la qualification matérielle](RELIABILITY_QUALIFICATION.md)
-et [Gate 3](THREE_GATE_VALIDATION.md). Les preuves WSL2/VirtualBox doivent être
-rejouées après toute modification du commit ou du plan de modules.
+et [Gate 3](THREE_GATE_VALIDATION.md). La preuve Live doit être
+rejouée après toute modification du commit ou du plan de modules.

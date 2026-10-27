@@ -3,12 +3,13 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
+source "$REPO_ROOT/lib/validation_gates.sh"
 [[ "${1:-}" == --interactive && -t 0 && "${XDG_CURRENT_DESKTOP:-}" == *GNOME* &&
    "${XDG_SESSION_TYPE:-}" == wayland ]] || {
   echo 'Usage: application-usage-doctor --interactive (GNOME Wayland session)' >&2; exit "$EXIT_USAGE";
 }
-scope=gate2
-if runtime_is_baremetal; then scope=gate3; fi
+validation_require_installed_runtime || exit $?
+scope=gate3
 marker="$STATE_ROOT/validation/application-usage-$scope.ok"
 mkdir -p "$(dirname "$marker")"
 rm -f "$marker" "$STATE_ROOT/final/certified.ok"

@@ -6,9 +6,7 @@ source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 source "$REPO_ROOT/lib/validation_gates.sh"
 
-ui_banner 'THREE-GATE VALIDATION' 'CURRENT SOURCE / IMPORTED PROOF STATUS'
+ui_banner 'NATIVE FEDORA VALIDATION' 'LIVE USB / INSTALLED SYSTEM'
 validation_pipeline_status
-printf '\nExpected sequence:\n'
-printf '  Gate 1  selected Fedora release / WSL2      system + logic, physical hardware DEFERRED\n'
-printf '  Gate 2  selected Fedora release / VirtualBox GNOME desktop + manual visual sign-off\n'
-printf '  Gate 3  selected Fedora release / bare-metal complete Golden hardware/software certification\n'
+printf '\nOperator path: native Live USB checks -> installation -> installed-system qualification.\n'
+printf 'Software quality is verified independently by the GitHub CI of the exact commit.\n'

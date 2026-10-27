@@ -585,27 +585,7 @@ Ne l'activer pas pour contourner un problème de clé.
 
 ---
 
-## 20. Windows ne voit pas le disque ou le réseau VirtIO
-
-Pendant l'installation, `virtio-win.iso` doit être attaché.
-
-Après installation, ouvrir `FGC_TOOLS` et exécuter PowerShell **en administrateur** :
-
-```text
-Configure-GuestIntegration.ps1
-```
-
-Le script installe les pilotes trouvés sur le média VirtIO et QEMU Guest Agent, puis refuse de valider si un périphérique VirtIO reste en erreur.
-
-Depuis Fedora :
-
-```bash
-bash scripts/kvm/runtime_certification.sh
-```
-
----
-
-## 21. Nautilus ne voit plus Rocky Linux/Windows
+## 21. Nautilus ne voit plus Rocky Linux
 
 Rafraîchir les favoris :
 
@@ -616,7 +596,7 @@ bash scripts/kvm/configure_nautilus_vm_access.sh show
 
 Le helper découvre d'abord l'IP via Guest Agent, puis via DHCP libvirt.
 
-Rocky Linux utilise SFTP. Windows utilise SMB uniquement si `Configure-VMShare.ps1` a été exécuté.
+Rocky Linux utilise SFTP. Vérifier le service SSH et l’utilisateur configuré dans le profil invité.
 
 Voir [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md).
 

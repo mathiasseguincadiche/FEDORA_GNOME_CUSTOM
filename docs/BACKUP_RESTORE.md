@@ -7,7 +7,7 @@ Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propri
 ```mermaid
 flowchart TD
   SYS["T705 nº1 : Fedora système / Btrfs"] --> REINSTALL["Réinstallation contrôlée depuis le dépôt"]
-  DATA["T705 nº2 : /data EXT4"] --> KEEP["Documents, Projets, ISO, Jeux, libvirt"]
+  DATA["T705 nº2 : /data EXT4"] --> KEEP["Documents, Projets, IA/Openclaw, ISO, Jeux, libvirt"]
   FILES["Documents et Projets"] --> BORG["SSD externe Kingston XS1000 : Borg"]
   KEEP --> FILES
   BORG --> RESTORE["Restauration d'abord en staging, puis vérification"]
@@ -80,7 +80,7 @@ Si `BACKUP_REPOSITORY` est vide, le helper recherche exactement **une** cible ex
 
 Au premier lancement, le dépôt est créé avec `borg init --encryption=none` après une confirmation tapée à la main. L'archive `fgc-preapply-<date>` est ensuite écrite, relue intégralement (`borg check --verify-data`) puis un fichier témoin (*canary*) est réellement extrait et comparé.
 
-La capture contient notamment : inventaire RPM/Flatpak, services activés, stockage/montages, PCI/routage, fichiers suivis du projet, configuration GNOME utilisateur, archive privilégiée `/etc` + `/boot`, ainsi que les XML/domaines/réseaux/pools libvirt présents.
+La capture contient notamment : inventaire RPM/Flatpak, services activés, stockage/montages, PCI/routage, fichiers suivis du projet, configuration GNOME utilisateur, archive privilégiée `/etc` + `/boot`, sans les métadonnées libvirt : les XML, NVRAM, TPM et disques des VM restent dans le périmètre des exports manuels du propriétaire.
 
 ## Runtime backup autonome
 
@@ -255,7 +255,7 @@ Pour un exercice réel, sélectionner un nom d'archive exact :
 `verify` relit toutes les données du dépôt (`borg check --verify-data`) ; Borg
 vérifie aussi chaque bloc contre son empreinte pendant l'extraction. Comparer ensuite les documents,
 permissions et liens attendus. Une restauration de fichiers réussie ne prouve
-pas le redémarrage de Fedora ou de Windows.
+pas le redémarrage de Fedora ou de Rocky.
 
 La reprise d'une VM repose **uniquement sur l'export manuel effectué par le propriétaire**.
 Ce document n'indique pas d'archive VM dans Borg et ne certifie aucune restauration VM.
@@ -323,7 +323,7 @@ remplissent jamais le disque, et les diagnostics signalent leur présence.
 Pour Gate 3, la certification Borg vérifie **le HOST et les données protégées**,
 ainsi que `include_vms=false`, `vm_count=0` et l'interdiction des overrides VM.
 Elle ne doit jamais demander un export de VM. Les exports personnels de
-Rocky Linux ou Windows restent totalement indépendants de cette Gate Borg.
+Rocky Linux reste totalement indépendants de cette Gate Borg.
 
 ## Configuration locale et sources Openclaw
 

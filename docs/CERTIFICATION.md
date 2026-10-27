@@ -1,56 +1,27 @@
-# Prouver que la machine est prête — guide d'entrée
+# Prouver que la machine est prête
 
-Ce guide est la **porte d'entrée** du pilier « fiabilité » côté preuves : comment le projet passe de « le code est correct » à « cette machine précise est certifiée ». Il ne répète pas le détail : il donne l'ordre des étapes et le document de chacune.
-
-## La certification, ce n'est pas « le programme s'est lancé »
+La cible est **Fedora 45 Workstation / GNOME 51** sur le PC réel. Une CI verte vérifie un commit ; la certification Golden demande les essais du système installé. Le profil reste `pending` jusqu'à la qualification et la promotion du média final signé et des dépendances stables.
 
 ```mermaid
 flowchart LR
-  C["CI : code et VM"] --> P["CODE-READY"]
-  G1["Gate 1 : logique"] --> G2["Gate 2 : GNOME"]
-  G2 --> G3["Gate 3 : vrai PC"]
-  G3 --> F["Golden runtime-certified"]
-  P -. "ne remplace pas" .-> G3
+  C["CI : logiciel"] --> L["Live USB : compatibilité avant installation"]
+  L --> I["Installation et APPLY"]
+  I --> G["Gate 3 : système installé"]
+  G --> F["Golden runtime-certified"]
 ```
 
-La **cible finale** est Fedora 45 Workstation + GNOME 51. Le profil Fedora 45 est encore `pending` : il ne suffit pas d'installer la Beta ou de réussir un laboratoire GNOME 51 pour déclarer la station certifiée.
+| Étape | Ce qu'elle établit | Guide canonique |
+|---|---|---|
+| CI au commit exact | Tests logiciels et laboratoires Linux QEMU | [CI](CI_VALIDATION.md) · [Laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md) |
+| Live USB sur le PC | Inventaire et essais avant installation, portée `PREINSTALL_ONLY` | [Contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) |
+| Installation puis convergence | Configuration définitive, baseline, dry-run, sauvegarde vérifiée, APPLY, redémarrage | [Installation](INSTALLATION_GUIDE.md) · [Contrat](EXECUTION_CONTRACT.md) |
+| Gate 3 sur Fedora installé | Matériel, bureau, applications, sauvegarde et Rocky lorsque KVM est activé | [Fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) · [Contrats complets](GOLDEN_COMPLETENESS_CLOSURE.md) |
+| État conservé | Identités, versions et preuves du système qualifié | [Golden Release](GOLDEN_RELEASE.md) |
 
-**Question décisive :** la preuve est-elle liée au **bon commit**, à la **bonne configuration**, à la **bonne release** et au **vrai matériel** ? Si l'un de ces éléments a changé, le résultat peut devenir `STALE`. [Schéma pédagogique](ARCHITECTURE_PEDAGOGIQUE.md) · [Procédure officielle](THREE_GATE_VALIDATION.md).
+L'ordre et les commandes sont dans [le protocole de validation](THREE_GATE_VALIDATION.md). Le Live et le système installé doivent utiliser le même commit et le même plan de modules, avec une preuve Live exportée avant redémarrage puis importée sur le SSD.
 
+**Code prêt** signifie que les contrôles logiciels du commit sont verts. **Golden runtime-certified** signifie que `./diagnostics/final-certification certify` a réussi sur le PC installé, pour les identités et la configuration courantes. La preuve Live ne remplace pas les services, extensions, sauvegardes, performances et cycles de veille du système final.
 
-## Le principe
+Une preuve devenue `STALE` doit être rejouée après le changement concerné. Ne pas déduire une certification actuelle d'un ancien rapport.
 
-Un réglage n'est pas considéré comme bon parce qu'il est écrit, ni parce qu'un paquet est installé : il faut une **preuve** qui correspond au commit, à la configuration et au matériel exacts. Une preuve qui ne correspond plus (nouveau commit, nouveau noyau, autre machine) devient `STALE` et doit être refaite.
-
-Le projet distingue donc deux états :
-
-- **code prêt** : la CI est verte ; aucune machine n'est certifiée par la CI ;
-- **machine certifiée** : `./diagnostics/final-certification certify` a produit un PASS sur le vrai PC.
-
-## Le parcours, dans l'ordre
-
-| Étape | Où | Ce qu'elle prouve | Document |
-| --- | --- | --- | --- |
-| 0. CI | GitHub, automatiquement | Contrats, tests, vraie VM Fedora GNOME, vraie VM Rocky | [`CI_VALIDATION.md`](CI_VALIDATION.md), [`FEDORA_GNOME_CI_LAB.md`](FEDORA_GNOME_CI_LAB.md) |
-| 1. Gate 1 | Fedora 45 dans WSL2 | Logique du projet, garde-fous | [`WSL2_VALIDATION.md`](WSL2_VALIDATION.md) |
-| 2. Gate 2 | Fedora 45 GNOME dans VirtualBox | Bureau réel et validation visuelle humaine | [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) |
-| 3. Baseline | Vrai PC, avant toute modification | Matériel assez sain pour autoriser l'installation | [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) |
-| 4. Installation | Vrai PC | Dry-run, sauvegarde, APPLY protégé | [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md), [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) |
-| 5. Gate 3 | Vrai PC, après installation | Matériel, logiciels, bureau, stabilité | [`PHYSICAL_QUALIFICATION_CHECKLIST.md`](PHYSICAL_QUALIFICATION_CHECKLIST.md), [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md), [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) |
-| 6. Version figée | Vrai PC certifié | État exact relié à toute sa chaîne de preuves | [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) |
-
-L'ordre officiel complet, avec toutes les commandes, est dans [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md). Règle d'or : **les trois gates utilisent le même commit**.
-
-## Documents de référence
-
-| Sujet | Document |
-| --- | --- |
-| Ce que « Golden » veut dire, runtime certifié ou non | [`GOLDEN_WORKSTATION.md`](GOLDEN_WORKSTATION.md) |
-| Stabilité matérielle : mesurer avant de corriger | [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) |
-| Ordre de qualification après correction des faux PASS | [`RELIABILITY_QUALIFICATION.md`](RELIABILITY_QUALIFICATION.md) |
-| Fiche à remplir pendant un essai physique | [`QUALIFICATION_EVIDENCE_TEMPLATE.md`](QUALIFICATION_EVIDENCE_TEMPLATE.md) |
-| Dépannage matériel pendant la Gate 3 | [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) |
-
-## Où en est le projet
-
-Code prêt, machine non certifiée : la prochaine étape est la Gate 1 puis la Gate 2, avec [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md).
+Pour approfondir : [architecture](ARCHITECTURE_PEDAGOGIQUE.md), [stabilité matérielle](HARDWARE_STABILITY.md), [qualification de fiabilité](RELIABILITY_QUALIFICATION.md), [fiche de preuves](QUALIFICATION_EVIDENCE_TEMPLATE.md), [dépannage matériel](RUNBOOK_GOLDEN_HARDWARE.md).

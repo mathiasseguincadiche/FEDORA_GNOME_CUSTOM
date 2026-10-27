@@ -66,6 +66,7 @@ while IFS= read -r -d '' tracked; do sources+=("$REPO_ROOT/$tracked"); done < <(
 backup_runtime_require_source_capacity "$repo" "${sources[@]}" || fail 'insufficient repository capacity for source data'
 printf 'Creating pre-APPLY archive (unencrypted Borg)...\n'
 read -r archive snap < <(backup_engine_create preapply \
+  --exclude "$HOME/.config/fedora-gnome-custom/secrets" \
   --exclude '*.qcow2' --exclude '*.vmdk' --exclude '*.vdi' \
   --exclude '*.vhd' --exclude '*.vhdx' --exclude '*.raw' \
   --exclude '*/libvirt/*' --exclude '*/libvirt/**' \

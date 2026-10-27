@@ -5,6 +5,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 usage(){ cat <<'TXT'
 Usage:
+  baseline-doctor prepare-tools  # explicit package installation before enrollment
   baseline-doctor status|snapshot|certify|enroll-wifi|enroll-bluetooth|list-cooling
   baseline-doctor enroll-cooling <pump-fanN> <cpu-fanN> <system-fanN>
   baseline-doctor storage-identity
@@ -15,6 +16,11 @@ Usage:
 TXT
 }
 require_baremetal(){ runtime_is_baremetal || { ui_error "Hardware evidence is bare-metal only; runtime=$(runtime_environment)"; exit "$EXIT_SECURITY_BLOCK"; }; }
+prepare_tools() {
+  require_baremetal
+  fedora_require_selected || { ui_error 'Baseline tools require the selected promoted Fedora release'; return "$EXIT_PRECHECK_FAILED"; }
+  DRY_RUN=false install_manifest_packages BASELINE "$REPO_ROOT/manifests/packages-baseline.txt"
+}
 prepare_platform(){ require_baremetal; command_exists modprobe || { ui_error 'modprobe is required for NCT6687D hwmon validation'; exit "$EXIT_PRECHECK_FAILED"; }; if ! lsmod | grep -q '^nct6683'; then sudo modprobe nct6683 || { ui_error 'Unable to load Fedora in-tree nct6683 driver; force=1 and third-party modules are forbidden.'; exit "$EXIT_PRECHECK_FAILED"; }; fi; }
 snapshot(){ local report="$REPORT_ROOT/$RUN_ID-hardware-baseline-snapshot.txt"; { echo '[runtime]'; runtime_environment; echo '[fingerprint]'; baseline_fingerprint_payload; echo '[platform]'; printf 'board_vendor=%s\nboard_name=%s\nbios_vendor=%s\nbios_version=%s\nbios_date=%s\n' "$(hardware_platform_board_vendor)" "$(hardware_platform_board_name)" "$(hardware_platform_bios_vendor)" "$(hardware_platform_bios_version)" "$(hardware_platform_bios_date)"; printf 'cpu_scaling_driver=%s\namd_pstate=%s\nboost=%s\n' "$(hardware_platform_cpu_scaling_driver 2>/dev/null || echo unknown)" "$(hardware_platform_cpu_pstate_status 2>/dev/null || echo unknown)" "$(hardware_platform_cpu_boost_value 2>/dev/null || echo unknown)"; hardware_platform_wifi_identity 2>/dev/null || true; physical_bluetooth_identity 2>/dev/null || true; physical_cooling_list 2>/dev/null || true; hardware_platform_hwmon_counts 2>/dev/null || true; echo '[os]'; cat /etc/os-release; echo '[kernel]'; uname -a; echo '[kernel-signatures]'; journalctl -k -b --no-pager 2>/dev/null | grep -Ei 'MCE|EDAC|xe|drm|PCIe|AER|nvme|watchdog|panic|Oops|thermal|nct668' || true; } > "$report"; printf '%s\n' "$report"; }
 run_memory() (
@@ -93,6 +99,7 @@ run_nvme() (
 
 
 case "${1:-status}" in
+ prepare-tools) prepare_tools ;;
  status)
    ui_banner 'HARDWARE BASELINE' 'PRE-APPLY CERTIFICATION'; ui_meta Fingerprint "$(baseline_fingerprint)"
    if baseline_certification_valid; then ui_check OK Certification valid; else ui_check KO Certification missing; fi

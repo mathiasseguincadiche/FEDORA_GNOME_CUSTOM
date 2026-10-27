@@ -37,7 +37,7 @@ fi
 tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 if virsh --connect "${LIBVIRT_URI:-qemu:///system}" domcapabilities --virttype kvm --arch x86_64 --machine q35 > "$tmpdir/domcaps.xml" 2>/dev/null \
    && kvm_contract_validate_domcaps_file "$tmpdir/domcaps.xml"; then
-  emit OK 'QEMU/libvirt domain capabilities' 'KVM + x86_64 + q35 + host-passthrough + EFI + TPM-CRB/emulator'
+  emit OK 'QEMU/libvirt domain capabilities' 'KVM + x86_64 + q35 + host-passthrough + EFI'
 else
   emit KO 'QEMU/libvirt domain capabilities' 'required Golden capabilities are missing'
 fi
@@ -60,13 +60,14 @@ check_domain(){
   if grep -Eq '^Autostart:[[:space:]]+(disable|no)' <<<"$info"; then emit OK "$name autostart" disabled; else emit KO "$name autostart" 'must remain disabled'; fi
 }
 check_domain rocky "${ROCKY_SERVER_NAME:-rocky-devops}"
-check_domain windows "${WINDOWS11_NAME:-windows-11}"
 
 report="$REPORT_ROOT/$RUN_ID-kvm-domain-contract.txt"
 {
   printf 'expected_io=%s\n' "$expected_io"
   printf 'domcaps_sha256=%s\n' "$(sha256sum "$tmpdir/domcaps.xml" 2>/dev/null | awk '{print $1}')"
-  for profile in rocky windows; do [[ -s "$tmpdir/$profile.xml" ]] && printf '%s_xml_sha256=%s\n' "$profile" "$(sha256sum "$tmpdir/$profile.xml" | awk '{print $1}')"; done
+  if [[ -s "$tmpdir/rocky.xml" ]]; then
+    printf 'rocky_xml_sha256=%s\n' "$(sha256sum "$tmpdir/rocky.xml" | awk '{print $1}')"
+  fi
 } | evidence_atomic_write "$report" 0644
 [[ "$quiet" == true ]] || { ui_meta Report "$report"; ui_meta OK "$ok"; ui_meta WARN "$warn"; ui_meta KO "$ko"; }
 (( ko == 0 ))
