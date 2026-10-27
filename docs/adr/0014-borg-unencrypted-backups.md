@@ -32,7 +32,7 @@ Avantages :
 
 Coûts assumés :
 
-- **quiconque possède le disque de sauvegarde peut lire son contenu**, y compris `~/.ssh`, `~/.gnupg` et les profils de navigateur. Le disque doit être rangé comme un document sensible ;
+- **quiconque possède le disque de sauvegarde peut lire son contenu**, y compris les profils de navigateur. Le disque doit être rangé comme un document sensible. Depuis [ADR 0021](0021-no-private-keys-in-unencrypted-backups.md), `~/.ssh` et `~/.gnupg` ne sont plus archivés ;
 - sans chiffrement authentifié, une modification malveillante du dépôt n'est détectée que par les empreintes vérifiées par `borg check --verify-data`, pas par une clé ;
 - les dépôts Restic créés par les versions ≤ 0.17 ne sont pas migrés automatiquement. Aucune installation réelle ne les avait encore utilisés ; le module de sauvegarde désactive les anciennes unités `fedora-gnome-restic-retention.*`.
 
