@@ -18,7 +18,7 @@ apply_gate_write_dryrun_proof() {
   } | evidence_atomic_write "$proof" 0600
 }
 
-apply_gate_require_runtime() { runtime_is_baremetal; }
+apply_gate_require_runtime() { runtime_is_baremetal && ! runtime_is_live; }
 
 apply_gate_require_clean_git() {
   is_true "${REQUIRE_CLEAN_GIT:-true}" || return 0
@@ -52,7 +52,7 @@ apply_gate_require_baseline() {
 
 apply_gate_open() {
   apply_gate_require_runtime || {
-    ui_error "REAL APPLY is forbidden outside bare-metal; detected runtime=$(runtime_environment)"
+    ui_error "REAL APPLY is forbidden outside bare-metal or from a Live USB session; install Fedora and reboot first; detected runtime=$(runtime_environment)"
     return "$EXIT_SECURITY_BLOCK"
   }
   fedora_require_install_target || {

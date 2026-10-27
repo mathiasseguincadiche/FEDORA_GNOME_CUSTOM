@@ -217,7 +217,7 @@ chmod +x "$tmp/ip" "$tmp/nft"
   grep -Fq 'protected_networks=10.8.0.0/24,172.20.0.0/16,192.168.1.0/24' <<<"$output"
   grep -Fq 'guard_mode=normal' <<<"$output"
 )
-# Runtime network checks live in the strict core; the public wrapper delegates to it and adds Windows live proof.
+# Runtime network checks live in the strict core; the public wrapper delegates to it and adds Rocky guest exercises.
 grep -Fq 'runtime_certification_core.sh' "$ROOT/scripts/kvm/runtime_certification.sh"
 grep -Fq 'protected_networks' "$ROOT/scripts/kvm/runtime_certification_core.sh"
 grep -Fq 'block VM to protected host networks' "$ROOT/diagnostics/virtualization-doctor"

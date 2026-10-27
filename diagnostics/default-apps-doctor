@@ -3,7 +3,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 quiet=false; scope=full
-for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --gate2) scope=gate2;; --full) scope=full;; *) echo 'Usage: default-apps-doctor [--quiet] [--gate2|--full]' >&2; exit "$EXIT_USAGE";; esac; done
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --native) scope=native;; --full) scope=full;; *) echo 'Usage: default-apps-doctor [--quiet] [--native|--full]' >&2; exit "$EXIT_USAGE";; esac; done
 ok=0; ko=0
 emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; KO)((ko+=1));; esac; }
 check(){ local mime="$1" wanted="$2" actual; actual="$(xdg-mime query default "$mime" 2>/dev/null || true)"; if [[ "$actual" == "$wanted" ]]; then emit OK "$mime" "$wanted"; else emit KO "$mime" "expected=$wanted actual=${actual:-unset}"; fi; }

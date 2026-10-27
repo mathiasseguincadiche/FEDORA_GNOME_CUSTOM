@@ -44,20 +44,12 @@ grep -Fq 'software-matrix-doctor' "$root/diagnostics/final-certification"
 grep -Fq 'usb-resume-doctor' "$root/diagnostics/final-certification"
 grep -Fq 'io_uring' "$root/diagnostics/kvm-io-doctor"
 grep -Fq 'libaio' "$root/diagnostics/kvm-io-doctor"
-for f in scripts/kvm/create_rocky_devops_vm.sh scripts/kvm/create_windows11_vm.sh; do
-  grep -Fq 'org.qemu.guest_agent.0' "$root/$f"
-  grep -Fq -- '--rng /dev/urandom' "$root/$f"
-  grep -Fq -- '--memballoon virtio' "$root/$f"
+for token in 'org.qemu.guest_agent.0' '--rng /dev/urandom' '--memballoon virtio'; do
+  grep -Fq -- "$token" "$root/scripts/kvm/create_rocky_devops_vm.sh"
 done
-grep -Fq 'com.redhat.spice.0' "$root/scripts/kvm/create_windows11_vm.sh"
-grep -Fq 'QEMU-GA' "$root/guest/windows-11/configure-guest-integration.ps1"
-grep -Fq 'pnputil.exe' "$root/guest/windows-11/configure-guest-integration.ps1"
-# Runtime QGA is split deliberately: the core performs generic guest-ping checks,
-# while the Windows doctor retrieves and validates the in-guest JSON evidence.
+# The public wrapper delegates to the Rocky runtime checks, including guest-ping.
 grep -Fq 'runtime_certification_core.sh' "$root/scripts/kvm/runtime_certification.sh"
-grep -Fq 'windows-guest-doctor' "$root/scripts/kvm/runtime_certification.sh"
 grep -Fq 'qemu-agent-command' "$root/scripts/kvm/runtime_certification_core.sh"
-grep -Fq 'qemu-agent-command' "$root/diagnostics/windows-guest-doctor"
 grep -Fq 'test_hardware_kvm_completion_contract.sh' "$root/.github/workflows/tests.yml"
 grep -Fq 'test_hardware_platform_behavior.sh' "$root/.github/workflows/tests.yml"
 echo 'Hardware/KVM completion contract OK'

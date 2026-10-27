@@ -142,8 +142,10 @@ PCI
 # A certificate must match all current identities and gate artifacts.
 (
   STATE_ROOT="$tmp/cert"; mkdir -p "$STATE_ROOT/final"
+  REPO_ROOT="$ROOT"
   source "$ROOT/lib/validation_gates.sh"
   runtime_is_baremetal() { [[ "$runtime" == baremetal ]]; }
+  validation_runtime_is_live() { return 1; }
   validation_require_chain() { :; }
   workstation_runtime_fingerprint() { echo "$fingerprint"; }
   baseline_fingerprint() { echo hardware; }
@@ -166,15 +168,14 @@ fingerprint=current
 hardware_fingerprint=hardware
 effective_config_sha256=current
 module_plan_sha256=plan
-gate1_proof_sha256=hash-1
-gate2_proof_sha256=hash-2
+live_proof_sha256=hash-2
 CERT
   validation_final_certificate_valid
   config=changed; assert_fails validation_final_certificate_valid
   config=current; fingerprint=changed; assert_fails validation_final_certificate_valid
   fingerprint=current; runtime=vm; assert_fails validation_final_certificate_valid
 )
-# GNOME 50: Enabled: Yes does not imply State: ACTIVE.
+# GNOME 51: Enabled: Yes does not imply State: ACTIVE.
 (
   source "$ROOT/lib/common.sh"
   gnome-extensions() { printf '  Enabled: Yes\n  State: %s\n' "$extension_state"; }

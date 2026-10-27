@@ -99,7 +99,7 @@ Décrivent la construction du système et la chaîne de preuves.
 - `HARDWARE_BASELINE_CERTIFICATION.md`
 - `HARDWARE_STABILITY.md`
 - `THREE_GATE_VALIDATION.md`
-- `VIRTUALBOX_GNOME_LAB.md`
+- `FEDORA45_LIVE_PREFLIGHT.md`
 
 Une procédure d'installation doit rendre visibles les **préconditions**, les **points de non-retour**, les **checkpoints** et le **résultat final attendu**.
 
@@ -158,7 +158,7 @@ Les diagrammes du [README](../README.md) et du [guide d'architecture](ARCHITECTU
 - **les flèches ne créent pas de raccourci** vers `install.sh --apply` ;
 - les composants correspondent aux vrais répertoires et moteurs ;
 - les **flux de données**, **commandes** et **preuves** sont clairement distingués ;
-- `CI PASS`, `Gate 2` et `Gate 3` ne sont jamais confondus ;
+- `CI PASS`, relevé Live et `Gate 3` ne sont jamais confondus ;
 - la cible unique `Fedora 45 / GNOME 51` et le statut de promotion `pending` / `ready` sont actualisés ensemble ;
 - une **explication textuelle sous le schéma** aide à lire le diagramme et reste accessible sur mobile.
 
@@ -202,8 +202,7 @@ Lorsqu'un détail est déjà canonique ailleurs, créer un lien plutôt que reco
 
 - KVM/libvirt ;
 - stockage `/data` ;
-- profils Rocky Linux/Windows ;
-- hashes Windows/VirtIO obligatoires ;
+- profil Rocky Linux et image authentifiée par CHECKSUM signé ;
 - runbooks dédiés ;
 - messages runtime liés au layout persistant.
 

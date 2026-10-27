@@ -18,7 +18,7 @@ Les doctors dédiés sont :
 ./diagnostics/gnome-desktop-integration-doctor
 ```
 
-Sur le bare-metal avec les deux VM en service :
+Sur le bare-metal avec Rocky DevOps en service :
 
 ```bash
 ./diagnostics/nautilus-vm-live-doctor --certify
@@ -50,38 +50,23 @@ Le profil gère explicitement :
 - archives → File Roller ;
 - HTTP/HTTPS/HTML → Brave sur le profil production complet.
 
-Gate 2 ne dépend pas de Brave et valide uniquement le sous-ensemble GNOME natif.
+La CI native utilise le sous-ensemble GNOME pour ses essais ; le système installé qualifie les associations du profil complet.
 
 ### XDG Portals
 
-Le doctor fonctionnel valide FileChooser, OpenURI, Notification et ScreenCast. Les surfaces D-Bus sont contrôlées automatiquement ; Gate 2 et Gate 3 demandent en plus une confirmation utilisateur des interactions graphiques qui ne doivent pas être simulées en contournant les dialogues de sécurité GNOME.
+Le doctor fonctionnel valide FileChooser, OpenURI, Notification et ScreenCast. Les surfaces D-Bus sont contrôlées automatiquement ; les essais du système installé demandent en plus une confirmation utilisateur des interactions graphiques qui ne doivent pas être simulées en contournant les dialogues de sécurité GNOME.
 
 ### Accès fichiers KVM
 
 En Gate 3, `nautilus-vm-live-doctor --certify` effectue un véritable aller-retour GIO :
 
-- Rocky DevOps via SFTP ;
-- Windows 11 via SMB.
+- Rocky DevOps via SFTP.
 
-Pour chacun : listing, écriture d'un canari, relecture puis suppression. Le doctor rafraîchit ensuite les bookmarks Nautilus gérés.
+Pour cet invité : listing, écriture d'un canari, relecture puis suppression. Le doctor rafraîchit ensuite les bookmarks Nautilus gérés.
 
-## Gate 2 — VirtualBox
+## Avant installation — Live USB
 
-```bash
-./control.sh validate gate2 apply
-./control.sh validate gate2 check
-./control.sh validate gate2 sign
-```
-
-`sign` lance la matrice interactive GNOME. Elle couvre Overview, dock, DING, Show Desktop Button/Super+D, Vitals, Nautilus/recherche, `Open in Console → Ptyxis`, applications par défaut et Portals.
-
-La preuve Gate 2 n'est créée qu'après cette matrice et la phrase historique :
-
-```text
-JE_VALIDE_VISUELLEMENT_GATE2
-```
-
-Le matériel physique reste `DEFERRED`.
+Le [contrôle Live USB](FEDORA45_LIVE_PREFLIGHT.md) observe le bureau Fedora natif, l’affichage et les périphériques sur le PC. Il ne personnalise pas la session avec les extensions du projet. Les interactions de ces extensions, les applications finales et l’intégration Rocky se qualifient après APPLY et redémarrage.
 
 ## Gate 3 — bare-metal
 
@@ -93,14 +78,14 @@ Après l'APPLY et les cinq cycles suspend/resume certifiés du fingerprint coura
 
 Cette commande exige :
 
-- chaîne Gate 1 → Gate 2 courante ;
+- preuve Live native courante importée après installation ;
 - nombre minimal de cycles suspend/resume ;
 - GNOME runtime sain ;
 - LocalSearch réel ;
 - Ptyxis/CWD fonctionnel ;
 - associations par défaut ;
 - Portals fonctionnels ;
-- accès SFTP/SMB aux VM si KVM est activé ;
+- accès SFTP à Rocky si KVM est activé ;
 - confirmation visuelle de la stabilité GNOME après suspend/resume.
 
 Elle produit :

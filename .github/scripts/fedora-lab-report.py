@@ -7,8 +7,8 @@ import re
 
 REQUIRED = ("image", "boot", "gnome", "reboot", "borg_files", "cold_archive",
             "restored_vm", "rebuilt_os")
-DEFERRED = ("gate1_wsl2", "gate2_visual", "gate3_hardware",
-            "production_apply", "windows_vm", "upstream_kernel_boot")
+DEFERRED = ("live_usb_hardware", "gate3_hardware",
+            "production_apply", "upstream_kernel_boot")
 
 
 def initialize(commit, release=45, extension_mode="curated"):

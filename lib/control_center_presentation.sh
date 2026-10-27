@@ -169,29 +169,6 @@ cc_kvm_create_rocky_interactive() {
   cc_interactive_exec 'CRÉATION ROCKY DEVOPS' "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" "${args[@]}"
 }
 
-cc_kvm_create_windows_interactive() {
-  local windows_iso=''
-  local virtio_iso=''
-  local windows_sha=''
-  local virtio_sha=''
-
-  read -r -p 'ISO Windows 11 : ' windows_iso
-  read -r -p 'ISO VirtIO : ' virtio_iso
-  read -r -p 'SHA-256 Windows de confiance : ' windows_sha
-  read -r -p 'SHA-256 VirtIO de confiance : ' virtio_sha
-
-  if [[ -z "$windows_iso" || -z "$virtio_iso" || -z "$windows_sha" || -z "$virtio_sha" ]]; then
-    printf 'Les deux ISO et les deux SHA-256 de confiance sont obligatoires.\n'
-    cc_pause
-    return 0
-  fi
-
-  cc_interactive_exec 'CRÉATION WINDOWS 11' "$REPO_ROOT/scripts/kvm/create_windows11_vm.sh" \
-    --windows-iso "$windows_iso" \
-    --virtio-iso "$virtio_iso" \
-    --windows-sha256 "$windows_sha" \
-    --virtio-sha256 "$virtio_sha"
-}
 
 cc_kvm_menu() {
   local choice=''
@@ -202,10 +179,9 @@ cc_kvm_menu() {
     cc_option 1 'Virtualization doctor' 'KVM / libvirt / pool / réseau'
     cc_option 2 'Contrôler guard réseau' 'fail-closed'
     cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
-    cc_option 4 'Certification runtime KVM' 'Rocky + Windows + isolation'
+    cc_option 4 'Certification runtime KVM' 'Rocky + isolation'
     cc_option 5 'Rafraîchir accès Nautilus aux VM'
     cc_option 6 'Créer Rocky DevOps' 'image signée Rocky Linux + cloud-init'
-    cc_option 7 'Créer Windows 11' 'ISO + VirtIO + 2 SHA-256 obligatoires'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
@@ -219,7 +195,6 @@ cc_kvm_menu() {
       4) cc_interactive_exec 'KVM RUNTIME CERTIFICATION' "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
       5) cc_interactive_exec 'NAUTILUS VM ACCESS' "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
       6) cc_kvm_create_rocky_interactive ;;
-      7) cc_kvm_create_windows_interactive ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -319,7 +294,6 @@ Usage:
   ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh
   ./control.sh kvm create-rocky --cloud-image PATH [--ssh-key PATH] [--rocky-key-file PATH]
-  ./control.sh kvm create-windows --windows-iso PATH --virtio-iso PATH --windows-sha256 HASH --virtio-sha256 HASH
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
   ./control.sh cert archive DESTINATION PAYLOAD [PAYLOAD ...]
   ./control.sh logs list|tail|boot-failure|retention|prune

@@ -48,7 +48,8 @@ assert 'Fedora 45' in text[:500] and 'GNOME 51' in text[:500], 'new-install targ
 assert 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' in text
 blocks = re.findall(r'```bash\n(.*?)```', text, re.S)
 commands = '\n'.join(blocks)
-assert './control.sh status' in commands and './control.sh install dry-run' in commands
+assert './control.sh validate live plan' in commands and './control.sh validate live run' in commands
+assert 'FEDORA45_LIVE_PREFLIGHT.md' in text and 'Live USB → installation Fedora' in text
 assert not re.search(r'^\s*(?:sudo\s+)?(?:./control.sh install apply|./install.sh --apply)', commands, re.M), 'landing must link to the full procedure before APPLY'
 assert 'Gate 3' in text and 'ne certifie pas encore' in text, 'CI/physical distinction missing'
 assert 'FEDORA45_PRIMARY.md' in text, 'qualification status must be discoverable'

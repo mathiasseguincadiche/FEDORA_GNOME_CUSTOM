@@ -1,6 +1,6 @@
 # Feuille de route technique — Fedora Golden Workstation, octobre 2026
 
-**Périmètre :** Fedora Workstation sur un PC fixe MSI MAG B850M MORTAR WIFI, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580, deux Crucial T705, moniteur QD-OLED 2560×1440/240 Hz, réseau Wi-Fi 7 / 5 GbE, GNOME Wayland, VMs Rocky Linux et Windows, sauvegardes Borg et accès distant facultatif depuis tablette Android.
+**Périmètre :** Fedora Workstation sur un PC fixe MSI MAG B850M MORTAR WIFI, Ryzen 7 7700, 48 Gio DDR5, Intel Arc B580, deux Crucial T705, moniteur QD-OLED 2560×1440/240 Hz, réseau Wi-Fi 7 / 5 GbE, GNOME Wayland, VM Rocky Linux, sauvegardes Borg et accès distant facultatif depuis tablette Android.
 
 **But :** une workstation **stable, explicable, reproductible, réversible et mesurable**, utilisée quotidiennement pour l'apprentissage et le travail DevOps, sans compromis silencieux sur la sécurité ni sur les données.
 
@@ -21,7 +21,7 @@ Sources officielles : [calendrier Fedora 45](https://fedorapeople.org/groups/sch
 |---|---|---|---|
 | **P0** | Authentification de l'ISO Fedora 45 | `CHECKSUM` signé, empreinte ISO et compose final correspondants ; profil promu en PR | **En attente** de la release finale |
 | **P0** | Préqualification Live non destructive | CPU/carte mère/GPU/pilote et deux T705 contrôlés ; absence de mutations ; `FAIL` explicite | **Renforcé** dans cette évolution, à tester |
-| **P0** | Chaîne Gate 1 / 2 / 3 | preuves du **même commit**, Gate 2 GNOME 51 réellement observée, puis Gate 3 PC | **À exécuter** après promotion |
+| **P0** | Live USB → installation → Gate 3 | compte rendu Live du **même commit** et du PC cible, puis qualification du système installé | **À exécuter** après promotion |
 | **P0** | Stockage/récupération | T705 système Btrfs et `/data` EXT4 distincts ; Borg externe ; restauration témoin réussie | En place dans le code ; **qualification physique restante** |
 | **P0** | Sécurité de l'hôte | SELinux Enforcing, firewalld, intégrité des sources et réseau KVM fail-closed | Contrats existants ; tests physiques restants |
 | **P1** | GNOME 51 stable et sobre | six **rôles** essentiels compatibles et vraiment actifs ; aucune extension supplémentaire sans justification | Verrous candidats ; tests GNOME 51 du profil final restants |
@@ -66,7 +66,7 @@ Une évolution de ces choix exige une décision explicite avec ADR et migration 
 
 **Étape C — Consolider les fonctionnalités déjà présentes :** KVM et réseau IPv6, DevOps Rocky, backup Borg, Wake-on-LAN et streaming AV1 ; corriger uniquement ce que des preuves montrent insuffisant.
 
-**Étape D — Tests finaux :** CI sur la PR exacte, puis contrôles du `push` sur `main`. Enfin USB Live sur matériel, Gates 1 et 2 selon la release réellement promue, baseline, sauvegarde, APPLY protégé et Gate 3 physique.
+**Étape D — Tests finaux :** CI sur la PR exacte, puis contrôles du `push` sur `main`. Enfin Live USB sur le PC avec export du compte rendu, installation sur SSD et import au même commit, configuration définitive, baseline, dry-run, sauvegarde, APPLY protégé, redémarrage et Gate 3 physique.
 
 ## Ce qu'est un « 10/10 » ici
 

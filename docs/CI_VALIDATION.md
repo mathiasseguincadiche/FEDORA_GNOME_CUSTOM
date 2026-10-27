@@ -10,7 +10,7 @@ La CI combine contrats statiques, intégration Fedora 45, laboratoire Fedora/GNO
 | Conteneurs Fedora 45 | paquets RPM, manifestes et intégrations attendues | comportement sur l'écran physique |
 | `fedora-gnome-vm / lab` | GNOME 51 natif, reboot, Borg, reprise et reconstruction | activation des six extensions et matériel B580/T705 |
 | VM Rocky Linux | installation, accès réseau et récupération DevOps | disponibilité du KVM de l'hôte réel |
-| `fedora45-gnome-vm / lab` | six extensions GNOME 51 actives, reboot et récupération | promotion du média final, Gate 2 visuelle et matériel réel |
+| `fedora45-gnome-vm / lab` | six extensions GNOME 51 actives, reboot et récupération | promotion du média final, bureau installé et matériel réel |
 | Gate 3 | essais physiques liés au commit et à la configuration | validité automatique des versions suivantes |
 
 ```mermaid
@@ -51,7 +51,7 @@ Un résultat rouge exige les journaux de **l'étape causale**, pas un `|| true` 
 - **Nautilus complet / GVfs / Sushi / File Roller** ;
 - **Ptyxis natif et séparation terminal/Bash** ;
 - **ergonomie desktop DING + Show Desktop Button** ;
-- **LAB GNOME VirtualBox fail-closed** ;
+- **contrat Live USB natif et séparation du système installé** ;
 - durcissement pré-1.0 ;
 - **fail-closed du guard KVM** ;
 - **authentification de l'image Rocky** ;
@@ -124,23 +124,13 @@ Ce test ne remplace pas la relecture éditoriale humaine, mais empêche les dive
 - bouton `left-end`, clic gauche `toggle-desktop`, `Super+D`, badge désactivé ;
 - diagnostic GNOME et workflows Fedora couvrant ces invariants.
 
-Cette CI valide configuration, provenance et schémas. Elle ne prétend pas prouver visuellement que les icônes sont rendues sur le framebuffer ou que plusieurs vraies fenêtres GNOME se masquent/restaurent : cette preuve appartient au GATE 2 VirtualBox puis au bare-metal.
+Cette CI valide configuration, provenance et schémas. Elle ne prétend pas prouver visuellement que les icônes sont rendues sur le framebuffer ou que plusieurs vraies fenêtres GNOME se masquent/restaurent : cette observation appartient à la matrice GNOME du système installé.
 
-## VirtualBox GNOME LAB
+## Contrat Live USB natif
 
-`tests/test_virtualbox_gnome_lab_contract.sh` protège le LAB GATE 2 :
+Les tests comportementaux Live vérifient les résultats individuels, les cas incomplets/en échec, les identités stables du PC et l’export/import du compte rendu. Ils rejettent les anciens schémas et les preuves qui ne correspondent pas au commit, au plan de modules ou au matériel.
 
-- identité VirtualBox doublement validée par `systemd-detect-virt --vm = oracle` et DMI ;
-- Fedora 45, GNOME Shell 51 et Wayland requis ;
-- entrypoint limité aux modules GNOME settings/extensions ;
-- dépendances système limitées à `curl`, `unzip`, `xdg-user-dirs`, `glib2` ;
-- DING et Show Desktop Button installés depuis leurs artefacts GNOME-reviewed pinés ;
-- doctor LAB strictement read-only ;
-- interdiction de charger l'orchestrateur complet ou les modules kernel/hardware/KVM/backup ;
-- rejet dynamique de la CI avec code sécurité `50` ;
-- confirmation par le doctor que `install.sh --apply` et la baseline bare-metal restent bloqués en VirtualBox.
-
-La procédure normative est [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md).
+Ces tests utilisent des fixtures, sans certifier de matériel. La [procédure Live](FEDORA45_LIVE_PREFLIGHT.md) se réalise directement sur le PC. L’APPLY et les preuves d’usage finales restent réservés au système installé, après redémarrage sur SSD.
 
 ## Shell quality
 
@@ -216,7 +206,7 @@ Dans un conteneur Fedora 45, installe réellement le contrat HOST/GNOME/KVM/back
 
 Un utilisateur de test installe DING et Show Desktop Button depuis leurs artefacts GNOME-reviewed, converge `~/Bureau` et les préférences, puis relit les GSettings et les marqueurs de provenance.
 
-Ce workflow ne simule pas VirtualBox ou une session GNOME graphique : le LAB GATE 2 reste une preuve runtime distincte.
+Ce workflow ne remplace pas les essais Live USB ni les interactions de la session GNOME du système installé.
 
 Il tourne aussi périodiquement.
 
@@ -281,7 +271,7 @@ Il tourne périodiquement afin de surveiller les dépôts externes et signatures
 
 ## Ce qui reste runtime/physique
 
-- rendu visuel réel DING et action Show Desktop dans une session GNOME complète (GATE 2 puis bare-metal) ;
+- rendu visuel réel DING et action Show Desktop dans une session GNOME complète sur le système installé en Gate 3 ;
 - vrai cold-start Nautilus ;
 - intégration périphériques réels MTP/AFC/GPhoto ;
 - Arc B580/`xe` ;
@@ -296,7 +286,7 @@ Il tourne périodiquement afin de surveiller les dépôts externes et signatures
 - changement Ethernet/Wi-Fi réel ;
 - second-host LAN → VM.
 
-Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`GAMING.md`](GAMING.md), [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
+Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`GAMING.md`](GAMING.md), [`FEDORA45_LIVE_PREFLIGHT.md`](FEDORA45_LIVE_PREFLIGHT.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
 
 ## Fedora/GNOME : boot et reprise isolée
 
@@ -305,7 +295,7 @@ boots QEMU Fedora 45/GNOME 51, le reboot, Borg et une restauration à froid
 UEFI/TPM logiciel suivie d'une reconstruction sur image neuve. `contracts` dépend
 de ce job : un échec ou un skip bloque le contexte obligatoire et la publication.
 Voir [la portée exacte et les rapports](FEDORA_GNOME_CI_LAB.md).
-Les gates WSL2/VirtualBox/bare-metal, la validation visuelle et le démarrage
+Les essais Live USB, la qualification du système installé, la validation visuelle et le démarrage
 Linux amont restent à qualifier sur leurs environnements réels.
 
 Le check agrégé `contracts` s'exécute même après un échec grâce à `always()`

@@ -123,11 +123,10 @@ Les clés SSH, user-data, disques et dépôts Borg ne sont pas publiés en artef
 Le rapport porte `scope=fedora-gnome-qemu-pretest`. Il n'écrit aucun fichier
 de certification officiel. Restent explicitement DEFERRED :
 
-- Gate 1 WSL2 et Gate 2 VirtualBox avec contrôle visuel humain ;
+- essais Live USB avant installation et interactions réelles du système installé ;
 - Gate 3 et matériel physique Ryzen/B580/T705/écran ;
 - APPLY complet de production et démarrage du noyau Linux amont ;
-- restauration des VM Rocky/Windows de production, UUID/libvirt/réseau,
-  TPM Windows et éventuels logiciels associés.
+- restauration de Rocky de production, ses données, son UUID et son réseau libvirt.
 
 Le noyau du laboratoire reste celui de Fedora Cloud. Installer GNOME sur une
 image Cloud n'exerce pas l'installateur Anaconda/Kickstart du média Workstation.
@@ -135,7 +134,7 @@ La reconstruction vérifie les fichiers de test et GNOME ; elle ne démontre
 pas la restauration de tous les paquets, jeux ou services de la workstation.
 
 Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et
-[les trois gates](THREE_GATE_VALIDATION.md) définissent les essais opérateur
+[le parcours Live USB puis Gate 3](THREE_GATE_VALIDATION.md) définissent les essais opérateur
 restants sur le même commit. Un PASS CI conserve toutes ces limites.
 
 Le check obligatoire `contracts` s'exécute avec `always()` puis contrôle

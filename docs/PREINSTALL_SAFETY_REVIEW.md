@@ -12,7 +12,7 @@ Cette revue relie les défauts constatés aux corrections et aux tests. La quali
 | Syntaxes SSH Borg rejetées | Valider `ssh://…/…` et `user@host:path` ; refuser les anciens backends Restic | `test_preinstall_shell_behavior.sh` |
 | Configuration locale absente des archives lorsque le clone est hors des sources | Copie privée dans l’inventaire pré-APPLY/full, SHA portable et restauration comparée avant attribution du PASS | Vraie archive Borg restaurée dans `test_backup_certification_behavior.sh` |
 | Champs SMART absents assimilés à zéro | Exiger toutes les mesures nécessaires, leurs types et leurs bornes | `test_preinstall_safety.py` |
-| Anciens cycles de veille comptés après changement de configuration/preuves | Comparer configuration, chaîne Gate 1/2, runtime, écran et contrat pilote ; dédupliquer les cycles | `test_preinstall_shell_behavior.sh` compte puis enregistre de nouvelles preuves sans écraser les anciennes |
+| Anciens cycles de veille comptés après changement de configuration/preuves | Comparer configuration, preuve Live native, runtime, écran et contrat pilote ; dédupliquer les cycles | `test_preinstall_shell_behavior.sh` compte puis enregistre de nouvelles preuves sans écraser les anciennes |
 | Assistants KVM ignorant les overrides locaux | Chargeur commun validé avant lecture des paramètres | Les trois préambules réels sont exécutés dans `test_preinstall_shell_behavior.sh` |
 | Runtime GNOME 51 différent entre laboratoire et installation | Correctif Gtk4-DING, versions RPM et vérificateurs partagés ; installation stable uniquement en production | Patch vérifié sur le ZIP réel dans le laboratoire ; refus de promotion sans RPM stables dans `test_promote_fedora45_behavior.sh` |
 

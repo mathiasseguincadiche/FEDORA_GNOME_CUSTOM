@@ -47,7 +47,7 @@ L'écran QD-OLED 1440p/240 Hz exige également une attention à la rémanence, a
 | Intégration | Portails, trousseau de clés, affichage, applications par défaut | [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md) |
 | Usage quotidien | Mises à jour, veille, sauvegarde quotidienne vues depuis le bureau | [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) |
 | Matériel du bureau | Identités audio, webcam et Wi-Fi, afficheur LD240 facultatif | [`DESKTOP_COMPLETION.md`](DESKTOP_COMPLETION.md) |
-| Preuves | Ce qui est vérifié en CI, en Gate 2 et en Gate 3 | [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) |
+| Preuves | Ce qui est vérifié en CI et sur le système installé en Gate 3 | [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) |
 
 ## Vérifier que tout va bien
 

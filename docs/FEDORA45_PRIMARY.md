@@ -52,6 +52,6 @@ Après promotion du profil et contrôle du média :
 
 **Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
 
-Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) et la [Gate 2 visuelle](GATE2_GUIDE_PAS_A_PAS.md) précèdent l’APPLY selon les gardes du projet. Les mesures B580, écran, veille, réseau et T705 appartiennent ensuite à la Gate 3 physique.
+Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l’installation sur SSD. Son compte rendu est exporté puis importé au même commit. La configuration finale, le dry-run, la sauvegarde vérifiée et l’APPLY se font sur Fedora installé. Les mesures complètes B580, écran, veille, réseau et T705, ainsi que le bureau personnalisé et Rocky, appartiennent ensuite à la Gate 3 physique.
 
 La [mise à niveau 44 → 45](UPGRADE_FEDORA_45.md) ne concerne que les anciens systèmes déjà installés.

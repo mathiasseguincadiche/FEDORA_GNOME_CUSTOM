@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 300" role="img" aria-labelledby="title desc">
 <title id="title">Chaîne de validation Fedora Golden Workstation</title>
-<desc id="desc">Gate 1 sous WSL2, Gate 2 sous VirtualBox, installation bare-metal, APPLY protégé, Gate 3 sur la machine réelle, puis Golden release PASS.</desc>
+<desc id="desc">CI logicielle Linux, observations Live USB sur le PC cible, export puis import après installation sur SSD, APPLY protégé, redémarrage et qualification Rocky, Gate 3 du système installé puis Golden release PASS.</desc>
 <defs>
   <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#4f6f98"/></marker>
   <style>
@@ -18,19 +18,19 @@
 
 <g transform="translate(30 112)">
   <rect width="175" height="128" rx="18" fill="#eaf4ff" stroke="#7bb8ed"/>
-  <circle cx="30" cy="30" r="20" fill="#2385d8"/><text x="30" y="31" class="badge">G1</text>
-  <text x="59" y="34" class="head">Gate 1</text>
-  <text x="20" y="76" class="sub">Fedora 45 / WSL2</text>
-  <text x="20" y="100" class="sub">Système + contrats</text>
+  <circle cx="30" cy="30" r="20" fill="#2385d8"/><text x="30" y="31" class="badge">1</text>
+  <text x="59" y="34" class="head">CI logicielle</text>
+  <text x="20" y="76" class="sub">Contrats + QEMU Linux</text>
+  <text x="20" y="100" class="sub">Commit exact</text>
 </g>
 <line x1="218" y1="176" x2="248" y2="176" stroke="#4f6f98" stroke-width="4" marker-end="url(#arrow)"/>
 
 <g transform="translate(260 112)">
   <rect width="180" height="128" rx="18" fill="#f0ecff" stroke="#ab9bed"/>
-  <circle cx="30" cy="30" r="20" fill="#6d63db"/><text x="30" y="31" class="badge">G2</text>
-  <text x="59" y="34" class="head">Gate 2</text>
-  <text x="20" y="76" class="sub">GNOME / VirtualBox</text>
-  <text x="20" y="100" class="sub">Desktop + UX</text>
+  <circle cx="30" cy="30" r="20" fill="#6d63db"/><text x="30" y="31" class="badge">2</text>
+  <text x="59" y="34" class="head">Live USB</text>
+  <text x="20" y="76" class="sub">PC réel · préinstallation</text>
+  <text x="20" y="100" class="sub">Observations exportées</text>
 </g>
 <line x1="453" y1="176" x2="483" y2="176" stroke="#4f6f98" stroke-width="4" marker-end="url(#arrow)"/>
 
@@ -39,7 +39,7 @@
   <circle cx="30" cy="30" r="20" fill="#20a46f"/><text x="30" y="31" class="badge">3</text>
   <text x="59" y="34" class="head">Installation</text>
   <text x="20" y="76" class="sub">Fedora 45 bare-metal</text>
-  <text x="20" y="100" class="sub">machine cible</text>
+  <text x="20" y="100" class="sub">SSD · import preuve Live</text>
 </g>
 <line x1="703" y1="176" x2="733" y2="176" stroke="#4f6f98" stroke-width="4" marker-end="url(#arrow)"/>
 
@@ -48,7 +48,7 @@
   <circle cx="30" cy="30" r="20" fill="#f59e0b"/><text x="30" y="31" class="badge">4</text>
   <text x="59" y="34" class="head">APPLY protégé</text>
   <text x="20" y="76" class="sub">Baseline · dry-run</text>
-  <text x="20" y="100" class="sub">backup · convergence</text>
+  <text x="20" y="100" class="sub">backup · APPLY · reboot</text>
 </g>
 <line x1="963" y1="176" x2="993" y2="176" stroke="#4f6f98" stroke-width="4" marker-end="url(#arrow)"/>
 

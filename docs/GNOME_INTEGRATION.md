@@ -56,7 +56,7 @@ DING conserve Home, volumes externes et volumes réseau masqués par défaut. Le
 
 Une extension ne doit jamais servir à masquer un problème Mutter/Wayland/GPU.
 
-Voir [`GNOME_PROFILE.md`](GNOME_PROFILE.md), [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md) et [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md).
+Voir [`GNOME_PROFILE.md`](GNOME_PROFILE.md), [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md) et [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md).
 
 ## Portals et applications sandboxées
 
@@ -132,14 +132,13 @@ Production/bare-metal :
 ./diagnostics/display-doctor
 ```
 
-GATE 2 VirtualBox :
+Avant installation, utiliser le [Live USB](FEDORA45_LIVE_PREFLIGHT.md) pour observer le matériel avec Fedora natif. Après APPLY et redémarrage, lancer la matrice interactive dans la session installée :
 
 ```bash
-./scripts/lab/apply-gnome-virtualbox.sh --apply
-./diagnostics/virtualbox-gnome-lab-doctor
+./scripts/validation/gnome-ux-matrix.sh gate3
 ```
 
-Le LAB VirtualBox ne remplace jamais `install.sh --apply` et n'ouvre aucun gate production. Il permet uniquement de converger et observer la surface GNOME nécessaire à la preuve visuelle DING + Show Desktop. La même ergonomie est ensuite confirmée bare-metal.
+La preuve GNOME personnalisée porte sur le système réellement installé, ses six extensions et ses applications.
 
 Ces contrôles sont repris dans la certification bare-metal finale selon leur scope.
 

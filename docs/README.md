@@ -11,7 +11,7 @@ Choisir le parcours correspondant à votre besoin. La cible d’installation neu
 | Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md) | [Maintenance](DESKTOP_LIFECYCLE.md) · [Sauvegardes](BACKUP_RESTORE.md) |
 | Configurer le bureau, jouer ou utiliser KVM | [GNOME](GNOME.md) · [Gaming](GAMING.md) | [Démarrage KVM](KVM_QUICKSTART.md) |
 | Résoudre un problème | [Dépannage](TROUBLESHOOTING.md) | Runbook du domaine concerné dans le catalogue ci-dessous |
-| Qualifier ou contribuer | [Validation en trois gates](THREE_GATE_VALIDATION.md) | [Fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) · [Contribution](../CONTRIBUTING.md) |
+| Qualifier ou contribuer | [Validation Live USB et Gate 3](THREE_GATE_VALIDATION.md) | [Fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) · [Contribution](../CONTRIBUTING.md) |
 
 Le [parcours d’apprentissage](LEARNING_PATH.md) accompagne une découverte progressive. Le [glossaire](GLOSSARY.md) explique les termes techniques.
 
@@ -21,7 +21,7 @@ Suivre le guide d’installation pour les commandes et leurs préconditions :
 
 **Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
 
-La CI vérifie le logiciel ; la Gate 2 vérifie le bureau dans un laboratoire ; la Gate 3 qualifie le PC réel. Le [laboratoire VirtualBox](VIRTUALBOX_GNOME_LAB.md) ne déverrouille jamais `install.sh --apply`. Le [guide Gate 2 pas à pas](GATE2_GUIDE_PAS_A_PAS.md) détaille ce parcours depuis Windows.
+La CI vérifie le logiciel. Le [Live USB](FEDORA45_LIVE_PREFLIGHT.md) permet les essais sur le PC avant installation ; son compte rendu est exporté puis importé sur Fedora installé. Il ne déverrouille jamais `install.sh --apply` dans la session Live. La Gate 3 qualifie ensuite le système installé, ses usages et Rocky DevOps.
 
 ## Utilisation quotidienne
 
@@ -54,16 +54,15 @@ Ces documents définissent les invariants. Ils répondent à **« qu'est-ce qui 
 
 Lire dans cet ordre pour une installation bare-metal :
 
-1. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — média, Kickstart, second T705, baseline, dry-run, backup, APPLY ;
-2. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification CPU/RAM/NVMe/hardware ;
-3. [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) — stabilité et critères de rejet ;
-4. [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) — chaîne Gate 1 → Gate 2 → installation → Gate 3 ;
-5. [`VIRTUALBOX_GNOME_LAB.md`](VIRTUALBOX_GNOME_LAB.md) — LAB Gate 2 isolé de l'APPLY production ;
-6. [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md) — guide pratique Gate 1 + Gate 2 depuis Windows (WSL2, VirtualBox, checklist, dépannage).
+1. [`FEDORA45_LIVE_PREFLIGHT.md`](FEDORA45_LIVE_PREFLIGHT.md) — média signé, essais directs sur le PC et export du compte rendu ;
+2. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation graphique, Kickstart avancé, second T705, baseline, dry-run, backup, APPLY ;
+3. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification CPU/RAM/NVMe/hardware ;
+4. [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) — stabilité et critères de rejet ;
+5. [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) — CI logicielle → Live USB → installation → Gate 3.
 
 Les [corrections avant installation](PREINSTALL_SAFETY_REVIEW.md) relient les défauts déjà traités à leurs tests.
 
-**Résultat attendu :** une machine installée, diagnostiquée puis certifiée physiquement. Gate 1 et Gate 2 ne remplacent pas Gate 3.
+**Résultat attendu :** une machine installée, diagnostiquée puis certifiée physiquement. Le compte rendu Live ne remplace pas la Gate 3.
 
 ---
 
@@ -111,7 +110,7 @@ Les références répondent à **« comment ce contrat est-il implémenté ? »*
 #### Virtualisation
 
 - [`VIRTUALIZATION.md`](VIRTUALIZATION.md) — architecture KVM/libvirt ;
-- [`VM_PROFILES.md`](VM_PROFILES.md) — profils exécutables Rocky Linux/Windows ;
+- [`VM_PROFILES.md`](VM_PROFILES.md) — profil exécutable Rocky Linux ;
 - [`KVM_NETWORK.md`](KVM_NETWORK.md) — réseau `devops-nat` fail-closed ;
 - [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) — accès fichiers ;
 - [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) — référence CLI avancée ;
@@ -133,7 +132,7 @@ Puis choisir le domaine :
 
 - [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — triage transversal ;
 - [`RUNBOOK_GOLDEN_HARDWARE.md`](RUNBOOK_GOLDEN_HARDWARE.md) — BIOS, P-State, ReBAR, PCIe, NVMe, EDID, kernel, offline update ;
-- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Rocky Linux, Windows, QGA, TPM, exports VM manuels ;
+- [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) — libvirt, pool, réseau, guard, Rocky Linux, QGA, exports VM manuels ;
 - [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) — `/data`, EXT4, ownership, SELinux, XDG Documents, Borg, Steam/Vulkan ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — restauration et DR ;
 - [`KVM_NETWORK.md`](KVM_NETWORK.md) — détails d'isolation réseau.
@@ -184,7 +183,6 @@ L’installation neuve Fedora 45 ne passe pas par Fedora 44. Les anciens essais 
 - [Suivi de fiabilité](RELIABILITY_QUALIFICATION.md)
 - [Feuille de route Fedora 45](ROADMAP_FEDORA45_2026.md)
 - [Noyau amont et politique N/N-1](UPSTREAM_LINUX.md)
-- [Validation depuis WSL2](WSL2_VALIDATION.md)
 - [Décision sur l’accès distant](adr/0017-remote-access.md)
 
 </details>

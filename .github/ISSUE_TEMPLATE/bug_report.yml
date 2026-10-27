@@ -21,8 +21,7 @@ body:
       label: Environnement
       options:
         - Fedora 45 bare-metal
-        - Fedora 45 / VirtualBox Gate 2
-        - Fedora 45 / WSL2 Gate 1
+        - Fedora 45 / Live USB
         - CI GitHub Actions
         - Autre
     validations:

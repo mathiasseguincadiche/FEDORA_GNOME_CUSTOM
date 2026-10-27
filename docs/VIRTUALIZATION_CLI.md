@@ -86,7 +86,7 @@ OVMF / UEFI
 swtpm / TPM 2.0
 ```
 
-Windows 11 conserve son profil UEFI Secure Boot + TPM 2.0 ; Rocky Linux 10.2 utilise UEFI.
+Le profil Rocky Linux 10.2 utilise UEFI et ne nécessite pas de TPM. Les outils `swtpm` restent disponibles pour les expériences Linux qui les utilisent, sans créer de profil invité supplémentaire.
 
 ## GUI complémentaire
 

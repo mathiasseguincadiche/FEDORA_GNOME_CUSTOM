@@ -31,18 +31,18 @@ Les tests logiciels et la qualification du PC sont suivis séparément. La réus
 
 Pour préparer l’installation, lire d’abord le [contrôle du média Live](docs/FEDORA45_LIVE_PREFLIGHT.md), puis suivre le [guide d’installation neuve](docs/INSTALLATION_GUIDE.md).
 
-Depuis l’environnement Fedora cible, le dépôt permet de consulter l’état et le plan :
+Depuis la session Live Fedora 45, consulter puis exécuter les contrôles du PC :
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
-./control.sh status
-./control.sh install dry-run
+./control.sh validate live plan
+./control.sh validate live run
 ```
 
 Le guide détaille le parcours complet :
 
-**Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
+**Live USB → installation Fedora → configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
 
 Pour l’usage quotidien, ouvrir le centre de contrôle :
 

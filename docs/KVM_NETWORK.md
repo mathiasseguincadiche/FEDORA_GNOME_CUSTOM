@@ -37,7 +37,7 @@ Internet → VM       aucun port-forward implicite
 ## Vue simple
 
 ```text
-rocky-devops / windows-11
+rocky-devops
           │
           │ VirtIO
           ▼
@@ -282,7 +282,7 @@ L'administration Rocky Linux se fait depuis le HOST :
 ssh mathias@192.168.50.x
 ```
 
-Windows est administré via sa console/GUI et les accès explicitement configurés dans le segment KVM.
+Rocky est administré par SSH dans le segment KVM ; les accès passent par les routes explicitement configurées.
 
 ## Dépannage
 

@@ -2,8 +2,8 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
-quiet=false; functional=false; preflight=false
-for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --functional) functional=true;; --preflight) preflight=true;; *) echo 'Usage: gnome-desktop-integration-doctor [--quiet] [--functional] [--preflight]' >&2; exit "$EXIT_USAGE";; esac; done
+quiet=false; functional=false; preflight=false; native=false
+for arg in "$@"; do case "$arg" in --quiet) quiet=true;; --functional) functional=true;; --preflight) preflight=true;; --native) native=true;; *) echo 'Usage: gnome-desktop-integration-doctor [--quiet] [--functional] [--preflight] [--native]' >&2; exit "$EXIT_USAGE";; esac; done
 ok=0; warn=0; ko=0
 emit(){ $quiet || ui_check "$1" "$2" "$3"; case "$1" in OK)((ok+=1));; WARN)((warn+=1));; KO)((ko+=1));; esac; }
 run_check(){ local label="$1"; shift; if "$@"; then emit OK "$label" PASS; else emit KO "$label" FAIL; fi; }
@@ -17,7 +17,7 @@ if [[ -r /etc/xdg/autostart/user-dirs-update-gtk.desktop || -r /usr/share/applic
 run_check 'GNOME runtime' "$REPO_ROOT/diagnostics/gnome-runtime-doctor" --quiet
 run_check LocalSearch "$REPO_ROOT/diagnostics/localsearch-doctor" --quiet
 if $functional; then run_check 'Nautilus → Ptyxis' "$REPO_ROOT/diagnostics/nautilus-ptyxis-doctor" --quiet --functional; else run_check 'Nautilus → Ptyxis' "$REPO_ROOT/diagnostics/nautilus-ptyxis-doctor" --quiet; run_check 'Ptyxis integration' "$REPO_ROOT/diagnostics/ptyxis-integration-doctor" --quiet; fi
-if runtime_is_virtualbox; then run_check 'Default applications' "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --gate2; else run_check 'Default applications' "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --full; fi
+if $native; then run_check 'Default applications' "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --native; else run_check 'Default applications' "$REPO_ROOT/diagnostics/default-apps-doctor" --quiet --full; fi
 run_check 'Portal functional substrate' "$REPO_ROOT/diagnostics/portal-functional-doctor" --quiet
 
 if runtime_is_baremetal && ! $preflight; then

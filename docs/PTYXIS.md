@@ -62,7 +62,6 @@ Pour le profil actuel :
 HOST Fedora          minimal et administrable
 Ptyxis + Bash        outils opérateur locaux
 KVM Rocky DevOps    environnement DevOps principal
-KVM Windows 11       environnement Windows
 Toolbx               non imposé par défaut
 ```
 

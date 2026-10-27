@@ -31,7 +31,7 @@ Relire les suppressions/conflits éventuels de la transaction. Le redémarrage e
 
 `finalize` exige le même commit et la même configuration, un boot différent, Fedora 45, GNOME 51, le journal DNF, une base de paquets cohérente et le noyau amont prévu réellement démarré. Il active ensuite le profil 45 dans l’override local sans supprimer les autres réglages et installe les quatre archives GNOME 51 du profil promu, avec vérification des hashes, UUID, major et schémas. Exécuter la finalisation depuis le compte GNOME, sans sudo. La phase `extensions-installed` demande une déconnexion normale puis une nouvelle connexion ; le code de retour 20 signifie qu’une action reste à effectuer. Relancer alors `./control.sh upgrade finalize` : le diagnostic doit confirmer le bureau et les extensions effectivement actifs avant le statut completed. Toute divergence bloque la finalisation ; elle n'est jamais annoncée comme réussie.
 
-Le profil, les médias et les verrous entrent dans l'empreinte de configuration : les anciennes preuves Golden deviennent obsolètes. Refaire WSL2 → VirtualBox avec validation visuelle → matériel physique, restauration isolée et reprise VM.
+Le profil, les médias et les verrous entrent dans l'empreinte de configuration : les anciennes preuves Golden deviennent obsolètes. Refaire les essais Live USB avec la source retenue, puis la qualification du système installé en Gate 3, la restauration isolée et la reprise Rocky.
 
 ## Qualification de la session GNOME 51 après migration
 

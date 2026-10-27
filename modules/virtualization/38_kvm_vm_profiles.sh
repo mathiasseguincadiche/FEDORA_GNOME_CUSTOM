@@ -11,15 +11,9 @@ kvm_vm_profiles_validate() {
   is_true "${ROCKY_SERVER_QEMU_GUEST_AGENT:-false}" && is_true "${ROCKY_SERVER_VIRTIO_RNG:-false}" && is_true "${ROCKY_SERVER_MEMORY_BALLOON:-false}" || return 1
   [[ "${ROCKY_SERVER_USERNAME:-}" == "mathias" && "${ROCKY_SERVER_PASSWORD_MODE:-}" == "runtime-prompt" ]] || return 1
   [[ -r "$REPO_ROOT/${ROCKY_SERVER_BOOTSTRAP_SCRIPT:-guest/rocky-devops/bootstrap-devops.sh}" && -r "$REPO_ROOT/${ROCKY_SERVER_VERIFY_SCRIPT:-guest/rocky-devops/verify-devops.sh}" ]] || return 1
-  [[ "${WINDOWS11_NAME:-}" == "windows-11" && "${WINDOWS11_VCPU:-}" == "4" && "${WINDOWS11_RAM_MB:-}" == "12288" && "${WINDOWS11_DISK_GB:-}" == "128" ]] || return 1
-  [[ "${WINDOWS11_FIRMWARE:-}" == "uefi-secureboot" && "${WINDOWS11_TPM_VERSION:-}" == "2.0" && "${WINDOWS11_TPM_BACKEND:-}" == "emulator" ]] || return 1
-  [[ "${WINDOWS11_DISK_BUS:-}" == "virtio" && "${WINDOWS11_NETWORK_MODEL:-}" == "virtio" && "${WINDOWS11_NETWORK:-}" == "${KVM_NETWORK_NAME:-devops-nat}" ]] || return 1
-  is_true "${WINDOWS11_REQUIRE_INSTALL_ISO:-false}" && is_true "${WINDOWS11_REQUIRE_VIRTIO_DRIVERS:-false}" || return 1
-  is_true "${WINDOWS11_QEMU_GUEST_AGENT:-false}" && is_true "${WINDOWS11_VIRTIO_RNG:-false}" && is_true "${WINDOWS11_MEMORY_BALLOON:-false}" && is_true "${WINDOWS11_SPICE_CHANNEL:-false}" || return 1
-  [[ -r "$REPO_ROOT/${WINDOWS11_INTEGRATION_SCRIPT:-guest/windows-11/configure-guest-integration.ps1}" ]] || return 1
   [[ -z "${FEDORA_VM_NAME:-}" ]] || return 1
 }
-kvm_vm_profiles_precheck() { is_true "${ENABLE_KVM:-true}" || return 0; kvm_vm_profiles_validate || { log_error KVM 'VM profile configuration violates the completed two-guest virtualization contract'; return "$EXIT_PRECHECK_FAILED"; }; }
-kvm_vm_profiles_plan() { echo 'Two explicit guests: Rocky Linux 10.2 and Windows 11 with VirtIO disk/network, QEMU Guest Agent channel, RNG, memory balloon, measured T705 I/O profile; Windows also gets UEFI Secure Boot, TPM 2.0 and SPICE channel.'; }
+kvm_vm_profiles_precheck() { is_true "${ENABLE_KVM:-true}" || return 0; kvm_vm_profiles_validate || { log_error KVM 'VM profile configuration violates the Rocky Linux virtualization contract'; return "$EXIT_PRECHECK_FAILED"; }; }
+kvm_vm_profiles_plan() { echo 'One explicit guest: Rocky Linux 10.2 with UEFI, VirtIO disk/network, QEMU Guest Agent channel, RNG, memory balloon and measured T705 I/O profile.'; }
 kvm_vm_profiles_apply() { :; }
 kvm_vm_profiles_postcheck() { is_true "${DRY_RUN:-true}" && return 0; is_true "${ENABLE_KVM:-true}" || return 0; kvm_vm_profiles_validate || return "$EXIT_POSTCHECK_FAILED"; command_exists cloud-localds && command_exists openssl; }

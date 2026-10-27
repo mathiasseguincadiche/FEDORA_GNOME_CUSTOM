@@ -17,7 +17,7 @@ Fedora 45 / GNOME 51 utilise **Vitals v85, review 74743**, UUID `Vitals@CoreCodi
 
 Les identifiants stables sont `_processor_usage_`, `_memory_usage_`, `__network-rx_max__` et `__network-tx_max__`. Le module applique et relit ces valeurs. Les anciennes clés GSettings de Resource Monitor v28 ne sont pas utilisées pour Vitals.
 
-Les températures dépendent des identifiants hwmon réellement découverts : les épingler depuis le menu Vitals sur le poste. Vitals ne garantit pas l’affichage de la charge Intel Arc B580 dans le panneau. Les détails propres aux interfaces réseau et aux capteurs doivent être contrôlés visuellement en Gate 2, puis sur le matériel en Gate 3.
+Les températures dépendent des identifiants hwmon réellement découverts : les épingler depuis le menu Vitals sur le poste. Vitals ne garantit pas l’affichage de la charge Intel Arc B580 dans le panneau. Les détails propres aux interfaces réseau et aux capteurs doivent être contrôlés visuellement sur le matériel après installation, en Gate 3.
 
 ## Contrôles matériels indépendants
 
@@ -30,4 +30,4 @@ bash diagnostics/resource-monitor-doctor
 ./diagnostics/gnome-doctor
 ```
 
-La CI vérifie les vrais schémas et préférences Vitals dans Fedora 45, et son activation dans la VM GNOME 51. WSL2, conteneur et [Gate 2 VirtualBox](VIRTUALBOX_GNOME_LAB.md) ne certifient pas les capteurs physiques. La Gate 3 exige le doctor sans KO.
+La CI vérifie les vrais schémas et préférences Vitals dans Fedora 45, et son activation dans la VM GNOME 51. Les conteneurs et laboratoires QEMU ne certifient pas les capteurs physiques. La Gate 3 exige le doctor sans KO.

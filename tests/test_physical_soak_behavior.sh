@@ -130,7 +130,7 @@ cat >"$tmp/bin/vkcube-wayland" <<'STUB'
 #!/usr/bin/env bash
 if [[ "$SOAK_TEST_MODE" == gpu_mixed ]]; then
   if mkdir "$SOAK_TEST_TMP/first-gpu" 2>/dev/null; then
-    echo "$" >"$SOAK_TEST_TMP/workload.pid"
+    echo "$$" >"$SOAK_TEST_TMP/workload.pid"
     sleep 60 &
     echo "$!" >"$SOAK_TEST_TMP/worker.pid"
     wait
@@ -164,6 +164,7 @@ assert_stopped() {
   for file in "$tmp/workload.pid" "$tmp/worker.pid"; do
     [[ -f "$file" ]] || continue
     pid="$(cat "$file")"
+    [[ "$pid" =~ ^[1-9][0-9]*$ ]] || { echo "invalid workload PID: $pid" >&2; exit 1; }
     state="$(ps -o stat= -p "$pid" 2>/dev/null || true)"
     [[ -z "$state" || "$state" == Z* ]] || { echo "workload left alive: $pid $state" >&2; exit 1; }
   done

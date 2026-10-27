@@ -27,35 +27,14 @@ jobs:
           grep -Fq 'apply_gate_require_runtime' lib/apply_gate.sh
           grep -Fq 'runtime_is_baremetal' lib/apply_gate.sh
           grep -Fq 'runtime_is_baremetal' lib/baseline.sh
-          grep -Fq 'wsl2)' diagnostic.sh
-          grep -Fq 'vm|container)' diagnostic.sh
-          grep -Fq 'REAL APPLY is blocked outside bare-metal' diagnostics/wsl2-doctor
-      - name: VirtualBox GNOME LAB isolation invariants
-        shell: bash
+          grep -Fq 'wsl2|vm|container)' diagnostic.sh
+          grep -Fq 'runtime_is_live' lib/apply_gate.sh
+      - name: Native Live USB and installed-system separation
         run: |
-          set -Eeuo pipefail
-          lab=scripts/lab/apply-gnome-virtualbox.sh
-          doctor=diagnostics/virtualbox-gnome-lab-doctor
-          test -x "$lab"
-          test -x "$doctor"
-          grep -Fq 'runtime_is_virtualbox' lib/common.sh
-          grep -Fq '== oracle' lib/common.sh
-          grep -Fq "grep -Eqi 'VirtualBox|Oracle|innotek'" lib/common.sh
-          grep -Fq 'runtime_is_virtualbox' "$lab"
-          grep -Fq 'fedora_shell_matches' "$lab"
-          grep -Fq 'fedora_require_install_target' "$lab"
-          grep -Fq 'Wayland is required for GATE 2' "$lab"
-          grep -Fq 'modules/gnome/24b_resource_monitor.sh' "$lab"
-          grep -Fq 'gnome_telemetry_apply' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'orchestrator_run_all' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'apply_gate_open' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'modules/system/' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'modules/hardware/' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'modules/virtualization/' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'modules/backup/' "$lab"
-          bash scripts/ci/assert-absent.sh grep -Fq 'run_mutating' "$doctor"
-          grep -Fq 'Production APPLY guard' "$doctor"
-          grep -Fq 'Bare-metal baseline guard' "$doctor"
+          bash tests/test_apply_gate_behavior.sh
+          bash tests/test_live_preflight_probe.sh
+          python3 tests/test_live_validation_behavior.py
+          bash tests/test_validation_gate_proof_behavior.sh
       - name: Fedora GNOME architecture invariants
         run: |
           grep -F 'REQUIRE_WAYLAND="true"' config/workstation.conf

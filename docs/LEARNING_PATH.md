@@ -25,7 +25,7 @@ En regardant le [schéma d'architecture](ARCHITECTURE_PEDAGOGIQUE.md), identifie
 2. **Où vont les données ?** Le système vit sur le T705 Btrfs ; `/data` est un second T705 EXT4 persistant ; Borg protège les données sélectionnées sur un SSD externe.
 3. **À partir de quand peut-on dire « c'est validé » ?** Une CI verte prouve les contrats logiciels. Une preuve Gate 3, sur le véritable PC et pour le commit/configuration courants, est nécessaire pour la certification Golden.
 
-**Question bonus :** pourquoi le dépôt décrit-il Fedora 45 alors que l'objectif est Fedora 45 ? Parce que `profiles/fedora45/profile.json` est encore `pending` : la promotion d'une release est une opération contrôlée, non une modification cosmétique.
+**Question bonus :** pourquoi la cible Fedora 45 n’autorise-t-elle pas encore l’APPLY ? Parce que `profiles/fedora45/profile.json` est encore `pending` : la promotion d'une release est une opération contrôlée, non une modification cosmétique.
 
 
 
@@ -50,7 +50,7 @@ Lire dans cet ordre :
 - le rôle du Linux amont stable N / N-1 ;
 - pourquoi Gaming et KVM sont des workloads contrôlés ;
 - la différence entre `CODE-READY` et `Golden runtime-certified` ;
-- pourquoi Gate 1 et Gate 2 ne constituent jamais une certification physique.
+- pourquoi un relevé Live avant installation ne certifie pas le système personnalisé installé.
 
 Si un de ces points reste flou, ne passez pas encore à l'installation bare-metal.
 
@@ -122,6 +122,10 @@ Le chemin mental est :
 ```text
 média vérifié
     ↓
+Live USB : essais natifs + compte rendu exporté hors de la session
+    ↓
+installation graphique Fedora sur SSD + import du compte rendu
+    ↓
 stockage préparé
     ↓
 baseline hardware
@@ -132,7 +136,9 @@ backup pré-APPLY vérifié
     ↓
 APPLY bare-metal
     ↓
-reboot + diagnostics
+reboot + diagnostics hôte
+    ↓
+Rocky créé et qualifié
     ↓
 Gate 3 physique
     ↓

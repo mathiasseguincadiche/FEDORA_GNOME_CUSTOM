@@ -2,7 +2,7 @@
 
 ## Statut
 
-Accepté.
+Remplacé par [ADR 0019 — Validation native Live USB](0019-native-live-usb-validation.md). Le contenu ci-dessous conserve la décision historique ; il ne décrit plus le parcours opérateur courant.
 
 ## Contexte
 

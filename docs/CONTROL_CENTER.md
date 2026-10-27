@@ -31,7 +31,7 @@ flowchart LR
 | Préparer une installation | `./control.sh install dry-run` | plan non mutant |
 | Installer réellement | `./control.sh install apply` | **mutation protégée, bare-metal uniquement** |
 
-La cible Fedora 45 / GNOME 51 ne devient pas active via le menu : elle attend la promotion de son profil `pending`. Le [schéma d'architecture expliqué](ARCHITECTURE_PEDAGOGIQUE.md) détaille les relations entre commandes et moteurs.
+Fedora 45 / GNOME 51 est la cible sélectionnée ; l’APPLY attend la promotion de son profil `pending`. Le [schéma d'architecture expliqué](ARCHITECTURE_PEDAGOGIQUE.md) détaille les relations entre commandes et moteurs.
 
 ## Tableau de bord
 
@@ -56,61 +56,39 @@ Le dashboard affiche :
 
 Une certification dont le fingerprint runtime, la configuration effective ou le plan de modules ne correspond plus est affichée `STALE`. Le certificat doit également contenir le contrat performance Golden.
 
-## Validation en trois gates
+## Validation Live USB puis système installé
+
+La CI vérifie le logiciel. Les essais opérateur utilisent directement le PC :
 
 ```text
-Gate 1 — Fedora 45 / WSL2
-  système + logique, hardware DEFERRED
+Live USB Fedora 45 / GNOME 51 : observations avant installation
+        ↓ export du compte rendu hors du HOME temporaire
+Installation Fedora sur SSD et import au même commit
         ↓
-Gate 2 — Fedora 45 GNOME / VirtualBox
-  GNOME + UX, hardware DEFERRED
+Configuration finale → baseline → dry-run → backup vérifié → APPLY
         ↓
-Installation Fedora 45 bare-metal
+Redémarrage, diagnostics hôte puis création/qualification Rocky
         ↓
-Gate 3 — vraie workstation
-  hardware + runtime + Performance + KVM + Gaming + backup
-        ↓
-final-certification PASS
+Gate 3 : matériel + bureau + Performance + KVM + Gaming + backup
 ```
 
-Statut :
+Depuis le Live :
 
 ```bash
+./control.sh validate live plan
+./control.sh validate live run
+./control.sh validate export live /chemin/support-externe-inscriptible
+```
+
+Après installation et redémarrage sur SSD :
+
+```bash
+./control.sh validate import /chemin/live-<commit>.json
 ./control.sh validate status
-```
-
-Gate 1 :
-
-```bash
-./control.sh validate gate1 run
-./control.sh validate gate1 status
-./control.sh validate export 1 /chemin/export
-```
-
-Gate 2, après import de Gate 1 :
-
-```bash
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate gate2 plan
-./control.sh validate gate2 apply
-./control.sh validate gate2 check
-./control.sh validate gate2 sign
-./control.sh validate export 2 /chemin/export
-```
-
-Gate 3, après installation bare-metal et import des preuves :
-
-```bash
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate import /chemin/gate2-<commit>.json
 ./control.sh validate gate3 status
-./control.sh validate gate3 record-suspend
-./control.sh validate gate3 certify
 ```
 
-Seul Gate 3 peut produire `final-certification PASS` et `golden-release.json`.
-
-Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md).
+La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](THREE_GATE_VALIDATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d’[installation](INSTALLATION_GUIDE.md).
 
 ## Installation
 
@@ -262,31 +240,6 @@ CLI :
 
 `CHECKSUM` et `CHECKSUM.asc` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.
 
-### Création Windows 11
-
-Dans le menu interactif, **KVM → Créer Windows 11** demande :
-
-- ISO Windows ;
-- ISO VirtIO ;
-- SHA-256 Windows de confiance ;
-- SHA-256 VirtIO de confiance.
-
-Les quatre entrées sont obligatoires.
-
-CLI :
-
-```bash
-./control.sh kvm create-windows \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso \
-  --windows-sha256 '<sha256-windows-de-confiance>' \
-  --virtio-sha256 '<sha256-virtio-de-confiance>'
-```
-
-`control.sh` transmet ces arguments au moteur durci `scripts/kvm/create_windows11_vm.sh`. Les hashes sont vérifiés avant `qemu-img create`.
-
-Voir [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) et [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md).
-
 ## Backup / restauration
 
 ```bash
@@ -312,7 +265,7 @@ Les restaurations passent par une zone de staging à inspecter avant récupérat
 ./control.sh cert baseline-certify
 ```
 
-La certification finale exige la chaîne Gate 1 → Gate 2, les preuves physiques, cinq cycles veille/réveil, hardware/display, `/data`, Gaming, backup et KVM selon le profil canonique.
+La certification finale exige la preuve Live courante importée, les preuves physiques, cinq cycles veille/réveil, hardware/display, `/data`, Gaming, backup et KVM selon le profil canonique.
 
 ### Archive Golden longue durée
 
@@ -320,10 +273,8 @@ Après certification réelle :
 
 ```bash
 ./control.sh cert archive /mnt/archive/golden-2026 \
-  /chemin/Fedora-Workstation-Live-44.iso \
-  /chemin/offline-rpm-flatpak-cache \
-  /chemin/Windows11.iso \
-  /chemin/virtio-win.iso
+  /chemin/Fedora-Workstation-Live-45.iso \
+  /chemin/offline-rpm-flatpak-cache
 ```
 
 Le moteur exige un certificat PASS courant et scelle les payloads fournis par l'opérateur. Il ne télécharge aucun média externe automatiquement.

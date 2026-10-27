@@ -48,15 +48,14 @@ Le diagnostic ne modifie ni les pilotes, ni l'ouverture du pare-feu, ni le compt
 
 ## Avant les charges
 
-1. Conserver le même commit Git propre et le même plan de modules pour les trois gates.
-2. Exécuter Gate 1 sous Fedora/WSL2, puis Gate 2 sous VirtualBox avec sa validation visuelle et exporter les preuves.
-3. Sur le Fedora physique cible, importer ces deux preuves dans l'ordre et lire l'état :
+1. Conserver le même commit Git propre et le même plan de modules depuis le Live jusqu’au système installé.
+2. Exécuter les essais Live USB sur le PC et exporter le compte rendu vers un support externe avant de redémarrer.
+3. Sur Fedora installé sur le SSD, importer cette preuve native et lire l’état :
 
 ~~~bash
 git rev-parse HEAD
 git status --short
-./control.sh validate import /chemin/gate1-<commit>.json
-./control.sh validate import /chemin/gate2-<commit>.json
+./control.sh validate import /chemin/live-<commit>.json
 ./control.sh validate gate3 status
 ~~~
 
@@ -112,7 +111,7 @@ scripts/kvm/runtime_certification.sh
 
 Le test Vulkan impose au moins quinze minutes et une à huit instances (deux par défaut). Fermer les fenêtres prématurément, réduire la durée ou fournir zéro instance fait échouer la qualification. Les workers CPU/RAM/GPU sont arrêtés avec leur groupe de processus lorsqu'un essai échoue ou est interrompu.
 
-Le LAN et le Wi-Fi doivent être connectés lors de leurs essais respectifs. L'audio demande une écoute réelle et une capture microphone ; l'affichage demande un contrôle actif HDR/VRR sur l'EDID cible. La certification KVM attend les invités Rocky Linux 10.2 **et Windows**, leur intégration et le guard réseau.
+Le LAN et le Wi-Fi doivent être connectés lors de leurs essais respectifs. L'audio demande une écoute réelle et une capture microphone ; l'affichage demande un contrôle actif HDR/VRR sur l'EDID cible. Après les premiers diagnostics hôte, créer Rocky selon [le guide KVM](KVM_QUICKSTART.md). La certification KVM complète attend cet invité Rocky Linux 10.2, son intégration et le guard réseau.
 
 Faire ensuite cinq cycles physiques distincts veille/réveil et les enregistrer selon le guide :
 
@@ -143,7 +142,7 @@ Conserver une sauvegarde Borg du HOST et des données utilisateur, puis exercer 
 | Affichage / audio | EDID, mode, essais actifs et confirmations humaines | PENDING |
 | LAN / Wi-Fi / Bluetooth | Identité, lien, DNS/HTTPS et périphériques réels | PENDING |
 | Veille | Cinq cycles physiques actuels | PENDING |
-| KVM / sauvegarde | Rocky, Windows, isolation et restauration à froid | PENDING |
+| KVM / sauvegarde | Rocky, isolation et restauration à froid ; Borg HOST/données distinct des exports VM manuels | PENDING |
 
 Les preuves CPU/RAM/GPU utilisent qualification_policy=2 et enregistrent durée demandée et durée écoulée. Les anciens markers ne comportant pas ces mesures sont refusés : rejouer les essais concernés, sans éditer les markers. Une nouvelle tentative valide invalide d'abord la preuve concernée et la certification courante ; un échec ne peut donc laisser un ancien PASS actif. Les bundles Golden archivés restent conservés.
 

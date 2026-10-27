@@ -8,7 +8,6 @@ source "$REPO_ROOT/config/vm-profiles.conf"
 
 uri="${LIBVIRT_URI:-qemu:///system}"
 rocky="${ROCKY_SERVER_NAME:-rocky-devops}"
-windows="${WINDOWS11_NAME:-windows-11}"
 network="${KVM_NETWORK_NAME:-devops-nat}"
 username="${ROCKY_SERVER_USERNAME:-mathias}"
 guard_unit="fedora-gnome-custom-kvm-guard.service"
@@ -47,29 +46,20 @@ remote_ping() {
   printf '%s\n' "$target" | ssh "${ssh_base[@]}" "${username}@${rocky_ip}" 'read -r target; ping -c 1 -W 2 "$target" >/dev/null'
 }
 
-for dom in "$rocky" "$windows"; do
-  if vsh dominfo "$dom" >/dev/null 2>&1; then record OK "domain $dom" present; else record KO "domain $dom" missing; fi
-done
+if vsh dominfo "$rocky" >/dev/null 2>&1; then record OK "domain $rocky" present; else record KO "domain $rocky" missing; fi
 ((ko == 0)) || exit 1
 
 if "$REPO_ROOT/diagnostics/kvm-domain-doctor" --quiet --require-guests; then
-  record OK 'Golden guest XML contract' 'both guests match exact q35/CPU/storage/network/security policy'
+  record OK 'Golden guest XML contract' 'Rocky matches exact q35/CPU/storage/network/security policy'
 else
   record KO 'Golden guest XML contract' 'libvirt capabilities or domain XML differs from policy'
 fi
 ((ko == 0)) || exit 1
 
-for dom in "$rocky" "$windows"; do
-  if domain_xml_has "$dom" 'org.qemu.guest_agent.0'; then record OK "$dom QGA channel" present; else record KO "$dom QGA channel" missing; fi
-  if domain_xml_has "$dom" '<rng'; then record OK "$dom VirtIO RNG" present; else record KO "$dom VirtIO RNG" missing; fi
-  if domain_xml_has "$dom" '<memballoon[^>]+model=.virtio.'; then record OK "$dom balloon" virtio; else record KO "$dom balloon" missing; fi
-  if agent_ping "$dom"; then record OK "$dom guest agent" responding; else record KO "$dom guest agent" 'guest-ping failed'; fi
-done
-
-if domain_xml_has "$windows" 'secure-boot' && domain_xml_has "$windows" '<tpm'; then record OK 'Windows security devices' 'Secure Boot + TPM present'; else record KO 'Windows security devices' missing; fi
-if domain_xml_has "$windows" 'com.redhat.spice.0'; then record OK 'Windows SPICE channel' present; else record KO 'Windows SPICE channel' missing; fi
-if domain_xml_has "$windows" "network=.${network}.|source network=.${network}." && domain_xml_has "$windows" "model type=.virtio."; then record OK 'Windows VirtIO network' configured; else record KO 'Windows VirtIO network' mismatch; fi
-if domain_xml_has "$windows" "target[^>]+bus=.virtio."; then record OK 'Windows VirtIO disk' configured; else record KO 'Windows VirtIO disk' mismatch; fi
+if domain_xml_has "$rocky" 'org.qemu.guest_agent.0'; then record OK "$rocky QGA channel" present; else record KO "$rocky QGA channel" missing; fi
+if domain_xml_has "$rocky" '<rng'; then record OK "$rocky VirtIO RNG" present; else record KO "$rocky VirtIO RNG" missing; fi
+if domain_xml_has "$rocky" '<memballoon[^>]+model=.virtio.'; then record OK "$rocky balloon" virtio; else record KO "$rocky balloon" missing; fi
+if agent_ping "$rocky"; then record OK "$rocky guest agent" responding; else record KO "$rocky guest agent" 'guest-ping failed'; fi
 
 if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
   if sudo systemctl is-active --quiet "$guard_unit"; then
@@ -124,9 +114,7 @@ if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
 fi
 
 rocky_ip="$(domain_ip "$rocky")"
-windows_ip="$(domain_ip "$windows")"
 if [[ -n "$rocky_ip" ]]; then record OK 'Rocky IP' "$rocky_ip"; else record KO 'Rocky IP' unavailable; fi
-if [[ -n "$windows_ip" ]]; then record OK 'Windows IP' "$windows_ip"; else record WARN 'Windows IP' unavailable; fi
 
 physical_gateway="$(ip -4 route show default 2>/dev/null | awk 'NR==1 {for (i=1;i<=NF;i++) if ($i=="via") {print $(i+1); exit}}')"
 kvm_gateway="${KVM_GATEWAY:-192.168.50.254}"
@@ -158,7 +146,6 @@ else
 fi
 
 if "$REPO_ROOT/diagnostics/kvm-io-doctor" --quiet; then record OK 'T705 KVM I/O profile' benchmarked; else record WARN 'T705 KVM I/O profile' 'default profile in use'; fi
-record WARN 'Windows guest integration' 'inside Windows, Configure-GuestIntegration.ps1 must report healthy VirtIO devices and QEMU-GA'
 record WARN 'LAN/VPN → VM live proof' 'run an external-host/VPN test when certifying a new routed environment; host-side rules are already checked here'
 
 printf '\nRuntime certification summary: OK=%d WARN=%d KO=%d\n' "$ok" "$warn" "$ko"

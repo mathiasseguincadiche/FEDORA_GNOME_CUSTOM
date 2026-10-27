@@ -9,7 +9,7 @@ Ce runbook comble les derniers écarts entre un déploiement Fedora 45 correct e
 Cette fermeture rend les contrats suivants *fail-closed* (bloquants en cas de doute) sur la vraie machine :
 
 - `gaming-doctor` est obligatoire, car le Gaming fait partie du profil Golden canonique ;
-- la Gate 3 exige les deux invités KVM Golden (Rocky Linux et Windows 11) ainsi que la disponibilité actuelle de QGA Windows et son dernier contrôle d’installation enregistré ;
+- la Gate 3 exige Rocky DevOps et ses contrôles hôte/invité lorsque KVM est activé ; sa création vient après l’installation et les premiers diagnostics de l’hôte ;
 - la certification finale de la sauvegarde exige une archive Borg complète et récente, un dépôt joignable et un contrôle d'intégrité approfondi ;
 - le Ryzen 7 7700 passe un test de charge CPU prolongé dédié avant la certification de la baseline ;
 - la certification du refroidissement identifie trois canaux distincts et actifs : pompe de l'AIO, ventilateur CPU/radiateur, ventilateur système ;
@@ -71,29 +71,9 @@ Terminer ensuite les tests RAM/NVMe existants et certifier la baseline :
 
 Le certificat de baseline ne peut pas être créé sans le test de charge CPU, le verrou Bluetooth et le verrou des canaux de refroidissement.
 
-## 2. QGA Windows actuel et contrôle d’intégration enregistré
+## 2. Préparer Rocky après installation
 
-Dans l'invité Windows 11 final, attacher le média VirtIO de confiance et exécuter en administrateur :
-
-```powershell
-.\Configure-GuestIntegration.ps1
-```
-
-Le script refuse les périphériques VirtIO en mauvaise santé et exige explicitement un stockage, un réseau et un ballon VirtIO sains ainsi qu'un QEMU Guest Agent en fonctionnement. Il écrit :
-
-```text
-C:\ProgramData\FedoraGnomeCustom\guest-integration.json
-```
-
-L’hôte vérifie la disponibilité actuelle du QEMU Guest Agent et récupère le dernier contrôle d’installation enregistré, avec sa date. Ce fichier ne prouve pas la santé actuelle des pilotes : après une modification des pilotes, relancer le script d’intégration dans Windows. Toute nouvelle tentative invalide l’ancien fichier avant ses opérations. Aucun dossier partagé ni identifiant de l’invité n’est utilisé.
-
-Vérification côté hôte :
-
-```bash
-./diagnostics/windows-guest-doctor
-```
-
-La Gate 3 exige aussi `kvm-domain-doctor --require-guests` : l'absence du domaine Rocky Linux (`rocky-devops`) ou Windows est bloquante.
+Aucune VM n’est nécessaire pour les essais Live ou pour installer Fedora. Après APPLY, redémarrer et vérifier les diagnostics de l’hôte, puis suivre [le démarrage KVM](KVM_QUICKSTART.md). La Gate 3 complète avec KVM activé exige ensuite `rocky-devops`, son XML réel, son runtime et l’accès SFTP. Le profil Windows 11 a été retiré du projet.
 
 ## 3. Preuve Borg complète avant la Gate 3 finale
 
@@ -108,7 +88,7 @@ Créer une sauvegarde complète récente depuis le même commit Git que celui qu
 
 ## 4. Preuves physiques d'exécution
 
-Importer d'abord les preuves Gate 1 et Gate 2 courantes, puis exécuter ce qui suit une fois les applications finales et les invités KVM en place.
+Importer d’abord la preuve Live native courante, puis exécuter ce qui suit sur le système installé une fois les applications finales et Rocky en place.
 
 ### Test de charge Vulkan de l'Arc B580
 
@@ -169,13 +149,13 @@ Un PASS exige ces cinq marqueurs courants : `gpu-soak`, `network-lan`, `network-
 
 ## 5. Certification finale de l'exécution KVM
 
-Démarrer les deux invités Golden et vérifier que le marqueur Windows existe, puis exécuter :
+Démarrer Rocky DevOps après les diagnostics de l’hôte installé, puis exécuter :
 
 ```bash
 ./scripts/kvm/runtime_certification.sh
 ```
 
-La certification publique conserve les tests existants de l'hôte, de Rocky Linux, du XML et du réseau fail-closed, et vérifie la disponibilité actuelle du QGA Windows ainsi que le dernier contrôle d’installation enregistré. La santé actuelle des pilotes doit être recontrôlée dans l’invité après leur modification.
+La certification publique vérifie l’hôte, Rocky Linux, son XML et l’isolation du réseau fail-closed. L’invité doit réellement démarrer et répondre aux contrôles de son profil.
 
 ## 6. Cinq cycles physiques de veille/réveil
 
@@ -199,9 +179,8 @@ Un PASS final exige désormais, en plus des contrats existants :
 - une certification Borg stricte ;
 - les cinq preuves physiques d'exécution ;
 - le Gaming activé et `gaming-doctor` en PASS sur la pile Arc B580/Wayland/240 Hz ;
-- les deux domaines KVM ;
-- la disponibilité actuelle de QGA Windows et son dernier contrôle d’installation enregistré ;
+- le domaine Rocky DevOps et sa certification KVM lorsque KVM est activé ;
 - l'activation complète des applications gérées ;
 - les cinq cycles de veille/réveil existants et la preuve de démarrage à froid de Nautilus.
 
-Seule cette commande physique peut créer le marqueur Golden final. La CI, WSL2 et VirtualBox ne peuvent toujours pas certifier le matériel de la workstation.
+Seule cette commande physique peut créer le marqueur Golden final. La CI ne certifie pas le matériel de la workstation ; le Live reste un relevé avant installation.

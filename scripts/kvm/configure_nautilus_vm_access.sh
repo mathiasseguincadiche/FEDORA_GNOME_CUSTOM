@@ -14,11 +14,8 @@ warn() { printf 'WARN: %s\n' "$*" >&2; }
 uri="${LIBVIRT_URI:-qemu:///system}"
 network="${KVM_NETWORK_NAME:-devops-nat}"
 rocky="${ROCKY_SERVER_NAME:-rocky-devops}"
-windows="${WINDOWS11_NAME:-windows-11}"
 rocky_user="${ROCKY_SERVER_USERNAME:-mathias}"
 rocky_label="${ROCKY_SERVER_NAUTILUS_LABEL:-Rocky DevOps}"
-windows_label="${WINDOWS11_NAUTILUS_LABEL:-Windows VM}"
-windows_share="${WINDOWS11_SMB_SHARE_NAME:-VM-Share}"
 config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
 bookmark_file="${config_home}/gtk-3.0/bookmarks"
 
@@ -71,9 +68,8 @@ remove_bookmark_label() {
 }
 
 install_bookmarks() {
-  local rocky_ip windows_ip
+  local rocky_ip
   rocky_ip="$(domain_ip "$rocky")"
-  windows_ip="$(domain_ip "$windows")"
 
   if [[ -n "$rocky_ip" ]]; then
     upsert_bookmark "sftp://${rocky_user}@${rocky_ip}/home/${rocky_user}" "$rocky_label"
@@ -81,25 +77,15 @@ install_bookmarks() {
     warn "$rocky has no discoverable IP yet; start it and rerun this helper"
   fi
 
-  if [[ -n "$windows_ip" ]]; then
-    upsert_bookmark "smb://${windows_ip}/${windows_share}" "$windows_label"
-  else
-    warn "$windows has no discoverable IP yet; finish Windows networking and rerun this helper"
-  fi
-
   printf 'Nautilus bookmarks file: %s\n' "$bookmark_file"
 }
 
-open_guest() {
-  local dom="$1" scheme="$2" ip target
+open_rocky() {
+  local ip target
   command -v gio >/dev/null 2>&1 || fail 'gio is unavailable'
-  ip="$(domain_ip "$dom")"
-  [[ -n "$ip" ]] || fail "no IP found for $dom"
-  case "$scheme" in
-    sftp) target="sftp://${rocky_user}@${ip}/home/${rocky_user}" ;;
-    smb) target="smb://${ip}/${windows_share}" ;;
-    *) fail "unsupported scheme: $scheme" ;;
-  esac
+  ip="$(domain_ip "$rocky")"
+  [[ -n "$ip" ]] || fail "no IP found for $rocky"
+  target="sftp://${rocky_user}@${ip}/home/${rocky_user}"
   printf 'Opening %s\n' "$target"
   gio open "$target" >/dev/null 2>&1 &
 }
@@ -108,15 +94,13 @@ case "${1:-install}" in
   install|refresh) install_bookmarks ;;
   remove)
     remove_bookmark_label "$rocky_label"
-    remove_bookmark_label "$windows_label"
     printf 'Removed managed VM bookmarks from %s\n' "$bookmark_file"
     ;;
   show)
     if [[ -f "$bookmark_file" ]]; then
-      grep -E " (${rocky_label}|${windows_label})$" "$bookmark_file" || true
+      grep -E " ${rocky_label}$" "$bookmark_file" || true
     fi
     ;;
-  open-rocky) open_guest "$rocky" sftp ;;
-  open-windows) open_guest "$windows" smb ;;
-  *) fail 'usage: configure_nautilus_vm_access.sh [install|refresh|remove|show|open-rocky|open-windows]' ;;
+  open-rocky) open_rocky ;;
+  *) fail 'usage: configure_nautilus_vm_access.sh [install|refresh|remove|show|open-rocky]' ;;
 esac

@@ -18,7 +18,6 @@ Fedora 45 HOST
 │
 ├── KVM / QEMU / libvirt : qemu:///system
 │   ├── domaine rocky-devops
-│   ├── domaine windows-11
 │   ├── pool devops-data → /data/libvirt/images
 │   └── réseau devops-nat → virbr50 → 192.168.50.0/24
 │
@@ -27,6 +26,7 @@ Fedora 45 HOST
 │   ├── Projets/
 │   ├── ISO/
 │   ├── Jeux/
+│   ├── IA/Openclaw/
 │   └── libvirt/
 │       ├── images/
 │       ├── iso/
@@ -57,12 +57,12 @@ La connexion de référence est `qemu:///system`. Le projet privilégie les daem
 
 ```text
 Fedora HOST → Intel Arc B580 / xe
-VM          → périphérique vidéo virtuel
+Rocky VM    → console série / SSH
 ```
 
 Aucun VFIO/passthrough automatique n'est autorisé. Le contrat graphique HOST 2560×1440/~240 Hz reste prioritaire.
 
-Windows utilise `SPICE + virtio video` pour sa console. Ce n'est pas l'équivalent d'un GPU physique attribué au guest.
+Rocky Linux est administré par console série et SSH. Son profil reste sans affichage graphique requis et n’utilise pas la B580.
 
 ## Second T705 et séparation SELinux
 
@@ -75,6 +75,7 @@ Les racines utilisateur :
 /data/Projets
 /data/ISO
 /data/Jeux
+/data/IA/Openclaw
 ```
 
 sont privées (`0750`), appartiennent à l'utilisateur workstation et suivent la politique SELinux `user_home_t`.
@@ -168,43 +169,11 @@ Le mot de passe demandé est réservé à la console et à `sudo`; SSH reste key
 
 Voir [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md) et [`ROCKY_DEVOPS_PROVISIONING.md`](ROCKY_DEVOPS_PROVISIONING.md).
 
-## Profil `windows-11`
-
-```text
-OS                 Windows 11
-vCPU               4
-RAM                12 Gio
-disque             128 Gio qcow2
-machine            Q35
-CPU                host-passthrough
-firmware           UEFI Secure Boot
-TPM                2.0 / swtpm
-disque/réseau      VirtIO
-QEMU Guest Agent   oui
-VirtIO RNG         oui
-balloon            oui
-graphique          SPICE + virtio video
-autostart          non
-```
-
-Windows et VirtIO sont fournis par l'opérateur depuis leurs sources de confiance. **Les deux SHA-256 de confiance sont obligatoires** : le script refuse de créer le disque si l'un manque.
-
-```bash
-bash scripts/kvm/create_windows11_vm.sh \
-  --windows-iso /data/libvirt/iso/windows-11.iso \
-  --virtio-iso /data/libvirt/iso/virtio-win.iso \
-  --windows-sha256 '<sha256-windows-de-confiance>' \
-  --virtio-sha256 '<sha256-virtio-de-confiance>'
-```
-
-Les hashes sont vérifiés avant `qemu-img create`. Le script génère aussi `windows-guest-tools.iso` avec `Configure-GuestIntegration.ps1` et `Configure-VMShare.ps1`.
-
 ## Accès fichiers
 
 ```text
 Fedora / Nautilus
-├── SFTP/SSH → rocky-devops → /home/mathias
-└── SMB      → windows-11   → C:\VM-Share
+└── SFTP/SSH → rocky-devops → /home/mathias
 ```
 
 Aucun partage HOST VirtioFS automatique n'appartient au profil Golden.
@@ -221,27 +190,21 @@ Avant création :
 ./diagnostics/kvm-io-doctor benchmark
 ```
 
-Après installation des deux VM :
+Après installation et démarrage de Rocky Linux :
 
 ```bash
 bash scripts/kvm/runtime_certification.sh
 ```
 
-La certification vérifie notamment domaines, QEMU Guest Agent, contrat XML VirtIO RNG/balloon et Secure Boot+TPM Windows, réseau/disque VirtIO, guard KVM, IP guests, SSH Rocky Linux, stack DevOps, DNS/HTTPS et isolement LAN. Pour Windows, le doctor vérifie QGA maintenant et lit le dernier contrôle d’installation enregistré, avec sa date ; il ne réinterroge pas les périphériques PnP. Relancer le script d’intégration dans l’invité après une modification des pilotes.
+La qualification vérifie notamment le domaine Rocky, QEMU Guest Agent, le contrat XML VirtIO RNG/balloon, le réseau/disque VirtIO, le guard KVM, l’IP de l’invité, SSH, la stack DevOps, DNS/HTTPS et l’isolement LAN. Elle précède la certification Golden complète du poste installé.
 
 Une preuve live complète `LAN → VM` nécessite un deuxième appareil du LAN ; la procédure est documentée dans [`KVM_NETWORK.md`](KVM_NETWORK.md).
 
-## Backup des VM
+## Exports manuels des VM
 
-```text
-VM arrêtée
-   ↓
-qemu-img check
-   ↓
-qemu-img convert vers staging
-   ↓
-Borg
-```
+Le propriétaire choisit quand arrêter Rocky et exporter ensemble les fichiers nécessaires : disque autonome ou chaîne de backing complète, XML et NVRAM UEFI associés. Ces exports restent séparés de Borg. Aucun timer ou assistant de sauvegarde du projet ne copie la VM.
+
+Une reprise se vérifie sur une copie isolée avant de réutiliser les données ; voir le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md).
 
 `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` sont protégés automatiquement par Borg. `/data/ISO` et `/data/Jeux` restent hors backup automatique par défaut.
 

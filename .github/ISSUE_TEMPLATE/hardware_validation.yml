@@ -30,7 +30,7 @@ body:
         - Audio ALC4080
         - Suspend / resume
         - Gaming / Steam / Proton
-        - KVM / Rocky Linux 10.2 / Windows
+        - KVM / Rocky Linux 10.2
         - Firmware / BIOS
     validations:
       required: true

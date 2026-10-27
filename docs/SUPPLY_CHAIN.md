@@ -35,7 +35,7 @@ CHECKSUM.asc
 4. vérifie la signature GPG de `CHECKSUM` liée à la clé de production Rocky 10 (une sous-clé de signature valide est acceptée) ;
 5. exige une seule ligne associant le nom versionné au SHA-256 et compare le hash de l'image.
 
-`create_rocky_devops_vm.sh` appelle ce contrôle avant toute création de disque.
+`create_rocky_devops_vm.sh` exige `--cloud-image /chemin/image.qcow2` et appelle ce contrôle avant toute création de disque. Par défaut, `CHECKSUM` et `CHECKSUM.asc` doivent accompagner l’image dans le même dossier ; `--sha256sums` et `--signature` permettent de préciser leurs chemins. L’authentification de l’image ne peut pas être désactivée.
 
 Le vrai prétest Rocky Linux CI utilise lui aussi une liste SHA-256 signée Rocky Linux.
 
@@ -47,27 +47,6 @@ Le vrai prétest Rocky Linux CI utilise lui aussi une liste SHA-256 signée Rock
 - yq `v4.53.3` et K9s `v0.51.0` ont des SHA-256 attendus versionnés ;
 - Helm v4.3.0 utilise l'archive officielle get.helm.sh et son SHA-256 publié ;
 - AWS CLI v2 est téléchargé sous forme de ZIP + signature détachée, puis la signature est vérifiée avec la clé AWS et l'empreinte attendue versionnée.
-
-## Médias Windows / VirtIO
-
-Le projet ne télécharge silencieusement ni Windows 11 ni `virtio-win.iso`.
-
-Ils restent sous la responsabilité explicite de l'opérateur :
-
-- ISO Windows depuis Microsoft ;
-- VirtIO-Win depuis une source Fedora/Red Hat de confiance ;
-- SHA-256 attendus obtenus indépendamment depuis des sources de confiance.
-
-`create_windows11_vm.sh` **exige** :
-
-```text
---windows-sha256 <hash-de-confiance>
---virtio-sha256 <hash-de-confiance>
-```
-
-Les deux valeurs sont obligatoires ensemble. Si l'une manque, la création est refusée. Les deux fichiers sont vérifiés **avant** `qemu-img create`.
-
-Important : calculer soi-même le SHA-256 d'un fichier déjà compromis puis fournir ce même hash ne prouve rien. Le digest attendu doit provenir d'une source de confiance indépendante.
 
 ## Applications du HOST
 
@@ -90,7 +69,7 @@ Les prétests package Fedora, intégration host et Rocky Linux VM sont rejoués 
 - release externe incompatible ;
 - rupture de bootstrap.
 
-La CI complète la provenance et la reproductibilité ; elle ne remplace pas la validation du matériel physique ni la responsabilité de l'opérateur sur les médias Windows fournis manuellement.
+La CI complète la provenance et la reproductibilité ; elle ne remplace pas la validation du matériel physique ni la responsabilité de l’opérateur sur les médias invités fournis manuellement.
 
 ## Accès distant (profil optionnel)
 

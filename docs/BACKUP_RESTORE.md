@@ -255,7 +255,7 @@ Pour un exercice réel, sélectionner un nom d'archive exact :
 `verify` relit toutes les données du dépôt (`borg check --verify-data`) ; Borg
 vérifie aussi chaque bloc contre son empreinte pendant l'extraction. Comparer ensuite les documents,
 permissions et liens attendus. Une restauration de fichiers réussie ne prouve
-pas le redémarrage de Fedora ou de Windows.
+pas le redémarrage de Fedora ou de Rocky.
 
 La reprise d'une VM repose **uniquement sur l'export manuel effectué par le propriétaire**.
 Ce document n'indique pas d'archive VM dans Borg et ne certifie aucune restauration VM.
@@ -323,7 +323,7 @@ remplissent jamais le disque, et les diagnostics signalent leur présence.
 Pour Gate 3, la certification Borg vérifie **le HOST et les données protégées**,
 ainsi que `include_vms=false`, `vm_count=0` et l'interdiction des overrides VM.
 Elle ne doit jamais demander un export de VM. Les exports personnels de
-Rocky Linux ou Windows restent totalement indépendants de cette Gate Borg.
+Rocky Linux reste totalement indépendants de cette Gate Borg.
 
 ## Configuration locale et sources Openclaw
 

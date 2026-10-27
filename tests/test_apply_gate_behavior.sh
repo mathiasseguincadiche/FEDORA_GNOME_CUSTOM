@@ -20,6 +20,7 @@ is_true() { [[ "${1,,}" == true ]]; }
 ui_error() { printf 'GATE-ERROR: %s\n' "$*"; }
 runtime_environment() { printf '%s\n' "${T_RUNTIME:-baremetal}"; }
 runtime_is_baremetal() { [[ "${T_RUNTIME:-baremetal}" == baremetal ]]; }
+runtime_is_live() { [[ "${T_LIVE:-false}" == true ]]; }
 repo_commit() { printf '%s\n' "${T_COMMIT:-1111111111111111111111111111111111111111}"; }
 effective_config_sha256() { printf '%s\n' "${T_CONFIG:-aaaa}"; }
 module_plan_sha256() { printf 'bbbb\n'; }
@@ -82,5 +83,7 @@ run_gate 'apply fedora 45 workstation'
 grep -Fq 'GATE-RC=50' <<<"$out" || fail "approximate confirmation accepted: $out"
 run_gate 'APPLY FEDORA 45 WORKSTATION'
 grep -Fq 'GATE-RC=0' <<<"$out" || fail "valid APPLY refused: $out"
+
+expect_block 'Live USB session' T_LIVE=true
 
 echo 'apply gate behavior: PASS'

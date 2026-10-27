@@ -3,7 +3,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 scope="${1:-full}"
-case "$scope" in gate2|full) ;; *) echo 'Usage: configure-default-apps.sh [gate2|full]' >&2; exit "$EXIT_USAGE";; esac
+case "$scope" in native|full) ;; *) echo 'Usage: configure-default-apps.sh [native|full]' >&2; exit "$EXIT_USAGE";; esac
 command -v xdg-mime >/dev/null 2>&1 || { ui_error 'xdg-mime is required'; exit "$EXIT_PRECHECK_FAILED"; }
 
 set_default(){ local desktop="$1"; shift; local mime

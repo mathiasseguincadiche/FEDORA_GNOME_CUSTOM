@@ -7,7 +7,7 @@ engine_bootstrap
 source "$REPO_ROOT/lib/validation_gates.sh"
 
 [[ $# -eq 2 ]] || { echo 'Usage: scripts/validation/export-proof.sh GATE DESTINATION_DIR' >&2; exit "$EXIT_USAGE"; }
-case "$1" in 1|2) ;; *) echo 'GATE must be 1 or 2' >&2; exit "$EXIT_USAGE" ;; esac
+case "$1" in 2) ;; *) echo 'Only the native Live proof (2) can be exported' >&2; exit "$EXIT_USAGE" ;; esac
 validation_require_clean_source || exit $?
 exported="$(validation_export_proof "$1" "$2")" || {
   ui_error "No current Gate $1 proof is available to export"

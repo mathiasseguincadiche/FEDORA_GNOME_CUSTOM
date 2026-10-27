@@ -70,4 +70,4 @@ Ces choix sont volontaires. Ils ne doivent pas être « corrigés » par une mai
 
 ## Où en est le projet
 
-Le statut **prêt côté code** exige une CI verte sur le commit exact, à vérifier dans les contrôles GitHub. La machine n'est pas encore certifiée : il reste la Gate 2 (VM GNOME, voir [`GATE2_GUIDE_PAS_A_PAS.md`](GATE2_GUIDE_PAS_A_PAS.md)), puis l'installation réelle et la Gate 3.
+Le statut **prêt côté code** exige une CI verte sur le commit exact, à vérifier dans les contrôles GitHub. La machine n'est pas encore certifiée : il reste les [essais Live USB](FEDORA45_LIVE_PREFLIGHT.md) sur le PC, l’installation réelle et la Gate 3 du système installé.

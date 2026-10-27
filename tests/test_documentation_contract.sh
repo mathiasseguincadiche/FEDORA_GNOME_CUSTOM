@@ -18,7 +18,7 @@ for file in \
   docs/KVM_NETWORK.md \
   docs/TROUBLESHOOTING.md \
   docs/VIRTUALIZATION.md \
-  docs/VIRTUALBOX_GNOME_LAB.md \
+  docs/FEDORA45_LIVE_PREFLIGHT.md \
   docs/EXECUTION_CONTRACT.md \
   docs/GNOME_INTEGRATION.md \
   docs/GNOME_PROFILE.md \
@@ -63,16 +63,19 @@ for token in \
   grep -Fq "$token" "$ROOT/docs/DOCUMENTATION_MODEL.md" || fail "documentation model missing pedagogy rule: $token"
 done
 
+# The installation guide explains the concrete native journey; its prose and
+# heading count are editorial choices, not executable behavior.
 for token in \
-  'Avant de commencer' \
-  'Préconditions' \
-  'Les cinq phases' \
-  "Règle d'arrêt" \
-  'Checkpoint :' \
-  'Résultat attendu :' \
-  'LEARNING_PATH.md' \
+  'Fedora 45' \
+  'GNOME 51' \
+  'FEDORA45_LIVE_PREFLIGHT.md' \
+  'prepare-tools' \
+  '--dry-run' \
+  '--apply' \
+  'Borg' \
+  'Gate 3' \
   'Golden runtime-certified'; do
-  grep -Fq "$token" "$ROOT/docs/INSTALLATION_GUIDE.md" || fail "installation guide missing operator guidance: $token"
+  grep -Fq -- "$token" "$ROOT/docs/INSTALLATION_GUIDE.md" || fail "installation guide missing operator guidance: $token"
 done
 
 # Control Center is the operator facade but must document the protected engines.
@@ -112,7 +115,7 @@ if grep -Fqi 'Desktop Icons ne sont pas imposés' "$ROOT/docs/GNOME_EXTENSIONS.m
   exit 1
 fi
 
-# Fedora 44 does not expose DING through the project RPM manifest. Stale active
+# The selected Fedora release does not expose DING through the project RPM manifest. Stale active
 # claims would make the operator procedure factually wrong.
 for file in README.md CHANGELOG.md docs/CI_VALIDATION.md docs/GNOME_INTEGRATION.md docs/GNOME_PROFILE.md docs/GNOME_EXTENSIONS.md; do
   if grep -Eqi 'DING.*(RPM Fedora|paquet Fedora|gnome-shell-extension-desktop-icons-ng)|RPM DING|paquet Fedora DING' "$ROOT/$file"; then
@@ -121,16 +124,23 @@ for file in README.md CHANGELOG.md docs/CI_VALIDATION.md docs/GNOME_INTEGRATION.
   fi
 done
 
-# GATE 2 must have a documented, isolated VirtualBox path while production
-# APPLY remains bare-metal only.
-grep -Fq 'VIRTUALBOX_GNOME_LAB.md' "$ROOT/docs/README.md"
-grep -Fq 'scripts/lab/apply-gnome-virtualbox.sh --apply' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
-grep -Fq 'install.sh --apply reste interdit' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
-grep -Fq 'Vitals' "$ROOT/docs/VIRTUALBOX_GNOME_LAB.md"
+# Native Live USB observations precede installation; they remain distinct from
+# the installed services/runtime qualification. Export/import is necessary
+# because a non-persistent Live HOME does not survive the reboot.
+grep -Fq 'FEDORA45_LIVE_PREFLIGHT.md' "$ROOT/docs/README.md"
+for route in 'validate live plan' 'validate live run' 'validate export live' 'validate import'; do
+  grep -Fq "$route" "$ROOT/docs/FEDORA45_LIVE_PREFLIGHT.md" || fail "Live guide missing route: $route"
+done
+for expected in PREINSTALL_ONLY NOT_TESTED '16' 'temporaire' 'même commit'; do
+  grep -Fq "$expected" "$ROOT/docs/FEDORA45_LIVE_PREFLIGHT.md" || fail "Live guide missing evidence boundary: $expected"
+done
 grep -Fq 'APPLY production' "$ROOT/docs/EXECUTION_CONTRACT.md"
-grep -Fq 'LAB GNOME VirtualBox' "$ROOT/docs/EXECUTION_CONTRACT.md"
-grep -Fq 'ne déverrouille jamais' "$ROOT/docs/README.md"
+grep -Fq 'Live' "$ROOT/docs/EXECUTION_CONTRACT.md"
 grep -Fq 'install.sh --apply' "$ROOT/docs/README.md"
+if grep -Eq 'VIRTUALBOX_GNOME_LAB.md|GATE2_GUIDE_PAS_A_PAS.md|WSL2_VALIDATION.md|validate gate[12]' \
+    "$ROOT/docs/README.md" "$ROOT/docs/INSTALLATION_GUIDE.md" "$ROOT/docs/FEDORA45_LIVE_PREFLIGHT.md"; then
+  fail 'entrypoint still prescribes the removed Windows/VirtualBox operator journey'
+fi
 
 # Professional catalog must reflect the real draw.io integration.
 grep -Fq 'com.jgraph.drawio.desktop' "$ROOT/docs/GTK4_APPLICATIONS.md"
@@ -170,7 +180,7 @@ for expected in \
   'devops-nat' \
   'guard_mode=emergency' \
   'cloud-init' \
-  'Windows' \
+  'SFTP' \
   'Backup / Restore'; do
   grep -Fq "$expected" "$ROOT/docs/TROUBLESHOOTING.md" || { echo "troubleshooting missing scope: $expected" >&2; exit 1; }
 done
@@ -187,7 +197,7 @@ for file in \
   docs/GNOME_PROFILE.md \
   docs/GNOME_EXTENSIONS.md \
   docs/RESOURCE_MONITOR.md \
-  docs/VIRTUALBOX_GNOME_LAB.md \
+  docs/FEDORA45_LIVE_PREFLIGHT.md \
   docs/DOCK_FAVORITES.md \
   docs/DESKTOP_LIFECYCLE.md \
   docs/ROCKY_DEVOPS_READY.md; do

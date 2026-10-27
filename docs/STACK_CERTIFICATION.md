@@ -38,26 +38,19 @@ Un débind, un remplacement par `vfio-pci`, un driver Wi-Fi différent ou un mod
 - cgroups v2 ;
 - accès direct `qemu:///system` par l'utilisateur, sans masquer une mauvaise session de groupes par un fallback sudo ;
 - daemons modulaires `virtqemud`, `virtnetworkd`, `virtstoraged` lorsque la pile installée les fournit ;
-- `domcapabilities` KVM x86_64 avec Q35, `host-passthrough`, EFI/OVMF et TPM CRB/emulator.
+- `domcapabilities` KVM x86_64 avec Q35, `host-passthrough` et EFI/OVMF.
 
 ### XML des invités
 
-Quand `rocky-devops` ou `windows-11` existe, son XML réel est validé. `runtime_certification.sh` utilise `--require-guests` et exige les deux invités.
+Quand `rocky-devops` existe, son XML réel est validé. La certification Golden avec KVM activé utilise `--require-guests` et exige cet invité, après installation et vérification de l’hôte.
 
 Contrat commun : Q35, CPU `host-passthrough`, RAM/vCPU exacts, qcow2 VirtIO sur `/data`, `cache=none`, `discard=unmap`, profil I/O mesuré, réseau `devops-nat` en VirtIO, QEMU Guest Agent, VirtIO RNG, balloon et aucun `hostdev`.
 
-Rocky Linux reste headless. Windows exige en plus Secure Boot, clés enrôlées, TPM 2.0 CRB emulator et SPICE.
+Rocky Linux reste headless ; aucun TPM émulé n’est obligatoire pour ce profil.
 
-### Médias Windows
+### Image Rocky
 
-La création de Windows refuse maintenant toute opération sans :
-
-```text
---windows-sha256 <digest de confiance>
---virtio-sha256  <digest de confiance>
-```
-
-Les deux digests sont contrôlés avant la création du qcow2. Ne pas utiliser comme « preuve » un SHA calculé uniquement après téléchargement depuis une source non authentifiée.
+Créer Rocky après les premiers diagnostics du système Fedora installé, selon [le guide KVM](KVM_QUICKSTART.md). Vérifier l'image avec le CHECKSUM signé et le keyring Rocky approuvé avant la création du disque. La provenance ne se résume pas à calculer un SHA après téléchargement.
 
 ### État I/O
 

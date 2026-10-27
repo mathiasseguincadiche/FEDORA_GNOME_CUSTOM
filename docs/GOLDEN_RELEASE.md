@@ -4,7 +4,7 @@
 
 Une workstation n'est considérée reproductible que si son état certifié peut être identifié précisément et relié à toute sa chaîne de validation.
 
-Le bundle Golden ne peut être généré qu'en **GATE 3 bare-metal**, après validation de la chaîne Gate 1 WSL2 → Gate 2 VirtualBox.
+Le bundle Golden ne peut être généré qu'en **GATE 3 bare-metal**, après import du compte rendu natif Live USB et qualification du système installé.
 
 Après la certification bare-metal, `scripts/release/capture-golden-release.sh` produit un bundle sous `state/releases/` contenant :
 
@@ -18,8 +18,7 @@ enabled-repositories.txt
 hardware-ids.txt
 fedora-media.lock
 performance-runtime.policy
-gate1-proof.json
-gate2-proof.json
+live-proof.json
 MANIFEST.sha256
 ```
 
@@ -34,31 +33,16 @@ Le verrou du média de la release active (`installer/fedora45-media.lock` après
 | **Golden Release Manifest** | photographier les versions, identités et preuves d'un système **déjà certifié** | une sauvegarde complète des documents |
 | **Borg sur SSD externe** | restaurer les jeux de données sélectionnés | un certificat du GPU ou de GNOME |
 
-Le futur manifeste Fedora 45 ne doit être produit **qu'après** promotion du média final, tests logiciels au nouveau SHA et Gate 3 sur le véritable PC. Les exemples Fedora 45 de ce guide décrivent la référence actuelle et restent valides tant que le profil Fedora 45 est `pending`.
+Le futur manifeste Fedora 45 ne doit être produit **qu'après** promotion du média final, tests logiciels au nouveau SHA et Gate 3 sur le véritable PC. Les exemples décrivent la cible sélectionnée ; ils ne permettent pas de générer un bundle avant la promotion et la qualification de la machine.
 
 Pour suivre le schéma de fonctionnement : [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md).
 
 
-## Chaîne de validation embarquée
+## Preuve Live embarquée
 
-`gate1-proof.json` provient de Fedora 45 sous WSL2 et porte explicitement :
+`live-proof.json` est la copie du JSON natif importé après installation. Il conserve le commit, le plan de modules, l’identité stable du PC et les résultats individuels des contrôles, avec `environment=live-usb` et `hardware_certification=PREINSTALL_ONLY`.
 
-```text
-hardware_certification=DEFERRED
-manual_visual=N/A
-```
-
-`gate2-proof.json` provient de Fedora 45 GNOME sous VirtualBox et porte :
-
-```text
-hardware_certification=DEFERRED
-manual_visual=PASS
-predecessor_sha256=<SHA-256 exact de gate1-proof.json>
-```
-
-La capture Golden vérifie la chaîne avant de créer le bundle. Les deux preuves sont ensuite copiées dans le release et incluses dans `MANIFEST.sha256`.
-
-Une preuve WSL2 ou VirtualBox ne devient donc jamais une preuve matérielle : elle reste une prévalidation traçable dans le dossier de la certification physique.
+La capture vérifie cette preuve avant de créer le bundle ; elle la copie et l’inclut dans `MANIFEST.sha256`. La qualification du système installé est portée par les diagnostics et preuves Gate 3, liés à la configuration effective et au runtime final.
 
 ## Contenu du manifeste
 
@@ -69,8 +53,7 @@ Une preuve WSL2 ou VirtualBox ne devient donc jamais une preuve matérielle : el
 - hash du plan de modules ;
 - bloc `performance_runtime` avec `contract=PASS`, policy SHA-256 et politiques CPU/SCX/zram/NVMe ;
 - `validation_gates.chain=PASS` ;
-- SHA-256 de la preuve Gate 1 ;
-- SHA-256 de la preuve Gate 2 ;
+- SHA-256 de `live-proof.json` dans `validation_gates.live_proof_sha256` ;
 - fingerprint hardware et runtime ;
 - kernel courant ;
 - politique kernel `rolling-n-nminus1` ;
@@ -93,9 +76,8 @@ Le script refuse de produire une Golden release si l'une de ces conditions manqu
 
 ```text
 runtime = baremetal
-Gate 1 = PASS et actuel
-Gate 2 = PASS et actuel
-Gate 2 → Gate 1 SHA-256 = valide
+Live USB = preuve native actuelle, source et identités matérielles correspondantes
+système = Fedora installé, hors session Live
 baseline hardware = valide
 B580 PCIe/ReBAR = valide
 T705 SMART/PCIe = valide
@@ -117,14 +99,14 @@ Pour l'usage Golden personnel, la politique retenue est :
 
 ```text
 source versionnée
-  + Gate 1 système/logique
-  + Gate 2 desktop/visuel
+  + CI logicielle au commit exact
+  + relevé Live natif avant installation
   + média signé
   + inventaire exact
   + certification hardware/runtime bare-metal
 ```
 
-Toute modification du commit ou du module plan invalide les preuves Gate 1/2. Toute modification significative de la matrice bare-metal — notamment un nouveau kernel N — doit être validée puis capturée à nouveau.
+Toute modification du commit ou du module plan invalide la preuve Live. Toute modification significative de la matrice bare-metal — notamment un nouveau kernel N — doit être validée puis capturée à nouveau.
 
 ## Archive historique longue durée
 
@@ -132,10 +114,8 @@ Après une certification finale `PASS`, le projet fournit un helper opt-in :
 
 ```bash
 ./control.sh cert archive /mnt/archive/golden-2026 \
-  /chemin/Fedora-Workstation-Live-44.iso \
-  /chemin/offline-rpm-flatpak-cache \
-  /chemin/Windows11.iso \
-  /chemin/virtio-win.iso
+  /chemin/Fedora-Workstation-Live-45.iso \
+  /chemin/offline-rpm-flatpak-cache
 ```
 
 `scripts/release/seal-golden-archive.sh` :
@@ -148,10 +128,10 @@ Après une certification finale `PASS`, le projet fournit un helper opt-in :
 - écrit `ARCHIVE.txt` avec commit et configuration effective ;
 - génère puis vérifie un nouveau `MANIFEST.sha256` couvrant l'archive complète.
 
-Le helper **ne télécharge rien automatiquement**. Cette limite est volontaire : les médias Windows/VirtIO et les snapshots de dépôts/caches doivent provenir d'une source de confiance choisie par l'opérateur. Pour les RPM/Flatpak, on peut fournir un cache ou miroir offline préalablement constitué ; l'archive scellée conserve ensuite exactement ce qui lui a été remis.
+Le helper **ne télécharge rien automatiquement**. Cette limite est volontaire : les médias Fedora/Rocky et les snapshots de dépôts/caches doivent provenir d'une source de confiance choisie par l'opérateur. Pour les RPM/Flatpak, on peut fournir un cache ou miroir offline préalablement constitué ; l'archive scellée conserve ensuite exactement ce qui lui a été remis.
 
 L'archive doit être stockée hors machine ou sur un stockage dédié. Elle complète Borg et le bundle Golden ; elle ne remplace ni le backup courant ni la certification runtime.
 
 Voir [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) pour le protocole complet.
 
-Le manifeste conserve `fedora-media.lock` pour la release sélectionnée et promue ; il ne copie jamais le média Fedora 45 comme preuve d'une Fedora 45.
+Le manifeste conserve `fedora-media.lock` pour la release sélectionnée et promue ; il ne copie jamais le média d’une autre release pour en attester la provenance.

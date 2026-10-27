@@ -32,7 +32,7 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 - Les outils de baseline sont préparés explicitement avant l’enrôlement, et inclus dans Kickstart ; le socle système fournit `semanage` avant `/data`.
 - Une mise à jour complète sans transaction RPM exécute Flatpak et ses postchecks sans demander de redémarrage.
 - Un LAN utilisant le même CIDR que KVM est distingué de son bridge et détecté comme conflit.
-- Windows distingue QGA actuel et dernier contrôle d’installation enregistré ; toute nouvelle tentative invalide le précédent marqueur.
+- Le profil VM Windows a été retiré ; Rocky reste le seul invité géré et qualifié après l’installation Fedora.
 - Le pré-APPLY applique l’exclusion `secrets` des sauvegardes daily/full ; les métadonnées libvirt restent hors Borg.
 - Les assertions CI d’absence propagent les échecs et erreurs de lecture ; les scénarios de régression vérifient les défauts observés.
 
@@ -52,7 +52,7 @@ Ces correctifs logiciels ne constituent ni une promotion du profil Fedora 45 ni 
 ## Parcours restant sur la machine
 
 1. Utiliser le [guide d'installation](INSTALLATION_GUIDE.md) et conserver le SHA
-   exact testé. Qualifier Gate 1 puis Gate 2 selon [la validation](THREE_GATE_VALIDATION.md).
+   exact testé. Effectuer les essais Live USB, exporter leur preuve puis l’importer sur le système installé selon [la validation](THREE_GATE_VALIDATION.md).
    Choisir le disque système par son numéro de série, vérifier le second T705
    et le support externe. Ne pas transformer les deux T705 en cibles interchangeables.
 2. Suivre la baseline, sauvegarder avant APPLY et exécuter le dry-run sur la même
@@ -77,7 +77,7 @@ machine Fedora ou d'un laboratoire isolé. Les rapports GitHub ne les remplacent
 
 | Exercice | Critère d'acceptation | Preuves à conserver |
 |---|---|---|
-| Installation GNOME neuve | Fedora 45 / GNOME 51 / Wayland démarre après APPLY et reboot ; second APPLY convergent | SHA, ISO vérifiée, rapports des trois gates, journaux |
+| Installation GNOME neuve | Fedora 45 / GNOME 51 / Wayland démarre après APPLY et reboot ; second APPLY convergent | SHA, ISO vérifiée, rapports Live et Gate 3, journaux |
 | Session GNOME réelle | Extensions ACTIVE, Nautilus/Ptyxis, changement d'écran et reprise sans perte de réglages | Diagnostics avant/après, observations de session |
 | Restauration fichiers isolée | Archive exacte et données identiques, modes/liens conservés | Nom/id/dépôt, vérification intégrale et comparaison |
 | Reprise Fedora isolée | Système reconstruit et données accessibles sans toucher aux disques originaux | SHA de récupération, étapes et journal de démarrage |
@@ -96,7 +96,7 @@ Wayland, un reboot, le moteur Borg, une restauration de VM à froid avec UEFI/TP
 logiciel et une reconstruction depuis une seconde image Cloud neuve. Son rapport
 est propre à chaque commit/run ; consulter son verdict et les journaux avant de
 conclure à un PASS. Il ne couvre pas l'APPLY de production, Anaconda/Kickstart,
-le démarrage Linux amont, Windows ni les trois gates officielles. Les exercices
+le démarrage Linux amont ni les essais Live et Gate 3 sur le PC réel. Les exercices
 opérateur du tableau restent requis sur la vraie configuration selon le
 [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md).
 

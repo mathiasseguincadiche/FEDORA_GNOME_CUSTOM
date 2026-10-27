@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl xorriso edk2-ovmf swtpm swtpm-tools swtpm-selinux guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
+for pkg in qemu-kvm qemu-img libvirt libvirt-client libvirt-client-qemu libvirt-nss libvirt-daemon-common libvirt-daemon-kvm libvirt-daemon-config-network virt-install virt-manager virt-viewer virt-top virt-v2v cloud-utils-cloud-localds openssl edk2-ovmf swtpm swtpm-tools swtpm-selinux guestfs-tools guestfs-tools-bash-completion osinfo-db osinfo-db-tools libosinfo openssh-clients iputils rsync nftables dnsmasq python3 policycoreutils-python-utils; do
   grep -Fxq "$pkg" "$ROOT/manifests/packages-virtualization.txt" || { echo "missing virtualization package: $pkg" >&2; exit 1; }
 done
 
@@ -50,12 +50,6 @@ for expected in \
   'ROCKY_SERVER_RAM_MB="16384"' \
   'ROCKY_SERVER_DISK_GB="160"' \
   'ROCKY_SERVER_USERNAME="mathias"' \
-  'WINDOWS11_VCPU="4"' \
-  'WINDOWS11_RAM_MB="12288"' \
-  'WINDOWS11_DISK_GB="128"' \
-  'WINDOWS11_FIRMWARE="uefi-secureboot"' \
-  'WINDOWS11_TPM_VERSION="2.0"' \
-  'WINDOWS11_SMB_SHARE_NAME="VM-Share"' \
   'VM_NAUTILUS_ACCESS_ENABLED="true"' \
   'VM_PROFILE_GPU_PASSTHROUGH_ALLOWED="false"'; do
   grep -Fq "$expected" "$ROOT/config/vm-profiles.conf" || { echo "missing final VM profile value: $expected" >&2; exit 1; }
@@ -73,10 +67,8 @@ fi
 for file in \
   guest/rocky-devops/bootstrap-devops.sh \
   guest/rocky-devops/verify-devops.sh \
-  guest/windows-11/configure-smb-share.ps1 \
   scripts/kvm/configure_nautilus_vm_access.sh \
   scripts/kvm/create_rocky_devops_vm.sh \
-  scripts/kvm/create_windows11_vm.sh \
   scripts/kvm/runtime_certification.sh \
   diagnostics/virtualization-doctor; do
   [[ -f "$ROOT/$file" ]] || { echo "missing runtime/provisioning file: $file" >&2; exit 1; }
@@ -99,4 +91,5 @@ if grep -RInE --exclude-dir=.git '(mkfs\.|wipefs|parted |sgdisk |chmod[[:space:]
   exit 1
 fi
 
+python3 -B "$ROOT/tests/test_rocky_kvm_runtime_behavior.py"
 echo 'virtualization contract: PASS'

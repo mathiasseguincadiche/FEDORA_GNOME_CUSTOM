@@ -13,7 +13,7 @@ GUEST OS CATALOG:
 - use Fedora osinfo-db/libosinfo metadata instead of a project-maintained stale OS database
 - validate osinfo-query and virt-install OS detection support
 - allow install media detection with require=off when a brand-new release is newer than packaged osinfo-db
-- keep Rocky Linux 10.2 and Windows 11 as explicit project guests; Fedora remains a workstation qualification target
+- keep Rocky Linux 10.2 as the explicit project guest; Fedora remains a workstation qualification target
 - never download installation media automatically from this module
 EOF
 }
@@ -30,5 +30,4 @@ kvm_catalog_postcheck() {
   [[ -n "$catalog" ]] || { log_error KVM 'libosinfo catalog is empty'; return "$EXIT_POSTCHECK_FAILED"; }
   grep -Eqi 'Fedora|fedora' <<<"$catalog" || log_warn KVM 'Fedora entry not matched in current osinfo-db'
   grep -Eqi 'Rocky|rocky' <<<"$catalog" || log_warn KVM 'Rocky entry not matched in current osinfo-db'
-  grep -Eqi 'Windows 11|win11' <<<"$catalog" || log_warn KVM 'Windows 11 entry not matched in current osinfo-db'
 }

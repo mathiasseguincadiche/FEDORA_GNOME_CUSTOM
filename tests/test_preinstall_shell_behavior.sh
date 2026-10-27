@@ -13,10 +13,12 @@ cp "$ROOT/scripts/config/validate-config.sh" "$tmp/fixture/scripts/config/"
 # bytes, and select Fedora 45 when creating a new overlay from the example.
 python3 - "$ROOT" "$tmp/fixture" <<'PYCONFIG'
 from pathlib import Path
-import os, subprocess, sys
+import os, re, subprocess, sys
 root, fixture = map(Path, sys.argv[1:])
-doc=(root/'docs/INSTALLATION_GUIDE.md').read_text().split('## 4. Configuration locale',1)[1]
-block=doc.split('```bash\n',1)[1].split('```',1)[0]
+doc=(root/'docs/INSTALLATION_GUIDE.md').read_text()
+blocks=[b for b in re.findall(r'```bash\n(.*?)```',doc,re.S) if 'test -e config/local.conf' in b and '$EDITOR config/local.conf' in b]
+assert len(blocks)==1, 'one canonical configuration block is required'
+block=blocks[0]
 local=fixture/'config/local.conf'
 original='HOST_RELEASE="45"\nREAL_MACHINE_APPROVED="false"\n'
 local.write_text(original)
@@ -52,21 +54,21 @@ done
 
 # Every public KVM helper executes the validated common loader before reading
 # settings. Execute their real preambles against the same local override.
-printf 'ROCKY_SERVER_NAME="local-rocky"\nWINDOWS11_NAME="local-windows"\n' > "$tmp/fixture/config/local.conf"
+printf 'ROCKY_SERVER_NAME="local-rocky"\n' > "$tmp/fixture/config/local.conf"
 python3 - "$ROOT" "$tmp" <<'PY'
 from pathlib import Path
 import sys
 root, tmp = map(Path, sys.argv[1:])
-for filename in ('create_rocky_devops_vm.sh', 'create_windows11_vm.sh', 'configure_nautilus_vm_access.sh'):
+for filename in ('create_rocky_devops_vm.sh', 'configure_nautilus_vm_access.sh'):
     code = (root / 'scripts/kvm' / filename).read_text()
     end = min(pos for key in ('\nusage()', '\nfail()') if (pos := code.find(key)) >= 0)
     preamble = code[:end]
     preamble = '\n'.join(line for line in preamble.splitlines() if not line.startswith('REPO_ROOT='))
-    (tmp / filename).write_text(preamble + '\n[[ "$ROCKY_SERVER_NAME" == local-rocky && "$WINDOWS11_NAME" == local-windows ]]\n')
+    (tmp / filename).write_text(preamble + '\n[[ "$ROCKY_SERVER_NAME" == local-rocky ]]\n')
 code = (root / 'diagnostics/final-certification').read_text()
 (tmp / 'suspend-count.sh').write_text(code[code.index('suspend_count(){'):code.index('latest_post_resume_log(){')] + code[code.index('record_suspend(){'):code.index('valid_coldstart(){')])
 PY
-for script in create_rocky_devops_vm.sh create_windows11_vm.sh configure_nautilus_vm_access.sh; do
+for script in create_rocky_devops_vm.sh configure_nautilus_vm_access.sh; do
   REPO_ROOT="$tmp/fixture" bash "$tmp/$script"
 done
 printf 'ROCKY_SERVER_NAME="$(touch /tmp/fgc-unexpected-execution)"\n' > "$tmp/fixture/config/local.conf"
@@ -107,11 +109,11 @@ validation_imported_proof_path() { echo "gate$1"; }
 validation_file_sha256() { echo "hash-$1"; }
 validation_require_chain() { [[ "${chain_valid:-true}" == true ]]; }
 marker() {
-  printf 'fingerprint=runtime-current\neffective_config_sha256=config-current\ngate1_proof_sha256=hash-gate1\ngate2_proof_sha256=hash-gate2\ndisplay_edid_sha256=edid-current\ndriver_contract=PASS\ncycle_id=%064d\n' "$2" > "$evidence_dir/suspend-$1.ok"
+  printf 'fingerprint=runtime-current\neffective_config_sha256=config-current\nlive_proof_sha256=hash-gate2\ndisplay_edid_sha256=edid-current\ndriver_contract=PASS\ncycle_id=%064d\n' "$2" > "$evidence_dir/suspend-$1.ok"
 }
 marker one 1; marker duplicate 1; marker two 2
 [[ "$(suspend_count)" == 2 ]]
-for field in fingerprint effective_config_sha256 gate1_proof_sha256 gate2_proof_sha256 display_edid_sha256 driver_contract cycle_id; do
+for field in fingerprint effective_config_sha256 live_proof_sha256 display_edid_sha256 driver_contract cycle_id; do
   marker two 2
   sed -i "s/^$field=.*/$field=obsolete/" "$evidence_dir/suspend-two.ok"
   [[ "$(suspend_count)" == 1 ]] || { echo "Stale suspend field accepted: $field" >&2; exit 1; }

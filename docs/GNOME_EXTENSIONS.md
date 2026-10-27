@@ -32,7 +32,7 @@ Le téléchargement est limité à l’artefact revu. L’installateur vérifie 
 
 ## Afficher le bureau
 
-Show Desktop Button utilise `org.gnome.shell.extensions.show-desktop-button` : position `LEFT_END` et raccourci `Super+D`. Les réglages d’actions de clic, de badge ou d’icône propres à Show Desktop Plus ne sont pas appliqués à cette extension. Le comportement visible doit être vérifié avec plusieurs fenêtres en Gate 2, puis confirmé sur la workstation.
+Show Desktop Button utilise `org.gnome.shell.extensions.show-desktop-button` : position `LEFT_END` et raccourci `Super+D`. Les réglages d’actions de clic, de badge ou d’icône propres à Show Desktop Plus ne sont pas appliqués à cette extension. Le comportement visible doit être vérifié avec plusieurs fenêtres sur la workstation installée.
 
 ## Télémétrie
 
@@ -50,7 +50,7 @@ Les deux RPM doivent déclarer GNOME 51 compatible. Leur présence seule ne suff
 
 La CI vérifie les archives, métadonnées, schémas et préférences réelles. Le laboratoire Fedora 45 personnalisé exige les **six extensions actives** après boot, reboot, restauration et reconstruction. Le laboratoire natif permet d’isoler GNOME sans extensions.
 
-Une CI verte ne promeut pas automatiquement le profil et ne produit aucune preuve physique. La Gate 2 vérifie visuellement le bureau et ses interactions ; la Gate 3 confirme le résultat sur le matériel. Sous Wayland, ouvrir une nouvelle session si l’activation initiale des extensions le nécessite, puis exécuter `diagnostics/gnome-doctor` et `diagnostics/polish-doctor`.
+Une CI verte ne promeut pas automatiquement le profil et ne produit aucune preuve physique. La Gate 3 vérifie visuellement le bureau et ses interactions sur le système installé. Sous Wayland, ouvrir une nouvelle session si l’activation initiale des extensions le nécessite, puis exécuter `diagnostics/gnome-doctor` et `diagnostics/polish-doctor`.
 
 ## Exclusions
 

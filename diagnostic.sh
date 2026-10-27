@@ -7,16 +7,13 @@ DRY_RUN=true
 export DRY_RUN
 
 case "$RUNTIME_ENVIRONMENT" in
-  wsl2)
-    exec "$REPO_ROOT/diagnostics/wsl2-doctor" --summary
-    ;;
   ci)
     ui_banner 'FEDORA WORKSTATION CONTROL' 'CI RUNTIME DETECTED'
     ui_meta Runtime "$RUNTIME_ENVIRONMENT"
     ui_check EXPECTED 'Bare-metal runtime' 'not certifiable inside CI; use repository workflows for automated evidence'
     ui_summary 'CI ENVIRONMENT DETECTED' 'USE GITHUB ACTIONS EVIDENCE' "$REPORT_ROOT" "$LOG_DIR"
     ;;
-  vm|container)
+  wsl2|vm|container)
     ui_banner 'FEDORA WORKSTATION CONTROL' 'VIRTUALIZED RUNTIME DETECTED'
     ui_meta Runtime "$RUNTIME_ENVIRONMENT"
     ui_check KO 'Bare-metal runtime' 'REAL APPLY and hardware certification are blocked inside VMs/containers'

@@ -5,11 +5,14 @@
 evidence_atomic_write() {
   local path="$1" mode="${2:-0600}" dir tmp
   dir="$(dirname "$path")"
-  mkdir -p "$dir"
+  mkdir -p "$dir" || return 1
   tmp="$(mktemp "$dir/.evidence.XXXXXX")" || return 1
-  cat > "$tmp"
-  chmod "$mode" "$tmp"
-  mv -f "$tmp" "$path"
+  # Callers may capture a path with $() || return; explicitly propagate failures
+  # even when Bash disables errexit through that conditional call chain.
+  if ! cat > "$tmp" || ! chmod "$mode" "$tmp" || ! mv -f "$tmp" "$path"; then
+    rm -f -- "$tmp"
+    return 1
+  fi
 }
 
 evidence_file_sha256() {
