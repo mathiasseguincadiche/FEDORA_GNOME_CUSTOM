@@ -538,7 +538,7 @@ kernel_lifecycle_install_latest() {
   kernel_lifecycle_require_install_gate || return $?
   kernel_lifecycle_ensure_tooling_and_repo || return $?
   kernel_lifecycle_ensure_dnf_retention || return $?
-  kernel_lifecycle_ensure_fedora_fallback || return $?
+  kernel_lifecycle_ensure_fedora_fallback ensure || return $?
 
   local available installed
   local -a exact_nevras=() install_args=()
@@ -574,7 +574,7 @@ kernel_lifecycle_finalize_update() {
     return "$EXIT_PRECHECK_FAILED"
   fi
 
-  kernel_lifecycle_ensure_fedora_fallback || return $?
+  kernel_lifecycle_ensure_fedora_fallback ensure || return $?
   kernel_lifecycle_prune_old || return $?
   kernel_lifecycle_write_state system-update
   ui_check OK 'Kernel N/N-1' "running N=$target; rollback N-1=$(kernel_lifecycle_previous_installed)"

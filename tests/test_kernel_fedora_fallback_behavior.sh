@@ -110,14 +110,14 @@ grep -Fq "kernel-core-$F2" "$FAKE_LOG"
 # Ensure: a present fallback is left untouched, without any versionlock change.
 : > "$FAKE_LOG"
 write_db "$F2" "$V3"
-kernel_lifecycle_ensure_fedora_fallback > /dev/null
+kernel_lifecycle_ensure_fedora_fallback ensure > /dev/null
 [[ ! -s "$FAKE_LOG" ]]
 
 # Missing fallback: lift the pin, install the exact Fedora NEVRAs from fedora/updates,
 # restore the pin to upstream N and keep upstream N as the GRUB default.
 : > "$FAKE_LOG"
 write_db "$V2" "$V3"
-FAKE_FEDORA_AVAILABLE="$F1 $F2 $V3" kernel_lifecycle_ensure_fedora_fallback > /dev/null
+FAKE_FEDORA_AVAILABLE="$F1 $F2 $V3" kernel_lifecycle_ensure_fedora_fallback ensure > /dev/null
 mapfile -t calls < "$FAKE_LOG"
 [[ "${calls[0]}" == 'pin --clear' ]]
 install_line="$(grep -n -- '--repo=fedora --repo=updates install' "$FAKE_LOG")"
@@ -130,7 +130,7 @@ grep -Fxq 'set-latest-default' "$FAKE_LOG"
 # Nothing available: fail closed and still restore the upstream pin.
 : > "$FAKE_LOG"
 rc=0
-FAKE_FEDORA_AVAILABLE='' kernel_lifecycle_ensure_fedora_fallback > /dev/null 2>&1 || rc=$?
+FAKE_FEDORA_AVAILABLE='' kernel_lifecycle_ensure_fedora_fallback ensure > /dev/null 2>&1 || rc=$?
 [[ "$rc" == "$EXIT_POSTCHECK_FAILED" ]]
 grep -Fxq "pin $V3" "$FAKE_LOG"
 if grep -Fq ' install ' "$FAKE_LOG"; then echo 'install attempted without a Fedora kernel' >&2; exit 1; fi
