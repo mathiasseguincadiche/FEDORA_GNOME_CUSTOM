@@ -35,7 +35,7 @@ Le retour aux RPM Fedora retire uniquement ce bloc géré. Un administrateur qui
 
 ## N et N-1
 
-N désigne la dernière stable effectivement installée et le défaut GRUB. N-1 est la version installée immédiatement précédente, conservée pour revenir au démarrage antérieur. Si une version intermédiaire n'a jamais été installée, elle n'est pas reconstituée artificiellement. Le premier N-1 peut être le noyau Fedora initial.
+N désigne la dernière stable effectivement installée et le défaut GRUB. N-1 est la version installée immédiatement précédente, conservée pour revenir au démarrage antérieur. Si une version intermédiaire n'a jamais été installée, elle n'est pas reconstituée artificiellement. N et N-1 ne comptent que les noyaux amont ; un noyau Fedora signé est conservé à part comme secours ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)).
 
 ```bash
 ./control.sh kernel rollback
@@ -43,7 +43,7 @@ sudo reboot
 ./control.sh kernel prune
 ```
 
-DNF conserve au maximum deux versions `kernel-core`. Il protège le noyau démarré ; si cela laisse plus de deux versions, le contrôle échoue et demande de démarrer sur N avant de relancer la purge. Aucun noyau en cours d'exécution n'est supprimé et aucun troisième secours n'est épinglé.
+Le projet conserve au maximum deux versions amont et le noyau Fedora de secours. La purge désigne les versions exactes à retirer et ne touche jamais le noyau démarré ; si cela laisse plus de deux versions amont, le contrôle échoue et demande de démarrer sur N avant de relancer la purge. `installonly_limit=4` laisse la place au nouveau N pendant son installation.
 
 Secure Boot actif ou indéterminé bloque les mutations. Le projet ne modifie ni l'UEFI ni la confiance MOK automatiquement. SELinux reste Enforcing, sans le réglage de chargement de modules auparavant associé au noyau personnalisé.
 

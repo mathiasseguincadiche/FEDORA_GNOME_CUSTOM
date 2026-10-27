@@ -21,3 +21,4 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0017 — Accès distant : Tailscale, SSH, Wake-on-LAN, Sunshine en option](0017-remote-access.md)
 - [0018 — Installation neuve Fedora 45 / GNOME 51](0018-fedora45-primary.md)
 - [0019 — Validation native Live USB puis système installé](0019-native-live-usb-validation.md)
+- [0020 — Noyau Fedora de secours à côté de Linux amont N / N-1](0020-fedora-kernel-boot-fallback.md)

@@ -14,8 +14,14 @@ case "${1:-status}" in
   install-latest) kernel_lifecycle_install_latest ;;
   prune) kernel_lifecycle_prune_old ;;
   rollback) kernel_lifecycle_rollback ;;
+  fallback) kernel_lifecycle_select_fallback ;;
+  refresh-fallback)
+    kernel_lifecycle_require_install_gate || exit $?
+    kernel_lifecycle_ensure_dnf_retention || exit $?
+    kernel_lifecycle_ensure_fedora_fallback refresh
+    ;;
   *)
-    echo 'Usage: kernel-lifecycle.sh [status|install-latest|prune|rollback]' >&2
+    echo 'Usage: kernel-lifecycle.sh [status|install-latest|prune|rollback|fallback|refresh-fallback]' >&2
     exit "$EXIT_USAGE"
     ;;
 esac

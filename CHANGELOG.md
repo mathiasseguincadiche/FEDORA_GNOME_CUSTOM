@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Noyau : un noyau Fedora signé est conservé comme entrée GRUB de secours à côté de Linux amont N / N-1 (ADR 0020), jamais par défaut ni supprimé par la rétention. La purge retire des versions exactes au lieu de `--oldinstallonly`, qui aurait retiré le secours en premier ; `installonly_limit=4`. Nouvelles commandes `./control.sh kernel fallback` (secours en défaut GRUB, sans suppression) et `kernel refresh-fallback` ; `kernel-doctor` et le contrôle GRUB vérifient la présence du secours.
 - Kickstart : Fedora refuse un Kickstart depuis une image Live ; le générateur déclare maintenant les miroirs officiels `fedora` et `updates` pour que `%packages` (dont le manifeste baseline) soit réellement installé depuis le média Everything netinstall, et retire `bootloader --location=boot`, sans effet en UEFI. Le guide d’installation précise le média requis.
 - Centre de contrôle : `kernel rollback` sélectionne N-1 sur toutes les routes (l’ancienne branche interne lançait la récupération Fedora) ; `rollback-fedora`, `install-latest` et `prune` y sont routés explicitement.
 - `repair.sh` : une commande inconnue affiche l’aide sur stderr et sort en code 2 au lieu de 0.

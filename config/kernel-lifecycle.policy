@@ -1,12 +1,12 @@
 # Unpatched upstream Linux stable; one managed kernel-core track, N and N-1.
-# A first installation may retain the running Fedora kernel until the next update.
-# No additional pinned fallback is managed; recovery to Fedora remains explicit.
+# One signed Fedora kernel is retained beside it as a non-default boot fallback
+# (ADR 0020); full recovery to Fedora packages remains explicit.
 mode=rolling-n-nminus1
 track=latest-stable
 install_latest_direct=true
 max_installed_kernels=2
 keep_previous=true
-keep_fedora_fallback=false
+keep_fedora_fallback=true
 rescue_entry_enabled=false
 one_shot_test_boot=false
 preboot_certification_required=false

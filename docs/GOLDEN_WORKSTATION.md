@@ -69,10 +69,10 @@ Le profil installe uniquement le dernier Linux amont stable publié sur kernel.o
 ```text
 N   = dernier stable installé, défaut GRUB
 N-1 = version installée immédiatement précédente, rollback
-max = 2 versions kernel-core
+max = 2 versions amont + 1 noyau Fedora de secours
 ```
 
-Les versions plus anciennes que N-1 sont purgées via DNF5 `oldinstallonly`. Le noyau actuellement démarré est protégé ; si la purge reste bloquée, démarrer sur N et recommencer. Le premier passage peut conserver le noyau Fedora initial comme N-1 ; aucun troisième noyau de secours n'est épinglé.
+Les versions amont plus anciennes que N-1 sont purgées par version exacte. Le noyau actuellement démarré est protégé ; si la purge reste bloquée, démarrer sur N et recommencer. Un noyau Fedora signé reste disponible dans GRUB comme secours, jamais par défaut ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)).
 
 Secure Boot actif bloque ce chemin par défaut. Le projet ne désactive pas Secure Boot automatiquement et ne génère/importera pas une clé MOK sans décision opérateur explicite.
 

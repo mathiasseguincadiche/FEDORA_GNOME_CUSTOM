@@ -101,6 +101,7 @@ PY
   printf 'kernel_grub_default\t%s\n' "$kernel_default"
   printf 'kernel_installed_count\t%s\n' "$kernel_count"
   printf 'kernel_max_installed\t%s\n' "$kernel_limit"
+  printf 'kernel_fedora_fallback\t%s\n' "$(kernel_lifecycle_fedora_fallback)"
   printf 'kernel_dnf_installonly_limit\t%s\n' "$(kernel_lifecycle_dnf_limit 2>/dev/null || printf unknown)"
   for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell} qemu-kvm libvirt; do
     printf '%s\t%s\n' "$pkg" "$(runtime_component_version "$pkg")"

@@ -331,7 +331,7 @@ cc_show_kernel_inventory() {
   printf '  Golden             canal %s\n' "${KERNEL_CHANNEL:-vanilla}"
   printf '  Cible              latest stable upstream\n'
   printf '  Minimum actuel     %s\n' "${KERNEL_MIN_VERSION:-non défini}"
-  printf '  Fedora fallback    %s\n' "${KERNEL_KEEP_FEDORA_FALLBACK:-false}"
+  printf '  Fedora fallback    %s\n' "${KERNEL_KEEP_FEDORA_FALLBACK:-true}"
 }
 
 cc_show_logs() {
@@ -746,7 +746,7 @@ Usage:
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
-  ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
+  ./control.sh kernel status|doctor|install-latest|prune|rollback|fallback|refresh-fallback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-rocky
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
   ./control.sh logs list|tail|boot-failure
@@ -814,7 +814,7 @@ cc_cli_dispatch() {
       case "$action" in
         status) cc_show_kernel_inventory ;;
         doctor) "$REPO_ROOT/diagnostics/kernel-doctor" ;;
-        install-latest|prune|rollback) bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" "$action" ;;
+        install-latest|prune|rollback|fallback|refresh-fallback) bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" "$action" ;;
         rollback-fedora) "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh" ;;
         *) cc_help; return "$EXIT_USAGE" ;;
       esac

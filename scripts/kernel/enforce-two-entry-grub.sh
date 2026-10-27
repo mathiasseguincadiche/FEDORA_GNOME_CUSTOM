@@ -51,5 +51,9 @@ mapfile -t remaining_rescue < <(rescue_entries)
 count="$(kernel_lifecycle_installed_count)"
 core="$(kernel_channel_core_package)" || { ui_error "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}"; exit "$EXIT_CONFIG_FAILED"; }
 (( count <= 2 )) || { ui_error "More than two $core versions are installed: $count"; exit "$EXIT_POSTCHECK_FAILED"; }
+fallback="$(kernel_lifecycle_fedora_fallback)"
+if kernel_lifecycle_keep_fedora_fallback; then
+  [[ -n "$fallback" && -e "/boot/vmlinuz-$fallback" ]] || { ui_error 'Fedora fallback kernel is missing; run ./control.sh kernel refresh-fallback'; exit "$EXIT_POSTCHECK_FAILED"; }
+fi
 
-ui_check OK 'GRUB N/N-1 surface' "rescue image disabled; managed $core versions=$count max=2"
+ui_check OK 'GRUB N/N-1 surface' "rescue image disabled; managed $core versions=$count max=2; Fedora fallback=${fallback:-none}"

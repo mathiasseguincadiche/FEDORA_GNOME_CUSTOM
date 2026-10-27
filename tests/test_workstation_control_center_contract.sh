@@ -129,12 +129,12 @@ fi
 # Golden kernel policy installs latest stable directly and retains only N/N-1.
 grep -Fq 'ENABLE_KERNEL_VANILLA_STABLE="true"' "$ROOT/config/kernel.conf"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="false"' "$ROOT/config/kernel.conf"
+grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
 grep -Fxq 'mode=rolling-n-nminus1' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fxq 'install_latest_direct=true' "$ROOT/config/kernel-lifecycle.policy"
 grep -Fxq 'max_installed_kernels=2' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fq 'installonly_limit=$limit' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'installonly_limit=$dnf_limit' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'kernel_lifecycle_release_nevras "$release"' "$ROOT/lib/kernel_lifecycle.sh"
 
 # Update order: backup must precede preparation of the offline DNF transaction.
 python3 - "$ROOT/scripts/maintenance/update-system.sh" <<'PY'
