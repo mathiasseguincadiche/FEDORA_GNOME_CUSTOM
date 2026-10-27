@@ -39,6 +39,8 @@ cp "$fixture_root/repo/manifests/module-plan.conf" "$fixture_root/original-plan"
   ui_error() { printf 'ERROR: %s\n' "$*" >&2; }
   uname() { [[ "$*" == -r ]] || return 98; printf '%s\n' "$FIXTURE_KERNEL"; }
   # shellcheck disable=SC2120
+  # Invoked indirectly by evidence_atomic_write; ShellCheck 0.9 uses SC2317.
+  # shellcheck disable=SC2317
   cat() {
     if [[ "$FIXTURE_CAT_FAIL" == true ]]; then
       printf 'truncated fixture stream'
