@@ -746,7 +746,7 @@ Usage:
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
-  ./control.sh kernel status|doctor|rollback
+  ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-rocky
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
   ./control.sh logs list|tail|boot-failure
@@ -814,7 +814,8 @@ cc_cli_dispatch() {
       case "$action" in
         status) cc_show_kernel_inventory ;;
         doctor) "$REPO_ROOT/diagnostics/kernel-doctor" ;;
-        rollback) "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh" ;;
+        install-latest|prune|rollback) bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" "$action" ;;
+        rollback-fedora) "$REPO_ROOT/scripts/kernel/rollback-to-fedora.sh" ;;
         *) cc_help; return "$EXIT_USAGE" ;;
       esac
       ;;

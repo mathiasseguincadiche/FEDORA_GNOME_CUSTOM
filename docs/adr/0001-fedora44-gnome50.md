@@ -2,7 +2,7 @@
 
 > Choix de version remplacé par [ADR 0018](0018-fedora45-primary.md). Conservé pour l’historique.
 
-**Statut : accepté**
+**Statut : remplacé par ADR 0018**
 
 ## Contexte
 

@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 import re
 import subprocess
-import sys
 
 
 def parse_vainfo(output: str) -> dict[str, bool]:
