@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Kickstart : Fedora refuse un Kickstart depuis une image Live ; le générateur déclare maintenant les miroirs officiels `fedora` et `updates` pour que `%packages` (dont le manifeste baseline) soit réellement installé depuis le média Everything netinstall, et retire `bootloader --location=boot`, sans effet en UEFI. Le guide d’installation précise le média requis.
+- Centre de contrôle : `kernel rollback` sélectionne N-1 sur toutes les routes (l’ancienne branche interne lançait la récupération Fedora) ; `rollback-fedora`, `install-latest` et `prune` y sont routés explicitement.
+- `repair.sh` : une commande inconnue affiche l’aide sur stderr et sort en code 2 au lieu de 0.
+- Nettoyage : imports Python inutilisés ; ADR 0001 marquée « remplacée par ADR 0018 ».
+
 - Validation : parcours natif Live USB Fedora 45 / GNOME 51, puis installation sur SSD et qualification Gate 3 ; retrait des étapes opérateur WSL2 et VirtualBox. Rapport portable à 16 points, export avant redémarrage et import sur le même PC/commit après installation ; aucune certification des services installés depuis le Live.
 - Preuves : propagation explicite des erreurs d’écriture et de checksum, refus d’une source modifiée et invalidation de l’ancien résultat avant un nouvel essai Live ou une nouvelle qualification GNOME.
 

@@ -510,6 +510,8 @@ ls -l /dev/disk/by-id/nvme-*
 installer/generate-fedora-kickstart.sh --release 45 --disk /dev/disk/by-id/nvme-IDENTIFIANT_SYSTEME
 ```
 
+**Média requis :** Fedora n’accepte pas de Kickstart depuis une image Live (« Try Fedora » / Workstation Live). Démarrer l’ISO **Fedora 45 Everything netinstall** avec `inst.ks=` pointant vers le fichier généré (clé USB ou URL locale). Les paquets proviennent alors des miroirs Fedora officiels (`fedora` et `updates`) déclarés dans le Kickstart ; l’ISO Workstation Live vérifiée à l’étape 1 reste la référence pour les observations Live.
+
 Le générateur :
 
 - montre modèle/serial/taille du disque ;

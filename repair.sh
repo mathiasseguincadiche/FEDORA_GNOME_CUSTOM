@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repair_help() {
+  cat <<EOF
+Diagnosis-first recovery:
+  $0 display                 Reapply the certified GNOME display link/mode
+  $0 coldstart               Measure a true Nautilus first-click cold launch
+  $0 kernel-status           Validate current kernel + Arc B580/xe
+  $0 kernel-rollback         Set retained N-1 kernel as GRUB default
+  $0 kernel-fedora-recovery  Emergency distro-sync back to Fedora kernel packages
+
+Diagnostics:
+  $REPO_ROOT/diagnostic.sh
+  $REPO_ROOT/diagnostics/display-doctor
+  $REPO_ROOT/diagnostics/suspend-doctor
+  $REPO_ROOT/scripts/collect-boot-failure.sh
+EOF
+}
+
 case "${1:-help}" in
  display)
    exec "$HOME/.local/libexec/fedora-gnome-display-repair"
@@ -17,20 +34,11 @@ case "${1:-help}" in
  coldstart)
    exec "$REPO_ROOT/diagnostics/nautilus-coldstart-doctor"
    ;;
- help|*)
-   cat <<EOF
-Diagnosis-first recovery:
-  $0 display                 Reapply the certified GNOME display link/mode
-  $0 coldstart               Measure a true Nautilus first-click cold launch
-  $0 kernel-status           Validate current kernel + Arc B580/xe
-  $0 kernel-rollback         Set retained N-1 kernel as GRUB default
-  $0 kernel-fedora-recovery  Emergency distro-sync back to Fedora kernel packages
-
-Diagnostics:
-  $REPO_ROOT/diagnostic.sh
-  $REPO_ROOT/diagnostics/display-doctor
-  $REPO_ROOT/diagnostics/suspend-doctor
-  $REPO_ROOT/scripts/collect-boot-failure.sh
-EOF
+ help|-h|--help)
+   repair_help
+   ;;
+ *)
+   repair_help >&2
+   exit 2
    ;;
 esac
