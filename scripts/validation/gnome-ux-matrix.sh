@@ -13,6 +13,9 @@ if [[ "$scope" == status ]]; then
   exit 0
 fi
 if [[ ! -t 0 || ! -t 1 ]]; then ui_error 'GNOME UX matrix requires an interactive terminal'; exit "$EXIT_SECURITY_BLOCK"; fi
+# A new interactive qualification replaces the previous attempt, including
+# when session/runtime/doctor prechecks or a human observation subsequently fail.
+rm -f -- "$gate3_marker" "$STATE_ROOT/final/certified.ok"
 if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || "${XDG_SESSION_TYPE:-}" != wayland ]]; then ui_error 'GNOME/Wayland session required'; exit "$EXIT_PRECHECK_FAILED"; fi
 validation_require_installed_runtime || exit $?
 validation_require_chain || { ui_error 'Gate 3 UX matrix requires current preinstallation validation proofs'; exit "$EXIT_PRECHECK_FAILED"; }

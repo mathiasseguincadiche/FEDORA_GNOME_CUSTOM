@@ -35,6 +35,7 @@ reste un prérequis de sécurité de l'APPLY ; la qualification exhaustive vient
 - Le profil VM Windows a été retiré ; Rocky reste le seul invité géré et qualifié après l’installation Fedora.
 - Le pré-APPLY applique l’exclusion `secrets` des sauvegardes daily/full ; les métadonnées libvirt restent hors Borg.
 - Les assertions CI d’absence propagent les échecs et erreurs de lecture ; les scénarios de régression vérifient les défauts observés.
+- Une nouvelle qualification interactive GNOME invalide son ancien résultat UX et le certificat final avant les précontrôles ; un nouvel échec ne peut plus laisser l’ancien PASS affiché. La consultation d’état reste sans mutation.
 
 Ces correctifs logiciels ne constituent ni une promotion du profil Fedora 45 ni une certification matérielle. Le média final signé, les composants stables et la Gate 3 restent à qualifier selon le parcours d’installation.
 

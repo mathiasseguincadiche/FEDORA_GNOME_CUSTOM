@@ -126,10 +126,86 @@ def exercise_ux_scope():
         assert not list(root.glob("state/**/*.ok")), "failed prechecks produced UX evidence"
 
 
+def exercise_ux_rerun(case):
+    """Failed interactive UX attempts cannot leave an earlier PASS authoritative."""
+    with tempfile.TemporaryDirectory(prefix="fgc-ux-rerun-") as directory:
+        root = Path(directory)
+        (root / "scripts/validation").mkdir(parents=True)
+        (root / "diagnostics").mkdir()
+        (root / "lib").mkdir()
+        (root / "bin").mkdir()
+        (root / "home").mkdir()
+        (root / "lib/bootstrap.sh").write_text(BOOTSTRAP + """
+is_true() { [[ "${1:-false}" == true ]]; }
+FINAL_CERT_MIN_SUSPEND_CYCLES=5
+ENABLE_KVM=false
+""")
+        (root / "lib/validation_gates.sh").write_text("""
+validation_require_installed_runtime() { [[ "$TEST_CASE" != runtime ]] || return 50; }
+validation_require_chain() { [[ "$TEST_CASE" != chain ]]; }
+""")
+        script = root / "scripts/validation/gnome-ux-matrix.sh"
+        script.write_text((ROOT / "scripts/validation/gnome-ux-matrix.sh").read_text())
+        for name, rejected_case, code in (
+            ("gnome-desktop-integration-doctor", "desktop-preflight", 31),
+            ("portal-functional-doctor", "portal-preflight", 32),
+        ):
+            doctor = root / "diagnostics" / name
+            doctor.write_text(f"#!/usr/bin/env bash\n"
+                              f'[[ "$TEST_CASE" != {rejected_case} ]] || exit {code}\n')
+            doctor.chmod(0o755)
+        nautilus = root / "bin/nautilus"
+        nautilus.write_text("#!/usr/bin/env bash\nexit 0\n")
+        nautilus.chmod(0o755)
+        state = root / "state"
+        marker = state / "final/evidence/gnome-ux.ok"
+        certificate = state / "final/certified.ok"
+        live = state / "validation/imported/live.json"
+        unrelated = state / "final/evidence/audio.ok"
+        for file in (marker, certificate, live, unrelated):
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_text("status=PASS\nworkstation_fingerprint=fixture-hardware\n"
+                            "effective_config_sha256=fixture-config\n")
+        for number in range(4 if case == "suspend-cycles" else 5):
+            (marker.parent / f"suspend-{number}.ok").write_text("fingerprint=fixture-hardware\n")
+        env = dict(os.environ, STATE_ROOT=str(state), TEST_CASE=case,
+                   XDG_CURRENT_DESKTOP="KDE" if case == "session" else "GNOME",
+                   XDG_SESSION_TYPE="wayland", HOME=str(root / "home"),
+                   PATH=str(root / "bin") + os.pathsep + os.environ["PATH"])
+        # Consultation is read-only, including with an old result on disk.
+        status = subprocess.run(["bash", str(script), "status"], env=env,
+                                text=True, capture_output=True, timeout=10)
+        assert status.returncode == 0 and status.stdout.startswith("OK|"), status.stderr
+        assert marker.exists() and certificate.exists()
+        if case == "status":
+            assert live.exists() and unrelated.exists()
+            return
+        terminal, slave = pty.openpty()
+        try:
+            if case == "manual-decline":
+                os.write(terminal, b"FAIL\n")
+            result = subprocess.run(["bash", str(script), "gate3"], env=env,
+                                    stdin=slave, stdout=slave, stderr=subprocess.PIPE,
+                                    text=True, timeout=10)
+        finally:
+            os.close(slave)
+            os.close(terminal)
+        expected = {"runtime": 50, "desktop-preflight": 31, "portal-preflight": 32}.get(case, 21)
+        assert result.returncode == expected, f"{case}: {result.returncode}: {result.stderr}"
+        assert not marker.exists(), f"{case}: earlier UX PASS survived a failed rerun"
+        assert not certificate.exists(), f"{case}: earlier final certificate survived a failed rerun"
+        assert live.exists() and unrelated.exists(), f"{case}: unrelated evidence was erased"
+        if case == "manual-decline":
+            assert "Visual check refused" in result.stderr, result.stderr
+
+
 for installed_runtime in (True, False):
     for selected_desktop in ("KDE", "GNOME"):
         exercise(selected_desktop, interactive=True, installed=installed_runtime)
         exercise(selected_desktop, interactive=False, installed=installed_runtime)
 exercise("GNOME", interactive=True, retired_scope=True)
 exercise_ux_scope()
-print("Installed portal/UX evidence lifecycle: PASS (Live refusal, failed prechecks, read-only preservation)")
+for failed_ux_stage in ("status", "session", "runtime", "chain", "suspend-cycles",
+                        "desktop-preflight", "portal-preflight", "manual-decline"):
+    exercise_ux_rerun(failed_ux_stage)
+print("Installed portal/UX evidence lifecycle: PASS (Live refusal, failed reruns, human refusal, read-only preservation)")

@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Validation : parcours natif Live USB Fedora 45 / GNOME 51, puis installation sur SSD et qualification Gate 3 ; retrait des étapes opérateur WSL2 et VirtualBox. Rapport portable à 16 points, export avant redémarrage et import sur le même PC/commit après installation ; aucune certification des services installés depuis le Live.
-- Preuves : propagation explicite des erreurs d’écriture et de checksum, refus d’une source modifiée et invalidation de l’ancien rapport avant un nouvel essai Live.
+- Preuves : propagation explicite des erreurs d’écriture et de checksum, refus d’une source modifiée et invalidation de l’ancien résultat avant un nouvel essai Live ou une nouvelle qualification GNOME.
 
 - Fiabilité de l’installation Fedora 45 / GNOME 51 : reconnaître l’état réel `ACTIVE` de Tiling Assistant et réutiliser le helper commun dans les contrôles ; conserver CPU/RAM/réseau sans imposer de faux compteurs de charge à la B580 `xe`.
 - Préparer les outils matériels avant leur premier usage via `control.sh install prepare-tools` et le manifeste inclus dans Kickstart ; fournir `semanage` dans le socle système avant `/data`.
