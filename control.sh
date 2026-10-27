@@ -15,7 +15,7 @@ fi
 # provide status, explicit maintenance and rollback surfaces.
 if [[ "${1:-}" == kernel ]]; then
   case "${2:-}" in
-    install-latest|prune|rollback)
+    install-latest|prune|rollback|fallback|refresh-fallback)
       exec bash "$REPO_ROOT/scripts/kernel/kernel-lifecycle.sh" "$2"
       ;;
     rollback-fedora)

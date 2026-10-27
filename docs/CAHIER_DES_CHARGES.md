@@ -43,8 +43,8 @@ Le pourquoi, les piliers, le matériel complet et les décisions du propriétair
 - RPM `@kernel-vanilla/stable` et sa dépendance amont `fedora`, sans attendre la publication du noyau dans les mises à jour Fedora ;
 - RC, linux-next, packaging obsolète et autres canaux refusés ;
 - N installé directement et sélectionné comme défaut GRUB ; N-1 conservé pour rollback ;
-- maximum deux versions `kernel-core` (`installonly_limit=2`), purge DNF5 `oldinstallonly`, aucun noyau en cours d'exécution supprimé ;
-- le premier N-1 peut être le noyau Fedora initial ; aucun troisième fallback épinglé ;
+- maximum deux versions amont, purge par version exacte (`installonly_limit=4`), aucun noyau en cours d'exécution supprimé ;
+- un noyau Fedora signé conservé comme secours GRUB, jamais par défaut (ADR 0020) ;
 - Secure Boot actif ou indéterminé bloque l'installation, sans désactivation automatique ;
 - après changement de noyau, la certification peut devenir `STALE` et doit être refaite.
 

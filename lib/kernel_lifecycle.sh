@@ -2,6 +2,8 @@
 # Rolling kernel N / N-1 lifecycle helpers.
 # Only official unpatched upstream stable Linux is managed (ADR 0015).
 # The stable COPR uses its upstream Fedora dependency; both are version-checked.
+# One signed Fedora kernel is kept beside N/N-1 as a boot fallback (ADR 0020):
+# it is never the GRUB default and retention never removes it.
 # REPO_ROOT, STATE_ROOT and project configuration are loaded by engine_bootstrap.
 
 kernel_lifecycle_state_dir() { printf '%s/kernel' "$STATE_ROOT"; }
@@ -95,6 +97,18 @@ kernel_lifecycle_max_installed() {
   value="$(kernel_lifecycle_policy_value max_installed_kernels 2>/dev/null || true)"
   [[ "$value" =~ ^[2-9][0-9]*$ ]] || value=2
   printf '%s\n' "$value"
+}
+
+kernel_lifecycle_keep_fedora_fallback() { [[ "${KERNEL_KEEP_FEDORA_FALLBACK:-true}" == true ]]; }
+
+# Upstream N/N-1, the Fedora fallback and one transient slot while a new N is
+# installed. Pruning is done by the project, never by DNF's oldest-first rule,
+# which would otherwise drop the lower-versioned Fedora fallback first.
+kernel_lifecycle_dnf_installonly_target() {
+  local limit
+  limit="$(kernel_lifecycle_max_installed)"
+  if kernel_lifecycle_keep_fedora_fallback; then limit=$((limit + 1)); fi
+  printf '%s\n' "$((limit + 1))"
 }
 
 kernel_lifecycle_release_is_stable() {
@@ -207,8 +221,8 @@ kernel_lifecycle_expected_nevra_count() {
   kernel_channel_packages | wc -l | tr -d '[:space:]'
 }
 
-kernel_lifecycle_installed_releases() {
-  # Always succeeds: an empty result means "no kernel of this channel installed".
+kernel_lifecycle_installed_all_releases() {
+  # Always succeeds: an empty result means "no kernel-core installed".
   local core output
   core="$(kernel_channel_core_package)" || return 1
   output="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' "$core" 2>/dev/null || true)"
@@ -216,6 +230,32 @@ kernel_lifecycle_installed_releases() {
     | grep -v -e 'is not installed' -e '^[[:space:]]*$' \
     | sort -Vu \
     || true
+}
+
+# Upstream channel only: N and N-1 are computed without the Fedora fallback.
+kernel_lifecycle_installed_releases() {
+  local release
+  while IFS= read -r release; do
+    if kernel_channel_release_matches "$release"; then printf '%s\n' "$release"; fi
+  done < <(kernel_lifecycle_installed_all_releases)
+  return 0
+}
+
+kernel_lifecycle_fedora_release_matches() {
+  [[ "$1" =~ ^[0-9]+[.][0-9]+([.][0-9]+)?-[0-9]+([.][0-9]+)*[.]fc[0-9]+[.]x86_64$ ]]
+}
+
+kernel_lifecycle_fedora_installed_releases() {
+  local release
+  while IFS= read -r release; do
+    if kernel_lifecycle_fedora_release_matches "$release"; then printf '%s\n' "$release"; fi
+  done < <(kernel_lifecycle_installed_all_releases)
+  return 0
+}
+
+# The retained fallback is the newest installed Fedora kernel.
+kernel_lifecycle_fedora_fallback() {
+  kernel_lifecycle_fedora_installed_releases | tail -n1
 }
 
 kernel_lifecycle_installed_count() {
@@ -296,13 +336,14 @@ kernel_lifecycle_ensure_tooling_and_repo() {
 }
 
 kernel_lifecycle_ensure_dnf_retention() {
-  local limit current
+  local limit dnf_limit current
   limit="$(kernel_lifecycle_max_installed)"
   (( limit == 2 )) || { ui_error "Golden N/N-1 policy requires max_installed_kernels=2, got $limit"; return "$EXIT_CONFIG_FAILED"; }
-  sudo dnf5 config-manager setopt "installonly_limit=$limit" || return $?
+  dnf_limit="$(kernel_lifecycle_dnf_installonly_target)"
+  sudo dnf5 config-manager setopt "installonly_limit=$dnf_limit" || return $?
   current="$(kernel_lifecycle_dnf_limit)"
-  [[ "$current" == "$limit" ]] || { ui_error "DNF installonly_limit mismatch: expected=$limit actual=${current:-unknown}"; return "$EXIT_POSTCHECK_FAILED"; }
-  ui_check OK 'Kernel retention' "DNF installonly_limit=$limit"
+  [[ "$current" == "$dnf_limit" ]] || { ui_error "DNF installonly_limit mismatch: expected=$dnf_limit actual=${current:-unknown}"; return "$EXIT_POSTCHECK_FAILED"; }
+  ui_check OK 'Kernel retention' "DNF installonly_limit=$dnf_limit (upstream N/N-1 + Fedora fallback + install slot)"
 }
 
 # RPMs may encode the first final series release as X.Y.0, kernel.org as X.Y.
@@ -342,16 +383,121 @@ kernel_lifecycle_prepare_rolling_update() {
   kernel_lifecycle_resolve_latest_stable
 }
 
+# Installonly kernel packages of one exact release; kernel-headers/tools are excluded.
+kernel_lifecycle_release_nevras() {
+  local release="$1"
+  rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' 'kernel*' 2>/dev/null \
+    | awk -F'\t' -v wanted="$release" \
+        '$2==wanted && $1 ~ /^kernel(-core|-modules(-core|-extra|-internal)?|-devel(-matched)?|-uki-virt)?$/ {print $1 "-" $2}'
+}
+
+# Keep upstream N/N-1 and the newest Fedora kernel; never remove the running kernel.
+# DNF's --oldinstallonly is not used: it removes the lowest version first, which
+# would be the Fedora fallback.
 kernel_lifecycle_prune_old() {
-  local limit count
+  local limit count keep running release fallback
+  local -a track=() fedora=() remove=() nevras=()
   limit="$(kernel_lifecycle_max_installed)"
-  sudo dnf5 -y remove --oldinstallonly --limit="$limit"
+  running="$(uname -r)"
+  keep=0
+  if kernel_lifecycle_keep_fedora_fallback; then keep=1; fi
+  mapfile -t track < <(kernel_lifecycle_installed_releases)
+  mapfile -t fedora < <(kernel_lifecycle_fedora_installed_releases)
+  if (( ${#track[@]} > limit )); then remove+=("${track[@]:0:${#track[@]}-limit}"); fi
+  if (( ${#fedora[@]} > keep )); then remove+=("${fedora[@]:0:${#fedora[@]}-keep}"); fi
+  for release in "${remove[@]}"; do
+    if [[ "$release" == "$running" ]]; then
+      ui_check WARN 'Kernel retention' "$release is running; it is removed after the next boot"
+      continue
+    fi
+    mapfile -t -O "${#nevras[@]}" nevras < <(kernel_lifecycle_release_nevras "$release")
+  done
+  if (( ${#nevras[@]} > 0 )); then
+    sudo dnf5 -y remove "${nevras[@]}" || return $?
+  fi
   count="$(kernel_lifecycle_installed_count)"
   (( count <= limit )) || {
     ui_error "Kernel retention still exceeds policy after prune: installed=$count max=$limit. Boot the newest kernel and retry."
     return "$EXIT_POSTCHECK_FAILED"
   }
-  ui_check OK 'Kernel retention' "$count $(kernel_channel_core_package) version(s) installed; max=$limit"
+  fallback="$(kernel_lifecycle_fedora_fallback)"
+  if (( keep == 1 )) && [[ -z "$fallback" ]]; then
+    ui_check WARN 'Fedora fallback' 'missing; run ./control.sh kernel refresh-fallback'
+  fi
+  ui_check OK 'Kernel retention' "$count upstream $(kernel_channel_core_package) version(s); max=$limit; Fedora fallback=${fallback:-none}"
+}
+
+kernel_lifecycle_fedora_latest_available() {
+  local release
+  while IFS= read -r release; do
+    if kernel_lifecycle_fedora_release_matches "$release"; then printf '%s\n' "$release"; fi
+  done < <(kernel_lifecycle_query_dnf --refresh --repo=fedora --repo=updates repoquery --available \
+             --qf $'%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core 2>/dev/null) | sort -V | tail -n1
+}
+
+# The upstream versionlock admits only the vanilla EVR, so it is lifted for the
+# exact Fedora transaction and restored to the installed upstream N afterwards.
+kernel_lifecycle_restore_pin() {
+  local latest
+  latest="$(kernel_lifecycle_latest_installed)"
+  [[ -n "$latest" ]] || return 0
+  kernel_lifecycle_pin_target "$latest"
+}
+
+# ensure: install a Fedora kernel only when none is present.
+# refresh: replace the fallback with the newest signed Fedora kernel.
+kernel_lifecycle_ensure_fedora_fallback() {
+  local mode="${1:-ensure}" current target pkg found rc=0
+  local -a nevras=()
+  kernel_lifecycle_keep_fedora_fallback || return 0
+  current="$(kernel_lifecycle_fedora_fallback)"
+  if [[ -n "$current" && "$mode" != refresh ]]; then
+    ui_check OK 'Fedora fallback' "$current retained (not default)"
+    return 0
+  fi
+  sudo python3 "$REPO_ROOT/scripts/kernel/pin-upstream-target.py" --clear || return $?
+  target="$(kernel_lifecycle_fedora_latest_available)"
+  if [[ -z "$target" ]]; then
+    ui_error 'No signed Fedora kernel is available from the fedora/updates repositories'
+    kernel_lifecycle_restore_pin
+    return "$EXIT_POSTCHECK_FAILED"
+  fi
+  if [[ "$target" != "$current" ]]; then
+    for pkg in kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra; do
+      found="$(kernel_lifecycle_query_dnf --repo=fedora --repo=updates repoquery --available \
+        --qf $'%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' "$pkg" 2>/dev/null | grep -Fx "$pkg-$target" | head -n1)"
+      [[ -n "$found" ]] || { ui_error "Exact Fedora NEVRA missing for $pkg release=$target"; rc="$EXIT_POSTCHECK_FAILED"; break; }
+      nevras+=("$found")
+    done
+    if (( rc == 0 )); then
+      sudo dnf5 -y --repo=fedora --repo=updates install "${nevras[@]}" || rc=$?
+    fi
+  fi
+  kernel_lifecycle_restore_pin || return $?
+  (( rc == 0 )) || return "$rc"
+  # Fedora's kernel-install makes a new kernel the default; upstream N stays the default.
+  if [[ -n "$(kernel_lifecycle_latest_installed)" ]]; then
+    kernel_lifecycle_set_latest_default || return $?
+  fi
+  # A refresh leaves the previous Fedora kernel; keep only the new fallback.
+  if [[ "$mode" == refresh ]]; then
+    kernel_lifecycle_prune_old || return $?
+  fi
+  ui_check OK 'Fedora fallback' "$target installed beside upstream N/N-1 (not default)"
+}
+
+# Non-destructive escape hatch when both upstream kernels misbehave.
+kernel_lifecycle_select_fallback() {
+  kernel_lifecycle_require_host_gate || return $?
+  command_exists grubby || { ui_error 'grubby is required to select the Fedora fallback'; return "$EXIT_PRECHECK_FAILED"; }
+  local fallback
+  fallback="$(kernel_lifecycle_fedora_fallback)"
+  [[ -n "$fallback" ]] || { ui_error 'No Fedora fallback kernel is installed; use ./control.sh kernel rollback-fedora'; return "$EXIT_PRECHECK_FAILED"; }
+  [[ -e "/boot/vmlinuz-$fallback" ]] || { ui_error "Boot image missing for Fedora fallback: $fallback"; return "$EXIT_POSTCHECK_FAILED"; }
+  sudo grubby --set-default "/boot/vmlinuz-$fallback"
+  [[ "$(kernel_lifecycle_default_release)" == "$fallback" ]] || { ui_error "Unable to set Fedora fallback as GRUB default: $fallback"; return "$EXIT_POSTCHECK_FAILED"; }
+  kernel_lifecycle_write_state fallback-selected
+  ui_check OK 'Kernel fallback' "Fedora $fallback is now GRUB default; upstream kernels remain installed. Return with ./control.sh kernel install-latest"
 }
 
 kernel_lifecycle_set_latest_default() {
@@ -384,6 +530,7 @@ kernel_lifecycle_write_state() {
     printf 'default=%s\n' "${default:-unknown}"
     printf 'installed_count=%s\n' "$count"
     printf 'max_installed=%s\n' "$(kernel_lifecycle_max_installed)"
+    printf 'fedora_fallback=%s\n' "$(kernel_lifecycle_fedora_fallback)"
   } | evidence_atomic_write "$(kernel_lifecycle_state_path)" 0600
 }
 
@@ -391,6 +538,7 @@ kernel_lifecycle_install_latest() {
   kernel_lifecycle_require_install_gate || return $?
   kernel_lifecycle_ensure_tooling_and_repo || return $?
   kernel_lifecycle_ensure_dnf_retention || return $?
+  kernel_lifecycle_ensure_fedora_fallback ensure || return $?
 
   local available installed
   local -a exact_nevras=() install_args=()
@@ -426,6 +574,7 @@ kernel_lifecycle_finalize_update() {
     return "$EXIT_PRECHECK_FAILED"
   fi
 
+  kernel_lifecycle_ensure_fedora_fallback ensure || return $?
   kernel_lifecycle_prune_old || return $?
   kernel_lifecycle_write_state system-update
   ui_check OK 'Kernel N/N-1' "running N=$target; rollback N-1=$(kernel_lifecycle_previous_installed)"
@@ -437,7 +586,7 @@ kernel_lifecycle_rollback() {
   local previous latest
   latest="$(kernel_lifecycle_latest_installed)"
   previous="$(kernel_lifecycle_previous_installed)"
-  [[ -n "$previous" && "$previous" != "$latest" ]] || { ui_error 'No N-1 kernel is installed for rollback'; return "$EXIT_PRECHECK_FAILED"; }
+  [[ -n "$previous" && "$previous" != "$latest" ]] || { ui_error 'No N-1 kernel is installed for rollback; use ./control.sh kernel fallback for the Fedora kernel'; return "$EXIT_PRECHECK_FAILED"; }
   [[ -e "/boot/vmlinuz-$previous" ]] || { ui_error "Boot image missing for N-1 kernel: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
   sudo grubby --set-default "/boot/vmlinuz-$previous"
   [[ "$(kernel_lifecycle_default_release)" == "$previous" ]] || { ui_error "Unable to set N-1 kernel as GRUB default: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
@@ -460,6 +609,7 @@ kernel_lifecycle_status() {
   printf 'running=%s\n' "$running"
   printf 'latest_installed=%s\n' "${latest:-none}"
   printf 'previous_installed=%s\n' "${previous:-none}"
+  printf 'fedora_fallback=%s\n' "$(kernel_lifecycle_fedora_fallback)"
   printf 'grub_default=%s\n' "${default:-unknown}"
   printf 'upstream_latest=%s\n' "$(kernel_lifecycle_upstream_latest 2>/dev/null || echo unresolved)"
   printf 'latest_available=%s\n' "${available:-unresolved}"

@@ -129,7 +129,7 @@ backup complet Borg
         ↓
 résolution latest-stable du canal configuré
         ↓
-installonly_limit = 2
+installonly_limit = 4 (N, N-1, secours Fedora, place d'installation)
         ↓
 dnf5 --refresh upgrade --offline
         ↓
@@ -141,7 +141,7 @@ N-1 = kernel précédent
 ./control.sh update finalize
 ```
 
-La finalisation vérifie la transaction, `dnf5 check`, le kernel N, le défaut GRUB, applique `dnf5 remove --oldinstallonly --limit=2`, puis converge Flatpak si nécessaire et lance les diagnostics.
+La finalisation vérifie la transaction, `dnf5 check`, le kernel N, le défaut GRUB, retire les noyaux amont plus anciens que N-1 en conservant le noyau Fedora de secours, puis converge Flatpak si nécessaire et lance les diagnostics.
 
 Pour le firmware : **aucun flash automatique**. `fwupdmgr` reste une surface d'inventaire/consultation.
 
@@ -152,8 +152,9 @@ La politique **Kernel Vanilla stable** suit Linux amont officiel : version de ke
 - canal unique `vanilla`, RPM sans patch `@kernel-vanilla/stable` ;
 - refus des RC, des autres canaux et des RPM en retard sur la dernière stable ;
 - N comme défaut GRUB et N-1 pour retour au démarrage précédent ;
-- deux versions `kernel-core` au maximum ; DNF protège le noyau actuellement démarré ;
-- récupération Fedora explicite, sans noyau de secours supplémentaire épinglé.
+- deux versions amont au maximum ; le noyau actuellement démarré n'est jamais retiré ;
+- un noyau Fedora signé conservé comme entrée GRUB de secours, jamais par défaut ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)) ;
+- récupération Fedora complète explicite (`rollback-fedora`).
 
 Les mises à niveau majeures ont un parcours séparé : `./control.sh upgrade plan|prepare|reboot|finalize|status`. Fedora 45 reste bloqué tant que son profil final n'est pas promu ([guide](UPGRADE_FEDORA_45.md)).
 
@@ -163,10 +164,14 @@ Les mises à niveau majeures ont un parcours séparé : `./control.sh upgrade pl
 ./control.sh kernel install-latest
 ./control.sh kernel prune
 ./control.sh kernel rollback
+./control.sh kernel fallback
+./control.sh kernel refresh-fallback
 ./control.sh kernel rollback-fedora
 ```
 
-`rollback` sélectionne N-1 sans supprimer N. `rollback-fedora` sert uniquement à une récupération d'urgence.
+`rollback` sélectionne N-1 sans supprimer N. `fallback` rend le noyau Fedora de secours défaut GRUB sans rien supprimer ; `install-latest` revient ensuite au dernier amont. `refresh-fallback` remplace le secours par le dernier noyau Fedora signé. `rollback-fedora` sert uniquement à une récupération d'urgence : il quitte le canal amont.
+
+Si ni N ni N-1 ne démarrent, maintenir **Maj** ou appuyer sur **Échap** au démarrage pour afficher GRUB, puis choisir l'entrée Fedora sans `vanilla` dans son nom.
 
 ## Diagnostics
 

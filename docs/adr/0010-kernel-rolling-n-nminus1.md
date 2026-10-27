@@ -30,13 +30,13 @@ Invariants :
 - `@kernel-vanilla/stable` reste la source ;
 - le minimum projet reste `7.2.2` tant que la configuration ne le relève pas ;
 - aucun `-rc`, mainline ou linux-next n'est accepté ;
-- `installonly_limit=2` est imposé et vérifié ;
-- `dnf5 remove --oldinstallonly --limit=2` est le mécanisme de purge ;
+- `installonly_limit` est imposé et vérifié (4 depuis ADR 0020) ;
+- la purge retire les versions exactes plus anciennes que N-1 (ADR 0020 ; `--oldinstallonly` retirerait d'abord le secours Fedora) ;
 - N est le défaut GRUB normal ;
 - N-1 reste installé pour rollback ;
 - le kernel actuellement démarré n'est jamais effacé directement par le projet ;
 - aucun `rpm -e` ni suppression directe de `/boot/vmlinuz-*` n'est utilisé ;
-- un fallback Fedora permanent n'est plus requis ;
+- un noyau Fedora signé est conservé comme secours GRUB non défaut (ADR 0020) ;
 - `rollback-to-fedora.sh` reste une procédure de récupération explicite ;
 - Secure Boot reste désactivé conformément à la politique HOST.
 

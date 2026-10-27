@@ -78,8 +78,8 @@ grep -Fq "qf $'%{VERSION}-%{RELEASE}.%{ARCH}\\n'" "$ROOT/lib/kernel_lifecycle.sh
 grep -Fq 'kernel_lifecycle_latest_nevras' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'Kernel install mismatch' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'kernel_lifecycle_version_at_least' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'installonly_limit=$limit' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'remove --oldinstallonly --limit="$limit"' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'installonly_limit=$dnf_limit' "$ROOT/lib/kernel_lifecycle.sh"
+grep -Fq 'kernel_lifecycle_release_nevras "$release"' "$ROOT/lib/kernel_lifecycle.sh"
 grep -Fq 'rolling N/N-1 max=2' "$ROOT/diagnostics/kernel-doctor"
 grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
 

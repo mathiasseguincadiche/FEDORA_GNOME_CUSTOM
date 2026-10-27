@@ -10,7 +10,7 @@ Les RPM `@kernel-vanilla/stable` et leur dépendance amont `fedora` permettent d
 
 ## Rétention et sécurité
 
-N est le dernier stable installé, N-1 le noyau installé immédiatement précédent ; un seul canal `kernel-core`, limite deux. Au premier passage N-1 peut être Fedora. DNF protège le noyau démarré ; une purge bloquée reste un échec explicite. Pas de secours supplémentaire épinglé ni de suppression manuelle de /boot.
+N est le dernier stable installé, N-1 le noyau installé immédiatement précédent ; un seul canal `kernel-core`, limite deux. Au premier passage N-1 peut être Fedora. DNF protège le noyau démarré ; une purge bloquée reste un échec explicite. Pas de suppression manuelle de /boot. Un noyau Fedora signé est conservé comme secours depuis [ADR 0020](0020-fedora-kernel-boot-fallback.md).
 
 Secure Boot actif ou inconnu bloque la mutation. SELinux Enforcing et les autres politiques HOST restent requis. Toute nouvelle version demande requalification, sans promesse de performance ou de stabilité matérielle fondée uniquement sur la CI.
 

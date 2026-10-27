@@ -24,9 +24,9 @@ Le profil utilise uniquement Linux amont officiel stable, avec plancher 7.2.9 et
 
 - N est le dernier stable installé et le défaut GRUB ;
 - N-1 est le kernel installé immédiatement précédent ;
-- `installonly_limit=2` vise deux versions sur l'unique canal `kernel-core` ;
-- DNF5 `oldinstallonly` purge les plus anciennes sans supprimer le noyau actuellement démarré ;
-- le premier passage peut conserver le noyau Fedora comme N-1 ; aucun secours supplémentaire n'est épinglé.
+- deux versions amont au maximum (N et N-1), plus un noyau Fedora signé de secours, jamais défaut GRUB ;
+- la purge du projet retire les versions exactes plus anciennes sans supprimer le noyau actuellement démarré ni le secours ;
+- `installonly_limit=4` laisse la place au nouveau N pendant son installation ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)).
 
 Secure Boot actif bloque ce chemin par défaut tant qu'un workflow de confiance/signature n'a pas été choisi explicitement.
 

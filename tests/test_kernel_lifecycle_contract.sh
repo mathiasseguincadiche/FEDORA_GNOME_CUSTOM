@@ -22,14 +22,14 @@ grep -Fxq 'track=latest-stable' "$policy"
 grep -Fxq 'install_latest_direct=true' "$policy"
 grep -Fxq 'max_installed_kernels=2' "$policy"
 grep -Fxq 'keep_previous=true' "$policy"
-grep -Fxq 'keep_fedora_fallback=false' "$policy"
+grep -Fxq 'keep_fedora_fallback=true' "$policy"
 grep -Fxq 'rescue_entry_enabled=false' "$policy"
 grep -Fxq 'one_shot_test_boot=false' "$policy"
 grep -Fxq 'preboot_certification_required=false' "$policy"
 grep -Fxq 'post_update_recertification=true' "$policy"
 grep -Fxq 'required_suspend_cycles=5' "$policy"
 grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$conf"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="false"' "$conf"
+grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$conf"
 grep -Fq 'kernel.org latest_stable' "$conf"
 grep -Fxq 'KERNEL_CHANNEL	vanilla' "$ROOT/config/schema-enums.tsv"
 
@@ -37,8 +37,8 @@ grep -Fq 'kernel_lifecycle_max_installed' "$lib"
 grep -Fq 'kernel_lifecycle_prepare_rolling_update' "$lib"
 grep -Fq 'kernel_lifecycle_finalize_update' "$lib"
 grep -Fq 'kernel_lifecycle_previous_installed' "$lib"
-grep -Fq 'dnf5 config-manager setopt "installonly_limit=$limit"' "$lib"
-grep -Fq 'remove --oldinstallonly --limit="$limit"' "$lib"
+grep -Fq 'dnf5 config-manager setopt "installonly_limit=$dnf_limit"' "$lib"
+grep -Fq 'kernel_lifecycle_release_nevras "$release"' "$lib"
 grep -Fq 'grubby --set-default' "$lib"
 grep -Fq 'installed=$count max=$limit' "$lib"
 grep -Fq 'rolling N/N-1 max=2' "$doctor"
@@ -72,6 +72,13 @@ for action in install-latest prune rollback; do
 done
 
 grep -Fq 'rollback-fedora' "$control"
+for action in fallback refresh-fallback; do
+  grep -Fq "$action" "$entry" || { echo "missing Fedora fallback action: $action" >&2; exit 1; }
+  grep -Fq "$action" "$control" || { echo "control.sh does not expose: $action" >&2; exit 1; }
+done
+grep -Fq 'kernel_lifecycle_ensure_fedora_fallback' "$lib"
+grep -Fq "Fedora fallback" "$doctor"
+grep -Fq 'kernel_lifecycle_keep_fedora_fallback' "$rescue"
 
 for stale in 'candidate.env' 'certified.env' 'previous-certified.env' 'grub2-reboot' 'kernel_lifecycle_certify_candidate' 'kernel_lifecycle_schedule_candidate_once'; do
   if grep -Fq "$stale" "$lib" "$entry" "$module"; then
@@ -80,8 +87,9 @@ for stale in 'candidate.env' 'certified.env' 'previous-certified.env' 'grub2-reb
   fi
 done
 
-# Kernel removal is allowed only through DNF5 installonly retention; raw package
-# erasure or direct /boot deletion remains forbidden.
+# Kernel removal goes through DNF5 with exact installonly NEVRAs chosen by the
+# project retention (upstream N/N-1 + Fedora fallback); raw package erasure or
+# direct /boot deletion remains forbidden.
 if grep -RInE 'rpm[[:space:]]+-e|rm[[:space:]].*/boot/vmlinuz|dnf5?[[:space:]].*remove[[:space:]].*kernel-[0-9]' "$lib" "$entry" "$module" "$updater" "$rescue"; then
   echo 'unsafe direct kernel deletion found' >&2
   exit 1

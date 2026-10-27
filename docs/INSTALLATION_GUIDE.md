@@ -299,7 +299,7 @@ L'APPLY refuse notamment :
 - un snapshot pré-APPLY absent/inaccessible ;
 - Secure Boot actif ou indéterminé.
 
-Le module kernel installe **le dernier Linux amont officiel stable, après comparaison à kernel.org**, applique `DNF installonly_limit=2`, définit ce noyau comme défaut GRUB et conserve au maximum le noyau immédiatement précédent.
+Le module kernel installe **le dernier Linux amont officiel stable, après comparaison à kernel.org**, définit ce noyau comme défaut GRUB, conserve au maximum le noyau amont immédiatement précédent et garde un noyau Fedora signé comme entrée GRUB de secours (`installonly_limit=4`).
 
 Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux` et `/data/IA/Openclaw`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
 
@@ -329,7 +329,7 @@ Après démarrage sur N :
 ./diagnostics/arc-compute-doctor
 ```
 
-Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=2`, le nombre de kernels installés, N/N-1 et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les répertoires persistants dont `IA/Openclaw`, leurs droits/labels et le mapping XDG Documents.
+Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=4`, le nombre de kernels amont installés, N/N-1, le secours Fedora et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les répertoires persistants dont `IA/Openclaw`, leurs droits/labels et le mapping XDG Documents.
 
 **Checkpoint :** le runtime actif doit réellement être N et les doctors bare-metal doivent être conformes avant la certification finale.
 
@@ -426,7 +426,7 @@ Préparer une mise à jour complète :
 ./control.sh update all
 ```
 
-Le chemin complet effectue le backup, résout le dernier Linux amont stable et refuse un RPM en retard sur kernel.org, impose `installonly_limit=2` et prépare la transaction RPM DNF5 offline. S’il existe une transaction RPM offline, vérifier l’état puis déclencher son redémarrage :
+Le chemin complet effectue le backup, résout le dernier Linux amont stable et refuse un RPM en retard sur kernel.org, impose `installonly_limit=4` et prépare la transaction RPM DNF5 offline. S’il existe une transaction RPM offline, vérifier l’état puis déclencher son redémarrage :
 
 ```bash
 ./control.sh update status
@@ -439,7 +439,7 @@ Après le redémarrage :
 ./control.sh update finalize
 ```
 
-La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, vérifie que le nouveau kernel N est installé, démarré et défaut GRUB, puis exécute `dnf5 remove --oldinstallonly --limit=2`. Il ne reste que N et N-1 sur l'unique canal `kernel-core`, sous réserve de la protection du noyau actuellement démarré. Ensuite viennent Flatpak en mode complet, consultation firmware et diagnostic global.
+La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, vérifie que le nouveau kernel N est installé, démarré et défaut GRUB, puis retire les noyaux amont plus anciens que N-1. Il reste N, N-1 et le noyau Fedora de secours, sous réserve de la protection du noyau actuellement démarré. Ensuite viennent Flatpak en mode complet, consultation firmware et diagnostic global.
 
 Exemple :
 
@@ -484,6 +484,12 @@ sudo reboot
 
 ```bash
 ./control.sh kernel install-latest
+```
+
+Si ni N ni N-1 ne démarrent : maintenir **Maj** ou appuyer sur **Échap** au démarrage pour afficher GRUB, puis choisir l'entrée Fedora sans `vanilla`. Une fois démarré, rendre ce secours durable sans rien supprimer :
+
+```bash
+./control.sh kernel fallback
 ```
 
 Retour d'urgence aux paquets Fedora :

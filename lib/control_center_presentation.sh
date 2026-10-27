@@ -291,7 +291,7 @@ Usage:
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
-  ./control.sh kernel status|doctor|install-latest|prune|rollback|rollback-fedora
+  ./control.sh kernel status|doctor|install-latest|prune|rollback|fallback|refresh-fallback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh
   ./control.sh kvm create-rocky --cloud-image PATH [--ssh-key PATH] [--rocky-key-file PATH]
   ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify

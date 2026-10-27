@@ -190,7 +190,7 @@ rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | sort -V
 ./control.sh kernel status
 ```
 
-Attendu : `installonly_limit=2` et au maximum deux versions `kernel-core` : N et N-1. Le noyau en cours d'exécution est protégé ; aucun second canal ni secours supplémentaire n'est géré.
+Attendu : `installonly_limit=4`, au maximum deux versions amont (N et N-1) et un noyau Fedora signé de secours, jamais défaut GRUB. Le noyau en cours d'exécution est protégé.
 
 Appliquer la politique :
 
@@ -198,7 +198,7 @@ Appliquer la politique :
 ./control.sh kernel prune
 ```
 
-Le moteur utilise uniquement `dnf5 remove --oldinstallonly --limit=2`. Il n'utilise ni `rpm -e` direct ni suppression manuelle de `/boot/vmlinuz-*`. Si un ancien kernel est encore le kernel actuellement démarré, DNF le protège ; redémarrer sur N puis relancer la purge.
+Le moteur retire par `dnf5 remove` les versions exactes plus anciennes que N-1 (et les noyaux Fedora plus anciens que le secours). Il n'utilise ni `--oldinstallonly`, qui retirerait d'abord le secours Fedora, ni `rpm -e` direct, ni suppression manuelle de `/boot/vmlinuz-*`. Si un ancien kernel est encore le kernel actuellement démarré, DNF le protège ; redémarrer sur N puis relancer la purge.
 
 ## Certification `STALE`
 

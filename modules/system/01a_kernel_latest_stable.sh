@@ -23,7 +23,7 @@ system_kernel_precheck() {
 }
 
 system_kernel_plan() {
-  echo "Install the latest stable $(kernel_channel_label) kernel from $(kernel_channel_copr) directly (minimum ${KERNEL_MIN_VERSION:-7.2.9}), set it as GRUB default, retain only N/N-1 of that channel, and disable Fedora's separate rescue boot entry."
+  echo "Install the latest stable $(kernel_channel_label) kernel from $(kernel_channel_copr) directly (minimum ${KERNEL_MIN_VERSION:-7.2.9}), set it as GRUB default, retain only N/N-1 of that channel plus one signed Fedora kernel as a non-default boot fallback, and disable Fedora's separate rescue boot entry."
 }
 
 system_kernel_apply() {
@@ -48,5 +48,5 @@ system_kernel_postcheck() {
   (( count <= limit && limit == 2 )) || { log_error SYSTEM "Kernel retention mismatch: installed=$count max=$limit"; return "$EXIT_POSTCHECK_FAILED"; }
   [[ "$default" == "$latest" ]] || { log_error SYSTEM "GRUB default mismatch: default=$default latest=$latest"; return "$EXIT_POSTCHECK_FAILED"; }
   bash "$REPO_ROOT/scripts/kernel/enforce-two-entry-grub.sh" --check >/dev/null || { log_error SYSTEM 'GRUB contains a rescue/extra kernel entry outside N/N-1 policy'; return "$EXIT_POSTCHECK_FAILED"; }
-  log_info SYSTEM "N=$latest N-1=${previous:-none} installed=$count max=$limit; rescue entry disabled; latest stable is the persistent GRUB default"
+  log_info SYSTEM "N=$latest N-1=${previous:-none} installed=$count max=$limit; Fedora fallback=$(kernel_lifecycle_fedora_fallback); rescue entry disabled; latest stable is the persistent GRUB default"
 }
