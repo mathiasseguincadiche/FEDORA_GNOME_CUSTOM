@@ -80,7 +80,7 @@ La baseline prouve que le matériel est assez sain pour autoriser les mutations.
 
 L'empreinte enregistrée couvre carte mère, BIOS, UUID plateforme, CPU, B580 et pilote, classe mémoire testée, NVMe (modèle, série, firmware) et EDID. Un changement significatif (mise à jour BIOS, vitesse mémoire, écran) invalide la baseline : refaire les essais concernés.
 
-L'APPLY n'est autorisé qu'avec : baseline certifiée, dry-run au même état, sauvegarde Borg pré-APPLY vérifiée et confirmation opérateur ([installation](INSTALLATION_GUIDE.md), [contrat d'exécution](EXECUTION_CONTRACT.md)).
+L'APPLY n'est autorisé qu'avec : baseline certifiée, dry-run au même état, sauvegarde Borg pré-APPLY vérifiée et confirmation opérateur ([installation](INSTALLATION_GUIDE.md), [contrat d'exécution](ARCHITECTURE.md#contrat-dexécution)).
 
 ## 4. Gate 3 — système installé
 

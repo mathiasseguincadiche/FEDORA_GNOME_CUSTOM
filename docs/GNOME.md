@@ -32,7 +32,7 @@ Chaque extension remplit une fonction précise. Les identités et archives exact
 
 URL, version, UUID, compatibilité GNOME 51 et SHA-256 des quatre archives téléchargées sont dans `config/gnome-extensions.lock`, qui doit rester identique à `profiles/fedora45/gnome-extensions.lock`. Chaque installateur refuse une archive dont l'un de ces éléments diffère, compile les schémas et garde la provenance dans `.fedora-gnome-custom-source`.
 
-Gtk4 DING, Show Desktop Button et Vitals remplacent Desktop Icons NG, Show Desktop Plus et Resource Monitor, qui n'ont pas de version GNOME 51. Les préfixes de configuration `DING_*`, `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` sont conservés comme noms de rôle. Les réglages propres aux anciennes extensions (actions de clic, badge, style d'icône de Show Desktop Plus) ne sont pas appliqués. Les sources GNOME 50 restent dans le [profil Fedora 44 historique](HISTORICAL_FEDORA44.md).
+Gtk4 DING, Show Desktop Button et Vitals remplacent Desktop Icons NG, Show Desktop Plus et Resource Monitor, qui n'ont pas de version GNOME 51. Les préfixes de configuration `DING_*`, `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` sont conservés comme noms de rôle. Les réglages propres aux anciennes extensions (actions de clic, badge, style d'icône de Show Desktop Plus) ne sont pas appliqués. Les sources GNOME 50 restent dans le [profil Fedora 44 historique](history/HISTORICAL_FEDORA44.md).
 
 ### Bureau et Corbeille (Gtk4 DING)
 

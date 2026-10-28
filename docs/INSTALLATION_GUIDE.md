@@ -6,7 +6,7 @@ Ce guide suit le parcours direct sur le PC : **Live USB → installation neuve �
 
 La référence unique de cette procédure est **Fedora 45 Workstation / GNOME 51**, installée directement. La configuration centrale sélectionne `HOST_RELEASE="45"` ; aucune installation préalable de Fedora 44 ni migration n’est nécessaire.
 
-Le profil de production reste `pending` jusqu’à la promotion du média final signé et des composants revus. Le contrôle Live ne promeut pas ce profil. La configuration et le dry-run restent consultables pendant la préparation ; l’APPLY et la génération du Kickstart de production refusent un profil non promu. Les scripts historiques Fedora 44 sont décrits séparément dans [HISTORICAL_FEDORA44.md](HISTORICAL_FEDORA44.md).
+Le profil de production reste `pending` jusqu’à la promotion du média final signé et des composants revus. Le contrôle Live ne promeut pas ce profil. La configuration et le dry-run restent consultables pendant la préparation ; l’APPLY et la génération du Kickstart de production refusent un profil non promu. Les scripts historiques Fedora 44 sont décrits séparément dans [history/HISTORICAL_FEDORA44.md](history/HISTORICAL_FEDORA44.md).
 
 ## Avant de commencer
 

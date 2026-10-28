@@ -38,7 +38,7 @@ Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôl
 
 Les conteneurs principaux (paquets, installation en dry-run, Borg, bureau, jeux, AppImage et télémétrie) utilisent Fedora 45. Les deux laboratoires obligatoires démarrent Fedora 45 / GNOME 51 : l’un natif, l’autre avec les six extensions. Le second peut installer deux RPM Fedora signés de `updates-testing`, strictement dans la VM jetable ; cela ne les rend pas stables pour le PC. Aucun dépôt de test n’est activé sur la machine de production.
 
-Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même si le rapport d’état se termine correctement. Le laboratoire [Fedora 44 historique](HISTORICAL_FEDORA44.md) est facultatif et lancé manuellement.
+Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même si le rapport d’état se termine correctement. Le laboratoire [Fedora 44 historique](history/HISTORICAL_FEDORA44.md) est facultatif et lancé manuellement.
 
 Le scénario QEMU ferme ses applications de test (action D-Bus `quit` de Nautilus) avant la déconnexion et vérifie l’absence réelle des processus Nautilus et Ptyxis. Nautilus utilise une instance D-Bus : l’arrêt de son seul lanceur ne suffit pas. Les journaux, les états de service et les processus avant/après fermeture sont conservés ; un blocage du compositeur, une unité en échec ou un coredump fait échouer le scénario. Cette vérification ne remplace pas l’essai de déconnexion avec des applications ouvertes lors de la qualification interactive.
 

@@ -6,7 +6,7 @@ La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51**. Son prof
 
 | Je veux… | Lire |
 |---|---|
-| Comprendre le projet | [Vision](VISION.md), puis [architecture](ARCHITECTURE_PEDAGOGIQUE.md) |
+| Comprendre le projet | [Vision et architecture](ARCHITECTURE.md) |
 | Installer ce PC | [Contrôle Live](FEDORA45_LIVE_PREFLIGHT.md), puis [installation](INSTALLATION_GUIDE.md) |
 | Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md), [maintenance](DESKTOP_LIFECYCLE.md), [sauvegardes](BACKUP_RESTORE.md) |
 | Le bureau, les jeux, les VM | [GNOME](GNOME.md), [Gaming](GAMING.md), [démarrage KVM](KVM_QUICKSTART.md) |
@@ -24,8 +24,7 @@ Le Live USB ne déverrouille jamais `install.sh --apply` ; la CI ne certifie jam
 
 ### Projet et règles
 
-- [Vision](VISION.md) · [architecture expliquée](ARCHITECTURE_PEDAGOGIQUE.md) · [architecture de référence](GOLDEN_WORKSTATION.md)
-- [Cahier des charges](CAHIER_DES_CHARGES.md) · [contrat d'exécution](EXECUTION_CONTRACT.md)
+- [Vision et architecture](ARCHITECTURE.md) (dont le [contrat d'exécution](ARCHITECTURE.md#contrat-dexécution))
 - [Politique de sécurité de l'hôte](HOST_SECURITY_POLICY.md) · [provenance des logiciels](SUPPLY_CHAIN.md) · [inventaire logiciel](SOFTWARE_INVENTORY.md)
 - [Glossaire](GLOSSARY.md) · [décisions d'architecture (ADR)](adr/README.md)
 
@@ -47,9 +46,8 @@ Le Live USB ne déverrouille jamais `install.sh --apply` ; la CI ne certifie jam
 
 ### Virtualisation
 
-- [Démarrage KVM](KVM_QUICKSTART.md) · [architecture KVM](VIRTUALIZATION.md) · [commandes avancées](KVM_QUICKSTART.md)
-- [Profils VM](VIRTUALIZATION.md#profil-rocky-devops) · [réseau `devops-nat`](KVM_NETWORK.md) · [fichiers des VM](KVM_QUICKSTART.md)
-- [Rocky DevOps : provisioning](VIRTUALIZATION.md#provisioning) · [état attendu](VIRTUALIZATION.md)
+- [KVM au quotidien](KVM_QUICKSTART.md) : créer, utiliser, fichiers, outils, dépannage
+- [Référence virtualisation](VIRTUALIZATION.md) : architecture, profil et provisioning Rocky DevOps · [réseau `devops-nat`](KVM_NETWORK.md)
 
 ### Dépannage
 
@@ -66,4 +64,4 @@ Ne jamais désactiver SELinux, firewalld ou un garde-fou pour faire disparaître
 
 ### Historique
 
-L'installation neuve ne passe pas par Fedora 44. [Fedora 44 historique](HISTORICAL_FEDORA44.md) · [mise à niveau facultative 44 → 45](UPGRADE_FEDORA_45.md) · [comptes rendus passés](history/README.md)
+L'installation neuve ne passe pas par Fedora 44. [Fedora 44 historique](history/HISTORICAL_FEDORA44.md) · [mise à niveau facultative 44 → 45](UPGRADE_FEDORA_45.md) · [comptes rendus passés](history/README.md)

@@ -7,3 +7,4 @@ Ces documents décrivent des **étapes passées** du projet (durcissement pré-1
 - [`HARDWARE_KVM_COMPLETION.md`](HARDWARE_KVM_COMPLETION.md) — fermeture du lot matériel + KVM
 - [`AUDIT_RUNTIME_2026-09-27.md`](AUDIT_RUNTIME_2026-09-27.md) — audit croisé du moteur (0.17–0.18), dont les exigences sont depuis satisfaites
 - [`PREINSTALL_SAFETY_REVIEW.md`](PREINSTALL_SAFETY_REVIEW.md) — corrections avant installation (octobre 2026) et leurs tests de régression
+- [`HISTORICAL_FEDORA44.md`](HISTORICAL_FEDORA44.md) — ancien profil Fedora 44 / GNOME 50, conservé pour l'historique

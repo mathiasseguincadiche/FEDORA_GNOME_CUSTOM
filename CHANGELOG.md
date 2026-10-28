@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Documentation, deuxième passe : 49 → 35 guides. KVM et Rocky DevOps (8 → 2 : `KVM_QUICKSTART.md` pour l'usage et le dépannage, `VIRTUALIZATION.md` pour la référence), dépannage (4 → 1 : `TROUBLESHOOTING.md` couvre désormais matériel, noyau avec secours Fedora, `/data`, Gaming, journaux et incidents), vision et architecture (5 → 1 : `ARCHITECTURE.md`). La page Fedora 44 rejoint `docs/history/`. Le contrôle d'intégrité a repéré deux références du code au runbook supprimé, corrigées.
+- Tests : `test_physical_soak_behavior.sh` n'est plus instable. Les PID des fausses charges sont écrits atomiquement et l'instance GPU saine est choisie par `flock` : un `mkdir` concurrent pouvait réussir deux fois sur certains tmpfs.
+
 - Documentation : 75 → 49 guides. Les guides GNOME (7 → 1), qualification et certification (12 → 2) et méta-documentation (4, intégrées à `CONTRIBUTING.md`) sont fusionnés ; le portail `docs/README.md` est réécrit. Les tests qui figeaient la formulation des guides (~110 assertions, 3 fichiers) sont remplacés par `tests/test_docs_integrity.py`, qui vérifie liens, pages atteignables, commandes `./control.sh` citées et chemins cités. `DESKTOP_LIFECYCLE.md` indiquait à tort des mises à jour Flatpak par GNOME Logiciels, que le projet verrouille.
 
 - Sauvegardes : les dossiers `.ssh` et `.gnupg`, à toute profondeur, sont toujours exclus des archives Borg non chiffrées (pré-APPLY, complète, quotidienne), même si la configuration locale les liste (ADR 0021). Le guide de sauvegarde explique comment conserver ces clés à part, dans Bitwarden ou sur un support chiffré. Test avec un vrai dépôt Borg et test sans Borg pour chaque type d'archive.

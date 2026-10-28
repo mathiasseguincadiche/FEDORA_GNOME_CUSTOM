@@ -28,7 +28,7 @@ flowchart LR
 
 **Un plantage GNOME n'est pas une réussite.** Les coredumps, erreurs critiques, services en échec et incohérences de reprise doivent rester bloquants, même s'ils apparaissent au dernier logout. Le job `contracts` dépend du succès effectif des laboratoires.
 
-Pour voir comment la VM et les preuves se rattachent à la machine physique, consulter [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md).
+Pour voir comment la VM et les preuves se rattachent à la machine physique, consulter [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Image et démarrage
 
