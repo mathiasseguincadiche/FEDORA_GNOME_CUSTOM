@@ -6,7 +6,7 @@ Ce guide suit le parcours direct sur le PC : **Live USB → installation neuve �
 
 La référence unique de cette procédure est **Fedora 45 Workstation / GNOME 51**, installée directement. La configuration centrale sélectionne `HOST_RELEASE="45"` ; aucune installation préalable de Fedora 44 ni migration n’est nécessaire.
 
-Le profil de production reste `pending` jusqu’à la promotion du média final signé et des composants revus. Le contrôle Live ne promeut pas ce profil. La configuration et le dry-run restent consultables pendant la préparation ; l’APPLY et la génération du Kickstart de production refusent un profil non promu. Les scripts historiques Fedora 44 sont décrits séparément dans [HISTORICAL_FEDORA44.md](HISTORICAL_FEDORA44.md).
+Le profil de production reste `pending` jusqu’à la promotion du média final signé et des composants revus. Le contrôle Live ne promeut pas ce profil. La configuration et le dry-run restent consultables pendant la préparation ; l’APPLY et la génération du Kickstart de production refusent un profil non promu. Les scripts historiques Fedora 44 sont décrits séparément dans [history/HISTORICAL_FEDORA44.md](history/HISTORICAL_FEDORA44.md).
 
 ## Avant de commencer
 
@@ -367,9 +367,9 @@ Créer ensuite explicitement le profil **Rocky DevOps**, puis le qualifier avec 
 bash scripts/kvm/runtime_certification.sh
 ```
 
-Les exports des VM relèvent d’une gestion personnelle manuelle. Les images et données `/data/libvirt` ne font pas partie des sauvegardes Borg automatiques : voir [VM_FILE_ACCESS.md](VM_FILE_ACCESS.md) et [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
+Les exports des VM relèvent d’une gestion personnelle manuelle. Les images et données `/data/libvirt` ne font pas partie des sauvegardes Borg automatiques : voir [KVM_QUICKSTART.md](KVM_QUICKSTART.md) et [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
 
-Ne désactiver ni SELinux, ni firewalld, ni le guard nftables pour contourner un défaut. Pour le détail : [VIRTUALIZATION.md](VIRTUALIZATION.md), [KVM_NETWORK.md](KVM_NETWORK.md), [VM_PROFILES.md](VM_PROFILES.md).
+Ne désactiver ni SELinux, ni firewalld, ni le guard nftables pour contourner un défaut. Pour le détail : [VIRTUALIZATION.md](VIRTUALIZATION.md), [KVM_NETWORK.md](KVM_NETWORK.md), [VIRTUALIZATION.md](VIRTUALIZATION.md#profil-rocky-devops).
 
 ## 12. Cinq cycles veille/réveil
 

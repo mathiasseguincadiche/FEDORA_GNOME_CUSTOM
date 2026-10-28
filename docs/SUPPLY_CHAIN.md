@@ -1,6 +1,6 @@
 # Supply-chain et provenance
 
-Les archives d’extensions de la référence **Fedora 45 / GNOME 51** sont centralisées dans `config/gnome-extensions.lock`, identique à `profiles/fedora45/gnome-extensions.lock`. Ces verrous sélectionnent les artefacts revus pour la préparation ; l’APPLY exige toujours le profil promu. Les verrous Fedora 44 sont réservés au [parcours historique](HISTORICAL_FEDORA44.md).
+Les archives d’extensions de la référence **Fedora 45 / GNOME 51** sont centralisées dans `config/gnome-extensions.lock`, identique à `profiles/fedora45/gnome-extensions.lock`. Ces verrous sélectionnent les artefacts revus pour la préparation ; l’APPLY exige toujours le profil promu. Les verrous Fedora 44 sont réservés au [parcours historique](history/HISTORICAL_FEDORA44.md).
 
 La version actuelle du projet se lit dans [`VERSION`](../VERSION), jamais
 dans une ancienne notice historique. Les verrous sont des constantes de

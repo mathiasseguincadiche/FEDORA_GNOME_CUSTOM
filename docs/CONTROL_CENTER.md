@@ -31,7 +31,7 @@ flowchart LR
 | Préparer une installation | `./control.sh install dry-run` | plan non mutant |
 | Installer réellement | `./control.sh install apply` | **mutation protégée, bare-metal uniquement** |
 
-Fedora 45 / GNOME 51 est la cible sélectionnée ; l’APPLY attend la promotion de son profil `pending`. Le [schéma d'architecture expliqué](ARCHITECTURE_PEDAGOGIQUE.md) détaille les relations entre commandes et moteurs.
+Fedora 45 / GNOME 51 est la cible sélectionnée ; l’APPLY attend la promotion de son profil `pending`. Le [schéma d'architecture expliqué](ARCHITECTURE.md) détaille les relations entre commandes et moteurs.
 
 ## Tableau de bord
 

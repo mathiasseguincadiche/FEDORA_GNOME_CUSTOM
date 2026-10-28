@@ -2,7 +2,7 @@
 
 L'objectif du dépôt : une Fedora 45 / GNOME 51 **stable, reproductible, mesurée, récupérable et adaptée au matériel cible**.
 
-La source de vérité est le **code, la configuration et les tests**. Viennent ensuite les guides courants, puis l'historique (`docs/history/`, `CHANGELOG.md`, ADR remplacées). Une contradiction entre un guide et le code est un bug. Avant une modification structurante, lire l'[architecture](docs/ARCHITECTURE_PEDAGOGIQUE.md), le [contrat d'exécution](docs/EXECUTION_CONTRACT.md) et les [ADR](docs/adr/README.md).
+La source de vérité est le **code, la configuration et les tests**. Viennent ensuite les guides courants, puis l'historique (`docs/history/`, `CHANGELOG.md`, ADR remplacées). Une contradiction entre un guide et le code est un bug. Avant une modification structurante, lire l'[architecture](docs/ARCHITECTURE.md), le [contrat d'exécution](docs/ARCHITECTURE.md#contrat-dexécution) et les [ADR](docs/adr/README.md).
 
 ## Principes
 

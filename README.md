@@ -61,7 +61,7 @@ Pour l’usage quotidien, ouvrir le centre de contrôle :
 | Utiliser les machines virtuelles | [Démarrage KVM](docs/KVM_QUICKSTART.md) |
 | Résoudre un problème | [Dépannage](docs/TROUBLESHOOTING.md) |
 
-La [documentation complète](docs/README.md) donne accès aux guides spécialisés, à l’[architecture](docs/ARCHITECTURE_PEDAGOGIQUE.md), aux décisions techniques et aux procédures de qualification.
+La [documentation complète](docs/README.md) donne accès aux guides spécialisés, à l’[architecture](docs/ARCHITECTURE.md), aux décisions techniques et aux procédures de qualification.
 
 ## Contribuer
 

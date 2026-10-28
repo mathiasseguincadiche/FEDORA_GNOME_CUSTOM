@@ -82,4 +82,4 @@ Procédure d'activation et retour arrière : [accès distant](REMOTE_ACCESS.md).
 
 En cas d'échec, ouvrir une [issue matérielle](../.github/ISSUE_TEMPLATE/hardware_validation.yml) avec commit, noyau, domaine, commande et erreur.
 
-L'invité Rocky garde son noyau EL10 et Docker stable. Les notices nft_compat / ip_set ne prouvent pas une panne du matériel Fedora ; la [qualification réseau Docker](ROCKY_DEVOPS_READY.md#qualification-réseau-docker) vérifie bridges, DNS, échanges entre conteneurs et port publié avant et après redémarrage.
+L'invité Rocky garde son noyau EL10 et Docker stable. Les notices nft_compat / ip_set ne prouvent pas une panne du matériel Fedora ; la [qualification réseau Docker](VIRTUALIZATION.md#qualification-réseau-docker) vérifie bridges, DNS, échanges entre conteneurs et port publié avant et après redémarrage.

@@ -20,7 +20,7 @@ L'inventaire ci-dessous est détaillé volontairement. Pour le lire sans se perd
 
 **Important :** `SOFTWARE_INVENTORY.md` décrit le **catalogue**, pas le droit de lancer une installation. Ce droit dépend du profil Fedora promu, des guards, de la baseline, du dry-run et de la sauvegarde. Les paquets d'une VM Rocky Linux ne sont pas automatiquement installés sur le système Fedora HOST.
 
-Pour l'architecture d'ensemble : [ARCHITECTURE_PEDAGOGIQUE.md](ARCHITECTURE_PEDAGOGIQUE.md). La référence Fedora 45 / GNOME 51 et ses conditions de promotion sont décrites dans [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
+Pour l'architecture d'ensemble : [ARCHITECTURE.md](ARCHITECTURE.md). La référence Fedora 45 / GNOME 51 et ses conditions de promotion sont décrites dans [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
 
 
 ## 1. HOST — Fedora Golden Workstation

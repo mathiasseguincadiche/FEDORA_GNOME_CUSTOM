@@ -15,7 +15,7 @@ flowchart TD
 
 Le second SSD protège les données de travail lors d'une **réinstallation du premier**, mais **pas** contre la panne ou l'effacement du second SSD. Borg fournit la sauvegarde externe pour les jeux de données sélectionnés ; `ISO` et `Jeux` ne sont pas automatiquement inclus par défaut, les VM sont exclues de Borg : leurs exports restent exclusivement manuels, sous la responsabilité de l'utilisateur.
 
-Les dépôts Borg de ce projet sont **non chiffrés** par décision explicite (ADR 0014) : traiter le support externe comme une donnée confidentielle. Aucune restauration ne doit écraser directement le système en production sans inspection. [Schéma d'architecture détaillé](ARCHITECTURE_PEDAGOGIQUE.md).
+Les dépôts Borg de ce projet sont **non chiffrés** par décision explicite (ADR 0014) : traiter le support externe comme une donnée confidentielle. Aucune restauration ne doit écraser directement le système en production sans inspection. [Schéma d'architecture détaillé](ARCHITECTURE.md).
 
 
 ## Contrat
