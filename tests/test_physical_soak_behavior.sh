@@ -118,21 +118,23 @@ EXIT_USAGE=2
 REPORT_ROOT="$SOAK_TEST_TMP/reports"
 RUN_ID=test
 STUB
+# PID files are written atomically: the doctor may kill a workload between the
+# shell creating the file and writing the PID, which left an empty file.
 cat >"$tmp/bin/stress-ng" <<'STUB'
 #!/usr/bin/env bash
-echo "$$" >"$SOAK_TEST_TMP/workload.pid"
+echo "$$" >"$SOAK_TEST_TMP/workload.pid.$$" && mv -f "$SOAK_TEST_TMP/workload.pid.$$" "$SOAK_TEST_TMP/workload.pid"
 if [[ "$SOAK_TEST_MODE" == early ]]; then exit 0; fi
 sleep 60 &
-echo "$!" >"$SOAK_TEST_TMP/worker.pid"
+echo "$!" >"$SOAK_TEST_TMP/worker.pid.$$" && mv -f "$SOAK_TEST_TMP/worker.pid.$$" "$SOAK_TEST_TMP/worker.pid"
 wait
 STUB
 cat >"$tmp/bin/vkcube-wayland" <<'STUB'
 #!/usr/bin/env bash
 if [[ "$SOAK_TEST_MODE" == gpu_mixed ]]; then
   if mkdir "$SOAK_TEST_TMP/first-gpu" 2>/dev/null; then
-    echo "$$" >"$SOAK_TEST_TMP/workload.pid"
+    echo "$$" >"$SOAK_TEST_TMP/workload.pid.$$" && mv -f "$SOAK_TEST_TMP/workload.pid.$$" "$SOAK_TEST_TMP/workload.pid"
     sleep 60 &
-    echo "$!" >"$SOAK_TEST_TMP/worker.pid"
+    echo "$!" >"$SOAK_TEST_TMP/worker.pid.$$" && mv -f "$SOAK_TEST_TMP/worker.pid.$$" "$SOAK_TEST_TMP/worker.pid"
     wait
   else
     exit 7
@@ -173,7 +175,9 @@ assert_stopped() {
 export SOAK_TEST_MODE=gpu_mixed
 started=$SECONDS
 expect_failure 40 bash "$tmp/diagnostics/physical-runtime-doctor" gpu-soak
-(( SECONDS-started < 10 )) || { echo 'GPU waited behind the healthy instance' >&2; exit 1; }
+# The healthy instance sleeps 60 s: finishing well before proves the failed one
+# was detected without waiting, whatever the runner's startup speed.
+(( SECONDS-started < 30 )) || { echo 'GPU waited behind the healthy instance' >&2; exit 1; }
 assert_stopped
 
 for SOAK_TEST_MODE in overheat missing; do
