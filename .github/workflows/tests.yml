@@ -179,6 +179,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_backup_private_keys_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_daily_backup_sources_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_config_schema_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_ci_maturity_contract.sh

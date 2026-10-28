@@ -114,6 +114,34 @@ borg list --short | grep -Fxq "$pre"
   if backup_runtime_validate_preapply_marker "$marker"; then echo 'daily archive accepted as pre-APPLY proof' >&2; exit 1; fi
   printf 'snapshot=%s\narchive=%s\nrepository=%s\n' "$(printf '%064d' 0)" "$pre_name" "$BACKUP_REPOSITORY" > "$marker"
   if backup_runtime_validate_preapply_marker "$marker"; then echo 'forged archive id accepted' >&2; exit 1; fi
+
+  # The APPLY gate accepts only a fresh marker for the current Golden identity.
+  source "$ROOT/lib/apply_gate.sh"
+  is_true() { [[ "$1" == true ]]; }
+  repo_commit() { printf '%040d\n' "${T_COMMIT:-1}"; }
+  effective_config_sha256() { printf '%064d\n' "${T_CONFIG:-1}"; }
+  module_plan_sha256() { printf '%064d\n' "${T_PLAN:-1}"; }
+  evidence_hardware_fingerprint() { echo "${T_HARDWARE:-board-a}"; }
+  baseline_fingerprint() { echo "${T_HARDWARE:-board-a}"; }
+  runtime_is_baremetal() { return 0; }
+  STATE_ROOT="$tmp/gate"
+  mkdir -p "$STATE_ROOT"
+  marker="$STATE_ROOT/preapply-backup.ok"
+  { printf 'verdict=PASS\nintegrity_check=PASS\nrestore_test=PASS\nsnapshot=%s\narchive=%s\nrepository=%s\n' "$pre_id" "$pre_name" "$BACKUP_REPOSITORY"
+    backup_runtime_identity_payload; } > "$marker"
+  apply_gate_require_backup || { echo 'current pre-APPLY backup refused by the APPLY gate' >&2; exit 1; }
+  for change in T_COMMIT=2 T_CONFIG=2 T_PLAN=2; do
+    if (export "${change?}"; apply_gate_require_backup); then
+      echo "pre-APPLY backup accepted after $change" >&2; exit 1
+    fi
+  done
+  baseline_fingerprint() { echo board-b; }
+  if apply_gate_require_backup; then echo 'pre-APPLY backup accepted on different hardware' >&2; exit 1; fi
+  baseline_fingerprint() { echo "${T_HARDWARE:-board-a}"; }
+  touch -d '25 hours ago' "$marker"
+  if apply_gate_require_backup; then echo 'stale pre-APPLY backup accepted' >&2; exit 1; fi
+  rm "$marker"
+  if apply_gate_require_backup; then echo 'APPLY gate passed without a pre-APPLY backup' >&2; exit 1; fi
 )
 
 # An attempted backup with a warning cannot retain yesterday's success marker.

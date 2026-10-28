@@ -26,9 +26,21 @@ printf 'private owner-managed VM XML\n' > "$HOME/.config/libvirt/manual-domain.x
 cat > "$REPO_ROOT/lib/install_lock.sh" <<'MOCK'
 install_lock_acquire() { return 0; }
 MOCK
+# /data is a fixture directory; its mount check is simulated.
 cat > "$REPO_ROOT/lib/persistent_data.sh" <<'MOCK'
-# No real persistent-data mount in this fixture.
+persistent_data_validate_mount() { [[ "${TEST_DATA_MOUNT:-invalid}" == valid ]]; }
+persistent_data_validate_user_path() { return 0; }
+persistent_data_documents() { printf '%s/Documents\n' "$TEST_DATA"; }
+persistent_data_projects() { printf '%s/Projets\n' "$TEST_DATA"; }
+persistent_data_openclaw() { printf '%s/IA/Openclaw\n' "$TEST_DATA"; }
 MOCK
+export TEST_DATA="$tmp/data" TEST_SYSROOT="$tmp/sysroot"
+mkdir -p "$TEST_DATA/Documents" "$TEST_DATA/Projets" "$TEST_DATA/Jeux" "$TEST_DATA/ISO"
+touch "$TEST_DATA/Documents/facture.pdf" "$TEST_DATA/Projets/main.py" "$TEST_DATA/Jeux/game.bin" "$TEST_DATA/ISO/fedora.iso"
+mkdir -p "$TEST_SYSROOT/etc/libvirt/qemu" "$TEST_SYSROOT/boot"
+printf 'host\n' > "$TEST_SYSROOT/etc/hostname"
+printf 'private domain XML\n' > "$TEST_SYSROOT/etc/libvirt/qemu/owner-managed.xml"
+touch "$TEST_SYSROOT/boot/vmlinuz-fixture"
 cat > "$REPO_ROOT/lib/bootstrap.sh" <<'MOCK'
 engine_bootstrap() {
   source "$REPO_ROOT/lib/evidence.sh"
@@ -40,7 +52,8 @@ repo_commit() { printf '%040d\n' 1; }
 effective_config_sha256() { printf '%064d\n' "${TEST_CONFIG:-1}"; }
 module_plan_sha256() { printf '%064d\n' 2; }
 evidence_hardware_fingerprint() { echo deferred:container; }
-runtime_is_baremetal() { return 1; }
+baseline_fingerprint() { echo deferred:container; }
+runtime_is_baremetal() { [[ "${TEST_BAREMETAL:-false}" == true ]]; }
 is_true() { [[ "$1" == true ]]; }
 MOCK
 cat >> "$REPO_ROOT/lib/backup_runtime.sh" <<'MOCK'
@@ -55,10 +68,18 @@ if [[ "$1" == tar ]]; then
   if [[ "${TEST_MUTATE_LOCAL_CONFIG:-false}" == true ]]; then
     printf '# edited during backup\n' >> "$REPO_ROOT/config/local.conf"
   fi
+  # Run the script's real tar arguments against a fixture root instead of /.
+  shift
+  args=()
   while (($#)); do
-    if [[ "$1" == -czf ]]; then printf 'fixture system configuration\n' > "$2"; exit; fi
+    case "$1" in
+      -C) args+=(-C "$TEST_SYSROOT"); shift ;;
+      --xattrs|--acls|--selinux) ;;
+      *) args+=("$1") ;;
+    esac
     shift
   done
+  exec tar "${args[@]}"
 fi
 exec "$@"
 MOCK
@@ -173,4 +194,27 @@ TEST_MUTATE_LOCAL_CONFIG=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --s
 grep -Fq 'Local configuration restore proof failed' "$tmp/edited.log"
 cmp "$marker" "$tmp/marker-before-edit"
 cp "$tmp/local-before-edit" "$REPO_ROOT/config/local.conf"
+
+# Bare metal with /data not proven to be the second NVMe: refused before Borg.
+rc=0
+TEST_BAREMETAL=true bash "$REPO_ROOT/scripts/backup/backup-now.sh" --staging-root "$tmp/data-refused" > "$tmp/data-refused.log" 2>&1 || rc=$?
+[[ "$rc" == 20 ]] || { cat "$tmp/data-refused.log" >&2; echo "unproven /data accepted (rc=$rc)" >&2; exit 1; }
+grep -Fq '/data is not the dedicated EXT4 second T705' "$tmp/data-refused.log"
+
+# Bare metal with a valid /data: Documents and Projets are archived, Jeux and
+# ISO are not, and the /etc snapshot inside the archive has no libvirt XML.
+TEST_BAREMETAL=true TEST_DATA_MOUNT=valid bash "$REPO_ROOT/scripts/backup/backup-now.sh" --staging-root "$tmp/staging-data"
+data_archive="$(evidence_marker_value "$marker" archive)"
+borg list --short "::$data_archive" > "$tmp/data-members"
+for kept in Documents/facture.pdf Projets/main.py; do
+  grep -Fq "data/$kept" "$tmp/data-members" || { echo "full backup misses /data/$kept" >&2; exit 1; }
+done
+if grep -Eq 'data/(Jeux|ISO)/' "$tmp/data-members"; then echo 'full backup archived Jeux or ISO' >&2; exit 1; fi
+mkdir "$tmp/system-config"
+(cd "$tmp/system-config" && borg extract "::$data_archive" --pattern '+**/fedora-system-config.tar.gz' --pattern '-**')
+system_tar="$(find "$tmp/system-config" -name fedora-system-config.tar.gz -print -quit)"
+tar -tzf "$system_tar" > "$tmp/system-members"
+grep -Fxq 'etc/hostname' "$tmp/system-members"
+grep -Fxq 'boot/vmlinuz-fixture' "$tmp/system-members"
+if grep -Fq 'etc/libvirt' "$tmp/system-members"; then echo 'libvirt domain XML leaked into the /etc snapshot' >&2; exit 1; fi
 echo 'Backup certification behavior: PASS'
