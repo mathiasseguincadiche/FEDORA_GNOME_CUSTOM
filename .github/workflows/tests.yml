@@ -169,6 +169,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_rocky_devops_bootstrap_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_rocky_vm_creation_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_python_toolchain_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_vm_file_access_contract.sh
