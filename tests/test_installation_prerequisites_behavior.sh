@@ -129,5 +129,15 @@ subprocess.run(['bash', str(script)], env=os.environ | values, check=True)
 packages = output.read_text().split('%packages\n', 1)[1].split('%end', 1)[0].splitlines()
 for package in ('smartmontools', 'pciutils', 'kmod', 'util-linux', 'stress-ng', 'dmidecode', 'fio'):
     assert package in packages, package
+# HOST policy chosen by the owner: no SSH server, SSH client available, no
+# disk encryption added behind their back, installation only on the chosen disk.
+kickstart = output.read_text().splitlines()
+assert 'services --enabled=NetworkManager,firewalld --disabled=sshd' in kickstart, 'sshd not disabled'
+assert 'openssh-clients' in packages, 'SSH client missing'
+assert not any('luks' in line.lower() or '--encrypted' in line for line in kickstart), 'encryption introduced'
+for line in ('bootloader --boot-drive=disk/by-id/nvme-FIXTURE', 'ignoredisk --only-use=disk/by-id/nvme-FIXTURE',
+             'clearpart --all --initlabel --drives=disk/by-id/nvme-FIXTURE'):
+    assert line in kickstart, f'not bound to the target disk: {line}'
+assert any(line.startswith('url --mirrorlist=') for line in kickstart), 'no Fedora package source'
 PY
 echo 'installation prerequisites behavior: PASS'
