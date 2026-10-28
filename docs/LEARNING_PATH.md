@@ -198,7 +198,7 @@ Un changement est incomplet s'il modifie un contrat utilisateur sans mettre à j
 | Problème `/data`, XDG ou Steam | [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) |
 | Problème KVM / réseau VM | [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) |
 | Backup ou restauration | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) |
-| GNOME / desktop | [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md), puis [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) |
+| GNOME / desktop | [`GNOME.md`](GNOME.md), puis [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) |
 | Doute sur un terme | [`GLOSSARY.md`](GLOSSARY.md) |
 | Doute sur la source de vérité | [`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md) |
 

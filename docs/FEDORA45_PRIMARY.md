@@ -32,7 +32,7 @@ La promotion exige :
 
 `config/gnome-extensions.lock` et le verrou du profil Fedora 45 doivent rester identiques. Même règle pour les manifestes Nautilus : Fedora 45 utilise File Roller et son extension Nautilus, sans `gvfs-archive` supprimé en amont. Le validateur détecte toute divergence avant promotion.
 
-Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l’interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME_EXTENSIONS.md](GNOME_EXTENSIONS.md).
+Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l’interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME.md](GNOME.md).
 
 ## Ce que vérifie la CI
 

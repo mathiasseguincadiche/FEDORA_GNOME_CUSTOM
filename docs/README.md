@@ -77,7 +77,7 @@ Ces documents répondent à **« que dois-je lancer et quel résultat dois-je at
 - [`REMOTE_ACCESS.md`](REMOTE_ACCESS.md) — accès distant : Tailscale, SSH, Wake-on-LAN, Sunshine (profil optionnel) ;
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) — Borg (non chiffré), restore et disaster recovery ;
 - [`DESKTOP_LIFECYCLE.md`](DESKTOP_LIFECYCLE.md) — maintenance desktop ;
-- [`DOCK_FAVORITES.md`](DOCK_FAVORITES.md) — favoris GNOME ;
+- [`GNOME.md`](GNOME.md) — favoris GNOME ;
 - [`APPIMAGE.md`](APPIMAGE.md) — politique AppImage lorsque nécessaire.
 
 ---
@@ -95,10 +95,10 @@ Les références répondent à **« comment ce contrat est-il implémenté ? »*
 #### GNOME / desktop
 
 - [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) ;
-- [`GNOME_INTEGRATION.md`](GNOME_INTEGRATION.md) ;
-- [`GNOME_PROFILE.md`](GNOME_PROFILE.md) ;
-- [`GNOME_EXTENSIONS.md`](GNOME_EXTENSIONS.md) ;
-- [`RESOURCE_MONITOR.md`](RESOURCE_MONITOR.md) ;
+- [`GNOME.md`](GNOME.md) ;
+- [`GNOME.md`](GNOME.md) ;
+- [`GNOME.md`](GNOME.md) ;
+- [`GNOME.md`](GNOME.md) ;
 - [`NAUTILUS.md`](NAUTILUS.md) ;
 - [`PTYXIS.md`](PTYXIS.md).
 
@@ -178,7 +178,7 @@ L’installation neuve Fedora 45 ne passe pas par Fedora 44. Les anciens essais 
 - [Certification de la plateforme](CERTIFICATION.md)
 - [Intégration du bureau et des périphériques](DESKTOP_COMPLETION.md)
 - [Diagnostic des couleurs](DISPLAY_COLOR_DIAGNOSTIC.md)
-- [Finition du bureau](GNOME_POLISH.md)
+- [Finition du bureau](GNOME.md)
 - [Noyau Linux amont](PERFORMANCE.md#noyau-officiel-linux-amont)
 - [Suivi de fiabilité](RELIABILITY_QUALIFICATION.md)
 - [Feuille de route Fedora 45](ROADMAP_FEDORA45_2026.md)
