@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Documentation : 75 → 49 guides. Les guides GNOME (7 → 1), qualification et certification (12 → 2) et méta-documentation (4, intégrées à `CONTRIBUTING.md`) sont fusionnés ; le portail `docs/README.md` est réécrit. Les tests qui figeaient la formulation des guides (~110 assertions, 3 fichiers) sont remplacés par `tests/test_docs_integrity.py`, qui vérifie liens, pages atteignables, commandes `./control.sh` citées et chemins cités. `DESKTOP_LIFECYCLE.md` indiquait à tort des mises à jour Flatpak par GNOME Logiciels, que le projet verrouille.
+
 - Sauvegardes : les dossiers `.ssh` et `.gnupg`, à toute profondeur, sont toujours exclus des archives Borg non chiffrées (pré-APPLY, complète, quotidienne), même si la configuration locale les liste (ADR 0021). Le guide de sauvegarde explique comment conserver ces clés à part, dans Bitwarden ou sur un support chiffré. Test avec un vrai dépôt Borg et test sans Borg pour chaque type d'archive.
 
 - Noyau : un noyau Fedora signé est conservé comme entrée GRUB de secours à côté de Linux amont N / N-1 (ADR 0020), jamais par défaut ni supprimé par la rétention. La purge retire des versions exactes au lieu de `--oldinstallonly`, qui aurait retiré le secours en premier ; `installonly_limit=4`. Nouvelles commandes `./control.sh kernel fallback` (secours en défaut GRUB, sans suppression) et `kernel refresh-fallback` ; `kernel-doctor` et le contrôle GRUB vérifient la présence du secours.

@@ -25,7 +25,7 @@ Avant toute mutation réelle, vous devez disposer :
 - d'une cible Borg externe/off-machine disponible pour le backup pré-APPLY (ext4, non chiffrée) ;
 - de Secure Boot désactivé et vérifiable comme tel.
 
-Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`LEARNING_PATH.md`](LEARNING_PATH.md).
+Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`README.md`](README.md).
 
 ### Le parcours
 
