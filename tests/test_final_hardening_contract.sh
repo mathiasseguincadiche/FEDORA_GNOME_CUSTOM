@@ -7,7 +7,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
-grep -Fq '](VERSION)' "$ROOT/README.md"
 grep -Fq "## $version —" "$ROOT/CHANGELOG.md"
 
 # User-decided HOST policy.
@@ -164,7 +163,6 @@ grep -Fq 'MANIFEST.sha256' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq 'fedora-gnome-backup-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
 grep -Fq "cc_option 8 'Appliquer rétention Borg'" "$ROOT/lib/control_center.sh"
 grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
-grep -Fq 'aucun secret à conserver' "$ROOT/docs/BACKUP_RESTORE.md"
 
 # KVM protects explicit main-table and policy-routed IPv4 HOST networks while preserving the Internet default route.
 grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
@@ -225,7 +223,6 @@ grep -Fq 'block VM to protected host networks' "$ROOT/diagnostics/virtualization
 # Community Flathub apps are explicit exceptions only.
 grep -Fq 'UNVERIFIED_FLATHUB_ALLOWLIST=' "$ROOT/config/applications.conf"
 grep -Fq 'professional_apps_validate_provenance' "$ROOT/modules/applications/41_professional_apps.sh"
-grep -Fq 'Exceptions Flathub communautaires' "$ROOT/docs/SUPPLY_CHAIN.md"
 
 # Privileged nftables service has a bounded systemd sandbox.
 for token in NoNewPrivileges=yes ProtectSystem=strict ProtectHome=yes 'CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW'; do

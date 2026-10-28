@@ -5,9 +5,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
-grep -Fq '](VERSION)' "$ROOT/README.md"
-grep -Fq 'docs/README.md' "$ROOT/README.md"
-grep -Fq 'GOLDEN_RELEASE.md' "$ROOT/docs/README.md"
 
 # Runtime identity must fail closed for virtualized and ambiguous environments.
 grep -Fq 'systemd-detect-virt --container' "$ROOT/lib/common.sh"

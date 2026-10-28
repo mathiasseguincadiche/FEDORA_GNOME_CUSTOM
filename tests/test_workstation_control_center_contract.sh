@@ -6,7 +6,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || { echo 'VERSION must be semantic x.y.z' >&2; exit 1; }
-grep -Fq '](VERSION)' "$ROOT/README.md"
 [[ -f "$ROOT/control.sh" ]] || { echo 'control.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center.sh" ]] || { echo 'control center library missing' >&2; exit 1; }
 [[ -f "$ROOT/lib/control_center_presentation.sh" ]] || { echo 'control center presentation layer missing' >&2; exit 1; }
@@ -15,7 +14,6 @@ grep -Fq '](VERSION)' "$ROOT/README.md"
 [[ -f "$ROOT/scripts/release/seal-golden-archive.sh" ]] || { echo 'seal-golden-archive.sh missing' >&2; exit 1; }
 [[ -f "$ROOT/config/operator-retention.policy" ]] || { echo 'operator-retention.policy missing' >&2; exit 1; }
 [[ -f "$ROOT/scripts/kernel/kernel-lifecycle.sh" ]] || { echo 'kernel lifecycle entrypoint missing' >&2; exit 1; }
-[[ -f "$ROOT/docs/CONTROL_CENTER.md" ]] || { echo 'CONTROL_CENTER.md missing' >&2; exit 1; }
 
 bash -n "$ROOT/control.sh"
 bash -n "$ROOT/lib/control_center.sh"
@@ -181,38 +179,5 @@ grep -Fq 'Politique N / N-1 · max 2' "$status_file"
 grep -Fq 'Data' "$status_file"
 grep -Fq 'Gaming' "$status_file"
 grep -Fq 'Performance' "$status_file"
-
-# Documentation must explain both interactive and CLI use and the no-auto-flash rule.
-grep -Fq './control.sh' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh update all' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh update reboot' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh update finalize' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'DNF5 offline' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh kernel install-latest' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh kernel rollback' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'N / N-1' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh doctor data' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh doctor gaming' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh perf status' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh perf sched-smoke' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh kvm create-rocky' "$ROOT/docs/CONTROL_CENTER.md"
-if grep -Eq 'create-windows|--windows-sha256|--virtio-sha256' "$ROOT/docs/CONTROL_CENTER.md"; then
-  echo 'documentation still exposes the removed Windows profile' >&2; exit 1
-fi
-grep -Fq './control.sh validate live run' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh validate import' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh logs retention' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq './control.sh cert archive' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'aucun flash' "$ROOT/docs/CONTROL_CENTER.md"
-grep -Fq 'Kernel Vanilla stable' "$ROOT/docs/CONTROL_CENTER.md"
-
-if grep -Fq -- '--post-offline' "$ROOT/docs/INSTALLATION_GUIDE.md" "$ROOT/docs/RUNBOOK_GOLDEN_HARDWARE.md"; then
-  echo 'stale --post-offline documentation remains' >&2
-  exit 1
-fi
-
-grep -Fq './control.sh update finalize' "$ROOT/docs/INSTALLATION_GUIDE.md"
-grep -Fq './control.sh update finalize' "$ROOT/docs/RUNBOOK_GOLDEN_HARDWARE.md"
-grep -Fq './control.sh cert archive' "$ROOT/docs/GOLDEN_RELEASE.md"
 
 echo 'workstation control center contract: PASS'

@@ -52,7 +52,7 @@ Au minimum :
 ```bash
 bash -n control.sh install.sh diagnostic.sh
 bash tests/test_workstation_control_center_contract.sh
-bash tests/test_documentation_contract.sh
+python3 -B tests/test_docs_integrity.py
 ```
 
 Pour un changement plus large, exécuter les contrats concernés dans `tests/`.

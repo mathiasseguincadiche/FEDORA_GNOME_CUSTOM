@@ -725,3 +725,5 @@ Le commit Git doit toujours accompagner les rapports : les diagnostics et les co
 5. Corriger sur une branche, lancer les contrôles requis, faire fusionner la PR, puis vérifier **les checks du push sur `main`**.
 
 **Ce qu'il ne faut jamais faire :** désactiver `journal_health`, supprimer une assertion bloquante, ajouter `|| true` pour fabriquer un vert, ou ignorer les coredumps. Voir [CI_VALIDATION.md](CI_VALIDATION.md), [FEDORA_GNOME_CI_LAB.md](FEDORA_GNOME_CI_LAB.md) et [GITHUB_GOVERNANCE.md](GITHUB_GOVERNANCE.md).
+
+Voir aussi : [journaux et incidents](LOGS_ET_INCIDENTS.md).

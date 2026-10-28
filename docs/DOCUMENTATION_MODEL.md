@@ -196,16 +196,4 @@ Lorsqu'un détail est déjà canonique ailleurs, créer un lien plutôt que reco
 
 ## Contrôle CI
 
-`tests/test_documentation_contract.sh` contrôle la structure, les liens et les invariants documentaires principaux.
-
-`tests/test_documentation_code_alignment.sh` contrôle directement les valeurs et exemples sensibles contre la configuration et les scripts :
-
-- KVM/libvirt ;
-- stockage `/data` ;
-- profil Rocky Linux et image authentifiée par CHECKSUM signé ;
-- runbooks dédiés ;
-- messages runtime liés au layout persistant.
-
-Le contrat documentaire contrôle également la présence du parcours pédagogique, des orientations par rôle et des notions de **préconditions**, **résultat attendu**, **critère d'arrêt** et **étape suivante**.
-
-La documentation ne doit donc pas seulement « avoir l'air correcte » : les contrats critiques et la structure de lecture sont testés comme le reste du projet.
+`tests/test_docs_integrity.py` vérifie ce qui peut tromper un opérateur, jamais la formulation : liens locaux, pages atteignables depuis le README, commandes `./control.sh` citées réellement routées, chemins du dépôt cités existants. Les tests de comportement exécutent le code ; ils ne recopient pas le texte des guides.

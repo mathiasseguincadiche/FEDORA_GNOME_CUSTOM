@@ -31,7 +31,6 @@ for token in 'sftp://' 'gio list' 'gio copy' 'gio cat' 'gio remove' 'physical_ru
 for token in 'FINAL_CERT_MIN_SUSPEND_CYCLES' 'portal-functional-doctor' 'nautilus-vm-live-doctor' 'workstation_fingerprint=' 'Open in Console'; do grep -Fq "$token" "$ROOT/scripts/validation/gnome-ux-matrix.sh" || fail "UX matrix missing $token"; done
 
 grep -Fq 'gnome-desktop-integration-doctor' "$ROOT/diagnostics/application-runtime-doctor" || fail 'runtime drift must include GNOME desktop integration'
-grep -Fq 'GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md' "$ROOT/docs/README.md" || fail 'documentation index missing GNOME desktop certification runbook'
 
 python3 -B - "$ROOT" <<'PY'
 from pathlib import Path

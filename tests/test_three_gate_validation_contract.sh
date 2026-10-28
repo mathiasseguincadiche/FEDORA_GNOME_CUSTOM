@@ -25,9 +25,7 @@ for file in \
   scripts/validation/import-proof.sh \
   scripts/validation/export-proof.sh \
   scripts/validation/status.sh \
-  manifests/validation-gate-proof.schema.json \
-  docs/THREE_GATE_VALIDATION.md \
-  docs/FEDORA45_LIVE_PREFLIGHT.md; do
+  manifests/validation-gate-proof.schema.json; do
   [[ -s "$ROOT/$file" ]] || fail "missing native validation artifact: $file"
 done
 
@@ -100,7 +98,5 @@ done
 if grep -Eqi 'wsl2|virtualbox|validate gate[12]' <<< "$help"; then
   fail 'public validation help still prescribes a removed operator environment'
 fi
-grep -Fq 'THREE_GATE_VALIDATION.md' "$ROOT/docs/README.md"
-grep -Fq 'FEDORA45_LIVE_PREFLIGHT.md' "$ROOT/docs/README.md"
 
 echo 'native Live USB and installed-system validation contract: PASS'

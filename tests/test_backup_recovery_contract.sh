@@ -62,7 +62,7 @@ fi
 if grep -Fq -- 'now-with-vms)' "$ROOT/lib/control_center.sh"; then
   echo 'Control Center still exposes VM backups' >&2; exit 1
 fi
-for file in README.md docs/CONTROL_CENTER.md lib/control_center_presentation.sh; do
+for file in lib/control_center_presentation.sh; do
   if grep -Fq 'now-with-vms' "$ROOT/$file"; then
     echo "Unsupported automatic VM backup advertised in $file" >&2; exit 1
   fi

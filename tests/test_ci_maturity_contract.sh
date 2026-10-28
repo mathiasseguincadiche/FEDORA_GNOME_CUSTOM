@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHECKOUT_SHA="11d5960a326750d5838078e36cf38b85af677262"
 UPLOAD_ARTIFACT_SHA="ea165f8d65b6e75b540449e92b4886f43607fa02"
 
-for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/fedora-package-preflight.yml .github/workflows/desktop-integration-pretest.yml .github/workflows/vm-pretest.yml .github/workflows/shell-quality.yml .github/scripts/vm-pretest.sh docs/GITHUB_GOVERNANCE.md; do
+for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/fedora-package-preflight.yml .github/workflows/desktop-integration-pretest.yml .github/workflows/vm-pretest.yml .github/workflows/shell-quality.yml .github/scripts/vm-pretest.sh; do
   [[ -f "$ROOT/$file" ]] || { echo "missing CI maturity file: $file" >&2; exit 1; }
 done
 
