@@ -33,7 +33,7 @@ if ((limit == 2)); then emit OK 'Kernel policy' 'rolling N/N-1 max=2'; else emit
 if ((count <= limit)); then emit OK 'Kernel retention' "installed=$count max=$limit"; else emit KO 'Kernel retention' "installed=$count exceeds max=$limit"; fi
 if [[ "$dnf_limit" == "$dnf_expected" ]]; then emit OK 'DNF installonly_limit' "$dnf_limit"; else emit KO 'DNF installonly_limit' "actual=${dnf_limit:-unknown} expected=$dnf_expected"; fi
 if ! kernel_lifecycle_keep_fedora_fallback; then emit WARN 'Fedora fallback' 'disabled by KERNEL_KEEP_FEDORA_FALLBACK'
-elif [[ -n "$fallback" && -e "/boot/vmlinuz-$fallback" ]]; then emit OK 'Fedora fallback' "$fallback bootable from GRUB (not default)"
+elif [[ -n "$fallback" && -e "$(kernel_lifecycle_boot_image "$fallback")" ]]; then emit OK 'Fedora fallback' "$fallback bootable from GRUB (not default)"
 else emit KO 'Fedora fallback' 'no bootable Fedora kernel retained; run ./control.sh kernel refresh-fallback'; fi
 
 if [[ -n "$latest" ]]; then

@@ -10,6 +10,9 @@ kernel_lifecycle_state_dir() { printf '%s/kernel' "$STATE_ROOT"; }
 kernel_lifecycle_state_path() { printf '%s/rolling.env' "$(kernel_lifecycle_state_dir)"; }
 kernel_lifecycle_policy_path() { printf '%s/config/kernel-lifecycle.policy' "$REPO_ROOT"; }
 kernel_lifecycle_ensure_dir() { mkdir -p "$(kernel_lifecycle_state_dir)"; }
+# KERNEL_BOOT_DIR exists for tests; GRUB entries always live in /boot.
+kernel_lifecycle_boot_image() { printf '%s/vmlinuz-%s
+' "${KERNEL_BOOT_DIR:-/boot}" "$1"; }
 
 kernel_lifecycle_value() {
   local file="$1" key="$2"
@@ -493,8 +496,8 @@ kernel_lifecycle_select_fallback() {
   local fallback
   fallback="$(kernel_lifecycle_fedora_fallback)"
   [[ -n "$fallback" ]] || { ui_error 'No Fedora fallback kernel is installed; use ./control.sh kernel rollback-fedora'; return "$EXIT_PRECHECK_FAILED"; }
-  [[ -e "/boot/vmlinuz-$fallback" ]] || { ui_error "Boot image missing for Fedora fallback: $fallback"; return "$EXIT_POSTCHECK_FAILED"; }
-  sudo grubby --set-default "/boot/vmlinuz-$fallback"
+  [[ -e "$(kernel_lifecycle_boot_image "$fallback")" ]] || { ui_error "Boot image missing for Fedora fallback: $fallback"; return "$EXIT_POSTCHECK_FAILED"; }
+  sudo grubby --set-default "$(kernel_lifecycle_boot_image "$fallback")"
   [[ "$(kernel_lifecycle_default_release)" == "$fallback" ]] || { ui_error "Unable to set Fedora fallback as GRUB default: $fallback"; return "$EXIT_POSTCHECK_FAILED"; }
   kernel_lifecycle_write_state fallback-selected
   ui_check OK 'Kernel fallback' "Fedora $fallback is now GRUB default; upstream kernels remain installed. Return with ./control.sh kernel install-latest"
@@ -503,10 +506,54 @@ kernel_lifecycle_select_fallback() {
 kernel_lifecycle_set_latest_default() {
   local latest
   latest="$(kernel_lifecycle_latest_installed)"
-  [[ -n "$latest" && -e "/boot/vmlinuz-$latest" ]] || { ui_error 'Latest installed kernel boot image is missing'; return "$EXIT_POSTCHECK_FAILED"; }
-  sudo grubby --set-default "/boot/vmlinuz-$latest"
+  [[ -n "$latest" && -e "$(kernel_lifecycle_boot_image "$latest")" ]] || { ui_error 'Latest installed kernel boot image is missing'; return "$EXIT_POSTCHECK_FAILED"; }
+  sudo grubby --set-default "$(kernel_lifecycle_boot_image "$latest")"
   [[ "$(kernel_lifecycle_default_release)" == "$latest" ]] || { ui_error "GRUB default does not match latest installed kernel $latest"; return "$EXIT_POSTCHECK_FAILED"; }
   ui_check OK 'GRUB default' "$latest"
+}
+
+kernel_lifecycle_rescue_entries() {
+  grubby --info=ALL 2>/dev/null \
+    | awk -F= '$1=="kernel" {gsub(/"/, "", $2); if ($2 ~ /\/vmlinuz-0-rescue-/) print $2}' \
+    | sort -u
+}
+
+# --apply removes Fedora's rescue image and its GRUB entries; both modes then
+# require the N/N-1 surface plus the Fedora fallback and nothing else.
+kernel_lifecycle_enforce_grub_surface() {
+  local mode="$1" limit kernel count core fallback
+  local -a rescue=()
+  command_exists rpm || { ui_error 'rpm is required'; return "$EXIT_PRECHECK_FAILED"; }
+  command_exists grubby || { ui_error 'grubby is required'; return "$EXIT_PRECHECK_FAILED"; }
+  limit="$(kernel_lifecycle_max_installed)"
+  [[ "$limit" == 2 ]] || { ui_error "Golden policy requires exactly two normal kernel entries; max=$limit"; return "$EXIT_CONFIG_FAILED"; }
+
+  if [[ "$mode" == --apply ]]; then
+    if rpm -q dracut-config-rescue >/dev/null 2>&1; then
+      command_exists dnf5 || { ui_error 'dnf5 is required to disable future rescue-image generation'; return "$EXIT_PRECHECK_FAILED"; }
+      sudo dnf5 -y remove dracut-config-rescue || return $?
+    fi
+    mapfile -t rescue < <(kernel_lifecycle_rescue_entries)
+    for kernel in "${rescue[@]}"; do
+      sudo grubby --remove-kernel="$kernel" || return $?
+    done
+  fi
+
+  if rpm -q dracut-config-rescue >/dev/null 2>&1; then
+    ui_error 'dracut-config-rescue is installed; Fedora may regenerate a third rescue boot entry'
+    return "$EXIT_POSTCHECK_FAILED"
+  fi
+  mapfile -t rescue < <(kernel_lifecycle_rescue_entries)
+  ((${#rescue[@]} == 0)) || { ui_error "Rescue GRUB entry still present: ${rescue[*]}"; return "$EXIT_POSTCHECK_FAILED"; }
+
+  count="$(kernel_lifecycle_installed_count)"
+  core="$(kernel_channel_core_package)" || { ui_error "Unsupported KERNEL_CHANNEL=${KERNEL_CHANNEL:-}"; return "$EXIT_CONFIG_FAILED"; }
+  (( count <= 2 )) || { ui_error "More than two $core versions are installed: $count"; return "$EXIT_POSTCHECK_FAILED"; }
+  fallback="$(kernel_lifecycle_fedora_fallback)"
+  if kernel_lifecycle_keep_fedora_fallback; then
+    [[ -n "$fallback" && -e "$(kernel_lifecycle_boot_image "$fallback")" ]] || { ui_error 'Fedora fallback kernel is missing; run ./control.sh kernel refresh-fallback'; return "$EXIT_POSTCHECK_FAILED"; }
+  fi
+  ui_check OK 'GRUB N/N-1 surface' "rescue image disabled; managed $core versions=$count max=2; Fedora fallback=${fallback:-none}"
 }
 
 kernel_lifecycle_write_state() {
@@ -587,8 +634,8 @@ kernel_lifecycle_rollback() {
   latest="$(kernel_lifecycle_latest_installed)"
   previous="$(kernel_lifecycle_previous_installed)"
   [[ -n "$previous" && "$previous" != "$latest" ]] || { ui_error 'No N-1 kernel is installed for rollback; use ./control.sh kernel fallback for the Fedora kernel'; return "$EXIT_PRECHECK_FAILED"; }
-  [[ -e "/boot/vmlinuz-$previous" ]] || { ui_error "Boot image missing for N-1 kernel: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
-  sudo grubby --set-default "/boot/vmlinuz-$previous"
+  [[ -e "$(kernel_lifecycle_boot_image "$previous")" ]] || { ui_error "Boot image missing for N-1 kernel: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
+  sudo grubby --set-default "$(kernel_lifecycle_boot_image "$previous")"
   [[ "$(kernel_lifecycle_default_release)" == "$previous" ]] || { ui_error "Unable to set N-1 kernel as GRUB default: $previous"; return "$EXIT_POSTCHECK_FAILED"; }
   kernel_lifecycle_write_state rollback-selected
   ui_check OK 'Kernel rollback' "N-1=$previous is now GRUB default; N=$latest remains installed"

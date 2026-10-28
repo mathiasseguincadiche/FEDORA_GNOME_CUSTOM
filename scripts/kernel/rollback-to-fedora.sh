@@ -25,7 +25,7 @@ mapfile -t names < <(rpm -qa --qf '%{NAME}\n' 'kernel*' 'libperf*' perf python3-
 sudo dnf5 -y --repo=fedora --repo=updates --setopt=allow_vendor_change=1 distro-sync "${names[@]}"
 fedora_latest="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core \
   | grep -E "^[0-9]+[.][0-9]+([.][0-9]+)?-[0-9.]+[.]fc${HOST_RELEASE:-45}[.]x86_64$" | sort -V | tail -n1)"
-[[ -n "$fedora_latest" && -e "/boot/vmlinuz-$fedora_latest" ]]
-sudo grubby --set-default "/boot/vmlinuz-$fedora_latest"
+[[ -n "$fedora_latest" && -e "$(kernel_lifecycle_boot_image "$fedora_latest")" ]]
+sudo grubby --set-default "$(kernel_lifecycle_boot_image "$fedora_latest")"
 [[ "$(kernel_lifecycle_default_release)" == "$fedora_latest" ]]
 echo "Fedora kernel $fedora_latest selected. Reboot, validate recovery and requalify the retained runtime."

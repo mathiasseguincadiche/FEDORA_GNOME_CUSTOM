@@ -22,7 +22,7 @@ La source de vérité est le **code, la configuration et les tests**. Viennent e
 | Promotion Fedora 45 | `scripts/development/promote-fedora45.py`, `profiles/fedora45/` | [Fiche Fedora 45](docs/FEDORA45_PRIMARY.md) | `tests/test_promote_fedora45_behavior.sh` |
 | Qualification | `scripts/validation/`, `diagnostics/final-certification` | [Qualification](docs/QUALIFICATION.md) | `tests/test_three_gate_validation_contract.sh` |
 | GNOME | `modules/gnome/`, `config/gnome-extensions.lock` | [GNOME](docs/GNOME.md) | tests d'extensions et laboratoire GNOME |
-| Noyau | `lib/kernel_lifecycle.sh`, `scripts/kernel/` | [Linux amont](docs/UPSTREAM_LINUX.md) | `tests/test_kernel_fedora_fallback_behavior.sh` |
+| Noyau | `lib/kernel_lifecycle.sh`, `scripts/kernel/` | [Linux amont](docs/UPSTREAM_LINUX.md) | `tests/test_kernel_lifecycle_behavior.sh` |
 | Sauvegarde | `lib/backup_runtime.sh`, `scripts/backup/` | [Sauvegardes](docs/BACKUP_RESTORE.md) | `tests/test_borg_roundtrip.sh` (vrai Borg) |
 | KVM et Rocky | `scripts/kvm/`, `guest/rocky-devops/` | [Démarrage KVM](docs/KVM_QUICKSTART.md) | laboratoire Rocky Linux |
 | Accès distant | `lib/remote_access.sh`, `modules/remote/` | [Accès distant](docs/REMOTE_ACCESS.md) | `tests/test_remote_access_contract.sh` |

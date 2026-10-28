@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Tests du noyau : les ~50 recherches de chaînes de `test_kernel_lifecycle_contract.sh` sont remplacées par `test_kernel_lifecycle_behavior.sh`, qui exécute le vrai code contre de faux `rpm`, `dnf5` et `grubby` : rétention DNF, retour N-1, sélection du secours Fedora, blocage Secure Boot et hors bare-metal, surface GRUB à deux entrées, ordre du module. Le contrat ne garde que les valeurs de politique, les commandes publiques et les suppressions interdites. La logique de `enforce-two-entry-grub.sh` passe dans `lib/kernel_lifecycle.sh` ; `KERNEL_BOOT_DIR` permet de tester sans `/boot`.
+
 - Documentation, deuxième passe : 49 → 35 guides. KVM et Rocky DevOps (8 → 2 : `KVM_QUICKSTART.md` pour l'usage et le dépannage, `VIRTUALIZATION.md` pour la référence), dépannage (4 → 1 : `TROUBLESHOOTING.md` couvre désormais matériel, noyau avec secours Fedora, `/data`, Gaming, journaux et incidents), vision et architecture (5 → 1 : `ARCHITECTURE.md`). La page Fedora 44 rejoint `docs/history/`. Le contrôle d'intégrité a repéré deux références du code au runbook supprimé, corrigées.
 - Tests : `test_physical_soak_behavior.sh` n'est plus instable. Les PID des fausses charges sont écrits atomiquement et l'instance GPU saine est choisie par `flock` : un `mkdir` concurrent pouvait réussir deux fois sur certains tmpfs.
 
