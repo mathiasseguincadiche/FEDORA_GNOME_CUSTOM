@@ -131,7 +131,15 @@ STUB
 cat >"$tmp/bin/vkcube-wayland" <<'STUB'
 #!/usr/bin/env bash
 if [[ "$SOAK_TEST_MODE" == gpu_mixed ]]; then
-  if mkdir "$SOAK_TEST_TMP/first-gpu" 2>/dev/null; then
+  # Exactly one instance stays healthy. A kernel lock picks it: concurrent mkdir
+  # is not atomic on every tmpfs (both calls succeed on WSL2 now and then).
+  exec 9>>"$SOAK_TEST_TMP/gpu.lock"
+  flock 9
+  order="$(cat "$SOAK_TEST_TMP/gpu.count" 2>/dev/null || echo 0)"
+  echo "$((order + 1))" >"$SOAK_TEST_TMP/gpu.count"
+  flock -u 9
+  exec 9>&-
+  if (( order == 0 )); then
     echo "$$" >"$SOAK_TEST_TMP/workload.pid.$$" && mv -f "$SOAK_TEST_TMP/workload.pid.$$" "$SOAK_TEST_TMP/workload.pid"
     sleep 60 &
     echo "$!" >"$SOAK_TEST_TMP/worker.pid.$$" && mv -f "$SOAK_TEST_TMP/worker.pid.$$" "$SOAK_TEST_TMP/worker.pid"
@@ -175,9 +183,7 @@ assert_stopped() {
 export SOAK_TEST_MODE=gpu_mixed
 started=$SECONDS
 expect_failure 40 bash "$tmp/diagnostics/physical-runtime-doctor" gpu-soak
-# The healthy instance sleeps 60 s: finishing well before proves the failed one
-# was detected without waiting, whatever the runner's startup speed.
-(( SECONDS-started < 30 )) || { echo 'GPU waited behind the healthy instance' >&2; exit 1; }
+(( SECONDS-started < 10 )) || { echo 'GPU waited behind the healthy instance' >&2; exit 1; }
 assert_stopped
 
 for SOAK_TEST_MODE in overheat missing; do
