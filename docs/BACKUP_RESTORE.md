@@ -39,7 +39,12 @@ La fiche matérielle prévoit un troisième support de ~1,8 To, le **Kingston XS
 - il doit être formaté en **ext4** (`BACKUP_PREAPPLY_REQUIRED_FSTYPE`). Un XS1000 neuf est livré en exFAT : il faut le reformater une fois (cela **efface** son contenu) ;
 - il doit être **seul** support externe monté lors du pré-APPLY, sinon la détection automatique s'arrête par sécurité. Dans ce cas, renseigner `BACKUP_REPOSITORY` dans `config/local.conf`.
 
-**Le dépôt n'est pas chiffré** : toute personne qui possède le disque peut lire les sauvegardes, y compris `~/.ssh`, `~/.gnupg` et les profils de navigateur. Ranger le disque en conséquence. En contrepartie, aucune passphrase ne peut être perdue : un Fedora neuf avec `borgbackup` suffit pour restaurer.
+**Le dépôt n'est pas chiffré** : toute personne qui possède le disque peut lire les sauvegardes, y compris les profils de navigateur. Ranger le disque en conséquence. En contrepartie, aucune passphrase ne peut être perdue : un Fedora neuf avec `borgbackup` suffit pour restaurer.
+
+**Les clés privées n'y entrent jamais.** Tout dossier `.ssh` ou `.gnupg`, à n'importe quelle profondeur (y compris dans `/data/Projets`), est exclu des archives pré-APPLY, complètes et quotidiennes, même si la configuration locale les liste encore ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)). Ces clés se sauvegardent à part, dans un emplacement chiffré :
+
+- **SSH** : enregistrer chaque clé privée dans Bitwarden (élément « Clé SSH ») ou sur un support chiffré ; après réinstallation, la recopier dans `~/.ssh` avec les droits `0600`. Une clé perdue peut aussi être régénérée puis redéclarée sur GitHub et les serveurs ; `authorized_keys` (clé de la tablette pour l'accès distant) est à redéclarer de la même façon.
+- **GnuPG** : `gpg --export-secret-keys --armor IDENTIFIANT > cle.asc` et `gpg --export-ownertrust > confiance.txt`, à stocker dans Bitwarden ou sur un support chiffré, puis `gpg --import cle.asc` et `gpg --import-ownertrust confiance.txt` à la restauration. Supprimer les fichiers exportés en clair après usage.
 
 ## VM : exports strictement manuels, indépendants de Borg
 
@@ -116,7 +121,7 @@ ${XDG_STATE_HOME:-~/.local/state}/fedora-gnome-custom/
 
 Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment de l'exécution. Les clés `DESKTOP`, `DOCUMENTS`, `PICTURES`, `VIDEOS` et `MUSIC` suivent donc la configuration XDG réelle de l'utilisateur. Dans le profil Golden, `DOCUMENTS` pointe vers `/data/Documents`; les autres dossiers restent résolus selon la locale utilisateur.
 
-Les chemins persistants `/data/Projets` et `/data/IA/Openclaw` sont sauvegardés avec `Development`, `.config`, `.ssh` et `.gnupg`. Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
+Les chemins persistants `/data/Projets` et `/data/IA/Openclaw` sont sauvegardés avec `Development`, `.config`, `.mozilla`, `.var/app` et `.local/share`. `.ssh` et `.gnupg` sont toujours exclus (voir plus haut). Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
 
 La surface absolue autorisée est volontairement étroite : le script accepte `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw`, mais refuse tout autre chemin absolu. `/data/ISO`, `/data/Jeux` et `/data/libvirt` ne peuvent donc pas être ajoutés accidentellement au backup quotidien par une dérive de configuration.
 

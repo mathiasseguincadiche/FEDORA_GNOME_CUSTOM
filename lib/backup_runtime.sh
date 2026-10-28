@@ -161,11 +161,16 @@ for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
 PY
 }
 
+# Repositories are unencrypted (ADR 0014): SSH and GnuPG private material is
+# never archived, at any depth and whatever the configured sources (ADR 0021).
+BACKUP_PRIVATE_KEY_EXCLUDES=('*/.ssh' '*/.gnupg')
+
 backup_engine_create() {
-  local kind="$1" name pending json comment identity
+  local kind="$1" name pending json comment identity pattern
   shift
   backup_engine_kind_valid "$kind" || return 2
   local -a opts=()
+  for pattern in "${BACKUP_PRIVATE_KEY_EXCLUDES[@]}"; do opts+=(--exclude "$pattern"); done
   while (($#)) && [[ "$1" != -- ]]; do
     [[ ( "$1" == --exclude || "$1" == --comment ) && -n "${2:-}" ]] || return 2
     if [[ "$1" == --comment ]]; then

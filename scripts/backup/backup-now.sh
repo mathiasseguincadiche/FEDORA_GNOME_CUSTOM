@@ -70,7 +70,7 @@ for key in DESKTOP DOCUMENTS PICTURES VIDEOS MUSIC; do
   [[ ! -d "$path" ]] || sources+=("$path")
 done
 [[ ! -d "$HOME/Development" ]] || sources+=("$HOME/Development")
-for user_path in .config .local/share .var/app .mozilla .ssh .gnupg; do
+for user_path in .config .local/share .var/app .mozilla; do
   [[ ! -d "$HOME/$user_path" ]] || sources+=("$HOME/$user_path")
 done
 if runtime_is_baremetal; then

@@ -33,6 +33,13 @@ printf 'flatpak-data\n' > "$HOME/.var/app/demo/data/document with spaces.txt"
 printf 'application-data\n' > "$HOME/.local/share/demo/state"
 printf 'browser-profile\n' > "$HOME/.mozilla/profile"
 printf 'must-not-be-archived\n' > "$HOME/.config/fedora-gnome-custom/secrets/token"
+# Private keys must never reach the unencrypted repository, even when an old
+# local.conf still lists them or a project tree carries its own .ssh.
+mkdir -p "$HOME/.ssh" "$HOME/.gnupg/private-keys-v1.d" "$HOME/Documents/projet/.ssh"
+printf 'PRIVATE-SSH\n' > "$HOME/.ssh/id_ed25519"
+printf 'PRIVATE-GPG\n' > "$HOME/.gnupg/private-keys-v1.d/key.key"
+printf 'PRIVATE-NESTED\n' > "$HOME/Documents/projet/.ssh/id_rsa"
+printf 'kept\n' > "$HOME/Documents/.ssh-notes.txt"
 ln -s test.conf "$HOME/.config/link"
 cat > "$fixture/lib/bootstrap.sh" <<'BOOT'
 engine_bootstrap() { :; }
@@ -48,7 +55,7 @@ printf '#!/usr/bin/env bash\nprintf "%%s/Documents\\n" "$HOME"\n' > "$tmp/bin/xd
 chmod +x "$tmp/bin/xdg-user-dir"
 export PATH="$tmp/bin:$PATH"
 DAILY_BACKUP_XDG_DIRS=DOCUMENTS
-DAILY_BACKUP_EXTRA_PATHS='.config .var/app .local/share .mozilla'
+DAILY_BACKUP_EXTRA_PATHS='.config .var/app .local/share .mozilla .ssh .gnupg'
 
 # 1. The installed autonomous runtime writes a real daily archive.
 runtime="$(backup_daily_install_runtime 0123456789abcdef0123456789abcdef01234567)"
@@ -71,6 +78,13 @@ done
 [[ "$(stat -c %a "$restored$HOME/.config/test.conf")" == 600 ]]
 [[ "$(readlink "$restored$HOME/.config/link")" == test.conf ]]
 [[ ! -e "$restored$HOME/.config/fedora-gnome-custom/secrets/token" ]]
+for private in .ssh .gnupg Documents/projet/.ssh; do
+  [[ ! -e "$restored$HOME/$private" ]] || { echo "private key directory archived: $private" >&2; exit 1; }
+done
+if borg list --short "::$archive" | grep -Eq '(^|/)[.](ssh|gnupg)(/|$)'; then
+  echo 'private key material listed in the archive' >&2; exit 1
+fi
+cmp "$HOME/Documents/.ssh-notes.txt" "$restored$HOME/Documents/.ssh-notes.txt"
 if bash "$fixture/scripts/backup/restore.sh" restore "$archive" "$restored" >/dev/null 2>&1; then
   echo 'nonempty restore destination accepted' >&2; exit 1
 fi
