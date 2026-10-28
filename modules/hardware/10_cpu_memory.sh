@@ -18,7 +18,7 @@ hardware_cpu_memory_postcheck() {
   is_true "${DRY_RUN:-true}" && return 0
   lscpu | grep -Fq "$EXPECTED_CPU" || return "$EXIT_POSTCHECK_FAILED"
   hardware_platform_validate_cpu_power || { log_error HARDWARE 'Ryzen AMD P-State/boost validation failed'; return "$EXIT_POSTCHECK_FAILED"; }
-  hardware_platform_validate_hwmon || { log_error HARDWARE 'NCT6687D motherboard temperature/fan telemetry validation failed (see docs/RUNBOOK_GOLDEN_HARDWARE.md: HARDWARE_NCT6683_FORCE opt-in)'; return "$EXIT_POSTCHECK_FAILED"; }
+  hardware_platform_validate_hwmon || { log_error HARDWARE 'NCT6687D motherboard temperature/fan telemetry validation failed (see docs/TROUBLESHOOTING.md: HARDWARE_NCT6683_FORCE opt-in)'; return "$EXIT_POSTCHECK_FAILED"; }
   local mem_kib min_kib
   mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
   min_kib=$((45*1024*1024))

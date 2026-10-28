@@ -12,7 +12,7 @@ GAMING_ENABLE="true"
 
 Une surcharge locale peut servir au dépannage ou à un build volontairement réduit, mais une machine avec Gaming désactivé n'est pas la Golden cible et ne peut pas obtenir la certification finale attendue.
 
-Pour le dépannage, voir [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md).
+Pour le dépannage, voir [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md#données-data-et-gaming).
 
 ## Stockage persistant des jeux
 

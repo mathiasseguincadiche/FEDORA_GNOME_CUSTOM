@@ -55,8 +55,8 @@ Le Live USB ne déverrouille jamais `install.sh --apply` ; la CI ne certifie jam
 
 Commencer par l'état réel avec `./control.sh status` et `./control.sh doctor all`, puis :
 
-- [Dépannage](TROUBLESHOOTING.md) · [journaux et incidents](LOGS_ET_INCIDENTS.md)
-- [Matériel et noyau](RUNBOOK_GOLDEN_HARDWARE.md) · [KVM](KVM_QUICKSTART.md#dépannage) · [données `/data` et Gaming](RUNBOOK_PERSISTENT_DATA_GAMING.md)
+- [Dépannage](TROUBLESHOOTING.md) · [journaux et incidents](TROUBLESHOOTING.md#journaux-et-incidents)
+- [Matériel et noyau](TROUBLESHOOTING.md#carte-mère-cpu-mémoire-et-stockage) · [KVM](KVM_QUICKSTART.md#dépannage) · [données `/data` et Gaming](TROUBLESHOOTING.md#données-data-et-gaming)
 
 Ne jamais désactiver SELinux, firewalld ou un garde-fou pour faire disparaître une erreur.
 

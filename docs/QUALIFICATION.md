@@ -238,7 +238,7 @@ Pour une reconstruction autonome à long terme, sceller une archive hors du dép
 - Aucun `force_probe`, et aucun `s2idle`/`deep`, ASPM, APST ou C-State forcé globalement sans preuve spécifique.
 - Un texte dégradé après veille est d'abord traité comme une renégociation écran/KMS/Mutter ; la réparation réapplique 1440p/~240 Hz, échelle 1.0, SDR et RGB complet.
 - Le réseau KVM passe en mode d'urgence restrictif quand l'uplink change, avant de recalculer ([réseau KVM](KVM_NETWORK.md)).
-- Après un redémarrage anormal, `scripts/collect-boot-failure.sh` collecte journal précédent, xe/DRM, ACPI, AER, NVMe, MCE/EDAC, watchdog, coredumps et pstore. Diagnostic par symptôme : [dépannage matériel](RUNBOOK_GOLDEN_HARDWARE.md), [dépannage](TROUBLESHOOTING.md).
+- Après un redémarrage anormal, `scripts/collect-boot-failure.sh` collecte journal précédent, xe/DRM, ACPI, AER, NVMe, MCE/EDAC, watchdog, coredumps et pstore. Diagnostic par symptôme : [dépannage matériel](TROUBLESHOOTING.md#carte-mère-cpu-mémoire-et-stockage), [dépannage](TROUBLESHOOTING.md).
 
 ## Afficheur LD240 (facultatif)
 

@@ -87,13 +87,13 @@ Les exports de la VM sont **manuels**, quand tu le décides : arrêter Rocky, pu
 
 ## Dépannage
 
-**Socle KVM indisponible.** `ls -l /dev/kvm`, `lsmod | grep kvm_amd`. S'il manque sur le PC, activer AMD-V/SVM dans l'UEFI avant de toucher à Linux.
+**Socle KVM indisponible.** `ls -l /dev/kvm`, `lsmod | grep kvm_amd`. S'il manque sur le PC, activer AMD-V/SVM dans l'UEFI avant de toucher à Linux. Si libvirt ne répond pas : `systemctl status virtqemud.socket virtnetworkd.socket virtstoraged.socket`. Le projet peut retomber sur `libvirtd.socket` ; ne pas basculer à la main entre les deux modèles.
 
-**Pool `devops-data` absent.** `virsh --connect qemu:///system pool-info devops-data` et `findmnt -T /data` : `/data` doit être le montage EXT4 dédié. Ne pas recréer le pool sur le SSD système pour contourner un second T705 absent ([données `/data`](RUNBOOK_PERSISTENT_DATA_GAMING.md)).
+**Pool `devops-data` absent.** `virsh --connect qemu:///system pool-info devops-data` et `findmnt -no SOURCE,FSTYPE,TARGET /data` : `/data` doit être le montage EXT4 du second NVMe. Labels : `ls -Zd /data/libvirt /data/libvirt/images` et `semanage fcontext -l | grep /data/libvirt` ; jamais de `chmod 777`. Ne pas recréer le pool sur le SSD système pour contourner un second T705 absent ([données `/data`](TROUBLESHOOTING.md#données-data-et-gaming)).
 
-**Réseau `devops-nat` absent.** `virsh --connect qemu:///system net-info devops-nat` et `ip addr show virbr50` : attendu `192.168.50.0/24`, passerelle `192.168.50.254`.
+**Réseau `devops-nat` absent.** `virsh --connect qemu:///system net-info devops-nat` (actif, autostart) et `ip addr show virbr50` : attendu `192.168.50.0/24`, passerelle `192.168.50.254`. `firewall-cmd --get-zone-of-interface=virbr50` doit répondre `libvirt`.
 
-**Guard en mode d'urgence.** `guard_mode=emergency` veut dire que le forwarding est volontairement bloqué. Identifier le changement d'uplink, de VPN ou de route, puis :
+**Guard en mode d'urgence.** `guard_mode=emergency` veut dire que le forwarding des VM est volontairement coupé plutôt que de garder une isolation peut-être obsolète. Causes typiques : LAN courant en conflit avec `192.168.50.0/24`, uplink sans réseau directement connecté exploitable, erreur nftables, changement de connectivité incomplet. Regarder `ip -4 route`, `sudo nft list table inet fedora_gnome_custom_kvm` et `journalctl -u fedora-gnome-custom-kvm-guard.service -b`, puis :
 
 ```bash
 ./control.sh kvm guard-check
@@ -105,11 +105,15 @@ Si le reconcile échoue, garder le mode d'urgence et diagnostiquer ; ne pas supp
 
 **Rocky ne démarre pas.** `virsh --connect qemu:///system dominfo rocky-devops`, `domblklist`, `dumpxml`, `journalctl -u virtqemud -b`. Vérifier `/data/libvirt/images/rocky-devops.qcow2`, le seed cloud-init et le réseau.
 
-**Pas de SSH.** `virsh --connect qemu:///system net-dhcp-leases devops-nat`, puis `ssh -v`. Dans l'invité (console) : `sudo systemctl status qemu-guest-agent`.
+**Pas d'adresse IP ou pas de SSH.** `virsh --connect qemu:///system domiflist rocky-devops`, puis `net-dhcp-leases devops-nat` ; sans bail, vérifier `devops-nat` avant de toucher au réseau de Rocky. Ensuite `ssh -v`. Un refus du mot de passe en SSH est **normal** : seule la clé est acceptée, ne pas réactiver `PasswordAuthentication`. Dans l'invité (console) : `sudo systemctl status qemu-guest-agent`.
 
-**Bootstrap incomplet.** Dans l'invité : `sudo cloud-init status --long`, `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, `sudo /usr/local/sbin/devops-verify.sh`. Ne recréer la VM qu'après avoir sauvé les données utiles et compris l'échec.
+**Rocky n'a plus Internet, le HOST oui.** Si le guard est en mode d'urgence, c'est volontaire (voir plus haut). Sinon, dans l'invité : `ip route`, `getent ahostsv4 example.com`, `curl -I https://example.com`, puis `./control.sh kvm certify` depuis Fedora.
 
-**Image refusée.** Image, `CHECKSUM` et `CHECKSUM.asc` doivent venir de la même release Rocky 10.2. Ne jamais contourner la signature ni la comparaison SHA-256 ; ne relancer la création que si le domaine et son disque n'existent pas encore.
+**Bootstrap incomplet.** Dans l'invité : `sudo cloud-init status --long`, `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, `sudo /usr/local/sbin/devops-verify.sh`. Distinguer panne réseau/DNS, dépôt éditeur indisponible, signature ou checksum externe modifié, et outil réellement absent (le laboratoire Rocky de la CI tourne aussi périodiquement pour repérer ces ruptures). Ne recréer la VM qu'après avoir sauvé les données utiles et compris l'échec.
+
+**Image refusée.** Image, `CHECKSUM` et `CHECKSUM.asc` doivent venir de la même release Rocky 10.2. Autres causes : image corrompue, signature invalide, serveur de clés indisponible (fournir alors une clé obtenue par un canal de confiance avec `--rocky-key-file`), clé locale incorrecte. Ne jamais contourner la signature ni la comparaison SHA-256 ; ne relancer la création que si le domaine et son disque n'existent pas encore.
+
+**Nautilus ne voit plus Rocky.** `./control.sh kvm nautilus-refresh`, puis vérifier le service SSH de l'invité.
 
 **Reconstruire l'invité.** Sauver les données utiles, retirer explicitement le domaine et son disque, puis relancer la création.
 
