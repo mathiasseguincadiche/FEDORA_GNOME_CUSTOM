@@ -11,7 +11,7 @@ doctor=diagnostics/appimage-doctor
 runner=scripts/appimage/appimage-run
 workflow=.github/workflows/fedora-appimage-pretest.yml
 
-for f in "$fedora_manifest" "$flatpak_manifest" "$module" "$doctor" "$runner" "$workflow" docs/APPIMAGE.md; do
+for f in "$fedora_manifest" "$flatpak_manifest" "$module" "$doctor" "$runner" "$workflow"; do
   [[ -s "$f" ]] || fail "missing $f"
 done
 

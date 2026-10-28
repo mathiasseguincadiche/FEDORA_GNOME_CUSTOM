@@ -1,6 +1,6 @@
 # Comprendre l'architecture — Fedora Golden Workstation
 
-> **Lecture guidée (10–15 min).** Ce document explique le *pourquoi*, le *comment*, le rôle de chaque composant et ce qui prouve qu'une opération a réellement fonctionné. Pour exécuter des commandes de production, utiliser les [guides d'installation](INSTALLATION_GUIDE.md) et de [validation](THREE_GATE_VALIDATION.md), pas les schémas seuls.
+> **Lecture guidée (10–15 min).** Ce document explique le *pourquoi*, le *comment*, le rôle de chaque composant et ce qui prouve qu'une opération a réellement fonctionné. Pour exécuter des commandes de production, utiliser les [guides d'installation](INSTALLATION_GUIDE.md) et de [validation](QUALIFICATION.md), pas les schémas seuls.
 
 ## 1. L'idée en une minute
 
@@ -49,7 +49,7 @@ flowchart TD
 4. **La sauvegarde externe précède les mutations.** Le système ne doit pas « réparer » une installation en risquant les fichiers.
 5. **Gate 3 teste la réalité du poste.** C'est seulement après cette étape qu'on peut employer le terme de machine certifiée.
 
-L'ordre exact et les commandes autorisées sont dans [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md) et [EXECUTION_CONTRACT.md](EXECUTION_CONTRACT.md).
+L'ordre exact et les commandes autorisées sont dans [QUALIFICATION.md](QUALIFICATION.md) et [EXECUTION_CONTRACT.md](EXECUTION_CONTRACT.md).
 
 ## 3. Ce que contient le dépôt et qui fait quoi
 
@@ -149,7 +149,7 @@ Le [parcours Fedora 45](FEDORA45_PRIMARY.md) décrit cette frontière. Fedora 44
 3. [CONTROL_CENTER.md](CONTROL_CENTER.md) : comment l'opérateur interagit avec le système.
 4. [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) : installation neuve et conditions d’arrêt.
 5. [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md) : sélection, promotion et preuves.
-6. [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md) : la différence entre préparer et certifier.
+6. [QUALIFICATION.md](QUALIFICATION.md) : la différence entre préparer et certifier.
 7. [GLOSSARY.md](GLOSSARY.md) : les termes techniques expliqués simplement.
 
 > **Phrase à retenir :** « Je ne cherche pas seulement à installer Fedora 45 : je cherche à pouvoir expliquer et reproduire *pourquoi* chaque composant de mon Fedora GNOME sur mesure se trouve là, *comment* il est installé, *comment* il est testé, et *comment* je récupère mes données si quelque chose se passe mal. »

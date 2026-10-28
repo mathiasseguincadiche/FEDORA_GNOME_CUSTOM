@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fail(){ echo "golden completeness: $*" >&2; exit 1; }
 
 [[ -x "$ROOT/diagnostics/gaming-doctor" ]] || fail 'gaming-doctor must be executable in Git'
-for f in lib/physical_certification.sh diagnostics/physical-runtime-doctor docs/GOLDEN_COMPLETENESS_CLOSURE.md; do [[ -s "$ROOT/$f" ]] || fail "missing $f"; done
+for f in lib/physical_certification.sh diagnostics/physical-runtime-doctor; do [[ -s "$ROOT/$f" ]] || fail "missing $f"; done
 grep -Fq 'lib/physical_certification.sh' "$ROOT/lib/bootstrap.sh" || fail 'physical certification library not bootstrapped'
 
 final="$ROOT/diagnostics/final-certification"

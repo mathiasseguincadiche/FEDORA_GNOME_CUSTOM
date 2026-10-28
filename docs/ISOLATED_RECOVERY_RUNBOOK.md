@@ -120,6 +120,6 @@ ambigu, un démarrage en échec ou une fuite réseau arrête l'exercice. Garder 
 preuves d'échec et corriger avant reprise ; aucun statut ne devient PASS sur
 la seule absence d'erreur dans un ancien rapport.
 
-Après ces essais, exécuter [la qualification matérielle](RELIABILITY_QUALIFICATION.md)
-et [Gate 3](THREE_GATE_VALIDATION.md). La preuve Live doit être
+Après ces essais, exécuter [la qualification matérielle](QUALIFICATION.md)
+et [Gate 3](QUALIFICATION.md). La preuve Live doit être
 rejouée après toute modification du commit ou du plan de modules.

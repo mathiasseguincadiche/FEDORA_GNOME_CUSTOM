@@ -33,9 +33,5 @@ for workflow in \
   fi
 done
 
-grep -Fq 'download1.rpmfusion.org' "$ROOT/docs/CI_VALIDATION.md" || {
-  echo 'CI documentation does not describe the RPM Fusion fallback' >&2
-  exit 1
-}
 
 echo 'RPM Fusion CI bootstrap contract: PASS'

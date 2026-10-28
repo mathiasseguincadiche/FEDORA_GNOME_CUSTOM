@@ -29,9 +29,9 @@ Cette démarche est aussi un support d'apprentissage DevOps : versionner la conf
 
 | Pilier | Ce qu'on veut | Où c'est dans le projet |
 | --- | --- | --- |
-| **Finition GNOME façon Ubuntu** | Dock, bureau avec icônes, tuilage amélioré, apps GTK3 harmonisées, soin de l'écran QD-OLED | [`GNOME.md`](GNOME.md) (guide d'entrée), [`GNOME_POLISH.md`](GNOME_POLISH.md), ADR 0013, `config/gnome-polish.conf` |
+| **Finition GNOME façon Ubuntu** | Dock, bureau avec icônes, tuilage amélioré, apps GTK3 harmonisées, soin de l'écran QD-OLED | [`GNOME.md`](GNOME.md) (guide d'entrée), [`GNOME.md`](GNOME.md), ADR 0013, `config/gnome-polish.conf` |
 | **Performance et réactivité** | Noyau stable le plus récent, réglages mesurés du CPU, de la mémoire et du GPU, aucun réglage aveugle | [`PERFORMANCE.md`](PERFORMANCE.md), [`UPSTREAM_LINUX.md`](UPSTREAM_LINUX.md), ADR 0015, `config/kernel.conf`, `config/performance.conf` |
-| **Fiabilité et sauvegardes** | Rien n'est appliqué sans dry-run, baseline et sauvegarde ; mises à jour sûres ; restauration prouvée | [`CERTIFICATION.md`](CERTIFICATION.md) (guide d'entrée des preuves), [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md), [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md), ADR 0014 |
+| **Fiabilité et sauvegardes** | Rien n'est appliqué sans dry-run, baseline et sauvegarde ; mises à jour sûres ; restauration prouvée | [`QUALIFICATION.md`](QUALIFICATION.md) (guide d'entrée des preuves), [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md), [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md), ADR 0014 |
 | **Outils DevOps** | KVM/libvirt isolé, labo DevOps en VM, terminal et Bash soignés | [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) (guide d'entrée), [`VIRTUALIZATION.md`](VIRTUALIZATION.md), [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md), [`PTYXIS.md`](PTYXIS.md) |
 
 Aucun pilier n'a le droit d'en casser un autre : une optimisation de performance qui rend la machine instable ou impossible à sauvegarder est refusée, une finition visuelle qui fige l'écran OLED est refusée.

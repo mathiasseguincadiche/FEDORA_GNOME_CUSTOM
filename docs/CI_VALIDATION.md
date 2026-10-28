@@ -286,7 +286,7 @@ Il tourne périodiquement afin de surveiller les dépôts externes et signatures
 - changement Ethernet/Wi-Fi réel ;
 - second-host LAN → VM.
 
-Voir aussi [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`GAMING.md`](GAMING.md), [`FEDORA45_LIVE_PREFLIGHT.md`](FEDORA45_LIVE_PREFLIGHT.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
+Voir aussi [`../CONTRIBUTING.md`](../CONTRIBUTING.md), [`NAUTILUS.md`](NAUTILUS.md), [`PTYXIS.md`](PTYXIS.md), [`GAMING.md`](GAMING.md), [`FEDORA45_LIVE_PREFLIGHT.md`](FEDORA45_LIVE_PREFLIGHT.md) et [`SUPPLY_CHAIN.md`](SUPPLY_CHAIN.md).
 
 ## Fedora/GNOME : boot et reprise isolée
 

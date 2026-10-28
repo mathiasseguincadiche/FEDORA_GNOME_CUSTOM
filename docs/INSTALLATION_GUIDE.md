@@ -25,7 +25,7 @@ Avant toute mutation réelle, vous devez disposer :
 - d'une cible Borg externe/off-machine disponible pour le backup pré-APPLY (ext4, non chiffrée) ;
 - de Secure Boot désactivé et vérifiable comme tel.
 
-Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`LEARNING_PATH.md`](LEARNING_PATH.md).
+Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`README.md`](README.md).
 
 ### Le parcours
 
@@ -385,7 +385,7 @@ Chaque preuve est unique et liée au fingerprint courant. Les erreurs critiques 
 
 ## 13. Certification Golden
 
-Terminer les essais du système installé décrits dans la [checklist physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) et le [protocole de fiabilité](RELIABILITY_QUALIFICATION.md) : réseau, audio, affichage, GPU, usage réel des applications et du bureau, sauvegarde/restauration, veille et Rocky. Le contrôle court du Live ne remplace pas ces preuves de fonctionnement après configuration.
+Terminer les essais du système installé décrits dans la [checklist physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) et le [protocole de fiabilité](QUALIFICATION.md) : réseau, audio, affichage, GPU, usage réel des applications et du bureau, sauvegarde/restauration, veille et Rocky. Le contrôle court du Live ne remplace pas ces preuves de fonctionnement après configuration.
 
 Quand toutes les preuves sont présentes :
 
@@ -540,4 +540,4 @@ Le commit incorporé doit être celui testé en Live. Après installation, repre
 - sauvegarde / restauration : [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) ;
 - symptômes : [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) ;
 - KVM : [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) ;
-- preuve et reproductibilité : [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md).
+- preuve et reproductibilité : [`QUALIFICATION.md`](QUALIFICATION.md).

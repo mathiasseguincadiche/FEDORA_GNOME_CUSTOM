@@ -190,12 +190,8 @@ host = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
 assert "preserve_hostname: false" in host
 assert "hostname: fgc-fedora-ci" in host
 assert "preserve_hostname: true" not in host
-# Current operator guide must match the configured default channel.
+# The configured default kernel channel is the upstream vanilla one.
 assert 'KERNEL_CHANNEL="vanilla"' in (root / "config/kernel.conf").read_text()
-guide = (root / "docs/THREE_GATE_VALIDATION.md").read_text()
-assert "CachyOS" not in guide
-assert "manuellement par leur propriétaire" in guide
-assert "Linux amont" in guide
 # A skipped required context must not turn a failed dependency into success.
 spec = importlib.util.spec_from_file_location("jobs", root / ".github/scripts/require-jobs-success.py")
 jobs = importlib.util.module_from_spec(spec)

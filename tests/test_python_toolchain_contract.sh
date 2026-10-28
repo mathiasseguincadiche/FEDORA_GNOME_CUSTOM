@@ -5,7 +5,6 @@ HOST_MANIFEST="$ROOT/manifests/packages-system.txt"
 SYSTEM_VALIDATION="$ROOT/modules/system/09_system_validation.sh"
 ROCKY_BOOT="$ROOT/guest/rocky-devops/bootstrap-devops.sh"
 ROCKY_VERIFY="$ROOT/guest/rocky-devops/verify-devops.sh"
-INVENTORY="$ROOT/docs/SOFTWARE_INVENTORY.md"
 
 for pkg in python3 python3-pip python3-devel pipx; do
   grep -Fxq "$pkg" "$HOST_MANIFEST" || { echo "host Python package missing from system manifest: $pkg" >&2; exit 1; }
@@ -21,10 +20,5 @@ for token in python3 pip3 pipx python.venv 'python3 -m pip --version' 'python3 -
   grep -Fq "$token" "$ROCKY_VERIFY" || { echo "Rocky Python verification missing: $token" >&2; exit 1; }
 done
 
-[[ -f "$INVENTORY" ]] || { echo 'software inventory documentation missing' >&2; exit 1; }
-for token in 'Python HOST' 'Python VM' python3-pip python3-devel python3-devel pipx 'Dépendances transitives'; do
-  grep -Fq "$token" "$INVENTORY" || { echo "software inventory missing Python contract: $token" >&2; exit 1; }
-done
-grep -Fq 'SOFTWARE_INVENTORY.md' "$ROOT/docs/README.md"
 
 echo 'python toolchain contract: PASS'

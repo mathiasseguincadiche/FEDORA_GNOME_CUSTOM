@@ -88,7 +88,7 @@ Après installation et redémarrage sur SSD :
 ./control.sh validate gate3 status
 ```
 
-La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](THREE_GATE_VALIDATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d’[installation](INSTALLATION_GUIDE.md).
+La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](QUALIFICATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d’[installation](INSTALLATION_GUIDE.md).
 
 ## Installation
 

@@ -1,8 +1,9 @@
 # Notes historiques
 
-Ces documents décrivent des **étapes passées** du projet (durcissement pré-1.0, fermeture de lots). Ils restent consultables pour comprendre *pourquoi* certaines règles existent, mais ils ne sont **pas normatifs** : en cas de différence, le code, la configuration, les tests et les documents de `docs/` font foi (voir [`DOCUMENTATION_MODEL.md`](../DOCUMENTATION_MODEL.md)).
+Ces documents décrivent des **étapes passées** du projet (durcissement pré-1.0, fermeture de lots). Ils restent consultables pour comprendre *pourquoi* certaines règles existent, mais ils ne sont **pas normatifs** : en cas de différence, le code, la configuration, les tests et les documents de `docs/` font foi (voir [le guide du contributeur](../../CONTRIBUTING.md)).
 
 - [`PRE1_HARDENING.md`](PRE1_HARDENING.md) — revue de durcissement avant la 1.0 (0.14)
 - [`INDUSTRIAL_READINESS.md`](INDUSTRIAL_READINESS.md) — état de préparation industrielle
 - [`HARDWARE_KVM_COMPLETION.md`](HARDWARE_KVM_COMPLETION.md) — fermeture du lot matériel + KVM
 - [`AUDIT_RUNTIME_2026-09-27.md`](AUDIT_RUNTIME_2026-09-27.md) — audit croisé du moteur (0.17–0.18), dont les exigences sont depuis satisfaites
+- [`PREINSTALL_SAFETY_REVIEW.md`](PREINSTALL_SAFETY_REVIEW.md) — corrections avant installation (octobre 2026) et leurs tests de régression

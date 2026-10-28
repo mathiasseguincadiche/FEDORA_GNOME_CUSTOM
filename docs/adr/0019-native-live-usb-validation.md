@@ -21,4 +21,4 @@ L’installation prévue est neuve, directement en Fedora 45 / GNOME 51. Le prop
 
 Une seule preuve native remplace les deux anciennes prévalidations virtuelles. Les anciens JSON sont refusés. Les changements de commit ou de plan exigent un nouveau relevé Live ; les changements de configuration ou de runtime installés exigent la requalification des preuves concernées. Aucun résultat CI ou Live ne devient automatiquement une certification Golden.
 
-Les politiques du projet concernant `/data`, Secure Boot OFF, l’absence de LUKS local, Borg non chiffré et les exports manuels de VM restent inchangées. Les procédures courantes sont [le Live USB](../FEDORA45_LIVE_PREFLIGHT.md), [l’installation](../INSTALLATION_GUIDE.md) et [la validation](../THREE_GATE_VALIDATION.md).
+Les politiques du projet concernant `/data`, Secure Boot OFF, l’absence de LUKS local, Borg non chiffré et les exports manuels de VM restent inchangées. Les procédures courantes sont [le Live USB](../FEDORA45_LIVE_PREFLIGHT.md), [l’installation](../INSTALLATION_GUIDE.md) et [la validation](../QUALIFICATION.md).

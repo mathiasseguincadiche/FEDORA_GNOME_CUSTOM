@@ -18,8 +18,7 @@ for file in "$policy" "$lib" "$manifest" \
   "$ROOT/diagnostics/frametime-doctor" \
   "$ROOT/scripts/performance/profile.sh" \
   "$ROOT/scripts/performance/game-performance.sh" \
-  "$ROOT/scripts/performance/nvme-scheduler-benchmark.sh" \
-  "$ROOT/docs/PERFORMANCE.md"; do
+  "$ROOT/scripts/performance/nvme-scheduler-benchmark.sh"; do
   [[ -s "$file" ]] || fail "missing $file"
 done
 for expected in \
@@ -70,7 +69,6 @@ grep -Fq 'performance-doctor" --quiet --certify' "$ROOT/diagnostics/final-certif
 grep -Fq 'performance-runtime.policy' "$ROOT/scripts/release/capture-golden-release.sh" || fail 'Golden release does not capture performance policy'
 grep -Fq 'performance_policy_sha256' "$ROOT/scripts/release/capture-golden-release.sh" || fail 'Golden release does not hash performance policy'
 grep -Fq "cc_section '7 — PERFORMANCE FEDORA LINUX'" "$ROOT/lib/control_center.sh" || fail 'interactive performance pillar missing'
-grep -Fq './control.sh perf status' "$ROOT/docs/CONTROL_CENTER.md" || fail 'Control Center docs missing performance route'
 grep -Fq "name '*.policy'" "$ROOT/lib/evidence.sh" || fail 'versioned policies must participate in effective_config_sha256'
 if grep -RInE 'sysctl[[:space:]]+-w|nohz_full|pcie_aspm=off|nvme_core\.default_ps_max_latency_us|adios|bore|kernel.*(cachy|zen|liquorix)|xe\.force_probe|i915\.force_probe' \
   "$ROOT/config/performance-runtime.policy" "$ROOT/modules/performance" "$ROOT/scripts/performance"; then

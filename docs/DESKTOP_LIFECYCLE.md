@@ -36,7 +36,7 @@ Politique :
 LIFECYCLE_FLATPAK_UPDATE_POLICY=manual
 ```
 
-Les applications Flatpak sont mises à jour volontairement via GNOME Software ou :
+Les applications Flatpak sont mises à jour volontairement avec `flatpak update`, `./control.sh update flatpak` ou :
 
 ```bash
 ./control.sh update all
@@ -45,6 +45,14 @@ Les applications Flatpak sont mises à jour volontairement via GNOME Software ou
 Le mode complet met aussi à jour Flatpak lorsque les RPM sont déjà à jour, sans demander de redémarrage dans ce cas. Une transaction RPM préparée reste appliquée et finalisée après le redémarrage prévu.
 
 Le projet ne crée aucun timer/service d'installation Flatpak silencieuse.
+
+## GNOME Logiciels
+
+GNOME Logiciels reste disponible pour parcourir le catalogue et installer de nouvelles applications, mais ne propose plus de voie parallèle de mise à jour : le module lifecycle installe une base dconf système dédiée et verrouille `org.gnome.software` `download-updates=false` et `allow-updates=false`, en conservant les entrées du profil dconf existant. Les mises à jour RPM passent par la transaction sauvegardée du projet.
+
+Après APPLY, se déconnecter, se reconnecter, puis lancer `./diagnostics/lifecycle-doctor`. Une valeur utilisateur ou un profil dconf personnalisé qui contourne la politique fait échouer ce contrôle. Ne pas supprimer PackageKit ou DNF5 pour autant.
+
+GNOME Disques (`gnome-disk-utility`) fait partie de la couche d'intégration ; Flatseal est livré depuis Flathub (provenance upstream, sans badge « verified »).
 
 ## Sauvegarde quotidienne
 

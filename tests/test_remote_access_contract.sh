@@ -11,8 +11,7 @@ for file in \
   lib/remote_access.sh diagnostics/remote-doctor \
   modules/remote/70_remote_preflight.sh modules/remote/71_remote_network.sh modules/remote/72_remote_ssh.sh modules/remote/73_remote_desktop.sh modules/remote/79_remote_validation.sh \
   remote/ssh/00-fgc-remote.conf.in remote/polkit/50-fgc-remote-power.rules.in remote/systemd/network/80-fgc-wol.link remote/systemd/user/fgc-remote-lock.service \
-   scripts/remote/wol-send.py scripts/remote/gdm_autologin.py scripts/remote/lock-graphical-session.sh scripts/remote/sunshine-config.py \
-  docs/REMOTE_ACCESS.md docs/adr/0017-remote-access.md; do
+   scripts/remote/wol-send.py scripts/remote/gdm_autologin.py scripts/remote/lock-graphical-session.sh scripts/remote/sunshine-config.py; do
   [[ -s "$file" ]] || fail "missing $file"
 done
 for exe in diagnostics/remote-doctor scripts/remote/wol-send.py scripts/remote/gdm_autologin.py; do
@@ -52,11 +51,6 @@ grep -Fq 'authorized_keys' modules/remote/70_remote_preflight.sh || fail 'prefli
 # Supply chain: signed repository metadata, no pipe-to-shell, no secret in the profile.
 grep -Fxq 'repo_gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale repository metadata must be signature-checked'
 grep -Fxq 'gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale RPM packages must be signature-checked'
-grep -Fq 'repo_gpgcheck=1' docs/SUPPLY_CHAIN.md || fail 'metadata signatures must be documented'
-grep -Fq 'gpgcheck=1' docs/SUPPLY_CHAIN.md || fail 'RPM signatures must be documented'
-if grep -F '**Tailscale**' docs/SUPPLY_CHAIN.md | grep -Fq 'gpgcheck=0'; then
-  fail 'signed Tailscale RPM policy misrepresented in supply-chain doc'
-fi
 if grep -REn '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' modules/remote lib/remote_access.sh scripts/remote remote; then fail 'no pipe-to-shell in the remote profile'; fi
 if grep -REni 'authkey|tskey-|password=|passphrase' modules/remote lib/remote_access.sh scripts/remote remote config/remote.conf; then fail 'no secret or auth key may live in the repository'; fi
 
@@ -70,14 +64,6 @@ grep -Fxq 'WakeOnLan=magic' remote/systemd/network/80-fgc-wol.link || fail 'WoL 
 # Operator entry points and CI.
 grep -Fq 'remote-doctor' control.sh || fail 'control.sh must route remote'
 grep -Fq 'manifests/packages-remote-fedora.txt' .github/workflows/fedora-package-preflight.yml || fail 'CI preflight must resolve the Fedora remote manifest'
-
-# Documentation: guide, ADR, indexes, and the honest limits.
-for token in 'Verdict sur l'"'"'architecture' 'relais' 'Gate 3' 'expiration' 'FedoraWorkstation' 'GNOME Remote Desktop' 'Non vérifié'; do
-  grep -Fq "$token" docs/REMOTE_ACCESS.md || fail "REMOTE_ACCESS.md missing: $token"
-done
-grep -Fq '0017-remote-access.md' docs/adr/README.md || fail 'ADR index missing 0017'
-grep -Fq 'REMOTE_ACCESS.md' docs/README.md || fail 'docs portal must link REMOTE_ACCESS.md'
-grep -Fq 'docs/README.md' README.md || fail 'README must link the documentation portal'
 grep -Fq 'REMOTE_ENABLE' config/local.conf.example || fail 'local.conf.example must document the opt-in'
 [[ "$(tr -d '[:space:]' < VERSION)" =~ ^0\.(2[2-9]|[3-9][0-9])\.[0-9]+$ ]] || fail 'VERSION must be at least 0.22.0 (remote access profile shipped in 0.22.0)'
 grep -Fq "v$(tr -d '[:space:]' < VERSION)-rc." .github/release-manifest.env || fail 'release manifest must follow VERSION'

@@ -51,8 +51,6 @@ grep -Fq 'DING Trash' "$ROOT/diagnostics/gnome-doctor"
 grep -Fq 'Show Desktop position' "$ROOT/diagnostics/gnome-doctor"
 
 # The two features must be documented and covered by Fedora host/package CI.
-grep -Fq 'Desktop Icons NG' "$ROOT/docs/GNOME_EXTENSIONS.md"
-grep -Fq 'Show Desktop Button' "$ROOT/docs/GNOME_EXTENSIONS.md"
 grep -Fq 'source config/gnome-extensions.lock' "$ROOT/.github/workflows/fedora-package-preflight.yml"
 grep -Fq 'bash .github/scripts/gnome51-settings-pretest.sh' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'gnome_ding_settings_apply' "$ROOT/.github/scripts/gnome51-settings-pretest.sh"

@@ -1,159 +1,85 @@
-# Qualification réelle du poste — fiche d'exécution
+# Fiche de qualification physique
 
-> Fait partie du parcours de certification : vue d'ensemble dans [`CERTIFICATION.md`](CERTIFICATION.md).
+Copier cette fiche dans le dossier de preuves de l'essai. Les commandes et critères sont dans [la qualification](QUALIFICATION.md) ; cette fiche sert à consigner ce qui a réellement été fait. Tout commence **NON EXÉCUTÉ** : un résultat ne devient PASS qu'après l'essai sur le PC, et cette fiche ne remplace aucun fichier de preuve Live ou Gate 3.
 
-Cette fiche prépare les essais sur le PC cible. Les résultats physiques restent **PENDING** tant que les commandes n'ont pas été exécutées sur ce PC et les contrôles humains réalisés. Les laboratoires GitHub Rocky/Fedora ne remplacent pas ces mesures.
+Ne pas lancer ces essais depuis un runner GitHub ou une VM en prétendant tester la B580, les T705 ou le BIOS. Avant de publier des journaux, retirer mots de passe, clés privées, jetons, enregistrements micro et inventaire personnel.
 
-La procédure autoritaire reste [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md). Utiliser le profil Fedora/GNOME effectivement promu pour la production ; la préparation Fedora 45/GNOME 51 ne constitue pas cette promotion.
+## Identités à figer
 
-## La machine cible : ce qu'il faudra pouvoir montrer
+- Date et opérateur : NON RENSEIGNÉ
+- Commit Git propre et exact, plan de modules, configuration effective : NON RENSEIGNÉ
+- Rapport CI de ce commit : NON RENSEIGNÉ
+- Média Fedora Workstation vérifié (nom, SHA-256) : NON RENSEIGNÉ
+- Séries du T705 système, du T705 `/data` et du support externe : NON RENSEIGNÉ
+- Dépôt Borg, nom et identifiant de l'archive complète : NON RENSEIGNÉ
+- SHA-256 de la preuve Live (même commit, même PC) : NON RENSEIGNÉ
 
-**L'objectif Fedora 45 / GNOME 51 ne sera atteint que lorsque le profil final sera promu et que cette checklist aura été exécutée sur le PC réel.** Les workflows GitHub Fedora et Rocky ne vérifient pas le comportement physique de ces périphériques.
+Cible : Ryzen 7 7700, MSI MAG B850M Mortar WiFi, Intel Arc B580, 48 Gio DDR5, deux Crucial T705, Kingston XS1000 externe, ASUS ROG Strix OLED XG27AQDMES 2560×1440/~240 Hz. Relever l'inventaire réel au moment de l'essai et noter tout remplacement.
 
-| Composant | Ce qu'il faut observer sur place | Pourquoi |
+## Avant installation et APPLY
+
+| Essai | État | Preuve attendue |
 |---|---|---|
-| Ryzen 7 7700 et 48 Gio DDR5 | identité, fréquence, stabilité | éviter de certifier un profil appliqué à une autre machine |
-| Intel Arc B580 | pilote `xe`, ReBAR, rendu Vulkan/VA-API | mesurer les performances et l'accélération réelles |
-| Deux Crucial T705 | identité NVMe, SMART, emplacements, `/data` EXT4 | distinguer système réinstallable et données persistantes |
-| ASUS QD-OLED | EDID, 2560×1440/~240 Hz, veille/reprise | confirmer image et fréquence sans artefacts |
-| Wi-Fi 7 / 5 GbE / audio / webcam | connectivité et usage effectifs | ne pas confondre paquet pilote installé et matériel fonctionnel |
-| Backup Borg sur XS1000 | sauvegarde et vraie restauration en staging | prouver la récupération au-delà d'une simple archive créée |
+| Live USB Fedora 45 / GNOME 51 | NON EXÉCUTÉ | JSON `PREINSTALL_ONLY` + SHA exportés hors du Live, puis importés sur le SSD |
+| Identités Wi-Fi, Bluetooth, refroidissement, `/data` | NON EXÉCUTÉ | verrous enrôlés, trois canaux de ventilation distincts |
+| RAM 5600 puis 6000 | NON EXÉCUTÉ | vitesse UEFI réelle, 60 min chacune, durée et erreurs consignées |
+| CPU | NON EXÉCUTÉ | 30 min, températures, aucune erreur MCE/EDAC |
+| Deux T705 | NON EXÉCUTÉ | séries distinctes, SMART, PCIe x4, intégrité fio |
+| Baseline certifiée | NON EXÉCUTÉ | `baseline-doctor certify` PASS |
+| Dry-run, sauvegarde pré-APPLY, APPLY | NON EXÉCUTÉ | même état, restauration canari vérifiée, APPLY terminé, reboot sur Linux amont N |
 
-**État initial : `PENDING`.** Remplir les preuves observées, puis requalifier après tout changement majeur de noyau, version Fedora, profil GNOME ou matériel. Pour la procédure exacte et les gardes, voir [THREE_GATE_VALIDATION.md](THREE_GATE_VALIDATION.md).
+## Système installé (Gate 3)
 
-
-## Qualification de l'affichage B580 : blanc, RGB, HDR, double écran
-
-L'affichage est une **mesure visuelle** à conduire avec l'Intel Arc B580 réelle. Ne pas afficher un PASS parce qu'un connecteur annonce un mode 2560×1440 : ce mode peut être simplement disponible, pas actif.
-
-1. Relever les sorties réellement connectées, le modèle des écrans et leur arrangement dans GNOME.
-2. Exécuter `./diagnostics/display-color-audit` **sans privilèges** pour obtenir un inventaire DRM anonymisé.
-3. Observer avec GNOME **la résolution et la fréquence active** sur chaque écran, ainsi que les éventuels VRR/HDR.
-4. Tester un aplat blanc, un dégradé noir/blanc et des gris neutres à réglages fixes ; noter la plage RGB côté moniteur, l'ICC et Night Light.
-5. Refaire la comparaison en SDR puis, si disponible, en HDR ; comparer HDMI et DisplayPort en ne changeant **qu'un facteur** à la fois.
-6. Refaire les observations après veille/réveil et vérifier les éventuels messages `xe`/DRM/PCIe.
-
-Le protocole complet, les causes possibles du blanc grisâtre et les décisions en cas d'échec sont dans [DISPLAY_COLOR_DIAGNOSTIC.md](DISPLAY_COLOR_DIAGNOSTIC.md). La validation ne doit pas contourner `xe`, désactiver SELinux ni imposer des profils couleur non vérifiés.
-
-
-## AV1 sur le poste et la tablette (qualification distincte)
-
-1. Sur l'hôte Fedora, observer `./diagnostics/arc-b580-av1 --format json` : **un seul** render node B580 `8086:e20b` lié à `xe` doit exposer `VAProfileAV1Profile0` avec `VAEntrypointVLD` et `VAEntrypointEncSlice` ou `VAEntrypointEncSliceLP`. Sinon : `NOT_TESTED` ou `MISSING_AV1_CAPABILITY`, et arrêt de la qualification AV1.
-2. Avec Sunshine activé **volontairement** et une session GNOME ouverte, vérifier le codec/encodeur réellement retenu dans les journaux, et non dans une simple liste de codecs disponibles.
-3. Depuis la tablette Android, lancer Moonlight ; relever codec décodé, résolution, FPS, pertes réseau et latence sur LAN puis via Tailscale.
-4. Après arrêt complet, demander Wake-on-LAN depuis un **relais LAN** ; répéter les cycles exigés, mesurer les erreurs et vérifier le verrouillage de session.
-5. Consigner la présence éventuelle de bascule H.264/HEVC, d'intervention locale, d'absence de 240 Hz ou d'artefacts. **Aucun résultat n'est simulé par GitHub Actions.**
-
-Le diagnostic ne modifie ni les pilotes, ni l'ouverture du pare-feu, ni le compte GNOME, ni Sunshine. Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md) pour la procédure d'activation et de retour arrière.
-
-## Avant les charges
-
-1. Conserver le même commit Git propre et le même plan de modules depuis le Live jusqu’au système installé.
-2. Exécuter les essais Live USB sur le PC et exporter le compte rendu vers un support externe avant de redémarrer.
-3. Sur Fedora installé sur le SSD, importer cette preuve native et lire l’état :
-
-~~~bash
-git rev-parse HEAD
-git status --short
-./control.sh validate import /chemin/live-<commit>.json
-./control.sh validate gate3 status
-~~~
-
-Ne pas lancer ces essais depuis un runner GitHub public ou une VM en prétendant tester la B580, les T705 ou le BIOS. Un éventuel runner personnel ne remplace pas la session Wayland ni les confirmations audio, HDR/VRR et visuelles.
-
-4. Suivre l'installation, la sauvegarde pré-APPLY et la convergence du [guide de validation](THREE_GATE_VALIDATION.md). La baseline RAM/CPU/NVMe et les identités Bluetooth/refroidissement sont préparées **avant APPLY**. L'opérateur reste présent pendant les charges.
-
-## Baseline avant APPLY
-
-~~~bash
-./diagnostics/peripherals-doctor list
-# Remplacer cardN/videoN après inspection :
-./diagnostics/peripherals-doctor enroll audio cardN
-./diagnostics/peripherals-doctor enroll camera videoN
-./diagnostics/baseline-doctor enroll-wifi
-./diagnostics/baseline-doctor enroll-bluetooth
-./diagnostics/baseline-doctor list-cooling
-~~~
-
-Identifier les canaux réels pompe/CPU/boîtier avant d'exécuter enroll-cooling avec trois entrées fanN distinctes. Aucun flash BIOS, overclocking ou réglage forcé de ventilateur n'est appliqué par cette fiche.
-
-~~~bash
-./diagnostics/baseline-doctor run-memory-test 5600
-./diagnostics/baseline-doctor run-memory-test 6000
-./diagnostics/baseline-doctor run-cpu-soak
-./diagnostics/baseline-doctor run-nvme-test root
-./diagnostics/baseline-doctor run-nvme-test data
-./diagnostics/baseline-doctor certify
-~~~
-
-Les deux essais RAM exigent chacun la vitesse réellement configurée dans l'UEFI ; lancer la commande 6000 alors que la RAM est à 5600 ne certifie pas 6000. Les essais NVMe écrivent seulement dans un fichier temporaire unique sur chaque système de fichiers ; ils ne visent jamais un disque brut.
-
-Les seuils minimaux de qualification sont une heure par vitesse RAM et trente minutes CPU. Le CPU exige une température lisible avant, pendant et après l'essai. La charge s'arrête si une mesure manque ou atteint la limite choisie, plafonnée à 95 °C. Un processus terminé trop tôt ne produit aucune preuve PASS.
-
-## Après APPLY et redémarrage
-
-Exécuter dans la vraie session GNOME/Wayland, avec l'écran et les périphériques utilisés au quotidien :
-
-~~~bash
-./diagnostics/kernel-doctor
-./diagnostics/peripherals-doctor test-camera
-./diagnostics/hardware-components-doctor
-./diagnostics/graphics-doctor
-./diagnostics/arc-compute-doctor
-./diagnostics/storage-doctor
-./control.sh validate gate3 gpu-soak
-./control.sh validate gate3 network-lan
-./control.sh validate gate3 network-wifi
-./control.sh validate gate3 audio-cert
-./control.sh validate gate3 display-cert
-scripts/kvm/runtime_certification.sh
-~~~
-
-Le test Vulkan impose au moins quinze minutes et une à huit instances (deux par défaut). Fermer les fenêtres prématurément, réduire la durée ou fournir zéro instance fait échouer la qualification. Les workers CPU/RAM/GPU sont arrêtés avec leur groupe de processus lorsqu'un essai échoue ou est interrompu.
-
-Le LAN et le Wi-Fi doivent être connectés lors de leurs essais respectifs. L'audio demande une écoute réelle et une capture microphone ; l'affichage demande un contrôle actif HDR/VRR sur l'EDID cible. Après les premiers diagnostics hôte, créer Rocky selon [le guide KVM](KVM_QUICKSTART.md). La certification KVM complète attend cet invité Rocky Linux 10.2, son intégration et le guard réseau.
-
-Faire ensuite cinq cycles physiques distincts veille/réveil et les enregistrer selon le guide :
-
-~~~bash
-./control.sh validate gate3 record-suspend
-~~~
-
-Après les cycles, refaire la capture Brio, l'écoute/capture audio et le partage réel :
-
-~~~bash
-./diagnostics/peripherals-doctor test-camera
-./diagnostics/physical-runtime-doctor audio
-./diagnostics/portal-functional-doctor --interactive --gate3
-./diagnostics/application-usage-doctor --interactive
-~~~
-
-Voir [DESKTOP_COMPLETION.md](DESKTOP_COMPLETION.md) pour les identités, les blocages Wi-Fi et l'afficheur LD240 facultatif.
-
-Conserver une sauvegarde Borg du HOST et des données utilisateur, puis exercer la [restauration isolée](ISOLATED_RECOVERY_RUNBOOK.md). Les VM restent **hors de Borg** : leur éventuelle exportation manuelle et leur restauration sont gérées personnellement par le propriétaire et évaluées séparément.
-
-## Résultats à conserver
-
-| Domaine | Preuve attendue | État initial |
+| Composant / usage | État | Preuve attendue |
 |---|---|---|
-| CPU / RAM | Charges complètes, mesures thermiques, journaux et SHA-256 | PENDING |
-| B580 | xe, ReBAR, PCIe x8, Vulkan, VA-API/OpenCL et charge complète | PENDING |
-| Deux T705 | Identités distinctes, SMART, PCIe x4 et intégrité fio | PENDING |
-| Affichage / audio | EDID, mode, essais actifs et confirmations humaines | PENDING |
-| LAN / Wi-Fi / Bluetooth | Identité, lien, DNS/HTTPS et périphériques réels | PENDING |
-| Veille | Cinq cycles physiques actuels | PENDING |
-| KVM / sauvegarde | Rocky, isolation et restauration à froid ; Borg HOST/données distinct des exports VM manuels | PENDING |
+| Arc B580 | NON EXÉCUTÉ | `xe`, ReBAR, PCIe x8, Vulkan/VA-API/OpenCL réels, `gpu-soak` 15 min sans erreur |
+| Écran | NON EXÉCUTÉ | EDID physique, 2560×1440/~240 Hz actif, VRR et HDR essayés, reconnexion |
+| Ethernet / Wi-Fi | NON EXÉCUTÉ | interface identifiée, DNS/HTTPS, transfert réel et débit mesuré |
+| Bluetooth | NON EXÉCUTÉ | appairage réel, usage prolongé, reprise après veille |
+| Audio | NON EXÉCUTÉ | lecture et capture réelles, sortie et volume conservés après veille |
+| Webcam, USB, XS1000 | NON EXÉCUTÉ | 60 images 1080p, branchements et reprise, données copiées comparées |
+| Veille | NON EXÉCUTÉ | cinq cycles distincts enregistrés ; écran, audio, réseau, USB revérifiés |
+| Bureau GNOME | NON EXÉCUTÉ | matrice UX : Bureau/Corbeille, Super+D, Vitals, Nautilus (aperçu, recherche), Ptyxis, portails. Une capture d'écran seule ne prouve pas les interactions |
+| Arrêt et reboot GNOME | NON EXÉCUTÉ | fermeture normale, reboot avec bureau ouvert et reboot précoce : aucune extension désactivée ni crash dans le journal du boot précédent |
+| Applications | NON EXÉCUTÉ | `application-usage-doctor --interactive` : modification enregistrée, PDF, Flatpak démarrés |
+| Gaming | NON EXÉCUTÉ | jeu réellement lancé, durée, erreurs, frametimes |
+| Rocky DevOps | NON EXÉCUTÉ | VM démarrée, guard réseau, SFTP depuis Nautilus, réseau Docker qualifié |
+| Sauvegarde et restauration | NON EXÉCUTÉ | `backup-doctor --certify`, restauration en staging, contenu/modes/liens comparés |
+| Reprise isolée Fedora / VM | NON EXÉCUTÉ | voir [reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) |
+| Noyau de secours Fedora | NON EXÉCUTÉ | entrée GRUB présente, démarrage testé une fois, retour sur N |
 
-Les preuves CPU/RAM/GPU utilisent qualification_policy=2 et enregistrent durée demandée et durée écoulée. Les anciens markers ne comportant pas ces mesures sont refusés : rejouer les essais concernés, sans éditer les markers. Une nouvelle tentative valide invalide d'abord la preuve concernée et la certification courante ; un échec ne peut donc laisser un ancien PASS actif. Les bundles Golden archivés restent conservés.
+Les doctors (baseline, graphics, arc-compute, display, storage, hardware-components, suspend, usb-resume, virtualization, backup, performance) sont des points de contrôle : leur PASS s'accompagne des essais d'usage ci-dessus. Une lecture de journaux seule ne prouve ni stabilité, ni débit, ni fluidité, ni silence.
 
-~~~bash
-./control.sh perf status
-./control.sh validate gate3 certify
-./control.sh validate status
-~~~
+## Affichage : blanc, RGB, HDR
 
-Seul le dernier verdict réel peut produire state/final/certified.ok et le bundle golden-release.json. En cas d'échec, ouvrir une [issue matérielle](../.github/ISSUE_TEMPLATE/hardware_validation.yml) avec le commit, le noyau, le domaine, la commande et l'erreur. Relire les journaux avant publication : ne transmettre ni mots de passe, clés privées, jetons cloud, enregistrement microphone ni inventaire personnel complet.
+Mesure visuelle avec la B580 réelle. Un mode 2560×1440 annoncé n'est pas forcément actif.
 
-## Réserve Rocky / Docker
+1. Relever les sorties connectées, les écrans et leur arrangement dans GNOME.
+2. `./diagnostics/display-color-audit`, **sans privilèges**, pour un inventaire DRM anonymisé.
+3. Noter la résolution et la fréquence **actives**, VRR/HDR.
+4. Aplat blanc, dégradé noir/blanc et gris neutres à réglages fixes ; noter la plage RGB côté écran, l'ICC et l'éclairage nocturne.
+5. Comparer SDR puis HDR, HDMI puis DisplayPort, en ne changeant **qu'un facteur** à la fois.
+6. Refaire après veille ; vérifier les messages `xe`/DRM/PCIe.
 
-L'invité Rocky garde son noyau EL10 et Docker stable. Les notices de maintenance nft_compat / ip_set restent visibles ; elles ne constituent pas une preuve de panne du matériel Fedora. La [qualification réseau Docker](ROCKY_DEVOPS_READY.md#qualification-réseau-docker) vérifie bridges interne/de publication, DNS, échanges entre conteneurs et port publié sur localhost avant/après redémarrage, puis après restauration sans téléchargement. Le backend nftables natif reste [expérimental selon Docker](https://docs.docker.com/engine/network/firewall-nftables/) ; il n'est pas activé pour masquer une notice.
+Causes possibles et décisions en cas d'échec : [diagnostic couleur](DISPLAY_COLOR_DIAGNOSTIC.md).
+
+## AV1 et streaming vers la tablette (facultatif)
+
+1. `./diagnostics/arc-b580-av1 --format json` : un seul render node B580 `8086:e20b` sur `xe` doit exposer `VAProfileAV1Profile0` avec `VAEntrypointVLD` et `VAEntrypointEncSlice` (ou `EncSliceLP`). Sinon : `NOT_TESTED` ou `MISSING_AV1_CAPABILITY`, et arrêt.
+2. Sunshine activé volontairement, session GNOME ouverte : relever dans les journaux le codec et l'encodeur **réellement** retenus.
+3. Depuis la tablette, Moonlight : codec décodé, résolution, FPS, pertes et latence, en LAN puis via Tailscale.
+4. Après arrêt complet, Wake-on-LAN depuis un relais LAN ; répéter, relever les erreurs, vérifier le verrouillage de session.
+5. Consigner toute bascule H.264/HEVC, intervention locale, absence de 240 Hz ou artefact.
+
+Procédure d'activation et retour arrière : [accès distant](REMOTE_ACCESS.md).
+
+## Clôture
+
+- Échecs et parties non testées : NON RENSEIGNÉ
+- Corrections et nouveau commit éventuel : NON RENSEIGNÉ
+- `validate gate3 certify` et bundle Golden : NON EXÉCUTÉ
+- Mesures A/B avant toute optimisation : NON EXÉCUTÉ
+
+En cas d'échec, ouvrir une [issue matérielle](../.github/ISSUE_TEMPLATE/hardware_validation.yml) avec commit, noyau, domaine, commande et erreur.
+
+L'invité Rocky garde son noyau EL10 et Docker stable. Les notices nft_compat / ip_set ne prouvent pas une panne du matériel Fedora ; la [qualification réseau Docker](ROCKY_DEVOPS_READY.md#qualification-réseau-docker) vérifie bridges, DNS, échanges entre conteneurs et port publié avant et après redémarrage.

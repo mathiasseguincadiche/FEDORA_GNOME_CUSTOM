@@ -304,4 +304,4 @@ Les affirmations de ce guide viennent de recherches faites au moment de l'écrit
 
 **Non vérifié depuis l'environnement de rédaction :** le contenu actuel de la documentation LizardByte et de celle de Tailscale (accès bloqué), la définition exacte du dépôt `tailscale.repo` (comparer `config/repos/tailscale.repo` avec la version publiée avant la première installation), le comportement du Realtek RTL8126 depuis un arrêt complet, et Sunshine sur Arc B580. Ce sont les raisons pour lesquelles le profil est **désactivé par défaut** et passe par le Gate 3.
 
-**Étape suivante :** [CERTIFICATION.md](CERTIFICATION.md) (parcours des Gates), puis [PHYSICAL_QUALIFICATION_CHECKLIST.md](PHYSICAL_QUALIFICATION_CHECKLIST.md).
+**Étape suivante :** [QUALIFICATION.md](QUALIFICATION.md) (parcours des Gates), puis [PHYSICAL_QUALIFICATION_CHECKLIST.md](PHYSICAL_QUALIFICATION_CHECKLIST.md).
