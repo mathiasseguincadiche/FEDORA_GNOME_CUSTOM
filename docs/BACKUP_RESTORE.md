@@ -306,7 +306,7 @@ Cette estimation est conservatrice : compression et déduplication ne permettent
 pas de contourner le contrôle. La capacité d'un dépôt distant ne peut pas être
 mesurée localement ; une erreur Borg y reste bloquante.
 
-La qualification réelle suit [le parcours de fiabilité](RELIABILITY_QUALIFICATION.md).
+La qualification réelle suit [le parcours de fiabilité](QUALIFICATION.md).
 Aucun conteneur ne certifie le démarrage Fedora, la session GNOME, le TPM d'une VM
 récupérée ou le matériel physique.
 

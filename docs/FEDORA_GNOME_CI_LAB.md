@@ -134,7 +134,7 @@ La reconstruction vérifie les fichiers de test et GNOME ; elle ne démontre
 pas la restauration de tous les paquets, jeux ou services de la workstation.
 
 Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et
-[le parcours Live USB puis Gate 3](THREE_GATE_VALIDATION.md) définissent les essais opérateur
+[le parcours Live USB puis Gate 3](QUALIFICATION.md) définissent les essais opérateur
 restants sur le même commit. Un PASS CI conserve toutes ces limites.
 
 Le check obligatoire `contracts` s'exécute avec `always()` puis contrôle

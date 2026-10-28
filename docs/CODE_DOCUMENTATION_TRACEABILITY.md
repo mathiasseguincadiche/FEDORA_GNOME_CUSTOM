@@ -8,7 +8,7 @@ Ce registre indique **où se trouve la source de vérité** de chaque parcours. 
 | USB Live Fedora 45 | `diagnostics/live-preflight.sh` | [Préflight Live](FEDORA45_LIVE_PREFLIGHT.md) | `.github/workflows/live-preflight.yml` |
 | Installation sécurisée | `install.sh`, `installer/` | [Installation](INSTALLATION_GUIDE.md) | `.github/workflows/fedora-installer-audit.yml` |
 | Promotion Fedora 45 | `scripts/development/promote-fedora45.py`, `profiles/fedora45/` | [Référence Fedora 45](FEDORA45_PRIMARY.md) | `tests/test_promote_fedora45_behavior.sh` |
-| Qualité et gates | `scripts/validation/`, `.github/workflows/` | [Live USB et Gate 3](THREE_GATE_VALIDATION.md), [CI](CI_VALIDATION.md) | `tests/test_three_gate_validation_contract.sh` |
+| Qualité et gates | `scripts/validation/`, `.github/workflows/` | [Live USB et Gate 3](QUALIFICATION.md), [CI](CI_VALIDATION.md) | `tests/test_three_gate_validation_contract.sh` |
 | GNOME | `modules/gnome/`, `profiles/fedora45/gnome-extensions.lock` | [GNOME](GNOME.md), [extensions](GNOME.md) | Tests d'intégration GNOME |
 | Sauvegarde et restauration | `modules/backup/`, `scripts/backup/` | [Backup et restauration](BACKUP_RESTORE.md) | Contrats backup et preuve réelle de restauration |
 | KVM et labo Rocky | `scripts/kvm/`, `guest/rocky-devops/` | [KVM](KVM_QUICKSTART.md), [Rocky](ROCKY_DEVOPS_READY.md) | Tests VM et qualification réelle |

@@ -112,10 +112,10 @@ Une commande de diagnostic qui échoue est une information à comprendre, pas un
 Lire **avant toute mutation bare-metal** :
 
 1. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) ;
-2. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) ;
+2. [`QUALIFICATION.md`](QUALIFICATION.md) ;
 3. [`EXECUTION_CONTRACT.md`](EXECUTION_CONTRACT.md) ;
-4. [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) ;
-5. [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md).
+4. [`QUALIFICATION.md`](QUALIFICATION.md) ;
+5. [`QUALIFICATION.md`](QUALIFICATION.md).
 
 Le chemin mental est :
 

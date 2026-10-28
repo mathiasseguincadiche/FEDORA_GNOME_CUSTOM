@@ -536,4 +536,4 @@ Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé 
 
 Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
 
-L’afficheur LD240 est une option communautaire épinglée, inactive par défaut et indépendante des réglages de ventilation. Voir [DESKTOP_COMPLETION.md](DESKTOP_COMPLETION.md).
+L’afficheur LD240 est une option communautaire épinglée, inactive par défaut et indépendante des réglages de ventilation. Voir [QUALIFICATION.md](QUALIFICATION.md).

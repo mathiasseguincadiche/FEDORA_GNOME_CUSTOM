@@ -11,7 +11,7 @@ Choisir le parcours correspondant à votre besoin. La cible d’installation neu
 | Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md) | [Maintenance](DESKTOP_LIFECYCLE.md) · [Sauvegardes](BACKUP_RESTORE.md) |
 | Configurer le bureau, jouer ou utiliser KVM | [GNOME](GNOME.md) · [Gaming](GAMING.md) | [Démarrage KVM](KVM_QUICKSTART.md) |
 | Résoudre un problème | [Dépannage](TROUBLESHOOTING.md) | Runbook du domaine concerné dans le catalogue ci-dessous |
-| Qualifier ou contribuer | [Validation Live USB et Gate 3](THREE_GATE_VALIDATION.md) | [Fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) · [Contribution](../CONTRIBUTING.md) |
+| Qualifier ou contribuer | [Validation Live USB et Gate 3](QUALIFICATION.md) | [Fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) · [Contribution](../CONTRIBUTING.md) |
 
 Le [parcours d’apprentissage](LEARNING_PATH.md) accompagne une découverte progressive. Le [glossaire](GLOSSARY.md) explique les termes techniques.
 
@@ -56,11 +56,11 @@ Lire dans cet ordre pour une installation bare-metal :
 
 1. [`FEDORA45_LIVE_PREFLIGHT.md`](FEDORA45_LIVE_PREFLIGHT.md) — média signé, essais directs sur le PC et export du compte rendu ;
 2. [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) — installation graphique, Kickstart avancé, second T705, baseline, dry-run, backup, APPLY ;
-3. [`HARDWARE_BASELINE_CERTIFICATION.md`](HARDWARE_BASELINE_CERTIFICATION.md) — qualification CPU/RAM/NVMe/hardware ;
-4. [`HARDWARE_STABILITY.md`](HARDWARE_STABILITY.md) — stabilité et critères de rejet ;
-5. [`THREE_GATE_VALIDATION.md`](THREE_GATE_VALIDATION.md) — CI logicielle → Live USB → installation → Gate 3.
+3. [`QUALIFICATION.md`](QUALIFICATION.md) — qualification CPU/RAM/NVMe/hardware ;
+4. [`QUALIFICATION.md`](QUALIFICATION.md) — stabilité et critères de rejet ;
+5. [`QUALIFICATION.md`](QUALIFICATION.md) — CI logicielle → Live USB → installation → Gate 3.
 
-Les [corrections avant installation](PREINSTALL_SAFETY_REVIEW.md) relient les défauts déjà traités à leurs tests.
+Les [corrections avant installation](history/PREINSTALL_SAFETY_REVIEW.md) relient les défauts déjà traités à leurs tests.
 
 **Résultat attendu :** une machine installée, diagnostiquée puis certifiée physiquement. Le compte rendu Live ne remplace pas la Gate 3.
 
@@ -88,13 +88,13 @@ Les références répondent à **« comment ce contrat est-il implémenté ? »*
 
 #### Hardware / kernel / drivers
 
-- [`STACK_CERTIFICATION.md`](STACK_CERTIFICATION.md) — contrat de stack ;
-- [`GOLDEN_COMPLETENESS_CLOSURE.md`](GOLDEN_COMPLETENESS_CLOSURE.md) — fermeture des socles ;
+- [`QUALIFICATION.md`](QUALIFICATION.md) — contrat de stack ;
+- [`QUALIFICATION.md`](QUALIFICATION.md) — fermeture des socles ;
 - [`GLOSSARY.md`](GLOSSARY.md) — vocabulaire.
 
 #### GNOME / desktop
 
-- [`GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md`](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md) ;
+- [`QUALIFICATION.md`](QUALIFICATION.md) ;
 - [`GNOME.md`](GNOME.md) ;
 - [`GNOME.md`](GNOME.md) ;
 - [`GNOME.md`](GNOME.md) ;
@@ -152,8 +152,8 @@ Ne pas désactiver SELinux, firewalld ou les garde-fous fail-closed pour masquer
 - [`CI_VALIDATION.md`](CI_VALIDATION.md) — validation automatisée ;
 - [`FEDORA_GNOME_CI_LAB.md`](FEDORA_GNOME_CI_LAB.md) — démarrage GNOME et récupération QEMU sur GitHub ;
 - [`ISOLATED_RECOVERY_RUNBOOK.md`](ISOLATED_RECOVERY_RUNBOOK.md) — reprise fichiers/OS/VM hors production ;
-- [`QUALIFICATION_EVIDENCE_TEMPLATE.md`](QUALIFICATION_EVIDENCE_TEMPLATE.md) — fiche de preuves à remplir pendant les essais ;
-- [`GOLDEN_RELEASE.md`](GOLDEN_RELEASE.md) — bundle Golden et archivage ;
+- [`PHYSICAL_QUALIFICATION_CHECKLIST.md`](PHYSICAL_QUALIFICATION_CHECKLIST.md) — fiche de preuves à remplir pendant les essais ;
+- [`QUALIFICATION.md`](QUALIFICATION.md) — bundle Golden et archivage ;
 - [`GITHUB_GOVERNANCE.md`](GITHUB_GOVERNANCE.md) — gouvernance du dépôt ;
 - [`DOCUMENTATION_MODEL.md`](DOCUMENTATION_MODEL.md) — règles de cohérence documentation ↔ code ;
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — contribution.
@@ -175,12 +175,12 @@ L’installation neuve Fedora 45 ne passe pas par Fedora 44. Les anciens essais 
 <summary>Autres références spécialisées</summary>
 
 - [Accueil du projet](../README.md)
-- [Certification de la plateforme](CERTIFICATION.md)
-- [Intégration du bureau et des périphériques](DESKTOP_COMPLETION.md)
+- [Certification de la plateforme](QUALIFICATION.md)
+- [Intégration du bureau et des périphériques](QUALIFICATION.md)
 - [Diagnostic des couleurs](DISPLAY_COLOR_DIAGNOSTIC.md)
 - [Finition du bureau](GNOME.md)
 - [Noyau Linux amont](PERFORMANCE.md#noyau-officiel-linux-amont)
-- [Suivi de fiabilité](RELIABILITY_QUALIFICATION.md)
+- [Suivi de fiabilité](QUALIFICATION.md)
 - [Feuille de route Fedora 45](ROADMAP_FEDORA45_2026.md)
 - [Noyau amont et politique N/N-1](UPSTREAM_LINUX.md)
 - [Décision sur l’accès distant](adr/0017-remote-access.md)

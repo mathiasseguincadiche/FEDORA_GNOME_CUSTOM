@@ -153,7 +153,7 @@ Le dossier du bureau (`Bureau`), l'affichage de la Corbeille et le raccourci `Su
 
 Chaque ligne `KO` nomme le réglage qui a dérivé et la valeur attendue.
 
-La CI vérifie les archives, métadonnées, schémas et réglages, puis l'activation des six extensions dans une VM GNOME 51 (boot, redémarrage, restauration). Une CI verte ne promeut pas le profil et ne prouve rien sur le matériel : la Gate 3 vérifie visuellement le bureau, les températures Ryzen, la B580, l'écran et la veille sur le système installé ([preuves GNOME](GNOME_DESKTOP_INTEGRATION_CERTIFICATION.md)).
+La CI vérifie les archives, métadonnées, schémas et réglages, puis l'activation des six extensions dans une VM GNOME 51 (boot, redémarrage, restauration). Une CI verte ne promeut pas le profil et ne prouve rien sur le matériel : la Gate 3 vérifie visuellement le bureau, les températures Ryzen, la B580, l'écran et la veille sur le système installé ([preuves GNOME](QUALIFICATION.md)).
 
 ## Hors profil
 
