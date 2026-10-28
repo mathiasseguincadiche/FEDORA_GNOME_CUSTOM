@@ -211,7 +211,7 @@ for kept in Documents/facture.pdf Projets/main.py; do
 done
 if grep -Eq 'data/(Jeux|ISO)/' "$tmp/data-members"; then echo 'full backup archived Jeux or ISO' >&2; exit 1; fi
 mkdir "$tmp/system-config"
-(cd "$tmp/system-config" && borg extract "::$data_archive" --pattern '+**/fedora-system-config.tar.gz' --pattern '-**')
+(cd "$tmp/system-config" && borg extract "::$data_archive" --pattern='+**/fedora-system-config.tar.gz' --pattern='-**')
 system_tar="$(find "$tmp/system-config" -name fedora-system-config.tar.gz -print -quit)"
 tar -tzf "$system_tar" > "$tmp/system-members"
 grep -Fxq 'etc/hostname' "$tmp/system-members"
