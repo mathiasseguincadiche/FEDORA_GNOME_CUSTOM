@@ -598,7 +598,7 @@ Le helper découvre d'abord l'IP via Guest Agent, puis via DHCP libvirt.
 
 Rocky Linux utilise SFTP. Vérifier le service SSH et l’utilisateur configuré dans le profil invité.
 
-Voir [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md).
+Voir [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md).
 
 ---
 

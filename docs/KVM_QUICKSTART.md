@@ -1,35 +1,20 @@
-# KVM Quickstart — utilisation quotidienne
+# KVM au quotidien
 
-> **Guide d'entrée du pilier « outils DevOps » côté virtualisation.** Les autres documents, selon le besoin :
->
-> | Besoin | Document |
-> | --- | --- |
-> | Comprendre l'architecture KVM | [`VIRTUALIZATION.md`](VIRTUALIZATION.md) |
-> | Comprendre le réseau privé des VM | [`KVM_NETWORK.md`](KVM_NETWORK.md) |
-> | Le profil Rocky Linux de référence | [`VM_PROFILES.md`](VM_PROFILES.md) |
-> | Le labo DevOps Rocky Linux | [`ROCKY_DEVOPS_READY.md`](ROCKY_DEVOPS_READY.md), [`ROCKY_DEVOPS_PROVISIONING.md`](ROCKY_DEVOPS_PROVISIONING.md) |
-> | Accéder aux fichiers des VM depuis Fedora | [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md) |
-> | Tout piloter en ligne de commande | [`VIRTUALIZATION_CLI.md`](VIRTUALIZATION_CLI.md) |
-> | Un problème | [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) |
+Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu du profil sont dans la [référence virtualisation](VIRTUALIZATION.md), l'isolation réseau dans le [réseau KVM](KVM_NETWORK.md).
 
-Ce document est le parcours opérateur court pour KVM/libvirt. Pour l'architecture détaillée, lire ensuite [`VIRTUALIZATION.md`](VIRTUALIZATION.md). Pour le dépannage, utiliser [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md).
-
-Rocky se crée **après l’installation de Fedora et les contrôles de base du HOST**, lorsque le stockage, le pool et le réseau KVM sont prêts, puis **avant la qualification Golden complète**. Le contrôle du média Live et la préparation de Fedora n’exigent aucune VM. Le projet ne crée pas Rocky automatiquement pendant l’APPLY.
-
-## Les quatre objets à retenir
+Rocky se crée **après** l'installation de Fedora et les premiers contrôles de l'hôte, et **avant** la qualification Golden complète. Le Live USB et l'installation n'exigent aucune VM ; l'APPLY n'en crée jamais.
 
 ```text
 HOST Fedora
 ├── connexion libvirt : qemu:///system
-├── pool stockage     : devops-data → /data/libvirt/images
+├── pool              : devops-data → /data/libvirt/images
 ├── réseau            : devops-nat  → virbr50 → 192.168.50.0/24
-└── VM
-    └── rocky-devops
+└── VM                : rocky-devops
 ```
 
-Une VM est un *domaine* libvirt. Le pool pointe vers le second T705. Le réseau `devops-nat` autorise HOST↔VM, VM↔VM et VM→Internet, tout en bloquant le forwarding vers le LAN physique.
+Une règle pour tout ce qui suit : ne jamais désactiver SELinux, firewalld ou le guard nftables pour contourner un problème, ne pas retoucher le XML du domaine au hasard, ne pas copier un QCOW2 en cours d'utilisation comme un fichier ordinaire.
 
-## 1. Vérifier que le socle est prêt
+## 1. Vérifier le socle
 
 ```bash
 ./control.sh doctor data
@@ -37,105 +22,95 @@ Une VM est un *domaine* libvirt. Le pool pointe vers le second T705. Le réseau 
 ./diagnostics/kvm-io-doctor benchmark
 ```
 
-Avant création des VM, attendre notamment : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, guard nftables, OVMF et swtpm.
+Attendu : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, guard nftables, OVMF et swtpm. Le benchmark écrit sur un fichier de `/data`, jamais sur le disque brut.
 
-Le benchmark I/O travaille sur le filesystem `/data`; il n'écrit jamais sur le block device brut.
+## 2. Créer Rocky DevOps
 
-## 2. Commandes quotidiennes
-
-```bash
-virsh --connect qemu:///system list --all
-virsh --connect qemu:///system net-info devops-nat
-virsh --connect qemu:///system net-dhcp-leases devops-nat
-virsh --connect qemu:///system pool-info devops-data
-virsh --connect qemu:///system vol-list devops-data
-```
-
-Démarrer/arrêter proprement :
+Placer l'image, `CHECKSUM` et `CHECKSUM.asc` de la même release dans `/data/libvirt/iso` (détails dans la [référence](VIRTUALIZATION.md#image-source-authentifiée)), puis :
 
 ```bash
-virsh --connect qemu:///system start rocky-devops
-virsh --connect qemu:///system shutdown rocky-devops
-```
-
-`virsh destroy` équivaut à une coupure d'alimentation virtuelle et reste un geste de dépannage.
-
-## 3. Créer Rocky DevOps
-
-Préparer ensemble depuis Rocky Linux :
-
-```text
-Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
-CHECKSUM
-CHECKSUM.asc
-```
-
-Puis :
-
-```bash
-bash scripts/kvm/create_rocky_devops_vm.sh \
+./control.sh kvm create-rocky \
   --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-Le script authentifie `CHECKSUM`, vérifie le SHA-256 de l'image **avant** la création du disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart.
+`CHECKSUM` et `CHECKSUM.asc` sont cherchés à côté de l'image ; sinon, les passer avec `--sha256sums` et `--signature`. Une clé Rocky obtenue par un canal de confiance se passe avec `--rocky-key-file`. Pour vérifier l'image seule avant création : `bash scripts/kvm/verify_rocky_cloud_image.sh --image … --sha256sums … --signature …`.
 
-Si la clé Rocky Linux doit être fournie localement :
+Le script authentifie l'image **avant** de créer le disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart. Au premier démarrage, l'invité installe sa stack ; il peut redémarrer une fois pour passer sur le noyau Rocky complet.
 
-```bash
-bash scripts/kvm/create_rocky_devops_vm.sh \
-  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
-  --rocky-key-file /chemin/RPM-GPG-KEY-Rocky-10
-```
-
-Accès :
+## 3. Utiliser
 
 ```bash
+virsh --connect qemu:///system list --all
+virsh --connect qemu:///system start rocky-devops
+virsh --connect qemu:///system shutdown rocky-devops     # arrêt propre
 virsh --connect qemu:///system domifaddr rocky-devops --source agent
 ssh mathias@192.168.50.x
 ```
 
-Nautilus :
+`virsh destroy` équivaut à couper l'alimentation : réservé au dépannage. SSH accepte uniquement la clé ; le mot de passe sert à la console et à `sudo`. `virt-manager --connect qemu:///system` reste disponible, mais tout se fait en ligne de commande.
 
-```text
-sftp://mathias@192.168.50.x/home/mathias
-```
-
-Le helper peut maintenir le favori :
+### Fichiers de la VM dans Nautilus
 
 ```bash
-bash scripts/kvm/configure_nautilus_vm_access.sh refresh
+./control.sh kvm nautilus-refresh
 ```
 
-## 4. Interface graphique
+Le script découvre l'IP de Rocky (Guest Agent ou bail DHCP) et crée ou met à jour le favori `sftp://mathias@192.168.50.x/home/mathias` dans `~/.config/gtk-3.0/bookmarks`. Relancer après un changement d'IP. Autres actions de `scripts/kvm/configure_nautilus_vm_access.sh` : `show`, `remove` (retire seulement ce favori), `open-rocky`. L'accès garde les permissions réelles de `mathias` ; aucun répertoire du HOST n'est partagé.
+
+### Outils avancés
+
+| Besoin | Outil |
+|---|---|
+| Cycle de vie, snapshots, réseaux, pools | `virsh` |
+| Démons libvirt, validation de l'hôte et des XML | `virt-admin`, `virt-host-validate`, `virt-xml-validate` |
+| Créer, cloner, modifier une VM | `virt-install`, `virt-clone`, `virt-xml` |
+| Images qcow2 | `qemu-img`, `qemu-io`, `qemu-nbd`, `qemu-storage-daemon` |
+| Disques invités hors ligne | `guestfish`, `virt-inspector`, `virt-ls`, `virt-cat`, `virt-edit`, `virt-copy-in/out`, `virt-df`, `virt-diff`, `virt-log` |
+| Préparer des modèles | `virt-customize`, `virt-sysprep`, `virt-resize`, `virt-sparsify`, `virt-builder`, `cloud-localds` |
+| Surveiller, migrer, QMP | `virt-top`, `virt-v2v`, `virt-qemu-qmp-proxy` |
+| Catalogue et firmware | `osinfo-query`, OVMF/UEFI, swtpm |
+
+`libvirt-nss` permet de résoudre les noms des domaines quand le réseau le permet. `virtualization-doctor` vérifie la présence de ces outils.
+
+## 4. Qualifier
 
 ```bash
-virt-manager --connect qemu:///system
+sudo /usr/local/sbin/devops-verify.sh          # dans l'invité
+./control.sh kvm certify                         # depuis Fedora
 ```
 
-La GUI est un complément. Le cycle de vie de référence reste réalisable en CLI.
+La certification demande le mot de passe sudo de la VM dans un terminal SSH. Elle précède la [Gate 3](QUALIFICATION.md).
 
-## 5. Qualifier Rocky et terminer la certification Golden
+## 5. Exports
 
-Quand Rocky Linux est installé et démarré :
+Les exports de la VM sont **manuels**, quand tu le décides : arrêter Rocky, puis garder ensemble disque, XML et NVRAM. Borg ne sauvegarde ni les disques ni le XML libvirt.
+
+## Dépannage
+
+**Socle KVM indisponible.** `ls -l /dev/kvm`, `lsmod | grep kvm_amd`. S'il manque sur le PC, activer AMD-V/SVM dans l'UEFI avant de toucher à Linux.
+
+**Pool `devops-data` absent.** `virsh --connect qemu:///system pool-info devops-data` et `findmnt -T /data` : `/data` doit être le montage EXT4 dédié. Ne pas recréer le pool sur le SSD système pour contourner un second T705 absent ([données `/data`](RUNBOOK_PERSISTENT_DATA_GAMING.md)).
+
+**Réseau `devops-nat` absent.** `virsh --connect qemu:///system net-info devops-nat` et `ip addr show virbr50` : attendu `192.168.50.0/24`, passerelle `192.168.50.254`.
+
+**Guard en mode d'urgence.** `guard_mode=emergency` veut dire que le forwarding est volontairement bloqué. Identifier le changement d'uplink, de VPN ou de route, puis :
 
 ```bash
-bash scripts/kvm/runtime_certification.sh
+./control.sh kvm guard-check
+./control.sh kvm guard-reconcile
+./control.sh kvm guard-check      # attendu : guard_mode=normal
 ```
 
-La qualification contrôle notamment QEMU Guest Agent, le contrat XML VirtIO/RNG/balloon de Rocky, le réseau, la stack DevOps, DNS/HTTPS et le guard KVM. Ce contrôle de l’invité précède la certification Golden complète, qui exige aussi les preuves matérielles du HOST. Suivre ensuite le [guide d’installation](INSTALLATION_GUIDE.md) pour terminer Gate 3.
+Si le reconcile échoue, garder le mode d'urgence et diagnostiquer ; ne pas supprimer la table nftables pour retrouver Internet.
 
-## 6. Exports des VM : gestion personnelle
+**Rocky ne démarre pas.** `virsh --connect qemu:///system dominfo rocky-devops`, `domblklist`, `dumpxml`, `journalctl -u virtqemud -b`. Vérifier `/data/libvirt/images/rocky-devops.qcow2`, le seed cloud-init et le réseau.
 
-Les exports des VM sont réalisés **manuellement**, seulement quand le
-propriétaire le souhaite. Aucune commande du moteur Borg n'exporte
-Rocky Linux, et le projet ne planifie aucun export automatique.
-Pour un export personnel cohérent, il appartient au propriétaire de
-vérifier l'état de la VM et de conserver ensemble ses fichiers nécessaires.
+**Pas de SSH.** `virsh --connect qemu:///system net-dhcp-leases devops-nat`, puis `ssh -v`. Dans l'invité (console) : `sudo systemctl status qemu-guest-agent`.
 
-## 7. En cas de problème
+**Bootstrap incomplet.** Dans l'invité : `sudo cloud-init status --long`, `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, `sudo /usr/local/sbin/devops-verify.sh`. Ne recréer la VM qu'après avoir sauvé les données utiles et compris l'échec.
 
-Ne pas désactiver SELinux, firewalld ou le guard pour contourner un symptôme.
+**Image refusée.** Image, `CHECKSUM` et `CHECKSUM.asc` doivent venir de la même release Rocky 10.2. Ne jamais contourner la signature ni la comparaison SHA-256 ; ne relancer la création que si le domaine et son disque n'existent pas encore.
 
-- KVM/libvirt/réseau/VM : [`RUNBOOK_KVM.md`](RUNBOOK_KVM.md) ;
-- second T705, `/data`, jeux : [`RUNBOOK_PERSISTENT_DATA_GAMING.md`](RUNBOOK_PERSISTENT_DATA_GAMING.md) ;
-- dépannage transversal : [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
+**Reconstruire l'invité.** Sauver les données utiles, retirer explicitement le domaine et son disque, puis relancer la création.
+
+**Certification KVM en échec.** Corriger le premier `KO` réel de `virtualization-doctor`, puis relancer. Ne jamais modifier les preuves.

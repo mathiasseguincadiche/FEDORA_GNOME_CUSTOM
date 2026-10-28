@@ -47,16 +47,16 @@ Le Live USB ne déverrouille jamais `install.sh --apply` ; la CI ne certifie jam
 
 ### Virtualisation
 
-- [Démarrage KVM](KVM_QUICKSTART.md) · [architecture KVM](VIRTUALIZATION.md) · [commandes avancées](VIRTUALIZATION_CLI.md)
-- [Profils VM](VM_PROFILES.md) · [réseau `devops-nat`](KVM_NETWORK.md) · [fichiers des VM](VM_FILE_ACCESS.md)
-- [Rocky DevOps : provisioning](ROCKY_DEVOPS_PROVISIONING.md) · [état attendu](ROCKY_DEVOPS_READY.md)
+- [Démarrage KVM](KVM_QUICKSTART.md) · [architecture KVM](VIRTUALIZATION.md) · [commandes avancées](KVM_QUICKSTART.md)
+- [Profils VM](VIRTUALIZATION.md#profil-rocky-devops) · [réseau `devops-nat`](KVM_NETWORK.md) · [fichiers des VM](KVM_QUICKSTART.md)
+- [Rocky DevOps : provisioning](VIRTUALIZATION.md#provisioning) · [état attendu](VIRTUALIZATION.md)
 
 ### Dépannage
 
 Commencer par l'état réel avec `./control.sh status` et `./control.sh doctor all`, puis :
 
 - [Dépannage](TROUBLESHOOTING.md) · [journaux et incidents](LOGS_ET_INCIDENTS.md)
-- [Matériel et noyau](RUNBOOK_GOLDEN_HARDWARE.md) · [KVM](RUNBOOK_KVM.md) · [données `/data` et Gaming](RUNBOOK_PERSISTENT_DATA_GAMING.md)
+- [Matériel et noyau](RUNBOOK_GOLDEN_HARDWARE.md) · [KVM](KVM_QUICKSTART.md#dépannage) · [données `/data` et Gaming](RUNBOOK_PERSISTENT_DATA_GAMING.md)
 
 Ne jamais désactiver SELinux, firewalld ou un garde-fou pour faire disparaître une erreur.
 

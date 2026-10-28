@@ -72,7 +72,7 @@ Le profil couvre :
 - NFS ;
 - services de fichiers exposés par GNOME Online Accounts.
 
-Les raccourcis VM gérés sont documentés dans [`VM_FILE_ACCESS.md`](VM_FILE_ACCESS.md).
+Les raccourcis VM gérés sont documentés dans [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md).
 
 ## Cold start
 
