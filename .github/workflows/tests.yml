@@ -201,6 +201,10 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_workstation_control_center_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_control_center_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_update_dispatch_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_golden_workstation_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_hardware_kvm_completion_contract.sh
