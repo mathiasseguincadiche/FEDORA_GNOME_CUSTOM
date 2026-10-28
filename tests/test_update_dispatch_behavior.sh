@@ -4,7 +4,7 @@
 # backup stops the update, mutations are bare-metal only, and firmware is only
 # ever queried. The offline transaction itself is covered by
 # test_update_kernel_deferral_behavior.sh.
-# shellcheck disable=SC2329,SC2034
+# shellcheck disable=SC2317,SC2329,SC2034
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
