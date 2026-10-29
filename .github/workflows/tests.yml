@@ -298,6 +298,8 @@ jobs:
         run: bash tests/test_application_runtime_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_stack_certification_contract.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_stack_certification_behavior.sh
       - name: Preinstallation certification contract
         run: bash tests/test_preinstall_certification_contract.sh
       - if: ${{ !cancelled() }}
