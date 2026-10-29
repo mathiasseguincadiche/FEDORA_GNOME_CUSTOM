@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Static contract of the optional remote-access profile (ADR 0017): safe defaults, no exposure,
-# hardened SSH, catalog wiring and documentation. Behaviour is covered by the other test_remote_* tests.
+# hardened SSH template, supply chain, catalog wiring and documentation. Behaviour (disabled and
+# unconfigured no-op, refusals, sshd -t, WoL, KVM guard, Sunshine) is covered by the test_remote_*
+# behaviour tests.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 fail() { echo "remote access contract: FAIL: $*" >&2; exit 1; }
@@ -33,20 +35,11 @@ for pin in 'REMOTE_ENABLE="false"' 'REMOTE_SSH_LAN="false"' 'REMOTE_WOL_MODE="ma
 done
 # The Sunshine web UI is administration: it must never appear in an opened port list.
 if grep -E '^REMOTE_SUNSHINE_(TCP|UDP)_PORTS=.*47990' config/remote.conf; then fail 'port 47990 must never be configured'; fi
-grep -Fq '47990' modules/remote/70_remote_preflight.sh || fail 'preflight must refuse port 47990'
-
-# Modules are inert when the profile is disabled.
-for module in modules/remote/7[0-3]_*.sh modules/remote/79_remote_validation.sh; do
-  grep -Fq 'remote_enabled' "$module" || fail "$module must gate on remote_enabled"
-done
-grep -Fq 'REMOTE_ENABLE:-false' lib/remote_access.sh || fail 'REMOTE_ENABLE must default to disabled when unset'
 
 # SSH hardening template.
 for line in 'PermitRootLogin no' 'PasswordAuthentication no' 'KbdInteractiveAuthentication no' 'PubkeyAuthentication yes' 'AuthenticationMethods publickey' 'AllowUsers @USER@'; do
   grep -Fxq "$line" remote/ssh/00-fgc-remote.conf.in || fail "SSH template missing: $line"
 done
-grep -Fq 'sshd -t' modules/remote/72_remote_ssh.sh || fail 'sshd -t validation missing'
-grep -Fq 'authorized_keys' modules/remote/70_remote_preflight.sh || fail 'preflight must require an SSH public key'
 
 # Supply chain: signed repository metadata, no pipe-to-shell, no secret in the profile.
 grep -Fxq 'repo_gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale repository metadata must be signature-checked'
@@ -54,21 +47,15 @@ grep -Fxq 'gpgcheck=1' config/repos/tailscale.repo || fail 'tailscale RPM packag
 if grep -REn '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh)' modules/remote lib/remote_access.sh scripts/remote remote; then fail 'no pipe-to-shell in the remote profile'; fi
 if grep -REni 'authkey|tskey-|password=|passphrase' modules/remote lib/remote_access.sh scripts/remote remote config/remote.conf; then fail 'no secret or auth key may live in the repository'; fi
 
-# Wake-on-LAN and KVM isolation wiring.
-grep -Fq '802-3-ethernet.wake-on-lan' modules/remote/71_remote_network.sh || fail 'Wake-on-LAN must be stored in the NetworkManager profile'
-grep -Fq 'KVM_EXTRA_PROTECTED_CIDRS' modules/remote/71_remote_network.sh || fail 'remote profile must protect the tailnet from the KVM guard'
-grep -Fq 'KVM_EXTRA_PROTECTED_CIDRS' scripts/kvm/kvm_network_guard.sh || fail 'KVM guard must support extra protected networks'
+# Wake-on-LAN and KVM isolation declarations.
 grep -Fxq 'Environment=KVM_EXTRA_PROTECTED_CIDRS=' virtualization/systemd/fedora-gnome-custom-kvm-guard.service || fail 'KVM guard unit must declare the extra-CIDR variable'
 grep -Fxq 'WakeOnLan=magic' remote/systemd/network/80-fgc-wol.link || fail 'WoL link fallback must request magic packets'
 
 # Operator entry points and CI.
-grep -Fq 'remote-doctor' control.sh || fail 'control.sh must route remote'
 grep -Fq 'manifests/packages-remote-fedora.txt' .github/workflows/fedora-package-preflight.yml || fail 'CI preflight must resolve the Fedora remote manifest'
 grep -Fq 'REMOTE_ENABLE' config/local.conf.example || fail 'local.conf.example must document the opt-in'
 [[ "$(tr -d '[:space:]' < VERSION)" =~ ^0\.(2[2-9]|[3-9][0-9])\.[0-9]+$ ]] || fail 'VERSION must be at least 0.22.0 (remote access profile shipped in 0.22.0)'
 grep -Fq "v$(tr -d '[:space:]' < VERSION)-rc." .github/release-manifest.env || fail 'release manifest must follow VERSION'
 
 python3 -B tests/test_arc_b580_av1.py
-grep -Fq 'sunshine_moonlight_end_to_end' scripts/validation/arc-b580-av1.py
-grep -Fq 'REMOTE_SUNSHINE_ENABLE="false"' config/remote.conf
 echo 'remote access contract: PASS'

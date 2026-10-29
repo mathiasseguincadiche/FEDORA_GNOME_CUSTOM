@@ -21,6 +21,8 @@ cat > "$labdir/bin/firewall-cmd" <<'STUB'
 case "$*" in
   *--get-default-zone*) echo FedoraWorkstation ;;
   *--get-zones*) echo 'FedoraWorkstation libvirt' ;;
+  *--get-zone-of-interface*) echo FedoraWorkstation ;;
+  *--query-service*) [[ -n "${STUB_SSH_OPEN:-}" ]]; exit ;;
 esac
 exit 0
 STUB
@@ -36,6 +38,14 @@ STUB
 cat > "$labdir/bin/systemctl" <<'STUB'
 #!/usr/bin/env bash
 exit 0
+STUB
+# sshd -t validates (STUB_SSHD_T_RC); sshd -T reports the effective policy of the installed drop-in.
+cat > "$labdir/bin/sshd" <<'STUB'
+#!/usr/bin/env bash
+case "$1" in
+  -t) exit "${STUB_SSHD_T_RC:-0}" ;;
+  -T) awk '!/^#/ && NF {print tolower($1), $2}' "$REMOTE_SSHD_DROPIN" ;;
+esac
 STUB
 cat > "$labdir/bin/getenforce" <<'STUB'
 #!/usr/bin/env bash
@@ -59,7 +69,8 @@ CALLS="$labdir/calls"
 log_error() { printf 'ERROR %s\n' "$*" >> "$labdir/log"; }
 log_warn() { printf 'WARN %s\n' "$*" >> "$labdir/log"; }
 log_info() { printf 'INFO %s\n' "$*" >> "$labdir/log"; }
-run_mutating() { shift; printf '%s\n' "$*" >> "$CALLS"; }
+# Records each mutation; RUN_REAL=1 also performs it (sudo is a pass-through stub).
+run_mutating() { shift; printf '%s\n' "$*" >> "$CALLS"; [[ -z "${RUN_REAL:-}" ]] || "$@"; }
 install_manifest_packages() { printf 'PKGS %s\n' "$(basename "$2")" >> "$CALLS"; }
 
 # Run one module phase in a subshell; remaining arguments are VAR=value overrides. Prints the return code.
@@ -84,6 +95,14 @@ for spec in 70_remote_preflight.sh:remote_preflight 71_remote_network.sh:remote_
     expect_rc "$out" 0 "disabled profile: ${prefix}_${step} must succeed"
     [[ ! -s "$CALLS" ]] || fail "disabled profile: ${prefix}_${step} mutated the system: $(cat "$CALLS")"
   done
+done
+
+# 1b. Without any configuration the profile defaults to disabled.
+for spec in 70_remote_preflight.sh:remote_preflight 71_remote_network.sh:remote_network 72_remote_ssh.sh:remote_ssh 73_remote_desktop.sh:remote_desktop 79_remote_validation.sh:remote_validation; do
+  file="${spec%%:*}"; prefix="${spec##*:}"
+  out="$(unset REMOTE_ENABLE; phase "$file" "${prefix}_apply" DRY_RUN=false | tail -n1)"
+  expect_rc "$out" 0 "unconfigured profile: ${prefix}_apply must succeed"
+  [[ ! -s "$CALLS" ]] || fail "unconfigured profile: ${prefix}_apply mutated the system: $(cat "$CALLS")"
 done
 
 # 2. Enabled, dry-run: network module.
@@ -136,6 +155,29 @@ calls_have 'systemctl enable --now sshd.service'
 calls_have 'firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=ssh'
 phase 72_remote_ssh.sh remote_ssh_apply REMOTE_ENABLE=true DRY_RUN=true REMOTE_SSH_LAN=true REMOTE_SSHD_DROPIN="$labdir/00-fgc-remote.conf" >/dev/null
 calls_lack '--remove-service=ssh'
+
+# 3b. Real SSH apply: the rendered drop-in passes sshd -t and yields the hardened effective policy.
+dropin="$labdir/sshd/00-fgc-remote.conf"
+ssh_phase() { phase 72_remote_ssh.sh "$1" REMOTE_ENABLE=true DRY_RUN=false REMOTE_SSHD_DROPIN="$dropin" "${@:2}" | tail -n1; }
+expect_rc "$(ssh_phase remote_ssh_apply RUN_REAL=1)" 0 'real ssh apply'
+grep -Fxq "AllowUsers $(id -un)" "$dropin" || fail 'SSH drop-in not rendered for the workstation user'
+calls_have 'firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=ssh'
+expect_rc "$(ssh_phase remote_ssh_postcheck)" 0 'hardened sshd postcheck'
+expect_rc "$(ssh_phase remote_ssh_postcheck STUB_SSH_OPEN=1)" "$EXIT_POSTCHECK_FAILED" 'ssh still open on the LAN must fail'
+expect_rc "$(ssh_phase remote_ssh_postcheck STUB_SSH_OPEN=1 REMOTE_SSH_LAN=true)" 0 'ssh on the LAN is an explicit opt-in'
+cp "$dropin" "$labdir/dropin.ok"
+for weak in 's/^PasswordAuthentication no$/PasswordAuthentication yes/' 's/^PermitRootLogin no$/PermitRootLogin yes/' 's/^AllowUsers .*/AllowUsers someone/'; do
+  sed "$weak" "$labdir/dropin.ok" > "$dropin"
+  expect_rc "$(ssh_phase remote_ssh_postcheck)" "$EXIT_POSTCHECK_FAILED" "weakened sshd policy accepted: $weak"
+done
+# sshd -t rejecting the drop-in restores the previous one, or removes it if none existed.
+printf 'PermitRootLogin no\n# previous working drop-in\n' > "$dropin"
+expect_rc "$(ssh_phase remote_ssh_apply RUN_REAL=1 STUB_SSHD_T_RC=1)" "$EXIT_APPLY_FAILED" 'invalid sshd configuration must fail'
+[[ "$(tail -n1 "$dropin")" == '# previous working drop-in' ]] || fail 'previous SSH drop-in not restored after sshd -t failure'
+calls_lack 'systemctl enable --now sshd.service'
+rm -f "$dropin"
+expect_rc "$(ssh_phase remote_ssh_apply RUN_REAL=1 STUB_SSHD_T_RC=1)" "$EXIT_APPLY_FAILED" 'invalid first sshd configuration must fail'
+[[ ! -e "$dropin" ]] || fail 'invalid SSH drop-in left in place'
 
 # 4. Desktop module: every step is an explicit opt-in.
 phase 73_remote_desktop.sh remote_desktop_apply REMOTE_ENABLE=true DRY_RUN=true >/dev/null
