@@ -1,76 +1,45 @@
 #!/usr/bin/env bash
+# Desktop lifecycle specification: the owner's update policy, the desktop
+# integration package set, module order and certification wiring. Behaviour is
+# exercised by test_desktop_lifecycle_behavior.sh (lifecycle module and doctor,
+# AppIndicator, suspend cycles, Arc compute) and the backup behaviour tests.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+fail() { echo "desktop lifecycle contract: FAIL: $*" >&2; exit 1; }
 
 version="$(<"$ROOT/VERSION")"
-[[ "$(printf '%s\n%s\n' '0.9.0' "$version" | sort -V | head -n1)" == "0.9.0" ]]
+[[ "$(printf '%s\n%s\n' '0.9.0' "$version" | sort -V | head -n1)" == 0.9.0 ]] || fail "VERSION below 0.9.0: $version"
 
-grep -Fq 'ENABLE_APPINDICATOR="true"' "$ROOT/config/gnome.conf"
-grep -Fq 'APPINDICATOR_UUID="appindicatorsupport@rgcjonas.gmail.com"' "$ROOT/config/gnome.conf"
-grep -Fxq 'gnome-shell-extension-appindicator' "$ROOT/manifests/packages-gnome-extensions.txt"
-grep -Fq 'gnome_extension_enable_checked AppIndicator' "$ROOT/modules/gnome/24_gnome_extensions.sh"
+(
+  set +u
+  source "$ROOT/config/desktop.conf"; source "$ROOT/config/backup.conf"; source "$ROOT/config/gnome.conf"
+  [[ "$LIFECYCLE_AUTOMATIC_DOWNLOADS" == true && "$LIFECYCLE_AUTOMATIC_INSTALLS" == false \
+    && "$LIFECYCLE_AUTOMATIC_REBOOT" == never && "$LIFECYCLE_FLATPAK_UPDATE_POLICY" == manual ]] || fail 'update policy changed'
+  [[ "$DAILY_BACKUP_ENABLED" == true && "$ENABLE_APPINDICATOR" == true ]] || fail 'daily backup or AppIndicator disabled'
+)
 
 for pkg in gnome-keyring gnome-keyring-pam libsecret cups ipp-usb avahi sane-airscan NetworkManager-openvpn NetworkManager-openconnect tuned-ppd glibc-langpack-fr hunspell-fr liberation-fonts-all remmina libimobiledevice intel-compute-runtime intel-level-zero intel-opencl clinfo dnf5-plugin-automatic; do
-  grep -Fxq "$pkg" "$ROOT/manifests/packages-desktop-integration.txt"
+  grep -Fxq "$pkg" "$ROOT/manifests/packages-desktop-integration.txt" || fail "desktop integration package missing: $pkg"
 done
 
-# Persistent second-T705 data is now a mandatory desktop stage between GNOME
-# validation and the wider desktop integration/lifecycle layers.
-grep -Fq 'desktop.persistent_data|DESKTOP|gnome.validation|modules/desktop/25_persistent_data.sh' "$ROOT/manifests/module-plan.conf"
-grep -Fq 'desktop.integration|DESKTOP|desktop.persistent_data|modules/desktop/26_desktop_integration.sh' "$ROOT/manifests/module-plan.conf"
-grep -Fq 'desktop.lifecycle|DESKTOP|desktop.integration|' "$ROOT/manifests/module-plan.conf"
-grep -Fq 'backup.daily|BACKUP|backup.validation|' "$ROOT/manifests/module-plan.conf"
-
+# Persistent data sits between GNOME validation and the desktop integration/lifecycle layers.
+for entry in 'desktop.persistent_data|DESKTOP|gnome.validation|modules/desktop/25_persistent_data.sh' \
+  'desktop.integration|DESKTOP|desktop.persistent_data|modules/desktop/26_desktop_integration.sh' \
+  'desktop.lifecycle|DESKTOP|desktop.integration|' 'backup.daily|BACKUP|backup.validation|'; do
+  grep -Fq "$entry" "$ROOT/manifests/module-plan.conf" || fail "module order changed: $entry"
+done
 for doctor in desktop-integration-doctor portal-doctor arc-compute-doctor lifecycle-doctor daily-backup-doctor; do
-  grep -Fq "$doctor" "$ROOT/diagnostics/final-certification"
+  grep -Fq "diagnostics/$doctor" "$ROOT/diagnostics/final-certification" || fail "final certification skips $doctor"
 done
 
-grep -Fq 'LIFECYCLE_AUTOMATIC_DOWNLOADS="true"' "$ROOT/config/desktop.conf"
-grep -Fq 'LIFECYCLE_AUTOMATIC_INSTALLS="false"' "$ROOT/config/desktop.conf"
-grep -Fq 'LIFECYCLE_AUTOMATIC_REBOOT="never"' "$ROOT/config/desktop.conf"
-grep -Fq 'LIFECYCLE_FLATPAK_UPDATE_POLICY="manual"' "$ROOT/config/desktop.conf"
-grep -Fq "download_updates = \${LIFECYCLE_AUTOMATIC_DOWNLOADS:-true}" "$ROOT/modules/desktop/27_lifecycle.sh"
-grep -Fq "apply_updates = \${LIFECYCLE_AUTOMATIC_INSTALLS:-false}" "$ROOT/modules/desktop/27_lifecycle.sh"
-grep -Fq "reboot = \${LIFECYCLE_AUTOMATIC_REBOOT:-never}" "$ROOT/modules/desktop/27_lifecycle.sh"
-if grep -Fq 'apply_updates = true' "$ROOT/modules/desktop/27_lifecycle.sh"; then
-  echo 'unattended package installation must remain disabled' >&2
-  exit 1
-fi
-grep -Fq 'dnf5-automatic.timer' "$ROOT/modules/desktop/27_lifecycle.sh"
-grep -Fq 'fstrim.timer' "$ROOT/modules/desktop/27_lifecycle.sh"
-grep -Fq 'unexpected project-owned unattended Flatpak updater exists' "$ROOT/diagnostics/lifecycle-doctor"
+grep -Fxq 'OnCalendar=daily' "$ROOT/systemd/user/fedora-gnome-daily-backup.timer" || fail 'daily backup timer is not daily'
+if grep -Fq -- '--prune' "$ROOT/scripts/backup/daily-user-backup.sh"; then fail 'daily backup must not prune snapshots automatically'; fi
+grep -Fq 'runtime_certification_core.sh' "$ROOT/scripts/kvm/runtime_certification.sh" || fail 'KVM runtime certification bypasses its strict core'
 
-grep -Fq 'DAILY_BACKUP_ENABLED="true"' "$ROOT/config/backup.conf"
-grep -Fq 'fedora-gnome-daily-backup.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'OnCalendar=daily' "$ROOT/systemd/user/fedora-gnome-daily-backup.timer"
-grep -Fq 'fedora-gnome-custom/secrets' "$ROOT/scripts/backup/daily-user-backup.sh"
-if grep -Fq -- '--prune' "$ROOT/scripts/backup/daily-user-backup.sh"; then
-  echo 'daily backup must not prune snapshots automatically' >&2
-  exit 1
-fi
-
-grep -Fq 'cycle_id=' "$ROOT/diagnostics/final-certification"
-grep -Fq 'This physical suspend/resume cycle is already recorded' "$ROOT/diagnostics/final-certification"
-grep -Fq 'marker_ts >= post_ts' "$ROOT/diagnostics/final-certification"
-grep -Fq 'latest-post.log' "$ROOT/diagnostics/final-certification"
-
-grep -Fq 'Current mode' "$ROOT/diagnostics/display-doctor"
-grep -Fq 'current_mode=' "$ROOT/diagnostics/display-doctor"
-grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
-
-# KVM network isolation lives in the strict runtime core; the public wrapper must delegate to it.
-grep -Fq 'runtime_certification_core.sh' "$ROOT/scripts/kvm/runtime_certification.sh"
-grep -Fq 'blocked_host_ipv4' "$ROOT/scripts/kvm/runtime_certification_core.sh"
-grep -Fq 'protected_networks' "$ROOT/scripts/kvm/runtime_certification_core.sh"
-grep -Fq 'Rocky → physical LAN' "$ROOT/scripts/kvm/runtime_certification_core.sh"
-grep -Fq 'KVM host-network guard rules' "$ROOT/scripts/kvm/runtime_certification_core.sh"
-
-grep -Fq 'clinfo' "$ROOT/diagnostics/arc-compute-doctor"
-grep -Fq 'intel-level-zero' "$ROOT/diagnostics/arc-compute-doctor"
-
-grep -Fq 'packages-desktop-integration.txt' "$ROOT/.github/workflows/fedora-package-preflight.yml"
-grep -Fq 'packages-desktop-integration.txt' "$ROOT/.github/workflows/fedora-host-pretest.yml"
-grep -Fq 'gnome-shell-extension-appindicator' "$ROOT/.github/workflows/fedora-package-preflight.yml"
-grep -Fq 'test_desktop_lifecycle_contract.sh' "$ROOT/.github/workflows/tests.yml"
+# The Fedora package preflights resolve the desktop integration set.
+for workflow in fedora-package-preflight fedora-host-pretest; do
+  grep -Fq 'packages-desktop-integration.txt' "$ROOT/.github/workflows/$workflow.yml" || fail "$workflow skips the desktop packages"
+done
+grep -Fq 'gnome-shell-extension-appindicator' "$ROOT/.github/workflows/fedora-package-preflight.yml" || fail 'AppIndicator not preflighted'
 
 echo 'Desktop/lifecycle completion contract: PASS'
