@@ -219,6 +219,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_desktop_lifecycle_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_desktop_lifecycle_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_shell_ux_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_dock_favorites_contract.sh
