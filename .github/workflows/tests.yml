@@ -151,6 +151,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_performance_runtime_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_performance_runtime_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_virtualization_contract.sh
       - if: ${{ !cancelled() }}
         run: python3 tests/test_rocky_kvm_runtime_behavior.py
