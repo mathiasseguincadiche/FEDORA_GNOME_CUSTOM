@@ -17,8 +17,8 @@ grep -Fxq 'KERNEL_CHANNEL	vanilla' "$ROOT/config/schema-enums.tsv" || fail 'vani
 (
   set +u
   source "$ROOT/config/kernel.conf"
-  [[ "$KERNEL_REQUIRE_LATEST_STABLE" == true && "$KERNEL_KEEP_FEDORA_FALLBACK" == true ]]
-) || fail 'kernel.conf must require latest stable and keep the Fedora fallback'
+  [[ "$KERNEL_REQUIRE_LATEST_STABLE" == true && "$KERNEL_KEEP_FEDORA_FALLBACK" == true && "$KERNEL_BLOCK_SECURE_BOOT" == true ]]
+) || fail 'kernel.conf must require latest stable, keep the Fedora fallback and block Secure Boot'
 
 # Every lifecycle action is reachable through ./control.sh kernel ACTION.
 usage="$(sed -n "s/.*Usage: kernel-lifecycle.sh \[\(.*\)\].*/\1/p" "$ROOT/scripts/kernel/kernel-lifecycle.sh")"

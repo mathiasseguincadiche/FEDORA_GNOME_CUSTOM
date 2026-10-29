@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Test harnesses below intentionally isolate mock environment mutations in
-# subshells and define functions invoked indirectly by sourced orchestrator code.
+# Cross-cutting hardening: declarative config, no source-time mutation, and
+# behaviour runs of runtime detection, the orchestrator, B580 render-node
+# selection and the KVM host-network guard. Domain rules live in their own
+# tests (kernel, backup, Kickstart render, extensions, Control Center).
+# Test harnesses below isolate mock environment mutations in subshells and
+# define functions invoked indirectly by sourced orchestrator code.
 # shellcheck disable=SC2030,SC2031,SC2317
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -9,23 +13,7 @@ version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
 grep -Fq "## $version —" "$ROOT/CHANGELOG.md"
 
-# User-decided HOST policy.
-grep -Fq 'services --enabled=NetworkManager,firewalld --disabled=sshd' "$ROOT/installer/lib/generate-kickstart.sh"
-grep -Fq 'openssh-clients' "$ROOT/installer/lib/generate-kickstart.sh"
-if grep -Eqi 'autopart[^\n]*--encrypted|luks' "$ROOT/installer/lib/generate-kickstart.sh"; then
-  echo 'Kickstart must not silently introduce LUKS into the chosen Golden policy' >&2
-  exit 1
-fi
-grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_BLOCK_SECURE_BOOT="true"' "$ROOT/config/kernel.conf"
-grep -Fxq 'mode=rolling-n-nminus1' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fxq 'max_installed_kernels=2' "$ROOT/config/kernel-lifecycle.policy"
-
 # Config is schema-validated before sourcing and remains declarative.
-[[ -r "$ROOT/config/schema.digest" ]]
-[[ -r "$ROOT/config/schema-enums.tsv" ]]
-grep -Fq 'validate-config.sh' "$ROOT/lib/config.sh"
 bash "$ROOT/scripts/config/validate-config.sh" "$ROOT/config" >/dev/null
 python3 - "$ROOT/config" <<'PY'
 from pathlib import Path
@@ -132,13 +120,8 @@ SH
   [[ -s "$REPORT_ROOT/run-$RUN_ID.json" ]]
   grep -Eq 'fail\.module.*apply.*42.*apply rc=42' "$report"
 )
-grep -Fq 'REAL APPLY FAILED rc=' "$ROOT/install.sh"
-grep -Fq 'SYSTEM MAY BE PARTIALLY CONVERGED' "$ROOT/install.sh"
 
 # Arc B580 media probing is tied to PCI identity, never render-node ordering.
-grep -Fq 'drm_render_node_for_pci_id 8086 e20b' "$ROOT/modules/gnome/22_multimedia_codecs.sh"
-grep -Fq 'drm_render_node_for_pci_id 8086 e20b' "$ROOT/diagnostics/media-doctor"
-grep -Fq 'VAAPI_DRM_DEVICE="auto"' "$ROOT/config/gnome.conf"
 mkdir -p "$tmp/drm/renderD128/device" "$tmp/drm/renderD129/device"
 printf '0x1002\n' > "$tmp/drm/renderD128/device/vendor"
 printf '0x164e\n' > "$tmp/drm/renderD128/device/device"
@@ -150,27 +133,8 @@ printf '0xe20b\n' > "$tmp/drm/renderD129/device/device"
   [[ "$(drm_render_node_for_pci_id 8086 e20b)" == /dev/dri/renderD129 ]]
 )
 
-# Reviewed GNOME artifacts are content-pinned.
-grep -Fq 'sha256sum --check --status' "$ROOT/scripts/gnome/install-pinned-extension.sh"
-
-# Backup runtime is autonomous and retention is periodic for both snapshot classes.
-grep -Fq 'BACKUP_PRUNE_AUTOMATICALLY="true"' "$ROOT/config/backup.conf"
-grep -Fq 'BACKUP_RETENTION_TIMER_ENABLED="true"' "$ROOT/config/backup.conf"
-grep -Fq 'for kind in full daily; do' "$ROOT/scripts/backup/backup-retention.sh"
-grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT' "$ROOT/scripts/backup/daily-user-backup.sh"
-grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'MANIFEST.sha256' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'fedora-gnome-backup-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq "cc_option 8 'Appliquer rétention Borg'" "$ROOT/lib/control_center.sh"
-grep -Fq "prune) \"\$REPO_ROOT/scripts/backup/backup-now.sh\" --prune" "$ROOT/lib/control_center.sh"
-
 # KVM protects explicit main-table and policy-routed IPv4 HOST networks while preserving the Internet default route.
-grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
-grep -Fq 'blocked_host_ipv4' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq 'protected_networks=' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq 'route show table main' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq 'ip -4 rule show' "$ROOT/scripts/kvm/kvm_network_guard.sh"
-grep -Fq 'custom_policy_tables' "$ROOT/scripts/kvm/kvm_network_guard.sh"
+grep -Fxq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
 cat > "$tmp/ip" <<'SH'
 #!/usr/bin/env sh
 case "$*" in
@@ -215,14 +179,8 @@ chmod +x "$tmp/ip" "$tmp/nft"
   grep -Fq 'protected_networks=10.8.0.0/24,172.20.0.0/16,192.168.1.0/24' <<<"$output"
   grep -Fq 'guard_mode=normal' <<<"$output"
 )
-# Runtime network checks live in the strict core; the public wrapper delegates to it and adds Rocky guest exercises.
-grep -Fq 'runtime_certification_core.sh' "$ROOT/scripts/kvm/runtime_certification.sh"
-grep -Fq 'protected_networks' "$ROOT/scripts/kvm/runtime_certification_core.sh"
-grep -Fq 'block VM to protected host networks' "$ROOT/diagnostics/virtualization-doctor"
-
 # Community Flathub apps are explicit exceptions only.
 grep -Fq 'UNVERIFIED_FLATHUB_ALLOWLIST=' "$ROOT/config/applications.conf"
-grep -Fq 'professional_apps_validate_provenance' "$ROOT/modules/applications/41_professional_apps.sh"
 
 # Privileged nftables service has a bounded systemd sandbox.
 for token in NoNewPrivileges=yes ProtectSystem=strict ProtectHome=yes 'CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW'; do
