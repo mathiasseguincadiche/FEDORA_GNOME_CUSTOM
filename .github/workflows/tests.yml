@@ -213,6 +213,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_hardware_kvm_completion_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_hardware_kvm_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_hardware_platform_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_physical_soak_behavior.sh
