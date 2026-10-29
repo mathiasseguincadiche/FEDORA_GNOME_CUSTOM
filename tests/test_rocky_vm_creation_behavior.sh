@@ -95,6 +95,10 @@ domain="$(grep '^virt-install ' "$T_LOG")"
 grep -Fq -- '--network network=devops-nat,' <<<"$domain" || fail 'domain not on devops-nat'
 grep -Fq -- '--boot uefi' <<<"$domain" || fail 'domain not UEFI'
 if grep -Fq -- '--autostart' <<<"$domain"; then fail 'domain set to autostart'; fi
+# Guest agent channel (runtime certification pings it), entropy and ballooning.
+for token in '--channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0' '--rng /dev/urandom' '--memballoon virtio'; do
+  grep -Fq -- "$token" <<<"$domain" || fail "domain lacks: $token"
+done
 
 # Unsafe inputs are refused before any disk or domain.
 rc=0; T_VERIFY_RC=1 create || rc=$?; [[ "$rc" != 0 ]] || fail 'unauthenticated image accepted'; no_disk 'failed verification'
