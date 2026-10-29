@@ -1,64 +1,34 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2016
+# Pre-1.0 hardening specification: version format, retired configuration keys,
+# the KVM network policy values and application provenance. Behaviour is
+# exercised by test_pre1_hardening_behavior.sh (runtime identity, diagnostic
+# routing, certification fingerprint, KVM IPv6, preflight) and by the kernel,
+# Golden workstation and desktop lifecycle behaviour tests.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+fail() { echo "pre-1.0 hardening contract: FAIL: $*" >&2; exit 1; }
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
-[[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
-
-# Runtime identity must fail closed for virtualized and ambiguous environments.
-grep -Fq 'systemd-detect-virt --container' "$ROOT/lib/common.sh"
-grep -Fq 'systemd-detect-virt --vm' "$ROOT/lib/common.sh"
-grep -Fq 'runtime_baremetal_proven' "$ROOT/lib/common.sh"
-grep -Fq "printf 'unknown\\n'" "$ROOT/lib/common.sh"
-grep -Fq 'vm|container)' "$ROOT/diagnostic.sh"
-
-# The final certificate is tied to graphics/runtime versions and includes KVM host health.
-grep -Fq 'FINAL_CERT_FINGERPRINT_PACKAGES=' "$ROOT/config/performance.conf"
-grep -Fq 'workstation_runtime_fingerprint' "$ROOT/lib/baseline.sh"
-grep -Fq 'workstation_runtime_fingerprint' "$ROOT/diagnostics/final-certification"
-grep -Fq 'diagnostics/virtualization-doctor' "$ROOT/diagnostics/final-certification"
-grep -Fq 'diagnostics/performance-doctor' "$ROOT/diagnostics/final-certification"
-grep -Fq 'performance_contract=PASS' "$ROOT/diagnostics/final-certification"
+[[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail "VERSION is not semver: $version"
 
 for stale in BASELINE_NVME_TEST_SECONDS BASELINE_NVME_VERIFY_SECONDS DISPLAY_PRESERVE_VRR FINAL_CERT_REQUIRE_DISPLAY_REPAIR FINAL_CERT_REQUIRE_NAUTILUS_COLDSTART FINAL_CERT_REQUIRE_KERNEL ALLOW_EXPERIMENTAL_KERNEL_ARGS CHECK_VULKAN CHECK_VAAPI CHECK_DRM_ERRORS CHECK_GPU_RESETS CHECK_DISPLAY_MODE CHECK_VRR CHECK_HDR; do
-  ! grep -RIn "^${stale}=" "$ROOT/config" >/dev/null || { echo "stale config key remains: $stale" >&2; exit 1; }
+  if grep -RIn "^${stale}=" "$ROOT/config" >/dev/null; then fail "stale config key remains: $stale"; fi
 done
 
-grep -Fxq 'mode=rolling-n-nminus1' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fxq 'max_installed_kernels=2' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fxq 'keep_previous=true' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fxq 'preboot_certification_required=false' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fxq 'post_update_recertification=true' "$ROOT/config/kernel-lifecycle.policy"
-grep -Fq 'KERNEL_REQUIRE_LATEST_STABLE="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'KERNEL_KEEP_FEDORA_FALLBACK="true"' "$ROOT/config/kernel.conf"
-grep -Fq 'kernel_lifecycle_latest_available' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'KERNEL_VENDOR_CHANGE_ALLOWED' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'installonly_limit=$dnf_limit' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'kernel_lifecycle_release_nevras "$release"' "$ROOT/lib/kernel_lifecycle.sh"
-grep -Fq 'kernel_lifecycle_finalize_update' "$ROOT/scripts/maintenance/update-system.sh"
-grep -Fq 'DISPLAY_CERT_TOLERANCE_HZ' "$ROOT/diagnostics/display-doctor"
-
-grep -Fq "repo_sha=\"\$(git -C \"\$REPO_ROOT\" rev-parse HEAD" "$ROOT/installer/lib/generate-kickstart.sh"
-grep -Fq "fetch --depth 1 origin \${repo_sha}" "$ROOT/installer/lib/generate-kickstart.sh"
-grep -Fq 'checkout --detach FETCH_HEAD' "$ROOT/installer/lib/generate-kickstart.sh"
+(
+  set +u
+  source "$ROOT/config/virtualization.conf"
+  [[ "$KVM_IPV6_ENABLED" == false && "$KVM_BLOCK_ROUTED_HOST_NETWORKS" == true ]]
+) || fail 'KVM must stay IPv4-only and block routed host networks'
+grep -Fq 'performance_contract=PASS' "$ROOT/diagnostics/final-certification" || fail 'certificate does not record the performance contract'
 if grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' "$ROOT/installer/lib/generate-kickstart.sh"; then
-  echo 'Kickstart must fetch and checkout the audited SHA instead of cloning mutable main' >&2
-  exit 1
+  fail 'Kickstart must fetch and checkout the audited SHA instead of cloning mutable main'
 fi
 
-grep -Fq 'KVM_IPV6_ENABLED="false"' "$ROOT/config/virtualization.conf"
-grep -Fq 'KVM_BLOCK_ROUTED_HOST_NETWORKS="true"' "$ROOT/config/virtualization.conf"
-grep -Fq 'KVM IPv6 is fail-closed' "$ROOT/modules/virtualization/34_kvm_network.sh"
-grep -Fq 'LIFECYCLE_FLATPAK_UPDATE_POLICY="manual"' "$ROOT/config/desktop.conf"
-grep -Fq 'unexpected project-owned unattended Flatpak updater exists' "$ROOT/diagnostics/lifecycle-doctor"
-grep -Fq 'NON-MUTATING PREFLIGHT / CONVERGENCE PLAN' "$ROOT/install.sh"
-grep -Fq 'PREFLIGHT SKIP MUTATION' "$ROOT/lib/mutations.sh"
-
-[[ -r "$ROOT/manifests/application-provenance.tsv" ]]
+[[ -r "$ROOT/manifests/application-provenance.tsv" ]] || fail 'application provenance manifest missing'
 while IFS= read -r app; do
   [[ -z "$app" || "$app" == \#* ]] && continue
-  grep -Fq "$app" "$ROOT/manifests/application-provenance.tsv" || { echo "missing provenance: $app" >&2; exit 1; }
+  grep -Fq "$app" "$ROOT/manifests/application-provenance.tsv" || fail "missing provenance: $app"
 done < "$ROOT/manifests/flatpaks-applications-professional.txt"
 
 echo 'pre-1.0 hardening contract: PASS'
