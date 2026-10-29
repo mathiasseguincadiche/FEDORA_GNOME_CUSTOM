@@ -147,6 +147,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_gaming_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_gaming_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_gaming_repositories_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_performance_runtime_contract.sh
