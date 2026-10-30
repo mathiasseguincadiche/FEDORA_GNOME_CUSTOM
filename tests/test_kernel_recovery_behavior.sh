@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Emergency return to Fedora kernels run for real in a repository copy with
-# fake dnf5/rpm/grubby/mokutil: it needs the exact confirmation, disables both
+# fake dnf5/rpm/grubby/mokutil, also with Secure Boot enabled (only the signed
+# Fedora kernel can then boot): it needs the exact confirmation, disables both
 # upstream COPRs, clears the versionlock, distro-syncs only from fedora/updates
 # and selects the newest Fedora kernel; every failure says why and leaves the
 # GRUB default unchanged. The kernel module refuses to relax the Secure Boot
@@ -89,9 +90,11 @@ grep -q 'grubby --set-default' "$T_LOG" && fail 'GRUB changed without a Fedora k
 reset; rm "$tmp/boot/vmlinuz-7.1.9-200.fc44.x86_64"; rc=0; recover 'ROLLBACK FEDORA KERNEL' || rc=$?
 [[ "$rc" == 40 ]] && grep -Fq 'boot image missing for 7.1.9-200.fc44.x86_64' "$tmp/out" && default_unchanged || fail "missing boot image not reported (rc=$rc)"
 refused 40 'GRUB default is 7.2.9-200.vanilla.fc44.x86_64, not 7.1.9-200.fc44.x86_64' 'a GRUB default that did not change' 'ROLLBACK FEDORA KERNEL' T_GRUBBY_STUCK=1
-# Secure Boot enabled or unknown: blocked by the HOST policy (ADR 0020), before any change.
-refused "$EXIT_SECURITY_BLOCK" 'Secure Boot is enabled' 'Secure Boot enabled' 'ROLLBACK FEDORA KERNEL' T_SB=enabled
-[[ ! -e "$T_LOG" ]] || fail 'Secure Boot refusal changed the host'
+# Secure Boot enabled: only the signed Fedora kernel can boot, so the recovery
+# towards it stays available (ADR 0020).
+reset
+recover 'ROLLBACK FEDORA KERNEL' T_SB=enabled || { cat "$tmp/out" >&2; fail 'recovery to the signed Fedora kernel refused with Secure Boot enabled'; }
+[[ "$(<"$tmp/grub-default")" == "$tmp/boot/vmlinuz-7.1.9-200.fc44.x86_64" ]] || fail 'Fedora kernel not selected with Secure Boot enabled'
 
 # The kernel module refuses to relax the Secure Boot block the install engine enforces.
 bash -s "$fixture" <<'MODULE' || fail "kernel module Secure Boot precheck (rc=$?)"

@@ -9,7 +9,7 @@ source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 source "$REPO_ROOT/lib/kernel_lifecycle.sh"
 fail() { echo "Fedora kernel recovery: $1" >&2; exit "${2:-40}"; }
-kernel_lifecycle_require_host_gate || exit $?
+kernel_lifecycle_require_recovery_gate || exit $?
 fedora_require_selected || fail "the running system is not the selected Fedora ${HOST_RELEASE:-45} release" 20
 command -v dnf5 >/dev/null || fail 'dnf5 is required' 20
 command -v grubby >/dev/null || sudo dnf5 -y install grubby || fail 'grubby is required and could not be installed' 20
