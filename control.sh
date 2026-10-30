@@ -183,6 +183,8 @@ EOF
   esac
 fi
 
+# shellcheck source=lib/validation_gates.sh
+source "$REPO_ROOT/lib/validation_gates.sh"
 # shellcheck source=lib/control_center.sh
 source "$REPO_ROOT/lib/control_center.sh"
 # shellcheck source=lib/control_center_kernel_rolling.sh

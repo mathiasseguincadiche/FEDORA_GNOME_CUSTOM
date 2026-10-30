@@ -3,7 +3,7 @@
 # engines are replaced by recorders: every public command reaches the right
 # engine with the right arguments, invalid commands reach none. Also runs the
 # dashboard, its proof states and the transient-artifact retention.
-# shellcheck disable=SC2016,SC2329
+# shellcheck disable=SC2016,SC2329,SC2030,SC2031
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
@@ -166,28 +166,56 @@ for line in Projet Runtime Kernel Data Gaming Performance; do
 done
 if grep -q $'\e\[' "$tmp/status"; then fail 'NO_COLOR=1 still prints ANSI colours'; fi
 
-# Proof states shown by the dashboard follow the current identity, not marker presence.
+# Proof states shown by the dashboard follow the real certificate and backup
+# identity checks (validation_gates.sh, evidence.sh), not marker presence.
 (
   REPO_ROOT="$fixture"
   source "$fixture/lib/constants.sh"
+  source "$fixture/lib/evidence.sh"
+  source "$fixture/lib/validation_gates.sh"
   source "$fixture/lib/control_center.sh"
   STATE_ROOT="$tmp/state"
-  mkdir -p "$STATE_ROOT/final"
+  mkdir -p "$STATE_ROOT/final" "$STATE_ROOT/validation/imported"
+  printf '{"live": "proof"}\n' > "$STATE_ROOT/validation/imported/live.json"
+  is_true() { [[ "${1,,}" == true ]]; }
+  runtime_is_baremetal() { [[ "${T_RUNTIME:-baremetal}" == baremetal ]]; }
+  validation_runtime_is_live() { return 1; }
+  validation_require_chain() { [[ -z "${T_NO_CHAIN:-}" ]]; }
   workstation_runtime_fingerprint() { echo "${T_FINGERPRINT:-fp1}"; }
+  baseline_fingerprint() { echo "${T_HARDWARE:-hw1}"; }
   effective_config_sha256() { echo "${T_CONFIG:-cfg1}"; }
   module_plan_sha256() { echo plan1; }
-  repo_commit() { echo "${T_COMMIT:-c1}"; }
+  repo_commit() { echo "${T_COMMIT:-1111111111111111111111111111111111111111}"; }
+  live_sha="$(sha256sum "$STATE_ROOT/validation/imported/live.json" | awk '{print $1}')"
+  cert="$STATE_ROOT/final/certified.ok"
+  write_cert() {
+    printf '%s\n' verdict=PASS validation_chain=PASS driver_contract=PASS application_runtime_contract=PASS \
+      backup_runtime_contract=PASS physical_runtime_contract=PASS performance_contract=PASS gaming_contract=PASS \
+      gaming_profile=true kvm_domain_contract=PASS kvm_runtime_contract=PASS fingerprint=fp1 hardware_fingerprint=hw1 \
+      effective_config_sha256=cfg1 module_plan_sha256=plan1 "live_proof_sha256=$live_sha" > "$cert"
+  }
   [[ "$(cc_cert_state)" == PENDING ]] || fail 'missing certificate not PENDING'
-  printf 'fingerprint=fp1\neffective_config_sha256=cfg1\nmodule_plan_sha256=plan1\nperformance_contract=PASS\n' > "$STATE_ROOT/final/certified.ok"
+  write_cert
   [[ "$(cc_cert_state)" == VALID ]] || fail 'current certificate not VALID'
   [[ "$(T_FINGERPRINT=fp2 cc_cert_state)" == STALE ]] || fail 'certificate for another runtime not STALE'
   [[ "$(T_CONFIG=cfg2 cc_cert_state)" == STALE ]] || fail 'certificate for another config not STALE'
-  sed -i 's/performance_contract=PASS/performance_contract=FAIL/' "$STATE_ROOT/final/certified.ok"
-  [[ "$(cc_cert_state)" == STALE ]] || fail 'certificate with a failed performance contract not STALE'
+  # Checked by the shared validator, not by the old 4-field dashboard check.
+  [[ "$(T_HARDWARE=hw2 cc_cert_state)" == STALE ]] || fail 'certificate for another hardware baseline not STALE'
+  [[ "$(T_NO_CHAIN=1 cc_cert_state)" == STALE ]] || fail 'certificate without the Live proof chain not STALE'
+  [[ "$(T_RUNTIME=vm cc_cert_state)" == STALE ]] || fail 'certificate shown VALID outside bare metal'
+  printf '{"live": "other"}\n' > "$STATE_ROOT/validation/imported/live.json"
+  [[ "$(cc_cert_state)" == STALE ]] || fail 'certificate bound to another Live proof not STALE'
+  printf '{"live": "proof"}\n' > "$STATE_ROOT/validation/imported/live.json"
+  for field in performance_contract gaming_contract kvm_runtime_contract driver_contract; do
+    write_cert; sed -i "s/^$field=PASS$/$field=FAIL/" "$cert"
+    [[ "$(cc_cert_state)" == STALE ]] || fail "certificate with a failed $field not STALE"
+  done
   [[ "$(cc_backup_state)" == PENDING ]] || fail 'missing backup not PENDING'
-  printf 'commit=c1\nutc=2026-10-01T00:00:00Z\n' > "$STATE_ROOT/last-full-backup.ok"
+  printf 'commit=1111111111111111111111111111111111111111\neffective_config_sha256=cfg1\nmodule_plan_sha256=plan1\nhardware_fingerprint=hw1\nutc=2026-10-01T00:00:00Z\n' > "$STATE_ROOT/last-full-backup.ok"
   [[ "$(cc_backup_state)" == PASS ]] || fail 'current backup not PASS'
-  [[ "$(T_COMMIT=c2 cc_backup_state)" == WARN ]] || fail 'backup from another commit not WARN'
+  [[ "$(T_COMMIT=2222222222222222222222222222222222222222 cc_backup_state)" == WARN ]] || fail 'backup from another commit not WARN'
+  [[ "$(T_CONFIG=cfg2 cc_backup_state)" == WARN ]] || fail 'backup of another configuration not WARN'
+  [[ "$(T_HARDWARE=hw2 cc_backup_state)" == WARN ]] || fail 'backup of another hardware not WARN'
 ) || exit 1
 
 # Retention removes only old logs and reports; state/ and releases are kept.
