@@ -59,18 +59,20 @@ fi
 if [[ -r "$schema_dir/gschemas.compiled" ]] && resource_monitor_is_vitals; then
   check_value 'Refresh interval' "$(gsettings --schemadir "$schema_dir" get "$schema" update-time 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
   check_value 'Panel position' "$(gsettings --schemadir "$schema_dir" get "$schema" position-in-panel 2>/dev/null || true)" "$(resource_monitor_vitals_position)"
-  check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" show-processor 2>/dev/null || true)" true
-  check_value 'RAM usage' "$(gsettings --schemadir "$schema_dir" get "$schema" show-memory 2>/dev/null || true)" true
-  check_value 'Network throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" show-network 2>/dev/null || true)" true
+  check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" show-processor 2>/dev/null || true)" "${RESOURCE_MONITOR_CPU_USAGE:-true}"
+  check_value 'RAM usage' "$(gsettings --schemadir "$schema_dir" get "$schema" show-memory 2>/dev/null || true)" "${RESOURCE_MONITOR_RAM:-true}"
+  check_value 'Network throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" show-network 2>/dev/null || true)" "${RESOURCE_MONITOR_NETWORK:-true}"
+  check_value 'CPU temperature' "$(gsettings --schemadir "$schema_dir" get "$schema" show-temperature 2>/dev/null || true)" "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}"
+  check_value 'GPU usage indicator' "$(gsettings --schemadir "$schema_dir" get "$schema" show-gpu 2>/dev/null || true)" "${RESOURCE_MONITOR_GPU_USAGE:-false}"
   check_value 'Top-bar sensors' "$(gsettings --schemadir "$schema_dir" get "$schema" hot-sensors 2>/dev/null || true)" "$(resource_monitor_vitals_hot_sensors)"
 elif [[ -r "$schema_dir/gschemas.compiled" ]]; then
   check_value 'Refresh interval' "$(gsettings --schemadir "$schema_dir" get "$schema" refreshtime 2>/dev/null || true)" "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}"
-  check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus 2>/dev/null || true)" true
-  check_value 'CPU temperature' "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus 2>/dev/null || true)" true
-  check_value 'RAM usage' "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus 2>/dev/null || true)" true
+  check_value 'CPU usage' "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus 2>/dev/null || true)" "${RESOURCE_MONITOR_CPU_USAGE:-true}"
+  check_value 'CPU temperature' "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus 2>/dev/null || true)" "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}"
+  check_value 'RAM usage' "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus 2>/dev/null || true)" "${RESOURCE_MONITOR_RAM:-true}"
   check_value 'RAM percent' "$(gsettings --schemadir "$schema_dir" get "$schema" ramunit 2>/dev/null || true)" "'perc'"
-  check_value 'Ethernet throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus 2>/dev/null || true)" true
-  check_value 'Wi-Fi throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus 2>/dev/null || true)" true
+  check_value 'Ethernet throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus 2>/dev/null || true)" "${RESOURCE_MONITOR_NETWORK:-true}"
+  check_value 'Wi-Fi throughput' "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus 2>/dev/null || true)" "${RESOURCE_MONITOR_NETWORK:-true}"
   check_value 'GPU usage indicator' "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus 2>/dev/null || true)" "${RESOURCE_MONITOR_GPU_USAGE:-false}"
   check_value 'Disk top-bar stats' "$(gsettings --schemadir "$schema_dir" get "$schema" diskstatsstatus 2>/dev/null || true)" false
   check_value 'Swap top-bar stats' "$(gsettings --schemadir "$schema_dir" get "$schema" swapstatus 2>/dev/null || true)" false
