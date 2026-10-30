@@ -9,11 +9,11 @@ hardware_platform_board_name(){ echo MS-7E61; }
 hardware_platform_validate_dmi(){ return 0; }
 runtime_is_baremetal(){ return 0; }
 evidence_atomic_write(){ cat > "$1"; chmod "$2" "$1"; }
-mkdir -p "$tmp/sys/class/sound/card2" "$tmp/sys/devices/audio/interface" "$tmp/sys/drivers/snd_usb_audio"
+mkdir -p "$tmp/sys/class/sound/card2" "$tmp/sys/devices/audio/interface" "$tmp/sys/drivers/snd-usb-audio"
 printf '0db0\n' > "$tmp/sys/devices/audio/idVendor"
 printf 'cc78\n' > "$tmp/sys/devices/audio/idProduct"
 printf 'USB Audio\n' > "$tmp/sys/devices/audio/product"
-ln -s "$tmp/sys/drivers/snd_usb_audio" "$tmp/sys/devices/audio/interface/driver"
+ln -s "$tmp/sys/drivers/snd-usb-audio" "$tmp/sys/devices/audio/interface/driver"
 ln -s "$tmp/sys/devices/audio/interface" "$tmp/sys/class/sound/card2/device"
 peripheral_enroll audio card2
 [[ "$(peripheral_resolve audio)" == card2 ]]
@@ -38,6 +38,11 @@ ln -s "$tmp/sys/devices/camera/interface" "$tmp/sys/class/video4linux/video0/dev
 v4l2-ctl(){ echo 'Video Capture'; }
 peripheral_enroll camera video0
 [[ "$(peripheral_resolve camera)" == video0 ]]
+# The Brio microphone is the camera's own USB audio interface (driver snd-usb-audio).
+mkdir -p "$tmp/sys/class/sound/card3" "$tmp/sys/devices/camera/audio-interface"
+ln -s "$tmp/sys/drivers/snd-usb-audio" "$tmp/sys/devices/camera/audio-interface/driver"
+ln -s "$tmp/sys/devices/camera/audio-interface" "$tmp/sys/class/sound/card3/device"
+[[ "$(peripheral_resolve_camera_mic)" == card3 ]] || { echo 'Brio microphone not resolved' >&2; exit 1; }
 mkdir -p "$tmp/sys/class/video4linux/video2"
 ln -s "$tmp/sys/devices/camera/interface" "$tmp/sys/class/video4linux/video2/device"
 if peripheral_resolve camera; then echo 'Ambiguous capture endpoints accepted' >&2; exit 1; fi

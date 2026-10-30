@@ -10,6 +10,9 @@ peripheral_usb_identity() {
       vendor="$(tr '[:upper:]' '[:lower:]' < "$node/idVendor")"
       product="$(tr '[:upper:]' '[:lower:]' < "$node/idProduct")"
       [[ "$vendor:$product" =~ ^[0-9a-f]{4}:[0-9a-f]{4}$ ]] || return 1
+      # sysfs names USB drivers as registered (snd-usb-audio); compare them in
+      # module form (snd_usb_audio), like the driver contract does.
+      driver="${driver//-/_}"
       printf 'usb_id=%s:%s\ndriver=%s\nproduct=%s\nserial=%s\n' "$vendor" "$product" "$driver" \
         "$(cat "$node/product" 2>/dev/null || true)" "$(cat "$node/serial" 2>/dev/null || true)"
       return 0
