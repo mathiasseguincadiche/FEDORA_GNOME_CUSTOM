@@ -41,26 +41,53 @@ for run in changed:
 assert gate.check({"workflow_runs":changed},sha,repo)==1
 assert gate.check({"workflow_runs":[r for r in runs if r["path"]!=security]},sha,repo)==3
 
-# Every workflow that runs on each push to main (no paths filter) gates the
-# release; path-filtered ones cannot, since they do not run on every commit.
-def push_without_paths(text):
+# Every workflow that runs on each push to main gates the release. A paths
+# filter, a branch filter that excludes main, or a tags-only trigger means the
+# workflow does not run on every main commit, so it cannot gate the release.
+def push_filters(text):
+    """Return the push trigger's filters as {key: [values]}, or None without push."""
     lines=text.splitlines()
     try: start=lines.index("on:")
-    except ValueError: return False
+    except ValueError: return None
     block=[]
     for line in lines[start+1:]:
         if line and not line.startswith(" "): break
         block.append(line)
     for i,line in enumerate(block):
-        if line.strip()=="push:" or line.strip().startswith("push:"):
+        if line.strip().startswith("push:"):
             indent=len(line)-len(line.lstrip())
+            filters, key = {}, None
             for sub in block[i+1:]:
-                if sub.strip() and len(sub)-len(sub.lstrip())<=indent: break
-                if sub.strip().startswith("paths"): return False
-            return True
-    return False
+                if not sub.strip(): continue
+                if len(sub)-len(sub.lstrip())<=indent: break
+                item=sub.strip()
+                if item.startswith("- ") and key:
+                    filters[key].append(item[2:].strip().strip("'\""))
+                elif ":" in item:
+                    key, value = (part.strip() for part in item.split(":", 1))
+                    filters[key]=[v.strip().strip("'\"") for v in value.strip("[]").split(",") if v.strip()]
+            return filters
+    return None
+def runs_on_every_main_push(text):
+    filters=push_filters(text)
+    if filters is None or "paths" in filters or "paths-ignore" in filters: return False
+    if "main" in filters.get("branches-ignore", []): return False
+    if "branches" in filters: return "main" in filters["branches"]
+    return "tags" not in filters
+samples={
+    "on:\n  push:\n": True,
+    "on:\n  push:\n    branches: [main]\n": True,
+    "on:\n  push:\n    branches:\n      - main\n": True,
+    "on:\n  push:\n    branches: [develop]\n": False,
+    "on:\n  push:\n    branches-ignore: [main]\n": False,
+    "on:\n  push:\n    tags: ['v*']\n": False,
+    "on:\n  push:\n    branches: [main]\n    paths:\n      - 'docs/**'\n": False,
+    "on:\n  pull_request:\n": False,
+}
+for sample, expected in samples.items():
+    assert runs_on_every_main_push(sample) is expected, sample
 workflows={".github/workflows/"+f.name for f in (root/".github/workflows").glob("*.yml")
-           if push_without_paths(f.read_text(encoding="utf-8"))}
+           if runs_on_every_main_push(f.read_text(encoding="utf-8"))}
 missing=workflows-gate.REQUIRED
 assert not missing, f"push workflows missing from the release gate: {sorted(missing)}"
 assert gate.REQUIRED<=workflows|{".github/workflows/"+f.name for f in (root/".github/workflows").glob("*.yml")}, "unknown workflow in the release gate"
