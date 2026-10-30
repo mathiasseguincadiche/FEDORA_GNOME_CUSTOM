@@ -27,7 +27,11 @@ driver_contract_pci_driver_for_id() {
 }
 
 driver_contract_module_intree() {
-  local module="$1" intree
+  local module="$1" intree filename
+  # Built into the kernel image (=y): modpost adds the intree tag only to
+  # loadable modules, so a built-in driver has none and is in-tree by definition.
+  filename="$(modinfo -F filename "$module" 2>/dev/null | head -n1 || true)"
+  [[ "$filename" != '(builtin)' ]] || return 0
   intree="$(modinfo -F intree "$module" 2>/dev/null | head -n1 || true)"
   [[ "$intree" =~ ^([Yy]|1|yes|YES)$ ]]
 }

@@ -76,12 +76,21 @@ else
   emit OK crypttab 'no configured encrypted block device'
 fi
 
+# dmsetup prints "No devices found" when there is no device-mapper device at
+# all (the default btrfs install), and needs root to read the tables. Only a
+# "NAME: START LENGTH crypt ..." row is an active crypt target.
+dm_crypt_table() {
+  dmsetup table --target crypt 2>/dev/null || sudo -n dmsetup table --target crypt 2>/dev/null
+}
 if command_exists dmsetup; then
-  crypt_targets="$(dmsetup table --target crypt 2>/dev/null || true)"
-  if [[ -n "$crypt_targets" ]]; then
-    emit KO 'device-mapper crypt' 'active crypt target detected'
+  if crypt_table="$(dm_crypt_table)"; then
+    if awk '$1 ~ /:$/ && $4 == "crypt" {found=1} END {exit !found}' <<<"$crypt_table"; then
+      emit KO 'device-mapper crypt' 'active crypt target detected'
+    else
+      emit OK 'device-mapper crypt' 'no active crypt target'
+    fi
   else
-    emit OK 'device-mapper crypt' 'no active crypt target'
+    emit WARN 'device-mapper crypt' 'device-mapper tables unreadable without root; lsblk/crypttab checks still applied'
   fi
 else
   emit WARN 'device-mapper crypt' 'dmsetup unavailable; lsblk/crypttab checks still applied'

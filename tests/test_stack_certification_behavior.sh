@@ -28,7 +28,13 @@ mkdir -p "$tmp/bin"
 fake() { printf '#!/usr/bin/env bash\n%s\n' "$2" > "$tmp/bin/$1"; chmod +x "$tmp/bin/$1"; }
 fake lspci 'printf "%s\n" "0000:05:00.0 Ethernet controller [0200]: Realtek RTL8126 [10ec:8126]" "	Kernel driver in use: ${T_LAN_DRIVER:-r8169}" \
   "0000:0c:00.0 USB controller [0c03]: AMD USB 3.2 [1022:43f7]" "	Kernel driver in use: ${T_USB_DRIVER:-xhci_hcd}"'
-fake modinfo '[[ "$1 $2" == "-F intree" ]] || exit 1; [[ "$3" == "${T_EXTERNAL:-}" ]] && echo N || echo Y'
+# modinfo: built-in drivers (T_BUILTIN) report filename "(builtin)" and no intree tag,
+# like the real modinfo; loadable ones report intree=Y, or N for T_EXTERNAL.
+fake modinfo 'case "$1 $2" in
+  "-F filename") [[ " ${T_BUILTIN:-} " == *" $3 "* ]] && echo "(builtin)" || echo "/lib/modules/k/kernel/$3.ko.xz" ;;
+  "-F intree") [[ " ${T_BUILTIN:-} " == *" $3 "* ]] && exit 0; [[ "$3" == "${T_EXTERNAL:-}" ]] && echo N || echo Y ;;
+  *) exit 1 ;;
+esac'
 fake lsmod 'printf "%s\n" "Module Size Used" "xe 1 0" ${T_NVIDIA:+"nvidia_drm 1 0"}'
 fake rpm 'for pkg in "${@:2}"; do [[ "$pkg" != "${T_RPM_INSTALLED:-}" ]] || exit 0; done; exit 1'
 export PATH="$tmp/bin:$PATH"
@@ -49,6 +55,9 @@ refused 'USB without xhci_hcd' T_USB_DRIVER=vfio-pci
 for module in xe r8169 nvme xhci_hcd snd_usb_audio nct6683 mt7925e; do
   refused "an out-of-tree $module" T_EXTERNAL="$module"
 done
+# Drivers built into the kernel image are in-tree; a loadable one still needs intree=Y.
+env T_BUILTIN='xhci_hcd nvme' bash -c "$(declare -f); driver_contract_validate" || fail 'built-in xhci_hcd/nvme refused as out-of-tree'
+refused 'a built-in xhci_hcd beside an out-of-tree r8169' T_BUILTIN=xhci_hcd T_EXTERNAL=r8169
 refused 'a loaded NVIDIA module' T_NVIDIA=1
 refused 'akmod-nvidia installed' T_RPM_INSTALLED=akmod-nvidia
 refused 'the NVIDIA X driver installed' T_RPM_INSTALLED=xorg-x11-drv-nvidia

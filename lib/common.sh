@@ -8,6 +8,15 @@ is_true() {
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# rpm -q writes "package X is not installed" on stdout: never take its output
+# as a version. Prints the formatted value of an installed package, fails otherwise.
+rpm_installed_query() {
+  local format="$1" pkg="$2" value
+  value="$(rpm -q --qf "$format" "$pkg" 2>/dev/null)" || return 1
+  [[ -n "$value" ]] || return 1
+  printf '%s\n' "$value"
+}
+
 # Read the complete journal before searching. Failed/empty reads are not health
 # proofs; grep never closes a live journalctl pipe early (SIGPIPE).
 journal_require_clean() {

@@ -13,8 +13,7 @@ matrix_payload(){
   printf 'kernel=%s\n' "$(uname -r)"
   local p v
   for p in ${SOFTWARE_MATRIX_REQUIRED_PACKAGES:-linux-firmware amd-ucode-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell nautilus qemu-kvm libvirt}; do
-    v="$(rpm -q --qf '%{VERSION}-%{RELEASE}' "$p" 2>/dev/null || true)"
-    [[ -n "$v" ]] || return 1
+    v="$(rpm_installed_query '%{VERSION}-%{RELEASE}' "$p")" || return 1
     printf '%s=%s\n' "$p" "$v"
   done
 }

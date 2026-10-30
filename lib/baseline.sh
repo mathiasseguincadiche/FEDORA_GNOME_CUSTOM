@@ -104,6 +104,6 @@ baseline_certification_valid(){
   [[ "$(evidence_marker_value "$marker" display_edid_sha256 2>/dev/null || true)" == "$(hardware_b580_expected_edid_sha256)" ]]
 }
 
-runtime_component_version(){ local pkg="$1" version; version="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' "$pkg" 2>/dev/null || true)"; printf '%s\n' "${version:-missing}"; }
+runtime_component_version(){ rpm_installed_query '%{VERSION}-%{RELEASE}.%{ARCH}' "$1" || printf 'missing\n'; }
 workstation_runtime_fingerprint_payload(){ local pkg; printf 'hardware=%s\n' "$(baseline_fingerprint)"; printf 'kernel=%s\n' "$(uname -r)"; if runtime_is_baremetal; then printf 'drivers=%s\n' "$(driver_contract_fingerprint)"; printf 'applications=%s\n' "$(application_runtime_fingerprint)"; if is_true "${ENABLE_KVM:-true}"; then printf 'kvm=%s\n' "$(kvm_contract_fingerprint)"; fi; fi; for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell}; do printf '%s=%s\n' "$pkg" "$(runtime_component_version "$pkg")"; done; }
 workstation_runtime_fingerprint(){ workstation_runtime_fingerprint_payload | sha256sum | awk '{print $1}'; }
