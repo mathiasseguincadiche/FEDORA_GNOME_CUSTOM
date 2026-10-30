@@ -32,6 +32,65 @@ assert gate.check({"workflow_runs":changed},sha,repo)==3
 assert gate.check({"workflow_runs":[]},sha,repo)==3
 newer=dict(runs[0],id=100,status="in_progress")
 assert gate.check({"workflow_runs":runs+[newer]},sha,repo)==3
+# A failed security scan blocks the release like any other required workflow.
+security=".github/workflows/security-scanning.yml"
+assert security in gate.REQUIRED
+changed=json.loads(json.dumps(runs))
+for run in changed:
+    if run["path"]==security: run["conclusion"]="failure"
+assert gate.check({"workflow_runs":changed},sha,repo)==1
+assert gate.check({"workflow_runs":[r for r in runs if r["path"]!=security]},sha,repo)==3
+
+# Every workflow that runs on each push to main gates the release. A paths
+# filter, a branch filter that excludes main, or a tags-only trigger means the
+# workflow does not run on every main commit, so it cannot gate the release.
+def push_filters(text):
+    """Return the push trigger's filters as {key: [values]}, or None without push."""
+    lines=text.splitlines()
+    try: start=lines.index("on:")
+    except ValueError: return None
+    block=[]
+    for line in lines[start+1:]:
+        if line and not line.startswith(" "): break
+        block.append(line)
+    for i,line in enumerate(block):
+        if line.strip().startswith("push:"):
+            indent=len(line)-len(line.lstrip())
+            filters, key = {}, None
+            for sub in block[i+1:]:
+                if not sub.strip(): continue
+                if len(sub)-len(sub.lstrip())<=indent: break
+                item=sub.strip()
+                if item.startswith("- ") and key:
+                    filters[key].append(item[2:].strip().strip("'\""))
+                elif ":" in item:
+                    key, value = (part.strip() for part in item.split(":", 1))
+                    filters[key]=[v.strip().strip("'\"") for v in value.strip("[]").split(",") if v.strip()]
+            return filters
+    return None
+def runs_on_every_main_push(text):
+    filters=push_filters(text)
+    if filters is None or "paths" in filters or "paths-ignore" in filters: return False
+    if "main" in filters.get("branches-ignore", []): return False
+    if "branches" in filters: return "main" in filters["branches"]
+    return "tags" not in filters
+samples={
+    "on:\n  push:\n": True,
+    "on:\n  push:\n    branches: [main]\n": True,
+    "on:\n  push:\n    branches:\n      - main\n": True,
+    "on:\n  push:\n    branches: [develop]\n": False,
+    "on:\n  push:\n    branches-ignore: [main]\n": False,
+    "on:\n  push:\n    tags: ['v*']\n": False,
+    "on:\n  push:\n    branches: [main]\n    paths:\n      - 'docs/**'\n": False,
+    "on:\n  pull_request:\n": False,
+}
+for sample, expected in samples.items():
+    assert runs_on_every_main_push(sample) is expected, sample
+workflows={".github/workflows/"+f.name for f in (root/".github/workflows").glob("*.yml")
+           if runs_on_every_main_push(f.read_text(encoding="utf-8"))}
+missing=workflows-gate.REQUIRED
+assert not missing, f"push workflows missing from the release gate: {sorted(missing)}"
+assert gate.REQUIRED<=workflows|{".github/workflows/"+f.name for f in (root/".github/workflows").glob("*.yml")}, "unknown workflow in the release gate"
 
 # Run the actual audit checker against a synthetic complete catalog. An
 # unrelated precheck failure, or a wrong phase/code in an allowed module, fails.

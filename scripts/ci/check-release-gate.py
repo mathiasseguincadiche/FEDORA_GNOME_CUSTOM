@@ -11,6 +11,9 @@ REQUIRED = {
     ".github/workflows/fedora-host-pretest.yml",
     ".github/workflows/desktop-integration-pretest.yml",
     ".github/workflows/fedora-installer-audit.yml",
+    # CodeQL and Gitleaks run on every push to main: no release over a leaked
+    # secret or a failed security analysis.
+    ".github/workflows/security-scanning.yml",
 }
 
 
