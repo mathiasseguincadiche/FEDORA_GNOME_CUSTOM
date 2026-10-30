@@ -6,8 +6,14 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 DEVOPS_USER="${DEVOPS_USER:-mathias}"
 KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"
+# Reviewed release SHA-256 values are pinned here, like yq and k9s: a release
+# host that served a different binary and checksum pair is refused.
 KIND_VERSION="${KIND_VERSION:-v0.33.0}"
+KIND_LINUX_AMD64_SHA256="${KIND_LINUX_AMD64_SHA256:-aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d}"
 MINIKUBE_VERSION="${MINIKUBE_VERSION:-v1.38.1}"
+MINIKUBE_LINUX_AMD64_SHA256="${MINIKUBE_LINUX_AMD64_SHA256:-099477eaf248bcb5bcea8ce78a2898e93ac01461c35189da1848c3de82ecd22e}"
+HELM_VERSION="${HELM_VERSION:-v4.3.0}"
+HELM_LINUX_AMD64_SHA256="${HELM_LINUX_AMD64_SHA256:-86584a54def73570558f66f5111cc53dfed56689637ae32c1201205d494f54fb}"
 YQ_VERSION="${YQ_VERSION:-v4.53.3}"
 YQ_LINUX_AMD64_SHA256="${YQ_LINUX_AMD64_SHA256:-fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4}"
 K9S_VERSION="${K9S_VERSION:-v0.51.0}"
@@ -212,13 +218,12 @@ fi
 
 log 'install Corepack at an explicit npm version (registry integrity checked by npm)'
 npm install --global corepack@0.34.5
-log 'install Helm from an explicit upstream release and its published SHA-256'
-helm_version=v4.3.0
+log 'install Helm from an explicit upstream release and its pinned SHA-256'
+helm_version="$HELM_VERSION"
 helm_tmp="$(mktemp -d)"
 helm_archive="helm-$helm_version-linux-amd64.tar.gz"
 curl -fsSL "https://get.helm.sh/$helm_archive" -o "$helm_tmp/$helm_archive"
-curl -fsSL "https://get.helm.sh/$helm_archive.sha256sum" -o "$helm_tmp/$helm_archive.sha256sum"
-(cd "$helm_tmp"; sha256sum -c "$helm_archive.sha256sum")
+printf '%s  %s\n' "$HELM_LINUX_AMD64_SHA256" "$helm_tmp/$helm_archive" | sha256sum -c -
 tar -xzf "$helm_tmp/$helm_archive" -C "$helm_tmp" linux-amd64/helm
 install -m 0755 "$helm_tmp/linux-amd64/helm" /usr/local/bin/helm
 rm -rf "$helm_tmp"
@@ -249,26 +254,19 @@ else
 fi
 aws --version 2>&1 | grep -q '^aws-cli/2[.]' || fail 'AWS CLI v2 required'
 
-log "install kind ${KIND_VERSION} with release checksum verification"
+log "install kind ${KIND_VERSION} with its pinned SHA-256"
 kind_version="$KIND_VERSION"
 kind_tmp="$(mktemp -d)"
 curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/${kind_version}/kind-linux-amd64" -o "$kind_tmp/kind-linux-amd64"
-curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/${kind_version}/kind-linux-amd64.sha256sum" -o "$kind_tmp/kind-linux-amd64.sha256sum"
-(
-  cd "$kind_tmp"
-  sha256sum -c kind-linux-amd64.sha256sum
-)
+printf '%s  %s\n' "$KIND_LINUX_AMD64_SHA256" "$kind_tmp/kind-linux-amd64" | sha256sum -c -
 install -m 0755 "$kind_tmp/kind-linux-amd64" /usr/local/bin/kind
 rm -rf "$kind_tmp"
 kind version | grep -Fq "$KIND_VERSION" || fail "kind version mismatch: $(kind version)"
 
-log "install Minikube ${MINIKUBE_VERSION} with release checksum verification"
+log "install Minikube ${MINIKUBE_VERSION} with its pinned SHA-256"
 minikube_tmp="$(mktemp -d)"
 curl -fsSL "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" -o "$minikube_tmp/minikube-linux-amd64"
-curl -fsSL "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64.sha256" -o "$minikube_tmp/minikube-linux-amd64.sha256"
-minikube_sha="$(tr -d '[:space:]' <"$minikube_tmp/minikube-linux-amd64.sha256")"
-[[ "$minikube_sha" =~ ^[0-9a-fA-F]{64}$ ]] || fail 'invalid Minikube checksum payload'
-printf '%s  %s\n' "$minikube_sha" "$minikube_tmp/minikube-linux-amd64" | sha256sum -c -
+printf '%s  %s\n' "$MINIKUBE_LINUX_AMD64_SHA256" "$minikube_tmp/minikube-linux-amd64" | sha256sum -c -
 install -m 0755 "$minikube_tmp/minikube-linux-amd64" /usr/local/bin/minikube
 rm -rf "$minikube_tmp"
 [[ "$(minikube version --short)" == "$MINIKUBE_VERSION" ]] || fail "Minikube version mismatch: $(minikube version --short)"
