@@ -265,6 +265,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_three_gate_validation_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_validation_entrypoints_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_validation_gate_proof_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_driver_runtime_behavior.sh
