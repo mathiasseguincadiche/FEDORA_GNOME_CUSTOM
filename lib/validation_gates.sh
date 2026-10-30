@@ -10,12 +10,8 @@ validation_gate_proof_path() { [[ "$1" == 2 ]] || return 1; printf '%s/live-%s.j
 validation_imported_proof_path() { [[ "$1" == 2 ]] || return 1; printf '%s/live.json\n' "$(validation_import_dir)"; }
 validation_gate_label() { case "$1" in 1) printf 'CI — SOFTWARE CHECKS\n';; 2) printf 'LIVE USB — PRE-INSTALL CHECKS\n';; 3) printf 'INSTALLED FEDORA — FINAL QUALIFICATION\n';; *) return 1;; esac; }
 validation_expected_environment() { case "$1" in 2) printf 'live-usb\n';; 3) printf 'baremetal\n';; *) return 1;; esac; }
-validation_fedora_release() { awk -F= '$1=="VERSION_ID" {gsub(/"/, "", $2); print $2; exit}' /etc/os-release; }
-validation_require_selected_fedora() {
-  [[ -r /etc/os-release ]] || return "$EXIT_PRECHECK_FAILED"
-  grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || return "$EXIT_PRECHECK_FAILED"
-  fedora_require_selected || return "$EXIT_PRECHECK_FAILED"
-}
+# Same OS identity (FEDORA_OS_RELEASE_FILE, ID=fedora) as the release selection.
+validation_require_selected_fedora() { fedora_require_selected || return "$EXIT_PRECHECK_FAILED"; }
 validation_runtime_is_live() { runtime_is_live; }
 validation_require_installed_runtime() {
   if ! runtime_is_baremetal || validation_runtime_is_live; then
