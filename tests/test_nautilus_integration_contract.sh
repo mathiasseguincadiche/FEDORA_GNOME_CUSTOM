@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
+# Nautilus specification: the Golden package sets, backends kept out of the
+# GNOME core manifest, the opt-in IBus default and CI wiring. The module,
+# prewarm, thumbnail policy and doctor are exercised by
+# test_nautilus_integration_behavior.sh.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 base="$ROOT/manifests/packages-nautilus.txt"
 optional="$ROOT/manifests/packages-nautilus-optional.txt"
-module="$ROOT/modules/gnome/21_nautilus_integration.sh"
-doctor="$ROOT/diagnostics/nautilus-integration-doctor"
 
 for pkg in nautilus gvfs gvfs-gphoto2 gvfs-fuse file-roller gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus; do
   grep -Fxq "$pkg" "$base" || { echo "missing Nautilus Golden package: $pkg" >&2; exit 1; }
@@ -21,24 +23,7 @@ for pkg in gvfs-smb gvfs-mtp gvfs-gphoto2 gvfs-fuse; do
   fi
 done
 
-grep -Fq 'manifests/packages-nautilus.txt' "$module"
-grep -Fq 'NAUTILUS_ENABLE_SMB' "$module"
-grep -Fq 'NAUTILUS_ENABLE_MTP' "$module"
-grep -Fq 'NAUTILUS_ENABLE_PREVIEWS' "$module"
-grep -Fq 'NAUTILUS_PREVIEW_POLICY' "$module"
-grep -Fq 'diagnostics/nautilus-integration-doctor' "$module"
-if grep -Fq 'ibus-typing-booster' "$module"; then
-  echo 'IBus workaround must not be coupled to Nautilus' >&2
-  exit 1
-fi
-
 grep -Fq 'REMOVE_IBUS_TYPING_BOOSTER="false"' "$ROOT/config/performance.conf"
-grep -Fq 'REMOVE_IBUS_TYPING_BOOSTER' "$ROOT/modules/desktop/26_desktop_integration.sh"
-
-for token in gvfs-archive gvfs-afc gvfs-goa gvfs-nfs sushi file-roller-nautilus 'show-image-thumbnails' 'fedora-gnome-nautilus-prewarm.service'; do
-  grep -Fq "$token" "$doctor" || { echo "Nautilus doctor missing check: $token" >&2; exit 1; }
-done
-
 grep -Fq 'diagnostics/nautilus-integration-doctor' "$ROOT/diagnostics/final-certification"
 for workflow in fedora-package-preflight.yml fedora-host-pretest.yml desktop-integration-pretest.yml; do
   grep -Fq 'manifests/packages-nautilus.txt' "$ROOT/.github/workflows/$workflow" || {
@@ -47,5 +32,6 @@ for workflow in fedora-package-preflight.yml fedora-host-pretest.yml desktop-int
   }
 done
 grep -Fq 'file-roller-nautilus' "$ROOT/.github/workflows/desktop-integration-pretest.yml"
+grep -Fq 'test_nautilus_integration_behavior.sh' "$ROOT/.github/workflows/tests.yml"
 
 echo 'nautilus integration contract: PASS'
