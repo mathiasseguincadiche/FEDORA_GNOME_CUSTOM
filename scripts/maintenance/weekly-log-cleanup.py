@@ -56,7 +56,8 @@ def scan(root, now, dry_run):
         if not main.exists():
             events.append({"run":run.name,"action":"conserve","reason":"journal principal absent"})
             continue
-        text = "\\n".join(p.read_text(encoding="utf-8", errors="replace") for p in run.iterdir() if p.suffix == ".log")
+        # One real line break between files: a rule must never match across two logs.
+        text = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sorted(run.iterdir()) if p.suffix == ".log")
         incident = incidents / (run.name + ".json")
         if incident.exists():
             if not incident.is_file() or incident.is_symlink():
