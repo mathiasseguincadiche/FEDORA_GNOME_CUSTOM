@@ -128,15 +128,15 @@ cc_marker_value() {
   awk -F= -v wanted="$key" '$1==wanted {sub(/^[^=]*=/, ""); print; exit}' "$file"
 }
 
+# Same identity rule as the APPLY gate: commit, configuration, module plan
+# and, on bare metal, hardware. The exact archive is verified by backup-doctor.
 cc_backup_state() {
   local marker="$STATE_ROOT/last-full-backup.ok"
-  local marker_commit=''
   if [[ ! -r "$marker" ]]; then
     printf 'PENDING'
     return 0
   fi
-  marker_commit="$(cc_marker_value "$marker" commit || true)"
-  if [[ -n "$marker_commit" && "$marker_commit" == "$(repo_commit)" ]]; then
+  if evidence_require_current_identity "$marker" 2>/dev/null; then
     printf 'PASS'
   else
     printf 'WARN'
@@ -154,21 +154,15 @@ cc_backup_detail() {
   printf '%s' "${utc:-preuve présente}"
 }
 
+# The dashboard shows VALID only when the shared certificate check used by
+# the doctors passes: identities, every contract and the imported Live proof.
 cc_cert_state() {
   local marker="$STATE_ROOT/final/certified.ok"
-  local expected='' expected_config='' expected_plan=''
   if [[ ! -s "$marker" ]]; then
     printf 'PENDING'
     return 0
   fi
-  expected="$(workstation_runtime_fingerprint 2>/dev/null || true)"
-  expected_config="$(effective_config_sha256 2>/dev/null || true)"
-  expected_plan="$(module_plan_sha256 2>/dev/null || true)"
-  if [[ -n "$expected" && -n "$expected_config" && -n "$expected_plan" ]] \
-    && grep -Fxq "fingerprint=$expected" "$marker" \
-    && grep -Fxq "effective_config_sha256=$expected_config" "$marker" \
-    && grep -Fxq "module_plan_sha256=$expected_plan" "$marker" \
-    && grep -Fxq 'performance_contract=PASS' "$marker"; then
+  if validation_final_certificate_valid 2>/dev/null; then
     printf 'VALID'
   else
     printf 'STALE'
@@ -456,7 +450,7 @@ cc_backup_menu() {
     read -r -p 'Choix : ' choice
     case "$choice" in
       1) cc_interactive_exec 'BACKUP COMPLET HOST' "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
-      2) cc_interactive_exec 'BACKUP UTILISATEUR XDG' env FEDORA_GNOME_CUSTOM_REPO="$REPO_ROOT" "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
+      2) cc_interactive_exec 'BACKUP UTILISATEUR XDG' "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
       3) cc_interactive_exec 'ARCHIVES BORG' "$REPO_ROOT/scripts/backup/restore.sh" list ;;
       4) cc_interactive_exec 'BACKUP / RECOVERY DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
       5) cc_interactive_exec 'VÉRIFICATION PROFONDE BORG' "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;
@@ -784,7 +778,7 @@ cc_cli_dispatch() {
     backup)
       case "$action" in
         now) "$REPO_ROOT/scripts/backup/backup-now.sh" ;;
-        daily) FEDORA_GNOME_CUSTOM_REPO="$REPO_ROOT" "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
+        daily) "$REPO_ROOT/scripts/backup/daily-user-backup.sh" ;;
         list) "$REPO_ROOT/scripts/backup/restore.sh" list ;;
         check) "$REPO_ROOT/diagnostics/backup-doctor" ;;
         deep) "$REPO_ROOT/diagnostics/backup-doctor" --deep ;;

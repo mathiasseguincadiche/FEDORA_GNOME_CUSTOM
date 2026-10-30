@@ -285,11 +285,13 @@ FEDORA GOLDEN WORKSTATION — Workstation Control Center
 Usage:
   ./control.sh                                      Menu interactif
   ./control.sh status                               Tableau de bord read-only
-  ./control.sh install dry-run|backup|apply
+  ./control.sh install prepare-tools|dry-run|backup|apply
   ./control.sh update check|all|dnf|flatpak|firmware
   ./control.sh update status|log|reboot|finalize
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
-  ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|kvm|backup
+  ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|polish|remote|kvm|backup
+  ./control.sh remote status|doctor|info
+  ./control.sh upgrade plan|prepare|reboot|finalize
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|install-latest|prune|rollback|fallback|refresh-fallback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh
