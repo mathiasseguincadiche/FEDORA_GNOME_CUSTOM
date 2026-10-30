@@ -65,6 +65,17 @@ use_lock() { # use_lock FILE -> exports its variables for the next run
   run resource_monitor_vitals_check || fail 'vitals check on applied settings'
   printf '5\n' > "$store/org.gnome.shell.extensions.vitals.update-time"
   if run resource_monitor_vitals_check; then fail 'vitals check accepted a changed refresh'; fi
+  # The check verifies what apply wrote from the configuration, not fixed values.
+  printf '2\n' > "$store/org.gnome.shell.extensions.vitals.update-time"
+  # run() sources config/gnome.conf: the overrides are set after it, through eval.
+  run eval 'RESOURCE_MONITOR_NETWORK=false RESOURCE_MONITOR_CPU_TEMPERATURE=false; resource_monitor_vitals_apply && resource_monitor_vitals_check' \
+    || fail 'vitals check refused a configuration with network and CPU temperature off'
+  [[ "$(<"$store/org.gnome.shell.extensions.vitals.show-network")" == false ]] || fail 'vitals network not turned off'
+  if run resource_monitor_vitals_check; then fail 'vitals check accepted network off while the configuration enables it'; fi
+  run resource_monitor_vitals_apply
+  printf 'true\n' > "$store/org.gnome.shell.extensions.vitals.show-gpu"
+  if run resource_monitor_vitals_check; then fail 'vitals check accepted GPU usage on while the configuration disables it'; fi
+  run resource_monitor_vitals_apply
 
   # Gtk4 DING keeps the keys the DING settings code writes.
   run gnome_ding_settings_apply || fail 'gtk4 ding settings'

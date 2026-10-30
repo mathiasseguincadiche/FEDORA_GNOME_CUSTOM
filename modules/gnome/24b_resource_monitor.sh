@@ -133,9 +133,12 @@ resource_monitor_vitals_check() {
   position="$(resource_monitor_vitals_position)" || return "$EXIT_POSTCHECK_FAILED"
   [[ "$(gsettings --schemadir "$schema_dir" get "$schema" update-time)" == "${RESOURCE_MONITOR_REFRESH_SECONDS:-2}" ]] || return "$EXIT_POSTCHECK_FAILED"
   [[ "$(gsettings --schemadir "$schema_dir" get "$schema" position-in-panel)" == "$position" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-processor)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-memory)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-network)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+  # Verify exactly what resource_monitor_vitals_apply wrote from the configuration.
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-processor)" == "${RESOURCE_MONITOR_CPU_USAGE:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-memory)" == "${RESOURCE_MONITOR_RAM:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-network)" == "${RESOURCE_MONITOR_NETWORK:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-temperature)" == "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+  [[ "$(gsettings --schemadir "$schema_dir" get "$schema" show-gpu)" == "${RESOURCE_MONITOR_GPU_USAGE:-false}" ]] || return "$EXIT_POSTCHECK_FAILED"
   [[ "$(gsettings --schemadir "$schema_dir" get "$schema" hot-sensors)" == "$(resource_monitor_vitals_hot_sensors)" ]] || return "$EXIT_POSTCHECK_FAILED"
 }
 
@@ -258,12 +261,12 @@ gnome_telemetry_postcheck() {
   if resource_monitor_is_vitals; then
     resource_monitor_vitals_check || return "$EXIT_POSTCHECK_FAILED"
   else
-    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" cpustatus)" == "${RESOURCE_MONITOR_CPU_USAGE:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" ramstatus)" == "${RESOURCE_MONITOR_RAM:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netethstatus)" == "${RESOURCE_MONITOR_NETWORK:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" netwlanstatus)" == "${RESOURCE_MONITOR_NETWORK:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
     [[ "$(gsettings --schemadir "$schema_dir" get "$schema" gpustatus)" == "${RESOURCE_MONITOR_GPU_USAGE:-false}" ]] || return "$EXIT_POSTCHECK_FAILED"
-    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" == "true" ]] || return "$EXIT_POSTCHECK_FAILED"
+    [[ "$(gsettings --schemadir "$schema_dir" get "$schema" thermalcputemperaturestatus)" == "${RESOURCE_MONITOR_CPU_TEMPERATURE:-true}" ]] || return "$EXIT_POSTCHECK_FAILED"
   fi
 
   if runtime_is_baremetal; then

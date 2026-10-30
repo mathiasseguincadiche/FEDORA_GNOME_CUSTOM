@@ -11,7 +11,7 @@ report="$REPORT_ROOT/$RUN_ID-firmware-runtime.txt"
   printf 'bios_date=%s\n' "$(baseline_hw_value /sys/class/dmi/id/bios_date)"
   printf 'kernel=%s\n' "$(uname -r)"
   for pkg in linux-firmware amd-ucode-firmware intel-gpu-firmware; do
-    printf '%s=%s\n' "$pkg" "$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' "$pkg" 2>/dev/null || printf missing)"
+    printf '%s=%s\n' "$pkg" "$(rpm_installed_query '%{VERSION}-%{RELEASE}.%{ARCH}' "$pkg" || printf missing)"
   done
   printf 'amd_microcode_runtime=%s\n' "$(cat /sys/devices/system/cpu/microcode/version 2>/dev/null || printf unavailable)"
   echo '[xe-firmware-declarations]'; modinfo -F firmware xe 2>/dev/null || true

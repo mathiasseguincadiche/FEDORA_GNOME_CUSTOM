@@ -236,7 +236,7 @@ physical_soak_invalidate_evidence() {
   local name="$1" path
   case "$name" in
     gpu-soak) path="$(physical_runtime_evidence_path "$name")";;
-    cpu-soak|memory-5600|memory-6000) path="$(baseline_evidence_dir)/$name.ok";;
+    cpu-soak|memory-5600|memory-6000|nvme-root|nvme-data) path="$(baseline_evidence_dir)/$name.ok";;
     *) return 1;;
   esac
   rm -f -- "$path" "$STATE_ROOT/final/certified.ok"

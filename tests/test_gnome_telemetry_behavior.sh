@@ -40,6 +40,7 @@ source "$ROOT/lib/common.sh"
 engine_bootstrap() {
   source "$ROOT/config/gnome-extensions.lock"
   source "$ROOT/config/gnome.conf"
+  [[ ! -r "$tmp/override.conf" ]] || source "$tmp/override.conf"
   DRY_RUN=false
   REPORT_ROOT="$tmp"
   LOG_DIR="$tmp"
@@ -120,6 +121,19 @@ for marker in cpu-present gpu-present; do
   if run_doctor; then fail "missing $marker accepted by doctor"; fi
   touch "$tmp/$marker"
 done
+# A configuration that turns network throughput off is verified as configured,
+# by the postcheck and the doctor, instead of being compared with fixed values.
+printf 'RESOURCE_MONITOR_NETWORK="false"\n' > "$tmp/override.conf"
+run_module resource_monitor_vitals_apply
+[[ "$(cat "$tmp/settings/org.gnome.shell.extensions.vitals.show-network")" == false ]] || fail 'network throughput not turned off by configuration'
+run_module gnome_telemetry_postcheck > "$tmp/postcheck.log" 2>&1 || { cat "$tmp/postcheck.log" >&2; fail 'postcheck refused the configured network-off telemetry'; }
+run_doctor || { cat "$tmp/doctor.log" >&2; fail 'doctor refused the configured network-off telemetry'; }
+printf 'true\n' > "$tmp/settings/org.gnome.shell.extensions.vitals.show-network"
+rc=0; run_module gnome_telemetry_postcheck > "$tmp/postcheck.log" 2>&1 || rc=$?
+[[ "$rc" -eq 40 ]] || fail "network on against the configuration accepted by postcheck (rc=$rc)"
+if run_doctor; then fail 'network on against the configuration accepted by doctor'; fi
+rm "$tmp/override.conf"
+run_module resource_monitor_vitals_apply
 printf 'ERROR\n' > "$tmp/extension-state"
 rc=0; run_module gnome_telemetry_postcheck > "$tmp/postcheck.log" 2>&1 || rc=$?
 [[ "$rc" -eq 40 ]] || fail 'extension ERROR accepted by postcheck'
