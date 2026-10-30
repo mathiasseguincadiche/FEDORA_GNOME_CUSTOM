@@ -26,6 +26,8 @@ mount_source_device() { printf '/dev/nvme0n1\n'; }
 ui_check() { :; }
 ui_error() { echo "$*" >&2; }
 baseline_write_evidence() { touch "$PROBE_TMP/evidence"; }
+# A new attempt first invalidates its previous evidence (records the call).
+physical_soak_invalidate_evidence() { printf '%s\n' "$1" >> "$PROBE_TMP/invalidated"; }
 sudo() {
   case "$1" in
     mktemp) mktemp -d "$PROBE_TMP/scratch.XXXXXX" ;;
@@ -43,6 +45,7 @@ SH_ADAPTER
 rc=0
 PROBE_TMP="$tmp" PROBE_RESULT=failed bash "$tmp/adapter.sh" || rc=$?
 [[ "$rc" == 42 && ! -e "$tmp/evidence" ]]
+[[ "$(<"$tmp/invalidated")" == nvme-root ]]
 [[ -z "$(find "$tmp" -name 'scratch.*' -print -quit)" ]]
 PROBE_TMP="$tmp" PROBE_RESULT=passed bash "$tmp/adapter.sh"
 [[ -f "$tmp/evidence" ]]
