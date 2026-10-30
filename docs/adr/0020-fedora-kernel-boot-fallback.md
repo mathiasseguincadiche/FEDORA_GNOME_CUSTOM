@@ -26,4 +26,4 @@ La rétention N / N-1 ne gardait que deux noyaux `@kernel-vanilla/stable`, et l�
 
 - Un noyau de plus dans `/boot` (environ 80 à 100 Mio).
 - Le secours n’est pas certifié Golden : un démarrage dessus est une session de dépannage (`kernel-doctor` l’indique en WARN).
-- Secure Boot reste désactivé par la politique HOST ; le secours, signé, ne change pas cette exigence.
+- Secure Boot reste désactivé par la politique HOST pour les noyaux amont : leur installation et le retour à N-1 sont bloqués s'il est actif ou indéterminé. Le secours, signé, ne change pas cette exigence. En revanche, `./control.sh kernel fallback` et `./control.sh kernel rollback-fedora` restent permis quel que soit l'état de Secure Boot, parce que le noyau Fedora signé est alors le seul qui démarre.

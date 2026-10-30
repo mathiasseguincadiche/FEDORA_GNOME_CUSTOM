@@ -45,7 +45,7 @@ sudo reboot
 
 Le projet conserve au maximum deux versions amont et le noyau Fedora de secours. La purge désigne les versions exactes à retirer et ne touche jamais le noyau démarré ; si cela laisse plus de deux versions amont, le contrôle échoue et demande de démarrer sur N avant de relancer la purge. `installonly_limit=4` laisse la place au nouveau N pendant son installation.
 
-Secure Boot actif ou indéterminé bloque les mutations. Le projet ne modifie ni l'UEFI ni la confiance MOK automatiquement. SELinux reste Enforcing, sans le réglage de chargement de modules auparavant associé au noyau personnalisé.
+Secure Boot actif ou indéterminé bloque l'installation d'un noyau amont et le retour à N-1. Le passage au noyau Fedora signé (`kernel fallback`, `kernel rollback-fedora`) reste permis, car c'est le seul qui démarre quand Secure Boot est actif. Le projet ne modifie ni l'UEFI ni la confiance MOK automatiquement. SELinux reste Enforcing, sans le réglage de chargement de modules auparavant associé au noyau personnalisé.
 
 La commande `./control.sh kernel rollback-fedora` est une récupération explicite vers les paquets Fedora ; elle sort du suivi amont. Requalifier les performances, l'Arc B580, la veille et les VM après tout changement du noyau utilisé.
 

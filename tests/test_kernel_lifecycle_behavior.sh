@@ -122,11 +122,12 @@ write_db "$F2" "$V2" "$V3"; rm "$tmp/boot/vmlinuz-$V2"
 expect_rc "$EXIT_POSTCHECK_FAILED" kernel_lifecycle_rollback
 default_is "$V3" || fail 'failed rollback changed the GRUB default'
 
-# Secure Boot enabled or unknown blocks every boot-chain change.
+# Secure Boot enabled or unknown blocks every change towards an upstream kernel.
 write_db "$F2" "$V2" "$V3"
 FAKE_SECURE_BOOT=enabled expect_rc "$EXIT_SECURITY_BLOCK" kernel_lifecycle_rollback
-FAKE_SECURE_BOOT=unknown expect_rc "$EXIT_SECURITY_BLOCK" kernel_lifecycle_select_fallback
+FAKE_SECURE_BOOT=unknown expect_rc "$EXIT_SECURITY_BLOCK" kernel_lifecycle_rollback
 FAKE_RUNTIME=vm expect_rc "$EXIT_SECURITY_BLOCK" kernel_lifecycle_rollback
+FAKE_RUNTIME=vm expect_rc "$EXIT_SECURITY_BLOCK" kernel_lifecycle_select_fallback
 default_is "$V3" || fail 'a blocked host changed the GRUB default'
 
 # Fedora fallback selection makes the Fedora kernel the default, keeping N/N-1.
@@ -135,6 +136,13 @@ expect_rc 0 kernel_lifecycle_select_fallback
 default_is "$F2" || fail 'Fedora fallback is not the GRUB default'
 grep -Fxq 'state fallback-selected' "$FAKE_LOG" || fail 'fallback state not recorded'
 [[ "$(kernel_lifecycle_installed_count)" == 2 ]] || fail 'upstream kernels changed while selecting the fallback'
+# Selecting the signed Fedora kernel stays possible with Secure Boot enabled
+# or unknown: it is the remedy when the unsigned upstream kernels cannot boot.
+for state in enabled unknown; do
+  write_db "$F2" "$V2" "$V3"; printf '%s\n' "$tmp/boot/vmlinuz-$V3" > "$tmp/grub-default"
+  FAKE_SECURE_BOOT="$state" expect_rc 0 kernel_lifecycle_select_fallback
+  default_is "$F2" || fail "Fedora fallback not selected with Secure Boot $state"
+done
 write_db "$V2" "$V3"
 expect_rc "$EXIT_PRECHECK_FAILED" kernel_lifecycle_select_fallback
 

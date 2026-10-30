@@ -8,18 +8,23 @@ system_kernel_precheck() {
   command_exists rpm || return "$EXIT_PRECHECK_FAILED"
   is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}" || return 0
   kernel_channel_require_platform || return $?
-  if is_true "${KERNEL_BLOCK_SECURE_BOOT:-true}"; then
-    case "$(kernel_lifecycle_secure_boot_state)" in
-      enabled)
-        log_error SYSTEM "Secure Boot is enabled; $(kernel_channel_label) installation is blocked until an explicit trust/signing workflow exists."
-        return "$EXIT_SECURITY_BLOCK"
-        ;;
-      unknown)
-        log_error SYSTEM "Secure Boot state cannot be proven disabled. $(kernel_channel_label) installation is blocked fail-closed."
-        return "$EXIT_SECURITY_BLOCK"
-        ;;
-    esac
-  fi
+  # An unsigned upstream kernel cannot boot under Secure Boot, and the install
+  # engine (kernel_lifecycle_require_host_gate) always blocks it: a different
+  # setting would only let the dry-run pass where APPLY then fails.
+  is_true "${KERNEL_BLOCK_SECURE_BOOT:-true}" || {
+    log_error SYSTEM 'KERNEL_BLOCK_SECURE_BOOT must stay true: the upstream kernel install always requires Secure Boot disabled.'
+    return "$EXIT_CONFIG_FAILED"
+  }
+  case "$(kernel_lifecycle_secure_boot_state)" in
+    enabled)
+      log_error SYSTEM "Secure Boot is enabled; $(kernel_channel_label) installation is blocked until an explicit trust/signing workflow exists."
+      return "$EXIT_SECURITY_BLOCK"
+      ;;
+    unknown)
+      log_error SYSTEM "Secure Boot state cannot be proven disabled. $(kernel_channel_label) installation is blocked fail-closed."
+      return "$EXIT_SECURITY_BLOCK"
+      ;;
+  esac
 }
 
 system_kernel_plan() {

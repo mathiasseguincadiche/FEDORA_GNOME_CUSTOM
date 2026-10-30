@@ -64,7 +64,7 @@ Le contrat `tests/test_host_security_policy_contract.sh` empêche l'ajout futur 
 
 ## Secure Boot et canaux de noyau
 
-Le lifecycle Linux amont officiel stable bloque l'installation si Secure Boot est actif ou si son état ne peut pas être établi. Le cycle est rolling N/N-1, sans autre canal ni réglage SELinux spécifique au noyau. La certification finale vérifie également la politique de sécurité de la workstation entière.
+Le lifecycle Linux amont officiel stable bloque l'installation si Secure Boot est actif ou si son état ne peut pas être établi. Seuls les deux secours vers le noyau Fedora signé (`./control.sh kernel fallback` et `./control.sh kernel rollback-fedora`) restent permis dans ce cas, car ce noyau est alors le seul qui démarre (ADR 0020). Le cycle est rolling N/N-1, sans autre canal ni réglage SELinux spécifique au noyau. La certification finale vérifie également la politique de sécurité de la workstation entière.
 
 ## Changement de politique
 

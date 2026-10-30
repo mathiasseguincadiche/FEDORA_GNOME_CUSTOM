@@ -135,6 +135,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_kernel_lifecycle_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_kernel_recovery_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_host_security_policy_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_gtk4_apps_policy.sh

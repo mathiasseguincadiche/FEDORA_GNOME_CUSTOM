@@ -315,6 +315,14 @@ kernel_lifecycle_require_host_gate() {
   kernel_channel_require_platform || return $?
 }
 
+# Selecting a signed Fedora kernel is the remedy when the unsigned upstream
+# kernels cannot boot, for instance with Secure Boot enabled: recovery towards
+# Fedora needs bare metal and the official channel, whatever the Secure Boot state.
+kernel_lifecycle_require_recovery_gate() {
+  runtime_is_baremetal || { ui_error 'Kernel mutations are bare-metal only'; return "$EXIT_SECURITY_BLOCK"; }
+  kernel_channel_require_platform || return $?
+}
+
 kernel_lifecycle_require_install_gate() {
   kernel_lifecycle_require_host_gate || return $?
   apply_gate_require_clean_git || { ui_error 'Kernel installation requires a clean Git worktree'; return "$EXIT_SECURITY_BLOCK"; }
@@ -491,7 +499,7 @@ kernel_lifecycle_ensure_fedora_fallback() {
 
 # Non-destructive escape hatch when both upstream kernels misbehave.
 kernel_lifecycle_select_fallback() {
-  kernel_lifecycle_require_host_gate || return $?
+  kernel_lifecycle_require_recovery_gate || return $?
   command_exists grubby || { ui_error 'grubby is required to select the Fedora fallback'; return "$EXIT_PRECHECK_FAILED"; }
   local fallback
   fallback="$(kernel_lifecycle_fedora_fallback)"
