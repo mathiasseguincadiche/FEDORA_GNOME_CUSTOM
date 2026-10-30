@@ -22,7 +22,7 @@ while IFS=$'\t' read -r delivery id executable smoke_arg trust; do
       printf 'origin=%s\n' "$(flatpak info --show-origin "$id" 2>/dev/null || printf missing)"
       printf 'runtime=%s\n' "$(flatpak info --show-runtime "$id" 2>/dev/null || printf missing)"
     else
-      printf 'nevra=%s\n' "$(rpm -q --qf '%{NEVRA}' "$id" 2>/dev/null || printf missing)"
+      printf 'nevra=%s\n' "$(rpm_installed_query '%{NEVRA}' "$id" || printf missing)"
       printf 'executable=%s\n' "$(command -v "$executable" 2>/dev/null || printf missing)"
     fi
   } >> "$report"

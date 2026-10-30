@@ -142,6 +142,10 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_physical_attempt_invalidation_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_host_security_policy_behavior.sh
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_rpm_query_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_host_security_policy_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_gtk4_apps_policy.sh
