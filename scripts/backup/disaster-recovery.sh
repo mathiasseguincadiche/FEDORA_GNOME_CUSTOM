@@ -36,7 +36,7 @@ Newer daily archives contain user files and are not OS/VM recovery bases.
 Engine: Borg 1.x, unencrypted repository (ADR 0014)
 
 1. Install the selected promoted Fedora Workstation profile and matching GNOME/Wayland, SELinux Enforcing and firewalld.
-2. Recreate the manual /data EXT4 mount on the dedicated VM SSD; do not let project automation format disks.
+2. Recreate the manual /data EXT4 mount on the dedicated second T705 and re-enroll its identity; do not let project automation format disks.
 3. Clone FEDORA_GNOME_CUSTOM and checkout the commit associated with the chosen backup when available.
 4. Run ./diagnostic.sh and ./install.sh --dry-run before any real convergence.
 5. Install borgbackup, then restore the selected Borg archive into a staging directory with scripts/backup/restore.sh (no passphrase is needed).
