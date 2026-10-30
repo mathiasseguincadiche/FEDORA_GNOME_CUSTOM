@@ -70,10 +70,12 @@ evidence_require_current_identity() {
   config_hash="$(evidence_marker_value "$marker" effective_config_sha256 2>/dev/null || true)"
   plan_hash="$(evidence_marker_value "$marker" module_plan_sha256 2>/dev/null || true)"
   hardware="$(evidence_marker_value "$marker" hardware_fingerprint 2>/dev/null || true)"
-  [[ "$commit" == "$(repo_commit)" ]] || return 1
+  # Outside a Git checkout repo_commit prints "unknown": that is no identity.
+  [[ "$commit" =~ ^[0-9a-f]{40}$ && "$commit" == "$(repo_commit)" ]] || return 1
   [[ "$config_hash" == "$(effective_config_sha256)" ]] || return 1
-  [[ "$plan_hash" == "$(module_plan_sha256)" ]] || return 1
+  [[ -n "$plan_hash" && "$plan_hash" == "$(module_plan_sha256)" ]] || return 1
   if runtime_is_baremetal; then
-    [[ "$hardware" == "$(baseline_fingerprint)" ]] || return 1
+    # An unreadable baseline prints nothing; an empty field never matches it.
+    [[ -n "$hardware" && "$hardware" == "$(baseline_fingerprint)" ]] || return 1
   fi
 }

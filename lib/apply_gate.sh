@@ -21,8 +21,11 @@ apply_gate_write_dryrun_proof() {
 apply_gate_require_runtime() { runtime_is_baremetal && ! runtime_is_live; }
 
 apply_gate_require_clean_git() {
+  local status
   is_true "${REQUIRE_CLEAN_GIT:-true}" || return 0
-  [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]
+  # A Git failure (not a checkout, unsafe ownership) is not a clean tree.
+  status="$(git -C "$REPO_ROOT" status --porcelain)" || return 1
+  [[ -z "$status" ]]
 }
 
 apply_gate_require_dryrun() {
@@ -67,6 +70,7 @@ apply_gate_open() {
   apply_gate_require_baseline || { ui_error 'hardware baseline certification missing or invalid for the current hardware/BIOS fingerprint'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_backup || { ui_error 'pre-APPLY Borg archive is missing, stale, no longer readable, or does not match current commit/config/hardware'; return "$EXIT_SECURITY_BLOCK"; }
   local answer
+  [[ -n "${APPLY_CONFIRMATION:-}" ]] || { ui_error 'APPLY_CONFIRMATION is empty; an empty answer cannot approve a real APPLY'; return "$EXIT_SECURITY_BLOCK"; }
   printf 'Type exactly "%s": ' "$APPLY_CONFIRMATION"
   read -r answer
   [[ "$answer" == "$APPLY_CONFIRMATION" ]] || return "$EXIT_SECURITY_BLOCK"
