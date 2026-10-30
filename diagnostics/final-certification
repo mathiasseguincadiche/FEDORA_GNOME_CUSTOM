@@ -59,6 +59,9 @@ runtime_stack_valid(){
 
 certify(){
   require_baremetal; require_validation_chain
+  # A previous certificate cannot stand in for this attempt: if any check below
+  # fails, no certificate is left to look current.
+  rm -f "$cert"
   baseline_certification_valid || { ui_error 'Pre-APPLY hardware baseline is not valid'; exit "$EXIT_PRECHECK_FAILED"; }
   is_true "${GAMING_ENABLE:-false}" || { ui_error 'Canonical Golden profile requires Gaming enabled'; exit "$EXIT_CONFIG_FAILED"; }
   "$REPO_ROOT/diagnostics/host-security-policy-doctor" --quiet

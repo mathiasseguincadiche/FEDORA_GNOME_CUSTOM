@@ -69,6 +69,8 @@ network_cert(){
   require_baremetal
   local kind="$1" type iface ipv4 route wifi_link ipv6
   case "$kind" in lan) type=ethernet;; wifi) type=wifi;; *) echo 'network requires lan|wifi' >&2; exit "$EXIT_USAGE";; esac
+  # Like the audio and GPU runs: a previous PASS cannot stand in for this attempt.
+  rm -f "$(physical_runtime_evidence_path "network-$kind")" "$STATE_ROOT/final/certified.ok"
   systemctl is-active --quiet NetworkManager || { ui_error 'NetworkManager is not active'; exit "$EXIT_POSTCHECK_FAILED"; }
   iface="$(LC_ALL=C nmcli -t -f DEVICE,TYPE,STATE device status | awk -F: -v type="$type" '$2==type && $3=="connected" {print $1; exit}')"
   [[ -n "$iface" ]] || { ui_error "No connected NetworkManager $type interface"; exit "$EXIT_POSTCHECK_FAILED"; }
@@ -141,6 +143,7 @@ PY
 
 display_cert(){
   require_baremetal
+  rm -f "$(physical_runtime_evidence_path display-capabilities)" "$STATE_ROOT/final/certified.ok"
   "$REPO_ROOT/diagnostics/display-doctor" --quiet
   local connector edid vrr report answer
   connector="$(hardware_b580_certified_connector)"; edid="$connector/edid"; [[ -s "$edid" ]] || { ui_error 'Certified display EDID missing'; exit "$EXIT_POSTCHECK_FAILED"; }
