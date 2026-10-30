@@ -41,6 +41,12 @@ domain_ip() {
   printf '%s' "$ip"
 }
 
+# A GTK bookmark line is "URI [LABEL]": only lines whose label is exactly ours
+# are replaced or removed, never a user bookmark that merely contains it.
+without_label() {
+  awk -v label="$1" '{ uri_end = index($0, " "); if (uri_end > 0 && substr($0, uri_end + 1) == label) next; print }'
+}
+
 ensure_bookmark_file() {
   mkdir -p "$(dirname "$bookmark_file")"
   touch "$bookmark_file"
@@ -51,7 +57,7 @@ upsert_bookmark() {
   local uri_value="$1" label="$2" tmp
   ensure_bookmark_file
   tmp="$(mktemp)"
-  awk -v label="$label" 'index($0, " " label) == 0 {print}' "$bookmark_file" >"$tmp"
+  without_label "$label" <"$bookmark_file" >"$tmp"
   printf '%s %s\n' "$uri_value" "$label" >>"$tmp"
   cat "$tmp" >"$bookmark_file"
   rm -f "$tmp"
@@ -62,7 +68,7 @@ remove_bookmark_label() {
   local label="$1" tmp
   [[ -f "$bookmark_file" ]] || return 0
   tmp="$(mktemp)"
-  awk -v label="$label" 'index($0, " " label) == 0 {print}' "$bookmark_file" >"$tmp"
+  without_label "$label" <"$bookmark_file" >"$tmp"
   cat "$tmp" >"$bookmark_file"
   rm -f "$tmp"
 }
@@ -98,7 +104,7 @@ case "${1:-install}" in
     ;;
   show)
     if [[ -f "$bookmark_file" ]]; then
-      grep -E " ${rocky_label}$" "$bookmark_file" || true
+      awk -v label="$rocky_label" '{ uri_end = index($0, " "); if (uri_end > 0 && substr($0, uri_end + 1) == label) print }' "$bookmark_file"
     fi
     ;;
   open-rocky) open_rocky ;;

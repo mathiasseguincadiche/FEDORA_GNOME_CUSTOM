@@ -38,4 +38,14 @@ if kvm_contract_validate_guest_file rocky "$tmp/bad-rocky.xml" io_uring >/dev/nu
 sed "s#</devices>#<hostdev mode='subsystem' type='pci'/></devices>#" "$tmp/rocky.xml" > "$tmp/hostdev-rocky.xml"
 if kvm_contract_validate_guest_file rocky "$tmp/hostdev-rocky.xml" io_uring >/dev/null 2>&1; then echo 'hostdev passthrough was accepted' >&2; exit 1; fi
 
+# Memory in any libvirt unit: 16 GiB is accepted, a decimal 16 GB (~15259 MiB) is not.
+for memory in "unit='KiB'>16777216" "unit='k'>16777216" "unit='G'>16" "unit='GiB'>16" "unit='M'>16384"; do
+  sed "s#<memory unit='MiB'>16384#<memory $memory#" "$tmp/rocky.xml" > "$tmp/unit-rocky.xml"
+  kvm_contract_validate_guest_file rocky "$tmp/unit-rocky.xml" io_uring || { echo "16 GiB as $memory refused" >&2; exit 1; }
+done
+for memory in "unit='GB'>16" "unit='MB'>16384" "unit='parsec'>16"; do
+  sed "s#<memory unit='MiB'>16384#<memory $memory#" "$tmp/rocky.xml" > "$tmp/unit-rocky.xml"
+  if kvm_contract_validate_guest_file rocky "$tmp/unit-rocky.xml" io_uring >/dev/null 2>&1; then echo "memory $memory accepted as 16 GiB" >&2; exit 1; fi
+done
+
 echo 'KVM XML policy behavior: PASS'

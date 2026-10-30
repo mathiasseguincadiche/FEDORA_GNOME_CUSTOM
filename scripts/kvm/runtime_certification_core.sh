@@ -98,15 +98,13 @@ if [[ "${KVM_BLOCK_PHYSICAL_LAN:-true}" == true ]]; then
 
   protected_networks="$(awk -F= '$1=="protected_networks" {print $2}' <<<"$guard_check")"
   if [[ -n "$protected_networks" && "$protected_networks" != none-connected ]]; then
-    coverage_ok=true
-    IFS=',' read -r -a protected_cidrs <<<"$protected_networks"
-    for cidr in "${protected_cidrs[@]}"; do
-      grep -Fq "$cidr" <<<"$nft_guard" || coverage_ok=false
-    done
-    if [[ "$coverage_ok" == true ]]; then
+    # Address-range proof on the set itself: nft prints /32 elements without a
+    # prefix and auto-merge folds contained networks, so text search is wrong.
+    nft_set="$(sudo nft -j list set inet "${KVM_NFT_TABLE:-fedora_gnome_custom_kvm}" blocked_host_ipv4 2>/dev/null || true)"
+    if uncovered="$(python3 "$REPO_ROOT/scripts/kvm/nft-set-coverage.py" "$protected_networks" <<<"$nft_set" 2>&1)"; then
       record OK 'KVM protected CIDR coverage' "$protected_networks"
     else
-      record KO 'KVM protected CIDR coverage' "guard does not contain every discovered LAN/VPN CIDR: $protected_networks"
+      record KO 'KVM protected CIDR coverage' "guard set does not cover: ${uncovered//$'\n'/,}"
     fi
   else
     record WARN 'KVM protected CIDR coverage' 'no non-default host CIDR to prove'
