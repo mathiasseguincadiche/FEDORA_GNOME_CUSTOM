@@ -183,6 +183,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_backup_runtime_bundle_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_backup_daily_runtime_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_backup_private_keys_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_daily_backup_sources_behavior.sh

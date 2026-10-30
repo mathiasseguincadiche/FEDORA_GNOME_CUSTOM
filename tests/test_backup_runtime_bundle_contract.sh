@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Backup runtime specification: the owner's weekly retention schedule, and the
+# installed bundle's retention run (archive globs, bounded refused archives, no
+# ambient passphrase). APPLY, units, postcheck and tamper refusal are exercised
+# by test_backup_daily_runtime_behavior.sh; backup-now --prune by
+# test_backup_certification_behavior.sh.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -8,22 +13,6 @@ for expected in \
   'BACKUP_RETENTION_ON_CALENDAR="Sun *-*-* 04:15:00"'; do
   grep -Fq "$expected" "$ROOT/config/backup.conf"
 done
-
-grep -Fq 'backup-runtime' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'MANIFEST.sha256' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'FEDORA_GNOME_CUSTOM_RUNTIME_ROOT=' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'fedora-gnome-backup-retention.timer' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'Refusing to replace invalid immutable backup runtime' "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq "install -m 0600 /dev/null \"\$output\"" "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq "mv -T -- \"\$tmp\" \"\$runtime_dir\"" "$ROOT/modules/backup/60_daily_user_backup.sh"
-grep -Fq 'runtime/APPLIED_SHA' "$ROOT/lib/backup_runtime_bundle.sh"
-if grep -Fq 'FEDORA_GNOME_CUSTOM_REPO=' "$ROOT/modules/backup/60_daily_user_backup.sh"; then
-  echo 'daily backup systemd runtime still depends on checkout path' >&2
-  exit 1
-fi
-grep -Fq 'backup_runtime_bundle_init' "$ROOT/scripts/backup/daily-user-backup.sh"
-grep -Fq 'backup_runtime_bundle_init' "$ROOT/scripts/backup/backup-retention.sh"
-grep -Fq 'backup-retention.sh" --strict' "$ROOT/scripts/backup/backup-now.sh"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT

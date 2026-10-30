@@ -217,4 +217,23 @@ tar -tzf "$system_tar" > "$tmp/system-members"
 grep -Fxq 'etc/hostname' "$tmp/system-members"
 grep -Fxq 'boot/vmlinuz-fixture' "$tmp/system-members"
 if grep -Fq 'etc/libvirt' "$tmp/system-members"; then echo 'libvirt domain XML leaked into the /etc snapshot' >&2; exit 1; fi
+
+# --prune runs the strict retention right after the integrity check; a failing
+# retention stops the run before a new certificate is written.
+cat > "$REPO_ROOT/scripts/backup/backup-retention.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf 'retention %s\n' "$*" >> "$TEST_RETENTION_LOG"
+exit "${TEST_RETENTION_RC:-0}"
+MOCK
+chmod +x "$REPO_ROOT/scripts/backup/backup-retention.sh"
+export TEST_RETENTION_LOG="$tmp/retention.log"
+bash "$REPO_ROOT/scripts/backup/backup-now.sh" --staging-root "$tmp/no-prune"
+[[ ! -e "$TEST_RETENTION_LOG" ]] || { echo 'retention ran without --prune' >&2; exit 1; }
+bash "$REPO_ROOT/scripts/backup/backup-now.sh" --prune --staging-root "$tmp/prune"
+[[ "$(<"$TEST_RETENTION_LOG")" == 'retention --strict' ]] || { echo "unexpected retention call: $(<"$TEST_RETENTION_LOG")" >&2; exit 1; }
+cp "$marker" "$tmp/marker-before-prune-failure"
+rc=0; TEST_RETENTION_RC=20 bash "$REPO_ROOT/scripts/backup/backup-now.sh" --prune --staging-root "$tmp/prune-fail" > "$tmp/prune-fail.log" 2>&1 || rc=$?
+if [[ "$rc" != 20 ]] || ! cmp -s "$marker" "$tmp/marker-before-prune-failure"; then
+  echo "failed retention still certified (rc=$rc)" >&2; exit 1
+fi
 echo 'Backup certification behavior: PASS'
