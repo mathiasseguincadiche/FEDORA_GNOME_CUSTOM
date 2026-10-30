@@ -32,6 +32,38 @@ assert gate.check({"workflow_runs":changed},sha,repo)==3
 assert gate.check({"workflow_runs":[]},sha,repo)==3
 newer=dict(runs[0],id=100,status="in_progress")
 assert gate.check({"workflow_runs":runs+[newer]},sha,repo)==3
+# A failed security scan blocks the release like any other required workflow.
+security=".github/workflows/security-scanning.yml"
+assert security in gate.REQUIRED
+changed=json.loads(json.dumps(runs))
+for run in changed:
+    if run["path"]==security: run["conclusion"]="failure"
+assert gate.check({"workflow_runs":changed},sha,repo)==1
+assert gate.check({"workflow_runs":[r for r in runs if r["path"]!=security]},sha,repo)==3
+
+# Every workflow that runs on each push to main (no paths filter) gates the
+# release; path-filtered ones cannot, since they do not run on every commit.
+def push_without_paths(text):
+    lines=text.splitlines()
+    try: start=lines.index("on:")
+    except ValueError: return False
+    block=[]
+    for line in lines[start+1:]:
+        if line and not line.startswith(" "): break
+        block.append(line)
+    for i,line in enumerate(block):
+        if line.strip()=="push:" or line.strip().startswith("push:"):
+            indent=len(line)-len(line.lstrip())
+            for sub in block[i+1:]:
+                if sub.strip() and len(sub)-len(sub.lstrip())<=indent: break
+                if sub.strip().startswith("paths"): return False
+            return True
+    return False
+workflows={".github/workflows/"+f.name for f in (root/".github/workflows").glob("*.yml")
+           if push_without_paths(f.read_text(encoding="utf-8"))}
+missing=workflows-gate.REQUIRED
+assert not missing, f"push workflows missing from the release gate: {sorted(missing)}"
+assert gate.REQUIRED<=workflows|{".github/workflows/"+f.name for f in (root/".github/workflows").glob("*.yml")}, "unknown workflow in the release gate"
 
 # Run the actual audit checker against a synthetic complete catalog. An
 # unrelated precheck failure, or a wrong phase/code in an allowed module, fails.

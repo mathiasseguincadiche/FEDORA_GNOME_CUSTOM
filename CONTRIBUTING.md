@@ -57,7 +57,7 @@ Les contrôles d'une PR portent sur un autre SHA que le commit de fusion : **rel
 
 Toute modification fonctionnelle fusionnée met à jour `VERSION`, `CHANGELOG.md`, et `README.md` si le contrat utilisateur change. Les guides ne recopient pas le numéro de version.
 
-`.github/release-manifest.env` décrit la release candidate. Le workflow `release.yml` attend le succès des workflows Tests, Shell quality, Architecture non-regression, Fedora package preflight, host integration, desktop integration et installer audit sur le **même SHA** poussé sur `main`, vérifie que le tag correspond à `VERSION`, puis crée la prerelease. Il refuse de déplacer un tag existant.
+`.github/release-manifest.env` décrit la release candidate. Le workflow `release.yml` attend le succès des workflows Tests, Shell quality, Architecture non-regression, Fedora package preflight, host integration, desktop integration, installer audit et Security scanning (CodeQL, Gitleaks) sur le **même SHA** poussé sur `main`, vérifie que le tag correspond à `VERSION`, puis crée la prerelease. Il refuse de déplacer un tag existant.
 
 ## Écrire la documentation
 
