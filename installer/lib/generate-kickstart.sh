@@ -15,7 +15,13 @@ lock="$REPO_ROOT/installer/fedora$release-media.lock"
 source "$lock"
 usage(){ echo "Usage: $0 --disk /dev/disk/by-id/nvme-... [--username mathias] [--hostname fedora-gnome-devops] [--output fedora45.ks]" >&2; }
 disk=""; username="mathias"; hostname="fedora-gnome-devops"; output="fedora$release-golden-workstation.ks"
-while (($#)); do case "$1" in --disk) disk="${2:-}"; shift 2;; --username) username="${2:-}"; shift 2;; --hostname) hostname="${2:-}"; shift 2;; --output) output="${2:-}"; shift 2;; *) usage; exit 2;; esac; done
+while (($#)); do
+  case "$1" in --disk|--username|--hostname|--output) (($# >= 2)) || { usage; echo "Missing value for $1." >&2; exit 2; };; *) usage; exit 2;; esac
+  case "$1" in --disk) disk="$2";; --username) username="$2";; --hostname) hostname="$2";; --output) output="$2";; esac
+  shift 2
+done
+# The file holds a password hash: never follow a symlink to an unexpected place.
+[[ ! -L "$output" ]] || { echo "Refusing a symlinked output path: $output" >&2; exit 2; }
 [[ -b "$disk" ]] || { usage; echo 'Target disk must be an existing block device.' >&2; exit 2; }
 [[ "$disk" =~ ^/dev/disk/by-id/nvme-[A-Za-z0-9_.:+-]+$ && "$disk" != *-part[0-9]* ]] || { echo 'Use a stable whole-disk /dev/disk/by-id/nvme-* identity.' >&2; exit 2; }
 resolved="$(readlink -f -- "$disk")"
@@ -90,9 +96,8 @@ runuser -u ${username} -- git -C "\$repo" fetch --depth 1 origin ${repo_sha}
 runuser -u ${username} -- git -C "\$repo" checkout --detach FETCH_HEAD
 actual_sha="\$(runuser -u ${username} -- git -C "\$repo" rev-parse HEAD)"
 [[ "\$actual_sha" == "${repo_sha}" ]]
-if [[ "${release}" == 45 ]]; then
-  printf 'HOST_RELEASE="45"\\n' > "\$repo/config/local.conf"
-fi
+# The installed checkout must select the release it was installed for.
+printf 'HOST_RELEASE="${release}"\\n' > "\$repo/config/local.conf"
 chown -R ${username}:${username} "\$repo"
 %end
 EOF_KS

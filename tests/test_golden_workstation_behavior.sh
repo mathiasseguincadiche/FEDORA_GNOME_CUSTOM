@@ -157,6 +157,8 @@ grep -Fxq "# Repository SHA: $sha" "$tmp/golden.ks" && grep -Fq "fetch --depth 1
 grep -Fxq "[[ \"\$(lsblk -dn -o SERIAL '$disk' | xargs)\" == 'FIXTURE123' ]]" "$tmp/golden.ks" || fail 'Kickstart not bound to the disk serial'
 [[ "$(stat -c %a "$tmp/golden.ks")" == 600 ]] || fail 'Kickstart with a password hash is not private'
 if grep -Fq S3cret-pass "$tmp/golden.ks"; then fail 'clear-text password in the Kickstart'; fi
+# The installed checkout selects the release the Kickstart was generated for.
+grep -Fxq "printf 'HOST_RELEASE=\"44\"\\n' > \"\$repo/config/local.conf\"" "$tmp/golden.ks" || fail 'Fedora 44 Kickstart does not select HOST_RELEASE=44'
 refused() { # refused WHY ANSWERS [ARGS...]
   local why="$1" rc=0; shift
   generate "$@" || rc=$?
@@ -169,6 +171,11 @@ refused 'empty password accepted' "EFFACER $disk\n\n\n"
 refused 'invalid user name accepted' "EFFACER $disk\nS3cret-pass\nS3cret-pass\n" --username 'Root;x'
 T_DISK="$disk-part1" refused 'partition target accepted' "EFFACER $disk-part1\np\np\n"
 T_DISK=/dev/nvme0n1 refused 'unstable disk name accepted' "EFFACER /dev/nvme0n1\np\np\n"
+ln -s "$tmp/elsewhere.ks" "$tmp/golden.ks.link"
+rc=0; printf 'EFFACER %s\nS3cret-pass\nS3cret-pass\n' "$disk" | bash "$generator" --release 44 --disk "$disk" --output "$tmp/golden.ks.link" > "$tmp/out" 2>&1 || rc=$?
+[[ "$rc" == 2 && ! -e "$tmp/elsewhere.ks" ]] && grep -Fq 'Refusing a symlinked output path' "$tmp/out" || fail "Kickstart written through a symlink (rc=$rc)"
+rc=0; bash "$generator" --release 44 --disk "$disk" --output < /dev/null > "$tmp/out" 2>&1 || rc=$?
+[[ "$rc" == 2 ]] && grep -Fq 'Missing value for --output.' "$tmp/out" || fail "option without a value not explained (rc=$rc)"
 mv "$fixture/.git" "$tmp/git.off"
 refused 'Kickstart generated outside a Git checkout' "EFFACER $disk\nS3cret-pass\nS3cret-pass\n"
 mv "$tmp/git.off" "$fixture/.git"
