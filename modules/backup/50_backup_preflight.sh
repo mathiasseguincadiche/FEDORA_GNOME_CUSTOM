@@ -10,10 +10,11 @@ backup_preflight_plan() {
 BACKUP / RECOVERY PRECHECK:
 - Borg 1.x is the only managed backup engine; the repository is unencrypted by owner decision (ADR 0014)
 - pre-APPLY backup must live on a proven external target, never on the protected system disk
-- repository/password are injected at runtime; no secret is committed
-- backup marker is bound to the exact Git commit used for APPLY
-- host configuration, project sources, libvirt metadata and optional VM disks have separate capture rules
-- live qcow2 file copies are forbidden; VM disk capture requires the guest to be shut off
+- the repository is chosen at runtime (config/local.conf or one external disk); there is no passphrase and no secret is committed
+- backup marker is bound to the exact Git commit, configuration, module plan and hardware used for APPLY
+- host configuration (/etc, /boot), GNOME user configuration and the tracked project sources are archived
+- VM disks, NVRAM, TPM, cloud-init media and libvirt metadata are never archived: the owner exports them manually
+- SSH and GnuPG private keys are excluded at any depth (ADR 0021)
 - integrity check and restore-canary test are mandatory before a pre-APPLY marker is accepted
 - restore helpers are staging-first and never overwrite a live host automatically
 EOF
