@@ -205,6 +205,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_nautilus_integration_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_nautilus_integration_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_ptyxis_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_resource_monitor_contract.sh

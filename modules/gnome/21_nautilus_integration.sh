@@ -15,7 +15,7 @@ gnome_nautilus_precheck() {
 gnome_nautilus_plan() {
   cat <<'EOF'
 Converge the complete Fedora-native Nautilus stack:
-- Nautilus + LocalSearch + GVfs core, camera, FUSE, archive, AFC/iPhone, GOA/cloud and NFS backends
+- Nautilus + LocalSearch + GVfs core, camera, FUSE, AFC/iPhone, GOA/cloud and NFS backends (archives through File Roller; gvfs-archive only on Fedora 44)
 - SMB and MTP are enabled only when their declared Golden flags are true
 - Sushi quick preview and File Roller Nautilus extension
 - Fedora Ptyxis Open in Console path is kept unambiguous by removing the legacy gnome-terminal-nautilus extension
@@ -45,16 +45,16 @@ gnome_nautilus_apply() {
   fi
 
   if ! is_true "${DRY_RUN:-true}"; then
-    install -d -m 0755 "$HOME/.local/libexec" "$HOME/.config/systemd/user"
-    install -m 0755 "$REPO_ROOT/scripts/gnome/nautilus-prewarm.sh" "$HOME/.local/libexec/fedora-gnome-nautilus-prewarm"
-    install -m 0644 "$REPO_ROOT/systemd/user/fedora-gnome-nautilus-prewarm.service" "$HOME/.config/systemd/user/fedora-gnome-nautilus-prewarm.service"
+    install -d -m 0755 "$HOME/.local/libexec" "$HOME/.config/systemd/user" || return "$EXIT_APPLY_FAILED"
+    install -m 0755 "$REPO_ROOT/scripts/gnome/nautilus-prewarm.sh" "$HOME/.local/libexec/fedora-gnome-nautilus-prewarm" || return "$EXIT_APPLY_FAILED"
+    install -m 0644 "$REPO_ROOT/systemd/user/fedora-gnome-nautilus-prewarm.service" "$HOME/.config/systemd/user/fedora-gnome-nautilus-prewarm.service" || return "$EXIT_APPLY_FAILED"
 
     if command_exists gsettings && gsettings list-schemas | grep -Fxq org.gnome.nautilus.preferences; then
       run_mutating GNOME gsettings set org.gnome.nautilus.preferences show-image-thumbnails "'$preview_policy'" || return "$EXIT_APPLY_FAILED"
     fi
 
-    systemctl --user daemon-reload
-    systemctl --user enable fedora-gnome-nautilus-prewarm.service
+    systemctl --user daemon-reload || return "$EXIT_APPLY_FAILED"
+    systemctl --user enable fedora-gnome-nautilus-prewarm.service || return "$EXIT_APPLY_FAILED"
   fi
 }
 
