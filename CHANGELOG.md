@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Tests du runtime de sauvegarde : `test_backup_runtime_bundle_contract.sh` ne fige plus ~15 chaînes du code. `test_backup_daily_runtime_behavior.sh` (nouveau) exécute le vrai module de sauvegarde quotidienne avec de faux `systemctl` et Borg. L'APPLY installe un runtime immuable, vérifié par manifeste et nommé d'après le commit et la configuration ; les unités quotidienne et de rétention pointent vers ce runtime, jamais vers le dépôt Git. Les anciennes unités Restic sont retirées. La configuration copiée est en mode 600 et ne contient aucune variable d'environnement de l'appelant. Un runtime altéré n'est jamais remplacé (la preuve est gardée) et refuse de s'exécuter ; un runtime ré-étiqueté ou dont la configuration a été modifiée échoue à la vérification. Le runtime installé fonctionne encore après la suppression du dépôt. `backup-now --prune` lance la rétention stricte, et un échec de rétention empêche tout nouveau certificat.
+
 ## 0.23.0 — Fedora 45 de référence, corrections avant installation et tests de comportement
 
 Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI principale. Cette version corrige aussi l'installation, le stockage, les sauvegardes et le noyau. Les tests vérifient désormais le comportement réel du code au lieu de chaînes de caractères. Le profil Fedora 45 reste `pending` : aucune installation physique ni certification bare-metal n'est revendiquée.
