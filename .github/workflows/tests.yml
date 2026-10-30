@@ -23,6 +23,7 @@ jobs:
       - name: Peripheral identity and portal cancellation regressions
         run: |
           bash tests/test_peripheral_identity_behavior.sh
+          bash tests/test_storage_health_behavior.sh
           python3 tests/test_portal_stream_behavior.py
           python3 tests/test_portal_evidence_invalidation.py
           python3 tests/test_fedora45_preview_media.py

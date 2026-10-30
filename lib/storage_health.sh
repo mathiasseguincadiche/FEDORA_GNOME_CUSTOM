@@ -12,14 +12,22 @@ storage_nvme_expected_controllers() {
   done | sort -V
 }
 
+# smartctl -j prints its JSON whatever its exit status, a bit mask that is
+# non-zero without root (device open failed) and when the NVMe error log has
+# entries. Keep exactly one document: the first one that carries the SMART log.
 storage_nvme_health_json() {
-  local dev="$1"
+  local dev="$1" json
   command -v smartctl >/dev/null 2>&1 || return 1
-  if smartctl -a -j "$dev" 2>/dev/null; then
-    return 0
+  json="$(smartctl -a -j "$dev" 2>/dev/null || true)"
+  if ! printf '%s
+' "$json" | storage_nvme_health_summary >/dev/null 2>&1; then
+    command -v sudo >/dev/null 2>&1 || return 1
+    json="$(sudo -n smartctl -a -j "$dev" 2>/dev/null || true)"
+    printf '%s
+' "$json" | storage_nvme_health_summary >/dev/null 2>&1 || return 1
   fi
-  command -v sudo >/dev/null 2>&1 || return 1
-  sudo -n smartctl -a -j "$dev" 2>/dev/null
+  printf '%s
+' "$json"
 }
 
 storage_nvme_health_summary() {
