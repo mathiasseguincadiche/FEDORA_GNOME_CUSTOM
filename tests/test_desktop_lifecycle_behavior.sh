@@ -210,6 +210,20 @@ record || fail 'second fresh cycle refused'
 [[ "$(unique_cycles)" == '2 / 5' ]] || fail "second cycle not counted: $(unique_cycles)"
 [[ "$(T_FP=fingerprint-2 unique_cycles)" == '0 / 5' ]] || fail 'cycles from another runtime stack still count'
 
+# A certification attempt that fails never leaves a previous certificate behind;
+# a refused runtime (VM, no Live proof) does not touch it.
+cert="$fixture/state/final/certified.ok"
+certify() { rm -f "$T_LOG"; env "$@" bash "$fixture/diagnostics/final-certification" certify > "$tmp/out" 2>&1; }
+printf 'verdict=PASS
+previous=1
+' > "$cert"
+rc=0; certify T_RUNTIME=vm || rc=$?
+[[ "$rc" == 50 && -s "$cert" ]] || fail "VM certification attempt changed the certificate (rc=$rc)"
+rc=0; certify T_NO_CHAIN=1 || rc=$?
+[[ "$rc" == 20 && -s "$cert" ]] || fail "certification without the Live proof changed the certificate (rc=$rc)"
+rc=0; certify || rc=$?
+[[ "$rc" != 0 && ! -e "$cert" ]] || fail "failed certification attempt kept the previous certificate (rc=$rc)"
+
 # Arc compute: packages, Level Zero, an enumerated Intel OpenCL device, a real run on bare metal.
 arc() { rm -f "$T_LOG"; bash "$fixture/diagnostics/arc-compute-doctor" > "$tmp/out" 2>&1; }
 arc || { cat "$tmp/out" >&2; fail 'Arc compute doctor rejected a complete stack'; }

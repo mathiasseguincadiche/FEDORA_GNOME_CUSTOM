@@ -68,8 +68,12 @@ fi
 
 upstream="$(kernel_lifecycle_upstream_latest 2>/dev/null || true)"
 available="$(kernel_lifecycle_latest_available 2>/dev/null || true)"
-if [[ -z "$upstream" ]]; then
+# Unreachable kernel.org (often the network right after resume) is not a kernel
+# defect: it only blocks the certification, which must prove the latest stable.
+if [[ -z "$upstream" ]] && $certify; then
   emit KO 'Latest stable' 'kernel.org unavailable; current latest stable cannot be verified'
+elif [[ -z "$upstream" ]]; then
+  emit WARN 'Latest stable' 'kernel.org unavailable; latest stable not verified now (required by --certify)'
 elif ! kernel_lifecycle_version_matches_upstream "$latest" "$upstream"; then
   emit WARN 'Latest stable' "kernel.org=$upstream installed=${latest:-none}; run a complete system update"
 elif ! kernel_lifecycle_version_matches_upstream "$available" "$upstream"; then
