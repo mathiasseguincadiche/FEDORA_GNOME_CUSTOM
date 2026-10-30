@@ -42,10 +42,7 @@ Le vrai prétest Rocky Linux CI utilise lui aussi une liste SHA-256 signée Rock
 ## VM Rocky DevOps — bootstrap
 
 - Kubernetes est limité à la génération `v1.37.x` ; les patchs restent fournis par `pkgs.k8s.io` ;
-- kind est épinglé à `v0.33.0` et vérifié avec le checksum publié ;
-- Minikube est épinglé à `v1.38.1` et vérifié avec son SHA-256 publié ;
-- yq `v4.53.3` et K9s `v0.51.0` ont des SHA-256 attendus versionnés ;
-- Helm v4.3.0 utilise l'archive officielle get.helm.sh et son SHA-256 publié ;
+- kind `v0.33.0`, Minikube `v1.38.1`, Helm `v4.3.0` (archive officielle get.helm.sh), yq `v4.53.3` et K9s `v0.51.0` ont tous un SHA-256 attendu versionné dans `guest/rocky-devops/bootstrap-devops.sh`. La somme n'est jamais relue à côté du binaire : un serveur de publication qui changerait à la fois le binaire et sa somme est refusé. Changer une version impose de changer sa somme dans le même commit ;
 - AWS CLI v2 est téléchargé sous forme de ZIP + signature détachée, puis la signature est vérifiée avec la clé AWS et l'empreinte attendue versionnée.
 
 ## Applications du HOST
