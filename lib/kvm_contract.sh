@@ -47,8 +47,11 @@ def fail(msg):
 def memory_mib(node):
     if node is None or not (node.text or '').strip().isdigit(): return None
     value=int((node.text or '').strip()); unit=(node.get('unit') or 'KiB').lower()
-    factors={'b':1/1048576,'bytes':1/1048576,'kib':1/1024,'kb':1/1024,'mib':1,'mb':1,'gib':1024,'gb':1024}
-    return round(value*factors.get(unit,1/1024))
+    # libvirt units: k/KiB/M/MiB/G/GiB are powers of 1024, KB/MB/GB powers of 1000.
+    factors={'b':1/1048576,'bytes':1/1048576,'k':1/1024,'kib':1/1024,'kb':1000/1048576,
+             'm':1,'mib':1,'mb':1000000/1048576,'g':1024,'gib':1024,'gb':1000000000/1048576}
+    if unit not in factors: return None
+    return round(value*factors[unit])
 if root.tag != 'domain': fail('unexpected domain XML')
 name=(root.findtext('name') or '').strip()
 if profile=='rocky': expected_name, expected_vcpu, expected_ram=rocky_name,int(rocky_vcpu),int(rocky_ram)

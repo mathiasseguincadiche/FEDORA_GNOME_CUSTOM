@@ -166,6 +166,10 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_kvm_network_fail_closed.sh
       - if: ${{ !cancelled() }}
+        run: python3 tests/test_kvm_guard_coverage.py
+      - if: ${{ !cancelled() }}
+        run: bash tests/test_nautilus_vm_bookmarks_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_vm_image_auth_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_rocky_image_auth_behavior.sh
