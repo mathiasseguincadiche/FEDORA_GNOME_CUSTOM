@@ -6,8 +6,17 @@ scope="${1:-full}"
 case "$scope" in native|full) ;; *) echo 'Usage: configure-default-apps.sh [native|full]' >&2; exit "$EXIT_USAGE";; esac
 command -v xdg-mime >/dev/null 2>&1 || { ui_error 'xdg-mime is required'; exit "$EXIT_PRECHECK_FAILED"; }
 
+# Desktop entries as the session finds them: user, Flatpak (user and system),
+# /usr/local and the distribution, in XDG_DATA_DIRS order.
+desktop_entry_exists(){ local dir
+  for dir in "${XDG_DATA_HOME:-$HOME/.local/share}" "${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/exports/share" \
+             /var/lib/flatpak/exports/share /usr/local/share /usr/share; do
+    [[ -r "$dir/applications/$1" ]] && return 0
+  done
+  return 1
+}
 set_default(){ local desktop="$1"; shift; local mime
-  [[ -r "/usr/share/applications/$desktop" || -r "${XDG_DATA_HOME:-$HOME/.local/share}/applications/$desktop" ]] || { ui_error "Desktop entry missing: $desktop"; return "$EXIT_PRECHECK_FAILED"; }
+  desktop_entry_exists "$desktop" || { ui_error "Desktop entry missing: $desktop"; return "$EXIT_PRECHECK_FAILED"; }
   for mime in "$@"; do xdg-mime default "$desktop" "$mime" || return "$EXIT_APPLY_FAILED"; done
 }
 

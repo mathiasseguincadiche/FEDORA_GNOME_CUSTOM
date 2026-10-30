@@ -228,6 +228,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_golden_workstation_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_gnome_desktop_toggles_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_hardware_kvm_completion_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_hardware_kvm_behavior.sh
