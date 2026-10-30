@@ -5,7 +5,11 @@ gnome_display_repair_precheck() { is_true "${DISPLAY_REPAIR_ENABLED:-true}" || r
 gnome_display_repair_plan() { echo 'Install GNOME/Wayland display recovery: preserve the complete pre-suspend layout, scale and HDR; observe monitor/hotplug changes without overwriting user settings.'; }
 gnome_display_repair_apply() {
   if ! is_true "${DISPLAY_REPAIR_ENABLED:-true}"; then
-    is_true "${DRY_RUN:-true}" || systemctl --user disable --now fedora-gnome-display-watch.service
+    # Only a watcher installed earlier is stopped: disabling a unit that was
+    # never installed fails, and that must not fail APPLY under errexit.
+    if ! is_true "${DRY_RUN:-true}" && [[ -e "$HOME/.config/systemd/user/fedora-gnome-display-watch.service" ]]; then
+      systemctl --user disable --now fedora-gnome-display-watch.service || return "$EXIT_APPLY_FAILED"
+    fi
     return 0
   fi
   if is_true "${DRY_RUN:-true}"; then return 0; fi
