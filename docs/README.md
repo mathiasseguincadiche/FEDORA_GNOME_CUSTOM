@@ -1,6 +1,6 @@
 # Documentation
 
-La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51**. Son profil reste `pending` jusqu'à la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
+La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51**. Son profil est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
 
 ## Par besoin
 

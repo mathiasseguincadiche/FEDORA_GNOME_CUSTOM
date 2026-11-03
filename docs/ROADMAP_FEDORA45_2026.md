@@ -10,7 +10,7 @@ Ce document est un **plan d'ingénierie**, pas une proclamation de résultats. T
 
 - **GNOME 51 “A Coruña”** est sorti le **16 septembre 2026**.
 - **Fedora 45 finale** est prévue pour le **20 octobre 2026** selon le calendrier Fedora ; un report est possible.
-- `profiles/fedora45/profile.json` reste `pending`. Pas d'APPLY Fedora 45 ni de verrou média fictif avant signature et hash final authentifiés.
+- `profiles/fedora45/profile.json` restait `pending` à cette date. Il est promu `ready` le 3 novembre 2026, après authentification du média final 1.4 et des RPM stables.
 - Les tests du dépôt peuvent être verts sans certificat de la machine réelle. La qualification sur PC est une phase **distincte**.
 
 Sources officielles : [calendrier Fedora 45](https://fedorapeople.org/groups/schedule/f-45/f-45-key-tasks.html), [GNOME 51](https://release.gnome.org/51/), [Fedora 45 ChangeSet](https://fedoraproject.org/wiki/Releases/45/ChangeSet).

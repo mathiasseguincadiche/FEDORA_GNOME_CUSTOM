@@ -63,9 +63,23 @@ status,detail,found=m.latest_status("RESOURCE_MONITOR",dict(lpins,RESOURCE_MONIT
 assert status=="NEWER" and "v85 -> available v86" in detail and found["VERSION"]=="86", (status,detail)
 status,detail,found=m.latest_status("RESOURCE_MONITOR",lpins,51,lambda url: (_ for _ in ()).throw(OSError("HTTP Error 503")))
 assert status=="UNKNOWN" and found=={} and "503" in detail, (status,detail)
-try: m.profile.validate(root,45)
-except ValueError as error: assert "pending" in str(error)
-else: raise AssertionError("unqualified future profile accepted")
+# A pending profile is refused on a disposable copy; the repository profile itself
+# must validate once promoted, and be refused as pending otherwise.
+import shutil, tempfile
+with tempfile.TemporaryDirectory() as work:
+    copy = pathlib.Path(work) / "repo"
+    shutil.copytree(root, copy, ignore=shutil.ignore_patterns(".git"))
+    (copy / "profiles/fedora45/profile.json").write_text(
+        json.dumps({"schema":1,"release":45,"gnome_major":51,"status":"pending"}) + "\n")
+    try: m.profile.validate(copy,45)
+    except ValueError as error: assert "pending" in str(error)
+    else: raise AssertionError("unqualified future profile accepted")
+if json.loads((root / "profiles/fedora45/profile.json").read_text())["status"] == "ready":
+    m.profile.validate(root,45)
+else:
+    try: m.profile.validate(root,45)
+    except ValueError as error: assert "pending" in str(error)
+    else: raise AssertionError("unqualified future profile accepted")
 uuid="tiling-assistant@leleat-on-github"
 tiling_url="https://github.com/ubuntu/Tiling-Assistant/releases/download/v55/tiling-assistant%40leleat-on-github.shell-extension.zip"
 release={"tag_name":"v55","prerelease":False,"draft":False,"assets":[{"name":uuid+".shell-extension.zip","browser_download_url":tiling_url}]}

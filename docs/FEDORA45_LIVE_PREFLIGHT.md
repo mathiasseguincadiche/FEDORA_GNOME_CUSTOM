@@ -2,7 +2,7 @@
 
 Ce contrôle se fait directement sur le PC prévu pour l’installation neuve. Il vérifie le démarrage et les fonctions utilisables depuis **Try Fedora**, avant de toucher aux SSD. La CI Linux teste le code séparément ; aucune VM n’est à préparer pour suivre ce parcours.
 
-Un résultat Live réussi signifie **compatibilité de préinstallation observée** (`PREINSTALL_ONLY`). La configuration personnalisée, les services installés, les sauvegardes et Rocky Linux seront qualifiés après l’installation. Le profil Fedora 45 reste `pending` jusqu’à la qualification et la promotion du média final signé et des composants stables : le contrôle Live ne le promeut pas.
+Un résultat Live réussi signifie **compatibilité de préinstallation observée** (`PREINSTALL_ONLY`). La configuration personnalisée, les services installés, les sauvegardes et Rocky Linux seront qualifiés après l’installation. Le profil Fedora 45 est promu (`ready`) par l’authentification du média final signé et des composants stables ; le contrôle Live ne modifie jamais ce profil.
 
 ## 1. Préparer le média et le compte rendu
 

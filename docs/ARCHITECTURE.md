@@ -4,7 +4,7 @@
 
 Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, et que ce soit la meilleure installation possible : la plus récente (Fedora 45 / GNOME 51), la plus finie (l'ergonomie qu'Ubuntu apporte à GNOME), la plus réactive, et **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
 
-**Golden** veut dire *installation de référence reproductible et vérifiable*, pas « ISO modifiée » ni « certification déjà acquise ». Le profil Fedora 45 reste `pending` jusqu'à la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
+**Golden** veut dire *installation de référence reproductible et vérifiable*, pas « ISO modifiée » ni « certification déjà acquise ». Le profil Fedora 45 est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)) ; la certification de la machine reste à acquérir.
 
 Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (une optimisation qui rend la machine instable ou impossible à sauvegarder est refusée, une finition qui fige l'écran OLED aussi) :
 

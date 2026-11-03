@@ -2,7 +2,7 @@
 
 **Objectif.** Comprendre un blanc qui paraît gris, délavé ou irrégulier sur plusieurs écrans, sans supposer que la carte graphique est défectueuse et **sans modifier automatiquement** les réglages du GPU ou de GNOME.
 
-Ce guide concerne Fedora Workstation (cible Fedora 45 / GNOME 51), Intel Arc B580 avec pilote `xe`, écrans DisplayPort/HDMI et configuration à deux moniteurs. Le profil de production Fedora 45 est encore `pending` : les mesures réelles sont à conduire avant la Gate 3 et à répéter après toute migration.
+Ce guide concerne Fedora Workstation (cible Fedora 45 / GNOME 51), Intel Arc B580 avec pilote `xe`, écrans DisplayPort/HDMI et configuration à deux moniteurs. Le profil de production Fedora 45 est promu (`ready`), mais les mesures réelles restent à conduire avant la Gate 3 et à répéter après toute migration.
 
 ## Ce qui peut changer le rendu du blanc
 

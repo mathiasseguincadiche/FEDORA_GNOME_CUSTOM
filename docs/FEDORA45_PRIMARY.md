@@ -4,11 +4,21 @@ Fedora 45 Workstation et GNOME 51 sont la cible unique de l’installation neuve
 
 ## Configuration sélectionnée et installation autorisée
 
-La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` reste `pending` : on peut consulter la configuration, le centre de contrôle et le dry-run, mais l’APPLY et les générateurs Kickstart de production refusent de continuer.
+La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l’APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
 
 La publication du média final se vérifie sur la [page officielle Workstation](https://fedoraproject.org/workstation/download/). Le statut de préparation du projet ne remplace pas cette vérification : aucun verrou final n’est créé avant authentification de l’ISO finale et de son CHECKSUM signé. Les images Beta utilisées par les laboratoires restent des supports de test.
 
-**Calendrier publié le 22 octobre 2026 :** Fedora a décidé un NO-GO, avec une nouvelle cible au 3 novembre et une prochaine réunion le 29 octobre. Voir le [compte rendu officiel](https://meetbot-raw.fedoraproject.org/teams/f45-final-go-no-go-meeting/f45-final-go-no-go-meeting.2026-10-22-17.00.html). Vérifier la disponibilité effective avant de fixer une date d’installation ; le 30 octobre précède cette nouvelle cible.
+## Média promu
+
+| Élément | Valeur |
+|---|---|
+| ISO | `Fedora-Workstation-Live-45-1.4.x86_64.iso` (2 925 092 864 octets) |
+| SHA-256 | `68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb` |
+| CHECKSUM signé | `Fedora-Workstation-45-1.4-x86_64-CHECKSUM` |
+| Clé de signature | `4F50A6114CD5C6976A7F1179655A4B02F577861E` (paquet `fedora-gpg-keys-45-1`) |
+| RPM stables | `gnome-shell-extension-dash-to-dock-110-1.fc45`, `gnome-shell-extension-appindicator-66-1.fc45` |
+
+Le verrou `installer/fedora45-media.lock` et les empreintes de `profile.json` ont été écrits par `promote-fedora45.py`, dans un conteneur Fedora 45 jetable et depuis un clone propre de `main`.
 
 La promotion exige :
 

@@ -65,7 +65,8 @@ subprocess.run(
 )
 subprocess.run([sys.executable, str(root / "scripts/gnome/fedora45-rpm-extensions.py"), "--verify"], check=True)
 result = audit.assess(roles, active, enabled, metadata, provenance, lock)
-result.update(lab_scope="disposable-qemu-only", profile_status="pending",
+profile_status = json.loads((root / "profiles/fedora45/profile.json").read_text())["status"]
+result.update(lab_scope="disposable-qemu-only", profile_status=profile_status,
               production_apply="BLOCKED", physical_gate3="DEFERRED")
 print(json.dumps(result, indent=2))
 if result["verdict"] != "PASS":

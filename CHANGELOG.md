@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fedora 45 : promotion du profil de production à `ready` avec le média final `Fedora-Workstation-Live-45-1.4.x86_64.iso` (SHA-256 `68338c6b…3beb`). Le CHECKSUM est vérifié avec la clé Fedora 45 épinglée `4F50A611…F577861E`, issue du paquet `fedora-gpg-keys-45-1`. Les RPM Dash to Dock 110-1.fc45 et AppIndicator 66-1.fc45 sont présents dans les dépôts stables. `promote-fedora45.py` a écrit `installer/fedora45-media.lock` et les empreintes du profil dans un conteneur Fedora 45 jetable, depuis un clone propre de `main`. La documentation suit ce statut, et l'audit du laboratoire QEMU rapporte le statut réel du profil au lieu d'un `pending` figé. Aucune certification matérielle n'est revendiquée : la Gate 3 sur le vrai PC reste requise.
+
 ## 0.23.1 — Relecture complète du code : sécurité, preuves et qualification physique
 
 Relecture complète du code produit, domaine par domaine, après la 0.23.0. Chaque défaut corrigé est couvert par un test qui échoue sur l'ancien code. Plusieurs auraient bloqué la qualification sur le vrai PC : lecture SMART des T705 sans root, nom du pilote audio, pilotes intégrés au noyau, contrôle du chiffrement sur une installation btrfs standard. Le profil Fedora 45 reste `pending` : aucune installation physique ni certification bare-metal n'est revendiquée.
