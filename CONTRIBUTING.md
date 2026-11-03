@@ -61,6 +61,10 @@ Toute modification fonctionnelle fusionnée met à jour `VERSION`, `CHANGELOG.md
 
 ## Écrire la documentation
 
+Cette section est la source de vérité des conventions de rédaction. Elle s'applique aux guides courants : README, `docs/` hors `docs/adr/` et `docs/history/`. Les ADR, l'historique et le `CHANGELOG.md` sont des archives : leur formulation d'origine est conservée.
+
+### Contenu
+
 - Le `README.md` racine est une vitrine ; les détails vivent dans `docs/`, avec un guide par sujet. Un détail déjà écrit ailleurs se lie, il ne se recopie pas.
 - Une commande documentée existe, avec ses paramètres obligatoires ; une procédure dit comment reconnaître le succès et quand **ne pas continuer**.
 - Distinguer lecture seule, dry-run, mutation protégée et opération manuelle ou destructive. Une commande destructive n'est jamais noyée dans une séquence sans précondition.
@@ -70,7 +74,50 @@ Toute modification fonctionnelle fusionnée met à jour `VERSION`, `CHANGELOG.md
 - Les schémas ne montrent aucun raccourci vers `install.sh --apply` et ne confondent jamais CI, Live et Gate 3.
 - Une maquette est étiquetée comme telle ; une preuve physique porte son contexte.
 
-`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il ne vérifie jamais la formulation.
+### Statuts
+
+Toute affirmation sur ce que fait le projet porte l'un de ces statuts, explicitement ou par sa formulation :
+
+| Statut | Signification | Preuve attendue |
+|---|---|---|
+| Prévu | Décidé, pas commencé | Aucune |
+| En cours | Commencé, non terminé | Référence au travail (branche, PR) |
+| Réalisé | Présent dans le code ou la configuration | Fichier identifiable |
+| Vérifié | Contrôlé par une méthode traçable | Date, méthode, environnement et résultat |
+| Non vérifié | Contrôle non fait ou impossible | Ce qui n'a pas été contrôlé, et pourquoi |
+
+« Vérifié par la CI » et « vérifié sur le matériel » ne se confondent jamais : seule la Gate 3 vérifie le PC. Une sortie de commande donnée en exemple est signalée comme telle ; elle n'est jamais présentée comme un résultat observé.
+
+### Ton et vocabulaire
+
+- **Registre** : infinitif impersonnel pour les consignes (« Lancer… », « Vérifier… »), phrases complètes pour les explications. Ni tutoiement, ni vouvoiement.
+- **Une idée par paragraphe.** Une énumération devient une liste, une comparaison un tableau.
+- **Gras réservé** aux avertissements et à la première occurrence d'un terme défini.
+- **Pas de qualificatif non démontré** (« robuste », « sécurisé », « complet ») : décrire ce qui est contrôlé et comment.
+- **Lexique** : les commandes, options, noms de fichiers et noms de produits restent en version originale (`doctor`, `APPLY`, `Gate 3`, Borg). Les titres et les notions sont en français ; le terme anglais d'usage figure entre parenthèses à sa première occurrence. Un terme garde le même sens dans tout le dépôt ; le [glossaire](docs/GLOSSARY.md) fait foi.
+
+### Métadonnées des guides
+
+Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son titre, par ce bloc :
+
+```markdown
+> Mise à jour : AAAA-MM-JJ · Responsable : @mathiasseguincadiche
+> Dernière vérification : AAAA-MM-JJ — méthode et périmètre — matériel : non vérifié
+```
+
+« Mise à jour » est la date du dernier changement de fond. « Dernière vérification » dit comment le contenu a été contrôlé (par exemple « relecture contre le code de `main` ») et sur quel périmètre. La mention `matériel` passe à `vérifié (Gate 3, AAAA-MM-JJ)` seulement après une preuve physique. Le bloc ne recopie pas le numéro de version du projet.
+
+### Schémas
+
+- Un schéma n'existe que s'il répond à une question du lecteur qu'un tableau ou une liste ne règle pas aussi bien.
+- Chaque schéma est une paire de fichiers de même nom de base dans `docs/assets/diagrams/` : la source éditable `<nom>.drawio` (format diagrams.net, XML non compressé) et l'export `<nom>.svg`.
+- Le SVG a un fond opaque, un `<title>` et une `<desc>`. Il reste lisible dans les thèmes clair et sombre de GitHub et ne porte aucune information par la couleur seule.
+- Dans la page, l'image est suivie d'une description textuelle des relations importantes et d'un lien vers sa source `.drawio`.
+- Mermaid n'est pas utilisé.
+
+### Contrôles
+
+`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il contrôle aussi la forme du bloc de métadonnées, les paires de schémas `.drawio` / `.svg` et l'absence de Mermaid. Les guides pas encore repris figurent dans des listes de migration du test ; ces listes ne peuvent que diminuer. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
 
 ## Shell
 

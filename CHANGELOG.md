@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Documentation (chantier C1, conventions) : `CONTRIBUTING.md` devient la source de vérité de la rédaction, avec les statuts (prévu, en cours, réalisé, vérifié, non vérifié), le registre impersonnel, le lexique, le bloc de métadonnées des guides et les règles des schémas (paires `.drawio` / `.svg` dans `docs/assets/diagrams/`, sans Mermaid). `test_docs_integrity.py` contrôle ces règles, avec des listes de migration qui ne peuvent que diminuer ; `test_docs_integrity_behavior.py` prouve sur 14 cas qu'il accepte et refuse ce qu'il doit. Correction de `FEDORA_GNOME_CI_LAB.md`, qui décrivait encore un profil `pending` et des RPM GNOME 51 absents des dépôts stables.
+
 ## 0.24.0 — Profil Fedora 45 promu avec le média final
 
 Le profil de production Fedora 45 / GNOME 51 est promu à `ready` avec le média final 1.4, authentifié par son CHECKSUM signé, et les RPM GNOME 51 revus des dépôts stables. L'APPLY et le Kickstart de production ne sont plus bloqués par le profil ; ils restent soumis à toutes leurs autres gardes. Aucune installation physique ni certification bare-metal n'est revendiquée : la qualification se fait sur le vrai PC jusqu'à la Gate 3.

@@ -6,12 +6,15 @@ Checks what can actually mislead an operator, never phrasing:
 - every guide in docs/ is reachable from README.md;
 - every `./control.sh DOMAIN ACTION` quoted in Markdown is routed by the code;
 - every repository path quoted in backticks exists;
-- code and workflows only reference documentation files that exist.
+- code and workflows only reference documentation files that exist;
+- guides carry the metadata block defined in CONTRIBUTING.md;
+- diagrams are .drawio/.svg pairs and no Mermaid block remains.
 """
 from pathlib import Path
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
@@ -117,6 +120,101 @@ for name in TRACKED:
     for ref in set(DOC_REF.findall(text)):
         if not (ROOT / ref).exists():
             errors.append(f"{name}: references missing documentation {ref}")
+
+# Migration lists for the documentation overhaul: a guide leaves a list when it is
+# rewritten, and a listed guide that already complies is an error, so the lists only shrink.
+METADATA_PENDING = {
+    "APPIMAGE.md", "ARCHITECTURE.md", "BACKUP_RESTORE.md", "CI_VALIDATION.md", "CONTROL_CENTER.md",
+    "DESKTOP_LIFECYCLE.md", "DISPLAY_COLOR_DIAGNOSTIC.md", "FEDORA45_LIVE_PREFLIGHT.md",
+    "FEDORA45_PRIMARY.md", "FEDORA_GNOME_CI_LAB.md", "GAMING.md", "GLOSSARY.md", "GNOME.md",
+    "GTK4_APPLICATIONS.md", "HOST_BASH_UX.md", "HOST_SECURITY_POLICY.md", "INSTALLATION_GUIDE.md",
+    "ISOLATED_RECOVERY_RUNBOOK.md", "KVM_NETWORK.md", "KVM_QUICKSTART.md", "MULTIMEDIA_CODECS.md",
+    "NAUTILUS.md", "PERFORMANCE.md", "PHYSICAL_QUALIFICATION_CHECKLIST.md", "PTYXIS.md",
+    "QUALIFICATION.md", "README.md", "REMOTE_ACCESS.md", "ROADMAP_FEDORA45_2026.md",
+    "SOFTWARE_INVENTORY.md", "SUPPLY_CHAIN.md", "TROUBLESHOOTING.md", "UPGRADE_FEDORA_45.md",
+    "UPSTREAM_LINUX.md", "VIRTUALIZATION.md",
+}
+MERMAID_PENDING = {
+    "docs/ARCHITECTURE.md", "docs/BACKUP_RESTORE.md", "docs/CI_VALIDATION.md", "docs/CONTROL_CENTER.md",
+    "docs/FEDORA_GNOME_CI_LAB.md", "docs/QUALIFICATION.md", "docs/REMOTE_ACCESS.md",
+}
+DATE = r"\d{4}-\d{2}-\d{2}"
+METADATA = re.compile(
+    rf"^> Mise à jour : {DATE} · Responsable : @[A-Za-z0-9-]+\n"
+    rf"> Dernière vérification : {DATE} — \S.* — matériel : (non vérifié|vérifié \(Gate 3, {DATE}\))\n")
+
+
+def body_after_title(path):
+    text = path.read_text(encoding="utf-8")
+    title, _, rest = text.partition("\n")
+    return title, rest.lstrip("\n")
+
+
+# 6. Guides carry the metadata block (CONTRIBUTING.md, « Métadonnées des guides »).
+guides = sorted(p for p in (ROOT / "docs").glob("*.md"))
+for name in sorted(METADATA_PENDING - {p.name for p in guides}):
+    errors.append(f"METADATA_PENDING lists a missing guide: docs/{name}")
+for path in guides:
+    title, rest = body_after_title(path)
+    valid = title.startswith("# ") and METADATA.match(rest) is not None
+    if path.name in METADATA_PENDING:
+        if valid:
+            errors.append(f"{rel(path)}: metadata present; remove it from METADATA_PENDING")
+    elif not valid:
+        errors.append(f"{rel(path)}: missing or malformed metadata block under the title")
+    if valid:
+        for day in re.findall(DATE, "\n".join(rest.splitlines()[:2])):
+            if not re.fullmatch(r"20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])", day):
+                errors.append(f"{rel(path)}: invalid metadata date {day}")
+
+# 7. No Mermaid: diagrams are .drawio sources with .svg exports (CONTRIBUTING.md, « Schémas »).
+for path in CURRENT:
+    has_mermaid = re.search(r"^\s*```\s*mermaid\b", path.read_text(encoding="utf-8"), re.M) is not None
+    if rel(path) in MERMAID_PENDING:
+        if not has_mermaid:
+            errors.append(f"{rel(path)}: no Mermaid left; remove it from MERMAID_PENDING")
+    elif has_mermaid:
+        errors.append(f"{rel(path)}: Mermaid block; use a .drawio source with its .svg export")
+for name in sorted(MERMAID_PENDING):
+    if not (ROOT / name).exists():
+        errors.append(f"MERMAID_PENDING lists a missing file: {name}")
+
+# 8. Each diagram is a valid .drawio/.svg pair with an accessible, opaque export.
+SVG_NS = "{http://www.w3.org/2000/svg}"
+diagrams = ROOT / "docs/assets/diagrams"
+for path in sorted(diagrams.glob("*")) if diagrams.is_dir() else []:
+    if path.suffix not in (".drawio", ".svg"):
+        errors.append(f"{rel(path)}: only .drawio sources and .svg exports belong here")
+        continue
+    twin = path.with_suffix(".svg" if path.suffix == ".drawio" else ".drawio")
+    if not twin.exists():
+        errors.append(f"{rel(path)}: missing its pair {twin.name}")
+    try:
+        tree = ET.parse(path).getroot()
+    except ET.ParseError as error:
+        errors.append(f"{rel(path)}: invalid XML ({error})")
+        continue
+    if path.suffix == ".drawio":
+        cells = tree.findall(".//mxCell")
+        ids = [cell.get("id") for cell in cells]
+        if tree.tag != "mxfile" or not tree.findall("diagram/mxGraphModel"):
+            errors.append(f"{rel(path)}: not an uncompressed diagrams.net file")
+        if len(ids) != len(set(ids)):
+            errors.append(f"{rel(path)}: duplicate cell ids")
+        for cell in cells:
+            for ref in ("parent", "source", "target"):
+                if cell.get(ref) and cell.get(ref) not in ids:
+                    errors.append(f"{rel(path)}: cell {cell.get('id')} has an orphan {ref}")
+    else:
+        if tree.tag != SVG_NS + "svg" or not tree.get("viewBox"):
+            errors.append(f"{rel(path)}: SVG root without a viewBox")
+        if not (tree.findtext(SVG_NS + "title") or "").strip() or not (tree.findtext(SVG_NS + "desc") or "").strip():
+            errors.append(f"{rel(path)}: SVG needs a non-empty <title> and <desc>")
+        background = next((c for c in tree if c.tag == SVG_NS + "rect"), None)
+        if background is None or background.get("fill") in (None, "none", "transparent"):
+            errors.append(f"{rel(path)}: SVG needs an opaque background rectangle first")
+        if re.search(r"<script|href=\"https?:", path.read_text(encoding="utf-8")):
+            errors.append(f"{rel(path)}: SVG must not load scripts or remote resources")
 
 if errors:
     print("documentation integrity: FAIL", file=sys.stderr)
