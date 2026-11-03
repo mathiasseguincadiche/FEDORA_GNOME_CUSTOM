@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.24.0 — Profil Fedora 45 promu avec le média final
+
+Le profil de production Fedora 45 / GNOME 51 est promu à `ready` avec le média final 1.4, authentifié par son CHECKSUM signé, et les RPM GNOME 51 revus des dépôts stables. L'APPLY et le Kickstart de production ne sont plus bloqués par le profil ; ils restent soumis à toutes leurs autres gardes. Aucune installation physique ni certification bare-metal n'est revendiquée : la qualification se fait sur le vrai PC jusqu'à la Gate 3.
+
 - Fedora 45 : promotion du profil de production à `ready` avec le média final `Fedora-Workstation-Live-45-1.4.x86_64.iso` (SHA-256 `68338c6b…3beb`). Le CHECKSUM est vérifié avec la clé Fedora 45 épinglée `4F50A611…F577861E`, issue du paquet `fedora-gpg-keys-45-1`. Les RPM Dash to Dock 110-1.fc45 et AppIndicator 66-1.fc45 sont présents dans les dépôts stables. `promote-fedora45.py` a écrit `installer/fedora45-media.lock` et les empreintes du profil dans un conteneur Fedora 45 jetable, depuis un clone propre de `main`. La documentation suit ce statut, et l'audit du laboratoire QEMU rapporte le statut réel du profil au lieu d'un `pending` figé. Aucune certification matérielle n'est revendiquée : la Gate 3 sur le vrai PC reste requise.
 
 ## 0.23.1 — Relecture complète du code : sécurité, preuves et qualification physique
