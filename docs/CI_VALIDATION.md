@@ -146,6 +146,8 @@ Le helper conserve une politique fail-closed : il tente d'abord les endpoints Mi
 
 `tests/test_rpmfusion_ci_bootstrap_contract.sh` verrouille ce comportement et interdit le retour à un bootstrap mono-endpoint dans les workflows Package, Host et Gaming.
 
+Chaque tentative passe par `scripts/packages/install-rpmfusion-release.sh`, partagé avec le module de production : `dnf install` d'abord, puis, pour le seul refus connu de dnf5 5.4.6, une installation `rpm` vérifiée par la clé épinglée. Le détail est dans la [provenance des logiciels](SUPPLY_CHAIN.md#dépôts-rpm-fusion).
+
 ## Fedora 45 package preflight
 
 Résolution des manifests, y compris les manifests Nautilus dédiés, RPM Fusion, dépôts VS Code/Brave, Flathub, swaps multimédia, extensions GNOME 51 et packages KVM, y compris GnuPG nécessaire à l'authentification d'image Rocky.
