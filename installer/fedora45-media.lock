@@ -1,0 +1,11 @@
+# Fedora Workstation 45 x86_64 installation-media lock.
+# Written by scripts/development/promote-fedora45.py after a signed-CHECKSUM verification.
+FEDORA_RELEASE=45
+FEDORA_COMPOSE=1.4
+ISO_FILENAME=Fedora-Workstation-Live-45-1.4.x86_64.iso
+ISO_SHA256=68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb
+CHECKSUM_FILENAME=Fedora-Workstation-45-1.4-x86_64-CHECKSUM
+SOURCE_URL=https://fedoraproject.org/workstation/download/
+VERIFIED_UTC=2026-11-03T15:58:36Z
+RELEASE_STATUS=final
+SIGNING_FINGERPRINT=4F50A6114CD5C6976A7F1179655A4B02F577861E

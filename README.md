@@ -23,7 +23,7 @@ La configuration vise **Ryzen 7 7700 · Intel Arc B580 · 48 Gio de RAM · deux 
 
 ## État de la cible
 
-**Fedora 45 / GNOME 51 est la cible d’installation neuve.** Le profil de production reste `pending` jusqu’à la qualification du média final signé et des composants nécessaires. Les conditions et l’état de promotion sont centralisés dans [la fiche Fedora 45](docs/FEDORA45_PRIMARY.md).
+**Fedora 45 / GNOME 51 est la cible d’installation neuve.** Le profil de production est `ready` : le média final signé et les composants stables sont authentifiés. La promotion n’est pas une certification de la machine ; celle-ci reste acquise par la Gate 3 sur le vrai PC. Le média et l’état de promotion sont centralisés dans [la fiche Fedora 45](docs/FEDORA45_PRIMARY.md).
 
 Les tests logiciels et la qualification du PC sont suivis séparément. La réussite des workflows GitHub ne certifie pas encore le fonctionnement du poste physique.
 

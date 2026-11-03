@@ -130,8 +130,12 @@ refused "$EXIT_SECURITY_BLOCK" 'Live record from the installed system' validate 
 [[ -s "$state/imported/live.json" ]] || fail 'installed system lost its imported Live proof'
 cmp "$tmp/usb/live-$commit.json" "$state/imported/live.json" || fail 'imported proof differs'
 
-# Fedora 45 is not promoted yet: Gate 3 refuses it; the selected promoted release runs.
+# An unpromoted Fedora 45 profile is refused by Gate 3, whatever the repository status;
+# the selected promoted release runs.
+cp "$fixture/profiles/fedora45/profile.json" "$tmp/profile45.json"
+printf '{"schema":1,"release":45,"gnome_major":51,"status":"pending"}\n' > "$fixture/profiles/fedora45/profile.json"
 refused "$EXIT_PRECHECK_FAILED" 'Gate 3 on an unpromoted Fedora 45' validate gate3 status
+cp "$tmp/profile45.json" "$fixture/profiles/fedora45/profile.json"
 printf 'HOST_RELEASE="44"\n' > "$fixture/config/local.conf"; os 44
 os 43; refused "$EXIT_PRECHECK_FAILED" 'Gate 3 on another Fedora release' validate gate3 status; os 44
 printf 'ID=ubuntu\nVERSION_ID=44\n' > "$FEDORA_OS_RELEASE_FILE"; refused "$EXIT_PRECHECK_FAILED" 'Gate 3 on another distribution' validate gate3 status; os 44

@@ -2,7 +2,7 @@
 
 Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./control.sh validate gate3 certify` a réussi sur le PC installé, pour ses identités matérielles et sa configuration courantes. Entre les deux : le Live USB, l'installation, la baseline et la Gate 3.
 
-Le profil Fedora 45 reste `pending` tant que le média final signé et les composants stables n'ont pas été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Aucun test ne remplace cette promotion.
+Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 
 ```mermaid
 flowchart LR

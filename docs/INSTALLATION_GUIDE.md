@@ -2,11 +2,11 @@
 
 Ce guide suit le parcours direct sur le PC : **Live USB → installation neuve → configuration personnalisée → qualification du système installé**. Le portail documentaire est [docs/README.md](README.md). Les tests logiciels de la CI Linux restent automatiques et ne constituent aucune étape à exécuter dans une VM avant l’installation.
 
-## Cible Fedora 45 et statut pending
+## Cible Fedora 45 et profil promu
 
 La référence unique de cette procédure est **Fedora 45 Workstation / GNOME 51**, installée directement. La configuration centrale sélectionne `HOST_RELEASE="45"` ; aucune installation préalable de Fedora 44 ni migration n’est nécessaire.
 
-Le profil de production reste `pending` jusqu’à la promotion du média final signé et des composants revus. Le contrôle Live ne promeut pas ce profil. La configuration et le dry-run restent consultables pendant la préparation ; l’APPLY et la génération du Kickstart de production refusent un profil non promu. Les scripts historiques Fedora 44 sont décrits séparément dans [history/HISTORICAL_FEDORA44.md](history/HISTORICAL_FEDORA44.md).
+Le profil de production est `ready` : le média final signé (compose 1.4) et les composants revus sont promus. Le contrôle Live ne modifie jamais ce profil. L’APPLY et la génération du Kickstart de production restent soumis à toutes leurs autres gardes ; ils refuseraient de nouveau un profil revenu à `pending`. Les scripts historiques Fedora 44 sont décrits séparément dans [history/HISTORICAL_FEDORA44.md](history/HISTORICAL_FEDORA44.md).
 
 ## Avant de commencer
 
@@ -60,18 +60,16 @@ Le résultat final recherché est explicite : **la workstation n'est `Golden run
 
 **But :** authentifier l'ISO Workstation Fedora 45 final et son CHECKSUM signé, jamais une Beta ou une RC.
 
-Le fichier `installer/fedora45-media.lock` n'existe qu'après promotion officielle du profil. Lorsque `profiles/fedora45/profile.json` est `pending`, cette étape reste **BLOCKED**.
-
-Après authentification et promotion du média final :
+Le fichier `installer/fedora45-media.lock` verrouille le média promu : `Fedora-Workstation-Live-45-1.4.x86_64.iso`, SHA-256 `68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb`. Vérifier l'ISO réellement copiée sur la clé USB :
 
 ```bash
 installer/verify-fedora-media.sh --release 45 \
-  --iso /chemin/Fedora-Workstation-Live-45-COMPOSE.x86_64.iso \
-  --checksum /chemin/Fedora-Workstation-45-COMPOSE-x86_64-CHECKSUM \
+  --iso /chemin/Fedora-Workstation-Live-45-1.4.x86_64.iso \
+  --checksum /chemin/Fedora-Workstation-45-1.4-x86_64-CHECKSUM \
   --keyring /chemin/fedora.gpg
 ```
 
-`COMPOSE` est à remplacer par le numéro réel du média promu. Le vérificateur exige signature GPG et SHA-256 exacts.
+Le vérificateur exige la signature GPG de la clé Fedora 45 épinglée et le SHA-256 exact du verrou.
 
 **Checkpoint :** ne pas continuer si le profil est pending, si la signature est invalide ou si l'ISO ne correspond pas au verrou.
 

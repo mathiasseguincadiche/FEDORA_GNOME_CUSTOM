@@ -2,7 +2,7 @@
 
 Fedora livre GNOME tel que ses développeurs l'ont conçu : propre, mais dépouillé. Le projet garde ce GNOME officiel (GNOME 51 sur Fedora 45, Wayland, Adwaita/libadwaita, applications Fedora) et lui ajoute **l'ergonomie qu'Ubuntu apporte à GNOME**, sans son thème Yaru ni ses icônes ([ADR 0013](adr/0013-ubuntu-grade-gnome-polish.md)).
 
-Le profil Fedora 45 reste `pending` tant que le média final signé et les composants stables n'ont pas été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
+Le profil Fedora 45 est `ready` : le média final signé et les RPM Dash to Dock et AppIndicator des dépôts stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
 
 ## Ce que tu obtiens
 

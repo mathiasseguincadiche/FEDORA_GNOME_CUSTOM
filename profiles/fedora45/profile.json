@@ -2,7 +2,12 @@
   "schema": 1,
   "release": 45,
   "gnome_major": 51,
-  "status": "pending",
-  "reason": "Final Workstation media, reviewed GNOME 51 extension lock and qualification evidence must be promoted together.",
-  "signing_fingerprint": "4F50A6114CD5C6976A7F1179655A4B02F577861E"
+  "status": "ready",
+  "signing_fingerprint": "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+  "media_lock_sha256": "fa07431ede49ab2de0d80cb5ac16f0f728c2ff0305eda7f09c96243226680245",
+  "extensions_lock_sha256": "f107f60a8756797bcf80861251891b9913615ee7b32bd8bff4a5f14a1616e873",
+  "packages_lock_sha256": "54f0d5a7a52a0ce6f6d1bd20a13916939f2cede15b55cde1971127e3ff652426",
+  "gnome_rpms_lock_sha256": "e0c4aefc942b729661a38fd3933320f50debb2676f52505bf879c825eaa2f686",
+  "ding_patch_sha256": "cea5311116b0a3054f078bebd9c075e8bed45f1c63f5cb36b36b32404fcb2f23",
+  "promotion_source_commit": "6f8d19dc767cea9618aa586bcbcf3ee1ded9eb9f"
 }
