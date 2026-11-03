@@ -210,6 +210,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_rpmfusion_ci_bootstrap_contract.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_rpmfusion_release_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_release_workflow_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_dash_to_dock_contract.sh

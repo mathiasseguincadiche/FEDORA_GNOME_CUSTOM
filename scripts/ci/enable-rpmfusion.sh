@@ -4,6 +4,7 @@ set -Eeuo pipefail
 # CI-only RPM Fusion bootstrap for the requested Fedora release. MirrorManager remains the primary
 # endpoint; download1.rpmfusion.org is the official direct fallback when a
 # selected mirror/CDN is temporarily unreachable.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 release="${RPMFUSION_FEDORA_RELEASE:-45}"
 attempts="${RPMFUSION_BOOTSTRAP_ATTEMPTS:-3}"
 
@@ -36,7 +37,8 @@ install_release() {
   for ((attempt = 1; attempt <= attempts; attempt++)); do
     for url in "${endpoints[@]}"; do
       echo "RPM Fusion ${channel}: cycle ${attempt}/${attempts} via ${url}"
-      if timeout 90 dnf -y install "$url"; then
+      # Shared with production: dnf first, then the signed rpm fallback for the known dnf5 case.
+      if timeout 150 bash "$ROOT/scripts/packages/install-rpmfusion-release.sh" "$release" "$channel" "$url"; then
         rpm -q "$package"
         return 0
       fi

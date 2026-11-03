@@ -51,6 +51,25 @@ Le vrai prétest Rocky Linux CI utilise lui aussi une liste SHA-256 signée Rock
 
 Les paquets Flathub communautaires ne sont pas présentés comme des paquets officiels de l'éditeur. La résolution des IDs Flathub est contrôlée en CI ; la provenance est revue lors des releases.
 
+## Dépôts RPM Fusion
+
+Le module `system.sources` et la CI installent `rpmfusion-free-release` et `rpmfusion-nonfree-release` par le même script, `scripts/packages/install-rpmfusion-release.sh`, depuis `mirrors.rpmfusion.org` puis `download1.rpmfusion.org`.
+
+Le chemin normal est `dnf install` de l'URL officielle. Depuis le 3 novembre 2026, dnf5 5.4.6 refuse les paquets `45-1` : ils déclarent la dépendance `/usr/share/dnf5/libdnf.conf.d/`, avec une barre oblique finale, qu'aucun paquet ne fournit sous cette forme. Pour ce seul cas, le script installe le paquet avec `rpm -i --nodeps` après avoir vérifié :
+
+- son nom, sa version et son architecture ;
+- que ses dépendances sont exactement ce répertoire et `system-release(N)`, et que les deux sont présents ;
+- sa signature, par la clé RPM Fusion épinglée du dépôt.
+
+Les clés publiques sont versionnées dans `config/keys/`. Le script refuse un fichier dont l'empreinte diffère de celles publiées sur [rpmfusion.org/keys](https://rpmfusion.org/keys) :
+
+| Dépôt | Empreinte |
+|---|---|
+| free (2020) | `E9A4 91A3 DE24 7814 E7E0 67EA E06F 8ECD D651 FF2E` |
+| nonfree (2020) | `79BD B88F 9BBF 7391 0FD4 095B 6A2A F961 9484 3C65` |
+
+Toute autre situation échoue sans rien installer. Le chemin normal ne vérifie pas la signature du paquet de configuration installé depuis une URL (dnf l'annonce : « skipped OpenPGP checks ») ; les paquets installés ensuite depuis les dépôts RPM Fusion sont, eux, vérifiés par dnf. `tests/test_rpmfusion_release_behavior.sh` exerce le chemin normal, le repli et chaque refus.
+
 ## Mises à jour
 
 - RPM Fedora : téléchargement automatique autorisé, installation et reboot automatiques interdits ;
