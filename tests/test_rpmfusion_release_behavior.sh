@@ -76,8 +76,8 @@ if [[ ${#as_root[@]} -gt 0 || "$EUID" == 0 ]]; then
   refused 'dependencies differ from the known dnf5 case' T_EXTRA_REQUIRE='libfoo.so.1()(64bit)'
   refused 'unexpected package identity' T_IDENTITY='rpmfusion-free-release 44 noarch'
   refused 'unexpected package identity' T_IDENTITY='rpmfusion-nonfree-release 45 noarch'
-  refused 'not signed by the pinned key' T_SIG_KEY=0123456789abcdef
-  refused 'is not the pinned' T_KEY_FPR=0000000000000000000000000000000000000000
+  refused 'not signed by the pinned key' T_SIG_KEY=another-signer
+  refused 'is not the pinned' T_KEY_FPR=not-the-pinned-fingerprint
   refused 'signature verification failed' T_CHECKSIG_RC=1
   refused 'system-release(45) is not installed' T_NO_SYSTEM_RELEASE=1
   refused 'download failed' T_CURL_RC=22
@@ -97,6 +97,6 @@ fi
 # 6. An installed package is left alone.
 : > "$tmp/log"; touch "$tmp/installed"
 env PATH="$tmp/bin:$PATH" T_LOG="$tmp/log" T_STATE="$tmp/installed" bash "$helper" 45 free "$URL" > "$tmp/out"
-grep -Fq 'already installed' "$tmp/out" && [[ ! -s "$tmp/log" ]] || fail 'installed package was reinstalled'
+if ! grep -Fq 'already installed' "$tmp/out" || [[ -s "$tmp/log" ]]; then fail 'installed package was reinstalled'; fi
 
 echo 'rpmfusion release behavior: PASS'
