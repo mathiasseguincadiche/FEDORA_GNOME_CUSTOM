@@ -1,0 +1,4 @@
+# Gitleaks false positives, each scoped to one commit, file, rule and line. Add an entry only
+# for a value proven not to be a secret, and say why on the line above it.
+# 035b279: fake RPM signature key id "0123456789abcdef" in a test fixture; replaced in the next commit.
+035b2796fa1c1a5976e595f47ed753bf21933d27:tests/test_rpmfusion_release_behavior.sh:generic-api-key:79

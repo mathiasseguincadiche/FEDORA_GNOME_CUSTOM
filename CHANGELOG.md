@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- RPM Fusion : dnf5 5.4.6 refuse depuis le 3 novembre 2026 les paquets `rpmfusion-free-release-45-1` et `rpmfusion-nonfree-release-45-1`, qui déclarent la dépendance `/usr/share/dnf5/libdnf.conf.d/` avec une barre oblique finale. Ce refus bloquait le check obligatoire `packages`, et aurait bloqué le module `system.sources` sur le PC. Le module et la CI utilisent maintenant le même script, `scripts/packages/install-rpmfusion-release.sh` : `dnf install` d'abord, puis, pour ce seul cas, `rpm -i --nodeps` après vérification de l'identité du paquet, de la liste exacte de ses dépendances et de sa signature par la clé RPM Fusion épinglée (`config/keys/`, empreintes de rpmfusion.org/keys). Tout autre cas échoue sans rien installer. Vérifié dans un conteneur Fedora 45 (dnf5 5.4.6.0-3, rpm 6.1.0-1) ; `tests/test_rpmfusion_release_behavior.sh` couvre le chemin normal, le repli et onze refus.
+
 ## 0.24.0 — Profil Fedora 45 promu avec le média final
 
 Le profil de production Fedora 45 / GNOME 51 est promu à `ready` avec le média final 1.4, authentifié par son CHECKSUM signé, et les RPM GNOME 51 revus des dépôts stables. L'APPLY et le Kickstart de production ne sont plus bloqués par le profil ; ils restent soumis à toutes leurs autres gardes. Aucune installation physique ni certification bare-metal n'est revendiquée : la qualification se fait sur le vrai PC jusqu'à la Gate 3.

@@ -5,7 +5,13 @@ system_sources_plan() { echo 'Enable RPM Fusion only for explicitly approved mul
 system_sources_apply() {
   if is_true "${ENABLE_RPMFUSION:-true}"; then
     local fedora; fedora="$(rpm -E %fedora)"
-    run_mutating SYSTEM sudo dnf -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora}.noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora}.noarch.rpm"
+    local channel
+    for channel in free nonfree; do
+      run_mutating SYSTEM sudo bash "$REPO_ROOT/scripts/packages/install-rpmfusion-release.sh" "$fedora" "$channel" \
+        "https://mirrors.rpmfusion.org/${channel}/fedora/rpmfusion-${channel}-release-${fedora}.noarch.rpm" \
+        "https://download1.rpmfusion.org/${channel}/fedora/rpmfusion-${channel}-release-${fedora}.noarch.rpm" \
+        || return "$EXIT_APPLY_FAILED"
+    done
   fi
   if is_true "${ENABLE_FLATHUB:-true}"; then
     run_mutating SYSTEM sudo dnf -y install flatpak
