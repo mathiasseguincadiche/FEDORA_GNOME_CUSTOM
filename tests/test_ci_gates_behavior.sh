@@ -113,5 +113,11 @@ with tempfile.TemporaryDirectory() as temp:
         bad=json.loads(json.dumps(rows)); bad[0].update(phase=phase,rc=rc)
         assert audit(bad)!=0
     assert audit(rows,"PASS")!=0
+    # A runner without /sys/power/mem_sleep is a documented limit only with the module's rc=20.
+    (fixture/"manifests/module-plan.conf").write_text("system.preflight|x\nbaseline.suspend_resume|x\n")
+    suspend=json.loads(json.dumps(rows)); suspend[1]=dict(module="baseline.suspend_resume",state="KO",phase="precheck",rc=20,detail="no mem_sleep")
+    assert audit(suspend)==0
+    suspend[1].update(rc=1)
+    assert audit(suspend)!=0
 print("CI gate behavior: PASS")
 PY

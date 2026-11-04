@@ -1,72 +1,61 @@
 # Fedora Golden Workstation
 
-Une configuration versionnée de **Fedora 45 Workstation avec GNOME 51**, pour un PC consacré au développement, au gaming et aux machines virtuelles.
+Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation avec GNOME 51**, pour un PC précis consacré au développement, au jeu vidéo et aux machines virtuelles.
 
 [![Tests](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml)
 [![Licence Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
 
-Le projet rassemble les réglages, les logiciels et les procédures nécessaires pour retrouver le même environnement après une installation neuve. Un point d’entrée permet de préparer l’installation, entretenir le poste, sauvegarder les données et lancer les diagnostics : **`./control.sh`**.
-
-![Maquette du bureau GNOME cible](docs/assets/desktop-preview.svg)
+![Maquette du bureau GNOME cible : barre supérieure, dock à gauche, terminal et gestionnaire de fichiers côte à côte](docs/assets/desktop-preview.svg)
 
 *Maquette illustrative, pas une capture réelle. Les captures du poste seront ajoutées après sa qualification matérielle.*
 
-## Ce que prépare le projet
+## Le problème et l'objectif
 
-- **Un bureau GNOME soigné** : Wayland, dock, tuilage, applications natives et réglages cohérents.
-- **Un poste de travail polyvalent** : outils de développement, applications quotidiennes, Steam et environnement KVM.
-- **Des données persistantes** sur un second SSD : documents, projets, projets IA dans `/data/IA/Openclaw` et stockage des VM.
-- **Une maintenance documentée** : mises à jour, sauvegardes Borg, restauration et diagnostics par domaine.
-- **Une configuration vérifiable** : plan consultable avant application, tests automatisés et qualification sur le matériel cible.
+Une installation faite à la main se perd : après une réinstallation, il faut retrouver chaque réglage, chaque logiciel et chaque correctif, sans savoir si le résultat est le même. Ce projet écrit tout cela dans un dépôt Git. Chaque réglage y est versionné, expliqué, testé et rejouable.
 
-La configuration vise **Ryzen 7 7700 · Intel Arc B580 · 48 Gio de RAM · deux Crucial T705**. Les caractéristiques complètes et l’organisation de `/data` figurent dans le [guide d’installation](docs/INSTALLATION_GUIDE.md).
+L'objectif est un poste de référence (« Golden ») : la même Fedora, sur le même matériel, reconstruite à l'identique et vérifiée par des contrôles reproductibles. Le dépôt sert aussi de terrain d'apprentissage des pratiques DevOps : configuration déclarative, tests de comportement, intégration continue et preuves.
 
-## État de la cible
+## Ce que fait le projet
 
-**Fedora 45 / GNOME 51 est la cible d’installation neuve.** Le profil de production est `ready` : le média final signé et les composants stables sont authentifiés. La promotion n’est pas une certification de la machine ; celle-ci reste acquise par la Gate 3 sur le vrai PC. Le média et l’état de promotion sont centralisés dans [la fiche Fedora 45](docs/FEDORA45_PRIMARY.md).
+| Domaine | Contenu | Guide |
+|---|---|---|
+| Bureau | GNOME sous Wayland, dock, bureau avec icônes, tuilage, applications GTK4, soin de l'écran QD-OLED | [GNOME](docs/GNOME.md) |
+| Données | Un second SSD monté sur `/data`, conservé lors d'une réinstallation : documents, projets, projets IA, jeux, disques des VM | [Installation](docs/INSTALLATION_GUIDE.md) |
+| Sauvegardes | Borg vers un SSD externe, sauvegarde vérifiée avant toute application, restauration d'abord dans un dossier d'essai | [Sauvegardes](docs/BACKUP_RESTORE.md) |
+| Développement | Terminal Ptyxis et Bash, laboratoire Rocky Linux en machine virtuelle KVM, réseau isolé du réseau local | [KVM](docs/KVM_QUICKSTART.md) |
+| Jeu vidéo | Steam, Proton et Vulkan sur l'Intel Arc B580 | [Gaming](docs/GAMING.md) |
+| Entretien | Mises à jour, noyau Linux amont avec retour arrière, diagnostics par domaine | [Centre de contrôle](docs/CONTROL_CENTER.md) |
 
-Les tests logiciels et la qualification du PC sont suivis séparément. La réussite des workflows GitHub ne certifie pas encore le fonctionnement du poste physique.
+Tout passe par un point d'entrée unique, `./control.sh`. Rien ne s'applique sans un essai à blanc (dry-run), une sauvegarde vérifiée et une confirmation explicite, et uniquement sur le PC physique. Le matériel visé est décrit dans l'[architecture](docs/ARCHITECTURE.md#le-matériel-cible) : Ryzen 7 7700, Intel Arc B580, 48 Gio de RAM, deux SSD Crucial T705.
 
-## Commencer
+## État réel
 
-Pour préparer l’installation, lire d’abord le [contrôle du média Live](docs/FEDORA45_LIVE_PREFLIGHT.md), puis suivre le [guide d’installation neuve](docs/INSTALLATION_GUIDE.md).
+Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce qui reste à prouver sur le vrai PC. Dernière mise à jour : 2026-11-03.
 
-Depuis la session Live Fedora 45, consulter puis exécuter les contrôles du PC :
+| Élément | Statut | Preuve |
+|---|---|---|
+| Configuration, scripts, modules et diagnostics | Réalisé | Ce dépôt |
+| Tests de comportement et contrats | Vérifié par la CI | Workflows GitHub sur chaque PR et chaque commit de `main` ([CI](docs/CI_VALIDATION.md)) |
+| Session GNOME 51 avec les six extensions, redémarrage et restauration | Vérifié par la CI, en VM jetable | [Laboratoire Fedora/GNOME](docs/FEDORA_GNOME_CI_LAB.md) |
+| Profil Fedora 45 : média final 1.4 et RPM stables | Vérifié le 2026-11-03 | Signature du CHECKSUM et SHA-256 de l'ISO ([fiche Fedora 45](docs/FEDORA45_PRIMARY.md)) |
+| Contrôle du PC depuis le Live USB | Non vérifié | À faire sur le matériel |
+| Installation, application et qualification (Gate 3) | Non vérifié | À faire sur le matériel ([qualification](docs/QUALIFICATION.md)) |
 
-```bash
-git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
-cd FEDORA_GNOME_CUSTOM
-./control.sh validate live plan
-./control.sh validate live run
-```
+**Une CI verte ne certifie pas le PC.** Seule la Gate 3, exécutée sur la machine installée, peut établir le statut « Golden runtime-certified ». Les versions publiées sont listées dans les [releases](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/releases).
 
-Le guide détaille le parcours complet :
+## Par où commencer
 
-**Live USB → installation Fedora → configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
-
-Pour l’usage quotidien, ouvrir le centre de contrôle :
-
-```bash
-./control.sh
-```
-
-## Documentation
-
-| Besoin | Point de départ |
+| Je veux… | Lire |
 |---|---|
-| Installer Fedora sur ce PC | [Installation](docs/INSTALLATION_GUIDE.md) |
-| Utiliser et entretenir le poste | [Centre de contrôle](docs/CONTROL_CENTER.md) |
-| Sauvegarder ou restaurer ses données | [Sauvegardes et restauration](docs/BACKUP_RESTORE.md) |
-| Découvrir le bureau et le gaming | [GNOME](docs/GNOME.md) · [Gaming](docs/GAMING.md) |
-| Utiliser les machines virtuelles | [Démarrage KVM](docs/KVM_QUICKSTART.md) |
-| Résoudre un problème | [Dépannage](docs/TROUBLESHOOTING.md) |
-
-La [documentation complète](docs/README.md) donne accès aux guides spécialisés, à l’[architecture](docs/ARCHITECTURE.md), aux décisions techniques et aux procédures de qualification.
+| Comprendre le projet et ses choix | [Architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
+| Installer ce PC | Le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md), puis le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) et la [qualification](docs/QUALIFICATION.md) |
+| Utiliser et entretenir le poste | Le [centre de contrôle](docs/CONTROL_CENTER.md), puis le [dépannage](docs/TROUBLESHOOTING.md) |
+| Voir tous les guides | Le [portail de la documentation](docs/README.md) |
 
 ## Contribuer
 
-Les changements sont proposés par pull request, avec les vérifications adaptées à leur portée. Voir les [consignes de contribution](CONTRIBUTING.md) et l’[historique des versions](CHANGELOG.md).
+Les changements passent par pull request, avec les tests adaptés à leur portée. Les [consignes de contribution](CONTRIBUTING.md) décrivent le flux de travail, la CI et les règles de rédaction ; l'[historique des versions](CHANGELOG.md) retrace les changements.
 
 ## Licence
 
-[Apache License 2.0](LICENSE) · [Version du projet](VERSION).
+[Apache License 2.0](LICENSE). La version courante du projet figure dans [`VERSION`](VERSION).
