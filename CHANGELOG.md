@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Documentation (chantiers D1 et D2, application des prompts V4) :
+  - **D1, vérifications réelles.** Rendu GitHub contrôlé dans le navigateur : 35 guides et README, en thème clair, sombre et en largeur mobile ; images chargées, ancres valides, aucune page ne déborde. Les 47 liens externes répondent. Les sept sources `.drawio` se rouvrent dans diagrams.net, avec des libellés identiques à leurs exports. Deux schémas étaient périmés depuis #182 : le laboratoire partait encore d'une « seed Cloud Beta », et le schéma de la CI ignorait l'exception des PR de documentation. Ils sont corrigés, comme la phrase de la fiche Fedora 45 sur les « images Beta » des laboratoires.
+  - **D2, schémas maintenables.** Le générateur des schémas, resté hors du dépôt, est versionné dans `tools/diagrams/` avec son mode d'emploi. `tests/test_diagram_sources.py` vérifie que chaque paire est reproduite octet pour octet et que les contrastes passent. `CONTRIBUTING.md` reçoit une charte graphique : structure des pages, et palette des schémas avec la fonction et le contraste mesuré de chaque couleur. Le contrôle des chemins cités couvre aussi `tools/`.
+
 - CI plus rapide, mesurée sur la PR #180 : 22 minutes, fixées par la VM Rocky et le laboratoire GNOME à six extensions, sans attente de runner.
   - **PR de documentation** : le nouveau job `changes` (`.github/scripts/docs-only-change.py`) classe les fichiers modifiés. Si la PR ne touche que du Markdown ou `docs/`, les trois VM, qui ne lisent aucun de ces fichiers, sont sautées. `contracts` n'accepte ce saut que pour ces trois jobs et seulement si `changes` a réussi ; tout autre job sauté reste un échec. Le push sur `main` exécute toujours les trois VM, et `release.yml` exige ce run. `test_fedora_lab_evidence.sh` couvre le classement et chaque refus.
   - **Image des laboratoires** : les deux laboratoires GNOME partent de l'image Cloud finale `Fedora-Cloud-Base-Generic-45-1.4` au lieu de la Beta 1.3. La Beta exigeait 416 mises à jour à chaque démarrage. Le `CHECKSUM` est vérifié par la clé Fedora 45 épinglée, et le contrôle refuse désormais toute autre image que celle de la compose épinglée.

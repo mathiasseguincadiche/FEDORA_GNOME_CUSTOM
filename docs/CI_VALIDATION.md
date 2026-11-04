@@ -133,7 +133,7 @@ Pour diagnostiquer un échec, suivre le [runbook CI](TROUBLESHOOTING.md#un-contr
 - une commande `./control.sh` que le code ne connaît pas ;
 - un chemin du dépôt cité qui n'existe pas ;
 - un guide sans bloc de métadonnées ;
-- un bloc Mermaid, un schéma sans sa paire `.drawio` / `.svg` ;
+- un bloc Mermaid, un schéma sans sa paire `.drawio` / `.svg`, ou une paire qui diffère de ce que produit `tools/diagrams/build.py` (`tests/test_diagram_sources.py`) ;
 - un inventaire logiciel différent des manifests.
 
 `tests/test_docs_integrity_behavior.py` prouve, sur des copies du dépôt, que chacune de ces règles accepte et refuse ce qu'elle doit. Les conventions sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation).
