@@ -81,6 +81,6 @@ Dans l'OSD du moniteur, relever **la plage RGB d'entrée** (Auto/Full/Limited), 
 
 **Pas de contournement** : ne pas désactiver SELinux, forcer `i915`, utiliser `force_probe`, modifier globalement les gamma LUT ou installer des Mesa expérimentaux sur l'hôte Golden. Une remédiation doit être réversible et liée à une preuve.
 
-La certification physique est régie par [PHYSICAL_QUALIFICATION_CHECKLIST.md](PHYSICAL_QUALIFICATION_CHECKLIST.md). Le travail prioritaire global est suivi dans [ROADMAP_FEDORA45_2026.md](ROADMAP_FEDORA45_2026.md).
+La certification physique est régie par [PHYSICAL_QUALIFICATION_CHECKLIST.md](PHYSICAL_QUALIFICATION_CHECKLIST.md). Les prochaines étapes du projet sont dans la [feuille de route](ROADMAP.md).
 
 **Sources :** [GNOME 51 — notes de version](https://release.gnome.org/51/) et [GNOME 50 — gestion des couleurs et VRR](https://release.gnome.org/50/).

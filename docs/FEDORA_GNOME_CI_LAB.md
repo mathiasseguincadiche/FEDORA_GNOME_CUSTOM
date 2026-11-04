@@ -1,165 +1,98 @@
-# Laboratoire Fedora/GNOME sur GitHub
+# Laboratoire Fedora/GNOME de la CI
 
-Ce prétest fonctionne exclusivement sur un runner GitHub jetable. Il ne lance
-aucune commande sur le PC de l'opérateur. Le job réutilisable
-`.github/workflows/fedora-gnome-vm.yml` est appelé par `Tests` sur les push vers `main` et les pull requests.
-Le contexte obligatoire `contracts` attend les deux laboratoires GNOME et les autres validations :
-logic-contracts, installer-audit, borg-fedora, upstream-kernel / rpm et rocky-devops-vm. La publication attend donc aussi ce laboratoire.
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — relu contre `.github/workflows/fedora-gnome-vm.yml`, `.github/workflows/fedora45-gnome-vm.yml`, `.github/scripts/fedora-gnome-vm.sh`, `.github/scripts/fedora-gnome-guest.sh` et `scripts/gnome/install-pinned-extension.sh` — matériel : non vérifié
 
-## Les deux laboratoires Fedora/GNOME : ce que chacun prouve
+Le laboratoire démarre une vraie session GNOME 51 dans une VM QEMU, sur un runner GitHub jetable. Il redémarre, sauvegarde, restaure puis reconstruit cette VM. Rien ne s'exécute sur le PC de l'opérateur, et aucun runner n'est à installer chez lui.
 
-| Profil laboratoire | Exercices | Non certifié |
-|---|---|---|
-| **Fedora 45 / GNOME 51 native preview** | GNOME 51 Wayland, maintenance, bureautique, redémarrage et récupération | six extensions personnalisées finales, matériel réel |
-| **Fedora 45 / GNOME 51 candidate complet** | session Wayland avec les **six** extensions réellement actives, ZIP épinglés/empreintes, RPM Fedora réels, redémarrage et restauration QEMU | publication finale Fedora, installation ISO Workstation, tests visuels humains et matériel réel |
+Les deux variantes sont des dépendances du job `contracts` ([CI](CI_VALIDATION.md)) : un échec bloque la fusion et la publication.
 
-Le workflow obligatoire `.github/workflows/fedora45-gnome-vm.yml` ne modifie ni `profiles/fedora45/profile.json`, ni le média de production. Il démarre le seed Cloud Fedora 45 Beta, dont la signature et le SHA sont verrouillés, et n'installe les quatre ZIP candidats que dans une VM jetable.
+## Les deux laboratoires
 
-Les deux extensions empaquetées par Fedora sont installées aux versions exactes du verrou `profiles/fedora45/gnome-rpms.json` : **Dash to Dock 110-1.fc45** et **AppIndicator 66-1.fc45**. Dans la VM seulement, `scripts/gnome/install-fedora45-rpm-extensions.sh --lab-testing` ajoute `updates-testing` à cette installation ; ce dépôt n'est jamais activé globalement, ni sur le PC. Avant le démarrage de GNOME, le laboratoire vérifie les versions RPM et la déclaration GNOME 51 de leur `metadata.json`. Aucune tolérance aux extensions incompatibles n'est activée.
+| Job | Extensions | Ce qu'il prouve | Ce qu'il ne prouve pas |
+|---|---|---|---|
+| `fedora-gnome-vm / lab` | aucune (mode `native`) | GNOME 51 Wayland, redémarrage, sauvegarde, restauration, reconstruction | les six extensions, le matériel |
+| `fedora45-gnome-vm / lab` | les six (mode `curated`) | session avec les six extensions actives, archives épinglées, RPM Fedora exacts, redémarrage, restauration | installation depuis l'ISO Workstation, tests visuels humains, matériel |
 
-Ces deux versions sont présentes dans les dépôts stables Fedora 45 : le contrôle `--stable-check` l'a vérifié lors de la promotion du profil, le 3 novembre 2026. Le PC de production n'installe ces paquets que depuis les dépôts stables.
-
-Le contrôle exige les six rôles `ACTIVE`, `enabled`, des métadonnées GNOME 51 et la provenance SHA des quatre archives, puis rejoue redémarrage, restauration et reconstruction. Un paquet incompatible reste **FAIL**, jamais `DEFERRED`.
-
-Le laboratoire natif sans extensions reste utile pour isoler les défauts GNOME, mais **son succès ne remplace pas** celui du laboratoire avec les six extensions. La CI donne une preuve logicielle QEMU seulement : rien ne qualifie le second T705, la B580 ou la certification physique.
+Le laboratoire natif isole les défauts de GNOME lui-même ; son succès ne remplace pas celui du laboratoire à six extensions. Aucun des deux ne modifie `profiles/fedora45/profile.json` ni le média de production.
 
 ![Schéma du laboratoire : sept étapes sur un runner GitHub jetable, de la VM Fedora 45 au rapport](assets/diagrams/laboratoire-gnome.svg)
 
-Tout se passe sur un runner GitHub jetable. Une VM Fedora 45 démarre depuis le seed Cloud Beta vérifié ; le dépôt est installé et la session GNOME 51 contrôlée ; des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg, l'original est supprimé et la VM restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
+Sur le runner, une VM Fedora 45 démarre depuis l'image Cloud vérifiée. Le dépôt est installé, la session GNOME 51 contrôlée, et des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg ; l'original est supprimé et la copie restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
 
 Source éditable : [`laboratoire-gnome.drawio`](assets/diagrams/laboratoire-gnome.drawio).
 
-**Un plantage GNOME n'est pas une réussite.** Les coredumps, erreurs critiques, services en échec et incohérences de reprise doivent rester bloquants, même s'ils apparaissent au dernier logout. Le job `contracts` dépend du succès effectif des laboratoires.
+## Image et machine virtuelle
 
-Pour voir comment la VM et les preuves se rattachent à la machine physique, consulter [ARCHITECTURE.md](ARCHITECTURE.md).
+Les deux laboratoires partent de l'image Fedora Cloud 45 Beta 1.3. `.github/scripts/fedora45-preview-media.py` vérifie sa signature par la clé Fedora 45 et son SHA-256, épinglé indépendamment. Cette image de laboratoire ne remplace jamais le média Workstation de production. Le laboratoire Fedora 44 historique, manuel, utilise seul `.github/fedora44-cloud.lock`.
 
-## Image et démarrage
+La VM utilise l'UEFI OVMF, un TPM logiciel (swtpm) et un GPU virtio. Elle tourne avec KVM quand le runner l'expose, sinon en émulation TCG ; l'accélération utilisée est enregistrée. GitHub indique que la virtualisation imbriquée fonctionne sans être officiellement prise en charge ([runners hébergés](https://docs.github.com/en/actions/concepts/runners/github-hosted-runners)).
 
-Les deux laboratoires principaux utilisent le seed Fedora Cloud 45 Beta verrouillé et signé, contrôlé par `.github/scripts/fedora45-preview-media.py`. Le laboratoire historique manuel utilise seul `.github/fedora44-cloud.lock` et la clé Fedora 44. Les images de laboratoire ne remplacent jamais le média Workstation final de production.
+Le disque de la VM est limité à 10 Gio, et sa taille maximale plus 2 Gio de réserve doit tenir sur le runner avant chaque création. Les disques intermédiaires sont supprimés dès qu'ils ne servent plus, pour ne pas cumuler plusieurs générations.
 
-Sources officielles : [Fedora Cloud](https://www.fedoraproject.org/cloud/download/) et [clés Fedora](https://fedoraproject.org/security/).
+SELinux reste en mode Enforcing et firewalld actif dans la VM. L'ouverture de session automatique et l'absence de mise en veille sont propres à cette image jetable.
 
-QEMU démarre un disque autonome, UEFI OVMF, TPM logiciel swtpm et un GPU virtio.
-L'accélération disponible est enregistrée ; TCG permet l'émulation lorsque
-KVM est absent. Les limites de temps restent bloquantes. Le disque virtuel du
-fixture est limité à 10 Gio ; sa capacité maximale plus 2 Gio de réserve doit
-tenir sur le runner avant chaque création. Les captures à froid dimensionnent
-l'espace d'après les tailles logiques des membres. L'original CI est supprimé
-après vérification Borg avant extraction, puis la copie et le dépôt jetables
-sont supprimés après le boot récupéré, avant reconstruction. Ces contrôles
-évitent de retenir plusieurs générations de disques jusqu'au pic de stockage. GitHub indique que
-la virtualisation imbriquée est techniquement possible mais non officiellement
-prise en charge : [documentation des runners](https://docs.github.com/en/actions/concepts/runners/github-hosted-runners).
-Le laboratoire ne nécessite aucun runner installé chez l'utilisateur.
+## Démarrage et redémarrage
 
-GNOME 51 est installé sur Fedora Cloud, puis lancé par GDM en session Wayland
-réelle. L'autologin et les réglages empêchant la veille sont propres à cette
-image éphémère. Avant chaque arrêt/redémarrage, le laboratoire attend que
-GNOME retire lui-même son marqueur de protection d'initialisation (environ
-une minute), puis revérifie session, réglages persistants et extensions actives.
-La session se ferme par `gnome-session-quit --logout --no-prompt`, puis GDM
-s'arrête avant le redémarrage/arrêt système. Le rapport exige
-`session_shutdown=gnome-logout`.
-Le runner s’abonne au moniteur QMP avant la demande de reboot du système,
-puis attend un événement `RESET` émis par l’invité avant de retenter SSH.
-Il ne force aucune remise à zéro depuis l’hôte. L’identifiant du boot doit
-également changer. Cette attente évite de provoquer des refus PAM critiques
-en interrogeant SSH pendant que Fedora bloque les connexions à l’arrêt.
-Le contrôle des erreurs critiques reste intégral : [événements QEMU](https://www.qemu.org/docs/master/interop/qemu-qmp-ref.html#event-reset).
-Il ne supprime jamais ce marqueur et ne réactive pas les extensions pour
-faire réussir un redémarrage. Le journal persistant permet aussi de refuser
-un crash ou une erreur critique sur le boot précédent, y compris à l'arrêt.
-La fermeture de session contrôle aussi immédiatement ces erreurs après l’arrêt
-de GDM, y compris pour la dernière VM qui ne sera pas redémarrée.
-Ce scénario ne qualifie pas un redémarrage précipité pendant la première
-minute d'initialisation, ni un reboot direct avec `systemctl` pendant que
-le bureau est ouvert. Ce dernier chemin a produit des timeouts d'arrêt de
-GNOME Shell et SIGABRT dans le laboratoire ; le contrôle du boot précédent
-les a rendus bloquants. Il reste à qualifier sur les autres environnements.
-Aucun timeout de GNOME, mécanisme de protection ni contrôle des coredumps
-n'est affaibli pour faire réussir ce parcours. SELinux reste enforcing et firewalld actif. Les quatre extensions utilisateur
-DING, Show Desktop Button, Vitals et Tiling Assistant utilisent leurs installateurs de
-production et les artefacts/hash du verrou existant. Les trois premières viennent de GNOME Extensions ; Tiling Assistant vient de sa release GitHub officielle. Avec Dash to Dock et AppIndicator fournis par RPM, les six extensions doivent être ACTIVE. Les ZIP sont téléchargés
-avec TLS strict par le runner, vérifiés puis transférés dans la VM ; le même
-installateur revérifie leur hash et leurs métadonnées depuis ce cache absolu.
-Aucun téléchargement non authentifié ni option curl insecure n'est utilisé.
+GNOME 51 est installé sur l'image Cloud puis lancé par GDM, en vraie session Wayland. Avant chaque arrêt, le laboratoire :
+
+1. attend que GNOME retire lui-même son marqueur de protection d'initialisation (environ une minute), sans jamais le supprimer ;
+2. revérifie la session, les réglages persistants et les extensions actives ;
+3. ferme la session par `gnome-session-quit --logout --no-prompt`, puis arrête GDM. Le rapport exige `session_shutdown=gnome-logout`.
+
+Pour redémarrer, le runner écoute le moniteur QMP de QEMU et attend l'événement `RESET` émis par l'invité avant de retenter SSH ([événements QEMU](https://www.qemu.org/docs/master/interop/qemu-qmp-ref.html#event-reset)). Il ne force aucune remise à zéro, et l'identifiant de démarrage doit changer. Interroger SSH pendant l'arrêt provoquait des refus PAM critiques.
+
+Le journal persistant permet de refuser un plantage ou une erreur critique du démarrage précédent, y compris pendant l'arrêt. La dernière VM, qui ne redémarre pas, est contrôlée juste après l'arrêt de GDM.
+
+**Cas non qualifiés.** Le laboratoire ne couvre ni un redémarrage pendant la première minute d'initialisation, ni un `systemctl reboot` lancé avec le bureau ouvert. Ce second chemin a produit des délais d'arrêt de GNOME Shell et un SIGABRT ; le contrôle du démarrage précédent les a rendus bloquants. Il reste à qualifier sur le PC. Aucun délai de GNOME ni contrôle des coredumps n'est affaibli pour faire réussir ce parcours.
+
+## Extensions
+
+Dash to Dock et AppIndicator sont installés depuis les RPM Fedora, aux versions exactes de `profiles/fedora45/gnome-rpms.json` (110-1.fc45 et 66-1.fc45). Dans la VM seulement, `scripts/gnome/install-fedora45-rpm-extensions.sh --lab-testing` ajoute `updates-testing` à cette transaction ; ce dépôt n'est jamais activé globalement ni sur le PC. Ces versions sont dans les dépôts stables depuis la promotion du profil, le 3 novembre 2026, et le PC ne les installe que depuis ces dépôts.
+
+Gtk4 DING, Show Desktop Button, Vitals et Tiling Assistant sont installés par l'installateur de production, à partir des archives et empreintes du verrou. Le runner télécharge les archives en TLS strict, les vérifie et les transfère dans la VM ; l'installateur revérifie leur empreinte et leurs métadonnées.
+
+Le laboratoire exige les six rôles `ACTIVE` et `enabled`, des métadonnées déclarant GNOME 51 et la provenance des quatre archives. Aucune tolérance aux extensions incompatibles n'est activée : un paquet incompatible est un échec, jamais un report.
+
+### Correctif d'arrêt de Gtk4 DING
+
+À la déconnexion, Gtk4 DING v145 pouvait relancer son processus d'icônes pendant sa propre désactivation, et faire planter la session. `scripts/gnome/ding-shutdown-fix.py` applique la correction explorée en amont (branche `fix-mutter-crash`) : ne plus relancer ce processus pendant la désactivation.
+
+L'archive officielle reste intacte, épinglée et revérifiée ; seul `dingManager.js` est modifié, et le fichier installé doit être exactement le résultat attendu. Si l'amont change ce fichier, le correctif refuse de s'appliquer et demande une nouvelle revue. L'empreinte du correctif est inscrite dans le profil promu (`ding_patch_sha256`), et `scripts/gnome/install-pinned-extension.sh` l'applique aussi sur le PC. Un passage vert ne prouve pas à lui seul la disparition d'une panne intermittente : la Gate 3 l'observe sur le matériel.
 
 ## Exercices et critères
 
-| Exercice | Résultat requis |
+| Exercice | Résultat exigé |
 |---|---|
-| Média | Signature de la clé Fedora 45 + paire nom/SHA exacte |
-| Démarrage | Fedora 45, SSH, cloud-init terminé, identité du boot enregistrée |
-| GNOME | GDM, Shell 50, session logind Wayland active, bus Shell, extensions ACTIVE, processus Nautilus/Ptyxis et portal |
-| Redémarrage | Identifiant du boot différent, GNOME et données/TPM persistants |
-| Fichiers Borg | Vrai moteur du projet, dépôt non chiffré, archive exacte vérifiée ; roundtrip quotidien existant rejoué dans Fedora |
-| Archive VM à froid | QEMU et swtpm arrêtés avant capture ; disque sans backing, NVRAM et TPM inclus ; vérification intégrale Borg et comparaison des membres |
-| VM récupérée | Démarrage des fichiers extraits, GNOME, données, canary TPM NV identique, réseau restrict=on |
-| Fedora reconstruit | Seconde image neuve, réinstallation indépendante de GNOME, données absentes avant extraction ; archive exacte restaurée en staging puis fichiers de test remis et comparés |
+| Média | signature de la clé Fedora 45 et paire nom / SHA-256 exacte |
+| Démarrage | Fedora 45, SSH, cloud-init terminé, identifiant de démarrage enregistré |
+| GNOME | GDM, GNOME Shell 51, session Wayland active, bus du Shell, extensions actives, processus Nautilus, Ptyxis et portail |
+| Redémarrage | nouvel identifiant de démarrage ; GNOME, données et TPM persistants |
+| Fichiers Borg | moteur du projet, dépôt non chiffré, archive exacte vérifiée |
+| Archive de la VM à froid | QEMU et swtpm arrêtés avant capture ; disque autonome, NVRAM et TPM inclus ; vérification intégrale par Borg |
+| VM restaurée | démarrage depuis les fichiers extraits, GNOME, données, témoin TPM identique, réseau isolé |
+| Fedora reconstruit | image neuve, GNOME réinstallé, données absentes avant extraction puis restaurées en staging et comparées |
 
-Le réseau de récupération utilise `restrict=on` avec un seul port SSH sur
-127.0.0.1. QEMU interdit les connexions sortantes et conserve ce canal de
-contrôle explicite : [documentation réseau QEMU](https://www.qemu.org/docs/master/system/invocation.html).
-Le test refuse une connexion sortante réussie. La VM originale est arrêtée et
-son dossier jetable supprimé après vérification de l'archive et avant de démarrer
-la copie récupérée. Cette suppression concerne uniquement les données de test CI.
-Les originaux de production restent conservés selon le runbook opérateur.
+La VM restaurée tourne sur un réseau QEMU `restrict=on`, avec un seul port SSH sur 127.0.0.1 ; toute connexion sortante réussie fait échouer le test ([réseau QEMU](https://www.qemu.org/docs/master/system/invocation.html)). L'original est supprimé avant le démarrage de la copie : cela ne concerne que les données de test de la CI.
 
 ## Rapports
 
-L'artefact `fedora-gnome-boot-recovery-<run_id>` conserve 14 jours :
+L'artefact du job (`fedora-gnome-boot-recovery-<run_id>` ou `fedora45-gnome51-six-extensions-<run_id>`) est conservé 14 jours. Il contient :
 
-- `report.json` : commit du code exact, étapes, quatre identifiants de boot,
-  archive/id, hash du disque et de la NVRAM, chiffrement, isolation et méthode de fermeture de session ;
-- consoles QEMU, sorties installation/restauration et signature du média ;
-- journaux complets du boot et des boots précédents, du noyau et de l'utilisateur, unités en échec,
-  inventaire des paquets et sessions pour chaque étape.
+- `report.json` : commit testé, étapes, quatre identifiants de démarrage, archive, empreintes du disque et de la NVRAM, isolement, méthode de fermeture de session ;
+- consoles QEMU, sorties d'installation et de restauration, vérification du média ;
+- journaux complets de chaque démarrage, unités en échec, inventaire des paquets.
 
-Un crash enregistré par systemd-coredump, un message journal de priorité
-critique ou une unité système/utilisateur en échec bloque le test. Les autres messages restent disponibles pour analyse.
-Une lecture de journal en échec reste un échec. Aucun PASS n'est écrit si une
-étape manque ou si un redémarrage conserve le même identifiant de boot.
-Les clés SSH, user-data, disques et dépôts Borg ne sont pas publiés en artefact.
+Bloquent le test : un plantage enregistré par systemd-coredump, un message de priorité critique, une unité en échec, une lecture de journal impossible, une étape manquante, un redémarrage qui garde le même identifiant. Les clés SSH, disques et dépôts Borg ne sont jamais publiés.
 
 ## Portée des preuves
 
-Le rapport porte `scope=fedora-gnome-qemu-pretest`. Il n'écrit aucun fichier
-de certification officiel. Restent explicitement DEFERRED :
+Le rapport porte `scope=fedora-gnome-qemu-pretest` et n'écrit aucun fichier de certification. Restent à prouver ailleurs :
 
-- essais Live USB avant installation et interactions réelles du système installé ;
-- Gate 3 et matériel physique Ryzen/B580/T705/écran ;
-- APPLY complet de production et démarrage du noyau Linux amont ;
-- restauration de Rocky de production, ses données, son UUID et son réseau libvirt.
+- le Live USB et l'usage du système installé ;
+- la Gate 3 et le matériel (Ryzen, B580, T705, écran) ;
+- l'APPLY de production et le démarrage du noyau Linux amont, le laboratoire gardant le noyau de l'image Cloud ;
+- l'installateur Anaconda et le Kickstart du média Workstation ;
+- la restauration de tous les paquets, jeux et services du poste, et celle de la VM Rocky de production.
 
-Le noyau du laboratoire reste celui de Fedora Cloud. Installer GNOME sur une
-image Cloud n'exerce pas l'installateur Anaconda/Kickstart du média Workstation.
-La reconstruction vérifie les fichiers de test et GNOME ; elle ne démontre
-pas la restauration de tous les paquets, jeux ou services de la workstation.
-
-Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et
-[le parcours Live USB puis Gate 3](QUALIFICATION.md) définissent les essais opérateur
-restants sur le même commit. Un PASS CI conserve toutes ces limites.
-
-Le check obligatoire `contracts` s'exécute avec `always()` puis contrôle
-explicitement que chacune des sept dépendances a conclu `success`. Un job dépendant
-simplement sauté peut être accepté comme check requis par GitHub ; ici tout
-`skipped`, `failure` ou `cancelled` produit un véritable échec du check agrégé.
-Voir [les conditions GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions).
-
-### Protection contre le crash de déconnexion de Gtk4-DING (GNOME 51)
-
-La qualification Fedora 45 applique **uniquement dans la VM jetable** le garde-fou
-issu de l'exploration amont `fix-mutter-crash` de Gtk4 Desktop Icons NG : un
-sous-processus d'icônes ne doit jamais être relancé si l'extension est en cours
-de désactivation. Le ZIP EGO officiel reste intact, épinglé par SHA-256 et
-recontrôlé avant installation. Le fichier `dingManager.js` installé doit être
-exactement le résultat déterministe du correctif ; l'audit indépendant
-reconstruit et vérifie ses octets contre le ZIP revu. Un changement amont non
-revu ou un fichier modifié entraîne un échec, pas une tolérance implicite.
-
-Ce correctif **n'est pas encore une promotion production Fedora 45** : une
-version upstream publiée et auditée, ou une décision explicite de distribution
-d'un correctif local validé, reste nécessaire pour l'installation finale.
-Le test continue à exiger la vraie déconnexion GNOME, six extensions actives,
-zéro coredump et une reprise après redémarrage et restauration. Un unique
-passage vert ne prouve pas à lui seul la disparition d'une panne intermittente.
+Le [runbook de reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et la [qualification](QUALIFICATION.md) définissent ces essais, sur le même commit. L'articulation entre VM et machine physique est dans l'[architecture](ARCHITECTURE.md).

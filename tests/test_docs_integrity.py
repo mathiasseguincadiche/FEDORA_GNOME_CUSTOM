@@ -8,7 +8,8 @@ Checks what can actually mislead an operator, never phrasing:
 - every repository path quoted in backticks exists;
 - code and workflows only reference documentation files that exist;
 - guides carry the metadata block defined in CONTRIBUTING.md;
-- diagrams are .drawio/.svg pairs and no Mermaid block remains.
+- diagrams are .drawio/.svg pairs and no Mermaid block remains;
+- the HOST software inventory reproduces the package manifests.
 """
 from pathlib import Path
 import re
@@ -123,11 +124,7 @@ for name in TRACKED:
 
 # Migration lists for the documentation overhaul: a guide leaves a list when it is
 # rewritten, and a listed guide that already complies is an error, so the lists only shrink.
-METADATA_PENDING = {
-    "ARCHITECTURE.md", "CI_VALIDATION.md", "FEDORA_GNOME_CI_LAB.md", "GLOSSARY.md",
-    "HOST_SECURITY_POLICY.md", "ROADMAP_FEDORA45_2026.md", "SOFTWARE_INVENTORY.md", "SUPPLY_CHAIN.md",
-    "TROUBLESHOOTING.md", "UPGRADE_FEDORA_45.md",
-}
+METADATA_PENDING = set()  # every guide carries its metadata block (C8)
 MERMAID_PENDING = set()  # every Mermaid block was replaced by a .drawio/.svg pair (C3)
 DATE = r"\d{4}-\d{2}-\d{2}"
 METADATA = re.compile(
@@ -206,6 +203,31 @@ for path in sorted(diagrams.glob("*")) if diagrams.is_dir() else []:
             errors.append(f"{rel(path)}: SVG needs an opaque background rectangle first")
         if re.search(r"<script|href=\"https?:", path.read_text(encoding="utf-8")):
             errors.append(f"{rel(path)}: SVG must not load scripts or remote resources")
+
+# 9. The HOST inventory reproduces every package manifest exactly.
+inventory = ROOT / "docs/SOFTWARE_INVENTORY.md"
+listed, current = {}, None
+for line in inventory.read_text(encoding="utf-8").splitlines():
+    marker = re.match(r"^\*\*`manifests/([a-z0-9-]+\.txt)`\*\*", line)
+    if marker:
+        current = listed.setdefault(marker.group(1), [])
+    elif line.startswith("#"):
+        current = None
+    elif current is not None and line.startswith("- "):
+        current.append(line[2:].split(" — ", 1)[0].strip())
+for manifest in sorted((ROOT / "manifests").glob("*.txt")):
+    expected = [l.split("#", 1)[0].split()[0] for l in manifest.read_text(encoding="utf-8").splitlines()
+                if l.split("#", 1)[0].strip()]
+    found = listed.pop(manifest.name, None)
+    if found is None:
+        errors.append(f"docs/SOFTWARE_INVENTORY.md: manifests/{manifest.name} is not listed")
+    elif found != expected:
+        missing = [p for p in expected if p not in found]
+        extra = [p for p in found if p not in expected]
+        errors.append(f"docs/SOFTWARE_INVENTORY.md: manifests/{manifest.name} differs"
+                      f" (missing {missing or 'none'}, extra {extra or 'none'}, or order)")
+for name in sorted(listed):
+    errors.append(f"docs/SOFTWARE_INVENTORY.md: lists missing manifest manifests/{name}")
 
 if errors:
     print("documentation integrity: FAIL", file=sys.stderr)

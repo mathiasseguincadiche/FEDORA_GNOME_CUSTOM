@@ -76,8 +76,12 @@ def remigrate(path):
 def relist(work, entry):
     test = work / "tests/test_docs_integrity.py"
     text = test.read_text(encoding="utf-8")
-    assert text.count("METADATA_PENDING = {\n") == 1
-    test.write_text(text.replace("METADATA_PENDING = {\n", 'METADATA_PENDING = {\n    "' + entry + '",\n'), encoding="utf-8")
+    if "METADATA_PENDING = set()" in text:
+        text = text.replace("METADATA_PENDING = set()", 'METADATA_PENDING = {"' + entry + '"}', 1)
+    else:
+        assert text.count("METADATA_PENDING = {\n") == 1
+        text = text.replace("METADATA_PENDING = {\n", 'METADATA_PENDING = {\n    "' + entry + '",\n', 1)
+    test.write_text(text, encoding="utf-8")
 
 
 def case(name, change, expect_pass, message=None):
@@ -132,9 +136,18 @@ case("source with an orphan edge", lambda w: diagram(w, drawio=DRAWIO.format(tar
      False, "has an orphan target")
 case("compressed or foreign source", lambda w: diagram(w, drawio="<mxfile><diagram>eJzLSM3JyQcABiwCFQ==</diagram></mxfile>\n"),
      False, "not an uncompressed diagrams.net file")
+case("manifest gains an undocumented package",
+     lambda w: edit(w / "manifests/packages-shell.txt", "direnv\n", "direnv\nexemple-paquet\n"),
+     False, "manifests/packages-shell.txt differs (missing ['exemple-paquet']")
+case("inventory lists a package no manifest installs",
+     lambda w: edit(w / "docs/SOFTWARE_INVENTORY.md", "- zoxide\n", "- zoxide\n- xorriso\n"),
+     False, "extra ['xorriso']")
+case("new manifest left out of the inventory",
+     lambda w: (w / "manifests/packages-exemple.txt").write_text("exemple\n", encoding="utf-8"),
+     False, "manifests/packages-exemple.txt is not listed")
 
 if failures:
     print("documentation integrity behavior: FAIL", file=sys.stderr)
     print("\n".join(failures), file=sys.stderr)
     sys.exit(1)
-print("documentation integrity behavior: PASS (15 cases)")
+print("documentation integrity behavior: PASS (18 cases)")

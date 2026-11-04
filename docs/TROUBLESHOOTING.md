@@ -1,5 +1,8 @@
 # Dépannage
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — chaque doctor, script et sous-commande cités existent dans le dépôt ; commandes `./control.sh` contrôlées par `tests/test_docs_integrity.py` — matériel : non vérifié
+
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
 ```bash
@@ -11,7 +14,21 @@ Chaque ligne `KO` nomme le contrôle en échec. Corriger le **premier** défaut 
 
 **À ne jamais faire** : désactiver SELinux ou firewalld ; supprimer les règles nftables KVM ; ajouter `force_probe`, ou forcer ASPM, APST, C-States ou un mode de veille sans preuve ; reformater `/data` ; `chmod 777` ; éditer ou recréer un marqueur de preuve à la main ; modifier une configuration avant d'avoir conservé les journaux.
 
-Machines virtuelles : voir le [dépannage KVM](KVM_QUICKSTART.md#dépannage).
+## Par où commencer
+
+| Symptôme | Première commande | Section |
+|---|---|---|
+| `install.sh --apply` ou la sauvegarde pré-APPLY refusés | `./install.sh --dry-run` | [Installation et APPLY](#installation-et-apply) |
+| Paquet, dépôt, Flatpak ou codec en échec | `dnf repolist`, `./diagnostics/media-doctor` | [Paquets et applications](#paquets-et-applications) |
+| GPU, écran, couleurs ou veille | `./diagnostics/graphics-doctor`, `./diagnostics/display-doctor` | [GPU, écran et veille](#gpu-écran-et-veille) |
+| Identité de la carte mère, CPU, mémoire, T705 | `./diagnostics/hardware-components-doctor` | [Carte mère, CPU, mémoire et stockage](#carte-mère-cpu-mémoire-et-stockage) |
+| Démarrage sur le mauvais noyau, régression | `./control.sh kernel status` | [Noyau](#noyau) |
+| `/data`, XDG Documents, Steam | `./control.sh doctor data` | [Données `/data` et Gaming](#données-data-et-gaming) |
+| Sauvegarde refusée, restauration | `./diagnostics/backup-doctor --certify-status` | [Sauvegarde et restauration](#sauvegarde-et-restauration) |
+| VM, réseau `devops-nat` | `./control.sh kvm guard-check` | [Dépannage KVM](KVM_QUICKSTART.md#dépannage) |
+| Contrôle GitHub Actions rouge | page Actions, SHA exact | [Un contrôle GitHub Actions devient rouge](#un-contrôle-github-actions-devient-rouge) |
+
+Les journaux et fiches d'incident sont décrits dans [Journaux et incidents](#journaux-et-incidents) ; ce qu'il faut joindre à une demande d'aide, dans [Avant de demander de l'aide](#avant-de-demander-de-laide).
 
 ## Installation et APPLY
 

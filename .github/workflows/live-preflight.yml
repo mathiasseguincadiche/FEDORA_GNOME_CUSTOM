@@ -9,7 +9,6 @@ on:
       - 'tests/test_live_preflight_probe.sh'
       - 'tests/test_display_color_audit.py'
       - 'docs/DISPLAY_COLOR_DIAGNOSTIC.md'
-      - 'docs/ROADMAP_FEDORA45_2026.md'
       - 'docs/FEDORA45_LIVE_PREFLIGHT.md'
       - '.github/workflows/live-preflight.yml'
   push:
@@ -22,7 +21,6 @@ on:
       - 'tests/test_live_preflight_probe.sh'
       - 'tests/test_display_color_audit.py'
       - 'docs/DISPLAY_COLOR_DIAGNOSTIC.md'
-      - 'docs/ROADMAP_FEDORA45_2026.md'
       - 'docs/FEDORA45_LIVE_PREFLIGHT.md'
       - '.github/workflows/live-preflight.yml'
 permissions:

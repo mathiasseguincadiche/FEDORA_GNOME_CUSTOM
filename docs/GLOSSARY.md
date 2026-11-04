@@ -1,6 +1,9 @@
-# Glossaire Fedora / KVM / Golden Workstation
+# Glossaire
 
-Ce glossaire donne une définition courte des termes utilisés dans le projet. Il vise d'abord la compréhension pratique, pas l'exhaustivité académique.
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — termes rapprochés du code (`lib/live_validation.py`, `config/virtualization.conf`, `config/golden-host.policy`, `manifests/`) ; un terme absent du code retiré — matériel : non vérifié
+
+Définitions courtes des termes du projet, pour la compréhension pratique. Les conventions de rédaction sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation).
 
 ## Système et projet
 
@@ -12,17 +15,27 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **`ready` (profil)** — identité finale et verrous promus ; ce n'est **ni un PASS CI, ni une qualification physique**.
 
-**`CODE-READY`** — niveau de préparation logicielle établi par les contrôles applicables ; distinct du matériel certifié.
-
 **`Golden runtime-certified`** — état du véritable PC après preuve Gate 3, lié à son commit et sa configuration.
 
 **`STALE`** — preuve devenue obsolète après changement significatif de code, matériel, noyau ou configuration : requalification nécessaire.
 
-**Validation / Gate 3** — la CI vérifie le logiciel ; le Live USB collecte des observations avant installation (`PREINSTALL_ONLY`) ; la Gate 3 qualifie le système installé sur le PC physique.
+**Validation / Gate 3** — la CI vérifie le logiciel ; le Live USB collecte des observations avant installation (`PREINSTALL_ONLY`) ; la Gate 3 qualifie le système installé sur le PC physique ([qualification](QUALIFICATION.md)).
 
-**HOST** — la machine Fedora physique. Ici, il s'agit de la workstation principale.
+**Compte rendu Live** — résultat du contrôle depuis le Live USB, lié au commit et au matériel ; exporté puis importé sur le système installé. Il vaut `PREINSTALL_ONLY` et ne déverrouille jamais l'APPLY.
 
-**Guest / invité** — système d'exploitation exécuté dans une machine virtuelle, ici `rocky-devops`.
+**Baseline** — empreinte matérielle et logicielle enregistrée avant l'APPLY. L'APPLY exige une baseline valide pour l'empreinte courante.
+
+**Sauvegarde pré-APPLY** — point de retour de l'état du système, pris juste avant l'APPLY et vérifié par restauration d'un témoin. Elle ne contient pas `/data` ([sauvegardes](BACKUP_RESTORE.md)).
+
+**`DEFERRED`** — preuve reportée à un environnement capable de la donner (le PC, une session réelle). Ce n'est ni un succès ni un échec.
+
+**ADR** — Architecture Decision Record : décision écrite, avec son contexte et ses conséquences ([liste](adr/README.md)).
+
+**N / N-1** — le noyau Linux amont courant et le précédent, gardé pour le retour arrière ; un noyau Fedora signé reste en secours ([Linux amont](UPSTREAM_LINUX.md)).
+
+**Hôte (HOST)** — la machine Fedora physique, le poste de travail principal.
+
+**Invité (guest)** — système d'exploitation exécuté dans une machine virtuelle, ici `rocky-devops`.
 
 **Bare-metal** — système exécuté directement sur le matériel physique, et non dans une VM, un conteneur ou WSL2.
 
@@ -42,7 +55,9 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **DNF5** — gestionnaire de paquets de Fedora 45 utilisé pour installer et résoudre les RPM.
 
-**RPM Fusion** — dépôts complémentaires utilisés notamment pour certains codecs multimédias non fournis directement par Fedora.
+**RPM Fusion** — dépôts complémentaires, utilisés pour certains codecs multimédia et pour Steam ([provenance](SUPPLY_CHAIN.md#dépôts-rpm-fusion)).
+
+**COPR** — service de dépôts communautaires de Fedora, signés par COPR. Le projet en utilise deux : le noyau amont (`@kernel-vanilla/stable`) et, en option, Sunshine.
 
 **Flatpak** — format d'applications sandboxées utilisé pour certaines applications graphiques.
 
@@ -50,9 +65,9 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **firewalld** — couche de gestion du pare-feu Fedora. Elle organise notamment les interfaces dans des zones.
 
-**nftables** — moteur de filtrage réseau Linux sous-jacent. Le projet possède une table nftables dédiée au guard KVM sans purger le firewall global.
+**nftables** — moteur de filtrage réseau Linux sous-jacent. Le projet possède une table nftables dédiée au garde réseau KVM sans purger le firewall global.
 
-**Secure Boot** — mécanisme UEFI qui n'autorise que des composants de démarrage reconnus comme fiables. Le chemin Kernel Vanilla du projet bloque actuellement lorsqu'il est actif sans workflow de signature explicite.
+**Secure Boot** — mécanisme UEFI qui n'autorise que des composants de démarrage signés par une clé reconnue. La politique de l'hôte l'exige désactivé, et l'installation du noyau amont est bloquée s'il est actif ([politique de sécurité](HOST_SECURITY_POLICY.md)).
 
 ## Virtualisation
 
@@ -86,7 +101,7 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **qcow2** — format d'image disque QEMU permettant notamment allocation dynamique et certaines fonctions de snapshot.
 
-**`/data`** — point de montage EXT4 du deuxième Crucial T705. Il constitue le stockage persistant de la workstation : `/data/Documents`, `/data/Projets`, `/data/ISO` et un sous-arbre `/data/libvirt` réservé à KVM.
+**`/data`** — point de montage EXT4 du deuxième Crucial T705, le stockage persistant du poste : `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`, `/data/IA/Openclaw` et `/data/libvirt`, réservé à KVM.
 
 **Données persistantes** — données placées sur le second T705 afin qu'une réinstallation du SSD système Btrfs ne les efface pas. Cette séparation physique ne remplace pas une sauvegarde externe contre la panne du second SSD.
 
@@ -110,9 +125,9 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **`devops-nat`** — réseau KVM privé du projet : `192.168.50.0/24`, passerelle `192.168.50.254`, bridge `virbr50`.
 
-**LAN physique** — réseau directement connecté au HOST via son uplink courant. Le guard empêche les VM de l'atteindre et empêche son trafic d'être forwardé vers les VM.
+**LAN physique** — réseau directement connecté à l'hôte par son lien actif. Le garde réseau KVM empêche les VM de l'atteindre, et son trafic d'être transmis vers les VM.
 
-**Fail-closed** — en cas d'échec d'un contrôle de sécurité, le système reste dans l'état restrictif. Le guard KVM entre désormais d'abord en mode d'urgence avant de recalculer les règles normales.
+**Fail-closed** — en cas d'échec d'un contrôle de sécurité, le système reste dans l'état restrictif. Le garde réseau KVM passe d'abord en mode d'urgence avant de recalculer les règles normales.
 
 ## Provisionnement VM
 
@@ -138,13 +153,15 @@ Ce glossaire donne une définition courte des termes utilisés dans le projet. I
 
 **GNOME Keyring / Secret Service** — stockage de secrets intégré à la session GNOME.
 
-**Dash to Dock** — extension GNOME Shell gérée et activée par le projet.
+**Six extensions** — Dash to Dock et AppIndicator (RPM Fedora), Gtk4 DING, Show Desktop Button, Vitals et Tiling Assistant (archives épinglées). Chacune remplit un rôle précis ([GNOME](GNOME.md)).
 
-**AppIndicator** — extension fournissant la compatibilité avec les applications utilisant AppIndicator/KStatusNotifierItem ; elle est également activée dans le profil courant.
+**Dash to Dock** — extension qui transforme le dash de GNOME en dock permanent.
+
+**AppIndicator** — extension qui affiche les icônes d'état des applications (AppIndicator, KStatusNotifierItem).
 
 ## Backup
 
-**Borg (BorgBackup)** — outil de sauvegarde dédupliquée et compressée utilisé par le projet, ici avec un dépôt **non chiffré** (ADR 0014).
+**Borg (BorgBackup)** — outil de sauvegarde dédupliquée et compressée utilisé par le projet, ici avec un dépôt **non chiffré** ([ADR 0014](adr/0014-borg-unencrypted-backups.md)).
 
 **Canary restore** — petit fichier réellement restauré puis comparé afin de prouver qu'un backup n'est pas seulement lisible mais restaurable.
 

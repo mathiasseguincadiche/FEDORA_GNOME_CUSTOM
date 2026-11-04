@@ -61,7 +61,7 @@ Ne jamais désactiver SELinux, firewalld ou un garde-fou pour faire disparaître
 
 ### Développement
 
-- [CI et validation](CI_VALIDATION.md) · [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md) · [feuille de route](ROADMAP_FEDORA45_2026.md)
+- [CI et validation](CI_VALIDATION.md) · [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md) · [feuille de route](ROADMAP.md)
 
 ### Historique
 

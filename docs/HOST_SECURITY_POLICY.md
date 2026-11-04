@@ -1,17 +1,19 @@
-# Politique HOST — Secure Boot et chiffrement local
+# Politique de sécurité de l'hôte — Secure Boot et chiffrement local
 
-## Décision Golden
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — relu contre `config/golden-host.policy`, `diagnostics/host-security-policy-doctor`, `installer/lib/generate-kickstart.sh` et `config/kernel.conf` — matériel : non vérifié
 
-La politique de la workstation physique est **fixe et non optionnelle** :
+## La décision
 
-```text
-Secure Boot du HOST             OFF obligatoire
-Chiffrement des SSD locaux      interdit
-LUKS / LUKS2                    interdit
-Partitionnement Golden          Btrfs non chiffré
-```
+Sur le PC physique, la politique est fixe et sans option :
 
-La source de vérité versionnée est `config/golden-host.policy` :
+| Élément | Politique |
+|---|---|
+| Secure Boot | désactivé, obligatoirement |
+| Chiffrement des SSD locaux, LUKS ou LUKS2 | interdit |
+| Partitionnement du système | Btrfs non chiffré |
+
+Elle est versionnée dans `config/golden-host.policy` :
 
 ```text
 HOST_SECURE_BOOT_POLICY=disabled-required
@@ -19,53 +21,47 @@ HOST_STORAGE_ENCRYPTION_POLICY=forbidden
 HOST_LUKS_POLICY=forbidden
 ```
 
-Il n'existe pas de profil `luks2`, de bascule d'activation, ni de chemin d'installation chiffré dans le Golden HOST.
+Il n'existe ni profil `luks2`, ni bascule, ni chemin d'installation chiffré. Les raisons et les risques acceptés sont dans l'[ADR 0002](adr/0002-no-secureboot-no-local-luks.md) : la possession physique d'un disque donne accès à ses données, ce qui impose de protéger le matériel lui-même.
 
-## Portée exacte
+## Portée
 
-Cette interdiction concerne **Fedora Golden HOST et ses périphériques bloc locaux**. Elle ne doit pas être confondue avec :
+L'interdiction vise l'hôte Fedora et ses périphériques bloc locaux. Elle ne s'applique pas :
 
-- les sauvegardes : depuis l'ADR 0014, le dépôt Borg externe/remote n'est **pas** chiffré non plus ;
-- GNOME Keyring ou d'autres coffres applicatifs destinés aux secrets ;
-- les besoins propres d'un système invité dans une VM. Une VM n'est pas le firmware ni le stockage bloc du HOST.
+- aux sauvegardes : le dépôt Borg externe n'est pas chiffré non plus, par une décision distincte ([ADR 0014](adr/0014-borg-unencrypted-backups.md)), et ne contient jamais de clé SSH ni GnuPG ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)) ;
+- à GNOME Keyring et aux autres coffres de secrets des applications ;
+- aux systèmes invités : une VM n'est ni le firmware ni le stockage de l'hôte.
 
-Le projet ne doit donc jamais affaiblir les sauvegardes ou la gestion de secrets au nom de cette politique de stockage local.
+Cette politique ne justifie donc jamais d'affaiblir la gestion des secrets.
 
-## Enforcement fail-closed
+## Contrôle
 
-`diagnostics/host-security-policy-doctor` valide :
+`diagnostics/host-security-policy-doctor` vérifie :
 
-- la politique versionnée ;
-- `mokutil --sb-state` sur bare-metal et exige Secure Boot désactivé ;
-- l'absence de périphérique bloc de type `crypt` ;
-- l'absence d'entrée active dans `/etc/crypttab` ;
-- l'absence de cible device-mapper `crypt` lorsqu'elle est observable.
+| Contrôle | Résultat en cas d'écart |
+|---|---|
+| valeurs de `config/golden-host.policy` | KO |
+| `mokutil --sb-state` sur le PC physique : Secure Boot désactivé ; `mokutil` absent | KO ; hors du PC physique, WARN (l'état du firmware n'est pas observable) |
+| aucun périphérique bloc de type `crypt` (`lsblk`) | KO |
+| aucune entrée active dans `/etc/crypttab` | KO |
+| aucune cible device-mapper `crypt` (`dmsetup`) | KO ; WARN si les tables sont illisibles sans root ou si `dmsetup` manque, les deux contrôles précédents restant appliqués |
 
-Sur bare-metal, Secure Boot actif ou un stockage local chiffré est un **KO**, pas un avertissement.
-
-Ce doctor entre dans :
-
-- `diagnostics/workstation-doctor` ;
-- `diagnostics/final-certification`.
-
-Une machine qui viole cette politique ne peut donc pas recevoir le verdict Golden certifié.
+Ce doctor est appelé par `diagnostics/workstation-doctor` et par `diagnostics/final-certification` : une machine qui enfreint la politique ne peut pas être certifiée.
 
 ## Installation
 
-Le générateur Kickstart conserve explicitement :
+Le Kickstart généré par `installer/lib/generate-kickstart.sh` contient `autopart --type=btrfs`, sans `--encrypted`, `cryptsetup` ni LUKS. `tests/test_host_security_policy_contract.sh` empêche d'ajouter un chemin de chiffrement dans les scripts d'installation et de convergence.
 
-```text
-autopart --type=btrfs
+## Secure Boot et noyau
+
+L'installation du noyau Linux amont est bloquée si Secure Boot est actif ou si son état ne peut pas être établi (`KERNEL_BLOCK_SECURE_BOOT` dans `config/kernel.conf`). Seuls les deux retours au noyau Fedora signé restent permis dans ce cas, car ce noyau est alors le seul qui démarre ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)) :
+
+```bash
+./control.sh kernel fallback
+./control.sh kernel rollback-fedora
 ```
 
-sans `--encrypted`, sans `cryptsetup`, sans LUKS.
+Le projet ne désactive jamais Secure Boot lui-même et ne gère aucune clé MOK : le réglage se fait dans l'UEFI, par le propriétaire.
 
-Le contrat `tests/test_host_security_policy_contract.sh` empêche l'ajout futur d'un chemin de chiffrement bloc dans les scripts d'installation/convergence.
+## Changer cette politique
 
-## Secure Boot et canaux de noyau
-
-Le lifecycle Linux amont officiel stable bloque l'installation si Secure Boot est actif ou si son état ne peut pas être établi. Seuls les deux secours vers le noyau Fedora signé (`./control.sh kernel fallback` et `./control.sh kernel rollback-fedora`) restent permis dans ce cas, car ce noyau est alors le seul qui démarre (ADR 0020). Le cycle est rolling N/N-1, sans autre canal ni réglage SELinux spécifique au noyau. La certification finale vérifie également la politique de sécurité de la workstation entière.
-
-## Changement de politique
-
-Aucun changement implicite n'est accepté. Modifier cette décision nécessiterait une évolution explicite de l'architecture, des tests et de la documentation. Tant que cette politique est en vigueur, **Secure Boot HOST et chiffrement local restent interdits**.
+Aucun changement implicite n'est accepté. Revenir sur cette décision demande un nouvel ADR, puis l'évolution coordonnée de la politique, des doctors, des tests et de la documentation.

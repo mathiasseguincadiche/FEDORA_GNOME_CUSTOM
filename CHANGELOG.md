@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Documentation (chantier C8, développement et référence) : les dix derniers guides sont relus contre le code et reçoivent leurs métadonnées ; `METADATA_PENDING` est vide.
+  - **Inventaire logiciel** : il avait dérivé des manifests. Il omettait Gaming, AppImage et Gear Lever, `adw-gtk3-theme`, `localsearch`, `xdg-user-dirs-gtk` et `kmod`, et citait `xorriso`, que le projet n'installe pas. La partie hôte reproduit désormais chaque manifest, et `test_docs_integrity.py` vérifie qu'elle reste identique (trois nouveaux cas dans `test_docs_integrity_behavior.py`, 18 au total). La partie VM est relue contre `bootstrap-devops.sh` : dépôts EPEL et CRB ajoutés, versions épinglées présentées en tableau.
+  - **CI** : la page est réorganisée en fiches par contexte obligatoire (ce que vérifie le job, ce qu'il ne prouve pas), puis en tableau des autres workflows. Corrigé : elle disait que certaines images Fedora venaient encore d'ECR Public, alors que toutes viennent de `registry.fedoraproject.org`.
+  - **Laboratoire GNOME** : corrigé « GNOME Shell 50 » en 51 et le correctif d'arrêt de DING, présenté comme réservé à la VM alors que l'installateur de production l'applique depuis la promotion du profil. La description du redémarrage est découpée en étapes.
+  - **Feuille de route** : celle d'octobre 2026, antérieure à la sortie de Fedora 45, est archivée dans `docs/history/` ; la nouvelle `docs/ROADMAP.md` donne l'état et les prochaines étapes.
+  - **Provenance** : ajout du média Fedora 45, du noyau amont et du tableau des extensions.
+  - **Dépannage** : tableau d'entrée « symptôme, première commande, section ».
+  - **Glossaire** : le terme `CODE-READY`, absent du code, est retiré ; ajout de compte rendu Live, baseline, sauvegarde pré-APPLY, `DEFERRED`, ADR, N/N-1 et COPR ; liste de `/data` complétée.
+  - **Mise à niveau 44 → 45** : réécrite par phases ; le code de retour 20 du premier `finalize` est expliqué.
+  - **Politique de sécurité, architecture** : contrôles du doctor en tableau, liens vers les ADR ; le BIOS 1.A66 est présenté comme une décision du propriétaire, non contrôlée par le code.
+
 - Documentation (chantier C7, virtualisation) : KVM au quotidien, la référence virtualisation et le réseau `devops-nat` sont relus contre `config/virtualization.conf`, `config/vm-profiles.conf`, le bootstrap Rocky, le garde nftables, son unité systemd et le dispatcher NetworkManager, et reçoivent leurs métadonnées. Les versions des outils de l'invité, la clé Rocky épinglée et le contrat réseau étaient exacts. Ajouts : l'option `--ssh-key` de la création Rocky, l'origine de l'utilisateur de l'invité (`ROCKY_SERVER_USERNAME`) et la protection statique `KVM_EXTRA_PROTECTED_CIDRS`, qui couvre la plage Tailscale. Le dépannage du réseau renvoie directement au dépannage KVM au lieu de TROUBLESHOOTING, qui ne faisait que rediriger. Vocabulaire harmonisé (« garde réseau », « invité », « hôte ») et un tutoiement retiré.
 
 - Applications : `application-usage-doctor` et `manifests/application-runtime-contract.tsv` exigeaient encore ONLYOFFICE (`org.onlyoffice.desktopeditors`), retiré du manifeste Flatpak ; la Gate 3 aurait échoué sur une application que le projet n'installe plus. Les deux sont corrigés, et `test_professional_apps_contract.sh` vérifie désormais que chaque Flatpak exigé par ces contrôles figure dans un manifeste.

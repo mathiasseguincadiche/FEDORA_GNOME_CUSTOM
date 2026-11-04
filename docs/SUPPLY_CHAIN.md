@@ -1,55 +1,41 @@
-# Supply-chain et provenance
+# Chaîne d'approvisionnement et provenance
 
-Les archives d’extensions de la référence **Fedora 45 / GNOME 51** sont centralisées dans `config/gnome-extensions.lock`, identique à `profiles/fedora45/gnome-extensions.lock`. Ces verrous sélectionnent les artefacts revus pour la préparation ; l’APPLY exige toujours le profil promu. Les verrous Fedora 44 sont réservés au [parcours historique](history/HISTORICAL_FEDORA44.md).
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — relu contre `installer/fedora45-media.lock`, `config/kernel.conf`, `config/gnome-extensions.lock`, `scripts/kvm/verify_rocky_cloud_image.sh`, `guest/rocky-devops/bootstrap-devops.sh` et `scripts/packages/install-rpmfusion-release.sh` — matériel : non vérifié
 
-La version actuelle du projet se lit dans [`VERSION`](../VERSION), jamais
-dans une ancienne notice historique. Les verrous sont des constantes de
-provenance vérifiées et non des options libres de `config/local.conf`.
+Cette page dit d'où vient chaque logiciel installé et comment le projet vérifie qu'il n'a pas été altéré. La liste complète des paquets est dans l'[inventaire logiciel](SOFTWARE_INVENTORY.md).
 
 ## Principes
 
-- préférer Fedora/Rocky Linux officiels et des dépôts éditeurs signés ;
-- ne jamais utiliser `curl | bash` / `wget | sh` ;
-- épingler par version et checksum/signature les binaires téléchargés directement ;
-- épingler les GitHub Actions à un SHA immuable ;
-- distinguer **intégrité** (le fichier correspond au hash attendu) et **provenance** (le hash/signature vient bien de la source de confiance) ;
-- exécuter périodiquement les prétests dépendant de services externes afin de détecter une rupture sans attendre un commit.
+- Préférer les dépôts officiels Fedora et Rocky Linux, puis les dépôts signés des éditeurs.
+- Jamais de `curl | bash` ni de `wget | sh`.
+- Épingler par version et par empreinte (SHA-256 ou signature) tout binaire téléchargé directement. Changer une version impose de changer son empreinte dans le même commit.
+- Épingler les GitHub Actions par SHA de commit.
+- Distinguer l'**intégrité** (le fichier correspond à l'empreinte attendue) de la **provenance** (l'empreinte vient bien de la source de confiance, par exemple par une signature).
+- Rejouer chaque semaine les contrôles qui dépendent de services externes, pour voir une rupture sans attendre un commit ([CI](CI_VALIDATION.md)).
 
-## Image Rocky Linux Cloud
+Les verrous sont des constantes vérifiées, pas des options de `config/local.conf`. La version du projet se lit dans [`VERSION`](../VERSION).
 
-La création de `rocky-devops` n'accepte plus une image locale sur son seul nom.
+## Média d'installation Fedora 45
 
-L'opérateur conserve ensemble :
+`installer/fedora45-media.lock` fixe le média : `Fedora-Workstation-Live-45-1.4.x86_64.iso`, son SHA-256, le fichier `CHECKSUM` qui le liste et l'empreinte de la clé Fedora 45 (`4F50 A611 4CD5 C697 6A7F 1179 655A 4B02 F577 861E`). `installer/verify-fedora-media.sh` vérifie la signature du `CHECKSUM` avec `gpgv`, puis l'empreinte de l'ISO. La procédure est dans le [guide d'installation](INSTALLATION_GUIDE.md).
 
-```text
-Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
-CHECKSUM
-CHECKSUM.asc
-```
+## Noyau Linux amont
 
-`scripts/kvm/verify_rocky_cloud_image.sh` :
+Le noyau vient du COPR `@kernel-vanilla/stable` (`config/kernel.conf`). Seule la version annoncée stable par kernel.org est acceptée, avec un plancher (`KERNEL_MIN_VERSION`) ; les versions RC et un COPR en retard sont refusés. Un noyau Fedora signé reste installé en secours. Le COPR est un dépôt communautaire signé par COPR. Voir [Linux amont](UPSTREAM_LINUX.md).
 
-1. utilise l'empreinte Rocky Linux cloud-image attendue, épinglée dans le script ;
-2. importe une clé locale fournie explicitement ou récupère cette clé par HTTPS sur dl.rockylinux.org ;
-3. vérifie que l'empreinte importée est exactement celle attendue ;
-4. vérifie la signature GPG de `CHECKSUM` liée à la clé de production Rocky 10 (une sous-clé de signature valide est acceptée) ;
-5. exige une seule ligne associant le nom versionné au SHA-256 et compare le hash de l'image.
+## Extensions GNOME
 
-`create_rocky_devops_vm.sh` exige `--cloud-image /chemin/image.qcow2` et appelle ce contrôle avant toute création de disque. Par défaut, `CHECKSUM` et `CHECKSUM.asc` doivent accompagner l’image dans le même dossier ; `--sha256sums` et `--signature` permettent de préciser leurs chemins. L’authentification de l’image ne peut pas être désactivée.
+Dash to Dock et AppIndicator viennent des dépôts Fedora, aux versions exactes de `profiles/fedora45/gnome-rpms.json`. Les quatre autres sont téléchargées et verrouillées par version et SHA-256 dans `config/gnome-extensions.lock`, identique à `profiles/fedora45/gnome-extensions.lock` :
 
-Le vrai prétest Rocky Linux CI utilise lui aussi une liste SHA-256 signée Rocky Linux.
+| Extension | Source | SHA-256 |
+|---|---|---|
+| Gtk4 DING v145 | GNOME Extensions, review 75162 | `4a884fa3976aeb814726fd96428c09cfeca2da01aec3ac8629ddd6cd22bff2c1` |
+| Show Desktop Button v59 | GNOME Extensions, review 75965 | `76411e57bf5402c54bc04e5a94700c62dfb71b094ed6eac48509f609c07f6000` |
+| Vitals v85 | GNOME Extensions, review 74743 | `899e5ffe27d1793cf13db069d835c11136cec816717e4e450a56f08bcf976b2f` |
+| Tiling Assistant v56 | release GitHub officielle | `961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a` |
 
-## VM Rocky DevOps — bootstrap
-
-- Kubernetes est limité à la génération `v1.37.x` ; les patchs restent fournis par `pkgs.k8s.io` ;
-- kind `v0.33.0`, Minikube `v1.38.1`, Helm `v4.3.0` (archive officielle get.helm.sh), yq `v4.53.3` et K9s `v0.51.0` ont tous un SHA-256 attendu versionné dans `guest/rocky-devops/bootstrap-devops.sh`. La somme n'est jamais relue à côté du binaire : un serveur de publication qui changerait à la fois le binaire et sa somme est refusé. Changer une version impose de changer sa somme dans le même commit ;
-- AWS CLI v2 est téléchargé sous forme de ZIP + signature détachée, puis la signature est vérifiée avec la clé AWS et l'empreinte attendue versionnée.
-
-## Applications du HOST
-
-`manifests/application-provenance.tsv` documente la classe de confiance.
-
-Les paquets Flathub communautaires ne sont pas présentés comme des paquets officiels de l'éditeur. La résolution des IDs Flathub est contrôlée en CI ; la provenance est revue lors des releases.
+Une archive dont le contenu change derrière la même URL est refusée **avant** `gnome-extensions install`. Le correctif d'arrêt de DING modifie un seul fichier, avec sa propre empreinte inscrite dans le profil ([laboratoire](FEDORA_GNOME_CI_LAB.md#correctif-darrêt-de-gtk4-ding)). Les verrous Fedora 44 ne servent qu'au [parcours historique](history/HISTORICAL_FEDORA44.md).
 
 ## Dépôts RPM Fusion
 
@@ -70,46 +56,55 @@ Les clés publiques sont versionnées dans `config/keys/`. Le script refuse un f
 
 Toute autre situation échoue sans rien installer. Le chemin normal ne vérifie pas la signature du paquet de configuration installé depuis une URL (dnf l'annonce : « skipped OpenPGP checks ») ; les paquets installés ensuite depuis les dépôts RPM Fusion sont, eux, vérifiés par dnf. `tests/test_rpmfusion_release_behavior.sh` exerce le chemin normal, le repli et chaque refus.
 
-## Mises à jour
+## Applications de l'hôte
 
-- RPM Fedora : téléchargement automatique autorisé, installation et reboot automatiques interdits ;
-- Flatpak : mise à jour volontairement manuelle via GNOME Software ou `flatpak update` ; aucun timer de mise à jour Flatpak n'est créé par le projet.
+`manifests/application-provenance.tsv` donne la classe de confiance de chaque application : dépôt Fedora, dépôt éditeur signé (VS Code, Brave) ou Flathub. Une application Flathub publiée par la communauté n'est jamais présentée comme officielle.
 
-## CI
+Une entrée classée `community-unverified` n'est installable que si son identifiant figure aussi dans `UNVERIFIED_FLATHUB_ALLOWLIST`. Cette liste fait de l'exception une décision versionnée et testable, et non une simple note. La résolution des identifiants Flathub est contrôlée en CI ; la provenance est revue à chaque release.
 
-Les prétests package Fedora, intégration host et Rocky Linux VM sont rejoués périodiquement afin de détecter :
+## Image Rocky Linux Cloud
 
-- disparition d'un dépôt ;
-- changement de clé/signature ;
-- App ID Flathub disparu ;
-- release externe incompatible ;
-- rupture de bootstrap.
-
-La CI complète la provenance et la reproductibilité ; elle ne remplace pas la validation du matériel physique ni la responsabilité de l’opérateur sur les médias invités fournis manuellement.
-
-## Accès distant (profil optionnel)
-
-Activé seulement par `REMOTE_ENABLE="true"` ; rien n'est téléchargé sinon.
-
-- **Tailscale** : dépôt éditeur `pkgs.tailscale.com`, fichier versionné dans `config/repos/tailscale.repo`. Les **métadonnées et les paquets RPM** sont soumis aux contrôles de signature (`repo_gpgcheck=1` et `gpgcheck=1`), exigés par les contrats du projet. Cette configuration doit encore être comparée à la publication officielle avant la première installation : la présence de clés et de directives n'est pas à elle seule une preuve de provenance.
-- **Sunshine** : COPR `lizardbyte/stable` du projet amont, uniquement avec `REMOTE_SUNSHINE_ENABLE="true"`. Le COPR est un dépôt communautaire signé par COPR : même classe de confiance que le COPR noyau, et le seul tiers du profil. La valeur est contrainte par `config/schema-enums.tsv`.
-- **Aucun** `curl | bash`, aucun binaire téléchargé hors dépôt, aucun port exposé à Internet.
-
-## Extensions GNOME revues
-
-Les extensions téléchargées directement depuis GNOME Extensions sont verrouillées par review, version **et SHA-256** :
+La création de `rocky-devops` n'accepte pas une image locale sur son seul nom. L'image est conservée avec sa liste d'empreintes signée :
 
 ```text
-Gtk4 DING 75162 / v145          4a884fa3976aeb814726fd96428c09cfeca2da01aec3ac8629ddd6cd22bff2c1
-Show Desktop Button 75965 / v59 76411e57bf5402c54bc04e5a94700c62dfb71b094ed6eac48509f609c07f6000
-Vitals 74743 / v85             899e5ffe27d1793cf13db069d835c11136cec816717e4e450a56f08bcf976b2f
-Tiling Assistant v56          961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a
+Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+CHECKSUM
+CHECKSUM.asc
 ```
 
-Un changement de contenu derrière une URL review existante est refusé **avant** `gnome-extensions install`.
+`scripts/kvm/verify_rocky_cloud_image.sh` :
 
-## Exceptions Flathub communautaires
+1. part de l'empreinte de la clé Rocky Linux épinglée dans le script ;
+2. importe une clé locale fournie explicitement, ou la télécharge en HTTPS depuis dl.rockylinux.org ;
+3. vérifie que l'empreinte importée est exactement celle attendue ;
+4. vérifie la signature de `CHECKSUM` par la clé de production Rocky 10 (une sous-clé de signature valide est acceptée) ;
+5. exige une seule ligne associant le nom versionné à un SHA-256, et compare l'image.
 
-Les entrées classées `community-unverified` dans `manifests/application-provenance.tsv` ne sont installables que si leur App ID figure aussi dans `UNVERIFIED_FLATHUB_ALLOWLIST`. Cette allowlist transforme l'exception de confiance en décision versionnée et testable au lieu d'une simple note documentaire.
+`scripts/kvm/create_rocky_devops_vm.sh` exige `--cloud-image /chemin/image.qcow2` et appelle ce contrôle avant de créer le moindre disque. `CHECKSUM` et `CHECKSUM.asc` doivent accompagner l'image ; `--sha256sums` et `--signature` permettent d'indiquer d'autres chemins. Cette vérification ne peut pas être désactivée. Le laboratoire Rocky de la CI utilise lui aussi une liste signée.
 
-Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
+## Outils de la VM Rocky DevOps
+
+- `kubectl` vient de `pkgs.k8s.io`, limité à la branche `v1.37` ; les correctifs de cette branche sont acceptés.
+- kind, Minikube, Helm, yq, K9s, kubectx et kubens ont une version et un SHA-256 versionnés dans `guest/rocky-devops/bootstrap-devops.sh`. L'empreinte n'est jamais lue à côté du binaire : un serveur qui changerait à la fois le binaire et son empreinte serait refusé. EPEL 10.2 ne fournit pas de RPM kubectx, d'où l'archive officielle.
+- AWS CLI v2 est téléchargé avec sa signature détachée, vérifiée par la clé AWS dont l'empreinte est versionnée.
+
+Les versions sont dans l'[inventaire](SOFTWARE_INVENTORY.md#23-outils-hors-paquets-versions-épinglées).
+
+## Accès distant (optionnel)
+
+Rien n'est installé sans `REMOTE_ENABLE="true"`.
+
+- **Tailscale** : dépôt éditeur `pkgs.tailscale.com`, défini dans `config/repos/tailscale.repo`. Les métadonnées et les paquets sont vérifiés (`repo_gpgcheck=1` et `gpgcheck=1`), comme l'exigent les contrats du projet. Avant la première installation, comparer encore cette définition à la publication officielle : la présence de clés et de directives ne prouve pas à elle seule la provenance.
+- **Sunshine** : COPR `lizardbyte/stable` du projet amont, seulement avec `REMOTE_SUNSHINE_ENABLE="true"`. Même classe de confiance que le COPR du noyau ; la valeur est contrainte par `config/schema-enums.tsv`.
+- Aucun port exposé à Internet.
+
+## Mises à jour
+
+- RPM Fedora : téléchargement automatique autorisé ; installation et redémarrage automatiques interdits.
+- Flatpak : mise à jour manuelle, par GNOME Software ou `flatpak update`. Le projet ne crée aucun timer de mise à jour Flatpak.
+
+## Ce que la CI apporte
+
+Les prétests de paquets, d'intégration de l'hôte et de la VM Rocky sont rejoués chaque semaine. Ils détectent la disparition d'un dépôt, un changement de clé ou de signature, un identifiant Flathub disparu, une release externe incompatible et une rupture du bootstrap.
+
+La CI complète la provenance ; elle ne remplace ni la qualification du matériel ni la responsabilité de l'opérateur sur les médias qu'il fournit lui-même.
