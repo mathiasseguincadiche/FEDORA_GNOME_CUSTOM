@@ -1,0 +1,23 @@
+name: External documentation links
+# Weekly and on demand. Not a required context: a third-party site going down
+# must not block a merge. A broken link fails this run and is fixed by a PR.
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check every external link of the Markdown files
+        run: python3 scripts/ci/check-external-links.py .

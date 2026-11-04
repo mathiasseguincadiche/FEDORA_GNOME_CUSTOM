@@ -22,6 +22,7 @@ jobs:
         run: |
           grep -F 'REAL_MACHINE_APPROVED="false"' config/apply-gate.conf
           grep -F 'REAL_MACHINE_APPROVED="false"' config/local.conf.example
+          # shellcheck disable=SC2016  # literal $ in the pattern
           bash scripts/ci/assert-absent.sh grep -n -E '^REAL_MACHINE_APPROVED="?(true|1|yes)"?$' config/*.conf
       - name: Runtime isolation invariants
         run: |
@@ -85,9 +86,11 @@ jobs:
           bash scripts/ci/assert-absent.sh grep -Fq 'NOPASSWD:ALL' scripts/kvm/create_rocky_devops_vm.sh
           grep -Fq 'awscli-exe-linux-x86_64.zip.sig' guest/rocky-devops/bootstrap-devops.sh
           grep -Fq 'gpgv --keyring' guest/rocky-devops/bootstrap-devops.sh
+          # shellcheck disable=SC2016  # literal $ in the pattern
           grep -Fq 'KUBERNETES_MINOR="${KUBERNETES_MINOR:-v1.37}"' guest/rocky-devops/bootstrap-devops.sh
       - name: Immutable installer source
         run: |
+          # shellcheck disable=SC2016  # literal $ in the pattern
           grep -Fq 'repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD' installer/lib/generate-kickstart.sh
           grep -Fq 'checkout --detach FETCH_HEAD' installer/lib/generate-kickstart.sh
           bash scripts/ci/assert-absent.sh grep -Fq 'git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git' installer/lib/generate-kickstart.sh
@@ -102,11 +105,14 @@ jobs:
           grep -F 'BACKUP_ALLOW_LIVE_QCOW2_COPY="false"' config/backup.conf
           grep -Fq 'evidence_require_current_identity' lib/apply_gate.sh
           grep -Fq 'backup_runtime_validate_preapply_marker' lib/apply_gate.sh
+          # shellcheck disable=SC2016  # literal $ in the pattern
           grep -Fq 'backup_engine_archive_matches "$archive" "$snapshot" preapply' lib/backup_runtime.sh
           grep -Fq 'backup_engine_repo_ready' lib/backup_runtime.sh
           grep -Fq 'effective_config_sha256' prepare-preapply-backup.sh
+          # shellcheck disable=SC2016  # literal $ in the pattern
           grep -Fq 'backup_identity="$(backup_runtime_identity_payload)"' prepare-preapply-backup.sh
           grep -Fq 'hardware_fingerprint' lib/backup_runtime.sh
+          # shellcheck disable=SC2016  # literal $ in the pattern
           grep -Fq '[[ "$backup_identity" == "$(backup_runtime_identity_payload)" ]]' prepare-preapply-backup.sh
       - name: No obvious committed secrets
         shell: bash

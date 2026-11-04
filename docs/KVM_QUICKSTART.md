@@ -5,6 +5,8 @@
 
 Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu du profil sont dans la [référence virtualisation](VIRTUALIZATION.md), l'isolation réseau dans le [réseau KVM](KVM_NETWORK.md).
 
+**À la fin de ce guide :** créer la VM Rocky DevOps depuis une image authentifiée, s'y connecter par clé SSH, la qualifier et diagnostiquer une panne courante. Le rôle du garde réseau est expliqué dans les [notions clés](CONCEPTS.md#7-le-garde-réseau-isole-les-vm-du-réseau-local).
+
 Rocky se crée **après** l'installation de Fedora et les premiers contrôles de l'hôte, et **avant** la certification finale (Gate 3). Le Live USB et l'installation n'exigent aucune VM ; l'APPLY n'en crée jamais.
 
 ```text
@@ -25,7 +27,7 @@ Une règle pour tout ce qui suit : ne jamais désactiver SELinux, firewalld ou l
 ./diagnostics/kvm-io-doctor benchmark
 ```
 
-Attendu : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, garde nftables, OVMF et swtpm. Le benchmark écrit sur un fichier de `/data`, jamais sur le disque brut.
+**Réussite :** `virtualization-doctor` sans `KO` : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, garde nftables, OVMF et swtpm. Le benchmark écrit sur un fichier de `/data`, jamais sur le disque brut. **Arrêt :** un `KO` se corrige avant de créer la VM ([dépannage](#dépannage)).
 
 ## 2. Créer Rocky DevOps
 
@@ -39,6 +41,8 @@ Placer l'image, `CHECKSUM` et `CHECKSUM.asc` de la même release dans `/data/lib
 `CHECKSUM` et `CHECKSUM.asc` sont cherchés à côté de l'image ; sinon, les passer avec `--sha256sums` et `--signature`. Une clé Rocky obtenue par un canal de confiance se passe avec `--rocky-key-file`, une autre clé SSH publique avec `--ssh-key`. Pour vérifier l'image seule avant création : `bash scripts/kvm/verify_rocky_cloud_image.sh --image … --sha256sums … --signature …`.
 
 Le script authentifie l'image **avant** de créer le disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart. Au premier démarrage, l'invité installe sa stack ; il peut redémarrer une fois pour passer sur le noyau Rocky complet.
+
+**Réussite :** `virsh --connect qemu:///system list --all` montre `rocky-devops`, puis `sudo cloud-init status --long` dans l'invité finit par `status: done`. **Arrêt :** si l'image est refusée, rien n'a été créé ; corriger la cause signalée ([image refusée](#dépannage)). Le script refuse aussi de continuer si le domaine, son disque ou son dossier cloud-init existent déjà : il n'écrase jamais une VM.
 
 ## 3. Utiliser
 
@@ -118,6 +122,13 @@ Si la reconstruction échoue, garder le mode d'urgence et diagnostiquer ; ne pas
 
 **Nautilus ne voit plus Rocky.** `./control.sh kvm nautilus-refresh`, puis vérifier le service SSH de l'invité.
 
-**Reconstruire l'invité.** Sauver les données utiles, retirer explicitement le domaine et son disque, puis relancer la création.
+**Reconstruire l'invité.** Opération destructive : elle efface le disque de la VM et tout ce qu'il contient. D'abord sauver les données utiles de l'invité (copie SFTP ou [export](#5-exports)), puis, depuis Fedora :
+
+```bash
+virsh --connect qemu:///system shutdown rocky-devops                              # arrêt propre
+virsh --connect qemu:///system undefine rocky-devops --nvram --remove-all-storage  # efface le domaine, sa NVRAM et son disque
+```
+
+Vérifier avec `virsh --connect qemu:///system list --all` que `rocky-devops` a disparu, retirer le dossier `/data/libvirt/cloud-init/rocky-devops` s'il reste (le script de création refuse un dossier existant), puis relancer la création.
 
 **Certification KVM en échec.** Corriger le premier `KO` réel de `virtualization-doctor`, puis relancer. Ne jamais modifier les preuves.

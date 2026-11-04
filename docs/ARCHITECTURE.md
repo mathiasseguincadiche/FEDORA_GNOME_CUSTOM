@@ -5,7 +5,7 @@
 
 ## Pourquoi ce projet
 
-Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, et que ce soit la meilleure installation possible : la plus récente (Fedora 45 / GNOME 51), la plus finie (l'ergonomie qu'Ubuntu apporte à GNOME), la plus réactive, et **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
+Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, avec un objectif précis : la version la plus récente (Fedora 45 / GNOME 51), la finition (l'ergonomie qu'Ubuntu apporte à GNOME), une réactivité mesurée plutôt que supposée, et une installation **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
 
 **Golden** veut dire *installation de référence reproductible et vérifiable*, pas « ISO modifiée » ni « certification déjà acquise ». Le profil Fedora 45 est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)) ; la certification de la machine reste à acquérir.
 
@@ -92,7 +92,7 @@ Fedora 45 neuve → baseline matérielle → dry-run → sauvegarde Borg + resta
 
 La baseline (avant l'APPLY) et la certification (après) sont séparées : un défaut que l'APPLY doit corriger ne doit pas empêcher d'installer son correctif. Remédiation : **mesurer → reproduire → corriger → recertifier**. Cette chaîne explique l'ordre des preuves ; l'ordre opérationnel exact fait foi dans le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours), et ce que démontre chaque preuve dans la [qualification](QUALIFICATION.md).
 
-Trois niveaux à ne jamais confondre :
+Trois niveaux à ne jamais confondre (expliqués pas à pas dans les [notions clés](CONCEPTS.md)) :
 
 | Statut | Ce qu'il veut dire |
 |---|---|

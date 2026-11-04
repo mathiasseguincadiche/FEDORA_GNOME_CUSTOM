@@ -14,6 +14,8 @@ Chaque ligne `KO` nomme le contrôle en échec. Corriger le **premier** défaut 
 
 **À ne jamais faire** : désactiver SELinux ou firewalld ; supprimer les règles nftables KVM ; ajouter `force_probe`, ou forcer ASPM, APST, C-States ou un mode de veille sans preuve ; reformater `/data` ; `chmod 777` ; éditer ou recréer un marqueur de preuve à la main ; modifier une configuration avant d'avoir conservé les journaux.
 
+Sauf mention *(modifie le système)*, les commandes de cette page observent sans rien changer au poste ; certaines écrivent seulement un rapport ou une preuve dans le dépôt (`logs/`, `state/`, `reports/`). Une commande marquée change l'état du poste ; la lancer seulement une fois la cause confirmée.
+
 ## Par où commencer
 
 | Symptôme | Première commande | Section |
@@ -30,6 +32,22 @@ Chaque ligne `KO` nomme le contrôle en échec. Corriger le **premier** défaut 
 
 Les journaux et fiches d'incident sont décrits dans [Journaux et incidents](#journaux-et-incidents) ; ce qu'il faut joindre à une demande d'aide, dans [Avant de demander de l'aide](#avant-de-demander-de-laide).
 
+## Pannes fréquentes
+
+Une cause possible reste une hypothèse tant que la vérification ne l'a pas confirmée. Le détail de chaque cas est dans la section indiquée.
+
+| Symptôme | Cause possible | Vérification sûre | Correction | Nouvelle validation |
+|---|---|---|---|---|
+| `install.sh --apply` refusé | dépôt modifié, dry-run absent ou d'un autre état, sauvegarde pré-APPLY absente, Secure Boot actif | `git status --short`, `./install.sh --dry-run` | corriger la cause nommée par le refus, refaire le dry-run puis la sauvegarde | l'APPLY passe ses gardes ([détail](#installation-et-apply)) |
+| Arc B580 absente ou rendu instable | carte mal insérée, ReBAR désactivé, firmware manquant | `lspci -nnk -d 8086:e20b`, `./diagnostics/graphics-doctor` | vérifier slot et UEFI ; jamais de `force_probe` | `graphics-doctor` sans `KO` ([détail](#gpu-écran-et-veille)) |
+| Affichage dégradé après une veille | mode d'écran perdu au réveil | `./diagnostics/display-doctor` | `./repair.sh display` *(modifie le système)* | `display-doctor` sans `KO` |
+| Démarrage sur N-1 au lieu de N | entrée de démarrage par défaut | `./control.sh kernel status` | `./control.sh kernel install-latest` *(modifie le système)*, puis redémarrer | `kernel status` montre N démarré ([détail](#noyau)) |
+| Régression après un nouveau noyau | défaut du noyau amont | `./control.sh kernel doctor`, `journalctl -k -b` | `./control.sh kernel rollback` *(modifie le système)* | doctors sans `KO` sur N-1, puis recertifier |
+| `/data` absent | montage du second T705 perdu | `findmnt -n -T /data -o SOURCE,FSTYPE`, `lsblk -f` | remonter le disque existant, **sans formater** | `./control.sh doctor data` sans `KO` ([détail](#données-data-et-gaming)) |
+| Label SELinux incorrect sous `/data` | fichiers copiés hors de leur contexte | `ls -Zd /data/*` | `sudo restorecon -RFv` sur les dossiers concernés *(modifie le système)* | `./control.sh doctor data` sans `KO` |
+| Sauvegarde refusée | `/data` n'est pas le montage attendu, support externe absent | `./diagnostics/backup-doctor --certify-status` | rétablir le montage ou brancher le support | nouvelle sauvegarde, puis `./control.sh backup check` ([détail](#sauvegarde-et-restauration)) |
+| VM sans Internet, garde en mode d'urgence | LAN en conflit avec `192.168.50.0/24`, changement de réseau | `./control.sh kvm guard-check`, `ip -4 route` | `./control.sh kvm guard-reconcile` *(modifie le système)* | `guard_mode=normal` ([détail](KVM_QUICKSTART.md#dépannage)) |
+
 ## Installation et APPLY
 
 **`install.sh --apply` refusé.** C'est une protection, pas une panne. Vérifier :
@@ -38,7 +56,7 @@ Les journaux et fiches d'incident sont décrits dans [Journaux et incidents](#jo
 git status --short
 ./diagnostics/baseline-doctor status
 ./install.sh --dry-run
-./prepare-preapply-backup.sh
+./prepare-preapply-backup.sh   # crée l'archive Borg pré-APPLY : écrit sur le support de sauvegarde
 ```
 
 Causes courantes : exécution hors du PC physique (VM, conteneur, WSL), dépôt Git modifié, dry-run absent ou d'un autre état, baseline incomplète, sauvegarde pré-APPLY absente ou illisible, Secure Boot actif ou indéterminé, `REAL_MACHINE_APPROVED=true` absent de `config/local.conf`, phrase de confirmation incorrecte. Changer `config/local.conf` impose de refaire le dry-run puis la sauvegarde.
@@ -80,11 +98,11 @@ Ne jamais ajouter `xe.force_probe` ou `i915.force_probe`.
 
 **Blanc grisâtre, image délavée.** Avant de soupçonner `xe`, comparer la plage RGB complète/limitée, la conversion HDR/SDR, l'éclairage nocturne et le profil ICC, un facteur à la fois. `./diagnostics/display-color-audit` donne un inventaire non intrusif ; un mode présent dans sysfs n'est pas forcément actif ([diagnostic des couleurs](DISPLAY_COLOR_DIAGNOSTIC.md)).
 
-**Polices ou affichage dégradés après veille.** Ne pas toucher Fontconfig en premier. `./diagnostics/display-doctor`, puis `./repair.sh display`, qui réapplique 2560×1440/~240 Hz, échelle 1.0, SDR et RGB complet, et seulement sur l'EDID certifié connecté à la B580.
+**Polices ou affichage dégradés après veille.** Ne pas toucher Fontconfig en premier. `./diagnostics/display-doctor`, puis `./repair.sh display` *(modifie le système)*, qui réapplique 2560×1440/~240 Hz, échelle 1.0, SDR et RGB complet, et seulement sur l'EDID certifié connecté à la B580.
 
 **EDID attendu absent ou plusieurs écrans.** `./diagnostics/display-doctor`, `cat ~/.config/fedora-gnome-custom/display-certified.env`. Un écran réellement remplacé impose de refaire la baseline. La capture initiale exige un seul écran cible : débrancher les écrans secondaires pendant la certification.
 
-**Réveil de veille incorrect.** `./diagnostics/suspend-doctor`, `./diagnostics/usb-resume-doctor`, `cat /sys/power/mem_sleep`, `journalctl -k -b | grep -Ei 'xe|drm|xhci|usb|nvme|AER|PCIe|ACPI'`. Ne forcer `deep`, `s2idle`, ASPM ou APST qu'après reproduction et analyse. Après correction, enregistrer de nouveaux cycles (`./control.sh validate gate3 record-suspend`).
+**Réveil de veille incorrect.** `./diagnostics/suspend-doctor`, `./diagnostics/usb-resume-doctor`, `cat /sys/power/mem_sleep`, `journalctl -k -b | grep -Ei 'xe|drm|xhci|usb|nvme|AER|PCIe|ACPI'`. Ne forcer `deep`, `s2idle`, ASPM ou APST qu'après reproduction et analyse. Après correction, enregistrer de nouveaux cycles (`./control.sh validate gate3 record-suspend` *(modifie le système)*).
 
 **Redémarrage inexpliqué ou crash.** Conserver les preuves avant tout changement de noyau ou de firmware :
 
@@ -103,9 +121,9 @@ coredumpctl list
 
 **DDR5 retombée en vitesse après un reset du BIOS.** `sudo dmidecode --type 17 | grep -E 'Configured Memory Speed|Speed:'`. Refaire les tests mémoire 5600/6000 et la certification de la baseline.
 
-**Wi-Fi identity lock en KO.** `lspci -Dnnk | grep -A4 -Ei 'Network controller|Wireless'`. Le verrou porte sur le PCI ID et le pilote, pas l'adresse PCI. Ne réenrôler (`./diagnostics/baseline-doctor enroll-wifi`) qu'après avoir compris le changement.
+**Wi-Fi identity lock en KO.** `lspci -Dnnk | grep -A4 -Ei 'Network controller|Wireless'`. Le verrou porte sur le PCI ID et le pilote, pas l'adresse PCI. Ne réenrôler (`./diagnostics/baseline-doctor enroll-wifi` *(modifie le système)*) qu'après avoir compris le changement.
 
-**Ventilateurs ou capteurs (NCT6687D-R).** Seul le pilote Fedora `nct6683`, en lecture seule, est autorisé ; le BIOS garde le contrôle des ventilateurs. `lsmod | grep nct6683`, `sensors`. Si le pilote refuse la carte (`sudo dmesg | grep -i nct6683` signale un *customer ID* non supporté), et seulement dans ce cas : `HARDWARE_NCT6683_FORCE="true"` dans `config/local.conf`, puis `./control.sh install apply`. Retour arrière : remettre `false`, supprimer `/etc/modprobe.d/fedora-gnome-custom-nct6683-force.conf` et recharger le module. `msi_fan_brute_force` et les modules tiers restent refusés. Sans tachymètre vivant, vérifier d'abord les branchements CPU_FAN/PUMP/SYS_FAN et les RPM dans le BIOS.
+**Ventilateurs ou capteurs (NCT6687D-R).** Seul le pilote Fedora `nct6683`, en lecture seule, est autorisé ; le BIOS garde le contrôle des ventilateurs. `lsmod | grep nct6683`, `sensors`. Si le pilote refuse la carte (`sudo dmesg | grep -i nct6683` signale un *customer ID* non supporté), et seulement dans ce cas : `HARDWARE_NCT6683_FORCE="true"` dans `config/local.conf`, puis `./control.sh install apply` *(modifie le système)*. Retour arrière : remettre `false`, supprimer `/etc/modprobe.d/fedora-gnome-custom-nct6683-force.conf` et recharger le module. `msi_fan_brute_force` et les modules tiers restent refusés. Sans tachymètre vivant, vérifier d'abord les branchements CPU_FAN/PUMP/SYS_FAN et les RPM dans le BIOS.
 
 **T705 négocié en x2 ou sous PCIe 5.0.** `./diagnostics/storage-doctor`, `sudo nvme list`, `lspci -tv`. Attendu : x4 et ≥ 32 GT/s pour chacun. Vérifier le slot M.2, le partage de lignes PCIe et l'UEFI ; ne pas désactiver ASPM ou APST par réflexe.
 
@@ -115,15 +133,15 @@ coredumpctl list
 
 État : `./control.sh kernel status` et `./control.sh kernel doctor`. Politique : [Linux amont](UPSTREAM_LINUX.md).
 
-**Nouveau N installé mais démarrage sur N-1.** `./control.sh kernel install-latest`, puis redémarrer. Pendant une mise à jour offline, `./control.sh update finalize` remet N par défaut et demande un redémarrage si besoin. Aucun noyau n'est supprimé tant que N n'a pas démarré.
+**Nouveau N installé mais démarrage sur N-1.** `./control.sh kernel install-latest` *(modifie le système)*, puis redémarrer. Pendant une mise à jour offline, `./control.sh update finalize` *(modifie le système)* remet N par défaut et demande un redémarrage si besoin. Aucun noyau n'est supprimé tant que N n'a pas démarré.
 
-**Régression sur N.** `./control.sh kernel rollback` choisit N-1 comme défaut sans supprimer N. Recertifier l'état retenu si la matrice a changé.
+**Régression sur N.** `./control.sh kernel rollback` *(modifie le système)* choisit N-1 comme défaut sans supprimer N. Recertifier l'état retenu si la matrice a changé.
 
-**Ni N ni N-1 ne démarrent.** Au démarrage, maintenir **Maj** ou appuyer sur **Échap** pour afficher GRUB (Fedora l'affiche aussi après un démarrage raté), puis choisir l'entrée Fedora sans `vanilla`. Une fois connecté : `./control.sh kernel fallback` en fait le défaut sans rien supprimer. Retour au dernier amont : `./control.sh kernel install-latest`. Retour complet aux paquets Fedora : `./control.sh kernel rollback-fedora`.
+**Ni N ni N-1 ne démarrent.** Au démarrage, maintenir **Maj** ou appuyer sur **Échap** pour afficher GRUB (Fedora l'affiche aussi après un démarrage raté), puis choisir l'entrée Fedora sans `vanilla`. Une fois connecté : `./control.sh kernel fallback` *(modifie le système)* en fait le défaut sans rien supprimer. Retour au dernier amont : `./control.sh kernel install-latest` *(modifie le système)*. Retour complet aux paquets Fedora : `./control.sh kernel rollback-fedora` *(modifie le système)*.
 
-**Trop de noyaux installés.** `rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | sort -V`. Attendu : au plus deux noyaux amont et un noyau Fedora de secours. `./control.sh kernel prune` retire les versions exactes en trop ; le noyau démarré est protégé : redémarrer sur N puis relancer.
+**Trop de noyaux installés.** `rpm -q --qf '%{NAME}\t%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | sort -V`. Attendu : au plus deux noyaux amont et un noyau Fedora de secours. `./control.sh kernel prune` *(modifie le système)* retire les versions exactes en trop ; le noyau démarré est protégé : redémarrer sur N puis relancer.
 
-**Transaction DNF offline en attente.** `./control.sh update status`, `./control.sh update reboot`, puis `./control.sh update finalize` après le redémarrage.
+**Transaction DNF offline en attente.** `./control.sh update status`, puis `./control.sh update reboot` *(modifie le système)* et `./control.sh update finalize` *(modifie le système)* après le redémarrage.
 
 **Certification `STALE`.** `./diagnostics/software-matrix-doctor diff` montre ce qui a changé. Lancer les doctors concernés, puis recertifier ; ne jamais recréer les marqueurs.
 
@@ -131,9 +149,9 @@ coredumpctl list
 
 Contrat : `/data` est l'EXT4 du second T705, avec `Documents`, `Projets`, `ISO`, `Jeux` et `IA/Openclaw` en `0750`, label `user_home_t`, et `libvirt` en `virt_image_t`. `Documents` est aussi le dossier XDG Documents. Le projet ne formate ni ne partitionne jamais ce disque.
 
-**`/data` absent ou mauvais système de fichiers.** `findmnt -n -T /data -o SOURCE,FSTYPE`, `lsblk -f`, `./control.sh doctor data`. Restaurer le montage du disque existant, sans formater. Après une réinstallation : `./diagnostics/baseline-doctor storage-identity`, puis `enroll-data NUMERO_DE_SERIE` ; deux partitions d'un même NVMe sont refusées.
+**`/data` absent ou mauvais système de fichiers.** `findmnt -n -T /data -o SOURCE,FSTYPE`, `lsblk -f`, `./control.sh doctor data`. Restaurer le montage du disque existant, sans formater. Après une réinstallation : `./diagnostics/baseline-doctor storage-identity`, puis `enroll-data NUMERO_DE_SERIE` *(modifie le système)* ; deux partitions d'un même NVMe sont refusées.
 
-**Dossier absent, propriétaire, mode ou label incorrect.** L'APPLY recrée les dossiers sans supprimer leur contenu. `stat -c '%U:%G %a %n' /data/*` et `ls -Zd /data/*`. Pour les labels, `sudo restorecon -RFv /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux /data/libvirt`. Jamais de `chown -R` aveugle, ni de lien vers `/data/libvirt`.
+**Dossier absent, propriétaire, mode ou label incorrect.** L'APPLY recrée les dossiers sans supprimer leur contenu. `stat -c '%U:%G %a %n' /data/*` et `ls -Zd /data/*`. Pour les labels, `sudo restorecon -RFv /data/Documents /data/Projets /data/IA/Openclaw /data/ISO /data/Jeux /data/libvirt` *(modifie le système)*. Jamais de `chown -R` aveugle, ni de lien vers `/data/libvirt`.
 
 **XDG Documents incorrect.** `xdg-user-dir DOCUMENTS` doit répondre `/data/Documents`.
 
@@ -161,7 +179,7 @@ Nettoyage (sessions de plus de sept jours seulement ; incidents ouverts, journau
 
 ```bash
 python3 scripts/maintenance/weekly-log-cleanup.py            # simulation
-python3 scripts/maintenance/weekly-log-cleanup.py --apply
+python3 scripts/maintenance/weekly-log-cleanup.py --apply    # supprime les sessions éligibles
 ```
 
 Activation hebdomadaire facultative (lundi 03:00, rattrapage avec `Persistent=true`), si le dépôt est dans `~/FEDORA_GNOME_CUSTOM` ; sinon adapter `ExecStart` et `ConditionPathIsDirectory` :

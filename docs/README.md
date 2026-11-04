@@ -9,7 +9,7 @@ Cette page oriente vers le bon guide. La cible d'installation neuve est **Fedora
 
 | Je veux… | Lire |
 |---|---|
-| Comprendre le projet | [Vision et architecture](ARCHITECTURE.md), [glossaire](GLOSSARY.md), [décisions (ADR)](adr/README.md) |
+| Comprendre le projet | [Notions clés](CONCEPTS.md), [vision et architecture](ARCHITECTURE.md), [glossaire](GLOSSARY.md), [décisions (ADR)](adr/README.md) |
 | Savoir où en est le projet | [État réel](../README.md#état-réel), [feuille de route](ROADMAP.md) |
 | Installer ce PC | [Contrôle Live](FEDORA45_LIVE_PREFLIGHT.md), puis [installation](INSTALLATION_GUIDE.md) |
 | Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md), [maintenance](DESKTOP_LIFECYCLE.md), [sauvegardes](BACKUP_RESTORE.md) |
@@ -28,7 +28,7 @@ Le Live USB ne déverrouille jamais `install.sh --apply` ; la CI ne certifie jam
 
 - [Vision et architecture](ARCHITECTURE.md) (dont le [contrat d'exécution](ARCHITECTURE.md#contrat-dexécution))
 - [Politique de sécurité de l'hôte](HOST_SECURITY_POLICY.md) · [provenance des logiciels](SUPPLY_CHAIN.md) · [inventaire logiciel](SOFTWARE_INVENTORY.md)
-- [Glossaire](GLOSSARY.md) · [décisions d'architecture (ADR)](adr/README.md)
+- [Notions clés](CONCEPTS.md) · [glossaire](GLOSSARY.md) · [décisions d'architecture (ADR)](adr/README.md)
 
 ### Installation et qualification
 

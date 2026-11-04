@@ -5,6 +5,8 @@
 
 Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
+**À la fin de ce guide :** le PC tourne sous Fedora 45 avec la configuration du projet appliquée, et chaque étape a laissé une preuve vérifiable. Comprendre d'abord pourquoi l'APPLY peut refuser : [notions clés](CONCEPTS.md), points 1 à 4.
+
 **Public :** l'opérateur qui installe le PC physique cible.
 **Résultat attendu :** une Fedora 45 installée, convergée, redémarrée sur Linux amont, puis certifiée par la Gate 3. Le poste n'est « Golden runtime-certified » qu'après ce dernier contrôle.
 
@@ -373,3 +375,7 @@ Le générateur affiche le modèle, le numéro de série et la taille du disque,
 **Média :** Fedora n'accepte pas de Kickstart depuis une image Live. Démarrer l'ISO **Fedora 45 Everything netinstall** avec `inst.ks=` pointant vers le fichier généré ; les paquets viennent alors des dépôts officiels `fedora` et `updates`. L'ISO Workstation vérifiée à la section 1 reste celle du contrôle Live.
 
 **Réussite :** le disque et le SHA incorporés sont ceux qui ont été audités, et le commit est celui du Live. Reprendre ensuite à l'import de la preuve Live (section 2), puis à la section 3. Le Kickstart ne remplace ni le contrôle Live, ni la baseline, ni la sauvegarde, ni la qualification.
+
+## Étape suivante
+
+Le poste installé se qualifie en Gate 3 : [qualification](QUALIFICATION.md). Pour l'usage courant ensuite, partir du [centre de contrôle](CONTROL_CENTER.md).

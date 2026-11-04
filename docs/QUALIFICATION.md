@@ -5,6 +5,8 @@
 
 Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./control.sh validate gate3 certify` a réussi sur le PC installé, pour ses identités matérielles et sa configuration courantes. Entre les deux : le Live USB, l'installation, la baseline et la Gate 3.
 
+**À la fin de ce guide :** savoir dire ce que prouve chaque étape, de la CI à la Gate 3, et reconnaître une preuve valide, périmée ou absente. Le principe des trois niveaux est expliqué dans les [notions clés](CONCEPTS.md#3-trois-niveaux-de-preuve--ci-live-usb-gate-3).
+
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 
 ![Schéma de la chaîne de qualification : dix étapes, de la CI au commit exact jusqu'à la Golden release](assets/diagrams/chaine-qualification.svg)
@@ -221,3 +223,7 @@ bash scripts/hardware/ld240-display.sh remove   # retour arrière
 ```
 
 Une incompatibilité doit rester visible : ne pas désactiver SELinux ni ouvrir l'accès à tous les périphériques HID pour la contourner.
+
+## Étape suivante
+
+Cocher les essais physiques dans la [fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md). Le poste qualifié s'entretient ensuite depuis le [centre de contrôle](CONTROL_CENTER.md) et la [maintenance du poste](DESKTOP_LIFECYCLE.md).

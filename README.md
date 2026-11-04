@@ -35,8 +35,8 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 | Élément | Statut | Preuve |
 |---|---|---|
 | Configuration, scripts, modules et diagnostics | Réalisé | Ce dépôt |
-| Tests de comportement et contrats | Vérifié par la CI | Workflows GitHub sur chaque PR et chaque commit de `main` ([CI](docs/CI_VALIDATION.md)) |
-| Session GNOME 51 avec les six extensions, redémarrage et restauration | Vérifié par la CI, en VM jetable | [Laboratoire Fedora/GNOME](docs/FEDORA_GNOME_CI_LAB.md) |
+| Tests de comportement et contrats | Vérifié par la CI le 2026-11-04, au commit `0007d97` de la préversion [v0.24.1-rc.1](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/releases/tag/v0.24.1-rc.1) | [run `Tests`](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/41880009717) ; les mêmes contrôles tournent sur chaque PR et chaque commit de `main` ([CI](docs/CI_VALIDATION.md)) |
+| Session GNOME 51 avec les six extensions, redémarrage et restauration | Vérifié par la CI le 2026-11-04, au même commit, en VM jetable | même [run `Tests`](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/41880009717) ([laboratoire Fedora/GNOME](docs/FEDORA_GNOME_CI_LAB.md)) |
 | Profil Fedora 45 : média final 1.4 et RPM stables | Vérifié le 2026-11-03 | Signature du CHECKSUM et SHA-256 de l'ISO ([fiche Fedora 45](docs/FEDORA45_PRIMARY.md)) |
 | Contrôle du PC depuis le Live USB | Non vérifié | À faire sur le matériel |
 | Installation, application et qualification (Gate 3) | Non vérifié | À faire sur le matériel ([qualification](docs/QUALIFICATION.md)) |
@@ -47,7 +47,7 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 
 | Je veux… | Lire |
 |---|---|
-| Comprendre le projet et ses choix | [Architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
+| Comprendre le projet et ses choix | Les [notions clés](docs/CONCEPTS.md), l'[architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
 | Installer ce PC | Le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md), puis le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) et la [qualification](docs/QUALIFICATION.md) |
 | Utiliser et entretenir le poste | Le [centre de contrôle](docs/CONTROL_CENTER.md), puis le [dépannage](docs/TROUBLESHOOTING.md) |
 | Voir tous les guides | Le [portail de la documentation](docs/README.md) |
