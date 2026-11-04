@@ -1,12 +1,15 @@
 # Linux amont officiel stable
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — politique relue contre `config/kernel.conf` et `lib/kernel_lifecycle.sh` — matériel : non vérifié
+
 Le projet retire le noyau personnalisé et suit uniquement Linux publié par kernel.org, sans patch de distribution. Le canal de paquets est `@kernel-vanilla/stable` ; sa dépendance `@kernel-vanilla/fedora` contient également des noyaux amont sans patch. Ce nom ne désigne pas le noyau Fedora modifié. Les canaux mainline, stable-rc et next sont exclus.
 
 ## Version et provenance
 
 À chaque installation ou préparation d'une mise à jour, le projet lit [le flux officiel](https://www.kernel.org/releases.json). La candidate RPM doit correspondre exactement à `latest_stable`, être une version numérique finale et porter la provenance Vanilla. Une nouvelle version finale peut encore être classée « mainline » par kernel.org ; elle est acceptée uniquement si elle est aussi la `latest_stable` officielle. Les RC et linux-next sont toujours refusés. L'encodage RPM `X.Y.0` est reconnu comme la même version finale que `X.Y` sur kernel.org.
 
-Au contrôle du 4 octobre 2026, la stable est **7.2.9** ; **7.3-rc6** est une préversion. Le projet passera automatiquement à 7.3 lorsqu'elle sera publiée comme finale. Le minimum 7.2.9 est un plancher de sécurité, pas une version figée.
+`./control.sh kernel status` affiche la version stable courante et celle qui est installée. `KERNEL_MIN_VERSION` (`config/kernel.conf`) est un plancher de sécurité, pas une version figée : le projet suit automatiquement chaque nouvelle stable.
 
 ```bash
 ./control.sh kernel status
@@ -15,7 +18,12 @@ sudo reboot
 ./diagnostics/kernel-doctor
 ```
 
-Les RPM sont empaquetés par les mainteneurs Kernel Vanilla : ils ne sont pas distribués comme binaires par kernel.org. La cadence est indépendante des mises à jour de noyau Fedora, mais la compilation et la publication COPR peuvent retarder la disponibilité. Si le RPM de la toute dernière stable manque, ou si kernel.org est injoignable, le projet n'installe pas une RC ou un ancien noyau en le présentant comme dernier stable. Lors d'une **mise à jour système**, seul le noyau est alors reporté : il est exclu de la transaction DNF, le noyau en cours reste N, et toutes les autres mises à jour (sécurité comprise) sont appliquées. L'état enregistre `kernel_deferred=true` et le bilan final l'indique ; relancer la mise à jour plus tard installe le noyau. Pour bloquer toute la mise à jour dans ce cas, régler `KERNEL_DEFER_WHEN_UNAVAILABLE="false"`. Une installation explicite du noyau (`./control.sh kernel install-latest`) échoue toujours avec ce message.
+Les RPM sont empaquetés par les mainteneurs Kernel Vanilla : kernel.org ne distribue pas de binaires. Leur cadence est indépendante des noyaux Fedora, mais la compilation et la publication COPR peuvent retarder leur disponibilité.
+
+Si le RPM de la dernière stable manque, ou si kernel.org est injoignable, le projet n'installe jamais une RC ou un ancien noyau en le présentant comme dernier stable :
+
+- lors d'une **mise à jour système**, seul le noyau est reporté : il est exclu de la transaction DNF, le noyau en cours reste N, et toutes les autres mises à jour, sécurité comprise, sont appliquées. L'état enregistre `kernel_deferred=true`, le bilan final l'indique, et relancer la mise à jour plus tard installe le noyau. Pour bloquer toute la mise à jour dans ce cas, régler `KERNEL_DEFER_WHEN_UNAVAILABLE="false"` ;
+- une installation explicite (`./control.sh kernel install-latest`) échoue toujours, avec le même message.
 
 ## Récupérer les sources dès leur publication
 

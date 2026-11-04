@@ -31,4 +31,4 @@ done < <(persistent_data_layout_paths)
 
 [[ "$(xdg-user-dir DOCUMENTS 2>/dev/null || true)" == "$(persistent_data_documents)" ]] || fail 'XDG Documents is not mapped to /data/Documents'
 
-pass '/data/{Documents,Projets,ISO,Jeux} are persistent, private and separated from /data/libvirt'
+pass '/data/{Documents,Projets,ISO,Jeux,IA/Openclaw} are persistent, private and separated from /data/libvirt'

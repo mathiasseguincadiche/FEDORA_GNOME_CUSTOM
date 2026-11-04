@@ -1,92 +1,179 @@
-# Backup, Restore et Disaster Recovery
+# Sauvegarde, restauration et reprise après sinistre
 
-Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)) et applique un modèle fail-closed. Une sauvegarde n'est pas considérée valide parce qu'une commande `backup` a simplement terminé : le dépôt exige une preuve d'intégrité et, pour le pré-APPLY et le backup complet, un test réel de restauration d'un canary.
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — sources, exclusions, rétention et commandes relues contre `config/backup.conf`, `lib/backup_runtime.sh` et `scripts/backup/` — matériel : non vérifié
 
-## Comprendre la stratégie de récupération en trente secondes
+Le projet sauvegarde avec **Borg 1.x, dans un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une sauvegarde n'est jamais tenue pour bonne parce qu'une commande s'est terminée : elle doit prouver son intégrité et, pour les sauvegardes pré-APPLY et complètes, réussir une vraie restauration d'un fichier témoin (*canary*).
+
+## Comprendre la stratégie
 
 ![Schéma de la sauvegarde : trois familles de sources vers un dépôt Borg externe, contrôles, restauration en staging puis copie manuelle](assets/diagrams/sauvegarde-restauration.svg)
 
-Trois familles de sources partent vers un dépôt Borg sur le SSD externe XS1000 (ext4, non chiffré) : les données de `/data` (Documents, Projets, IA/Openclaw), les dossiers personnels (Bureau, Images, Vidéos, Musique, `~/Development`) et les réglages (`.config`, `.mozilla`, `.var/app`, `.local/share`, configuration de l'hôte et du projet). La sauvegarde pré-APPLY n'est validée qu'après `borg check --verify-data` et une restauration canari. Une restauration se fait toujours dans `~/Restores` avant inspection et copie manuelle. Restent hors Borg : Téléchargements, ISO, Jeux et tout ce qui concerne les VM ; le système, lui, est reconstruit depuis le dépôt. Les listes exactes viennent de `config/backup.conf`.
+Par les sauvegardes quotidienne et complète, trois familles de sources partent vers un dépôt Borg sur le SSD externe XS1000 (ext4, non chiffré) : les données de `/data` (Documents, Projets, IA/Openclaw), les dossiers personnels (Bureau, Images, Vidéos, Musique, `~/Development`) et les réglages (`.config`, `.mozilla`, `.var/app`, `.local/share`, configuration de l'hôte et du projet).
+
+La sauvegarde pré-APPLY n'est validée qu'après `borg check --verify-data` et une restauration canari. Une restauration se fait toujours dans `~/Restores` avant inspection et copie manuelle. Restent hors Borg : Téléchargements, ISO, Jeux et tout ce qui concerne les VM ; le système, lui, est reconstruit depuis le dépôt. Les listes exactes viennent de `config/backup.conf`.
 
 Source éditable : [`sauvegarde-restauration.drawio`](assets/diagrams/sauvegarde-restauration.drawio).
 
-Le second SSD protège les données de travail lors d'une **réinstallation du premier**, mais **pas** contre la panne ou l'effacement du second SSD. Borg fournit la sauvegarde externe pour les jeux de données sélectionnés ; `ISO` et `Jeux` ne sont pas automatiquement inclus par défaut, les VM sont exclues de Borg : leurs exports restent exclusivement manuels, sous la responsabilité de l'utilisateur.
+**Deux SSD ne font pas deux sauvegardes.** Le second T705, monté sur `/data`, survit à une réinstallation du système : c'est une première protection. Il ne protège ni contre sa propre panne, ni contre un effacement : c'est le rôle de Borg, sur un support externe. Le dépôt n'étant pas chiffré, ce support se range comme un document sensible.
 
-Les dépôts Borg de ce projet sont **non chiffrés** par décision explicite (ADR 0014) : traiter le support externe comme une donnée confidentielle. Aucune restauration ne doit écraser directement le système en production sans inspection. [Schéma d'architecture détaillé](ARCHITECTURE.md).
+## Ce qui est sauvegardé
 
+| Source | Quotidienne | Complète | Pré-APPLY |
+| --- | --- | --- | --- |
+| `/data/Documents` (via XDG Documents), `/data/Projets`, `/data/IA/Openclaw` | oui | oui | non |
+| Bureau, Images, Vidéos, Musique (dossiers XDG), `~/Development` | oui | oui | non |
+| `.config` | oui | oui | oui |
+| `.mozilla`, `.var/app`, `.local/share` | oui | oui | `.local/share/gnome-shell` seulement |
+| Inventaire du système (paquets RPM et Flatpak, services, montages, PCI, réglages GNOME), `/etc` et `/boot`, copie privée de `config/local.conf` | non | oui | oui |
+| Fichiers suivis du dépôt du projet | non | non | oui |
 
-## Contrat
+La sauvegarde **pré-APPLY** est un point de retour de l'état du système avant l'APPLY, pas une sauvegarde des données : celles-ci sont protégées par les sauvegardes quotidienne et complète. Les listes exactes figurent dans `scripts/backup/daily-user-backup.sh`, `scripts/backup/backup-now.sh` et `prepare-preapply-backup.sh`.
 
-- cible locale pré-APPLY obligatoirement prouvée externe (USB/removable/hotplug), ou dépôt Borg distant `ssh://` ;
-- dépôt **non chiffré** : aucune passphrase n'existe ; un dépôt chiffré est refusé par la politique ;
-- marker pré-APPLY lié au **même commit Git** que le dry-run et l'APPLY, et à l'archive exacte (nom + identifiant) ;
-- `borg check --verify-data` sur l'archive pré-APPLY obligatoire (chaque bloc est relu et vérifié) ;
-- restauration du canary obligatoire avant création de `state/preapply-backup.ok` ;
-- **aucune sauvegarde, copie ou export automatique de VM par Borg**, y compris XML libvirt, NVRAM, swtpm, disques virtuels et cloud-init ;
-- les exports de VM sont effectués manuellement par leur propriétaire, hors des scripts du projet ;
-- aucune restauration automatique en place de `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images` ;
-- runtime des timers installé dans un bundle immutable versionné par SHA et contrôlé par `MANIFEST.sha256` ;
-- rétention Borg périodique versionnée : 7 daily / 4 weekly / 6 monthly, appliquée séparément aux archives `fgc-full-*` et `fgc-daily-*` ; les archives `fgc-preapply-*` (points de retour arrière) ne sont jamais supprimées automatiquement.
+Les dossiers XDG sont résolus avec `xdg-user-dir` au moment de chaque sauvegarde quotidienne ou complète ; une résolution ambiguë, qui renverrait par exemple directement vers `$HOME`, bloque la sauvegarde au lieu d'archiver un emplacement imprévu. La sauvegarde quotidienne n'accepte, en chemin absolu, que `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` : une dérive de configuration ne peut pas y ajouter `/data/ISO`, `/data/Jeux` ou `/data/libvirt`. Les profils Firefox et les données Flatpak peuvent être volumineux : dimensionner le support en conséquence.
 
-## Disque de sauvegarde de la machine cible
+### Ce qui n'est jamais sauvegardé
 
-La fiche matérielle prévoit un troisième support de ~1,8 To, le **Kingston XS1000**, un **SSD externe USB 3.2 Gen 2** (et non un disque dur mécanique), en plus des deux T705. C'est la cible naturelle du dépôt Borg local, à condition de respecter le contrat du projet :
+- **Les machines virtuelles** : disques, définitions XML libvirt, NVRAM, état TPM (swtpm) et médias cloud-init. `BACKUP_VM_DISKS`, `BACKUP_LIBVIRT_METADATA` et `BACKUP_VM_CLOUD_INIT_METADATA` sont forcés à `false` ; une valeur `true` fait échouer la sauvegarde, et l'option `--include-vms` est refusée. Les exports de VM restent manuels (voir [plus bas](#exports-de-vm)).
+- **`/data/ISO` et `/data/Jeux`** : volumineux et retéléchargeables. Une sauvegarde de partie, de mod rare ou de contenu irremplaçable stocké sous `/data/Jeux` demande une politique explicite de l'opérateur ; les sauvegardes de parties rangées dans les dossiers utilisateur restent couvertes.
+- **Le dossier Téléchargements.**
+- **Les clés privées** : tout dossier `.ssh` ou `.gnupg`, à n'importe quelle profondeur (y compris dans `/data/Projets`), est exclu de toutes les archives, même si la configuration locale le liste ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)). Le dossier `~/.config/fedora-gnome-custom/secrets` est exclu de la même façon.
 
-- il doit être **externe** (USB / amovible) : le projet refuse un dépôt sur le disque système ou sur `/data` ;
-- il doit être formaté en **ext4** (`BACKUP_PREAPPLY_REQUIRED_FSTYPE`). Un XS1000 neuf est livré en exFAT : il faut le reformater une fois (cela **efface** son contenu) ;
-- il doit être **seul** support externe monté lors du pré-APPLY, sinon la détection automatique s'arrête par sécurité. Dans ce cas, renseigner `BACKUP_REPOSITORY` dans `config/local.conf`.
+### Sauvegarder les clés privées à part
 
-**Le dépôt n'est pas chiffré** : toute personne qui possède le disque peut lire les sauvegardes, y compris les profils de navigateur. Ranger le disque en conséquence. En contrepartie, aucune passphrase ne peut être perdue : un Fedora neuf avec `borgbackup` suffit pour restaurer.
+Ces clés se gardent dans un emplacement chiffré, hors Borg :
 
-**Les clés privées n'y entrent jamais.** Tout dossier `.ssh` ou `.gnupg`, à n'importe quelle profondeur (y compris dans `/data/Projets`), est exclu des archives pré-APPLY, complètes et quotidiennes, même si la configuration locale les liste encore ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)). Ces clés se sauvegardent à part, dans un emplacement chiffré :
+- **SSH** : enregistrer chaque clé privée dans un gestionnaire de mots de passe (par exemple un élément « Clé SSH » de Bitwarden) ou sur un support chiffré. Après réinstallation, la recopier dans `~/.ssh` avec les droits `0600`. Une clé perdue peut aussi être régénérée, puis redéclarée sur GitHub et sur les serveurs ; `authorized_keys`, qui contient par exemple la clé de la tablette pour l'accès distant, se redéclare de la même façon.
+- **GnuPG** : exporter, stocker dans le même emplacement chiffré, puis supprimer les fichiers en clair :
 
-- **SSH** : enregistrer chaque clé privée dans Bitwarden (élément « Clé SSH ») ou sur un support chiffré ; après réinstallation, la recopier dans `~/.ssh` avec les droits `0600`. Une clé perdue peut aussi être régénérée puis redéclarée sur GitHub et les serveurs ; `authorized_keys` (clé de la tablette pour l'accès distant) est à redéclarer de la même façon.
-- **GnuPG** : `gpg --export-secret-keys --armor IDENTIFIANT > cle.asc` et `gpg --export-ownertrust > confiance.txt`, à stocker dans Bitwarden ou sur un support chiffré, puis `gpg --import cle.asc` et `gpg --import-ownertrust confiance.txt` à la restauration. Supprimer les fichiers exportés en clair après usage.
+  ```bash
+  gpg --export-secret-keys --armor IDENTIFIANT > cle.asc
+  gpg --export-ownertrust > confiance.txt
+  ```
 
-## VM : exports strictement manuels, indépendants de Borg
+  À la restauration : `gpg --import cle.asc`, puis `gpg --import-ownertrust confiance.txt`.
 
-**Les disques virtuels, définitions XML libvirt, états NVRAM/TPM et médias cloud-init ne sont jamais sauvegardés automatiquement par le projet.** Le propriétaire exporte lui-même ses VM **lorsqu'il en a besoin**, selon sa procédure et vers le support de son choix.
+## Préparer le support de sauvegarde
 
-Le contrat `BACKUP_VM_DISKS=false`, `BACKUP_LIBVIRT_METADATA=false` et `BACKUP_VM_CLOUD_INIT_METADATA=false` est imposé. Les anciens overrides `true` échouent explicitement, `--include-vms` est refusé et le Control Center ne propose plus de sauvegarde VM. Les exclusions s'appliquent aux sauvegardes quotidiennes, complètes et pré-APPLY. Les VM n'entrent **pas** dans le périmètre de certification Borg.
+Le support prévu est le **Kingston XS1000** (~1,8 To), un SSD externe USB 3.2 Gen 2. Il doit être :
 
-Borg continue de protéger le HOST, les données personnelles, `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw`. Le backup complet ajoute aussi les dossiers XDG localisés (Bureau, Documents, Images, Vidéos, Musique) et `~/Development`. Une résolution XDG inconnue ou ambiguë bloque la sauvegarde plutôt que d'archiver un emplacement imprévu.
+- **externe** (USB, amovible) : le projet refuse un dépôt sur le disque système ou sur `/data`. Un dépôt Borg distant `ssh://` est aussi accepté ;
+- formaté en **ext4** (`BACKUP_PREAPPLY_REQUIRED_FSTYPE`). Un XS1000 neuf est livré en exFAT : le reformater une fois, **ce qui efface son contenu** ;
+- **le seul** support externe monté lors de la sauvegarde pré-APPLY, si `BACKUP_REPOSITORY` est vide. Sinon, renseigner `BACKUP_REPOSITORY` dans `config/local.conf`.
 
-## Deux niveaux de protection des données
+Un dépôt chiffré est refusé : aucune phrase de passe n'existe, et aucune ne peut donc être perdue. Un Fedora neuf avec `borgbackup` suffit pour restaurer.
 
-Le second T705 monté sur `/data` fournit une première protection contre la perte ou la réinstallation du **SSD système Btrfs**. Il contient :
+## Sauvegarder
 
-```text
-/data/
-├── Documents/
-├── Projets/
-├── ISO/
-├── Jeux/
-└── libvirt/
-```
+### Sauvegarde pré-APPLY
 
-Ce disque n'est jamais formaté automatiquement par le projet. Une réinstallation du premier T705 doit donc remonter le même `/data` et conserver ces données.
-
-Ce mécanisme n'est toutefois **pas un backup** contre la panne du second T705. Les données irremplaçables restent protégées par Borg sur une cible externe/off-machine : `/data/Documents` via XDG Documents et `/data/Projets` ainsi que `/data/IA/Openclaw` explicitement. `/data/ISO` et `/data/Jeux` sont exclus des backups automatiques par défaut car ces payloads sont généralement volumineux et reproductibles/retéléchargeables.
-
-Les sauvegardes de jeux non reproductibles, mods rares ou autres contenus importants stockés directement sous `/data/Jeux` doivent donc être ajoutées par une politique opérateur explicite si nécessaire. Les sauvegardes de parties placées dans les chemins utilisateur/XDG restent couvertes normalement par Borg.
-
-## Pré-APPLY
-
-Après un dry-run réussi sur le commit courant :
+Elle précède tout APPLY, après un dry-run réussi au même commit ([guide d'installation](INSTALLATION_GUIDE.md#7-créer-la-sauvegarde-pré-apply)) :
 
 ```bash
 ./prepare-preapply-backup.sh
 ```
 
-Si `BACKUP_REPOSITORY` est vide, le helper recherche exactement **une** cible externe montée et utilise `Backup-Fedora/borg` dessus. Si plusieurs cibles externes sont montées, il bloque : renseigner alors `BACKUP_REPOSITORY` dans `config/local.conf`.
+Si `BACKUP_REPOSITORY` est vide, le script cherche exactement **un** support externe monté et utilise `Backup-Fedora/borg` dessus ; plusieurs supports montés le bloquent. Au premier lancement, il crée le dépôt avec `borg init --encryption=none` après une confirmation tapée à la main. Il écrit ensuite l'archive `fgc-preapply-<date>`, la relit intégralement (`borg check --verify-data`), extrait et compare un fichier témoin, puis écrit `state/preapply-backup.ok`. Ce marqueur est lié au commit Git du dry-run et à l'archive exacte (nom et identifiant) ; l'APPLY rouvre le dépôt pour vérifier que cette archive existe toujours.
 
-Au premier lancement, le dépôt est créé avec `borg init --encryption=none` après une confirmation tapée à la main. L'archive `fgc-preapply-<date>` est ensuite écrite, relue intégralement (`borg check --verify-data`) puis un fichier témoin (*canary*) est réellement extrait et comparé.
+### Sauvegarde complète
 
-La capture contient notamment : inventaire RPM/Flatpak, services activés, stockage/montages, PCI/routage, fichiers suivis du projet, configuration GNOME utilisateur, archive privilégiée `/etc` + `/boot`, sans les métadonnées libvirt : les XML, NVRAM, TPM et disques des VM restent dans le périmètre des exports manuels du propriétaire.
+```bash
+./control.sh backup now
+```
 
-## Runtime backup autonome
+Cette commande lance `scripts/backup/backup-now.sh`, qui sauvegarde l'hôte, la configuration et les données, jamais les VM. Deux options sont disponibles en appel direct :
 
-Lors de l'APPLY, `modules/backup/60_daily_user_backup.sh` construit un bundle dédié sous :
+```bash
+scripts/backup/backup-now.sh --prune                             # applique ensuite la rétention
+scripts/backup/backup-now.sh --staging-root /chemin/absolu/staging   # autre espace de capture
+```
+
+La capture du système passe par un espace de travail (`state/backup-staging` par défaut). Avant d'archiver, le script vérifie que la taille estimée des sources et la réserve configurée (20 Gio par défaut, `BACKUP_PREAPPLY_MIN_FREE_GIB`) tiennent sur le support externe ; l'estimation est volontairement prudente, sans compter sur la compression ni la déduplication. La capacité d'un dépôt distant ne se mesure pas localement : une erreur Borg y reste bloquante.
+
+### Sauvegarde quotidienne
+
+Après l'APPLY, un timer systemd utilisateur lance la sauvegarde quotidienne. Elle peut aussi se lancer à la main avec `./control.sh backup daily`. Quand le support externe est absent, le run est enregistré `skipped` et le timer reste actif ; ce comportement ne concerne pas la sauvegarde pré-APPLY, qui échoue fermée.
+
+La sauvegarde quotidienne tourne pendant la session : un seul avertissement de Borg y est toléré, « file changed while we backed it up », pour un fichier modifié pendant sa lecture (profil de navigateur, données Flatpak). L'archive contient alors la version lue, et le nombre de fichiers concernés est enregistré (`files_changed_during_backup`) et affiché par `daily-backup-doctor`. Tout autre avertissement, comme un fichier illisible ou une source absente, refuse l'archive.
+
+### Rétention
+
+La politique versionnée garde **7 archives quotidiennes, 4 hebdomadaires et 6 mensuelles**, appliquée séparément aux archives `fgc-full-*` et `fgc-daily-*` : une classe ne peut jamais consommer la place de l'autre. Les archives `fgc-preapply-*`, points de retour arrière, ne sont jamais supprimées automatiquement.
+
+Le timer `fedora-gnome-backup-retention.timer` l'applique chaque dimanche à 04:15, avec un délai aléatoire de 30 minutes au plus : `borg prune` par classe, puis un seul `borg compact` pour libérer l'espace. Une échéance manquée est rejouée au démarrage suivant (`Persistent=true`), et un support absent donne un run `skipped`. Le déclenchement manuel, `./control.sh backup prune`, échoue au contraire si le dépôt est indisponible.
+
+## Vérifier
+
+```bash
+./control.sh backup check                 # état du dépôt et des sauvegardes
+./control.sh backup deep                  # relit toutes les données : borg check --verify-data, plus long
+./control.sh backup list                  # archives présentes
+./diagnostics/daily-backup-doctor         # timers, bundle installé, derniers états
+./diagnostics/data-storage-doctor         # /data, ses dossiers, droits, labels et XDG Documents
+```
+
+`data-storage-doctor` vérifie que `/data` est l'EXT4 dédié et que `Documents`, `Projets`, `ISO`, `Jeux`, `IA` et `IA/Openclaw` sont de vrais dossiers, séparés de `/data/libvirt`, avec le bon propriétaire, le mode `0750` et le label SELinux `user_home_t`.
+
+## Restaurer
+
+Une restauration passe **toujours** par un dossier d'essai vide (staging), sous `BACKUP_RESTORE_STAGING_ROOT` (`~/Restores/fedora-gnome-custom` par défaut). Le projet ne restaure jamais automatiquement en place `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images`.
+
+1. Lister les archives et vérifier le dépôt :
+
+   ```bash
+   scripts/backup/restore.sh list
+   scripts/backup/restore.sh verify
+   ```
+
+2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide :
+
+   ```bash
+   scripts/backup/restore.sh restore NOM_EXACT_DE_L_ARCHIVE /chemin/du/staging/vide
+   scripts/backup/restore.sh restore latest
+   ```
+
+   Un troisième argument, un chemin absolu, limite l'extraction à ce chemin. Le script refuse les cibles de production et un dossier déjà rempli.
+
+3. Inspecter le staging : contenus, droits, liens symboliques, propriétaires. Borg vérifie chaque bloc contre son empreinte pendant l'extraction.
+4. Copier à la main les seuls fichiers voulus vers leur emplacement.
+
+Pour reprendre `config/local.conf` sur une nouvelle machine, vérifier sa copie avec `sha256sum --check local.conf.sha256` depuis le dossier d'inventaire du staging, puis revoir les chemins avant de la remettre en place. L'identité approuvée de `/data` y est conservée pour comparaison ; elle n'autorise jamais automatiquement un autre disque.
+
+**Ce que la restauration prouve :** une restauration de fichiers réussie ne prouve pas qu'un Fedora ou une VM redémarre. L'exercice complet est décrit dans la [reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md).
+
+## Reprendre après une perte totale
+
+Le dépôt n'étant pas chiffré, aucun secret n'est nécessaire : sur une machine neuve, installer `borgbackup`, cloner le projet, brancher le support et lancer `scripts/backup/restore.sh list` (ou `borg list` sur le dépôt).
+
+Pour obtenir un plan de reconstruction ordonné :
+
+```bash
+./control.sh backup dr-plan
+```
+
+`scripts/backup/disaster-recovery.sh` exige `borgbackup`, `jq` et Python 3. Il sélectionne la dernière archive **complète**, valide son manifeste de récupération, relit ses données (`borg check --verify-data`), puis écrit dans `state/` un plan : Fedora 45, remontage du second T705 sur `/data` **sans formatage**, dépôt, dry-run, restauration en staging, labels SELinux et diagnostics finaux. Il ne modifie rien.
+
+## Exports de VM
+
+Le projet ne sauvegarde ni n'exporte jamais une VM. Les outils libvirt servent à créer, exploiter et diagnostiquer les VM, pas à les archiver. Le propriétaire choisit quand arrêter ses VM et quels fichiers conserver ensemble : disque virtuel, XML, NVRAM et état TPM s'il existe. Aucune preuve Borg ne vaut preuve de récupération d'une VM ; la reprise d'une VM repose uniquement sur cet export manuel ([reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md#3-reprendre-une-vm)).
+
+## Référence : fonctionnement interne
+
+### Cycle de vie d'une archive
+
+Chaque archive est d'abord créée sous un nom `fgc-pending-<type>-*`. Elle n'est promue en `fgc-preapply-*`, `fgc-full-*` ou `fgc-daily-*` que si la création Borg renvoie **0**, ou, pour la quotidienne, avec le seul avertissement toléré ; l'identifiant est relu après renommage.
+
+Un code 1 peut signaler des fichiers illisibles ou omis : la tentative échoue même si Borg a écrit une archive. Une archive refusée reste inspectable sous `fgc-pending-*` mais ne devient jamais une base de récupération ; la rétention n'en garde que les plus récentes (`BACKUP_KEEP_PENDING`, 3 par défaut) et les diagnostics signalent leur présence.
+
+### Marqueurs et certification
+
+La sauvegarde complète restaure et compare un fichier témoin, puis écrit atomiquement un marqueur : dépôt, nom et identifiant de l'archive, commit, empreintes de la configuration, du plan et du matériel, résultat du contrôle d'intégrité et de la restauration. Le doctor de certification (`backup-doctor --certify`) rouvre cette **archive exacte**, contrôle son manifeste et extrait son témoin : une archive supprimée, un autre dépôt ou une configuration modifiée invalident la preuve.
+
+Le manifeste de récupération figure dans le staging et dans le commentaire Borg de l'archive complète. Pour rester compatible avec les anciennes archives, il conserve les champs `include_vms=false`, `vm_count=0` et une liste de VM vide, qui indiquent explicitement l'absence de VM. La certification Gate 3 vérifie l'hôte et les données protégées, ces champs et le refus des options VM ; elle ne demande jamais d'export de VM.
+
+### Runtime des timers
+
+L'APPLY installe un runtime de sauvegarde autonome, construit par `modules/backup/60_daily_user_backup.sh` :
 
 ```text
 ~/.local/lib/fedora-gnome-custom/backup-runtime/<SHA-appliqué>-<SHA256-configuration>/
@@ -102,233 +189,12 @@ Lors de l'APPLY, `modules/backup/60_daily_user_backup.sh` construit un bundle d�
 └── MANIFEST.sha256
 ```
 
-`backup-runtime.conf` est un snapshot minimal des seules variables `BACKUP_*` et `DAILY_*`. Aucune variable `BORG_*` de l'environnement appelant n'y est copiée, et une `BORG_PASSPHRASE` ambiante est neutralisée à l'exécution. Le manifeste SHA-256 est vérifié au postcheck et à chaque exécution du runtime.
-
-Un dossier nommé par SHA est **immutable** : un nouvel APPLY du même SHA réutilise le bundle uniquement si son `APPLIED_SHA` et son manifeste sont valides. Un dossier existant corrompu n'est jamais écrasé silencieusement ; l'APPLY échoue et demande une intervention explicite. Cela évite aussi de remplacer un runtime pendant qu'un timer l'utilise.
-
-Les services systemd utilisateur pointent directement vers ce dossier SHA. Ils ne sourcent plus `bootstrap.sh`, `backup_runtime.sh` ou la configuration depuis le checkout Git. Déplacer, mettre à jour ou modifier le dépôt de travail ne change donc pas le comportement d'un timer déjà appliqué ; un nouvel APPLY est nécessaire pour installer un nouveau runtime.
-
-Les états des timers sont enregistrés hors checkout sous :
-
-```text
-${XDG_STATE_HOME:-~/.local/state}/fedora-gnome-custom/
-```
-
-## Sauvegarde quotidienne utilisateur
-
-Le timer quotidien résout les dossiers standards avec `xdg-user-dir` au moment de l'exécution. Les clés `DESKTOP`, `DOCUMENTS`, `PICTURES`, `VIDEOS` et `MUSIC` suivent donc la configuration XDG réelle de l'utilisateur. Dans le profil Golden, `DOCUMENTS` pointe vers `/data/Documents`; les autres dossiers restent résolus selon la locale utilisateur.
-
-Les chemins persistants `/data/Projets` et `/data/IA/Openclaw` sont sauvegardés avec `Development`, `.config`, `.mozilla`, `.var/app` et `.local/share`. `.ssh` et `.gnupg` sont toujours exclus (voir plus haut). Un ancien override local `DAILY_BACKUP_PATHS` reste accepté comme fallback pour compatibilité.
-
-La surface absolue autorisée est volontairement étroite : le script accepte `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw`, mais refuse tout autre chemin absolu. `/data/ISO`, `/data/Jeux` et `/data/libvirt` ne peuvent donc pas être ajoutés accidentellement au backup quotidien par une dérive de configuration.
-
-Le script refuse une source XDG ambiguë qui résoudrait directement vers `$HOME`, refuse les chemins contenant `..`, et enregistre le nombre ainsi que la liste exacte des sources incluses dans l'archive.
-
-L'absence temporaire du disque externe (ou d'un dépôt distant) fait **skipper** le run quotidien sans désactiver le timer. Cela ne change pas le comportement fail-closed du backup pré-APPLY.
-
-## Rétention périodique
-
-La politique versionnée est :
-
-```text
-7 daily
-4 weekly
-6 monthly
-```
-
-Un timer systemd utilisateur dédié exécute par défaut la rétention chaque dimanche à 04:15, avec un délai aléatoire maximal de 30 minutes :
-
-```text
-fedora-gnome-backup-retention.timer
-```
-
-Il lance le runtime installé `backup-retention`, applique `borg prune` séparément aux archives `fgc-full-*` et `fgc-daily-*` (motif `--glob-archives`), puis exécute **un seul** `borg compact` pour libérer réellement l'espace.
-
-Chaque classe d'archive a sa propre politique : un backup complet ne peut donc jamais « consommer » la place d'une archive quotidienne, et inversement. Les archives `fgc-preapply-*` ne correspondent à aucun motif de rétention.
-
-Si le disque/repository n'est pas disponible au créneau prévu, le run est enregistré comme `skipped` et le timer reste sain. `Persistent=true` permet à systemd de rejouer une échéance manquée après reconnexion/démarrage selon son comportement normal.
-
-La rétention reste également déclenchable manuellement :
-
-```bash
-scripts/backup/backup-now.sh --prune
-# ou
-./control.sh backup prune
-```
-
-Le chemin manuel est strict : une cible Borg indisponible provoque un échec explicite au lieu d'un skip.
-
-## Sauvegarde du HOST et des données utilisateur
-
-```bash
-# Fedora HOST, configuration, documents et projets — jamais les VM
-scripts/backup/backup-now.sh
-
-# Même portée sans VM, avec rétention ensuite
-scripts/backup/backup-now.sh --prune
-```
-
-L'option historique `--include-vms` n'est **plus prise en charge**. Ne pas la réactiver en modifiant `local.conf`. Le propriétaire gère ses exports de VM en dehors de Borg.
-
-## Diagnostic
-
-```bash
-diagnostics/data-storage-doctor
-diagnostics/backup-doctor
-diagnostics/backup-doctor --deep
-diagnostics/daily-backup-doctor
-```
-
-`data-storage-doctor` vérifie que `/data` est bien l'EXT4 dédié, que `Documents`, `Projets`, `ISO` et `Jeux` existent avec le bon propriétaire, le mode `0750`, le label SELinux utilisateur et le mapping XDG Documents. Le doctor quotidien vérifie notamment l'intégrité du bundle installé, l'activation des timers daily/rétention et les derniers états enregistrés. `backup-doctor --deep` relit toutes les données du dépôt (`borg check --verify-data`), ce qui est plus long.
-
-## Restauration staging-first
-
-Lister :
-
-```bash
-scripts/backup/restore.sh list
-```
-
-Vérifier :
-
-```bash
-scripts/backup/restore.sh verify
-```
-
-Restaurer sans toucher au système live :
-
-```bash
-scripts/backup/restore.sh restore latest
-```
-
-ou :
-
-```bash
-scripts/backup/restore.sh restore <archive> /chemin/staging/vide '/chemin/absolu/optionnel'
-```
-
-Le helper refuse les destinations sensibles/actives. On inspecte ensuite le staging avant toute restauration manuelle. Cette règle s'applique également à `/data` : le projet ne remplace jamais automatiquement les données persistantes existantes.
-
-## Récupération après perte totale
-
-Le dépôt n'étant pas chiffré, il n'y a **aucun secret à conserver** : sur une machine neuve, installer `borgbackup`, cloner le projet, brancher le disque et lancer `scripts/backup/restore.sh list` (ou directement `borg list <dépôt>`). La contrepartie est physique : le disque de sauvegarde doit être conservé comme un document sensible.
-
-## Disaster Recovery
-
-```bash
-scripts/backup/disaster-recovery.sh
-```
-
-Ce générateur de plan exige `borgbackup`, `jq` et Python 3.
-
-Le script sélectionne uniquement la dernière archive **full**, valide son manifeste de récupération, puis relit ses données (`borg check --verify-data`) puis génère dans `state/` un plan de reconstruction ordonné : Fedora 45, remontage du second T705 `/data` **sans formatage**, dépôt, dry-run, restauration staging, libvirt, QCOW2, labels SELinux et diagnostics finaux. Il est volontairement **non destructif**.
-
-## Export manuel des VM : périmètre et limites
-
-Le projet ne prend **aucune initiative** de sauvegarde ou d'export des VM. Les outils libvirt/KVM servent à **créer, exploiter et diagnostiquer** les VM, pas à les archiver. L'ancien planificateur de sauvegarde VM a été retiré du dépôt : aucun composant de Borg ne doit générer de plan de conversion ou copie QCOW2.
-
-Pour ses exports personnels, le propriétaire choisit quand arrêter ses VM et quels fichiers conserver ensemble (disque virtuel, XML, NVRAM et état TPM si applicable). Ce travail est **hors périmètre** de la sauvegarde du HOST ; aucune preuve Borg ne vaut preuve de récupération d'une VM.
-
-Pour la reprise du système, la seule procédure automatisée concerne l'archive **HOST** et la restauration des fichiers utilisateur en zone de staging.
-
-## Qualification après l'audit de fiabilité
-
-Un nouvel APPLY au même commit avec une autre configuration de sauvegarde crée
-un nouveau bundle immuable. Le doctor compare aussi sa configuration avec celle
-du dépôt. Les variables d'environnement `BORG_*` ne sont jamais sérialisées
-dans ce bundle.
-
-Les profils Firefox, données Flatpak et données applicatives utilisateur sont
-inclus via `.mozilla`, `.var/app` et `.local/share`. Ces répertoires peuvent être
-volumineux : dimensionner et vérifier le support externe. Le dossier
-`~/.config/fedora-gnome-custom/secrets` reste exclu des archives.
-
-`Les VM sont **entièrement exclues** des sauvegardes de ce projet. Le propriétaire
-gère lui-même ses exports ponctuels, sans `backup-now.sh` ni timer Borg.
-
-Pour un exercice réel, sélectionner un nom d'archive exact :
-
-```bash
-./scripts/backup/restore.sh list
-./scripts/backup/restore.sh verify
-./scripts/backup/restore.sh restore fgc-full-AAAAMMJJTHHMMSS... /chemin/vers/staging-vide
-```
-
-`verify` relit toutes les données du dépôt (`borg check --verify-data`) ; Borg
-vérifie aussi chaque bloc contre son empreinte pendant l'extraction. Comparer ensuite les documents,
-permissions et liens attendus. Une restauration de fichiers réussie ne prouve
-pas le redémarrage de Fedora ou de Rocky.
-
-La reprise d'une VM repose **uniquement sur l'export manuel effectué par le propriétaire**.
-Ce document n'indique pas d'archive VM dans Borg et ne certifie aucune restauration VM.
-
-Le test `tests/test_borg_roundtrip.sh` exerce un vrai dépôt Borg non chiffré,
-le runtime quotidien installé, la rétention et le script de restauration. Il
-vérifie contenu, permissions, lien symbolique, exclusion du dossier secrets,
-refus d'écraser un staging existant, refus d'un nom d'archive malformé, preuve
-pré-APPLY exacte (nom, identifiant, type) et refus d'un dépôt chiffré. Son disque externe est simulé : ce test n'émet aucune preuve Gate 3.
-
-## Certification et capacité depuis 0.19
-
-Seul un code de création Borg **0** permet d'enregistrer un succès. Un code 1
-peut correspondre à des fichiers illisibles/omis ; la tentative échoue même si
-Borg a écrit une archive. Le timer conserve un état d'échec, détecté par le
-doctor quotidien. Un disque absent reste un état `skipped`, distinct du succès.
-
-Le backup complet restaure et compare un canary, puis écrit atomiquement un
-marker contenant dépôt, nom/id, commit, empreintes configuration/plan/matériel,
-contrôle d'intégrité, restauration et couverture VM. Le doctor de certification
-réouvre cette **archive exacte**, contrôle son manifeste et extrait son canary.
-Une archive supprimée, un dépôt différent ou une configuration modifiée invalide
-la preuve. Les anciens markers complets doivent être régénérés.
-
-Le manifeste de récupération est inclus dans le staging et dans le commentaire
-Borg de l'archive complète. Pour la compatibilité avec les archives historiques,
-il conserve les champs `include_vms=false`, `vm_count=0` et une liste vide.
-Cela indique explicitement **l'absence de sauvegarde de VM** ; l'archive
-quotidienne reste réservée à la récupération des fichiers utilisateur.
-
-Le staging par défaut reste sous `state/backup-staging`. Pour choisir un autre
-espace de travail :
-
-```bash
-scripts/backup/backup-now.sh --staging-root /chemin/absolu/backup-staging
-```
-
-Avant la capture système, l'espace disponible doit couvrir la taille estimée
-et conserver la marge de sécurité configurée. Aucun disque VM n'est mesuré
-ni copié. Avant l'archivage local, la taille des sources HOST et la
-réserve configurée (20 Gio par défaut) doivent tenir sur le support externe.
-Cette estimation est conservatrice : compression et déduplication ne permettent
-pas de contourner le contrôle. La capacité d'un dépôt distant ne peut pas être
-mesurée localement ; une erreur Borg y reste bloquante.
-
-La qualification réelle suit [le parcours de fiabilité](QUALIFICATION.md).
-Aucun conteneur ne certifie le démarrage Fedora, la session GNOME, le TPM d'une VM
-récupérée ou le matériel physique.
-
-Les créations commencent dans le namespace `fgc-pending-<type>-*`. Pour
-`fgc-preapply-*` et `fgc-full-*`, seul un code de création 0 permet la
-promotion, avec relecture de l'identifiant après renommage. Pour la sauvegarde
-**quotidienne**, qui tourne pendant la session, un seul avertissement est toléré :
-« file changed while we backed it up » (profil de navigateur, données Flatpak
-modifiées pendant la lecture). L'archive est complète et contient la version
-lue ; le nombre de fichiers concernés est enregistré dans le marker
-(`files_changed_during_backup`) et affiché par `daily-backup-doctor`. Tout autre
-avertissement (fichier illisible, source absente…) refuse l'archive.
-
-Une archive refusée reste inspectable dans `fgc-pending-*` et ne peut devenir
-automatiquement une base de récupération. La rétention hebdomadaire n'en garde
-que les plus récentes (`BACKUP_KEEP_PENDING`, 3 par défaut) pour qu'elles ne
-remplissent jamais le disque, et les diagnostics signalent leur présence.
-
-Pour Gate 3, la certification Borg vérifie **le HOST et les données protégées**,
-ainsi que `include_vms=false`, `vm_count=0` et l'interdiction des overrides VM.
-Elle ne doit jamais demander un export de VM. Les exports personnels de
-Rocky Linux reste totalement indépendants de cette Gate Borg.
-
-## Configuration locale et sources Openclaw
-
-`/data/IA/Openclaw` est une racine utilisateur persistante, protégée par les sauvegardes quotidiennes et complètes comme `/data/Projets`. Les exclusions existantes des images et métadonnées de VM restent actives, y compris dans cette racine. Le projet prépare ce répertoire ; il n’installe pas Openclaw.
-
-L’inventaire pré-APPLY et full inclut une copie privée de `config/local.conf` et son SHA-256, même si le clone Git se trouve hors des dossiers utilisateur sauvegardés. Après restauration en staging, vérifier `sha256sum --check local.conf.sha256` depuis son dossier d’inventaire, puis revoir les chemins de la nouvelle machine avant de remettre l’overlay en place. L’identité approuvée de `/data` est également conservée pour comparaison ; elle ne doit pas autoriser automatiquement un autre disque.
+- `backup-runtime.conf` ne contient que les variables `BACKUP_*` et `DAILY_*`. Aucune variable `BORG_*` de l'environnement n'y est copiée, et une `BORG_PASSPHRASE` ambiante est neutralisée à l'exécution.
+- `MANIFEST.sha256` est vérifié au postcheck et à chaque exécution.
+- Un dossier est **immuable** : un nouvel APPLY au même commit réutilise le bundle seulement si son `APPLIED_SHA` et son manifeste sont valides ; une autre configuration de sauvegarde crée un nouveau bundle. Un dossier corrompu n'est jamais écrasé : l'APPLY échoue et demande une intervention.
+- Les services utilisateur pointent directement vers ce dossier, sans lire le checkout Git. Modifier ou déplacer le dépôt de travail ne change donc pas un timer déjà appliqué ; un nouvel APPLY est nécessaire.
+- Les états des timers sont enregistrés sous `${XDG_STATE_HOME:-~/.local/state}/fedora-gnome-custom/`.
+
+### Ce que prouvent les tests
+
+`tests/test_borg_roundtrip.sh` exerce un vrai dépôt Borg non chiffré, le runtime quotidien installé, la rétention et le script de restauration : contenu, droits, lien symbolique, exclusion des secrets, refus d'écraser un staging, refus d'un nom d'archive malformé, preuve pré-APPLY exacte et refus d'un dépôt chiffré. Le support externe y est simulé : ce test ne produit aucune preuve Gate 3, et aucun conteneur ne certifie le matériel physique.
