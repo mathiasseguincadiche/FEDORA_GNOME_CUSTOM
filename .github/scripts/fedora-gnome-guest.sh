@@ -223,7 +223,7 @@ case "${1:-}" in
       gnome-shell-extension-appindicator gnome-text-editor libreoffice poppler-utils gnome-software dconf
     if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
       # Same version lock, installer and runtime checks as production. Testing
-      # remains an explicit QEMU-only input while final stable RPMs are absent.
+      # stays an explicit QEMU-only input; production installs from stable only.
       bash "$REPO/scripts/gnome/install-fedora45-rpm-extensions.sh" --lab-testing
     fi
     if [[ "$LAB_RELEASE" == 45 ]]; then
