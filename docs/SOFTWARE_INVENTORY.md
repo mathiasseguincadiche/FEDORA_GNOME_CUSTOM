@@ -1,31 +1,34 @@
-# Inventaire logiciel — HOST Fedora 45 et VM Rocky DevOps
+# Inventaire logiciel — hôte Fedora 45 et VM Rocky DevOps
 
-Ce document décrit le **contrat logiciel explicite** du projet. Il liste les paquets, applications et outils directement demandés par les manifests Fedora ou par le bootstrap Rocky Linux.
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — partie hôte régénérée depuis `manifests/` et comparée par `tests/test_docs_integrity.py` ; partie VM relue contre `guest/rocky-devops/bootstrap-devops.sh` — matériel : non vérifié
 
-Les dépendances transitives (`glibc`, bibliothèques GTK/Qt, bibliothèques Python, dépendances RPM, etc.) ne sont volontairement pas figées ici : DNF les résolvent au moment de l'installation et leur liste peut évoluer sans changement du projet.
+Cette page liste ce que le projet demande explicitement : les paquets et applications des manifests de l'hôte, puis les outils installés dans la VM Rocky. Les dépendances transitives (bibliothèques, dépendances RPM) ne sont pas figées : DNF les résout à l'installation.
 
-## À quoi servent les logiciels : comprendre avant la liste des paquets
+Ce catalogue ne donne pas le droit d'installer : l'APPLY exige toujours le profil promu, la baseline, le dry-run et la sauvegarde ([guide d'installation](INSTALLATION_GUIDE.md)). Les outils de la VM ne sont jamais installés sur l'hôte.
 
-L'inventaire ci-dessous est détaillé volontairement. Pour le lire sans se perdre, commencer par les **sept familles d'usage** :
+## Vue d'ensemble
 
-| Famille | Outils principaux | Leur rôle pour la Golden |
+| Famille | Outils principaux | Rôle |
 |---|---|---|
-| **Système Fedora** | DNF5, RPM, SELinux, firewalld, fwupd | mises à jour contrôlées, sécurité, diagnostics |
-| **Bureau GNOME** | GNOME Shell, Mutter/Wayland, Nautilus, Ptyxis | interface fluide et cohérente |
-| **Affichage Arc B580** | pilote `xe`, Mesa, Vulkan, VA-API | graphique et décodage/encodage sous Linux |
-| **DevOps et VM** | Git, Python, Bash, KVM, QEMU, libvirt, Rocky Linux | environnements de développement et d'automatisation isolés |
-| **Gaming** | Steam, Proton, GameMode, MangoHud | lancer et mesurer les jeux sous Fedora |
-| **Récupération** | Borg, EXT4 `/data`, vérification des archives | reprendre le travail après incident |
-| **Contrôle** | `control.sh`, doctors, CI, Gates | vérifier l'état réel avant d'annoncer Golden |
+| Système Fedora | DNF5, RPM, SELinux, firewalld, fwupd | mises à jour contrôlées, sécurité, diagnostic |
+| Bureau GNOME | GNOME Shell, Mutter (Wayland), Nautilus, Ptyxis | bureau cohérent et réactif |
+| Affichage Arc B580 | pilote `xe`, Mesa, Vulkan, VA-API | rendu, décodage et encodage vidéo |
+| DevOps et VM | Git, Python, Bash, KVM, QEMU, libvirt, Rocky Linux | environnements isolés de développement |
+| Jeux | Steam, Proton, GameMode, MangoHud | lancer et mesurer les jeux |
+| Récupération | Borg, `/data` en EXT4 | reprendre le travail après un incident |
+| Contrôle | `control.sh`, doctors, CI, Gate 3 | vérifier l'état réel avant de l'annoncer |
 
-**Important :** `SOFTWARE_INVENTORY.md` décrit le **catalogue**, pas le droit de lancer une installation. Ce droit dépend du profil Fedora promu, des guards, de la baseline, du dry-run et de la sauvegarde. Les paquets d'une VM Rocky Linux ne sont pas automatiquement installés sur le système Fedora HOST.
-
-Pour l'architecture d'ensemble : [ARCHITECTURE.md](ARCHITECTURE.md). La référence Fedora 45 / GNOME 51 et ses conditions de promotion sont décrites dans [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
+La vision d'ensemble est dans l'[architecture](ARCHITECTURE.md), la provenance de chaque source dans la [chaîne d'approvisionnement](SUPPLY_CHAIN.md).
 
 
-## 1. HOST — Fedora Golden Workstation
+## 1. Hôte Fedora 45
+
+Chaque liste reproduit un manifeste de `manifests/`, qui fait foi ; `tests/test_docs_integrity.py` vérifie qu'elles restent identiques.
 
 ### 1.1 Socle système
+
+**`manifests/packages-system.txt`**
 
 - bash
 - coreutils
@@ -42,42 +45,26 @@ Pour l'architecture d'ensemble : [ARCHITECTURE.md](ARCHITECTURE.md). La référe
 - amd-ucode-firmware
 - intel-gpu-firmware
 - policycoreutils
+- policycoreutils-python-utils
 - firewalld
 - dnf5-plugins
 - mokutil
 - grubby
 - stress-ng
+- dmidecode
 - fio
 - drm_info
-
-### 1.2 Python HOST
-
-Python est un outil workstation explicite, et non une simple dépendance de KVM :
-
 - python3
 - python3-pip
+- python3-gobject
 - python3-devel
 - pipx
 
-Le post-check exige également :
+Python est un outil du poste, pas une simple dépendance de KVM. Le postcheck exige `python3 --version`, `python3 -m pip --version`, `pipx` et la création réelle d'un environnement `python3 -m venv`. Les paquets Python d'un projet s'installent dans un `venv` ou avec `pipx`, jamais dans le Python système.
 
-- `python3 --version`
-- `python3 -m pip --version`
-- `pipx`
-- création réelle d'un environnement `python3 -m venv`
+### 1.2 Matériel et diagnostic
 
-Les packages Python d'un projet applicatif doivent être installés dans un `venv` ou via `pipx`, pas globalement dans le Python système Fedora.
-
-### 1.3 Shell opérateur
-
-- bash-completion
-- fzf
-- zoxide
-- direnv
-
-Ptyxis est le terminal natif de référence mais appartient au catalogue d'applications GTK4. Toolbx/Podman ne sont pas des dépendances implicites du HOST Golden ; KVM reste la frontière DevOps principale.
-
-### 1.4 Matériel / diagnostic / Intel Arc B580
+**`manifests/packages-hardware.txt`** — Pilotes, outils GPU, stockage et capteurs
 
 - mesa-dri-drivers
 - mesa-vulkan-drivers
@@ -102,9 +89,32 @@ Ptyxis est le terminal natif de référence mais appartient au catalogue d'appli
 - bluez
 - alsa-utils
 
-### 1.5 GNOME core / portails
+**`manifests/packages-baseline.txt`** — Outils exigés avant l'enrôlement de la baseline
 
-Le GNOME core est volontairement séparé de Nautilus afin que chaque socle possède son module et son doctor :
+- pciutils
+- kmod
+- util-linux
+- smartmontools
+- stress-ng
+- dmidecode
+- fio
+
+### 1.3 Shell
+
+**`manifests/packages-shell.txt`**
+
+- bash-completion
+- fzf
+- zoxide
+- direnv
+
+Ptyxis, terminal natif de référence, appartient au catalogue des applications GTK4. Toolbx et Podman ne sont pas des dépendances implicites de l'hôte : KVM reste la frontière DevOps.
+
+### 1.4 GNOME et portails
+
+Le socle GNOME est séparé de Nautilus : chacun a son module et son doctor.
+
+**`manifests/packages-gnome.txt`**
 
 - gnome-shell
 - mutter
@@ -112,58 +122,64 @@ Le GNOME core est volontairement séparé de Nautilus afin que chaque socle poss
 - xdg-desktop-portal
 - xdg-desktop-portal-gnome
 - xdg-user-dirs
+- xdg-user-dirs-gtk
 - flatpak
 
-### 1.6 Nautilus / GVfs / fichiers
+### 1.5 Nautilus et fichiers
 
-Socle Golden obligatoire :
+**`manifests/packages-nautilus.txt`** — Socle obligatoire
 
 - nautilus
+- localsearch
 - gvfs
 - gvfs-gphoto2
 - gvfs-fuse
-- file-roller
 - gvfs-afc
 - gvfs-goa
 - gvfs-nfs
 - sushi
 - file-roller-nautilus
+- file-roller
 
-Backends déclaratifs activés dans le profil courant :
+**`manifests/packages-nautilus-optional.txt`** — Backends optionnels, définis dans `config/gnome.conf`
 
-- gvfs-smb — contrôlé par `NAUTILUS_ENABLE_SMB`
-- gvfs-mtp — contrôlé par `NAUTILUS_ENABLE_MTP`
+- gvfs-smb — activé par `NAUTILUS_ENABLE_SMB`
+- gvfs-mtp — activé par `NAUTILUS_ENABLE_MTP`
 
-`gvfs-goa` fournit le backend nécessaire lorsque l'utilisateur configure des services de fichiers via GNOME Online Accounts ; aucun compte n'est créé automatiquement.
+`gvfs-goa` sert quand l'utilisateur configure des comptes en ligne GNOME ; aucun compte n'est créé automatiquement. Fedora 45 ne fournit plus `gvfs-archive` : File Roller et son extension Nautilus ouvrent les archives. Le socle est validé par `diagnostics/nautilus-integration-doctor` ; le démarrage à froid est mesuré à part par `diagnostics/nautilus-coldstart-doctor`.
 
-Le socle est validé par `diagnostics/nautilus-integration-doctor`. Le benchmark `diagnostics/nautilus-coldstart-doctor` reste séparé afin de distinguer fonctionnalité et performance.
+### 1.6 Extensions et finition GNOME
 
-### 1.7 Extensions GNOME Fedora / gérées
-
-RPM Fedora :
+**`manifests/packages-gnome-extensions.txt`** — Extensions empaquetées par Fedora
 
 - gnome-shell-extension-dash-to-dock
-- gnome-shell-extension-blur-my-shell — installé mais désactivé dans le Golden courant
+- gnome-shell-extension-blur-my-shell — installé mais désactivé dans le profil actuel
 - gnome-shell-extension-appindicator
 
-DING, Show Desktop Button et Vitals utilisent des artefacts GNOME Extensions revus. Tiling Assistant utilise la release GitHub officielle v56. Ces quatre archives sont épinglées dans config/gnome-extensions.lock et contrôlées par le projet ; avec les deux extensions RPM activées, elles forment les six extensions fonctionnelles du profil canonique.
+**`manifests/packages-gnome-polish.txt`** — Finition (ADR 0013)
 
-### 1.8 Intégration desktop
+- adw-gtk3-theme — apparence libadwaita pour les applications GTK3
 
-Secrets / credentials :
+Les versions exactes des RPM d'extensions sont épinglées dans `profiles/fedora45/gnome-rpms.json`. Gtk4 DING, Show Desktop Button et Vitals viennent de GNOME Extensions, Tiling Assistant de sa release GitHub officielle : ces quatre archives sont épinglées dans `config/gnome-extensions.lock`. Avec Dash to Dock et AppIndicator, elles forment les six extensions du profil ([GNOME](GNOME.md)).
+
+### 1.7 Intégration du bureau
+
+**`manifests/packages-desktop-integration.txt`**
+
+*Secrets*
 
 - gnome-keyring
 - gnome-keyring-pam
 - libsecret
 - seahorse
 
-Wayland / Flatpak :
+*Portails Wayland et Flatpak*
 
 - xdg-desktop-portal-gtk
 - pipewire
 - wireplumber
 
-Impression / scan :
+*Impression et numérisation sans pilote*
 
 - cups
 - cups-client
@@ -172,25 +188,19 @@ Impression / scan :
 - sane-airscan
 - system-config-printer
 
-VPN NetworkManager / GNOME :
+*VPN dans NetworkManager*
 
 - NetworkManager-openvpn
 - NetworkManager-openvpn-gnome
 - NetworkManager-openconnect
 - NetworkManager-openconnect-gnome
 
-Énergie :
+*Profils d'énergie*
 
 - tuned
 - tuned-ppd
 
-Performance runtime Fedora Linux :
-
-- scx_rusty — capacité sched_ext/SCX, désactivée par défaut jusqu'au smoke test bare-metal ;
-- zram-generator-defaults — swap-on-zram selon les defaults Fedora ;
-- gamemode — optimisation temporaire par workload, sans overclock GPU.
-
-Français / dictionnaires / polices :
+*Français, correcteur et polices*
 
 - glibc-langpack-fr
 - hunspell-fr
@@ -200,7 +210,7 @@ Français / dictionnaires / polices :
 - google-noto-color-emoji-fonts
 - liberation-fonts-all
 
-Administration distante :
+*Client d'administration à distance*
 
 - remmina
 - remmina-plugins-rdp
@@ -208,34 +218,45 @@ Administration distante :
 - remmina-plugins-secret
 - remmina-plugins-spice
 
-Téléphone / iPhone :
+*Téléphone et iPhone*
 
 - libimobiledevice
 - libimobiledevice-utils
 - ifuse
 
-Le backend Nautilus/GIO complémentaire `gvfs-afc` appartient au socle fichiers ci-dessus.
-
-Intel Arc compute :
+*Calcul Intel Arc (Level Zero, OpenCL)*
 
 - intel-compute-runtime
 - intel-level-zero
 - intel-opencl
 - clinfo
 
-Gestion des disques et diagnostics des flux :
+*Mises à jour : téléchargement seul, jamais d'installation ni de redémarrage automatiques*
+
+- dnf5-plugin-automatic
+- dnf5-plugins
+
+*Disques et diagnostic des flux du portail*
 
 - gnome-disk-utility
 - dconf
 - python3-gobject
 - pipewire-gstreamer
+- gstreamer1-plugins-base
 
-Lifecycle :
+### 1.8 Performance
 
-- dnf5-plugin-automatic
-- dnf5-plugins
+**`manifests/packages-performance.txt`**
 
-### 1.9 Applications GNOME GTK4 / libadwaita
+- scx_rusty — capacité sched_ext, désactivée par défaut jusqu'au test sur le PC
+- zram-generator-defaults — swap en zram aux valeurs Fedora
+- gamemode — optimisation par jeu, sans overclocking du GPU
+
+Voir [performance](PERFORMANCE.md).
+
+### 1.9 Applications GTK4
+
+**`manifests/packages-applications-gtk4.txt`**
 
 - ptyxis
 - gnome-tweaks
@@ -256,33 +277,36 @@ Lifecycle :
 - gnome-contacts
 - simple-scan
 
-Ptyxis est contrôlé par `diagnostics/ptyxis-doctor`; le shell Bash chargé dans le terminal est contrôlé séparément par `diagnostics/shell-doctor`.
+Ptyxis est contrôlé par `diagnostics/ptyxis-doctor` ; le Bash chargé dans le terminal l'est séparément par `diagnostics/shell-doctor`.
 
-### 1.10 Applications professionnelles RPM
+### 1.10 Applications professionnelles
 
-Fedora :
+**`manifests/packages-applications-professional-fedora.txt`** — Dépôts Fedora
 
 - vlc
 - libreoffice
 - libreoffice-langpack-fr
+- libreoffice-gtk4 — intégration GTK4 de LibreOffice
 - filezilla
 
-Dépôts éditeurs signés :
+**`manifests/packages-applications-professional-vendor.txt`** — Dépôts éditeurs signés
 
-- code (Visual Studio Code)
+- code — Visual Studio Code
 - brave-browser
 
-### 1.11 Applications professionnelles Flatpak
+**`manifests/flatpaks-applications-professional.txt`** — Flathub
 
 - com.bitwarden.desktop
 - com.slack.Slack
 - com.github.marktext.marktext
 - com.jgraph.drawio.desktop
-- com.github.tchx84.Flatseal — manifeste maintenu en amont ; badge éditeur non supposé
+- com.github.tchx84.Flatseal — manifeste maintenu par l'amont, sans badge éditeur supposé
 
-### 1.12 Multimédia / codecs
+La classe de confiance de chaque application est dans `manifests/application-provenance.tsv` ([provenance](SUPPLY_CHAIN.md#applications-de-lhôte)).
 
-Fondation Fedora :
+### 1.11 Multimédia et codecs
+
+**`manifests/packages-multimedia-fedora.txt`** — Fondation Fedora
 
 - gstreamer1-plugins-base
 - gstreamer1-plugins-good
@@ -291,19 +315,64 @@ Fondation Fedora :
 - libvpl
 - intel-vpl-gpu-rt
 
-Complément RPM Fusion :
+**`manifests/packages-rpmfusion.txt`** — Complément RPM Fusion
 
-- ffmpeg (remplace `ffmpeg-free` lorsque nécessaire)
 - ffmpegthumbnailer
 - gstreamer1-plugins-bad-freeworld
 - gstreamer1-plugins-ugly
 - gstreamer1-plugin-libav
 
-Le driver `intel-media-driver` RPM Fusion n'est installé que si la mesure VA-API de l'Arc B580 montre qu'il est réellement nécessaire ; sinon le driver Fedora est conservé.
+Le module multimédia remplace `ffmpeg-free` par le `ffmpeg` de RPM Fusion lorsque c'est nécessaire. Le pilote `intel-media-driver` de RPM Fusion n'est installé que si la mesure VA-API de la B580 le rend nécessaire ; sinon le pilote Fedora reste en place ([codecs](MULTIMEDIA_CODECS.md)).
 
-### 1.13 KVM / libvirt / virtualisation
+### 1.12 Jeux
 
-Hyperviseur :
+**`manifests/packages-gaming.txt`** — Socle Fedora, x86_64 et i686
+
+- gamemode — optimisation par jeu, sans overclocking du GPU
+- gamescope
+- mangohud
+- goverlay
+- steam-devices
+- vulkan-tools
+- mesa-vulkan-drivers.x86_64
+- mesa-vulkan-drivers.i686
+- mesa-dri-drivers.x86_64
+- mesa-dri-drivers.i686
+- vulkan-loader.x86_64
+- vulkan-loader.i686
+
+**`manifests/packages-gaming-rpmfusion.txt`** — Steam, isolé dans son manifeste
+
+- steam — dépôt `rpmfusion-nonfree-steam`, activé pour cette seule transaction
+
+Proton est géré par Steam ; aucun Mesa git, COPR ou noyau de jeu n'est ajouté ([Gaming](GAMING.md)).
+
+### 1.13 AppImage
+
+**`manifests/packages-appimage.txt`** — Prise en charge FUSE 2 et FUSE 3, inspection et intégration au bureau
+
+- fuse
+- fuse-libs.x86_64
+- fuse-libs.i686
+- fuse3
+- fuse3-libs.x86_64
+- fuse3-libs.i686
+- bsdtar
+- squashfs-tools
+- file
+- desktop-file-utils
+- shared-mime-info
+- xdg-utils
+
+**`manifests/flatpaks-appimage.txt`** — Flathub
+
+- it.mijorus.gearlever — Gear Lever, gestion des AppImage
+
+Voir [AppImage](APPIMAGE.md).
+
+### 1.14 Virtualisation
+
+**`manifests/packages-virtualization.txt`**
 
 - qemu-kvm
 - qemu-img
@@ -314,225 +383,116 @@ Hyperviseur :
 - libvirt-daemon-common
 - libvirt-daemon-kvm
 - libvirt-daemon-config-network
-
-Administration :
-
 - virt-install
 - virt-manager
 - virt-viewer
 - virt-top
 - virt-v2v
-
-Images / cloud-init / intégrité :
-
 - cloud-utils-cloud-localds
 - openssl
-- xorriso
 - gnupg2
-
-UEFI / TPM / guest images :
-
 - edk2-ovmf
 - swtpm
 - swtpm-tools
 - swtpm-selinux
 - guestfs-tools
 - guestfs-tools-bash-completion
-
-Métadonnées OS :
-
 - osinfo-db
 - osinfo-db-tools
 - libosinfo
-
-Administration HOST → VM :
-
 - openssh-clients
 - iputils
 - rsync
-
-Réseau / sécurité :
-
 - nftables
 - dnsmasq
+- python3
 - policycoreutils-python-utils
 
-`python3` est aussi requis historiquement par cette couche, mais le contrat Python HOST est désormais défini dans le socle système.
+Voir [virtualisation](VIRTUALIZATION.md).
 
-### 1.14 Accès distant (profil optionnel, désactivé par défaut)
+### 1.15 Accès distant (optionnel, désactivé par défaut)
 
-Paquets Fedora officiels (`manifests/packages-remote-fedora.txt`) :
+Installé seulement avec `REMOTE_ENABLE="true"`.
+
+**`manifests/packages-remote-fedora.txt`** — Paquets Fedora
 
 - openssh-server
 - ethtool
 - polkit
 
-Dépôt éditeur signé Tailscale (`manifests/packages-remote-vendor.txt`, `config/repos/tailscale.repo`) :
+**`manifests/packages-remote-vendor.txt`** — Dépôt éditeur signé Tailscale (`config/repos/tailscale.repo`)
 
 - tailscale
 
-COPR LizardByte, seulement si `REMOTE_SUNSHINE_ENABLE="true"` (`manifests/packages-remote-sunshine.txt`) :
+**`manifests/packages-remote-sunshine.txt`** — COPR LizardByte
 
-- Sunshine
+- Sunshine — seulement si `REMOTE_SUNSHINE_ENABLE="true"`
 
-Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md) et l'[ADR 0017](adr/0017-remote-access.md).
+Voir [accès distant](REMOTE_ACCESS.md) et l'[ADR 0017](adr/0017-remote-access.md).
 
-## 2. VM — Rocky Linux 10.2 DevOps
+## 2. VM Rocky Linux 10.2 DevOps
 
-La VM est une workstation CLI DevOps prête à cloner, construire, tester, conteneuriser et déployer.
+La VM `rocky-devops` est un poste DevOps en ligne de commande : cloner, construire, tester, conteneuriser, déployer. Tout est installé par `guest/rocky-devops/bootstrap-devops.sh`, puis contrôlé par `guest/rocky-devops/verify-devops.sh`.
 
-### 2.1 Base RPM/DNF / système
+### 2.1 Dépôts
 
-- dnf-plugins-core
-- ca-certificates
-- curl
-- wget
-- gnupg2
-- policycoreutils
-- container-selinux
-- jq
-- unzip
-- zip
-- rsync
-- less
-- groff
+| Dépôt | Fournit |
+|---|---|
+| Rocky Linux (BaseOS, AppStream, CRB activé) | socle, langages, outils de build |
+| EPEL 10 (paquet `epel-release` officiel) | paquets absents de Rocky, dont `glab` |
+| Docker officiel RHEL 10 | Docker Engine et ses plugins |
+| GitHub CLI officiel | `gh` |
+| HashiCorp officiel RHEL 10 | `terraform` |
+| Microsoft RHEL 10 (clé `microsoft-2025`) | `azure-cli` |
+| `pkgs.k8s.io`, branche `v1.37` | `kubectl` |
 
-### 2.2 Git / forge
+Chaque dépôt vérifie les signatures (`gpgcheck=1`) ; aucun repli EL9, `--nogpgcheck` ni `--skip-broken`.
 
-- git
-- git-lfs
-- gh — GitHub CLI
-- glab — GitLab CLI
+### 2.2 Paquets
 
-### 2.3 Python VM
+| Usage | Paquets |
+|---|---|
+| Système | dnf-plugins-core, ca-certificates, curl, wget, gnupg2, policycoreutils, container-selinux, jq, unzip, zip, rsync, less, groff, grubby, kmod |
+| Git et forges | git, git-lfs, gh, glab |
+| Python | python3, python3-pip, python3-devel, pipx |
+| Automatisation | ansible-core |
+| Build et shell | gcc, gcc-c++, make, shellcheck, bash-completion, htop, tree, tmux, ripgrep |
+| Réseau et accès | openssh-server, qemu-guest-agent, bind-utils, traceroute, iproute, net-tools, nmap-ncat |
+| JavaScript | nodejs (22 ou plus exigé), npm |
+| Java | java-21-openjdk-devel (OpenJDK 21 exigé), maven |
+| Conteneurs | docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin |
+| Cloud et IaC | terraform, azure-cli, kubectl |
 
-- python3
-- python3-pip
-- python3 (venv intégré)
-- python3-devel
-- pipx
+### 2.3 Outils hors paquets, versions épinglées
 
-`python3-devel` fournit les en-têtes nécessaires pour compiler proprement les extensions Python natives dans la VM de build/DevOps.
+| Outil | Version | Source et vérification |
+|---|---|---|
+| Corepack | 0.34.5 | npm, contrôle d'intégrité du registre |
+| Helm | v4.3.0 | archive get.helm.sh, SHA-256 versionné |
+| kind | v0.33.0 | release GitHub, SHA-256 versionné |
+| Minikube | v1.38.1 | release GitHub, SHA-256 versionné ; pilote Docker par défaut |
+| yq | v4.53.3 | release GitHub, SHA-256 versionné |
+| K9s | v0.51.0 | release GitHub, SHA-256 versionné |
+| kubectx et kubens | v0.11.0 | release GitHub, SHA-256 versionné (EPEL 10.2 n'en fournit pas de RPM) |
+| AWS CLI v2 | dernière | ZIP officiel et signature GPG vérifiée contre l'empreinte versionnée |
 
-Le doctor Rocky Linux vérifie :
+Changer une version impose de changer son empreinte dans le même commit ([provenance](SUPPLY_CHAIN.md#outils-de-la-vm-rocky-devops)).
 
-- Python 3
-- `python3 -m pip`
-- `pipx`
-- création réelle d'un `python3 -m venv`
+### 2.4 Services
 
-### 2.4 Ansible / automation
+`sshd` et `docker` sont activés ; l'utilisateur DevOps entre dans le groupe `docker`. `qemu-guest-agent` fonctionne lorsque le canal virtio est exposé. La connexion SSH par mot de passe reste désactivée ([KVM au quotidien](KVM_QUICKSTART.md)).
 
-- ansible-core
+Le doctor de la VM vérifie aussi Python (`python3 -m pip`, `pipx`, création réelle d'un `venv`), Node.js 22 ou plus et OpenJDK 21.
 
-### 2.5 Outils de build et shell
+## 3. État réel d'une installation
 
-- gcc
-- gcc-c++
-- make
-- shellcheck
-- bash-completion
-- htop
-- tree
-- tmux
-- ripgrep
-
-### 2.6 Réseau et accès VM
-
-- openssh-server
-- qemu-guest-agent
-- bind-utils
-- traceroute
-- iproute
-- net-tools
-- nmap-ncat
-
-SSH par mot de passe reste désactivé ; l'accès opérateur suit le contrat SSH/SFTP du projet.
-
-### 2.7 JavaScript / Node
-
-- nodejs — Node.js 22+ exigé
-- npm
-- corepack 0.34.5 (npm, contrôle d'intégrité du registre)
-
-### 2.8 Java
-
-- java-21-openjdk-devel
-- maven
-
-Le bootstrap exige OpenJDK 21.
-
-### 2.9 Docker / conteneurs
-
-Dépôt officiel Docker :
-
-- docker-ce
-- docker-ce-cli
-- containerd.io
-- docker-buildx-plugin
-- docker-compose-plugin
-
-Le service Docker est activé et l'utilisateur DevOps est ajouté au groupe `docker`.
-
-### 2.10 Kubernetes
-
-Dépôts / paquets :
-
-- kubectl — branche Kubernetes v1.37.x contractuelle
-- helm v4.3.0 — archive get.helm.sh + SHA-256 publié
-- kubectx (et `kubens` fourni avec l'outillage associé)
-
-Binaires contrôlés / pinnés :
-
-- kind v0.33.0
-- Minikube v1.38.1
-- K9s v0.51.0
-- yq v4.53.3
-
-Minikube utilise Docker comme driver par défaut.
-
-### 2.11 Infrastructure as Code / Cloud
-
-- terraform — dépôt HashiCorp officiel
-- azure-cli — dépôt Microsoft natif RHEL 10, clé microsoft-2025
-- AWS CLI v2 — archive officielle dont la signature GPG est vérifiée
-
-### 2.12 Services VM
-
-Activés / validés :
-
-- sshd
-- docker
-- qemu-guest-agent lorsque le canal virtio est exposé
-
-## 3. Dépendances transitives
-
-DNF installe automatiquement les bibliothèques requises par les paquets ci-dessus. Cette liste est volontairement dynamique.
-
-Pour connaître la vérité exacte d'une installation donnée :
-
-HOST Fedora :
+Cette page décrit le contrat. Pour l'état exact d'une machine, sur l'hôte comme dans la VM :
 
 ```bash
 rpm -qa | sort
-```
-
-Paquets explicitement installés par l'utilisateur / projet :
-
-```bash
 dnf repoquery --userinstalled
 ```
 
-VM Rocky Linux :
+Ces sorties peuvent être archivées comme inventaire d'exécution ; elles complètent ce contrat sans le remplacer.
 
-```bash
-rpm -qa | sort
-```
-
-Après installation, ces sorties peuvent être archivées comme inventaire runtime ; elles complètent le contrat versionné de ce document.
-
-Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le ancien montage GIO des archives. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
-
-Kubectx/kubens v0.11.0 sont installés depuis les archives officielles ahmetb/kubectx avec leurs SHA-256 versionnés : aucun RPM kubectx n'est fourni par EPEL 10.2 au moment de la qualification.
-
-L’afficheur LD240 est une option communautaire épinglée, inactive par défaut et indépendante des réglages de ventilation. Voir [QUALIFICATION.md](QUALIFICATION.md).
+L'afficheur de l'AIO LD240 est une option communautaire épinglée, inactive par défaut et indépendante de la ventilation ([qualification](QUALIFICATION.md)).

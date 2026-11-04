@@ -1,48 +1,86 @@
-# Migration facultative d’un ancien Fedora 44 vers Fedora 45
+# Mise à niveau facultative de Fedora 44 vers Fedora 45
 
-Ce document concerne uniquement un poste qui exécute déjà Fedora 44. **Pour ton installation neuve directe Fedora 45 / GNOME 51, suivre [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md). Aucune migration n’est requise.**
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — phases, préconditions et codes de sortie relus dans `scripts/maintenance/upgrade-fedora.sh` — matériel : non vérifié
 
-La configuration principale cible déjà Fedora 45. Un ancien poste doit conserver explicitement `HOST_RELEASE="44"` dans son override local jusqu’à la finalisation de sa migration. Le profil Fedora 45 doit être promu avec le média final authentifié, les paquets stables revus et la CI du commit exact avant une mutation. Le statut `pending` n’est jamais contourné.
+Cette page ne concerne qu'un poste qui exécute déjà Fedora 44. **Une installation neuve passe directement à Fedora 45 / GNOME 51 par le [guide d'installation](INSTALLATION_GUIDE.md) ; aucune mise à niveau n'est nécessaire.**
 
-La promotion et les limites des laboratoires sont décrites dans [FEDORA45_PRIMARY.md](FEDORA45_PRIMARY.md).
+La configuration principale cible Fedora 45. Un poste encore sous Fedora 44 garde `HOST_RELEASE="44"` dans `config/local.conf` jusqu'à la fin de la mise à niveau. Le profil Fedora 45 est promu ([fiche Fedora 45](FEDORA45_PRIMARY.md)) ; la mise à niveau l'exige.
 
-## Mise à niveau Fedora 44 vers Fedora 45
+## Vue d'ensemble
 
-Mettre Fedora 44 complètement à jour et démarrer/finaliser ce résultat avant la migration :
+| Phase | Commande | Résultat |
+|---|---|---|
+| Mettre Fedora 44 à jour | `./control.sh update all`, `update reboot`, `update finalize` | système source à jour, aucune mise à jour en attente |
+| Planifier | `./control.sh upgrade plan` | étapes affichées, profil 45 vérifié ; rien n'est modifié |
+| Préparer | `./control.sh upgrade prepare` | sauvegarde vérifiée, transaction Fedora 45 téléchargée ; état `prepared` |
+| Redémarrer | `./control.sh upgrade reboot` | installation hors ligne de Fedora 45 |
+| Finaliser | `./control.sh upgrade finalize`, deux fois | profil 45 activé, extensions installées puis vérifiées ; état `completed` |
+
+`./control.sh upgrade status` affiche la phase en cours à tout moment.
+
+## 1. Mettre Fedora 44 à jour
 
 ```bash
 ./control.sh update all
 ./control.sh update reboot
 ./control.sh update finalize
+```
+
+Réussite : `./control.sh update status` ne signale aucune transaction en attente. DNF exige un système source à jour avant une mise à niveau de version.
+
+## 2. Planifier et préparer
+
+```bash
 ./control.sh upgrade plan
 ./control.sh upgrade prepare
 ./control.sh upgrade status
 ```
 
-`prepare` exige le profil final, le HOST physique, Secure Boot désactivé, un Git propre, le système source à jour et aucune mise à jour projet déjà en attente. Il résout la dernière stable Linux amont pour Fedora 45, puis effectue une sauvegarde Borg du **HOST et des fichiers utilisateur uniquement**, sans arrêter, copier ni exporter de VM. Les disques, XML, NVRAM et états TPM des VM restent exclusivement sous la gestion des exports manuels du propriétaire. L'espace de staging, le support externe et les preuves d'intégrité/restitution du HOST sont contrôlés. Il télécharge ensuite la transaction DNF5 system-upgrade, sans `--allowerasing`, sans saut de paquets et sans redémarrage automatique.
+`prepare` refuse de continuer sans : le PC physique, Fedora 44 avec `HOST_RELEASE="44"`, le profil 45 promu, Secure Boot désactivé, un dépôt Git propre, un système à jour et aucune mise à jour du projet en attente.
 
-Relire les suppressions/conflits éventuels de la transaction. Le redémarrage est une action séparée :
+Il résout ensuite la dernière version stable de Linux amont pour Fedora 45, puis fait une sauvegarde Borg de l'hôte et des fichiers de l'utilisateur, certifiée par `backup-doctor`. Cette sauvegarde n'arrête, ne copie et n'exporte aucune VM : disques, XML, NVRAM et TPM des VM restent sous la responsabilité du propriétaire, par export manuel ([sauvegardes](BACKUP_RESTORE.md)).
+
+Enfin, il télécharge la transaction `dnf5 system-upgrade`, sans `--allowerasing`, sans ignorer de paquet et sans redémarrer.
+
+**Arrêt** : relire dans la sortie de DNF les suppressions et conflits éventuels avant de continuer.
+
+## 3. Redémarrer
 
 ```bash
 ./control.sh upgrade reboot
-# après retour en session Fedora 45 :
+```
+
+Le redémarrage revérifie la sauvegarde complète et son absence de VM, puis lance l'installation hors ligne.
+
+## 4. Finaliser
+
+Depuis la session GNOME de l'utilisateur, sans `sudo` :
+
+```bash
 ./control.sh upgrade finalize
 ```
 
-`finalize` exige le même commit et la même configuration, un boot différent, Fedora 45, GNOME 51, le journal DNF, une base de paquets cohérente et le noyau amont prévu réellement démarré. Il active ensuite le profil 45 dans l’override local sans supprimer les autres réglages et installe les quatre archives GNOME 51 du profil promu, avec vérification des hashes, UUID, major et schémas. Exécuter la finalisation depuis le compte GNOME, sans sudo. La phase `extensions-installed` demande une déconnexion normale puis une nouvelle connexion ; le code de retour 20 signifie qu’une action reste à effectuer. Relancer alors `./control.sh upgrade finalize` : le diagnostic doit confirmer le bureau et les extensions effectivement actifs avant le statut completed. Toute divergence bloque la finalisation ; elle n'est jamais annoncée comme réussie.
+Le premier passage exige le même commit et la même configuration, un nouveau démarrage, Fedora 45, GNOME 51, le journal DNF, une base de paquets cohérente, et le noyau amont prévu réellement démarré. Il inscrit alors `HOST_RELEASE="45"` dans `config/local.conf` sans toucher aux autres réglages, et installe les quatre archives GNOME 51 du profil, en vérifiant leur empreinte, leur UUID, la version de GNOME et leurs schémas.
 
-Le profil, les médias et les verrous entrent dans l'empreinte de configuration : les anciennes preuves Golden deviennent obsolètes. Refaire les essais Live USB avec la source retenue, puis la qualification du système installé en Gate 3, la restauration isolée et la reprise Rocky.
+Il s'arrête ensuite volontairement avec le code 20 (`EXIT_PRECHECK_FAILED`), en phase `extensions-installed` : **se déconnecter normalement, se reconnecter, puis relancer** :
 
-## Qualification de la session GNOME 51 après migration
+```bash
+./control.sh upgrade finalize
+```
 
-La validation finale appelle maintenant `python3 scripts/validation/gnome51-extension-audit.py --live` **depuis la session GNOME de l'utilisateur**. Cette vérification fail-closed exige six rôles actifs, les métadonnées GNOME 51 et la provenance des quatre extensions épinglées. Elle ne peut pas réussir sur un profil `pending` et ne contourne pas le système de signatures du média.
+Ce second passage exécute `scripts/validation/gnome51-extension-audit.py --live` : six rôles actifs, métadonnées GNOME 51, provenance des quatre archives. Puis il lance `./diagnostic.sh` et enregistre l'état `completed`.
 
-En cas d'erreur, la phase reste `extensions-installed` ; corriger le paquet RPM incompatible ou l'extension concernée, se déconnecter/reconnecter normalement, puis relancer `./control.sh upgrade finalize`. Ne pas désactiver le vérificateur pour annoncer `completed`.
+En cas d'échec, la phase reste `extensions-installed`. Corriger le paquet ou l'extension en cause, se déconnecter, se reconnecter, relancer `finalize`. Ne jamais désactiver le vérificateur pour obtenir `completed`.
 
-## Récupération et qualification physique — Gate 3
+## Après la mise à niveau
 
-Le retour au noyau N-1 ne revient **pas** de Fedora 45 à Fedora 44. Une récupération de l'OS repose sur la sauvegarde, le média connu et la reconstruction isolée décrite dans [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
+Le profil, le média et les verrous entrent dans l'empreinte de configuration : les preuves Golden antérieures deviennent obsolètes (`STALE`). Refaire le contrôle Live, la [qualification](QUALIFICATION.md) en Gate 3, la [reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) et la reprise de la VM Rocky.
 
-Mesurer sur la machine réelle : GNOME/Wayland, Arc B580 et `xe`, Vulkan/Steam/Proton, écran 1440p/~240 Hz, veille/reprise, réseau, audio et périphériques. Conserver le cas à qualifier du redémarrage direct avec session GNOME ouverte, déjà observé dans le laboratoire QEMU : aucun timeout système ni contrôle de coredump n'est neutralisé.
+Mesurer sur le PC : GNOME et Wayland, Arc B580 sur `xe`, Vulkan, Steam et Proton, écran 1440p à environ 240 Hz, veille et reprise, réseau, audio, périphériques. Le redémarrage direct avec la session GNOME ouverte, déjà observé dans le [laboratoire](FEDORA_GNOME_CI_LAB.md#démarrage-et-redémarrage), reste à qualifier.
+
+## Retour arrière
+
+Revenir au noyau N-1 ne ramène **pas** à Fedora 44. Revenir à un état antérieur repose sur la sauvegarde, le média connu et la reconstruction isolée ([sauvegardes](BACKUP_RESTORE.md), [reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md)).
 
 Références : [DNF5 system-upgrade](https://dnf5.readthedocs.io/en/latest/commands/system-upgrade.8.html), [clés Fedora](https://fedoraproject.org/security/), [calendrier GNOME](https://release.gnome.org/calendar/).

@@ -117,7 +117,7 @@ Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son
 
 ### Contrôles
 
-`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il contrôle aussi la forme du bloc de métadonnées, les paires de schémas `.drawio` / `.svg` et l'absence de Mermaid. Les guides pas encore repris figurent dans des listes de migration du test ; ces listes ne peuvent que diminuer. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
+`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il contrôle aussi la forme du bloc de métadonnées, les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, et que l'inventaire logiciel de l'hôte reproduit exactement les manifests de `manifests/`. Tous les guides ont été repris : les listes de migration du test sont vides. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
 
 ## Shell
 

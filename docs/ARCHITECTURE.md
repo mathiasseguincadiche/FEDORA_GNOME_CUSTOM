@@ -1,5 +1,8 @@
 # Vision et architecture
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — contrat d'exécution relu contre `lib/apply_gate.sh` et `config/apply-gate.conf`, invariants contre `config/kernel.conf`, `config/virtualization.conf` et `config/backup.conf`, ADR cités présents dans `docs/adr/` — matériel : non vérifié
+
 ## Pourquoi ce projet
 
 Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, et que ce soit la meilleure installation possible : la plus récente (Fedora 45 / GNOME 51), la plus finie (l'ergonomie qu'Ubuntu apporte à GNOME), la plus réactive, et **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
@@ -10,7 +13,7 @@ Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (un
 
 | Pilier | Ce qu'on veut | Où |
 |---|---|---|
-| Finition GNOME | dock, bureau avec icônes, tuilage, apps GTK3 harmonisées, soin OLED | [GNOME](GNOME.md), ADR 0013 |
+| Finition GNOME | dock, bureau avec icônes, tuilage, apps GTK3 harmonisées, soin OLED | [GNOME](GNOME.md), [ADR 0013](adr/0013-ubuntu-grade-gnome-polish.md) |
 | Performance | noyau stable le plus récent, réglages mesurés, aucun réglage aveugle | [performance](PERFORMANCE.md), [Linux amont](UPSTREAM_LINUX.md) |
 | Fiabilité et sauvegardes | rien sans dry-run, baseline et sauvegarde ; restauration prouvée | [qualification](QUALIFICATION.md), [sauvegardes](BACKUP_RESTORE.md) |
 | Outils DevOps | KVM isolé, labo Rocky en VM, terminal et Bash soignés | [KVM](KVM_QUICKSTART.md), [Ptyxis](PTYXIS.md) |
@@ -20,7 +23,7 @@ Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (un
 | Composant | Modèle | Ce que le projet en fait |
 |---|---|---|
 | Processeur | AMD Ryzen 7 7700 (8C/16T, 65 W) | amd-pstate, profils d'énergie, contrôle de stabilité |
-| Carte mère | MSI MAG B850M Mortar WiFi, BIOS 1.A66 minimum | identité vérifiée ; BIOS mis à jour par le propriétaire, aucune version exacte imposée |
+| Carte mère | MSI MAG B850M Mortar WiFi, BIOS 1.A66 ou plus récent | identité vérifiée ; BIOS mis à jour par le propriétaire, version non contrôlée par le code |
 | Mémoire | 48 Go DDR5-6000 CL30 (2 × 24 Go G.Skill) | testée à 5600 puis 6000 MT/s (EXPO/XMP) |
 | GPU | ASRock Intel Arc B580 Challenger 12 Go | pilote `xe` et Mesa de Fedora, réservé à l'hôte |
 | Stockage | 2 × Crucial T705 1 To (PCIe 5.0) | système Btrfs sur le premier, `/data` EXT4 persistant sur le second |
