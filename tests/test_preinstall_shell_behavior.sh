@@ -16,7 +16,7 @@ from pathlib import Path
 import os, re, subprocess, sys
 root, fixture = map(Path, sys.argv[1:])
 doc=(root/'docs/INSTALLATION_GUIDE.md').read_text()
-blocks=[b for b in re.findall(r'```bash\n(.*?)```',doc,re.S) if 'test -e config/local.conf' in b and '$EDITOR config/local.conf' in b]
+blocks=[b for b in re.findall(r'```bash\n(.*?)```',doc,re.S) if 'test -e config/local.conf' in b and re.search(r'\$\{?EDITOR\b.*config/local\.conf', b)]
 assert len(blocks)==1, 'one canonical configuration block is required'
 block=blocks[0]
 local=fixture/'config/local.conf'

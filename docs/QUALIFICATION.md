@@ -1,5 +1,8 @@
 # Qualifier la workstation
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — commandes, doctors et critères relus contre `diagnostics/` et `scripts/validation/` — matériel : non vérifié
+
 Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./control.sh validate gate3 certify` a réussi sur le PC installé, pour ses identités matérielles et sa configuration courantes. Entre les deux : le Live USB, l'installation, la baseline et la Gate 3.
 
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
@@ -25,48 +28,17 @@ Consulter les contrôles GitHub du **commit exact** à installer ([CI](CI_VALIDA
 
 ## 2. Live USB
 
-Démarrer le média Fedora 45 final authentifié en mode essai et suivre le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) :
-
-```bash
-./control.sh validate live plan
-./control.sh validate live run
-./control.sh validate export live /chemin/du/support-externe
-```
-
-La preuve (schéma 2) porte `environment=live-usb` et `hardware_certification=PREINSTALL_ONLY`. Elle est liée au commit, au plan de modules et à l'identité stable du PC (dont les séries des deux T705), pas au noyau ni à l'UUID racine qui changeront. **L'exporter avant de redémarrer** : le HOME du Live est temporaire. Après installation, au même commit :
-
-```bash
-./control.sh validate import /chemin/live-<commit>.json
-./control.sh validate status
-```
-
-Une preuve d'une autre machine, d'un autre commit ou plan, ou d'un ancien schéma est refusée.
+Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) fait foi pour les commandes et les décisions. La preuve (schéma 2) porte `environment=live-usb` et `hardware_certification=PREINSTALL_ONLY`. Elle est liée au commit, au plan de modules et à l'identité stable du PC (dont les séries des deux T705), pas au noyau ni à l'UUID racine qui changeront. **L'exporter avant de redémarrer** : le HOME du Live est temporaire. Elle est ensuite importée sur le système installé, au même commit ([guide d'installation](INSTALLATION_GUIDE.md#premier-démarrage-sur-le-ssd)). Une preuve d'une autre machine, d'un autre commit ou plan, ou d'un ancien schéma est refusée.
 
 ## 3. Baseline matérielle avant APPLY
 
 La baseline prouve que le matériel est assez sain pour autoriser les mutations. Elle s'exécute sur la Fedora installée, après `./control.sh install prepare-tools` (qui installe `manifests/packages-baseline.txt`, dont `smartmontools`, sans rien mesurer). La veille n'en fait pas partie : elle est qualifiée après l'APPLY, pour qu'un défaut que l'APPLY corrige n'empêche pas d'installer son correctif.
 
-**Identités.** Wi-Fi (PCI ID et pilote de cet exemplaire, verrou local jamais commité), Bluetooth (identité USB, pilote `btusb`), refroidissement (trois canaux NCT6687D distincts et actifs : pompe, ventilateur CPU, ventilateur boîtier), `/data` (numéro de série du second T705) :
+Le [guide d'installation](INSTALLATION_GUIDE.md#5-certifier-la-baseline-matérielle) fait foi pour l'ordre des commandes ; cette section décrit ce qu'elles prouvent.
 
-```bash
-./diagnostics/baseline-doctor enroll-wifi
-./diagnostics/baseline-doctor enroll-bluetooth
-./diagnostics/baseline-doctor list-cooling
-./diagnostics/baseline-doctor enroll-cooling fanN fanM fanP   # pompe, CPU, boîtier
-./diagnostics/baseline-doctor storage-identity
-./diagnostics/baseline-doctor enroll-data NUMERO_DE_SERIE
-```
+**Identités.** Wi-Fi (PCI ID et pilote de cet exemplaire, verrou local jamais commité), Bluetooth (identité USB, pilote `btusb`), refroidissement (trois canaux NCT6687D distincts et actifs : pompe, ventilateur CPU, ventilateur boîtier), `/data` (numéro de série du second T705).
 
-**Charges.** Chaque essai exige la vitesse réellement configurée dans l'UEFI ; le projet ne modifie jamais timings, tensions ni profil mémoire.
-
-```bash
-./diagnostics/baseline-doctor run-memory-test 5600   # profil 6000 désactivé
-./diagnostics/baseline-doctor run-memory-test 6000   # après réactivation et reboot
-./diagnostics/baseline-doctor run-cpu-soak
-./diagnostics/baseline-doctor run-nvme-test root
-./diagnostics/baseline-doctor run-nvme-test data
-./diagnostics/baseline-doctor certify
-```
+**Charges.** Chaque essai exige la vitesse réellement configurée dans l'UEFI ; le projet ne modifie jamais timings, tensions ni profil mémoire. La mémoire est testée au profil 5600 MT/s, puis à 6000 MT/s après réactivation du profil et redémarrage.
 
 | Essai | Critère |
 |---|---|

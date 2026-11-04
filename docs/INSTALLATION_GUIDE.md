@@ -1,203 +1,189 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-Ce guide suit le parcours direct sur le PC : **Live USB → installation neuve → configuration personnalisée → qualification du système installé**. Le portail documentaire est [docs/README.md](README.md). Les tests logiciels de la CI Linux restent automatiques et ne constituent aucune étape à exécuter dans une VM avant l’installation.
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — commandes, sous-commandes et garde-fous relus contre le code de `main` — matériel : non vérifié
 
-## Cible Fedora 45 et profil promu
+Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
-La référence unique de cette procédure est **Fedora 45 Workstation / GNOME 51**, installée directement. La configuration centrale sélectionne `HOST_RELEASE="45"` ; aucune installation préalable de Fedora 44 ni migration n’est nécessaire.
-
-Le profil de production est `ready` : le média final signé (compose 1.4) et les composants revus sont promus. Le contrôle Live ne modifie jamais ce profil. L’APPLY et la génération du Kickstart de production restent soumis à toutes leurs autres gardes ; ils refuseraient de nouveau un profil revenu à `pending`. Les scripts historiques Fedora 44 sont décrits séparément dans [history/HISTORICAL_FEDORA44.md](history/HISTORICAL_FEDORA44.md).
+**Public :** l'opérateur qui installe le PC physique cible.
+**Résultat attendu :** une Fedora 45 installée, convergée, redémarrée sur Linux amont, puis certifiée par la Gate 3. Le poste n'est « Golden runtime-certified » qu'après ce dernier contrôle.
 
 ## Avant de commencer
 
-**Public :** opérateur qui prépare ou installe la workstation physique cible.
-
-**Objectif :** passer d'un matériel identifié à une Fedora installée, convergée, redémarrée puis certifiée par Gate 3, sans contourner les garde-fous Golden.
-
 ### Préconditions
 
-Avant toute mutation réelle, vous devez disposer :
+Avant toute modification du PC, réunir :
 
-- du matériel cible identifié ;
-- d'un média final Fedora 45 authentifié et de son CHECKSUM signé ;
-- du dépôt sur un commit propre et audité ;
-- d'un second T705 identifié sans ambiguïté pour `/data` ;
-- d'une cible Borg externe/off-machine disponible pour le backup pré-APPLY (ext4, non chiffrée) ;
-- de Secure Boot désactivé et vérifiable comme tel.
+- le matériel cible, décrit dans l'[architecture](ARCHITECTURE.md#le-matériel-cible) ;
+- l'ISO Fedora 45 Workstation finale et son CHECKSUM signé ;
+- le dépôt sur un commit audité, dont la CI est verte ;
+- le numéro de série de chacun des deux T705 : l'un recevra le système, l'autre `/data` ;
+- un support Borg externe en ext4, non chiffré, pour la sauvegarde pré-APPLY ;
+- un second support externe, accessible en écriture, pour la preuve Live ;
+- Secure Boot désactivé dans l'UEFI.
 
-Si le modèle mental du projet, les statuts `CODE-READY` / `Golden runtime-certified` ou le rôle des Gates ne sont pas clairs, lire d'abord [`README.md`](README.md).
+Le profil Fedora 45 est `ready` : son média et ses composants sont promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucun des contrôles ci-dessous.
 
 ### Le parcours
 
 | Phase | Sections | Résultat attendu |
 | --- | --- | --- |
-| Préinstaller | 1 et 2 | Média final signé, observations Live réussies et compte rendu exporté |
-| Installer Fedora | 2 | Installation neuve sur le SSD système, redémarrage et import du compte rendu Live |
-| Préparer la configuration | 3 à 5 | Outils, configuration locale, `/data` et baseline prêts |
-| Appliquer | 6 à 10 | Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage |
-| Qualifier | 11 à 14 | Host vérifié, Rocky qualifié, essais physiques et Gate 3 PASS |
-| Exploiter | 15 à 17 | Mises à jour, sauvegardes et récupération |
+| Préinstaller | 1 et 2 | Média authentifié, observations Live `GO` et preuve exportée |
+| Installer Fedora | 2 | Fedora sur le T705 système, preuve Live importée au même commit |
+| Préparer la configuration | 3 à 5 | Outils, `config/local.conf`, `/data` et baseline certifiée |
+| Appliquer | 6 à 9 | Dry-run final, sauvegarde vérifiée, APPLY, redémarrage sur Linux amont N |
+| Qualifier | 10 à 12 | Premier login, Gate 3 PASS, état certifié vérifié |
+
+L'exploitation courante (mises à jour, sauvegardes quotidiennes, récupération) est décrite [après ce guide](#après-la-certification).
 
 ### Règle d'arrêt
 
-**Ne continuez pas** lorsqu'une précondition ou un doctor obligatoire échoue. Le chemin est fail-closed : corriger la cause, puis relancer la validation correspondante.
+Le parcours échoue fermé : **ne pas continuer** quand une précondition, un doctor ou un contrôle échoue. Corriger la cause, puis relancer le contrôle concerné. En particulier, l'APPLY est hors de question si :
 
-En particulier, ne pas poursuivre vers APPLY si :
-
-- le profil Fedora 45 est pending ou le média n'est pas authentifié ;
-- `/data` pointe vers un disque ambigu ou incorrect ;
-- la baseline n'est pas valide ;
-- le dry-run est périmé ;
-- le backup pré-APPLY n'est plus vérifiable ;
+- le média n'est pas authentifié ou le profil n'est pas `ready` ;
+- `/data` ne désigne pas, sans ambiguïté, le second T705 ;
+- la baseline n'est pas certifiée, ou le dry-run est périmé ;
+- la sauvegarde pré-APPLY n'est plus vérifiable ;
 - Secure Boot est actif ou indéterminé ;
-- Git est dirty.
+- le dépôt Git contient des modifications.
 
-Le résultat final recherché est explicite : **la workstation n'est `Golden runtime-certified` qu'après Gate 3 PASS sur la vraie machine**.
+La section [En cas d'échec](#en-cas-déchec) liste les refus les plus probables et leur correction.
 
 ---
 
-## 1. Vérifier le média Fedora 45 final
+## 1. Vérifier le média Fedora 45
 
-**But :** authentifier l'ISO Workstation Fedora 45 final et son CHECKSUM signé, jamais une Beta ou une RC.
+**But :** prouver que l'ISO à écrire sur la clé USB est bien le média final promu, signé par Fedora.
 
-Le fichier `installer/fedora45-media.lock` verrouille le média promu : `Fedora-Workstation-Live-45-1.4.x86_64.iso`, SHA-256 `68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb`. Vérifier l'ISO réellement copiée sur la clé USB :
+**Où :** une machine Linux disposant du dépôt, de `gpgv`, `python3` et `sha256sum`, avant d'écrire la clé.
+
+Le verrou `installer/fedora45-media.lock` fixe le média attendu : `Fedora-Workstation-Live-45-1.4.x86_64.iso`, SHA-256 `68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb`. Le vérificateur demande un trousseau contenant la clé Fedora 45. Sur une Fedora, il se prépare à partir du paquet `fedora-gpg-keys` ; ailleurs, la clé publique est sur la [page sécurité de Fedora](https://fedoraproject.org/security/).
 
 ```bash
+# Écrit la clé Fedora 45 au format attendu par gpgv dans ./fedora45.gpg ; ne modifie rien d'autre.
+gpg --dearmor -o fedora45.gpg /usr/share/pki/rpm-gpg/RPM-GPG-KEY-fedora-45-primary
+
 installer/verify-fedora-media.sh --release 45 \
   --iso /chemin/Fedora-Workstation-Live-45-1.4.x86_64.iso \
   --checksum /chemin/Fedora-Workstation-45-1.4-x86_64-CHECKSUM \
-  --keyring /chemin/fedora.gpg
+  --keyring fedora45.gpg
 ```
 
-Le vérificateur exige la signature GPG de la clé Fedora 45 épinglée et le SHA-256 exact du verrou.
+Le vérificateur contrôle le nom des deux fichiers, le SHA-256 de l'ISO, la signature du CHECKSUM, l'empreinte de la clé qui l'a signé (`4F50A611…F577861E`, épinglée dans le verrou) et la ligne qui lie l'ISO à son hash. Il ne modifie rien.
 
-**Checkpoint :** ne pas continuer si le profil est pending, si la signature est invalide ou si l'ISO ne correspond pas au verrou.
+**Réussite :** la sortie se termine par `Fedora 45 media PASS: Fedora-Workstation-Live-45-1.4.x86_64.iso`. Toute autre sortie arrête le parcours : ne pas écrire cette ISO sur la clé.
 
-## 2. Vérifier le PC en Live, puis installer Fedora
+## 2. Contrôler le PC en Live, puis installer Fedora
 
-### Depuis « Try Fedora »
+### Observer le PC depuis « Try Fedora »
 
-Démarrer la clé Fedora 45 finale authentifiée et choisir **Try Fedora**. Ne pas encore ouvrir l’installateur. Suivre [FEDORA45_LIVE_PREFLIGHT.md](FEDORA45_LIVE_PREFLIGHT.md), qui détaille les 16 points, les réponses humaines et les critères de décision.
-
-Depuis une copie propre du dépôt positionnée au commit audité :
+Démarrer la clé, choisir **Try Fedora** et ne pas lancer l'installateur. Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) fait foi pour cette étape : préparation du dépôt au commit audité, 16 points observés, réponses attendues et décision. En résumé :
 
 ```bash
-git rev-parse HEAD
-./control.sh validate live plan
-./control.sh validate live run
-```
-
-Les six points requis doivent réussir et aucun point ne doit échouer. Les essais complémentaires non effectués restent `NOT_TESTED`. Un GO Live prouve uniquement les observations de préinstallation ; il ne certifie ni la configuration personnalisée ni les services du système installé.
-
-**Avant de quitter le Live**, exporter le JSON et son fichier SHA-256 vers un support externe accessible en écriture :
-
-```bash
+git rev-parse HEAD                  # doit afficher le commit audité
+./control.sh validate live plan     # affiche les 16 points, sans rien exécuter
+./control.sh validate live run      # observations et questions
 ./control.sh validate export live /chemin/du/support-externe/preinstallation
 ```
 
-Conserver aussi le SHA du commit. Le HOME du Live est temporaire ; la clé de démarrage peut être en lecture seule. Vérifier que les deux fichiers exportés sont réellement sur le support externe. Ne pas utiliser le futur SSD système ou le SSD `/data` comme destination de transfert.
+**Réussite :** décision `GO` (les six points requis en `PASS`, aucun point en `FAIL`), puis le JSON et son fichier SHA-256 présents sur le support externe. Le HOME du Live disparaît au redémarrage : exporter avant de quitter. Ne pas utiliser l'un des deux T705 comme support de transfert.
 
-### Installation graphique neuve
+### Installer Fedora sur le T705 système
 
-Lancer ensuite l’installateur Fedora depuis la session Live. Identifier le **T705 système par son numéro de série**, puis relire le récapitulatif des changements de stockage avant confirmation. L’installation doit cibler ce SSD : Btrfs, sans LUKS, conformément au choix du projet. Préserver le second T705 prévu pour `/data` ; le dépôt ne le partitionne et ne le formate pas automatiquement. Ne pas déduire le rôle d’un disque de son nom `/dev/nvme0n1`, qui peut changer.
+Lancer l'installateur depuis la session Live.
 
-Le projet demande Secure Boot désactivé. Une installation Fedora manuelle ne lance pas `install.sh --apply` : la préparation et les preuves décrites ci-dessous ont lieu après son premier redémarrage.
+1. Identifier le T705 système **par son numéro de série**, jamais par un nom comme `/dev/nvme0n1`, qui peut changer d'un démarrage à l'autre.
+2. Choisir une installation Btrfs, sans LUKS, conformément à l'[ADR 0002](adr/0002-no-secureboot-no-local-luks.md).
+3. Ne pas toucher au second T705, réservé à `/data` : le dépôt ne le partitionne ni ne le formate jamais.
+4. Relire le récapitulatif des changements de stockage avant de confirmer.
 
-Le [Kickstart optionnel](#option-avancée--kickstart) est une alternative pour une installation automatisée préparée et relue ; il n’est pas requis pour le parcours graphique.
+L'installation graphique ne lance pas `install.sh` : la configuration du projet commence au premier démarrage. Pour une installation automatisée, voir l'[option Kickstart](#option-avancée--kickstart).
 
 ### Premier démarrage sur le SSD
 
-Retirer le média de démarrage au moment approprié puis ouvrir la session GNOME du système installé. Si Git manque sur cette installation neuve, l’installer avec `sudo dnf install git`. Reprendre **le même commit** que celui testé en Live :
+Retirer la clé, démarrer sur le T705 système et ouvrir la session GNOME. Installer Git s'il manque (`sudo dnf install git`), puis reprendre **le même commit** que celui du Live et importer la preuve :
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
 git switch --detach SHA_DU_COMMIT_AUDITE
-./control.sh validate import /chemin/du/support-externe/preinstallation/live-COMMIT.json
+./control.sh validate import /chemin/du/support-externe/preinstallation/live-SHA_DU_COMMIT_AUDITE.json
 ./control.sh validate status
 ```
 
-Remplacer les SHA et chemins par ceux réellement conservés. L’import contrôle le commit, le plan des modules et les identités physiques du PC. Il ne demande pas que le noyau Live soit identique au noyau installé. Le contrôle de ce dernier appartient à la qualification du système installé.
+L'import vérifie le commit, le plan de modules et les identités physiques du PC ; il ne compare pas le noyau du Live à celui du système installé.
 
-**Checkpoint :** compte rendu Live importé pour ce PC et ce commit, démarrage depuis le SSD système, second T705 préservé. Aucune VM n’est nécessaire avant cette étape.
+**Réussite :** `validate status` montre la preuve Live importée pour ce PC et ce commit. Une preuve d'un autre commit ou d'un autre PC est refusée : refaire alors le contrôle Live au bon commit.
 
-## 3. Outils et configuration locale
+## 3. Préparer les outils et la configuration locale
 
-Avant l’enrôlement et les mesures, préparer explicitement les outils nécessaires :
+**But :** installer les outils de mesure et écrire les choix propres au PC, sans encore autoriser l'APPLY.
 
 ```bash
 ./control.sh install prepare-tools
 ```
 
-Cette commande installe les paquets de baseline, dont `smartmontools`, sans mesurer ni certifier le matériel. Le Kickstart généré inclut le même manifeste ; cette étape prépare aussi une installation Fedora effectuée manuellement. Les consultations d’état restent sans installation de paquets.
+Cette commande installe les paquets de `manifests/packages-baseline.txt`, dont `smartmontools`, sans rien mesurer ni certifier. Créer ensuite `config/local.conf`, fichier local non versionné, à partir de l'exemple :
 
 ```bash
 test -e config/local.conf || cp config/local.conf.example config/local.conf
-$EDITOR config/local.conf
+"${EDITOR:-nano}" config/local.conf
 ```
 
-Conserver le fichier existant si Kickstart a déjà écrit `HOST_RELEASE="45"`. Pour une installation manuelle, l’exemple sélectionne également Fedora 45. Pendant la revue initiale, conserver :
+Dans ce fichier :
 
-```text
-REAL_MACHINE_APPROVED=false
-```
+- garder `HOST_RELEASE="45"` ;
+- garder `REAL_MACHINE_APPROVED="false"` jusqu'à la section 6 ;
+- renseigner `BACKUP_REPOSITORY`, le chemin du dépôt Borg sur le support externe (l'exemple propose `/run/media/$USER/XS1000/Backup-Fedora/borg`).
 
-jusqu’à la fin des contrôles préparatoires. Renseigner aussi le dépôt Borg externe et les réglages retenus avant de mesurer la baseline.
+La configuration effective comprend les fichiers versionnés **et** `config/local.conf` : toute retouche ultérieure périme le dry-run.
 
-La configuration effective inclut les fichiers versionnés **et `config/local.conf`**. Une modification de l'overlay local après le dry-run rend la preuve obsolète.
+## 4. Préparer le second T705 pour `/data`
 
-## 4. Préparer le second T705 — stockage persistant + KVM
+**But :** monter le second T705 sur `/data` et l'enregistrer comme disque de données, sans jamais le formater par le projet.
 
-Le second Crucial T705 est le disque **persistant** de la workstation. Il ne sert plus uniquement à KVM : il protège les données de travail, la bibliothèque ISO et la bibliothèque de jeux d'une réinstallation ou d'une perte du disque système Btrfs. Le dépôt **ne partitionne et ne formate jamais ce disque**.
-
-S’il contient déjà les données à conserver, réutiliser son filesystem EXT4 **sans le reformater**. Pour un disque neuf seulement, préparer manuellement EXT4 après vérification du numéro de série et des sauvegardes. Le monter durablement sur `/data` (de préférence par UUID dans `/etc/fstab`), puis :
+Ce disque conserve les documents, projets, ISO, jeux et disques de VM lors d'une réinstallation du système. S'il contient déjà des données, réutiliser son EXT4 tel quel. S'il est neuf, le formater soi-même en EXT4, après avoir vérifié son numéro de série. Le monter durablement sur `/data`, de préférence par UUID dans `/etc/fstab`, puis :
 
 ```bash
-findmnt /data
-./diagnostics/baseline-doctor storage-identity
+findmnt /data                                            # lecture seule
+./diagnostics/baseline-doctor storage-identity           # lecture seule : modèles, séries, montages
 ./diagnostics/baseline-doctor enroll-data NUMERO_DE_SERIE_DU_T705_DATA
-lsblk -f
+lsblk -f                                                 # lecture seule
 ```
 
-Le root et `/data` doivent être deux T705 physiques distincts. Recopier le numéro de série de la cible `/data` observé dans `storage-identity` pour l’approuver ; ne pas deviner ce numéro. L’enrôlement enregistre les modèles, numéros de série, WWN et UUID. Un changement de montage ou de disque invalide ensuite la baseline et bloque les écritures et sauvegardes sur `/data`.
+Recopier le numéro de série affiché par `storage-identity` ; ne pas le deviner. L'enrôlement enregistre modèles, séries, WWN et UUID. Un changement de disque ou de montage invalide ensuite la baseline et bloque les écritures sur `/data`.
 
-L'APPLY crée ou normalise ensuite cette structure **sans supprimer le contenu existant** :
+L'APPLY créera ou normalisera cette arborescence, **sans supprimer de contenu** :
 
 ```text
 /data/
-├── Documents/          # documents utilisateur persistants ; XDG Documents pointe ici
-├── Projets/            # projets de travail persistants
-├── ISO/                # bibliothèque ISO persistante, hors backup automatique par défaut
-├── Jeux/               # bibliothèque de jeux persistante, hors backup automatique par défaut
-├── IA/Openclaw/        # projets et sources Openclaw IA ; protégés par Borg
-└── libvirt/
-    ├── images/         # pool devops-data / disques qcow2
-    ├── iso/
-    ├── cloud-init/
-    ├── nvram/
-    ├── snapshots/
-    └── exports/
+├── Documents/      # documents ; le dossier XDG Documents pointe ici
+├── Projets/        # projets de travail
+├── ISO/            # images ISO, hors sauvegarde automatique
+├── Jeux/           # bibliothèque de jeux, hors sauvegarde automatique
+├── IA/Openclaw/    # projets IA, sauvegardés par Borg
+└── libvirt/        # disques et fichiers des VM, hors Borg
 ```
 
-`Documents`, `Projets`, `ISO`, `Jeux` et `IA/Openclaw` restent des répertoires utilisateur séparés de `/data/libvirt`. Une réinstallation du premier T705 doit **réutiliser le second T705 sans le reformater**.
+**Réussite :** `findmnt` et `lsblk` montrent `/` et `/data` sur deux T705 physiques distincts, et `enroll-data` réussit.
 
-**Checkpoint :** `findmnt` et `lsblk` doivent prouver que `/` et `/data` résident sur deux T705 physiques distincts avant de continuer.
+## 5. Certifier la baseline matérielle
 
-## 5. Baseline hardware
+**But :** démontrer que le matériel réel correspond au profil avant toute modification. Les critères de chaque essai figurent dans la [qualification](QUALIFICATION.md#3-baseline-matérielle-avant-apply).
 
-**But :** démontrer que le matériel réel correspond au profil Golden avant toute convergence.
+Enrôler d'abord les identités, puis tester la mémoire au profil 5600 MT/s :
 
 ```bash
 ./diagnostics/baseline-doctor enroll-wifi
 ./diagnostics/baseline-doctor enroll-bluetooth
 ./diagnostics/baseline-doctor list-cooling
-# Identifier physiquement pompe, ventilateur CPU et ventilateur boîtier.
+# Identifier physiquement la pompe, le ventilateur CPU et le ventilateur boîtier.
 ./diagnostics/baseline-doctor enroll-cooling fanN fanM fanP
 ./diagnostics/baseline-doctor snapshot
 ./diagnostics/baseline-doctor run-memory-test 5600
 ```
 
-Configurer ensuite 6000 MT/s dans le BIOS, redémarrer et lancer :
+Régler ensuite 6000 MT/s dans l'UEFI, redémarrer, puis terminer :
 
 ```bash
 ./diagnostics/baseline-doctor run-memory-test 6000
@@ -207,116 +193,85 @@ Configurer ensuite 6000 MT/s dans le BIOS, redémarrer et lancer :
 ./diagnostics/baseline-doctor certify
 ```
 
-La certification vérifie notamment :
+Les essais durent environ deux heures et demie au total : 60 minutes par passe mémoire et 30 minutes de charge CPU. Le projet ne change jamais les réglages de l'UEFI ; chaque essai vérifie la vitesse réellement configurée. Les essais NVMe écrivent un fichier temporaire, jamais sur le disque brut.
 
-- Ryzen 7 7700 ;
-- DDR5 testée à 5600 puis 6000 MT/s ;
-- Arc B580 `8086:e20b` sur `xe` ;
-- ReBAR actif ;
-- lien B580 x8 avec capacité ≥ PCIe 4.0 ;
-- deux T705 distincts, SMART strict et lien x4 avec capacité PCIe 5.0 ;
-- EDID du moniteur connecté **à la B580** ;
-- absence de signaux kernel critiques.
+**Réussite :** `certify` réussit. Le profil d'écran certifié est alors enregistré dans `~/.local/state/fedora-gnome-custom/display-profile.env`. Un échec matériel arrête le parcours.
 
-Le profil EDID certifié est écrit dans :
+## 6. Lancer le dry-run final
 
-```text
-~/.local/state/fedora-gnome-custom/display-profile.env
-```
+**But :** exécuter tout le plan sans rien modifier, et produire une preuve liée à l'état exact qui sera appliqué.
 
-**Checkpoint :** la baseline doit être certifiée. Un échec hardware est un critère d'arrêt.
-
-## 6. Full dry-run
-
-Après revue du matériel, de `/data` et de tous les réglages, fixer **avant ce dry-run final** dans `config/local.conf` :
+Fixer d'abord la configuration définitive dans `config/local.conf` :
 
 ```text
 HOST_RELEASE="45"
-REAL_MACHINE_APPROVED=true
+REAL_MACHINE_APPROVED="true"
 ```
 
-La configuration est désormais définitive : **configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3**. Toute retouche, y compris du drapeau d’approbation, impose de refaire le dry-run puis le backup. Le profil Fedora 45 doit déjà être promu ; ce drapeau ne contourne aucun verrou.
+Ce drapeau confirme que ce PC est la machine réelle ; il ne contourne aucun verrou. Lancer ensuite :
 
 ```bash
 ./install.sh --dry-run
 ```
 
-Le dry-run est non mutant et produit une preuve liée à :
+Le dry-run exécute precheck, plan, apply et postcheck avec toutes les mutations neutralisées. Sa preuve est liée au commit, à la configuration effective, au plan de modules et à l'empreinte matérielle.
 
-```text
-commit Git
-configuration effective
-plan des modules
-fingerprint hardware
-```
+**Réussite :** le dry-run se termine sans module en échec. Toute modification ultérieure du commit, de `config/local.conf` ou du matériel impose de le relancer, puis de refaire la sauvegarde.
 
-Toute modification d'un de ces éléments impose de refaire le dry-run.
+## 7. Créer la sauvegarde pré-APPLY
 
-**Checkpoint :** la preuve doit correspondre au commit, à la configuration et au fingerprint qui seront utilisés pour APPLY.
-
-## 7. Backup pré-APPLY
+**But :** disposer d'une sauvegarde Borg vérifiée et restaurable de l'état exact d'avant l'APPLY.
 
 ```bash
 ./prepare-preapply-backup.sh
 ```
 
-Le chemin est fail-closed :
+Le script demande la phrase de confirmation définie dans `config/backup.conf`, puis enchaîne :
 
 ```text
-cible externe/off-machine
-      ↓
-archive Borg fgc-preapply-…
-      ↓
-borg check --verify-data
-      ↓
-restore canary
-      ↓
-marker lié au même état que le dry-run
+cible externe prouvée (ext4, 20 Gio libres au minimum)
+  → archive Borg fgc-preapply-…
+  → borg check --verify-data
+  → restauration d'un fichier canari
+  → marqueur lié au même état que le dry-run
 ```
 
-Au moment de l'APPLY, le projet **rouvre réellement le dépôt Borg** et vérifie que l'archive exacte (nom et identifiant) existe toujours avec le type pré-APPLY attendu. La seule présence du marker local ne suffit pas.
+**Réussite :** le script se termine en confirmant le marqueur. Au moment de l'APPLY, le projet rouvre réellement le dépôt Borg et vérifie que l'archive exacte existe toujours : le marqueur seul ne suffit pas. Garder le support externe branché.
 
-**Checkpoint :** ne continuer que si le snapshot exact est encore accessible et restaurable.
+## 8. Appliquer la configuration
 
-## 8. APPLY protégé
-
-**Point de mutation principal :** cette étape modifie réellement la workstation.
-
-La configuration approuvée à l’étape 6 ne doit plus changer après la création des preuves. Exécuter :
+**But :** faire converger le PC vers la configuration du dépôt. **C'est la seule étape qui modifie réellement le système.**
 
 ```bash
 ./install.sh --apply
 ```
 
-L'APPLY refuse notamment :
+L'APPLY vérifie toutes les préconditions, puis demande de taper exactement `APPLY FEDORA 45 WORKSTATION`. Il refuse notamment :
 
-- une exécution non bare-metal ;
-- un Git dirty ;
-- un dry-run obsolète ;
-- une baseline obsolète ;
-- un snapshot pré-APPLY absent/inaccessible ;
+- une exécution hors du PC physique (VM, conteneur, CI, session Live) ;
+- un dépôt Git modifié ;
+- un dry-run ou une baseline périmés ;
+- une sauvegarde pré-APPLY absente ou inaccessible ;
 - Secure Boot actif ou indéterminé.
 
-Le module kernel installe **le dernier Linux amont officiel stable, après comparaison à kernel.org**, définit ce noyau comme défaut GRUB, conserve au maximum le noyau amont immédiatement précédent et garde un noyau Fedora signé comme entrée GRUB de secours (`installonly_limit=4`).
+Parmi les modules appliqués :
 
-Le module de données persistantes vérifie que `/data` est bien le second T705 EXT4, crée idempotemment `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux` et `/data/IA/Openclaw`, applique leurs droits/labels SELinux, puis configure XDG Documents vers `/data/Documents`. Aucun contenu préexistant n'est supprimé.
+- **Noyau** : le dernier Linux amont stable, comparé à kernel.org, devient le défaut GRUB ; le noyau amont précédent est conservé, et un noyau Fedora signé reste disponible en secours (`installonly_limit` réglé en conséquence).
+- **Données** : `/data` est contrôlé, l'arborescence de la section 4 est créée avec ses droits et labels SELinux, et XDG Documents pointe vers `/data/Documents`.
 
-**Checkpoint :** APPLY doit terminer sans garde-fou contourné. Un refus impose de corriger la précondition qui l'a déclenché.
+**Réussite :** l'APPLY se termine sans erreur. Un refus désigne la précondition à corriger ; ne jamais le contourner.
 
-## 9. Premier boot sur Linux amont stable N
-
-Après APPLY :
+## 9. Redémarrer sur Linux amont N
 
 ```bash
 ./control.sh kernel status
 sudo reboot
 ```
 
-Le démarrage normal doit utiliser `N`, le dernier stable installé. Le noyau `N-1` reste disponible dans GRUB comme rollback. Il n'existe plus de boot `candidate` one-shot ni de promotion préalable.
-
-Après démarrage sur N :
+Après le redémarrage, vérifier le noyau et le socle matériel. Ces doctors sont en lecture seule :
 
 ```bash
+./control.sh kernel status
 ./diagnostics/kernel-doctor
 ./diagnostics/firmware-doctor
 ./diagnostics/storage-doctor
@@ -327,84 +282,39 @@ Après démarrage sur N :
 ./diagnostics/arc-compute-doctor
 ```
 
-Le kernel doit notamment passer les vrais smoke tests VA-API et OpenCL sur la B580. `kernel-doctor` vérifie aussi `installonly_limit=4`, le nombre de kernels amont installés, N/N-1, le secours Fedora et le défaut GRUB. `data-storage-doctor` vérifie le second T705, les répertoires persistants dont `IA/Openclaw`, leurs droits/labels et le mapping XDG Documents.
+`kernel-doctor` contrôle N, N-1, le secours Fedora, le défaut GRUB et `installonly_limit` ; `data-storage-doctor` contrôle le second T705, l'arborescence de `/data`, ses droits et labels, et XDG Documents ; `graphics-doctor` et `arc-compute-doctor` exécutent de vrais essais VA-API et OpenCL sur la B580.
 
-**Checkpoint :** le runtime actif doit réellement être N et les doctors bare-metal doivent être conformes avant la certification finale.
+**Réussite :** le système a démarré sur N, le dernier stable installé, et ces doctors réussissent. `./control.sh doctor all` est plus large : certains de ses contrôles (KVM, jeu, accès distant) ne réussissent qu'après la Gate 3. Si N ne démarre pas, voir [En cas d'échec](#en-cas-déchec).
 
-## 10. Premier login GNOME
+## 10. Contrôler le premier login GNOME
 
-Immédiatement après le login, avant d'utiliser Files :
+Le démarrage à froid de Nautilus fait partie de la certification et se mesure **avant la première ouverture de Fichiers** :
 
 ```bash
 ./diagnostics/nautilus-coldstart-doctor
-```
-
-Puis contrôler :
-
-```bash
 ./diagnostics/gnome-doctor
-./diagnostics/nautilus-integration-doctor
-./diagnostics/portal-doctor
-./diagnostics/applications-doctor
 ```
 
-Dans Nautilus et les boîtes de dialogue GNOME, « Documents » doit maintenant pointer vers `/data/Documents`.
+**Réussite :** les deux doctors réussissent, et le dossier « Documents » de Fichiers pointe vers `/data/Documents`.
 
-## 11. Préparer et qualifier Rocky après les contrôles du host
+## 11. Qualifier le système installé (Gate 3)
 
-Le Live USB et l’installation neuve n’exigent aucune VM. À présent que Fedora est installé, configuré, redémarré et que les contrôles de base du host ont réussi, vérifier le socle KVM :
+La [qualification](QUALIFICATION.md#4-gate-3--système-installé) fait foi pour cette étape. Elle s'exécute dans la vraie session GNOME, avec l'écran et les périphériques du quotidien, dans cet ordre :
 
-```bash
-./diagnostics/virtualization-doctor
-./diagnostics/kvm-io-doctor benchmark
-```
+1. diagnostics de l'hôte ;
+2. preuves physiques : GPU, réseau, audio, affichage ;
+3. enrôlement des périphériques ;
+4. sauvegarde complète certifiée et restauration isolée ;
+5. création et qualification de Rocky DevOps, si KVM est activé ([démarrage KVM](KVM_QUICKSTART.md)) ;
+6. bureau GNOME et applications ;
+7. cinq cycles de veille réels, puis matrice UX ;
+8. certification finale : `./control.sh validate gate3 certify`.
 
-Créer ensuite explicitement le profil **Rocky DevOps**, puis le qualifier avec le [KVM Quickstart](KVM_QUICKSTART.md). Le projet ne crée aucune VM automatiquement pendant APPLY. La qualification de l’invité et les essais Nautilus/SFTP doivent précéder la certification Golden complète lorsque KVM est activé.
+Consigner chaque résultat dans la [fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md). Aucune VM n'est créée par l'APPLY : Rocky se crée explicitement, après les contrôles de l'hôte.
 
-```bash
-bash scripts/kvm/runtime_certification.sh
-```
+**Réussite :** `validate gate3 certify` réussit et crée `state/final/certified.ok` avec le bundle Golden.
 
-Les exports des VM relèvent d’une gestion personnelle manuelle. Les images et données `/data/libvirt` ne font pas partie des sauvegardes Borg automatiques : voir [KVM_QUICKSTART.md](KVM_QUICKSTART.md) et [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
-
-Ne désactiver ni SELinux, ni firewalld, ni le guard nftables pour contourner un défaut. Pour le détail : [VIRTUALIZATION.md](VIRTUALIZATION.md), [KVM_NETWORK.md](KVM_NETWORK.md), [VIRTUALIZATION.md](VIRTUALIZATION.md#profil-rocky-devops).
-
-## 12. Cinq cycles veille/réveil
-
-Effectuer cinq vrais cycles physiques. Après chaque reprise :
-
-```bash
-./diagnostics/final-certification record-suspend
-```
-
-Chaque preuve est unique et liée au fingerprint courant. Les erreurs critiques xe/PCIe/NVMe/xHCI après resume rendent le cycle invalide.
-
-**Checkpoint :** cinq preuves physiques distinctes et valides sont requises ; ne pas simuler ce résultat.
-
-## 13. Certification Golden
-
-Terminer les essais du système installé décrits dans la [checklist physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) et le [protocole de fiabilité](QUALIFICATION.md) : réseau, audio, affichage, GPU, usage réel des applications et du bureau, sauvegarde/restauration, veille et Rocky. Le contrôle court du Live ne remplace pas ces preuves de fonctionnement après configuration.
-
-Quand toutes les preuves sont présentes :
-
-```bash
-./control.sh validate gate3 certify
-```
-
-La certification finale :
-
-1. exécute tous les doctors obligatoires ;
-2. certifie la matrice logicielle réellement démarrée ;
-3. génère un `golden-release.json` et ses inventaires ;
-4. lie la preuve au kernel/runtime courant.
-
-Le diagnostic desktop bare-metal inclut le contrat de données persistantes ; une Golden ne doit donc pas être considérée conforme si `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux` ou `/data/IA/Openclaw` dérivent de leur contrat.
-
-Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal. En revanche, une mise à jour kernel peut rendre l'ancienne Golden `STALE` jusqu'à une nouvelle certification.
-
-**Résultat attendu :** Gate 3 PASS et artefacts de certification liés au runtime physique courant.
-
-## 14. Vérifier l'état certifié
+## 12. Vérifier l'état certifié
 
 ```bash
 ./control.sh cert status
@@ -412,130 +322,54 @@ Le nouveau kernel n'attend plus cette certification pour devenir le noyau normal
 ./diagnostics/software-matrix-doctor diff
 ```
 
-`diff` montre exactement ce qui a changé depuis la matrice known-good.
+`diff` montre ce qui a changé depuis la matrice logicielle de référence. À ce stade seulement, et si la Gate 3 a réellement réussi, le poste peut être décrit comme **Golden runtime-certified**. Une évolution ultérieure du noyau, du matériel ou de la configuration peut rendre ce statut `STALE` : on requalifie alors, on ne réécrit jamais un marqueur.
 
-À ce stade seulement, si Gate 3 a réellement réussi, la workstation peut être décrite comme **Golden runtime-certified**.
+---
 
-## 15. Mises à jour quotidiennes
+## En cas d'échec
 
-Préparer une mise à jour complète :
+Chaque cause ci-dessous reste une hypothèse tant que la vérification indiquée ne l'a pas confirmée.
 
-```bash
-./control.sh update all
-```
+| Symptôme | Cause possible | Vérification sûre | Correction | Nouvelle validation |
+| --- | --- | --- | --- | --- |
+| `ISO SHA256 mismatch` ou `Unexpected Fedora signing key` | ISO corrompue, incomplète ou autre que le média promu | Taille et nom du fichier, comparés à la [fiche Fedora 45](FEDORA45_PRIMARY.md#média-promu) | Retélécharger l'ISO et le CHECKSUM officiels | Section 1 |
+| Décision Live `NO-GO` ou `A_VERIFIER` | Point en `FAIL`, ou point requis non essayé | `./control.sh validate live status` | Corriger le défaut ou faire l'essai manquant | `validate live run` |
+| Import Live refusé | Autre commit, autre plan de modules ou autre PC | `git rev-parse HEAD`, comparé au SHA conservé | Revenir au commit du Live, ou refaire le contrôle Live | `validate import` |
+| `baseline-doctor certify` échoue | Essai manquant, vitesse mémoire différente de l'essai, matériel non conforme | Sortie de `certify` et `./diagnostics/baseline-doctor status` | Refaire l'essai indiqué ; un défaut matériel arrête le parcours | `certify` |
+| APPLY refusé : dry-run périmé | Commit, `config/local.conf` ou matériel modifiés après le dry-run | `git status` et date de la dernière retouche | Relancer le dry-run, puis la sauvegarde | Sections 6 et 7 |
+| APPLY refusé : sauvegarde | Support Borg débranché ou archive introuvable | Support monté, `./diagnostics/backup-doctor` | Rebrancher le support ou refaire la sauvegarde | Section 7 |
+| APPLY refusé : Secure Boot | Secure Boot actif ou état illisible | `mokutil --sb-state` | Désactiver Secure Boot dans l'UEFI | Section 8 |
+| Démarrage sur N-1 ou échec de N | Régression du noyau N | `./control.sh kernel status`, journal du démarrage précédent | `./control.sh kernel rollback` ; si aucun noyau amont ne démarre, choisir l'entrée Fedora dans GRUB ([dépannage](TROUBLESHOOTING.md)) | `kernel-doctor` |
 
-Le chemin complet effectue le backup, résout le dernier Linux amont stable et refuse un RPM en retard sur kernel.org, impose `installonly_limit=4` et prépare la transaction RPM DNF5 offline. S’il existe une transaction RPM offline, vérifier l’état puis déclencher son redémarrage :
+**Retour arrière.** L'APPLY ne supprime aucune donnée de `/data`. Pour revenir à l'état d'avant l'APPLY, restaurer l'archive pré-APPLY en staging, puis remettre les fichiers voulus à la main, selon [sauvegardes et restauration](BACKUP_RESTORE.md). Une réinstallation complète repart de la section 2 et réutilise le second T705 sans le reformater.
 
-```bash
-./control.sh update status
-./control.sh update reboot
-```
+## Après la certification
 
-Après le redémarrage :
-
-```bash
-./control.sh update finalize
-```
-
-La finalisation relit le journal DNF5 offline, exécute `dnf5 check`, vérifie que le nouveau kernel N est installé, démarré et défaut GRUB, puis retire les noyaux amont plus anciens que N-1. Il reste N, N-1 et le noyau Fedora de secours, sous réserve de la protection du noyau actuellement démarré. Ensuite viennent Flatpak en mode complet, consultation firmware et diagnostic global.
-
-Exemple :
-
-```text
-7.2.2
-  ↓ update all
-7.2.3 = N
-7.2.2 = N-1
-  ↓ update all
-7.2.4 = N
-7.2.3 = N-1
-7.2.2 supprimé
-```
-
-Si aucun changement RPM n’est nécessaire, le parcours complet traite quand même les mises à jour Flatpak ; aucun redémarrage offline n’est alors à déclencher. Aucun firmware n’est flashé automatiquement.
-
-## 16. Backup et récupération des données persistantes
-
-La sauvegarde quotidienne Borg protège les dossiers XDG habituels ; `DOCUMENTS` se résout désormais vers `/data/Documents`. `/data/Projets` et `/data/IA/Openclaw` sont également ajoutés explicitement aux sources quotidiennes. `/data/ISO` et `/data/Jeux` ne sont pas sauvegardés automatiquement par défaut afin d'éviter de dupliquer de gros payloads reproductibles ou retéléchargeables.
-
-Le second T705 protège contre la perte/réinstallation du **disque système**, mais il ne remplace pas un backup externe : une panne physique du second T705 reste possible. Les données importantes conservent donc la protection Borg externe.
-
-## 17. Recovery
-
-Affichage :
-
-```bash
-./repair.sh display
-```
-
-Le repair refuse un écran arbitraire : il cible l'EDID certifié sur un connecteur de la B580.
-
-Kernel N-1 :
-
-```bash
-./diagnostics/kernel-doctor
-./control.sh kernel rollback
-sudo reboot
-```
-
-`rollback` ne supprime pas N ; il sélectionne N-1 comme défaut GRUB. Pour revenir ensuite au dernier noyau installé :
-
-```bash
-./control.sh kernel install-latest
-```
-
-Si ni N ni N-1 ne démarrent : maintenir **Maj** ou appuyer sur **Échap** au démarrage pour afficher GRUB, puis choisir l'entrée Fedora sans `vanilla`. Une fois démarré, rendre ce secours durable sans rien supprimer :
-
-```bash
-./control.sh kernel fallback
-```
-
-Retour d'urgence aux paquets Fedora :
-
-```bash
-scripts/kernel/rollback-to-fedora.sh
-```
-
-Ce dernier chemin désactive les COPR noyau et remet les paquets Fedora par
-défaut. Cette récupération explicite remplace le suivi amont ; aucun troisième noyau n'est épinglé.
-
-Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) avant toute restauration et [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant tout contournement.
-
+| Besoin | Guide |
+| --- | --- |
+| Mises à jour (`./control.sh update all`, redémarrage hors ligne, finalisation) | [Centre de contrôle](CONTROL_CENTER.md) |
+| Noyau : rollback N-1, secours Fedora, retour au dernier stable | [Linux amont](UPSTREAM_LINUX.md) |
+| Sauvegarde quotidienne, restauration, reprise après sinistre | [Sauvegardes et restauration](BACKUP_RESTORE.md) |
+| Affichage dégradé après veille (`./repair.sh display`), autres symptômes | [Dépannage](TROUBLESHOOTING.md) |
+| Machines virtuelles | [KVM au quotidien](KVM_QUICKSTART.md) |
 
 ---
 
 ## Option avancée — Kickstart
 
-Pour remplacer l’installation graphique par une installation automatisée préparée, après la qualification Live et l’export du compte rendu :
+**But :** remplacer l'installation graphique de la section 2 par une installation automatisée, préparée et relue. Elle se fait **après** le contrôle Live et l'export de sa preuve.
 
 ```bash
-ls -l /dev/disk/by-id/nvme-*
-# Choisir l'identifiant du T705 système, vérifié par son numéro de série.
+ls -l /dev/disk/by-id/nvme-*    # lecture seule : repérer le T705 système par son numéro de série
 installer/generate-fedora-kickstart.sh --release 45 --disk /dev/disk/by-id/nvme-IDENTIFIANT_SYSTEME
 ```
 
-**Média requis :** Fedora n’accepte pas de Kickstart depuis une image Live (« Try Fedora » / Workstation Live). Démarrer l’ISO **Fedora 45 Everything netinstall** avec `inst.ks=` pointant vers le fichier généré (clé USB ou URL locale). Les paquets proviennent alors des miroirs Fedora officiels (`fedora` et `updates`) déclarés dans le Kickstart ; l’ISO Workstation Live vérifiée à l’étape 1 reste la référence pour les observations Live.
+Le générateur affiche le modèle, le numéro de série et la taille du disque, puis exige une phrase de confirmation destructive exacte. Le Kickstart produit :
 
-Le générateur :
+- efface uniquement le NVMe choisi et y installe Btrfs, sans LUKS ;
+- incorpore le média approuvé et le SHA Git du dépôt, puis clone exactement ce commit ;
+- ne modifie pas Secure Boot et ne lance jamais l'APPLY.
 
-- montre modèle/serial/taille du disque ;
-- exige la phrase destructive exacte ;
-- incorpore le SHA Git du checkout ;
-- incorpore le média Fedora approuvé ;
-- efface uniquement le NVMe explicitement choisi ;
-- installe Btrfs **sans LUKS** ;
-- ne change pas Secure Boot ; le projet exige de le désactiver explicitement ;
-- clone exactement le commit incorporé ;
-- ne lance jamais l'APPLY automatiquement.
+**Média :** Fedora n'accepte pas de Kickstart depuis une image Live. Démarrer l'ISO **Fedora 45 Everything netinstall** avec `inst.ks=` pointant vers le fichier généré ; les paquets viennent alors des dépôts officiels `fedora` et `updates`. L'ISO Workstation vérifiée à la section 1 reste celle du contrôle Live.
 
-**Checkpoint :** le disque système et le SHA Git incorporé doivent être ceux que vous avez réellement audités.
-
-Le commit incorporé doit être celui testé en Live. Après installation, reprendre l’import du compte rendu Live et la préparation à la section 3. Le Kickstart ne remplace ni les observations Live, ni la baseline, ni la sauvegarde, ni la qualification finale.
-
-## Après ce guide
-
-- exploitation quotidienne : [`CONTROL_CENTER.md`](CONTROL_CENTER.md) ;
-- sauvegarde / restauration : [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) ;
-- symptômes : [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) ;
-- KVM : [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md) ;
-- preuve et reproductibilité : [`QUALIFICATION.md`](QUALIFICATION.md).
+**Réussite :** le disque et le SHA incorporés sont ceux qui ont été audités, et le commit est celui du Live. Reprendre ensuite à l'import de la preuve Live (section 2), puis à la section 3. Le Kickstart ne remplace ni le contrôle Live, ni la baseline, ni la sauvegarde, ni la qualification.

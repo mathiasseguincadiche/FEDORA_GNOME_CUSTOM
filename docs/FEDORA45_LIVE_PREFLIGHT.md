@@ -1,5 +1,8 @@
 # Fedora 45 / GNOME 51 — vérifier le PC depuis le Live USB
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — points, niveaux et décisions relus contre `lib/live_preflight_probe.sh` et `diagnostics/live-preflight.sh` — matériel : non vérifié
+
 Ce contrôle se fait directement sur le PC prévu pour l’installation neuve. Il vérifie le démarrage et les fonctions utilisables depuis **Try Fedora**, avant de toucher aux SSD. La CI Linux teste le code séparément ; aucune VM n’est à préparer pour suivre ce parcours.
 
 Un résultat Live réussi signifie **compatibilité de préinstallation observée** (`PREINSTALL_ONLY`). La configuration personnalisée, les services installés, les sauvegardes et Rocky Linux seront qualifiés après l’installation. Le profil Fedora 45 est promu (`ready`) par l’authentification du média final signé et des composants stables ; le contrôle Live ne modifie jamais ce profil.
@@ -14,7 +17,7 @@ Ouvrir les paramètres GNOME, connecter le réseau, vérifier l’écran et pré
 
 ## 2. Utiliser le commit audité
 
-Git et Python 3 sont nécessaires pour le dépôt et son rapport. Vérifier leur présence avec `command -v git python3`. Si Git manque, le préparer explicitement dans la session Live avec `sudo dnf install git`, puis reprendre ci-dessous. Cette installation d’outil utilise l’environnement temporaire du Live ; le contrôleur ne l’effectue pas automatiquement. La disponibilité des outils d’inventaire sera aussi vérifiée lors de la qualification du média final.
+Git et Python 3 sont nécessaires pour le dépôt et son rapport. Vérifier leur présence avec `command -v git python3`. Si Git manque, l’installer dans la session Live avec `sudo dnf install git`, puis reprendre ci-dessous. Cette installation reste dans l’environnement temporaire du Live ; le contrôleur ne l’effectue jamais lui-même.
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
@@ -91,15 +94,15 @@ Les identités physiques du PC sont utilisées pour reconnaître la machine apr�
 
 ## 6. Après l’installation de Fedora
 
-Redémarrer sur le SSD, cloner le dépôt au **même SHA audité**, puis importer le fichier sauvegardé :
+Redémarrer sur le SSD, cloner le dépôt au **même SHA audité**, puis importer le fichier sauvegardé. Le [guide d’installation](INSTALLATION_GUIDE.md#premier-démarrage-sur-le-ssd) donne la séquence complète :
 
 ```bash
-./control.sh validate import /chemin/du/support/live-COMMIT.json
+./control.sh validate import /chemin/du/support/live-SHA_DU_COMMIT_AUDITE.json
 ./control.sh validate status
 ```
 
 L’import vérifie les résultats, le commit, le plan des modules et les identités physiques. Le noyau Live peut différer du noyau installé ; cela ne transforme pas le contrôle Live en preuve du noyau installé. Un autre commit ou un autre matériel demande un nouveau compte rendu Live correspondant.
 
-Poursuivre le [guide d’installation](INSTALLATION_GUIDE.md) : outils et configuration locale, `/data`, baseline, dry-run final, sauvegarde vérifiée, APPLY, redémarrage, contrôles du système installé, Rocky puis **Gate 3**.
+Poursuivre ensuite le [guide d’installation](INSTALLATION_GUIDE.md#le-parcours), qui fait foi pour l’ordre des étapes suivantes.
 
 Le contrôle Live ne sélectionne pas le SSD à effacer et ne valide pas sa santé. Voir deux T705 ne suffit pas : identifier séparément le SSD système et le SSD `/data` par leurs numéros de série. Le script ne lance ni installation, ni formatage, ni montage des SSD, ni modification de firmware, ni installation de paquets.
