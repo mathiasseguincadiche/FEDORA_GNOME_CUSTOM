@@ -13,16 +13,11 @@ La CI combine contrats statiques, intégration Fedora 45, laboratoire Fedora/GNO
 | `fedora45-gnome-vm / lab` | six extensions GNOME 51 actives, reboot et récupération | promotion du média final, bureau installé et matériel réel |
 | Gate 3 | essais physiques liés au commit et à la configuration | validité automatique des versions suivantes |
 
-```mermaid
-flowchart TD
-  A["logic-contracts"] --> R["Tests / contracts"]
-  B["installer-audit"] --> R
-  C["borg-fedora"] --> R
-  D["fedora-gnome-vm"] --> R
-  G["fedora45-gnome-vm / six extensions"] --> R
-  E["upstream-kernel / rpm"] --> R
-  F["rocky-devops-vm"] --> R
-```
+![Schéma des contrôles : sept jobs du workflow Tests vers contracts, cinq autres contextes, fusion, push sur main puis release](assets/diagrams/ci-fusion-release.svg)
+
+Le workflow Tests lance sept jobs, et `contracts` exige leurs sept succès. La fusion dans `main` exige `contracts` et cinq autres contextes obligatoires : `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Après la fusion, les mêmes workflows et le scan de sécurité tournent sur le commit de `main` ; `release.yml` ne publie la préversion que si tout est vert sur ce même commit.
+
+Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-release.drawio).
 
 Le job bloquant `upstream-kernel / rpm` valide une transaction de paquets noyau **réelle sur Fedora 45**, cible du poste de travail. Il ne considère comme recevable que la version exacte annoncée stable par kernel.org et présente dans les dépôts COPR autorisés. Une publication COPR anticipée de la série suivante ne prouve pas sa stabilité ; sans RPM exact, le job échoue volontairement, et `contracts` reste rouge. Les essais Fedora 44 restent historiques, manuels et distincts.
 

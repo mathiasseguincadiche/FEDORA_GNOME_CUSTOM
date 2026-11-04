@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 680" width="1320" height="680" role="img" aria-labelledby="title desc">
+  <title id="title">Sauvegarde et restauration</title>
+  <desc id="desc">Trois familles de sources vont dans un dépôt Borg sur le SSD externe XS1000 (ext4, non chiffré) : les données de /data (Documents, Projets, IA/Openclaw), les dossiers personnels (Bureau, Images, Vidéos, Musique, ~/Development) et les réglages (.config, .mozilla, .var/app, .local/share, configuration de l&#x27;hôte et du projet). La sauvegarde pré-APPLY est validée par borg check --verify-data et une restauration canari. Une restauration se fait d&#x27;abord dans ~/Restores, puis on inspecte et on copie à la main. Hors Borg : Téléchargements, ISO, Jeux et les VM, exportées manuellement ; le système est reconstruit depuis le dépôt.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+  </defs>
+  <rect width="1320" height="680" fill="#FFFFFF"/>
+  <text x="32" y="44" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#0F172A">Sauvegarde et restauration</text>
+  <rect x="40" y="80" width="420" height="420" rx="14" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="56" y="106" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#334155">Sources sauvegardées</text>
+  <line x1="398.0" y1="212.0" x2="520.0" y2="247.4" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="440.0" y1="284.0" x2="520.0" y2="284.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="440.0" y1="360.5" x2="520.0" y2="336.4" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="820.0" y1="242.0" x2="973.1" y2="192.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="820.0" y1="289.0" x2="960.0" y2="289.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1120.0" y1="332.0" x2="1120.0" y2="392.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="60" y="126" width="380" height="86" rx="10" fill="#DCFCE7" stroke="#15803D" stroke-width="2"/>
+  <text x="250.0" y="165.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Données de /data</text>
+  <text x="250.0" y="184.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">Documents · Projets · IA/Openclaw</text>
+  <rect x="60" y="236" width="380" height="96" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="250.0" y="270.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Dossiers personnels</text>
+  <text x="250.0" y="289.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">Bureau · Images · Vidéos · Musique</text>
+  <text x="250.0" y="308.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">~/Development</text>
+  <rect x="60" y="356" width="380" height="124" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="250.0" y="395.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Réglages</text>
+  <text x="250.0" y="414.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">.config · .mozilla · .var/app</text>
+  <text x="250.0" y="433.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">.local/share</text>
+  <text x="250.0" y="452.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">configuration de l&#x27;hôte et du projet</text>
+  <rect x="520" y="236" width="300" height="110" rx="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="2"/>
+  <text x="670.0" y="277.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Dépôt Borg</text>
+  <text x="670.0" y="296.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">SSD externe Kingston XS1000</text>
+  <text x="670.0" y="315.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">ext4 · non chiffré (ADR 0014)</text>
+  <rect x="960" y="96" width="320" height="96" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="1120.0" y="130.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Contrôles de validation</text>
+  <text x="1120.0" y="149.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">borg check --verify-data</text>
+  <text x="1120.0" y="168.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">restauration canari</text>
+  <rect x="960" y="246" width="320" height="86" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="1120.0" y="285.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Restauration en staging</text>
+  <text x="1120.0" y="304.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">~/Restores/fedora-gnome-custom</text>
+  <rect x="960" y="392" width="320" height="86" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="1120.0" y="431.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Inspection, puis copie manuelle</text>
+  <text x="1120.0" y="450.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">jamais d&#x27;écrasement en place</text>
+  <rect x="40" y="540" width="600" height="110" rx="10" fill="#FFFFFF" stroke="#64748B" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="340.0" y="581.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">Hors Borg</text>
+  <text x="340.0" y="600.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">Téléchargements · ISO · Jeux</text>
+  <text x="340.0" y="619.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">disques, XML et NVRAM des VM : export manuel</text>
+  <rect x="680" y="540" width="600" height="110" rx="10" fill="#FFFFFF" stroke="#64748B" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="980.0" y="591.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">T705 nº1 : système</text>
+  <text x="980.0" y="610.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">reconstruit depuis le dépôt, pas restauré</text>
+  <rect x="860.3" y="206.0" width="72.5" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="896.5" y="221.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#0F172A">pré-APPLY</text>
+  <rect x="853.8" y="278.0" width="72.5" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="890.0" y="293.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#0F172A">restaurer</text>
+</svg>

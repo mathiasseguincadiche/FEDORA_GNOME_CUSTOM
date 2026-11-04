@@ -12,15 +12,11 @@ Avant les premiers enrôlements matériels, `./control.sh install prepare-tools`
 
 ## Le Control Center : une façade, des moteurs spécialisés
 
-```mermaid
-flowchart LR
-  U["Utilisateur"] --> C["./control.sh"]
-  C --> A["Installation et modules"]
-  C --> B["DNF5 + noyau"]
-  C --> D["Borg + restauration"]
-  C --> E["KVM + réseau"]
-  C --> F["Doctors + Gates"]
-```
+![Schéma du centre de contrôle : l'opérateur, la façade control.sh et les huit domaines avec leurs moteurs](assets/diagrams/centre-de-controle.svg)
+
+L'opérateur passe toujours par `./control.sh`, une façade sans logique métier. Chaque domaine délègue à son moteur : `install.sh` pour le dry-run et l'APPLY, `scripts/maintenance/update-system.sh` pour les mises à jour, le cycle de vie du noyau, les scripts de sauvegarde, la création Rocky et le garde réseau KVM, les doctors en lecture seule, puis la validation Live, la Gate 3 et la certification.
+
+Source éditable : [`centre-de-controle.drawio`](assets/diagrams/centre-de-controle.drawio).
 
 `control.sh` expose des commandes compréhensibles mais **n'élimine aucun garde-fou**. Les moteurs `install.sh`, mises à jour, sauvegardes, virtualisation et diagnostics restent séparés, vérifiables et soumis aux mêmes préconditions.
 
