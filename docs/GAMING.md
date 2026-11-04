@@ -1,4 +1,7 @@
-# Gaming — Fedora 45 / GNOME 51 / Intel Arc B580
+# Jeu vidéo — Fedora 45, GNOME 51 et Intel Arc B580
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-gaming.txt` et `manifests/packages-gaming-rpmfusion.txt`, dépôt Steam contre `modules/gaming/43_gaming_stack.sh` — matériel : non vérifié
 
 ## Périmètre
 
@@ -32,13 +35,13 @@ Le projet ne génère et ne réécrit pas `libraryfolders.vdf`. Après le premie
 
 `/data/Jeux` est exclu des backups Borg daily/full automatiques par défaut, car les jeux installés sont volumineux et généralement retéléchargeables. Toute donnée non reproductible stockée directement sous `/data/Jeux` nécessite une politique de backup explicite.
 
-## Stack Golden
+## Composants installés
 
 ### Steam
 
 Steam est installé comme RPM natif depuis le dépôt dédié `rpmfusion-nonfree-steam`.
 
-Le projet provisionne explicitement les métadonnées requises, vérifie `/etc/yum.repos.d/rpmfusion-nonfree-steam.repo` et active ce dépôt uniquement pour la transaction d'installation Steam avec :
+Le projet vérifie la définition `rpmfusion-nonfree-steam.repo` fournie par Fedora ([voir plus bas](#définition-du-dépôt-steam-sur-fedora-45)) et n'active ce dépôt que pour la transaction d'installation de Steam :
 
 ```text
 --enablerepo=rpmfusion-nonfree-steam
@@ -65,9 +68,9 @@ Steam/Proton nécessitent les bibliothèques graphiques x86_64 et i686. Le profi
 - `vulkan-loader.x86_64` et `.i686` ;
 - `vulkan-tools`.
 
-Le GPU reste sur le pilote kernel Fedora `xe` et Mesa/ANV Fedora. Aucun `mesa-git`, COPR Mesa, dépôt GPU Intel tiers ou `force_probe` n'appartient au contrat Golden. Le pilote `xe` vient du noyau Linux amont officiel stable ; les performances et la stabilité restent à mesurer sur l'Arc B580.
+Le GPU reste sur le pilote `xe` du noyau et sur Mesa/ANV de Fedora. Aucun `mesa-git`, COPR Mesa, dépôt GPU Intel tiers ou `force_probe` n'appartient au contrat Golden. Le pilote `xe` vient du noyau Linux amont officiel stable ; les performances et la stabilité restent à mesurer sur l'Arc B580.
 
-### Helpers Gaming
+### Outils d'accompagnement
 
 - GameMode — politique temporaire par jeu ;
 - MangoHud — FPS/frametime/GPU/CPU ;
@@ -91,7 +94,7 @@ mangohud gamemoderun %command%
 
 Les options Gamescope dépendent du titre et de l'affichage et ne doivent pas devenir une chaîne universelle.
 
-## CI versus preuve bare-metal
+## Ce que prouve la CI, ce que prouve le PC
 
 Le pretest Gaming Fedora 45 valide en conteneur headless :
 

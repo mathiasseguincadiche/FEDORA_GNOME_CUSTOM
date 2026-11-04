@@ -1,5 +1,8 @@
 # Applications GTK4 / libadwaita et outils professionnels
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — applications relues contre `manifests/packages-applications-gtk4.txt`, `manifests/packages-applications-professional-fedora.txt`, `manifests/packages-applications-professional-vendor.txt` et `manifests/flatpaks-applications-professional.txt` — matériel : non vérifié
+
 ## Objectif
 
 Le bureau doit rester visuellement et fonctionnellement cohérent avec GNOME 51. Les applications graphiques **du bureau général** gérées automatiquement par le projet sont donc limitées à une sélection dont la pile Fedora 45 repose sur GTK4/libadwaita lorsqu'une solution GNOME de qualité existe.
@@ -28,12 +31,11 @@ Les applications professionnelles indispensables constituent une seconde excepti
 | Lecteur multimédia | VLC | Fedora (`vlc`) |
 | Gestionnaire de mots de passe | Bitwarden | Flathub (`com.bitwarden.desktop`) |
 | Communication professionnelle | Slack | Flathub (`com.slack.Slack`) |
-| Suite bureautique OOXML | ONLYOFFICE Desktop Editors | Flathub (`org.onlyoffice.desktopeditors`) |
-| Suite bureautique générale | LibreOffice + langue française | Fedora (`libreoffice`, `libreoffice-langpack-fr`) |
+| Suite bureautique | LibreOffice, langue française et intégration GTK4 | Fedora (`libreoffice`, `libreoffice-langpack-fr`, `libreoffice-gtk4`) |
 | FTP / FTPS / SFTP | FileZilla | Fedora (`filezilla`) |
 | Markdown | MarkText | Flathub (`com.github.marktext.marktext`) |
 | Diagrammes / architecture | draw.io Desktop | Flathub (`com.jgraph.drawio.desktop`) |
-| Éditeur texte natif | GNOME Text Editor | Fedora (`gnome-text-editor`) |
+| Permissions des Flatpak | Flatseal | Flathub (`com.github.tchx84.Flatseal`) |
 
 La présence de ces outils ne doit pas servir de prétexte pour ajouter arbitrairement d'autres applications non-GTK4. Toute nouvelle exception professionnelle doit être explicite, documentée, avoir une provenance connue et être testée.
 

@@ -24,7 +24,6 @@ vendor-rpm	code	code	--version	signed-vendor
 vendor-rpm	brave-browser	brave-browser	--version	signed-vendor
 flatpak	com.bitwarden.desktop	-	-	verified-publisher
 flatpak	com.slack.Slack	-	-	community-unverified
-flatpak	org.onlyoffice.desktopeditors	-	-	verified-publisher
 flatpak	com.github.marktext.marktext	-	-	community-unverified
 flatpak	com.jgraph.drawio.desktop	-	-	community-unverified
 fedora-rpm	gnome-disk-utility	-	__desktop__	fedora-repository

@@ -1,8 +1,9 @@
-# Nautilus — profil Golden complet
+# Nautilus — gestionnaire de fichiers
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-nautilus.txt` et `manifests/packages-nautilus-optional.txt`, réglages contre `config/gnome.conf` et `config/performance.conf` — matériel : non vérifié
 
 > Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
-
-La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Objectif
 
@@ -15,7 +16,7 @@ Le contrat vise quatre propriétés :
 3. previews et archives intégrés ;
 4. comportement mesurable et certifiable.
 
-## Paquets Golden
+## Paquets installés
 
 Le manifeste [`../manifests/packages-nautilus.txt`](../manifests/packages-nautilus.txt) installe :
 
@@ -23,12 +24,12 @@ Le manifeste [`../manifests/packages-nautilus.txt`](../manifests/packages-nautil
 - `gvfs` ;
 - `gvfs-gphoto2` pour les appareils photo ;
 - `gvfs-fuse` pour l'exposition FUSE des montages GIO ;
-- File Roller et son extension Nautilus pour les archives prises en charge ;
+- `localsearch` pour l'indexation et la recherche de fichiers ;
 - `gvfs-afc` pour les appareils Apple/AFC ;
 - `gvfs-goa` pour l'intégration des services de fichiers GNOME Online Accounts lorsqu'un compte est configuré ;
 - `gvfs-nfs` pour les partages NFS ;
 - `sushi` pour l'aperçu rapide ;
-- `file-roller-nautilus` pour les actions d'archives dans Files.
+- `file-roller` et `file-roller-nautilus` pour ouvrir et extraire les archives depuis Files.
 
 Les backends `gvfs-smb` et `gvfs-mtp` sont validés par [`../manifests/packages-nautilus-optional.txt`](../manifests/packages-nautilus-optional.txt) puis installés selon les flags versionnés :
 
@@ -37,9 +38,9 @@ NAUTILUS_ENABLE_SMB=true
 NAUTILUS_ENABLE_MTP=true
 ```
 
-Ils sont activés dans le profil Golden courant.
+Les deux sont activés par défaut (`config/gnome.conf`).
 
-## Previews
+## Miniatures
 
 La politique reste :
 
@@ -58,7 +59,7 @@ Si `NAUTILUS_ENABLE_PREVIEWS=false`, le module converge explicitement `show-imag
 
 `file-roller-nautilus` fournit l’extension native de File Roller pour ouvrir et extraire les archives prises en charge.
 
-`Sushi` est le previewer GNOME de référence. Son paquet est obligatoire dans le Golden ; aucune extension Nautilus tierce n'est nécessaire pour cette fonction.
+`Sushi` est l'outil d'aperçu de référence de GNOME. Son paquet est obligatoire ; aucune extension Nautilus tierce n'est nécessaire pour cette fonction.
 
 ## Appareils et accès distants
 
@@ -74,17 +75,17 @@ Le profil couvre :
 
 Les raccourcis VM gérés sont documentés dans [`KVM_QUICKSTART.md`](KVM_QUICKSTART.md).
 
-## Cold start
+## Démarrage à froid
 
-`fedora-gnome-nautilus-prewarm.service` préchauffe uniquement Portal/GIO. Il ne démarre jamais Nautilus : la première ouverture de Files reste donc une vraie mesure cold-start.
+`fedora-gnome-nautilus-prewarm.service` préchauffe uniquement les portails et GIO. Il ne démarre jamais Nautilus : la première ouverture de Fichiers reste donc une vraie mesure de démarrage à froid.
 
 ```bash
 ./diagnostics/nautilus-coldstart-doctor
 ```
 
-La cible et la limite dure restent définies dans `config/performance.conf`.
+La cible (1200 ms) et la limite (2000 ms) sont définies dans `config/performance.conf`.
 
-## Doctor d'intégration
+## Contrôle d'intégration
 
 Le contrôle fonctionnel distinct est :
 
@@ -94,21 +95,21 @@ Le contrôle fonctionnel distinct est :
 
 Il vérifie notamment :
 
-- tous les paquets Golden et les backends activés ;
+- tous les paquets du profil et les backends activés ;
 - le payload `file-roller-nautilus` ;
 - l'énumération GIO ;
 - la politique de miniatures réellement appliquée ;
-- le helper et le service user de prewarm ;
+- le script et le service utilisateur de préchauffage ;
 - le dossier XDG Desktop lorsque disponible.
 
-Le doctor d'intégration fait partie du `workstation-doctor`, du postcheck du module Nautilus et de la certification bare-metal finale. La performance cold-start reste une preuve séparée afin de ne pas confondre fonctionnalité et latence.
+Ce contrôle fait partie de `workstation-doctor`, du postcheck du module Nautilus et de la certification finale sur le PC. La mesure du démarrage à froid reste une preuve séparée, pour ne pas confondre fonctionnement et latence.
 
-## Ce qui reste volontairement hors du Golden
+## Hors profil
 
 - `nautilus-python` : non installé tant qu'aucune extension Python indispensable n'est versionnée et testée ;
 - AFP : non requis pour le périmètre actuel ;
 - montage automatique de comptes cloud : le backend GOA est présent, mais aucun compte utilisateur n'est créé automatiquement ;
-- pré-démarrage de Nautilus : interdit, car il fausserait la mesure cold-start.
+- pré-démarrage de Nautilus : interdit, car il fausserait la mesure du démarrage à froid.
 
 ## Dépannage
 
@@ -121,4 +122,4 @@ Commencer par :
 
 Puis consulter [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) avant de modifier GVfs, portals, SELinux ou les services de session.
 
-Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas le ancien montage GIO des archives. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).
+Pour Fedora 45, `gvfs-archive` n'est plus fourni (backend supprimé/désactivé en amont). Le profil utilise File Roller et son extension Nautilus pour ouvrir et extraire les archives ; il ne promet pas l'ancien montage GIO des archives. Voir le [changelog Fedora GVfs](https://packages.fedoraproject.org/pkgs/gvfs/gvfs/fedora-45.html).

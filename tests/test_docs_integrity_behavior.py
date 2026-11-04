@@ -60,12 +60,24 @@ def add_metadata(path):
     path.write_text(title + "\n\n" + METADATA + "\n" + rest.lstrip("\n"), encoding="utf-8")
 
 
-def unlist(work, entry):
+def strip_metadata(path):
+    title, _, rest = path.read_text(encoding="utf-8").partition("\n")
+    lines = rest.lstrip("\n").split("\n")
+    assert lines[0].startswith("> Mise à jour") and lines[1].startswith("> Dernière vérification"), path
+    path.write_text(title + "\n\n" + "\n".join(lines[2:]).lstrip("\n"), encoding="utf-8")
+
+
+def remigrate(path):
+    """Replace the guide's metadata by the fixture block, so later edits do not depend on its dates."""
+    strip_metadata(path)
+    add_metadata(path)
+
+
+def relist(work, entry):
     test = work / "tests/test_docs_integrity.py"
     text = test.read_text(encoding="utf-8")
-    new = re.sub(r'\s*"' + re.escape(entry) + r'",', "", text, count=1)
-    assert new != text, entry
-    test.write_text(new, encoding="utf-8")
+    assert text.count("METADATA_PENDING = {\n") == 1
+    test.write_text(text.replace("METADATA_PENDING = {\n", 'METADATA_PENDING = {\n    "' + entry + '",\n'), encoding="utf-8")
 
 
 def case(name, change, expect_pass, message=None):
@@ -97,16 +109,18 @@ case("new Mermaid block", lambda w: edit(w / gnome, "## Les six extensions", "``
 case("stale Mermaid list", lambda w: edit(w / "tests/test_docs_integrity.py", "MERMAID_PENDING = set()",
                                             'MERMAID_PENDING = {"docs/GNOME.md"}'),
      False, "no Mermaid left; remove it from MERMAID_PENDING")
-case("guide leaves the list without metadata", lambda w: unlist(w, "GNOME.md"),
+# Metadata cases use GNOME.md, an already migrated guide, so they never depend on
+# which guides are still listed in METADATA_PENDING.
+case("migrated guide loses its metadata", lambda w: strip_metadata(w / gnome),
      False, "docs/GNOME.md: missing or malformed metadata block")
-case("listed guide already migrated", lambda w: add_metadata(w / gnome),
+case("migrated guide listed again", lambda w: relist(w, "GNOME.md"),
      False, "metadata present; remove it from METADATA_PENDING")
-case("migrated guide", lambda w: (add_metadata(w / gnome), unlist(w, "GNOME.md")), True)
-case("malformed metadata", lambda w: (add_metadata(w / gnome), unlist(w, "GNOME.md"),
-                                      edit(w / gnome, "matériel : non vérifié", "matériel : OK")),
+case("list names a missing guide", lambda w: relist(w, "ABSENT.md"),
+     False, "METADATA_PENDING lists a missing guide: docs/ABSENT.md")
+case("freshly migrated guide", lambda w: remigrate(w / gnome), True)
+case("malformed metadata", lambda w: (remigrate(w / gnome), edit(w / gnome, "matériel : non vérifié", "matériel : OK")),
      False, "docs/GNOME.md: missing or malformed metadata block")
-case("impossible date", lambda w: (add_metadata(w / gnome), unlist(w, "GNOME.md"),
-                                   edit(w / gnome, "Mise à jour : 2026-11-03", "Mise à jour : 2026-13-03")),
+case("impossible date", lambda w: (remigrate(w / gnome), edit(w / gnome, "Mise à jour : 2026-11-03", "Mise à jour : 2026-13-03")),
      False, "invalid metadata date 2026-13-03")
 case("valid diagram pair", lambda w: diagram(w), True)
 case("export without source", lambda w: diagram(w, pair=False), False, "missing its pair exemple.drawio")
@@ -123,4 +137,4 @@ if failures:
     print("documentation integrity behavior: FAIL", file=sys.stderr)
     print("\n".join(failures), file=sys.stderr)
     sys.exit(1)
-print("documentation integrity behavior: PASS (14 cases)")
+print("documentation integrity behavior: PASS (15 cases)")

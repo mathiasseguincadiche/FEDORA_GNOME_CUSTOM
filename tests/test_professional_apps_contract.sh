@@ -42,4 +42,16 @@ grep -Fq 'flatpaks-applications-professional.txt' "$ROOT/modules/applications/41
   exit 1
 }
 
+# Every Flatpak that a Gate 3 check requires must be one the project installs.
+installed_flatpaks="$(cat "$ROOT"/manifests/flatpaks-*.txt | sed -E '/^[[:space:]]*(#|$)/d')"
+while IFS=$'\t' read -r kind id _; do
+  [[ "$kind" == flatpak ]] || continue
+  grep -Fxq "$id" <<<"$installed_flatpaks" || { echo "runtime contract requires a Flatpak no manifest installs: $id" >&2; exit 1; }
+done < "$ROOT/manifests/application-runtime-contract.tsv"
+usage_ids="$(sed -nE 's/^for id in (.*); do$/\1/p' "$ROOT/diagnostics/application-usage-doctor")"
+[[ -n "$usage_ids" ]] || { echo 'application-usage-doctor Flatpak list not found' >&2; exit 1; }
+for id in $usage_ids; do
+  grep -Fxq "$id" <<<"$installed_flatpaks" || { echo "application-usage-doctor requires a Flatpak no manifest installs: $id" >&2; exit 1; }
+done
+
 echo 'professional applications contract: PASS'

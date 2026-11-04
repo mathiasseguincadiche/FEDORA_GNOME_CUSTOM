@@ -1,5 +1,8 @@
 # Multimédia et codecs — Fedora 45
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-multimedia-fedora.txt` et `manifests/packages-rpmfusion.txt`, politique contre `config/gnome.conf` — matériel : non vérifié
+
 ## Objectif
 
 Fournir une pile multimédia GNOME complète et explicite, sans groupes de paquets opaques ni remplacement aveugle de composants graphiques.
@@ -52,7 +55,7 @@ En parallèle, oneVPL reste fourni par Fedora via `libvpl` + `intel-vpl-gpu-rt`.
 
 ## Diagnostic
 
-`diagnostics/media-doctor` est read-only et vérifie :
+`diagnostics/media-doctor` est en lecture seule et vérifie :
 
 - présence des paquets multimédias attendus ;
 - absence de `ffmpeg-free` lorsque le profil RPM Fusion est actif ;
