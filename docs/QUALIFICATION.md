@@ -4,15 +4,11 @@ Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./c
 
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 
-```mermaid
-flowchart LR
-  CI["CI : contrats et laboratoires QEMU"] --> L["Live USB sur le PC"]
-  L --> I["Installation sur le SSD"]
-  I --> B["Baseline matérielle"]
-  B --> A["Dry-run, sauvegarde, APPLY"]
-  A --> G["Gate 3 : système installé"]
-  G --> R["Golden Release"]
-```
+![Schéma de la chaîne de qualification : dix étapes, de la CI au commit exact jusqu'à la Golden release](assets/diagrams/chaine-qualification.svg)
+
+La qualification enchaîne dix étapes : la CI au commit exact, le contrôle Live USB sur le PC, l'installation de Fedora avec import de la preuve Live, la baseline matérielle, le dry-run, la sauvegarde pré-APPLY vérifiée, l'APPLY protégé, le redémarrage sur Linux amont N, la Gate 3, puis la Golden release. Seules les étapes 2 à 10 ont lieu sur le PC ; un changement du matériel, du code ou de la configuration invalide les preuves concernées.
+
+Source éditable : [`chaine-qualification.drawio`](assets/diagrams/chaine-qualification.drawio).
 
 | Résultat | Ce qu'il démontre | Ce qu'il ne démontre pas |
 |---|---|---|

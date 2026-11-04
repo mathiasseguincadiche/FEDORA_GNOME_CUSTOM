@@ -4,14 +4,11 @@ Le projet utilise **Borg 1.x avec un dépôt non chiffré** (décision du propri
 
 ## Comprendre la stratégie de récupération en trente secondes
 
-```mermaid
-flowchart TD
-  SYS["T705 nº1 : Fedora système / Btrfs"] --> REINSTALL["Réinstallation contrôlée depuis le dépôt"]
-  DATA["T705 nº2 : /data EXT4"] --> KEEP["Documents, Projets, IA/Openclaw, ISO, Jeux, libvirt"]
-  FILES["Documents et Projets"] --> BORG["SSD externe Kingston XS1000 : Borg"]
-  KEEP --> FILES
-  BORG --> RESTORE["Restauration d'abord en staging, puis vérification"]
-```
+![Schéma de la sauvegarde : trois familles de sources vers un dépôt Borg externe, contrôles, restauration en staging puis copie manuelle](assets/diagrams/sauvegarde-restauration.svg)
+
+Trois familles de sources partent vers un dépôt Borg sur le SSD externe XS1000 (ext4, non chiffré) : les données de `/data` (Documents, Projets, IA/Openclaw), les dossiers personnels (Bureau, Images, Vidéos, Musique, `~/Development`) et les réglages (`.config`, `.mozilla`, `.var/app`, `.local/share`, configuration de l'hôte et du projet). La sauvegarde pré-APPLY n'est validée qu'après `borg check --verify-data` et une restauration canari. Une restauration se fait toujours dans `~/Restores` avant inspection et copie manuelle. Restent hors Borg : Téléchargements, ISO, Jeux et tout ce qui concerne les VM ; le système, lui, est reconstruit depuis le dépôt. Les listes exactes viennent de `config/backup.conf`.
+
+Source éditable : [`sauvegarde-restauration.drawio`](assets/diagrams/sauvegarde-restauration.drawio).
 
 Le second SSD protège les données de travail lors d'une **réinstallation du premier**, mais **pas** contre la panne ou l'effacement du second SSD. Borg fournit la sauvegarde externe pour les jeux de données sélectionnés ; `ISO` et `Jeux` ne sont pas automatiquement inclus par défaut, les VM sont exclues de Borg : leurs exports restent exclusivement manuels, sous la responsabilité de l'utilisateur.
 

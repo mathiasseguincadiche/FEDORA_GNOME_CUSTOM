@@ -134,10 +134,7 @@ METADATA_PENDING = {
     "SOFTWARE_INVENTORY.md", "SUPPLY_CHAIN.md", "TROUBLESHOOTING.md", "UPGRADE_FEDORA_45.md",
     "UPSTREAM_LINUX.md", "VIRTUALIZATION.md",
 }
-MERMAID_PENDING = {
-    "docs/ARCHITECTURE.md", "docs/BACKUP_RESTORE.md", "docs/CI_VALIDATION.md", "docs/CONTROL_CENTER.md",
-    "docs/FEDORA_GNOME_CI_LAB.md", "docs/QUALIFICATION.md", "docs/REMOTE_ACCESS.md",
-}
+MERMAID_PENDING = set()  # every Mermaid block was replaced by a .drawio/.svg pair (C3)
 DATE = r"\d{4}-\d{2}-\d{2}"
 METADATA = re.compile(
     rf"^> Mise à jour : {DATE} · Responsable : @[A-Za-z0-9-]+\n"

@@ -60,20 +60,11 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 
 ## Le système obtenu
 
-```mermaid
-flowchart TB
-  PC["Ryzen 7 7700 / Arc B580 / 48 Gio"] --> HOST["Fedora Workstation : Wayland, SELinux, firewalld"]
-  HOST --> GUI["GNOME : Nautilus, Ptyxis, extensions, finition"]
-  HOST --> DEV["DevOps : Git, terminal, KVM/libvirt"]
-  HOST --> GAME["Gaming : Steam, Proton, Vulkan"]
-  HOST --> CORE["Linux amont N / N-1 + secours Fedora"]
-  HOST --> ROOT["T705 nº1 : système Btrfs, réinstallable"]
-  HOST --> DATA["T705 nº2 : /data EXT4 persistant"]
-  DATA --> FILES["Documents, Projets, IA/Openclaw"]
-  DATA --> MEDIA["ISO, Jeux"]
-  DATA --> VMS["libvirt : disques des VM"]
-  FILES --> BORG["Borg sur le XS1000 externe"]
-```
+![Schéma du poste : le PC et Fedora 45, quatre usages, le système sur le premier T705, /data sur le second et la sauvegarde Borg](assets/diagrams/architecture-poste.svg)
+
+Le PC exécute Fedora 45 Workstation, qui porte quatre usages : le bureau GNOME 51, l'environnement DevOps avec KVM, le jeu vidéo et le noyau Linux amont avec secours Fedora. Le premier T705 contient le système Btrfs, reconstruit depuis le dépôt à chaque réinstallation. Le second porte `/data` en EXT4 et survit à une réinstallation. Seuls Documents, Projets et IA y sont sauvegardés par Borg sur le SSD externe ; ISO et Jeux sont hors Borg par défaut, et les disques des VM s'exportent à la main.
+
+Source éditable : [`architecture-poste.drawio`](assets/diagrams/architecture-poste.drawio).
 
 **Deux SSD ne font pas deux sauvegardes.** Le T705 système se reconstruit depuis le dépôt. Le T705 `/data` survit à une réinstallation et n'est jamais formaté par le projet. Il ne protège pas contre sa propre panne, un effacement ou une compromission : c'est le rôle de Borg, sur un support externe non chiffré à ranger comme un document sensible. `ISO` et `Jeux` sont hors Borg par défaut ; les VM s'exportent à la main.
 

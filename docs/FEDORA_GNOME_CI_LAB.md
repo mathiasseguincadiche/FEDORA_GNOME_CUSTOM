@@ -23,14 +23,11 @@ Le contrôle exige les six rôles `ACTIVE`, `enabled`, des métadonnées GNOME 5
 
 Le laboratoire natif sans extensions reste utile pour isoler les défauts GNOME, mais **son succès ne remplace pas** celui du laboratoire avec les six extensions. La CI donne une preuve logicielle QEMU seulement : rien ne qualifie le second T705, la B580 ou la certification physique.
 
-```mermaid
-flowchart LR
-  A["VM Fedora jetable"] --> B["Boot + GNOME"]
-  B --> C["Bureau + logout + reboot"]
-  C --> D["Borg à froid"]
-  D --> E["Restauration isolée"]
-  E --> F["Rapport + journaux"]
-```
+![Schéma du laboratoire : sept étapes sur un runner GitHub jetable, de la VM Fedora 45 au rapport](assets/diagrams/laboratoire-gnome.svg)
+
+Tout se passe sur un runner GitHub jetable. Une VM Fedora 45 démarre depuis le seed Cloud Beta vérifié ; le dépôt est installé et la session GNOME 51 contrôlée ; des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg, l'original est supprimé et la VM restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
+
+Source éditable : [`laboratoire-gnome.drawio`](assets/diagrams/laboratoire-gnome.drawio).
 
 **Un plantage GNOME n'est pas une réussite.** Les coredumps, erreurs critiques, services en échec et incohérences de reprise doivent rester bloquants, même s'ils apparaissent au dernier logout. Le job `contracts` dépend du succès effectif des laboratoires.
 

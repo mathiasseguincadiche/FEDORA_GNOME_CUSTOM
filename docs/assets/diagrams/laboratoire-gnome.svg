@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 540" width="1320" height="540" role="img" aria-labelledby="title desc">
+  <title id="title">Le laboratoire Fedora/GNOME sur GitHub</title>
+  <desc id="desc">Sur un runner GitHub jetable, sans toucher au PC : 1, une VM Fedora 45 démarre depuis le seed Cloud Beta vérifié ; 2, le dépôt est installé et la session GNOME 51 contrôlée ; 3, des données témoin survivent à un redémarrage ; 4, la VM est arrêtée puis sauvegardée à froid par Borg ; 5, l&#x27;original est supprimé et la VM restaurée redémarre ; 6, une image neuve est reconstruite et redémarrée ; 7, le rapport conserve preuves et journaux, et tout plantage fait échouer le laboratoire.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+  </defs>
+  <rect width="1320" height="540" fill="#FFFFFF"/>
+  <text x="32" y="44" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#0F172A">Le laboratoire Fedora/GNOME sur GitHub</text>
+  <rect x="30" y="70" width="1260" height="440" rx="14" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="46" y="96" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#334155">Runner GitHub jetable : aucune commande sur le PC</text>
+  <line x1="330.0" y1="175.0" x2="370.0" y2="175.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="640.0" y1="175.0" x2="680.0" y2="175.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="950.0" y1="175.0" x2="990.0" y2="175.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1125.0" y1="230.0" x2="1125.0" y2="340.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="990.0" y1="395.0" x2="950.0" y2="395.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="680.0" y1="395.0" x2="640.0" y2="395.0" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="60" y="120" width="270" height="110" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="195.0" y="161.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">1. VM Fedora 45</text>
+  <text x="195.0" y="180.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">seed Cloud Beta vérifié</text>
+  <text x="195.0" y="199.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">signature et SHA-256</text>
+  <rect x="370" y="120" width="270" height="110" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="505.0" y="161.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">2. Dépôt et session</text>
+  <text x="505.0" y="180.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">GNOME 51 sous Wayland</text>
+  <text x="505.0" y="199.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">natif ou six extensions</text>
+  <rect x="680" y="120" width="270" height="110" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="815.0" y="161.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">3. Données témoin</text>
+  <text x="815.0" y="180.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">redémarrage</text>
+  <text x="815.0" y="199.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">persistance vérifiée</text>
+  <rect x="990" y="120" width="270" height="110" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="1125.0" y="161.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">4. Arrêt propre</text>
+  <text x="1125.0" y="180.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">Borg à froid : disque,</text>
+  <text x="1125.0" y="199.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">UEFI et TPM</text>
+  <rect x="990" y="340" width="270" height="110" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="1125.0" y="381.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">5. Restauration</text>
+  <text x="1125.0" y="400.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">original supprimé,</text>
+  <text x="1125.0" y="419.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">VM restaurée démarrée</text>
+  <rect x="680" y="340" width="270" height="110" rx="10" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+  <text x="815.0" y="381.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">6. Reconstruction</text>
+  <text x="815.0" y="400.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">image neuve</text>
+  <text x="815.0" y="419.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">redémarrage et contrôles</text>
+  <rect x="370" y="340" width="270" height="110" rx="10" fill="#DCFCE7" stroke="#15803D" stroke-width="2"/>
+  <text x="505.0" y="381.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0F172A">7. Rapport</text>
+  <text x="505.0" y="400.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">preuves et journaux</text>
+  <text x="505.0" y="419.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#0F172A">plantage = échec</text>
+</svg>

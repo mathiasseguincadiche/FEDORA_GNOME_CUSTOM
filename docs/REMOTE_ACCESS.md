@@ -10,15 +10,11 @@ Ce guide répond à trois questions : *qu'est-ce que le projet automatise*, *l'a
 
 ## Le scénario : un PC puissant, une tablette comme terminal
 
-```mermaid
-flowchart LR
-  T["Tablette Android + Moonlight/SSH"] --> VPN["Tailscale : tunnel privé"]
-  VPN --> F["Fedora HOST : B580 + GNOME"]
-  R["Relais LAN toujours allumé"] --> W["Wake-on-LAN : Magic Packet"]
-  W --> F
-  F --> S["Sunshine : capture/encodage si activé"]
-  S --> VPN
-```
+![Schéma de l'accès distant : tablette, tunnel Tailscale, PC Fedora et relais de réveil sur le réseau local](assets/diagrams/acces-distant.svg)
+
+La tablette Android atteint le PC Fedora par le tunnel privé Tailscale, sans port ouvert sur Internet : SSH par clés uniquement, Sunshine s'il est activé, GNOME Remote Desktop en repli configuré à la main. Pour réveiller le PC éteint, la tablette passe par le relais toujours allumé du réseau local, qui envoie le Magic Packet. Le profil est désactivé par défaut (`REMOTE_ENABLE=false`).
+
+Source éditable : [`acces-distant.drawio`](assets/diagrams/acces-distant.drawio).
 
 Le PC fixe reste l'unique environnement de travail. La tablette n'héberge ni les projets DevOps ni les VM : elle devient **un écran et un dispositif de contrôle à distance**. Wake-on-LAN depuis l'arrêt complet demande un relais actif sur le LAN ; Sunshine et son encodage **AV1 ne sont pas activés automatiquement**. Tout cela reste **optionnel** et doit être validé à Gate 3, notamment après plusieurs cycles de réveil.
 

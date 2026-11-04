@@ -94,7 +94,8 @@ gnome = "docs/GNOME.md"
 case("unchanged repository", lambda w: None, True)
 case("new Mermaid block", lambda w: edit(w / gnome, "## Les six extensions", "```mermaid\nflowchart LR\n  A --> B\n```\n\n## Les six extensions"),
      False, "docs/GNOME.md: Mermaid block")
-case("stale Mermaid list", lambda w: (edit(w / "docs/BACKUP_RESTORE.md", "```mermaid", "```text")),
+case("stale Mermaid list", lambda w: edit(w / "tests/test_docs_integrity.py", "MERMAID_PENDING = set()",
+                                            'MERMAID_PENDING = {"docs/GNOME.md"}'),
      False, "no Mermaid left; remove it from MERMAID_PENDING")
 case("guide leaves the list without metadata", lambda w: unlist(w, "GNOME.md"),
      False, "docs/GNOME.md: missing or malformed metadata block")
