@@ -61,7 +61,7 @@ done
 grep -Fq "persistent_data_mount() { printf '%s\\n' '/data'; }" "$ROOT/lib/persistent_data.sh"
 grep -Fq 'source "$REPO_ROOT/lib/persistent_data.sh"' "$ROOT/diagnostics/data-storage-doctor"
 grep -Fq 'persistent_data_layout_paths' "$ROOT/diagnostics/data-storage-doctor"
-grep -Fq '/data/{Documents,Projets,ISO,Jeux}' "$ROOT/diagnostics/data-storage-doctor"
+grep -Fq '/data/{Documents,Projets,ISO,Jeux,IA/Openclaw}' "$ROOT/diagnostics/data-storage-doctor"
 
 # Kernel latest-stable is installed directly with a strict N/N-1 retention.
 grep -Fq 'kernel_lifecycle_vanilla_repo_id' "$ROOT/lib/kernel_lifecycle.sh"
