@@ -8,6 +8,16 @@
   - **Doublons** : `shell-quality`, `fedora-package-preflight` et `fedora-installer-audit` tournaient deux fois par push de branche (événements `push` et `pull_request`). Leur `push` est limité à `main`. `fedora-installer-audit` ne tourne plus sur les PR, déjà couvertes par le job `installer-audit` de `Tests`.
   - **Runs dépassés** : neuf workflows annulent le run précédent d'une même PR quand un nouveau push arrive ; aucun run n'est annulé sur `main`.
 
+## 0.24.1 — Documentation refondue et corrections avant le Live USB
+
+Préversion à utiliser pour le contrôle Live USB et l'installation du PC. Elle reprend les corrections fusionnées depuis 0.24.0 RC1 :
+- vérification du média avec un trousseau donné par son seul nom ;
+- installation de RPM Fusion malgré le refus de dnf5 5.4.6 ;
+- message explicite du precheck de veille ;
+- retrait d'ONLYOFFICE des contrôles de la Gate 3.
+
+Elle apporte aussi la refonte complète de la documentation (chantiers C1 à C9), relue contre le code et protégée par des contrôles stricts. Aucune installation physique ni certification matérielle n'est revendiquée.
+
 - Documentation (chantier C9, audit transversal) : la refonte est terminée ; son compte rendu est dans `docs/history/DOCUMENTATION_OVERHAUL_2026-11.md`.
   - **Contrôles stricts** : les listes de migration `METADATA_PENDING` et `MERMAID_PENDING` sont supprimées. Tout guide de `docs/` doit porter son bloc de métadonnées. Les dates ne peuvent être ni futures ni incohérentes : une « Dernière vérification » antérieure à la « Mise à jour » échoue.
   - **Fins de ligne** : six fichiers étaient entrés dans `main` en CRLF avec C8, contrairement à `.editorconfig` : quatre pages de `docs/`, deux pages d'historique et `tests/test_docs_integrity.py`. Ils sont repassés en LF, et le test refuse désormais tout fichier suivi en CRLF.
@@ -65,7 +75,6 @@ Relecture complète du code produit, domaine par domaine, après la 0.23.0. Chaq
 
 - Matériel (relecture) : deux défauts qui auraient bloqué la qualification sur le vrai PC sont corrigés. **Santé SMART des T705** : `smartctl -j` écrit son JSON quel que soit son code de retour, non nul sans root et quand le journal d'erreurs NVMe a des entrées. Le code relançait alors via `sudo -n` mais gardait la première sortie : deux documents JSON collés, refusés par l'analyse. La baseline, `storage-doctor` et la capture de release échouaient donc pour un utilisateur normal. Seul le premier document qui contient le journal SMART est gardé. **Identité audio** : sysfs nomme le pilote USB `snd-usb-audio` (avec des tirets), alors que l'identification de la carte son ALC4080 et du micro de la Brio exigeait `snd_usb_audio`. Leur enrôlement échouait donc toujours ; les noms de pilote sont maintenant comparés sous leur forme de module. `test_storage_health_behavior.sh` (nouveau) et `test_peripheral_identity_behavior.sh` (vrai nom du pilote, micro de la Brio) échouent sur l'ancien code.
 
-
 ### Sécurité et preuves
 
 - VM Rocky DevOps : Helm, kind et Minikube ont maintenant, comme yq et K9s, un SHA-256 attendu versionné dans le dépôt. Auparavant, leur somme était téléchargée depuis le même serveur que le binaire : une publication compromise qui changeait les deux aurait été acceptée. Changer une version impose de changer sa somme dans le même commit.
@@ -80,7 +89,6 @@ Relecture complète du code produit, domaine par domaine, après la 0.23.0. Chaq
 
 - Moteur : trois vérifications de sécurité échouent maintenant en cas de doute au lieu de passer. La vérification « dépôt Git propre » de l'APPLY et de la sauvegarde pré-APPLY échoue si Git lui-même échoue (dossier hors Git, propriétaire non sûr), au lieu de considérer le dépôt comme propre. Une phrase `APPLY_CONFIRMATION` vidée par la configuration bloque l'APPLY au lieu d'accepter une réponse vide. Une preuve n'est plus reconnue comme l'identité actuelle si son commit n'est pas un vrai SHA Git (`unknown` hors Git), si l'empreinte du plan de modules est vide, ou, en bare-metal, si l'empreinte matérielle est vide (baseline illisible). Ces cas sont couverts par `test_apply_gate_behavior.sh`.
 
-
 ### Fiabilité et messages
 
 - Nettoyage hebdomadaire des journaux (relecture des scripts Python) : les journaux d'un même run étaient assemblés avec les deux caractères `\n` au lieu d'un vrai saut de ligne, dans un ordre de fichiers non fixé. Une règle d'explication pouvait alors correspondre à cheval sur deux fichiers, par exemple la fin de `main.log` et le début de `modules.log`, et la fiche d'incident recevait un faux diagnostic. Les fichiers sont maintenant lus dans un ordre fixe et séparés par un vrai saut de ligne. Relus sans défaut : `fedora-profile.py`, `promote-fedora45.py` (signature épinglée, commit exact, restauration en cas d'échec), `gdm_autologin.py`, `persistent_data_identity.py`, `live_validation.py`, `pin-upstream-target.py`, `upstream-release.py` et `nft-set-coverage.py`.
@@ -94,7 +102,6 @@ Relecture complète du code produit, domaine par domaine, après la 0.23.0. Chaq
 - Sauvegarde (relecture) : les textes affichés correspondent maintenant à la politique réelle. Le plan du module 50 ne parle plus de mot de passe ni de sauvegarde de VM éteinte : le dépôt Borg n'est pas chiffré, les VM, la NVRAM, le TPM, le cloud-init et les métadonnées libvirt ne sont jamais archivés, et les clés SSH et GnuPG sont exclues. Le plan du module 58 n'annonce plus la reconstruction des disques de VM. Le plan de reprise après sinistre place `/data` sur le second T705 (avec ré-enrôlement de son identité) et non sur un « SSD de VM ». Aucun défaut de fonctionnement n'a été trouvé dans le moteur Borg, les scripts de sauvegarde, de rétention, de restauration et de reprise, ni dans les docteurs.
 
 - Nautilus : un échec de l'installation de l'assistant de préchauffage, du rechargement systemd ou de l'activation de son service renvoie maintenant `EXIT_APPLY_FAILED`. Auparavant, l'orchestrateur (`set -e`) arrêtait déjà l'APPLY, mais avec le code brut de la commande, et un appel direct de la fonction continuait. Le plan n'annonce plus le backend `gvfs-archive`, retiré de Fedora 45. `test_nautilus_integration_contract.sh` ne fige plus le code du module et du docteur. `test_nautilus_integration_behavior.sh` (nouveau) exécute le vrai module et le vrai docteur avec de faux `dnf`, `rpm`, `gsettings`, `gio` et `systemctl`. Il vérifie l'installation de la pile Fedora, SMB et MTP seulement s'ils sont activés, le retrait de l'ancienne extension `gnome-terminal-nautilus`, la politique de miniatures (`never` si les aperçus sont désactivés), et le préchauffage, qui ne lance jamais Nautilus lui-même. Le docteur refuse chaque paquet manquant (sans exiger `gvfs-archive` sur Fedora 45), une extension File Roller absente, GIO en panne, un schéma absent, une politique modifiée, et un assistant ou un service de préchauffage absent ; un Bureau XDG absent avant DING n'est qu'un avertissement. Le contournement IBus reste opt-in, séparé de Nautilus, et ne retire qu'un paquet réellement installé.
-
 
 ### Tests de comportement
 
@@ -314,7 +321,6 @@ Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI 
 - Laboratoire Rocky obligatoire : Q35/UEFI, vrai redémarrage, sauvegarde Borg sans chiffrement à froid, suppression des sources et démarrage restauré.
 - Ancienne VM préservée : remplacement par création séparée et transfert des données, aucune conversion destructive.
 
-
 ## 0.20.0 — Linux amont et préparation Fedora 45
 
 - Retrait du noyau personnalisé et de ses réglages CPU/SELinux : canal Vanilla unique, dernière stable comparée à kernel.org, RC/linux-next/RPM obsolètes refusés.
@@ -324,7 +330,6 @@ Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI 
 - CI preview Fedora 45, inspection des archives d'extensions et rapports de dépendances explicites ; candidats distincts des verrous actifs.
 - Contrôle de la clé Fedora et du couple nom/hash du CHECKSUM signé ; installation neuve paramétrée par release.
 - Documentation, README, ADR et tests alignés. Qualification physique et promotion Fedora 45 restent à réaliser.
-
 
 ## 0.19.1 — 2026-10-01
 
@@ -342,7 +347,6 @@ Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI 
 - Reprise OS/VM basée exclusivement sur une archive complète avec manifeste de récupération, commit et couverture VM explicites. Contrôle d'espace avant la capture système, les disques VM et l'écriture au dépôt ; option `--staging-root`.
 - Le check obligatoire `contracts` dépend désormais de l'audit Fedora et du roundtrip Borg Fedora 44. L'audit refuse les blocages inattendus ; la publication attend les workflows réussis du SHA exact sur main.
 - Nouveaux tests de journaux, certification/restauration/capacité et portes CI ; documentation de la qualification GNOME, récupération isolée et matériel encore à réaliser sur machine.
-
 
 ## 0.18.1 — 2026-09-27
 
