@@ -1,12 +1,15 @@
 # Installation neuve Fedora 45 / GNOME 51 : référence du projet
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — média, verrous et profil relus contre `installer/fedora45-media.lock` et `profiles/fedora45/` — matériel : non vérifié
+
 Fedora 45 Workstation et GNOME 51 sont la cible unique de l’installation neuve : `config/workstation.conf` sélectionne `HOST_RELEASE="45"`. Le [guide d’installation](INSTALLATION_GUIDE.md) est le parcours principal. Aucun Fedora 44 préalable et aucune commande de migration ne sont nécessaires.
 
 ## Configuration sélectionnée et installation autorisée
 
 La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l’APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
 
-La publication du média final se vérifie sur la [page officielle Workstation](https://fedoraproject.org/workstation/download/). Le statut de préparation du projet ne remplace pas cette vérification : aucun verrou final n’est créé avant authentification de l’ISO finale et de son CHECKSUM signé. Les images Beta utilisées par les laboratoires restent des supports de test.
+Le média final a été publié par Fedora ([page officielle Workstation](https://fedoraproject.org/workstation/download/)) et authentifié avant la création du verrou. Les images Beta utilisées par les laboratoires CI restent des supports de test ; elles ne servent jamais à installer le PC.
 
 ## Média promu
 
@@ -46,7 +49,7 @@ Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôl
 
 ## Ce que vérifie la CI
 
-Les conteneurs principaux (paquets, installation en dry-run, Borg, bureau, jeux, AppImage et télémétrie) utilisent Fedora 45. Les deux laboratoires obligatoires démarrent Fedora 45 / GNOME 51 : l’un natif, l’autre avec les six extensions. Le second peut installer deux RPM Fedora signés de `updates-testing`, strictement dans la VM jetable ; cela ne les rend pas stables pour le PC. Aucun dépôt de test n’est activé sur la machine de production.
+Les conteneurs principaux (paquets, installation en dry-run, Borg, bureau, jeux, AppImage et télémétrie) utilisent Fedora 45. Les deux laboratoires obligatoires démarrent Fedora 45 / GNOME 51 : l’un natif, l’autre avec les six extensions. Le second installe les deux RPM d’extensions aux versions exactes du verrou, en ajoutant `updates-testing` dans la VM jetable seulement ; ces mêmes versions sont présentes dans les dépôts stables depuis la promotion. Aucun dépôt de test n’est activé sur la machine de production ([laboratoire](FEDORA_GNOME_CI_LAB.md)).
 
 Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même si le rapport d’état se termine correctement. Le laboratoire [Fedora 44 historique](history/HISTORICAL_FEDORA44.md) est facultatif et lancé manuellement.
 
@@ -58,10 +61,6 @@ Le module `gnome.core` installe aussi un drop-in utilisateur `org.gnome.Shell@us
 
 Le second Crucial T705 reste monté en EXT4 sur `/data` : `Documents/`, `Projets/`, `ISO/`, `Jeux/`, `IA/Openclaw/` et `libvirt/`. Borg protège `/data/IA/Openclaw` comme `/data/Projets`, en conservant les exclusions des disques de VM. Aucune migration d’OS ne doit reformater ce disque.
 
-Après promotion du profil et contrôle du média :
-
-**Configuration définitive → dry-run final → sauvegarde vérifiée → APPLY → redémarrage → qualification matérielle Gate 3.**
-
-Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l’installation sur SSD. Son compte rendu est exporté puis importé au même commit. La configuration finale, le dry-run, la sauvegarde vérifiée et l’APPLY se font sur Fedora installé. Les mesures complètes B580, écran, veille, réseau et T705, ainsi que le bureau personnalisé et Rocky, appartiennent ensuite à la Gate 3 physique.
+Le parcours d’installation fait foi dans le [guide](INSTALLATION_GUIDE.md#le-parcours). Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l’installation sur SSD ; la configuration finale, le dry-run, la sauvegarde vérifiée et l’APPLY se font sur Fedora installé ; les mesures complètes du matériel, le bureau et Rocky appartiennent à la [Gate 3](QUALIFICATION.md#4-gate-3--système-installé).
 
 La [mise à niveau 44 → 45](UPGRADE_FEDORA_45.md) ne concerne que les anciens systèmes déjà installés.

@@ -39,6 +39,9 @@ verify() {
 }
 printf 'SHA256 (%s) = %s\n' "$iso_name" "$digest" > "$tmp/plain"
 sign; verify
+# A bare keyring file name, as in the installation guide, is read from the current directory.
+(cd "$tmp" && GNUPGHOME="$tmp/keys" bash "$tmp/installer/verify-fedora44-media.sh" --iso "$tmp/$iso_name" \
+  --checksum "$tmp/$checksum_name" --keyring fedora.gpg) >/dev/null
 sign other
 if verify >/dev/null 2>&1; then echo 'wrong signing identity accepted' >&2; exit 1; fi
 printf 'SHA256 (%s) = %064d\nSHA256 (different.iso) = %s\n' "$iso_name" 0 "$digest" > "$tmp/plain"

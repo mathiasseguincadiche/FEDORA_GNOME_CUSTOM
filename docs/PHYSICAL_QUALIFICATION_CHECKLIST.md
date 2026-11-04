@@ -1,5 +1,8 @@
 # Fiche de qualification physique
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — fiche relue contre la qualification et les doctors cités — matériel : non vérifié
+
 Copier cette fiche dans le dossier de preuves de l'essai. Les commandes et critères sont dans [la qualification](QUALIFICATION.md) ; cette fiche sert à consigner ce qui a réellement été fait. Tout commence **NON EXÉCUTÉ** : un résultat ne devient PASS qu'après l'essai sur le PC, et cette fiche ne remplace aucun fichier de preuve Live ou Gate 3.
 
 Ne pas lancer ces essais depuis un runner GitHub ou une VM en prétendant tester la B580, les T705 ou le BIOS. Avant de publier des journaux, retirer mots de passe, clés privées, jetons, enregistrements micro et inventaire personnel.

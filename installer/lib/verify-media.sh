@@ -14,6 +14,8 @@ usage(){ echo "Usage: $0 --iso FILE --checksum FILE --keyring FEDORA_GPG_KEYRING
 iso=''; checksum=''; keyring=''
 while (($#)); do case "$1" in --iso) iso="${2:-}"; shift 2;; --checksum) checksum="${2:-}"; shift 2;; --keyring) keyring="${2:-}"; shift 2;; *) usage; exit 2;; esac; done
 [[ -r "$iso" && -r "$checksum" && -r "$keyring" ]] || { usage; exit 2; }
+# gpgv looks up a keyring name without a slash in ~/.gnupg, not in the current directory.
+[[ "$keyring" == */* ]] || keyring="./$keyring"
 [[ "$(basename "$iso")" == "$ISO_FILENAME" ]] || { echo "Unexpected ISO filename: $(basename "$iso")" >&2; exit 1; }
 [[ "$(basename "$checksum")" == "$CHECKSUM_FILENAME" ]] || { echo "Unexpected CHECKSUM filename: $(basename "$checksum")" >&2; exit 1; }
 command -v gpgv >/dev/null || { echo 'gpgv is required' >&2; exit 1; }
