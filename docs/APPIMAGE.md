@@ -1,8 +1,11 @@
-# AppImage — compatibilité complète Fedora 45
+# AppImage — compatibilité sur Fedora 45
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-appimage.txt` et `manifests/flatpaks-appimage.txt`, CI contre `fedora-appimage-pretest.yml` — matériel : non vérifié
 
 ## Objectif
 
-Le HOST Golden prend en charge les AppImages **actuels et anciens** sans remplacer le kernel Fedora, sans désactiver SELinux et sans installer de pile graphique tierce.
+L'hôte prend en charge les AppImage **actuelles et anciennes** sans remplacer le kernel Fedora, sans désactiver SELinux et sans installer de pile graphique tierce.
 
 Le contrat couvre :
 
@@ -97,7 +100,7 @@ Gear Lever améliore l'intégration desktop mais n'est pas le runtime de compati
 
 Une AppImage est du code natif fourni par un tiers. Le fait que le fichier soit portable ne constitue **aucune sandbox**.
 
-Règles Golden :
+Règles du projet :
 
 1. télécharger uniquement depuis la source officielle du logiciel ;
 2. vérifier checksum/signature lorsqu'ils sont publiés ;
@@ -107,7 +110,7 @@ Règles Golden :
 6. préférer RPM Fedora/éditeur ou Flatpak vérifié lorsqu'ils offrent le même logiciel avec une chaîne de mise à jour mieux intégrée ;
 7. utiliser `appimage-run --identify` pour identifier le format sans exécuter le payload.
 
-## Doctor
+## Contrôles
 
 ```bash
 ./diagnostics/appimage-doctor
@@ -140,8 +143,8 @@ Le workflow `Fedora 45 AppImage compatibility pretest` vérifie :
 
 La CI **n'exécute aucun AppImage téléchargé depuis Internet**. La compatibilité d'une application AppImage particulière reste dépendante de son propre packaging, de son architecture et de ses dépendances externes éventuelles.
 
-## Limites réelles de « prise en charge totale »
+## Limites
 
 Le système fournit toutes les briques génériques raisonnables pour exécuter les formats AppImage Type 1 et Type 2 sur Fedora 45. Il ne peut toutefois pas garantir qu'un binaire arbitraire datant de plusieurs décennies fonctionnera si celui-ci dépend d'un ABI retiré, d'un pilote propriétaire obsolète, d'une architecture CPU non supportée ou d'un comportement incompatible avec un kernel moderne.
 
-Dans ce cas, le problème appartient au payload spécifique, pas au socle AppImage Golden.
+Dans ce cas, le problème vient de l'application elle-même, pas du socle AppImage du projet.

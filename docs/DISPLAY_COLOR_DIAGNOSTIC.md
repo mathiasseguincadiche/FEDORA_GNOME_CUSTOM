@@ -1,4 +1,7 @@
-# Diagnostic d'affichage — Intel Arc B580, GNOME Wayland et fidélité des couleurs
+# Diagnostic d'affichage — Intel Arc B580, GNOME Wayland et couleurs
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — outil relu contre `scripts/development/display-color-audit.py` ; aucune mesure faite sur l'écran réel — matériel : non vérifié
 
 **Objectif.** Comprendre un blanc qui paraît gris, délavé ou irrégulier sur plusieurs écrans, sans supposer que la carte graphique est défectueuse et **sans modifier automatiquement** les réglages du GPU ou de GNOME.
 
@@ -29,7 +32,7 @@ gnome-shell --version
 ./diagnostics/display-color-audit --format json
 ```
 
-Le nouveau diagnostic interroge **seulement les connecteurs DRM lisibles dans sysfs** : connexion, activation et **liste des modes pris en charge**. Il ne demande ni `sudo`, ni accès à `/dev/mem`, ni modification d'affichage. Il ne collecte pas l'EDID brut, les numéros de série, les adresses réseau ou les captures d'écran. En l'absence d'information, il renvoie `NOT_TESTED`.
+Ce diagnostic interroge **seulement les connecteurs DRM lisibles dans sysfs** : connexion, activation et **liste des modes pris en charge**. Il ne demande ni `sudo`, ni accès à `/dev/mem`, ni modification d'affichage. Il ne collecte pas l'EDID brut, les numéros de série, les adresses réseau ou les captures d'écran. En l'absence d'information, il renvoie `NOT_TESTED`.
 
 **Important :** une résolution `2560x1440` dans la liste des modes n'est **pas** une preuve que le moniteur fonctionne actuellement en 240 Hz.
 
@@ -80,4 +83,4 @@ Dans l'OSD du moniteur, relever **la plage RGB d'entrée** (Auto/Full/Limited), 
 
 La certification physique est régie par [PHYSICAL_QUALIFICATION_CHECKLIST.md](PHYSICAL_QUALIFICATION_CHECKLIST.md). Le travail prioritaire global est suivi dans [ROADMAP_FEDORA45_2026.md](ROADMAP_FEDORA45_2026.md).
 
-**Sources :** [GNOME 51 — notes de version](https://release.gnome.org/51/) et [GNOME 51 — gestion des couleurs et VRR](https://release.gnome.org/50/).
+**Sources :** [GNOME 51 — notes de version](https://release.gnome.org/51/) et [GNOME 50 — gestion des couleurs et VRR](https://release.gnome.org/50/).

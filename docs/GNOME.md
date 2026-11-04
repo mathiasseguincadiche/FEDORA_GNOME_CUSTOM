@@ -1,10 +1,13 @@
 # Le bureau GNOME
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — extensions relues contre `config/gnome-extensions.lock`, réglages contre `config/gnome-polish.conf`, `config/gnome.conf` et `modules/gnome/` — matériel : non vérifié
+
 Fedora livre GNOME tel que ses développeurs l'ont conçu : propre, mais dépouillé. Le projet garde ce GNOME officiel (GNOME 51 sur Fedora 45, Wayland, Adwaita/libadwaita, applications Fedora) et lui ajoute **l'ergonomie qu'Ubuntu apporte à GNOME**, sans son thème Yaru ni ses icônes ([ADR 0013](adr/0013-ubuntu-grade-gnome-polish.md)).
 
 Le profil Fedora 45 est `ready` : le média final signé et les RPM Dash to Dock et AppIndicator des dépôts stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
 
-## Ce que tu obtiens
+## Ce que le profil change
 
 | Avant (Fedora pur) | Après | Pourquoi |
 |---|---|---|
@@ -153,7 +156,7 @@ Le dossier du bureau (`Bureau`), l'affichage de la Corbeille et le raccourci `Su
 
 Chaque ligne `KO` nomme le réglage qui a dérivé et la valeur attendue.
 
-La CI vérifie les archives, métadonnées, schémas et réglages, puis l'activation des six extensions dans une VM GNOME 51 (boot, redémarrage, restauration). Une CI verte ne promeut pas le profil et ne prouve rien sur le matériel : la Gate 3 vérifie visuellement le bureau, les températures Ryzen, la B580, l'écran et la veille sur le système installé ([preuves GNOME](QUALIFICATION.md)).
+La CI vérifie les archives, métadonnées, schémas et réglages, puis l'activation des six extensions dans une VM GNOME 51 (boot, redémarrage, restauration). Une CI verte ne prouve rien sur le matériel : la Gate 3 vérifie visuellement le bureau, les températures Ryzen, la B580, l'écran et la veille sur le système installé ([preuves GNOME](QUALIFICATION.md)).
 
 ## Hors profil
 

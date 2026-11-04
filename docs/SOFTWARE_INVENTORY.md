@@ -276,7 +276,6 @@ Dépôts éditeurs signés :
 
 - com.bitwarden.desktop
 - com.slack.Slack
-- org.onlyoffice.desktopeditors
 - com.github.marktext.marktext
 - com.jgraph.drawio.desktop
 - com.github.tchx84.Flatseal — manifeste maintenu en amont ; badge éditeur non supposé

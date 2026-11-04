@@ -1,8 +1,9 @@
-# Ptyxis — terminal Golden Fedora
+# Ptyxis — terminal
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — paquet relu contre `manifests/packages-applications-gtk4.txt`, contrôles contre `diagnostics/ptyxis-doctor` — matériel : non vérifié
 
 > Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
-
-La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Rôle
 
@@ -20,7 +21,7 @@ Cette séparation évite de transformer le HOST Fedora en VM de développement i
 
 Le paquet `ptyxis` est présent dans `manifests/packages-applications-gtk4.txt` et est validé après l'installation du catalogue d'applications.
 
-Le profil conserve le paquet Fedora natif ; aucune version Flatpak parallèle n'est installée par le Golden.
+Le profil conserve le paquet Fedora natif ; le projet n'installe aucune version Flatpak parallèle.
 
 ## Bash géré
 
@@ -50,11 +51,11 @@ Il ne force donc pas arbitrairement :
 - raccourcis personnalisés ;
 - profils conteneur.
 
-Cette règle évite de lier la certification Golden à des clés GSettings pouvant évoluer entre versions de Ptyxis sans bénéfice fonctionnel.
+Cette règle évite de lier la certification à des clés GSettings pouvant évoluer entre versions de Ptyxis sans bénéfice fonctionnel.
 
 ## Toolbx / conteneurs
 
-Ptyxis sait s'intégrer à Podman, Distrobox et Toolbx. Cette capacité n'implique pas que ces outils deviennent automatiquement des dépendances du HOST Golden.
+Ptyxis sait s'intégrer à Podman, Distrobox et Toolbx. Cette capacité n'en fait pas des dépendances automatiques de l'hôte.
 
 Pour le profil actuel :
 
@@ -67,7 +68,7 @@ Toolbx               non imposé par défaut
 
 Toolbx pourra être ajouté ultérieurement comme profil explicitement optionnel si un besoin de sandbox CLI légère sur le HOST est validé. Il ne doit pas apparaître implicitement dans `packages-shell.txt`.
 
-## Doctor
+## Contrôles
 
 ```bash
 ./diagnostics/ptyxis-doctor

@@ -124,10 +124,8 @@ for name in TRACKED:
 # Migration lists for the documentation overhaul: a guide leaves a list when it is
 # rewritten, and a listed guide that already complies is an error, so the lists only shrink.
 METADATA_PENDING = {
-    "APPIMAGE.md", "ARCHITECTURE.md", "CI_VALIDATION.md", "DISPLAY_COLOR_DIAGNOSTIC.md",
-    "FEDORA_GNOME_CI_LAB.md", "GAMING.md", "GLOSSARY.md", "GNOME.md", "GTK4_APPLICATIONS.md",
-    "HOST_BASH_UX.md", "HOST_SECURITY_POLICY.md", "KVM_NETWORK.md", "KVM_QUICKSTART.md",
-    "MULTIMEDIA_CODECS.md", "NAUTILUS.md", "PTYXIS.md", "ROADMAP_FEDORA45_2026.md",
+    "ARCHITECTURE.md", "CI_VALIDATION.md", "FEDORA_GNOME_CI_LAB.md", "GLOSSARY.md",
+    "HOST_SECURITY_POLICY.md", "KVM_NETWORK.md", "KVM_QUICKSTART.md", "ROADMAP_FEDORA45_2026.md",
     "SOFTWARE_INVENTORY.md", "SUPPLY_CHAIN.md", "TROUBLESHOOTING.md", "UPGRADE_FEDORA_45.md",
     "VIRTUALIZATION.md",
 }

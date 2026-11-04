@@ -24,7 +24,7 @@ if ! confirm JE_CONFIRME_DOCUMENT ||
    [[ ! -s "$work/document.txt" || ! -s "$work/document.pdf" || "$(sha256sum "$work/document.txt" | cut -d\  -f1)" == "$original_sha" ]]; then
   ui_error 'Document/save/PDF test incomplete'; exit "$EXIT_POSTCHECK_FAILED";
 fi
-for id in com.bitwarden.desktop com.slack.Slack org.onlyoffice.desktopeditors com.github.tchx84.Flatseal; do
+for id in com.bitwarden.desktop com.slack.Slack com.github.tchx84.Flatseal; do
   flatpak info "$id" >/dev/null
   echo "Vérifiez dans $id : interface utilisable, ouverture de fichier si applicable, puis fermez l'application."
   flatpak run "$id" >/dev/null 2>&1 &

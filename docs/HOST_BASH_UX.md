@@ -1,8 +1,9 @@
-# Fedora Host Bash UX
+# Environnement Bash de l'hôte
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-shell.txt`, fichiers et alias contre `shell/bash/` et `scripts/shell/install-host-bash-ux.sh` — matériel : non vérifié
 
 La machine hôte Fedora 45 conserve Bash comme shell de travail et Ptyxis comme terminal GNOME. La couche gérée fournit une expérience terminal professionnelle sans remplacer Bash par Zsh et sans framework de prompt.
-
-La version applicable est celle de [`../VERSION`](../VERSION).
 
 ## Séparation terminal / shell
 
@@ -88,14 +89,15 @@ et ne sont régénérées que lorsque le binaire correspondant change.
 
 Les aliases restent courts et lisibles :
 
-- Git : `gs`, `ga`, `gc`, `gp`, `gpl`, `gl` ;
-- Docker Compose : `dc` ;
+- listes de fichiers : `ll`, `la` ;
+- Git : `g`, `gs`, `ga`, `gc`, `gp`, `gpl`, `gl` ;
+- Docker : `dc` (Compose), `dps` ;
 - Kubernetes : `k`, `kgp`, `kgs`, `kgn`, `kd`, `kl` ;
 - Terraform : `tf`, `tfi`, `tfp`, `tff`, `tfv`.
 
 Aucun alias ne remplace `rm`, `mv`, `cp` ou `sudo`.
 
-## Certification
+## Contrôles
 
 ```bash
 ./diagnostics/shell-doctor
@@ -104,4 +106,4 @@ Aucun alias ne remplace `rm`, `mv`, `cp` ou `sudo`.
 
 `shell-doctor` vérifie paquets, fichiers gérés, unicité du bloc `.bashrc`, sauvegarde initiale, syntaxe Bash et smoke test interactif. `ptyxis-doctor` vérifie séparément le terminal Fedora natif, son desktop entry, son schéma GSettings lorsque disponible et Bash comme login shell.
 
-Les deux font partie de la certification finale bare-metal.
+Les deux font partie de la certification finale sur le PC physique.
