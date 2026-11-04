@@ -223,3 +223,7 @@ bash scripts/hardware/ld240-display.sh remove   # retour arrière
 ```
 
 Une incompatibilité doit rester visible : ne pas désactiver SELinux ni ouvrir l'accès à tous les périphériques HID pour la contourner.
+
+## Étape suivante
+
+Cocher les essais physiques dans la [fiche de qualification physique](PHYSICAL_QUALIFICATION_CHECKLIST.md). Le poste qualifié s'entretient ensuite depuis le [centre de contrôle](CONTROL_CENTER.md) et la [maintenance du poste](DESKTOP_LIFECYCLE.md).

@@ -104,7 +104,7 @@ Fichier : `.github/workflows/desktop-integration-pretest.yml`. Installe GNOME, N
 
 **Si rouge :** un paquet ou un schéma GSettings absent vient en général d'un changement de Fedora ; vérifier le manifeste `manifests/packages-nautilus.txt` ou le catalogue GTK4.
 
-## Autres workflows
+## Workflows non obligatoires
 
 Ces workflows ne sont pas des contextes obligatoires. Un échec reste à corriger, mais ne bloque pas la fusion par lui-même.
 

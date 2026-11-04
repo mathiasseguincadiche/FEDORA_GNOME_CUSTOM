@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Documentation (chantier D5, navigation et cohérence, prompts V4) : les guides d'installation, de qualification et la fiche physique se terminent par une « étape suivante ». Les lignes « Vérifié par la CI » du README donnent leur date, le commit de la préversion v0.24.1-rc.1 et le lien du run. La ligne « Installation » de `CONTRIBUTING.md` nomme le job qui contrôle les PR depuis #182. « Autres workflows » devient « Workflows non obligatoires ». Le superlatif de l'architecture est remplacé par un objectif mesurable. Le compte rendu de la refonte reçoit une section sur la seconde passe V4 : modules utilisés et écartés, vérifications réelles, et points non vérifiés.
+
 - Documentation (chantier D4, pédagogie, prompts V4) : nouvelle page [notions clés](docs/CONCEPTS.md). Elle explique sept idées qui reviennent dans tous les guides, chacune par le problème qu'elle règle, son principe, sa place dans le projet, sa vérification, ses limites et l'erreur fréquente : fermé par défaut, preuve liée à un état, trois niveaux de preuve, baseline et certification, sauvegarde vérifiée par restauration, noyau N / N-1 et secours Fedora, garde réseau des VM. Les guides d'installation, de qualification, de sauvegarde et de KVM s'ouvrent sur ce qu'ils permettent de faire, et le README, le portail et l'architecture renvoient à la page.
 
 - Documentation (chantier D3, diagnostic et procédures, prompts V4) :

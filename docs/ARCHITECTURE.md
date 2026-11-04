@@ -5,7 +5,7 @@
 
 ## Pourquoi ce projet
 
-Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, et que ce soit la meilleure installation possible : la plus récente (Fedora 45 / GNOME 51), la plus finie (l'ergonomie qu'Ubuntu apporte à GNOME), la plus réactive, et **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
+Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, avec un objectif précis : la version la plus récente (Fedora 45 / GNOME 51), la finition (l'ergonomie qu'Ubuntu apporte à GNOME), une réactivité mesurée plutôt que supposée, et une installation **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
 
 **Golden** veut dire *installation de référence reproductible et vérifiable*, pas « ISO modifiée » ni « certification déjà acquise ». Le profil Fedora 45 est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)) ; la certification de la machine reste à acquérir.
 

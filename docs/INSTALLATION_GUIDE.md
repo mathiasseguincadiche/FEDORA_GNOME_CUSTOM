@@ -375,3 +375,7 @@ Le générateur affiche le modèle, le numéro de série et la taille du disque,
 **Média :** Fedora n'accepte pas de Kickstart depuis une image Live. Démarrer l'ISO **Fedora 45 Everything netinstall** avec `inst.ks=` pointant vers le fichier généré ; les paquets viennent alors des dépôts officiels `fedora` et `updates`. L'ISO Workstation vérifiée à la section 1 reste celle du contrôle Live.
 
 **Réussite :** le disque et le SHA incorporés sont ceux qui ont été audités, et le commit est celui du Live. Reprendre ensuite à l'import de la preuve Live (section 2), puis à la section 3. Le Kickstart ne remplace ni le contrôle Live, ni la baseline, ni la sauvegarde, ni la qualification.
+
+## Étape suivante
+
+Le poste installé se qualifie en Gate 3 : [qualification](QUALIFICATION.md). Pour l'usage courant ensuite, partir du [centre de contrôle](CONTROL_CENTER.md).

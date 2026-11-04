@@ -18,7 +18,7 @@ La source de vérité est le **code, la configuration et les tests**. Viennent e
 |---|---|---|---|
 | Point d'entrée | `control.sh`, `lib/control_center.sh` | [Centre de contrôle](docs/CONTROL_CENTER.md) | `tests/test_workstation_control_center_contract.sh` |
 | Live USB | `diagnostics/live-preflight.sh`, `scripts/validation/` | [Contrôle Live](docs/FEDORA45_LIVE_PREFLIGHT.md) | `.github/workflows/live-preflight.yml` |
-| Installation | `install.sh`, `installer/`, `lib/apply_gate.sh` | [Installation](docs/INSTALLATION_GUIDE.md) | `.github/workflows/fedora-installer-audit.yml` |
+| Installation | `install.sh`, `installer/`, `lib/apply_gate.sh` | [Installation](docs/INSTALLATION_GUIDE.md) | job `installer-audit` de `.github/workflows/tests.yml` (PR) ; `.github/workflows/fedora-installer-audit.yml` (`main`) |
 | Promotion Fedora 45 | `scripts/development/promote-fedora45.py`, `profiles/fedora45/` | [Fiche Fedora 45](docs/FEDORA45_PRIMARY.md) | `tests/test_promote_fedora45_behavior.sh` |
 | Qualification | `scripts/validation/`, `diagnostics/final-certification` | [Qualification](docs/QUALIFICATION.md) | `tests/test_three_gate_validation_contract.sh` |
 | GNOME | `modules/gnome/`, `config/gnome-extensions.lock` | [GNOME](docs/GNOME.md) | tests d'extensions et laboratoire GNOME |
