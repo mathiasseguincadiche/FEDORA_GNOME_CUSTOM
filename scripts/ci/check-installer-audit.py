@@ -23,6 +23,8 @@ EXPECTED_BLOCKERS = {
     ("baseline.cpu_stability", "postcheck", 40): "runner is not a Ryzen 7700 with AMD-V",
     ("baseline.nvme_health", "postcheck", 40): "runner does not expose the two T705",
     ("baseline.gpu", "postcheck", 40): "runner does not expose an Arc B580 on xe",
+    # Depends on the runner host kernel: some GitHub runners expose /sys/power/mem_sleep, others do not.
+    ("baseline.suspend_resume", "precheck", 20): "runner kernel exposes no /sys/power/mem_sleep",
     ("hardware.graphics", "precheck", 1): "runner does not expose an Arc B580 on xe",
     ("kvm.preflight", "precheck", 20): "container has no target AMD-V/KVM/Arc runtime",
     ("kvm.network", "precheck", 20): "container has no running host firewall/network isolation guard",
