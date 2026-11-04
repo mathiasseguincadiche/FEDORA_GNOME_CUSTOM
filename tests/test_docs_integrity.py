@@ -125,9 +125,8 @@ for name in TRACKED:
 # rewritten, and a listed guide that already complies is an error, so the lists only shrink.
 METADATA_PENDING = {
     "ARCHITECTURE.md", "CI_VALIDATION.md", "FEDORA_GNOME_CI_LAB.md", "GLOSSARY.md",
-    "HOST_SECURITY_POLICY.md", "KVM_NETWORK.md", "KVM_QUICKSTART.md", "ROADMAP_FEDORA45_2026.md",
-    "SOFTWARE_INVENTORY.md", "SUPPLY_CHAIN.md", "TROUBLESHOOTING.md", "UPGRADE_FEDORA_45.md",
-    "VIRTUALIZATION.md",
+    "HOST_SECURITY_POLICY.md", "ROADMAP_FEDORA45_2026.md", "SOFTWARE_INVENTORY.md", "SUPPLY_CHAIN.md",
+    "TROUBLESHOOTING.md", "UPGRADE_FEDORA_45.md",
 }
 MERMAID_PENDING = set()  # every Mermaid block was replaced by a .drawio/.svg pair (C3)
 DATE = r"\d{4}-\d{2}-\d{2}"

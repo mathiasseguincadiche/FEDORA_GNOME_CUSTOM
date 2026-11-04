@@ -1,5 +1,8 @@
 # Virtualisation — référence KVM et Rocky DevOps
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — profil relu contre `config/vm-profiles.conf` et `config/virtualization.conf`, versions contre `guest/rocky-devops/bootstrap-devops.sh`, clé contre `scripts/kvm/verify_rocky_cloud_image.sh` — matériel : non vérifié
+
 Pour l'usage quotidien et le dépannage, voir le [démarrage KVM](KVM_QUICKSTART.md). Ce document décrit l'architecture, le profil Rocky DevOps et ce qui est vérifié. Les valeurs exécutables viennent de `config/virtualization.conf` et `config/vm-profiles.conf` ; une contradiction entre ces fichiers, les scripts et ce document est un bug.
 
 ## Architecture
@@ -19,7 +22,7 @@ Fedora 45 (HOST)
 - **Matériel** : AMD-V/SVM, `/dev/kvm` et `kvm_amd` obligatoires sur le PC. Démons libvirt modulaires de Fedora (`virtqemud`, `virtnetworkd`, `virtstoraged`, `virtlogd`, `virtlockd`), `libvirtd` seulement en repli.
 - **GPU** : aucun VFIO ni passthrough. Rocky s'administre par console série et SSH, sans affichage ; le contrat 2560×1440/~240 Hz du HOST reste prioritaire.
 - **Stockage** : le projet ne partitionne ni ne formate jamais le second T705. `/data/ISO` est une bibliothèque utilisateur ; seuls les médias placés dans `/data/libvirt/iso` sont exposés à QEMU. Pool `devops-data`, type `dir`, autostart. Les VM utilisent le profil I/O mesuré par `kvm-io-doctor benchmark` (sur un fichier, jamais sur le disque brut), avec `cache=none` et `discard=unmap`.
-- **Réseau** : `devops-nat`, `virbr50`, `192.168.50.0/24`, passerelle `192.168.50.254`, DHCP `192.168.50.100-200`, DNS 9.9.9.9 et 1.1.1.1, NAT IPv4, zone firewalld `libvirt`. HOST↔VM, VM↔VM et VM→Internet autorisés ; VM→LAN et LAN→VM bloqués ; aucun forwarding implicite depuis Internet. Quand l'uplink change, le guard passe d'abord en mode d'urgence, puis reconstruit les règles ; si cela échoue, l'état restrictif reste actif. Détails : [réseau KVM](KVM_NETWORK.md).
+- **Réseau** : `devops-nat`, `virbr50`, `192.168.50.0/24`, passerelle `192.168.50.254`, DHCP `192.168.50.100-200`, DNS 9.9.9.9 et 1.1.1.1, NAT IPv4, zone firewalld `libvirt`. HOST↔VM, VM↔VM et VM→Internet autorisés ; VM→LAN et LAN→VM bloqués ; aucun forwarding implicite depuis Internet. Quand la connexion sortante change, le garde réseau passe d'abord en mode d'urgence, puis reconstruit les règles ; si cela échoue, l'état restrictif reste actif. Détails : [réseau KVM](KVM_NETWORK.md).
 - **Fichiers** : accès Fedora → Rocky par SFTP/SSH uniquement ; aucun partage HOST↔VM (pas de VirtioFS).
 
 ## Profil `rocky-devops`
@@ -58,7 +61,7 @@ CHECKSUM.asc
 
 Le mot de passe demandé à la création n'est jamais affiché ni stocké : seul son hash SHA-512 (`openssl passwd -6`) entre dans le seed cloud-init, avec `ssh_pwauth: false`. Le compte garde un sudo authentifié ; aucun sudo sans mot de passe n'est provisionné.
 
-## Provisioning
+## Provisionnement
 
 ```text
 image authentifiée → create_rocky_devops_vm.sh → cloud-init (utilisateur, clé SSH)
@@ -102,7 +105,7 @@ Le script n'utilise que le socket Docker local avec `--pull=never` et journalise
 | `diagnostics/virtualization-doctor` | KVM, libvirt, outils CLI, stockage, SELinux, OVMF, swtpm, réseau et isolation |
 | `diagnostics/kvm-domain-doctor` | XML Rocky conforme au profil ci-dessus, aucun `hostdev` |
 | `devops-verify.sh` (dans l'invité) | stack, services, `PasswordAuthentication no` effectif |
-| `scripts/kvm/runtime_certification.sh` | domaine, Guest Agent, XML VirtIO/RNG/balloon, IP, SSH, stack, DNS/HTTPS, guard et isolement LAN |
+| `scripts/kvm/runtime_certification.sh` | domaine, Guest Agent, XML VirtIO/RNG/balloon, IP, SSH, stack, DNS/HTTPS, garde réseau et isolement LAN |
 | CI « Rocky Linux 10.2 real VM pretest » | image authentifiée, bootstrap exact, smoke tests, reboot, sauvegarde Borg de qcow2/NVRAM/seed, restauration et redémarrage isolé (`restrict=on`) |
 
 Une preuve complète LAN → VM demande un second appareil du LAN ([réseau KVM](KVM_NETWORK.md)). La CI ne certifie aucun périphérique physique ; la qualification Rocky précède la [Gate 3](QUALIFICATION.md).
