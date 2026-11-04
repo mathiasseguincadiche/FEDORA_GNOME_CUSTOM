@@ -105,7 +105,7 @@ Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son
 > Dernière vérification : AAAA-MM-JJ — méthode et périmètre — matériel : non vérifié
 ```
 
-« Mise à jour » est la date du dernier changement de fond. « Dernière vérification » dit comment le contenu a été contrôlé (par exemple « relecture contre le code de `main` ») et sur quel périmètre. La mention `matériel` passe à `vérifié (Gate 3, AAAA-MM-JJ)` seulement après une preuve physique. Le bloc ne recopie pas le numéro de version du projet.
+« Mise à jour » est la date du dernier changement de fond ; modifier un guide sans revérifier son contenu fait échouer le contrôle. « Dernière vérification » dit comment le contenu a été contrôlé (par exemple « relecture contre le code de `main` ») et sur quel périmètre. La mention `matériel` passe à `vérifié (Gate 3, AAAA-MM-JJ)` seulement après une preuve physique. Le bloc ne recopie pas le numéro de version du projet.
 
 ### Schémas
 
@@ -117,7 +117,7 @@ Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son
 
 ### Contrôles
 
-`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il contrôle aussi la forme du bloc de métadonnées, les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, et que l'inventaire logiciel de l'hôte reproduit exactement les manifests de `manifests/`. Tous les guides ont été repris : les listes de migration du test sont vides. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
+`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il contrôle aussi le bloc de métadonnées de chaque guide (dates valides, jamais futures, vérification jamais antérieure à la mise à jour), les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, l'inventaire logiciel de l'hôte, qui doit reproduire exactement `manifests/`, et les fins de ligne LF de tous les fichiers suivis. Ces règles s'appliquent sans liste d'exceptions ; `tests/test_docs_integrity_behavior.py` prouve chacune d'elles. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
 
 ## Shell
 

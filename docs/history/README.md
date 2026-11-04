@@ -9,3 +9,4 @@ Ces documents décrivent des **étapes passées** du projet (durcissement pré-1
 - [`PREINSTALL_SAFETY_REVIEW.md`](PREINSTALL_SAFETY_REVIEW.md) — corrections avant installation (octobre 2026) et leurs tests de régression
 - [`HISTORICAL_FEDORA44.md`](HISTORICAL_FEDORA44.md) — ancien profil Fedora 44 / GNOME 50, conservé pour l'historique
 - [`ROADMAP_FEDORA45_2026.md`](ROADMAP_FEDORA45_2026.md) — feuille de route d'octobre 2026, écrite avant la sortie de Fedora 45
+- [`DOCUMENTATION_OVERHAUL_2026-11.md`](DOCUMENTATION_OVERHAUL_2026-11.md) — refonte de la documentation (chantiers C1 à C9, novembre 2026)
