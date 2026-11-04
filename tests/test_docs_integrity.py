@@ -100,7 +100,7 @@ for path in CURRENT:
                         errors.append(f"{rel(path)}:{line_no}: unknown command ./control.sh {domain} {action}")
 
 # 4. Repository paths quoted in backticks exist (placeholders and globs are skipped).
-PATH = re.compile(r"`((?:\./)?(?:scripts|diagnostics|installer|config|lib|modules|manifests|profiles|tests|guest|systemd|remote|virtualization)/[A-Za-z0-9_./@-]+)")
+PATH = re.compile(r"`((?:\./)?(?:scripts|diagnostics|installer|config|lib|modules|manifests|profiles|tests|guest|systemd|remote|virtualization|tools)/[A-Za-z0-9_./@-]+)")
 for path in CURRENT:
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         for match in PATH.finditer(line):

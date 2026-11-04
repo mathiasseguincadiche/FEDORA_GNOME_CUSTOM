@@ -114,6 +114,32 @@ Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son
 - Le SVG a un fond opaque, un `<title>` et une `<desc>`. Il reste lisible dans les thèmes clair et sombre de GitHub et ne porte aucune information par la couleur seule.
 - Dans la page, l'image est suivie d'une description textuelle des relations importantes et d'un lien vers sa source `.drawio`.
 - Mermaid n'est pas utilisé.
+- Les paires sont produites par le [générateur du dépôt](tools/diagrams/README.md), jamais retouchées à la main : `tests/test_diagram_sources.py` échoue si un fichier diffère de ce que produit `tools/diagrams/build.py`.
+
+### Charte graphique
+
+La documentation s'affiche dans le rendu natif de GitHub : le projet ne choisit ni police ni taille de texte. La charte porte donc sur la structure des pages et sur les couleurs des schémas.
+
+**Pages**
+
+- Un seul titre de niveau 1 par page, sans saut de niveau.
+- Un tableau compare ; au-delà de quatre colonnes, il défile sur un écran de téléphone : préférer alors une liste ou deux tableaux.
+- Un bloc de code annonce son langage (`bash`, `text`, `ini`…) et ne contient que ce qui se copie.
+- Une citation (`>`) est réservée au bloc de métadonnées et aux avertissements importants ; pas d'emoji, pas de badge décoratif.
+- Une image a un texte alternatif qui dit ce qu'elle montre.
+
+**Schémas** — palette « conteneur clair », définie dans `tools/diagrams/diagramkit.py`. Chaque couleur a une fonction ; le libellé du nœud porte toujours le sens, la couleur ne fait que le renforcer.
+
+| Fonction | Fond | Bordure | Texte sur fond | Bordure sur blanc |
+|---|---|---|---|---|
+| Élément central (contrôle, décision) | `#DBEAFE` | `#1D4ED8` | 14,6:1 | 6,7:1 |
+| Élément ordinaire | `#F1F5F9` | `#334155` | 16,3:1 | 10,4:1 |
+| Données et résultats | `#DCFCE7` | `#15803D` | 16,3:1 | 5,0:1 |
+| Attention | `#FEF3C7` | `#B45309` | 16,0:1 | 5,0:1 |
+| Hors périmètre, manuel (trait pointillé) | `#FFFFFF` | `#64748B` | 17,9:1 | 4,8:1 |
+| Groupe | `#F8FAFC` | `#94A3B8` | titre `#334155` : 9,9:1 | 2,6:1, cadre décoratif |
+
+Texte `#0F172A`, flèches `#334155` (10,4:1 sur blanc), police Arial, fond de schéma blanc opaque. Contrastes mesurés selon la formule WCAG 2.x par `tools/diagrams/verify.py`, le 2026-11-04 : AA est atteint pour le texte (4,5:1) et pour les éléments graphiques porteurs d'information (3:1). Le cadre des groupes est sous 3:1 ; il ne porte aucune information, puisque le titre du groupe la donne.
 
 ### Contrôles
 
