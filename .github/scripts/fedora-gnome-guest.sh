@@ -191,7 +191,7 @@ case "${1:-}" in
     [[ "$LAB_RELEASE" == 45 ]]
     grep -Eq '^VERSION_ID="?45"?$' /etc/os-release
     [[ "$(getenforce)" == Enforcing ]]
-    # A Beta seed can predate its current GNOME/systemd/kernel packages.
+    # The released Cloud image can predate its current GNOME/systemd/kernel packages.
     # Upgrade the official base and boot that transaction before installing
     # a desktop that may require newly installed kernel modules and schemas.
     dnf -y upgrade --refresh

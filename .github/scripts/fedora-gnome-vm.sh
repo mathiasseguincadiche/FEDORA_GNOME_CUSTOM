@@ -22,7 +22,7 @@ python3 "$REPORTER" "$REPORT" init "$COMMIT" "$LAB_RELEASE:$LAB_EXTENSION_MODE"
 if [[ "$LAB_RELEASE" == 44 ]]; then
   source "$ROOT/.github/fedora44-cloud.lock"
 else
-  # Created only from the verified, independently pinned signed Beta CHECKSUM.
+  # Created only from the verified, independently pinned signed Cloud CHECKSUM.
   # shellcheck disable=SC1091
   source "$ROOT/.fedora45-preview/fedora45-cloud.lock"
 fi

@@ -424,26 +424,55 @@ jobs:
     permissions:
       contents: read
 
+  # A pull request that only changes Markdown or docs/ skips the three VM
+  # laboratories, which never read those files. Pushes to main always run them,
+  # and release.yml requires that push run.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Classify the changed paths
+        id: classify
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/docs-only-change.py "$EVENT" "$BASE_SHA" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
   fedora-gnome-vm:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs_only != 'true' }}
     uses: ./.github/workflows/fedora-gnome-vm.yml
     permissions:
       contents: read
 
   fedora45-gnome-vm:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs_only != 'true' }}
     uses: ./.github/workflows/fedora45-gnome-vm.yml
     permissions:
       contents: read
 
   rocky-devops-vm:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs_only != 'true' }}
     uses: ./.github/workflows/vm-pretest.yml
     permissions:
       contents: read
 
   # A default skipped job can satisfy a required check on GitHub. Always run
   # this aggregate, and explicitly FAIL for failed/cancelled/skipped dependencies.
+  # Only the three VM laboratories may be skipped, and only when `changes`
+  # succeeded and reported a documentation-only pull request.
   contracts:
     if: ${{ always() }}
-    needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, fedora45-gnome-vm, upstream-kernel, rocky-devops-vm]
+    needs: [changes, logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, fedora45-gnome-vm, upstream-kernel, rocky-devops-vm]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -453,4 +482,4 @@ jobs:
         env:
           DEPENDENCY_RESULTS: ${{ toJSON(needs) }}
         run: |
-          python3 .github/scripts/require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm fedora45-gnome-vm upstream-kernel rocky-devops-vm <<< "$DEPENDENCY_RESULTS"
+          python3 .github/scripts/require-jobs-success.py --docs-only-skippable fedora-gnome-vm,fedora45-gnome-vm,rocky-devops-vm changes logic-contracts installer-audit borg-fedora fedora-gnome-vm fedora45-gnome-vm upstream-kernel rocky-devops-vm <<< "$DEPENDENCY_RESULTS"

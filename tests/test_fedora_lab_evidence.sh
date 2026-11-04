@@ -67,9 +67,16 @@ for gate in lab.DEFERRED:
 rejected(lab.initialize("a" * 40))
 # The mandatory contracts context must actually wait for the reusable VM job.
 tests = (root / ".github/workflows/tests.yml").read_text()
-assert "needs: [logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, fedora45-gnome-vm, upstream-kernel, rocky-devops-vm]" in tests
+assert "needs: [changes, logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm, fedora45-gnome-vm, upstream-kernel, rocky-devops-vm]" in tests
 assert "if: ${{ always() }}" in tests.split("\n  contracts:\n", 1)[1]
-assert "require-jobs-success.py logic-contracts installer-audit borg-fedora fedora-gnome-vm fedora45-gnome-vm upstream-kernel rocky-devops-vm" in tests
+assert ("require-jobs-success.py --docs-only-skippable fedora-gnome-vm,fedora45-gnome-vm,rocky-devops-vm "
+        "changes logic-contracts installer-audit borg-fedora fedora-gnome-vm fedora45-gnome-vm upstream-kernel rocky-devops-vm") in tests
+# Only the three VM laboratories may be skipped, each gated on the changes job.
+for job in ("fedora-gnome-vm", "fedora45-gnome-vm", "rocky-devops-vm"):
+    block = tests.split("\n  " + job + ":\n", 1)[1].split("\n\n", 1)[0]
+    assert "needs: changes" in block and "if: ${{ needs.changes.outputs.docs_only != 'true' }}" in block, job
+for job in ("logic-contracts", "installer-audit", "borg-fedora", "upstream-kernel"):
+    assert "docs_only" not in tests.split("\n  " + job + ":\n", 1)[1].split("\n\n  ", 1)[0], job
 assert "uses: ./.github/workflows/fedora-gnome-vm.yml" in tests
 assert "uses: ./.github/workflows/fedora45-gnome-vm.yml" in tests
 for script in (".github/scripts/fedora45-ci-install-extension.sh", ".github/scripts/fedora45-ci-extension-audit.py", ".github/scripts/fedora45-ci-validate-candidate.py"):
@@ -205,6 +212,43 @@ for name in required:
         broken[name]["result"] = result
         assert not jobs.successful(broken, required)
 assert not jobs.successful({}, required)
+# Documentation-only exception: the VM labs may be skipped only when `changes`
+# succeeded and said docs_only=true; nothing else may be skipped, ever.
+vms = ["fedora-gnome-vm", "fedora45-gnome-vm", "rocky-devops-vm"]
+full = ["changes"] + required
+def with_changes(result="success", docs="true"):
+    payload = {name: {"result": "success"} for name in full}
+    payload["changes"] = {"result": result, "outputs": {"docs_only": docs}}
+    return payload
+docs_pr = with_changes()
+for name in vms:
+    docs_pr[name]["result"] = "skipped"
+assert jobs.successful(docs_pr, full, vms)
+assert jobs.successful(with_changes(docs="false"), full, vms)
+assert not jobs.successful(needs, required, vms)                               # skippable without changes required
+code_pr = copy.deepcopy(docs_pr); code_pr["changes"]["outputs"]["docs_only"] = "false"
+assert not jobs.successful(code_pr, full, vms)                                 # code change: VMs must run
+failed_changes = copy.deepcopy(docs_pr); failed_changes["changes"]["result"] = "failure"
+assert not jobs.successful(failed_changes, full, vms)
+for name in ("logic-contracts", "installer-audit", "borg-fedora", "upstream-kernel"):
+    broken = copy.deepcopy(docs_pr); broken[name]["result"] = "skipped"
+    assert not jobs.successful(broken, full, vms), name                        # never skippable
+for name in vms:
+    broken = copy.deepcopy(docs_pr); broken[name]["result"] = "failure"
+    assert not jobs.successful(broken, full, vms), name                        # a failure stays a failure
+assert jobs.parse(["x", "--docs-only-skippable", "a,b", "c", "d"]) == (["c", "d"], ["a", "b"])
+assert jobs.parse(["x", "c"]) == (["c"], [])
+# The classifier: only an all-documentation pull request skips the labs.
+spec = importlib.util.spec_from_file_location("changes", root / ".github/scripts/docs-only-change.py")
+changes = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(changes)
+assert changes.docs_only("pull_request", ["README.md", "docs/GNOME.md", "docs/assets/diagrams/x.svg", "CHANGELOG.md"])
+for event, paths in (("push", ["README.md"]), ("schedule", ["README.md"]), ("pull_request", []),
+                     ("pull_request", ["README.md", "tests/test_docs_integrity.py"]),
+                     ("pull_request", [".github/workflows/tests.yml"]),
+                     ("pull_request", ["manifests/packages-shell.txt"]),
+                     ("pull_request", ["docsx/notes.txt"])):
+    assert not changes.docs_only(event, paths), (event, paths)
 # Host resets, shutdown and untrusted boolean values are not OS reboot proof.
 spec = importlib.util.spec_from_file_location("qmp", root / ".github/scripts/fedora-qmp-reboot.py")
 qmp = importlib.util.module_from_spec(spec)

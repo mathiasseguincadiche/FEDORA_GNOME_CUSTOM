@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Resolve the image filename from a signed CHECKSUM and independently pinned hash."""
+"""Resolve the laboratory image filename from a signed CHECKSUM and an independently pinned hash.
+
+The image only seeds disposable QEMU laboratories; it is never production media.
+"""
 import json
 import os
 import pathlib
@@ -10,12 +13,13 @@ import sys
 import urllib.request
 
 
-def image_from_checksum(text, expected_sha):
+def image_from_checksum(text, expected_sha, compose):
+    expected = "Fedora-Cloud-Base-Generic-" + compose + ".x86_64.qcow2"
     matches = re.findall(r"^SHA256 \(([^/()]+\.x86_64\.qcow2)\) = " +
                          re.escape(expected_sha) + r"$", text, re.M)
-    if len(matches) != 1 or not matches[0].startswith("Fedora-Cloud-Base-Generic-45_Beta-1.3"):
-        raise ValueError("Signed filename/hash pair is not the expected Fedora 45 Beta cloud image")
-    return matches[0]
+    if matches != [expected]:
+        raise ValueError("Signed filename/hash pair is not the expected Fedora " + compose + " cloud image")
+    return expected
 
 
 def download(url, target):
@@ -50,13 +54,13 @@ def main():
     (work / "signature.log").write_text(status)
     if "[GNUPG:] VALIDSIG " + config["signing_fingerprint"] + " " not in status:
         raise ValueError("Unexpected signing key")
-    image = image_from_checksum((work / "signed.txt").read_text(), config["image_sha256"])
+    image = image_from_checksum((work / "signed.txt").read_text(), config["image_sha256"], config["compose"])
     values = dict(FEDORA_CLOUD_IMAGE=image, FEDORA_CLOUD_SHA256=config["image_sha256"],
                   FEDORA_CLOUD_CHECKSUM=config["checksum"], FEDORA_CLOUD_URL=config["url"],
                   FEDORA_SIGNING_FINGERPRINT=config["signing_fingerprint"])
     (work / "fedora45-cloud.lock").write_text("".join(
         key + "=" + shlex.quote(value) + "\n" for key, value in values.items()))
-    print("PASS: signed preview image/hash identity; not a production media promotion")
+    print("PASS: signed laboratory image/hash identity; not production media")
 
 
 if __name__ == "__main__":

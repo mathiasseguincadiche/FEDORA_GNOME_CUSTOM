@@ -1,10 +1,16 @@
 name: Fedora 45 installer audit
+# Pull requests run the same audit as the installer-audit job of tests.yml.
+# This workflow runs on main, where release.yml requires it.
 on:
   push:
-  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   installer-audit:
     runs-on: ubuntu-latest
