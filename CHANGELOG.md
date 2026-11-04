@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.24.1 — Documentation refondue et corrections avant le Live USB
+
+Préversion à utiliser pour le contrôle Live USB et l'installation du PC. Elle reprend les corrections fusionnées depuis 0.24.0 RC1 :
+- vérification du média avec un trousseau donné par son seul nom ;
+- installation de RPM Fusion malgré le refus de dnf5 5.4.6 ;
+- message explicite du precheck de veille ;
+- retrait d'ONLYOFFICE des contrôles de la Gate 3.
+
+Elle apporte aussi la refonte complète de la documentation (chantiers C1 à C9), relue contre le code et protégée par des contrôles stricts. Aucune installation physique ni certification matérielle n'est revendiquée.
+
 - Documentation (chantier C9, audit transversal) : la refonte est terminée ; son compte rendu est dans `docs/history/DOCUMENTATION_OVERHAUL_2026-11.md`.
   - **Contrôles stricts** : les listes de migration `METADATA_PENDING` et `MERMAID_PENDING` sont supprimées. Tout guide de `docs/` doit porter son bloc de métadonnées. Les dates ne peuvent être ni futures ni incohérentes : une « Dernière vérification » antérieure à la « Mise à jour » échoue.
   - **Fins de ligne** : six fichiers étaient entrés dans `main` en CRLF avec C8, contrairement à `.editorconfig` : quatre pages de `docs/`, deux pages d'historique et `tests/test_docs_integrity.py`. Ils sont repassés en LF, et le test refuse désormais tout fichier suivi en CRLF.
