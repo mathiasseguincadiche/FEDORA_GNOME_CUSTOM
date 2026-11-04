@@ -5,6 +5,8 @@
 
 Le projet sauvegarde avec **Borg 1.x, dans un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une sauvegarde n'est jamais tenue pour bonne parce qu'une commande s'est terminée : elle doit prouver son intégrité et, pour les sauvegardes pré-APPLY et complètes, réussir une vraie restauration d'un fichier témoin (*canary*).
 
+**À la fin de ce guide :** savoir ce que contient chaque sauvegarde, en vérifier une, et restaurer un fichier sans toucher au système. Pourquoi une sauvegarde n'est bonne que restaurée : [notions clés](CONCEPTS.md#5-une-sauvegarde-nest-bonne-que-restaurée).
+
 ## Comprendre la stratégie
 
 ![Schéma de la sauvegarde : trois familles de sources vers un dépôt Borg externe, contrôles, restauration en staging puis copie manuelle](assets/diagrams/sauvegarde-restauration.svg)

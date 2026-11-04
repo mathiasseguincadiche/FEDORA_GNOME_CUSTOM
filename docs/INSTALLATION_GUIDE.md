@@ -5,6 +5,8 @@
 
 Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
+**À la fin de ce guide :** le PC tourne sous Fedora 45 avec la configuration du projet appliquée, et chaque étape a laissé une preuve vérifiable. Comprendre d'abord pourquoi l'APPLY peut refuser : [notions clés](CONCEPTS.md), points 1 à 4.
+
 **Public :** l'opérateur qui installe le PC physique cible.
 **Résultat attendu :** une Fedora 45 installée, convergée, redémarrée sur Linux amont, puis certifiée par la Gate 3. Le poste n'est « Golden runtime-certified » qu'après ce dernier contrôle.
 

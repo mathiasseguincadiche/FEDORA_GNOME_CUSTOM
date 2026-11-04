@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Documentation (chantier D4, pédagogie, prompts V4) : nouvelle page [notions clés](docs/CONCEPTS.md). Elle explique sept idées qui reviennent dans tous les guides, chacune par le problème qu'elle règle, son principe, sa place dans le projet, sa vérification, ses limites et l'erreur fréquente : fermé par défaut, preuve liée à un état, trois niveaux de preuve, baseline et certification, sauvegarde vérifiée par restauration, noyau N / N-1 et secours Fedora, garde réseau des VM. Les guides d'installation, de qualification, de sauvegarde et de KVM s'ouvrent sur ce qu'ils permettent de faire, et le README, le portail et l'architecture renvoient à la page.
+
 - Documentation (chantier D3, diagnostic et procédures, prompts V4) :
   - **Restauration** : le guide donnait l'exemple `restore NOM /chemin/du/staging/vide`, que `restore.sh` refuse, car toute cible doit être dans la racine de staging (`~/Restores/fedora-gnome-custom`). Les exemples sont corrigés, et chaque étape reçoit un critère de réussite et une règle d'arrêt.
   - **Création de VM** : critères de réussite et d'arrêt. La reconstruction de l'invité, destructive, est maintenant écrite avec ses commandes exactes et leur portée, au lieu de « retirer explicitement le domaine ».

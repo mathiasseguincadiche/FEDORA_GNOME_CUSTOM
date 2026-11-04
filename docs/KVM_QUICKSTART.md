@@ -5,6 +5,8 @@
 
 Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu du profil sont dans la [référence virtualisation](VIRTUALIZATION.md), l'isolation réseau dans le [réseau KVM](KVM_NETWORK.md).
 
+**À la fin de ce guide :** créer la VM Rocky DevOps depuis une image authentifiée, s'y connecter par clé SSH, la qualifier et diagnostiquer une panne courante. Le rôle du garde réseau est expliqué dans les [notions clés](CONCEPTS.md#7-le-garde-réseau-isole-les-vm-du-réseau-local).
+
 Rocky se crée **après** l'installation de Fedora et les premiers contrôles de l'hôte, et **avant** la certification finale (Gate 3). Le Live USB et l'installation n'exigent aucune VM ; l'APPLY n'en crée jamais.
 
 ```text

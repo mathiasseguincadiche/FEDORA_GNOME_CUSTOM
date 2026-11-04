@@ -92,7 +92,7 @@ Fedora 45 neuve → baseline matérielle → dry-run → sauvegarde Borg + resta
 
 La baseline (avant l'APPLY) et la certification (après) sont séparées : un défaut que l'APPLY doit corriger ne doit pas empêcher d'installer son correctif. Remédiation : **mesurer → reproduire → corriger → recertifier**. Cette chaîne explique l'ordre des preuves ; l'ordre opérationnel exact fait foi dans le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours), et ce que démontre chaque preuve dans la [qualification](QUALIFICATION.md).
 
-Trois niveaux à ne jamais confondre :
+Trois niveaux à ne jamais confondre (expliqués pas à pas dans les [notions clés](CONCEPTS.md)) :
 
 | Statut | Ce qu'il veut dire |
 |---|---|

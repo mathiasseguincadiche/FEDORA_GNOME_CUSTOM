@@ -47,7 +47,7 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 
 | Je veux… | Lire |
 |---|---|
-| Comprendre le projet et ses choix | [Architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
+| Comprendre le projet et ses choix | Les [notions clés](docs/CONCEPTS.md), l'[architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
 | Installer ce PC | Le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md), puis le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) et la [qualification](docs/QUALIFICATION.md) |
 | Utiliser et entretenir le poste | Le [centre de contrôle](docs/CONTROL_CENTER.md), puis le [dépannage](docs/TROUBLESHOOTING.md) |
 | Voir tous les guides | Le [portail de la documentation](docs/README.md) |
