@@ -1,8 +1,11 @@
 # KVM au quotidien
 
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — commandes relues contre `scripts/kvm/`, profil contre `config/vm-profiles.conf` — matériel : non vérifié
+
 Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu du profil sont dans la [référence virtualisation](VIRTUALIZATION.md), l'isolation réseau dans le [réseau KVM](KVM_NETWORK.md).
 
-Rocky se crée **après** l'installation de Fedora et les premiers contrôles de l'hôte, et **avant** la qualification Golden complète. Le Live USB et l'installation n'exigent aucune VM ; l'APPLY n'en crée jamais.
+Rocky se crée **après** l'installation de Fedora et les premiers contrôles de l'hôte, et **avant** la certification finale (Gate 3). Le Live USB et l'installation n'exigent aucune VM ; l'APPLY n'en crée jamais.
 
 ```text
 HOST Fedora
@@ -12,7 +15,7 @@ HOST Fedora
 └── VM                : rocky-devops
 ```
 
-Une règle pour tout ce qui suit : ne jamais désactiver SELinux, firewalld ou le guard nftables pour contourner un problème, ne pas retoucher le XML du domaine au hasard, ne pas copier un QCOW2 en cours d'utilisation comme un fichier ordinaire.
+Une règle pour tout ce qui suit : ne jamais désactiver SELinux, firewalld ou le garde nftables pour contourner un problème, ne pas retoucher le XML du domaine au hasard, ne pas copier un QCOW2 en cours d'utilisation comme un fichier ordinaire.
 
 ## 1. Vérifier le socle
 
@@ -22,7 +25,7 @@ Une règle pour tout ce qui suit : ne jamais désactiver SELinux, firewalld ou l
 ./diagnostics/kvm-io-doctor benchmark
 ```
 
-Attendu : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, guard nftables, OVMF et swtpm. Le benchmark écrit sur un fichier de `/data`, jamais sur le disque brut.
+Attendu : `/dev/kvm`, `kvm_amd`, `qemu:///system`, pool `devops-data`, réseau `devops-nat`, SELinux Enforcing, firewalld, garde nftables, OVMF et swtpm. Le benchmark écrit sur un fichier de `/data`, jamais sur le disque brut.
 
 ## 2. Créer Rocky DevOps
 
@@ -33,7 +36,7 @@ Placer l'image, `CHECKSUM` et `CHECKSUM.asc` de la même release dans `/data/lib
   --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
 ```
 
-`CHECKSUM` et `CHECKSUM.asc` sont cherchés à côté de l'image ; sinon, les passer avec `--sha256sums` et `--signature`. Une clé Rocky obtenue par un canal de confiance se passe avec `--rocky-key-file`. Pour vérifier l'image seule avant création : `bash scripts/kvm/verify_rocky_cloud_image.sh --image … --sha256sums … --signature …`.
+`CHECKSUM` et `CHECKSUM.asc` sont cherchés à côté de l'image ; sinon, les passer avec `--sha256sums` et `--signature`. Une clé Rocky obtenue par un canal de confiance se passe avec `--rocky-key-file`, une autre clé SSH publique avec `--ssh-key`. Pour vérifier l'image seule avant création : `bash scripts/kvm/verify_rocky_cloud_image.sh --image … --sha256sums … --signature …`.
 
 Le script authentifie l'image **avant** de créer le disque, demande le mot de passe console/sudo sans l'afficher, injecte la clé SSH, génère cloud-init et crée la VM sans autostart. Au premier démarrage, l'invité installe sa stack ; il peut redémarrer une fois pour passer sur le noyau Rocky complet.
 
@@ -47,7 +50,7 @@ virsh --connect qemu:///system domifaddr rocky-devops --source agent
 ssh mathias@192.168.50.x
 ```
 
-`virsh destroy` équivaut à couper l'alimentation : réservé au dépannage. SSH accepte uniquement la clé ; le mot de passe sert à la console et à `sudo`. `virt-manager --connect qemu:///system` reste disponible, mais tout se fait en ligne de commande.
+L'utilisateur de l'invité est fixé par `ROCKY_SERVER_USERNAME` dans `config/vm-profiles.conf` (`mathias`) ; l'adresse vient de la commande `domifaddr`. `virsh destroy` équivaut à couper l'alimentation : réservé au dépannage. SSH accepte uniquement la clé ; le mot de passe sert à la console et à `sudo`. `virt-manager --connect qemu:///system` reste disponible, mais tout se fait en ligne de commande.
 
 ### Fichiers de la VM dans Nautilus
 
@@ -83,7 +86,7 @@ La certification demande le mot de passe sudo de la VM dans un terminal SSH. Ell
 
 ## 5. Exports
 
-Les exports de la VM sont **manuels**, quand tu le décides : arrêter Rocky, puis garder ensemble disque, XML et NVRAM. Borg ne sauvegarde ni les disques ni le XML libvirt.
+Les exports de la VM sont **manuels**, au moment choisi par le propriétaire : arrêter Rocky, puis garder ensemble disque, XML et NVRAM ([référence](VIRTUALIZATION.md#exports-des-vm)). Borg ne sauvegarde ni les disques ni le XML libvirt.
 
 ## Dépannage
 
@@ -93,7 +96,7 @@ Les exports de la VM sont **manuels**, quand tu le décides : arrêter Rocky, pu
 
 **Réseau `devops-nat` absent.** `virsh --connect qemu:///system net-info devops-nat` (actif, autostart) et `ip addr show virbr50` : attendu `192.168.50.0/24`, passerelle `192.168.50.254`. `firewall-cmd --get-zone-of-interface=virbr50` doit répondre `libvirt`.
 
-**Guard en mode d'urgence.** `guard_mode=emergency` veut dire que le forwarding des VM est volontairement coupé plutôt que de garder une isolation peut-être obsolète. Causes typiques : LAN courant en conflit avec `192.168.50.0/24`, uplink sans réseau directement connecté exploitable, erreur nftables, changement de connectivité incomplet. Regarder `ip -4 route`, `sudo nft list table inet fedora_gnome_custom_kvm` et `journalctl -u fedora-gnome-custom-kvm-guard.service -b`, puis :
+**Garde réseau en mode d'urgence.** `guard_mode=emergency` veut dire que le forwarding des VM est volontairement coupé plutôt que de garder une isolation peut-être obsolète. Causes typiques : LAN courant en conflit avec `192.168.50.0/24`, uplink sans réseau directement connecté exploitable, erreur nftables, changement de connectivité incomplet. Regarder `ip -4 route`, `sudo nft list table inet fedora_gnome_custom_kvm` et `journalctl -u fedora-gnome-custom-kvm-guard.service -b`, puis :
 
 ```bash
 ./control.sh kvm guard-check
@@ -101,13 +104,13 @@ Les exports de la VM sont **manuels**, quand tu le décides : arrêter Rocky, pu
 ./control.sh kvm guard-check      # attendu : guard_mode=normal
 ```
 
-Si le reconcile échoue, garder le mode d'urgence et diagnostiquer ; ne pas supprimer la table nftables pour retrouver Internet.
+Si la reconstruction échoue, garder le mode d'urgence et diagnostiquer ; ne pas supprimer la table nftables pour retrouver Internet ([réseau KVM](KVM_NETWORK.md#fail-closed-lors-dun-changement-réseau)).
 
 **Rocky ne démarre pas.** `virsh --connect qemu:///system dominfo rocky-devops`, `domblklist`, `dumpxml`, `journalctl -u virtqemud -b`. Vérifier `/data/libvirt/images/rocky-devops.qcow2`, le seed cloud-init et le réseau.
 
 **Pas d'adresse IP ou pas de SSH.** `virsh --connect qemu:///system domiflist rocky-devops`, puis `net-dhcp-leases devops-nat` ; sans bail, vérifier `devops-nat` avant de toucher au réseau de Rocky. Ensuite `ssh -v`. Un refus du mot de passe en SSH est **normal** : seule la clé est acceptée, ne pas réactiver `PasswordAuthentication`. Dans l'invité (console) : `sudo systemctl status qemu-guest-agent`.
 
-**Rocky n'a plus Internet, le HOST oui.** Si le guard est en mode d'urgence, c'est volontaire (voir plus haut). Sinon, dans l'invité : `ip route`, `getent ahostsv4 example.com`, `curl -I https://example.com`, puis `./control.sh kvm certify` depuis Fedora.
+**Rocky n'a plus Internet, l'hôte oui.** Si le garde est en mode d'urgence, c'est volontaire (voir plus haut). Sinon, dans l'invité : `ip route`, `getent ahostsv4 example.com`, `curl -I https://example.com`, puis `./control.sh kvm certify` depuis Fedora.
 
 **Bootstrap incomplet.** Dans l'invité : `sudo cloud-init status --long`, `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, `sudo /usr/local/sbin/devops-verify.sh`. Distinguer panne réseau/DNS, dépôt éditeur indisponible, signature ou checksum externe modifié, et outil réellement absent (le laboratoire Rocky de la CI tourne aussi périodiquement pour repérer ces ruptures). Ne recréer la VM qu'après avoir sauvé les données utiles et compris l'échec.
 

@@ -1,4 +1,7 @@
-# Réseau KVM `devops-nat` — architecture et sécurité
+# Réseau KVM `devops-nat` — architecture et isolement
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — contrat relu contre `config/virtualization.conf`, garde contre `scripts/kvm/kvm_network_guard.sh`, unité et dispatcher contre `virtualization/` — matériel : non vérifié
 
 Ce document explique le réseau KVM privé de la workstation. Il complète [`VIRTUALIZATION.md`](VIRTUALIZATION.md) avec un niveau de détail suffisant pour comprendre **qui fournit l'adresse IP, qui fait le NAT, qui filtre les réseaux protégés du HOST et ce qui se passe lors d'un changement Ethernet/Wi-Fi**.
 
@@ -62,7 +65,7 @@ rocky-devops
 
 ## Pourquoi le NAT libvirt ne suffit pas
 
-Le NAT libvirt donne aux VM une connectivité sortante sans les placer directement sur le LAN. Ce comportement est souhaité pour Internet, mais le contrat Golden Workstation ajoute une exigence plus stricte : les VM de laboratoire ne doivent pas pouvoir atteindre directement les réseaux privés/routés connus du HOST (LAN, VPN, entreprise, tunnels explicites).
+Le NAT libvirt donne aux VM une connectivité sortante sans les placer directement sur le LAN. Ce comportement est souhaité pour Internet, mais le projet ajoute une exigence plus stricte : les VM de laboratoire ne doivent pas pouvoir atteindre directement les réseaux privés/routés connus du HOST (LAN, VPN, entreprise, tunnels explicites).
 
 Le projet ajoute donc une table nftables propre :
 
@@ -94,9 +97,9 @@ libvirt
 
 Le projet conserve firewalld actif et ne crée pas de stratégie basée sur sa désactivation.
 
-### nftables guard
+### Garde nftables
 
-Le helper :
+Le script :
 
 ```text
 /usr/local/libexec/fedora-gnome-custom/kvm-network-guard
@@ -126,6 +129,8 @@ Le HOST lui-même peut toujours parler aux VM parce que ce trafic n'est pas du f
 ## Portée exacte des réseaux protégés
 
 Le contrat courant bloque toutes les **routes IPv4 explicites non-default de la table principale du HOST** : réseaux directement connectés, LAN, routes VPN/entreprise et tunnels explicitement routés. Le CIDR KVM lui-même et le loopback sont exclus.
+
+Des plages peuvent aussi être protégées de façon statique avec `KVM_EXTRA_PROTECTED_CIDRS`, même si aucune route ne les annonce encore. Le profil d'accès distant y place la plage Tailscale `100.64.0.0/10`, car `tailscale0` n'émet aucun événement NetworkManager ([accès distant](REMOTE_ACCESS.md#1-ce-que-lanalyse-a-changé-dans-larchitecture-demandée)).
 
 La route IPv4 `default` reste volontairement hors du set afin de conserver **VM → Internet**. Un nouveau VPN ou une nouvelle route d'entreprise déclenche le reconcile via NetworkManager ; si la nouvelle table ne peut pas être découverte, validée ou appliquée, le guard conserve le mode `emergency` qui bloque tout forwarding via `virbr50`.
 
@@ -249,7 +254,7 @@ qui serait insuffisant si le gateway refusait déjà le ping depuis toutes les m
 
 La certification host vérifie la règle nftables correspondante. Une preuve réseau réellement externe nécessite cependant un **deuxième appareil du LAN**.
 
-Sur un autre ordinateur du LAN, pendant qu'Rocky Linux est démarré :
+Sur un autre ordinateur du LAN, pendant que Rocky Linux est démarré :
 
 ```text
 1. récupérer l'IP 192.168.50.x de la VM depuis Fedora ;
@@ -286,12 +291,12 @@ Rocky est administré par SSH dans le segment KVM ; les accès passent par les r
 
 ## Dépannage
 
-En cas de perte réseau VM, ne supprimer ni firewalld ni la table nftables en premier réflexe. Suivre la section KVM de [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) afin de distinguer :
+En cas de perte réseau d'une VM, ne supprimer ni firewalld ni la table nftables en premier réflexe. Suivre le [dépannage KVM](KVM_QUICKSTART.md#dépannage) afin de distinguer :
 
 - réseau libvirt inactif ;
 - bridge absent ;
 - DHCP absent ;
-- guard en mode d'urgence ;
+- garde réseau en mode d'urgence ;
 - chevauchement de sous-réseaux ;
-- guest sans pilote/agent ;
+- invité sans pilote ou sans agent ;
 - absence de connectivité physique du HOST.
