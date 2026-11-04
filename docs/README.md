@@ -1,12 +1,15 @@
 # Documentation
 
-La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51**. Son profil est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)).
+> Mise à jour : 2026-11-03 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-03 — liens, ancres et commandes contrôlés par `tests/test_docs_integrity.py` ; contenu des guides cités : non relu dans ce chantier — matériel : non vérifié
+
+Cette page oriente vers le bon guide. La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51** ; son profil est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)). L'état réel du projet, de la CI au matériel, est résumé dans le [README](../README.md#état-réel).
 
 ## Par besoin
 
 | Je veux… | Lire |
 |---|---|
-| Comprendre le projet | [Vision et architecture](ARCHITECTURE.md) |
+| Comprendre le projet | [Vision et architecture](ARCHITECTURE.md), [glossaire](GLOSSARY.md), [décisions (ADR)](adr/README.md) |
 | Installer ce PC | [Contrôle Live](FEDORA45_LIVE_PREFLIGHT.md), puis [installation](INSTALLATION_GUIDE.md) |
 | Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md), [maintenance](DESKTOP_LIFECYCLE.md), [sauvegardes](BACKUP_RESTORE.md) |
 | Le bureau, les jeux, les VM | [GNOME](GNOME.md), [Gaming](GAMING.md), [démarrage KVM](KVM_QUICKSTART.md) |
@@ -14,9 +17,7 @@ La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51**. Son prof
 | Prouver que la machine est prête | [Qualification](QUALIFICATION.md) et sa [fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) |
 | Contribuer | [Guide du contributeur](../CONTRIBUTING.md), [CI](CI_VALIDATION.md), [décisions](adr/README.md) |
 
-Pour l'usage quotidien, tout part de `./control.sh`. Le parcours d'installation est :
-
-**Live USB → installation → configuration définitive → baseline → dry-run → sauvegarde vérifiée → APPLY → redémarrage → Gate 3.**
+Pour l'usage quotidien, tout part de `./control.sh`. L'installation suit cinq phases avant l'exploitation courante : préinstaller, installer Fedora, préparer la configuration, appliquer, qualifier. Le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours) les détaille et fait foi ; la [qualification](QUALIFICATION.md) explique ce que chaque preuve démontre.
 
 Le Live USB ne déverrouille jamais `install.sh --apply` ; la CI ne certifie jamais le matériel.
 
