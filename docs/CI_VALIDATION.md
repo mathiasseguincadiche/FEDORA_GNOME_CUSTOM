@@ -40,15 +40,16 @@ Chaque fiche donne le fichier, ce que le job vérifie, ce qu'il ne prouve pas, e
 
 Fichier : `.github/workflows/tests.yml`. Déclenché par chaque PR et chaque push sur `main`. Le job `changes`, quelques secondes, ne fait que classer les fichiers modifiés.
 
-| Job | Vérifie | Ne prouve pas |
-|---|---|---|
-| `logic-contracts` | plus de cent tests de contrat et de comportement (`tests/`), dont la sonde Docker sur le runner | ce qui demande Fedora, une VM ou le PC |
-| `installer-audit` | le catalogue des modules dans un conteneur Fedora 45, sans certifier ce conteneur ; refuse les blocages inattendus | un APPLY réel |
-| `borg-fedora` | sauvegarde et restauration Borg réelles, certification de sauvegarde, avertissements quotidiens, aller-retour `IA/Openclaw` | le disque externe du PC |
-| `upstream-kernel / rpm` | la transaction des RPM du noyau amont stable sur Fedora 45, version égale à kernel.org, verrou DNF5 | le démarrage de ce noyau |
-| `fedora-gnome-vm / lab` | laboratoire GNOME natif ([fiche](FEDORA_GNOME_CI_LAB.md)) | les six extensions, le matériel |
-| `fedora45-gnome-vm / lab` | laboratoire à six extensions ([fiche](FEDORA_GNOME_CI_LAB.md)) | l'installation depuis l'ISO, le matériel |
-| `rocky-devops-vm` | vraie VM Rocky 10.2 : image authentifiée, bootstrap exact, redémarrage, restauration Borg à froid | le KVM et le réseau de l'hôte réel |
+| Job | Vérifie | Ne prouve pas | Si rouge |
+|---|---|---|---|
+| `logic-contracts` | plus de cent tests de contrat et de comportement (`tests/`), dont la sonde Docker sur le runner | ce qui demande Fedora, une VM ou le PC | ouvrir la première étape en échec : elle nomme le test ; le rejouer en local, par exemple `bash tests/test_structure.sh` |
+| `installer-audit` | le catalogue des modules dans un conteneur Fedora 45, sans certifier ce conteneur ; refuse les blocages inattendus | un APPLY réel | lire le blocage listé par `scripts/ci/check-installer-audit.py`, puis l'artefact `installer-audit-<run_id>` |
+| `borg-fedora` | sauvegarde et restauration Borg réelles, certification de sauvegarde, avertissements quotidiens, aller-retour `IA/Openclaw` | le disque externe du PC | l'étape en échec nomme le test ; le rejouer sur une machine où `borg` est installé |
+| `upstream-kernel / rpm` | la transaction des RPM du noyau amont stable sur Fedora 45, version égale à kernel.org, verrou DNF5 | le démarrage de ce noyau | comparer, dans le journal, la version kernel.org et celle du COPR ; un COPR en retard se règle en attendant sa publication, jamais en contournant le contrôle ; artefact `upstream-linux-rpm-<run_id>` |
+| `fedora-gnome-vm / lab` | laboratoire GNOME natif ([fiche](FEDORA_GNOME_CI_LAB.md)) | les six extensions, le matériel | `report.json` de l'artefact indique l'exercice en échec ; les journaux du démarrage concerné disent pourquoi ([rapports](FEDORA_GNOME_CI_LAB.md#rapports)) |
+| `fedora45-gnome-vm / lab` | laboratoire à six extensions ([fiche](FEDORA_GNOME_CI_LAB.md)) | l'installation depuis l'ISO, le matériel | idem, plus l'état `ACTIVE` de chaque extension dans le rapport |
+| `rocky-devops-vm` | vraie VM Rocky 10.2 : image authentifiée, bootstrap exact, redémarrage, restauration Borg à froid | le KVM et le réseau de l'hôte réel | artefact `fedora-gnome-custom-rocky-vm-pretest-<run_id>` : journal du bootstrap et inventaire ; distinguer panne d'un dépôt externe et défaut du bootstrap |
+| `contracts` | que chaque job ci-dessus a réussi (seule exception : les VM sautées sur une PR de documentation) | rien par lui-même | corriger le job amont qu'il nomme ; `contracts` n'a jamais de défaut propre |
 
 Pour `upstream-kernel / rpm`, seule la version annoncée stable par kernel.org et présente dans le COPR autorisé est recevable. Si le COPR n'a pas encore publié ce RPM exact, le job échoue volontairement : une série plus récente publiée en avance ne prouve pas sa stabilité.
 
@@ -69,6 +70,8 @@ Fichier : `.github/workflows/non-regression.yml`. Vérifie les invariants d'arch
 - invité Rocky : pas de SSH par mot de passe ni de sudo sans mot de passe, AWS CLI vérifié par sa signature, Kubernetes limité à `v1.37` ;
 - Kickstart épinglé, sauvegarde fail-closed, absence de secret évident dans le dépôt.
 
+**Si rouge :** l'étape en échec nomme l'invariant ; chercher dans le diff l'élément qu'elle interdit. Une garde ne s'assouplit pas pour faire passer un changement : le changement s'adapte, ou une décision écrite (ADR) modifie la règle.
+
 ### `packages`
 
 Fichier : `.github/workflows/fedora-package-preflight.yml`. Dans un conteneur Fedora 45 :
@@ -78,6 +81,8 @@ Fichier : `.github/workflows/fedora-package-preflight.yml`. Dans un conteneur Fe
 - télécharge et contrôle les quatre archives d'extensions du verrou (UUID, compatibilité GNOME Shell 51, SHA-256).
 
 Il tourne aussi chaque dimanche, pour détecter une rupture externe sans attendre un commit.
+
+**Si rouge :** distinguer un paquet réellement absent des dépôts Fedora 45 (corriger le manifeste) d'une indisponibilité passagère d'un dépôt ou de Flathub (relancer le job une fois le service rétabli).
 
 ### `packages-and-integration`
 
@@ -91,9 +96,13 @@ Fichier : `.github/workflows/fedora-host-pretest.yml`. Installe réellement le c
 
 Hebdomadaire lui aussi. Il ne remplace ni le Live USB ni une vraie session GNOME.
 
+**Si rouge :** l'étape en échec désigne le domaine (centre de contrôle, Bash, dock, GNOME, dépôts) ; le test correspondant de `tests/` se rejoue en local.
+
 ### `nautilus-ptyxis`
 
 Fichier : `.github/workflows/desktop-integration-pretest.yml`. Installe GNOME, Nautilus et le catalogue GTK4, puis vérifie les paquets, l'extension File Roller pour Nautilus, les schémas GSettings, l'énumération GVfs par D-Bus, LocalSearch, et les commandes et fichiers `.desktop` de Nautilus et Ptyxis. Il ne mesure pas le démarrage à froid graphique, réservé à la Gate 3.
+
+**Si rouge :** un paquet ou un schéma GSettings absent vient en général d'un changement de Fedora ; vérifier le manifeste `manifests/packages-nautilus.txt` ou le catalogue GTK4.
 
 ## Autres workflows
 

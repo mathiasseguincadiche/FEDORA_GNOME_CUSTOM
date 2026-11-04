@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Documentation (chantier D3, diagnostic et procédures, prompts V4) :
+  - **Restauration** : le guide donnait l'exemple `restore NOM /chemin/du/staging/vide`, que `restore.sh` refuse, car toute cible doit être dans la racine de staging (`~/Restores/fedora-gnome-custom`). Les exemples sont corrigés, et chaque étape reçoit un critère de réussite et une règle d'arrêt.
+  - **Création de VM** : critères de réussite et d'arrêt. La reconstruction de l'invité, destructive, est maintenant écrite avec ses commandes exactes et leur portée, au lieu de « retirer explicitement le domaine ».
+  - **Dépannage** : un tableau « Pannes fréquentes » donne, pour neuf cas, la cause possible, la vérification sûre, la correction et la nouvelle validation. Chaque commande qui modifie le système porte la mention *(modifie le système)* ; les autres observent seulement.
+  - **CI** : la page annonçait, pour chaque job, « où regarder s'il échoue » sans le dire. Le tableau des jobs de `Tests` reçoit une colonne « Si rouge » avec les artefacts à ouvrir, et les autres fiches une ligne « Si rouge ».
+
 - Documentation (chantiers D1 et D2, application des prompts V4) :
   - **D1, vérifications réelles.** Rendu GitHub contrôlé dans le navigateur : 35 guides et README, en thème clair, sombre et en largeur mobile ; images chargées, ancres valides, aucune page ne déborde. Les 47 liens externes répondent. Les sept sources `.drawio` se rouvrent dans diagrams.net, avec des libellés identiques à leurs exports. Deux schémas étaient périmés depuis #182 : le laboratoire partait encore d'une « seed Cloud Beta », et le schéma de la CI ignorait l'exception des PR de documentation. Ils sont corrigés, comme la phrase de la fiche Fedora 45 sur les « images Beta » des laboratoires.
   - **D2, schémas maintenables.** Le générateur des schémas, resté hors du dépôt, est versionné dans `tools/diagrams/` avec son mode d'emploi. `tests/test_diagram_sources.py` vérifie que chaque paire est reproduite octet pour octet et que les contrastes passent. `CONTRIBUTING.md` reçoit une charte graphique : structure des pages, et palette des schémas avec la fonction et le contraste mesuré de chaque couleur. Le contrôle des chemins cités couvre aussi `tools/`.

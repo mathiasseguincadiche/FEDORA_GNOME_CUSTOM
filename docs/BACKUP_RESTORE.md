@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
 > Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — sources, exclusions, rétention et commandes relues contre `config/backup.conf`, `lib/backup_runtime.sh` et `scripts/backup/` — matériel : non vérifié
+> Dernière vérification : 2026-11-04 — sources, exclusions, rétention et commandes relues contre `config/backup.conf`, `lib/backup_runtime.sh` et `scripts/backup/` ; procédure de restauration relue contre `scripts/backup/restore.sh` — matériel : non vérifié
 
 Le projet sauvegarde avec **Borg 1.x, dans un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une sauvegarde n'est jamais tenue pour bonne parce qu'une commande s'est terminée : elle doit prouver son intégrité et, pour les sauvegardes pré-APPLY et complètes, réussir une vraie restauration d'un fichier témoin (*canary*).
 
@@ -116,26 +116,34 @@ Le timer `fedora-gnome-backup-retention.timer` l'applique chaque dimanche à 04:
 
 ## Restaurer
 
-Une restauration passe **toujours** par un dossier d'essai vide (staging), sous `BACKUP_RESTORE_STAGING_ROOT` (`~/Restores/fedora-gnome-custom` par défaut). Le projet ne restaure jamais automatiquement en place `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images`.
+Une restauration passe **toujours** par un dossier d'essai vide (staging), à l'intérieur de la racine `BACKUP_RESTORE_STAGING_ROOT` (`~/Restores/fedora-gnome-custom` par défaut). Le projet ne restaure jamais automatiquement en place `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images`. Les commandes se lancent depuis le dossier du dépôt, sans `sudo`, support de sauvegarde branché.
 
 1. Lister les archives et vérifier le dépôt :
 
    ```bash
-   scripts/backup/restore.sh list
-   scripts/backup/restore.sh verify
+   scripts/backup/restore.sh list      # archives présentes : nom, date, identifiant
+   scripts/backup/restore.sh verify    # borg check --verify-data : relit toutes les données, long
    ```
 
-2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide :
+   **Réussite :** l'archive voulue apparaît dans la liste et `verify` se termine sans erreur. **Arrêt :** une erreur de `verify` signale un dépôt endommagé ; ne rien extraire, garder le support tel quel et lancer `./control.sh backup deep` pour le diagnostic.
+
+2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide de la racine de staging. Cette étape écrit seulement dans le staging :
 
    ```bash
-   scripts/backup/restore.sh restore NOM_EXACT_DE_L_ARCHIVE /chemin/du/staging/vide
    scripts/backup/restore.sh restore latest
+   scripts/backup/restore.sh restore fgc-full-NOM_EXACT ~/Restores/fedora-gnome-custom/essai-1
+   scripts/backup/restore.sh restore fgc-full-NOM_EXACT ~/Restores/fedora-gnome-custom/essai-2 /data/Documents
    ```
 
-   Un troisième argument, un chemin absolu, limite l'extraction à ce chemin. Le script refuse les cibles de production et un dossier déjà rempli.
+   Sans dossier indiqué, l'extraction va dans `~/Restores/fedora-gnome-custom/<nom de l'archive>`. Le dernier argument facultatif, un chemin absolu, limite l'extraction à cette partie de l'archive. Le script refuse un nom d'archive inconnu, un dossier déjà rempli et toute cible hors de la racine de staging.
 
-3. Inspecter le staging : contenus, droits, liens symboliques, propriétaires. Borg vérifie chaque bloc contre son empreinte pendant l'extraction.
-4. Copier à la main les seuls fichiers voulus vers leur emplacement.
+   **Réussite :** le script affiche `Restored into staging only:` suivi du dossier. **Arrêt :** un refus (code de sortie 30) n'a rien écrit ; corriger le nom ou le dossier indiqué par le message.
+
+3. Inspecter le staging : contenus, droits, liens symboliques, propriétaires. Borg a vérifié chaque bloc contre son empreinte pendant l'extraction.
+
+   **Réussite :** les fichiers attendus sont présents et lisibles. **Arrêt :** un fichier manquant ou inattendu se compare d'abord à une autre archive (`list`), avant toute copie.
+
+4. Copier à la main les seuls fichiers voulus vers leur emplacement. C'est la seule étape qui modifie les données en place : vérifier la destination avant d'écraser un fichier existant.
 
 Pour reprendre `config/local.conf` sur une nouvelle machine, vérifier sa copie avec `sha256sum --check local.conf.sha256` depuis le dossier d'inventaire du staging, puis revoir les chemins avant de la remettre en place. L'identité approuvée de `/data` y est conservée pour comparaison ; elle n'autorise jamais automatiquement un autre disque.
 
