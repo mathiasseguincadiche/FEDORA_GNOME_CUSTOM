@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Verify signed Fedora 45 Beta seed identity
+      - name: Verify signed Fedora 45 Cloud seed identity
         run: python3 .github/scripts/fedora45-preview-media.py
       - name: Exercise native GNOME 51 boot, reboot and isolated recovery
         env:

@@ -13,6 +13,10 @@ on:
       - '.github/workflows/weekly-log-retention.yml'
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   retention:
     runs-on: ubuntu-latest

@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Verify independently pinned signed Fedora 45 Beta seed
+      - name: Verify independently pinned signed Fedora 45 Cloud seed
         run: python3 .github/scripts/fedora45-preview-media.py
       - name: Boot GNOME 51 with six active extensions, reboot and recover VM
         shell: bash

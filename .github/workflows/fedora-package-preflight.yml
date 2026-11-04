@@ -1,12 +1,17 @@
 name: Fedora 45 package preflight
 on:
   push:
+    branches: [main]
   pull_request:
   schedule:
     - cron: '17 5 * * 0'
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   packages:

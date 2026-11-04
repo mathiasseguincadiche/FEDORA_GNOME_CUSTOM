@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- CI plus rapide, mesurée sur la PR #180 : 22 minutes, fixées par la VM Rocky et le laboratoire GNOME à six extensions, sans attente de runner.
+  - **PR de documentation** : le nouveau job `changes` (`.github/scripts/docs-only-change.py`) classe les fichiers modifiés. Si la PR ne touche que du Markdown ou `docs/`, les trois VM, qui ne lisent aucun de ces fichiers, sont sautées. `contracts` n'accepte ce saut que pour ces trois jobs et seulement si `changes` a réussi ; tout autre job sauté reste un échec. Le push sur `main` exécute toujours les trois VM, et `release.yml` exige ce run. `test_fedora_lab_evidence.sh` couvre le classement et chaque refus.
+  - **Image des laboratoires** : les deux laboratoires GNOME partent de l'image Cloud finale `Fedora-Cloud-Base-Generic-45-1.4` au lieu de la Beta 1.3. La Beta exigeait 416 mises à jour à chaque démarrage. Le `CHECKSUM` est vérifié par la clé Fedora 45 épinglée, et le contrôle refuse désormais toute autre image que celle de la compose épinglée.
+  - **Doublons** : `shell-quality`, `fedora-package-preflight` et `fedora-installer-audit` tournaient deux fois par push de branche (événements `push` et `pull_request`). Leur `push` est limité à `main`. `fedora-installer-audit` ne tourne plus sur les PR, déjà couvertes par le job `installer-audit` de `Tests`.
+  - **Runs dépassés** : neuf workflows annulent le run précédent d'une même PR quand un nouveau push arrive ; aucun run n'est annulé sur `main`.
+
 - Documentation (chantier C9, audit transversal) : la refonte est terminée ; son compte rendu est dans `docs/history/DOCUMENTATION_OVERHAUL_2026-11.md`.
   - **Contrôles stricts** : les listes de migration `METADATA_PENDING` et `MERMAID_PENDING` sont supprimées. Tout guide de `docs/` doit porter son bloc de métadonnées. Les dates ne peuvent être ni futures ni incohérentes : une « Dernière vérification » antérieure à la « Mise à jour » échoue.
   - **Fins de ligne** : six fichiers étaient entrés dans `main` en CRLF avec C8, contrairement à `.editorconfig` : quatre pages de `docs/`, deux pages d'historique et `tests/test_docs_integrity.py`. Ils sont repassés en LF, et le test refuse désormais tout fichier suivi en CRLF.

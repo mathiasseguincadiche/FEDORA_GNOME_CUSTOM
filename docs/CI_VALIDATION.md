@@ -1,7 +1,7 @@
 # CI et validation
 
 > Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — workflows, jobs, étapes et images relus dans `.github/workflows/` ; contextes obligatoires lus dans le ruleset de `main` — matériel : non vérifié
+> Dernière vérification : 2026-11-04 — workflows, jobs, étapes et images relus dans `.github/workflows/` ; contextes obligatoires lus dans le ruleset de `main` ; durées mesurées sur les runs de la PR #180 — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -28,13 +28,17 @@ Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-releas
 
 **`contracts` est rouge si une seule dépendance n'a pas réussi.** Il tourne même après un échec (`if: always()`) et refuse une dépendance échouée, annulée ou sautée : sur GitHub, un job sauté pourrait sinon satisfaire un contexte obligatoire. Un `contracts` rouge se corrige dans le job amont.
 
+**Exception : une PR qui ne change que la documentation.** Le job `changes` classe les fichiers modifiés (`.github/scripts/docs-only-change.py`). Si tous sont en Markdown ou sous `docs/`, les trois VM sont sautées : les deux laboratoires GNOME et la VM Rocky, qui ne lisent aucun de ces fichiers. `contracts` n'accepte ce saut que pour ces trois jobs, seulement si `changes` a réussi et a conclu à une PR de documentation ; tous les autres jobs, dont les tests de documentation de `logic-contracts`, doivent réussir. Le push sur `main` exécute toujours les trois VM, et `release.yml` exige ce run. Une PR de documentation est estimée à 14 minutes au lieu de 22, la durée de `logic-contracts`.
+
+**Un nouveau push annule le run précédent de la même PR** (`concurrency`, `cancel-in-progress`). Sur `main`, aucun run n'est annulé.
+
 ## Fiches des contextes obligatoires
 
 Chaque fiche donne le fichier, ce que le job vérifie, ce qu'il ne prouve pas, et où regarder s'il échoue.
 
 ### `contracts` et les sept jobs de `Tests`
 
-Fichier : `.github/workflows/tests.yml`. Déclenché à chaque push et chaque PR.
+Fichier : `.github/workflows/tests.yml`. Déclenché par chaque PR et chaque push sur `main`. Le job `changes`, quelques secondes, ne fait que classer les fichiers modifiés.
 
 | Job | Vérifie | Ne prouve pas |
 |---|---|---|
@@ -101,7 +105,7 @@ Ces workflows ne sont pas des contextes obligatoires. Un échec reste à corrige
 | `fedora-appimage-pretest.yml` | push, PR, hebdomadaire | FUSE 2 et 3, extraction des AppImage de type 1 et 2 sans les exécuter, Gear Lever sur Flathub |
 | `resource-monitor-fedora-pretest.yml` | push, PR | réglages Vitals revus pour GNOME 51 |
 | `live-preflight.yml` | PR et push sur les fichiers du Live | sonde Live en lecture seule, audit couleur sans écriture, refus hors Live |
-| `fedora-installer-audit.yml` | push, PR | même audit du catalogue que le job `installer-audit` |
+| `fedora-installer-audit.yml` | push sur `main`, manuel | même audit que le job `installer-audit`, qui le couvre sur les PR ; exigé par `release.yml` |
 | `fedora45-package-preflight.yml` | PR, hebdomadaire | toutes les résolutions Fedora 45, espace utilisateur Intel Arc (Vulkan, VA-API), transaction du noyau amont |
 | `release-readiness.yml` | PR sur les profils, hebdomadaire | état réel des dépôts Fedora et des verrous candidats |
 | `fedora45-gnome-preview.yml` | PR, hebdomadaire | laboratoire GNOME natif, rapport de prévisualisation |

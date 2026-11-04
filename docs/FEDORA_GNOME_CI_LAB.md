@@ -18,13 +18,13 @@ Le laboratoire natif isole les défauts de GNOME lui-même ; son succès ne remp
 
 ![Schéma du laboratoire : sept étapes sur un runner GitHub jetable, de la VM Fedora 45 au rapport](assets/diagrams/laboratoire-gnome.svg)
 
-Sur le runner, une VM Fedora 45 démarre depuis l'image Cloud vérifiée. Le dépôt est installé, la session GNOME 51 contrôlée, et des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg ; l'original est supprimé et la copie restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
+Sur le runner, une VM Fedora 45 démarre depuis l'image Cloud finale vérifiée. Le dépôt est installé, la session GNOME 51 contrôlée, et des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg ; l'original est supprimé et la copie restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
 
 Source éditable : [`laboratoire-gnome.drawio`](assets/diagrams/laboratoire-gnome.drawio).
 
 ## Image et machine virtuelle
 
-Les deux laboratoires partent de l'image Fedora Cloud 45 Beta 1.3. `.github/scripts/fedora45-preview-media.py` vérifie sa signature par la clé Fedora 45 et son SHA-256, épinglé indépendamment. Cette image de laboratoire ne remplace jamais le média Workstation de production. Le laboratoire Fedora 44 historique, manuel, utilise seul `.github/fedora44-cloud.lock`.
+Les deux laboratoires partent de l'image finale `Fedora-Cloud-Base-Generic-45-1.4.x86_64.qcow2`, définie dans `.github/fedora45-preview-media.json`. `.github/scripts/fedora45-preview-media.py` vérifie la signature de son `CHECKSUM` par la clé Fedora 45 et son SHA-256, épinglé indépendamment. Jusqu'au 4 novembre 2026, les laboratoires partaient de l'image Beta 1.3, dont la mise à jour coûtait plusieurs minutes à chaque démarrage. Cette image de laboratoire ne remplace jamais le média Workstation de production. Le laboratoire Fedora 44 historique, manuel, utilise seul `.github/fedora44-cloud.lock`.
 
 La VM utilise l'UEFI OVMF, un TPM logiciel (swtpm) et un GPU virtio. Elle tourne avec KVM quand le runner l'expose, sinon en émulation TCG ; l'accélération utilisée est enregistrée. GitHub indique que la virtualisation imbriquée fonctionne sans être officiellement prise en charge ([runners hébergés](https://docs.github.com/en/actions/concepts/runners/github-hosted-runners)).
 
