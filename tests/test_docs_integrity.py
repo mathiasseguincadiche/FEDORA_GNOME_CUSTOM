@@ -9,8 +9,10 @@ Checks what can actually mislead an operator, never phrasing:
 - code and workflows only reference documentation files that exist;
 - guides carry the metadata block defined in CONTRIBUTING.md;
 - diagrams are .drawio/.svg pairs and no Mermaid block remains;
-- the HOST software inventory reproduces the package manifests.
+- the HOST software inventory reproduces the package manifests;
+- tracked text files use LF line endings (.editorconfig).
 """
+from datetime import date
 from pathlib import Path
 import re
 import subprocess
@@ -122,14 +124,11 @@ for name in TRACKED:
         if not (ROOT / ref).exists():
             errors.append(f"{name}: references missing documentation {ref}")
 
-# Migration lists for the documentation overhaul: a guide leaves a list when it is
-# rewritten, and a listed guide that already complies is an error, so the lists only shrink.
-METADATA_PENDING = set()  # every guide carries its metadata block (C8)
-MERMAID_PENDING = set()  # every Mermaid block was replaced by a .drawio/.svg pair (C3)
 DATE = r"\d{4}-\d{2}-\d{2}"
 METADATA = re.compile(
-    rf"^> Mise à jour : {DATE} · Responsable : @[A-Za-z0-9-]+\n"
-    rf"> Dernière vérification : {DATE} — \S.* — matériel : (non vérifié|vérifié \(Gate 3, {DATE}\))\n")
+    rf"^> Mise à jour : ({DATE}) · Responsable : @[A-Za-z0-9-]+\n"
+    rf"> Dernière vérification : ({DATE}) — \S.* — matériel : (non vérifié|vérifié \(Gate 3, {DATE}\))\n")
+TODAY = date.today().isoformat()
 
 
 def body_after_title(path):
@@ -139,33 +138,30 @@ def body_after_title(path):
 
 
 # 6. Guides carry the metadata block (CONTRIBUTING.md, « Métadonnées des guides »).
-guides = sorted(p for p in (ROOT / "docs").glob("*.md"))
-for name in sorted(METADATA_PENDING - {p.name for p in guides}):
-    errors.append(f"METADATA_PENDING lists a missing guide: docs/{name}")
-for path in guides:
+# Every guide, without exception: the documentation overhaul (C1-C9) migrated them all.
+for path in sorted((ROOT / "docs").glob("*.md")):
     title, rest = body_after_title(path)
-    valid = title.startswith("# ") and METADATA.match(rest) is not None
-    if path.name in METADATA_PENDING:
-        if valid:
-            errors.append(f"{rel(path)}: metadata present; remove it from METADATA_PENDING")
-    elif not valid:
+    match = METADATA.match(rest) if title.startswith("# ") else None
+    if match is None:
         errors.append(f"{rel(path)}: missing or malformed metadata block under the title")
-    if valid:
-        for day in re.findall(DATE, "\n".join(rest.splitlines()[:2])):
-            if not re.fullmatch(r"20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])", day):
-                errors.append(f"{rel(path)}: invalid metadata date {day}")
+        continue
+    updated, checked = match.group(1), match.group(2)
+    for day in (updated, checked):
+        try:
+            date.fromisoformat(day)
+        except ValueError:
+            errors.append(f"{rel(path)}: invalid metadata date {day}")
+            break
+    else:
+        if updated > TODAY or checked > TODAY:
+            errors.append(f"{rel(path)}: metadata date in the future")
+        elif checked < updated:
+            errors.append(f"{rel(path)}: content updated on {updated} after its last check on {checked}")
 
 # 7. No Mermaid: diagrams are .drawio sources with .svg exports (CONTRIBUTING.md, « Schémas »).
 for path in CURRENT:
-    has_mermaid = re.search(r"^\s*```\s*mermaid\b", path.read_text(encoding="utf-8"), re.M) is not None
-    if rel(path) in MERMAID_PENDING:
-        if not has_mermaid:
-            errors.append(f"{rel(path)}: no Mermaid left; remove it from MERMAID_PENDING")
-    elif has_mermaid:
+    if re.search(r"^\s*```\s*mermaid\b", path.read_text(encoding="utf-8"), re.M):
         errors.append(f"{rel(path)}: Mermaid block; use a .drawio source with its .svg export")
-for name in sorted(MERMAID_PENDING):
-    if not (ROOT / name).exists():
-        errors.append(f"MERMAID_PENDING lists a missing file: {name}")
 
 # 8. Each diagram is a valid .drawio/.svg pair with an accessible, opaque export.
 SVG_NS = "{http://www.w3.org/2000/svg}"
@@ -228,6 +224,15 @@ for manifest in sorted((ROOT / "manifests").glob("*.txt")):
                       f" (missing {missing or 'none'}, extra {extra or 'none'}, or order)")
 for name in sorted(listed):
     errors.append(f"docs/SOFTWARE_INVENTORY.md: lists missing manifest manifests/{name}")
+
+# 10. Tracked text files use LF line endings, as .editorconfig requires.
+for name in TRACKED:
+    try:
+        data = (ROOT / name).read_bytes()
+    except (FileNotFoundError, IsADirectoryError):
+        continue
+    if b"\0" not in data and b"\r\n" in data:
+        errors.append(f"{name}: CRLF line endings; use LF (.editorconfig)")
 
 if errors:
     print("documentation integrity: FAIL", file=sys.stderr)

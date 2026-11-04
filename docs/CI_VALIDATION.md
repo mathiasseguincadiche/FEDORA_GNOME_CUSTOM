@@ -20,7 +20,7 @@ La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 ré
 
 ![Schéma des contrôles : sept jobs du workflow Tests vers contracts, cinq autres contextes, fusion, push sur main puis release](assets/diagrams/ci-fusion-release.svg)
 
-Le workflow `Tests` lance sept jobs, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main` ; `release.yml` ne publie la préversion que si tous les contrôles de ce même commit ont réussi.
+Le workflow `Tests` lance sept jobs, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main` ; `release.yml` ne publie la préversion que si huit workflows ont réussi sur ce même commit : `Tests`, la qualité du shell, la non-régression, le préflight des paquets, l'intégration de l'hôte et du bureau, l'audit de l'installateur et le scan de sécurité (`scripts/ci/check-release-gate.py`).
 
 Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-release.drawio).
 

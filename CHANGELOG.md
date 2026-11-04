@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Documentation (chantier C9, audit transversal) : la refonte est terminée ; son compte rendu est dans `docs/history/DOCUMENTATION_OVERHAUL_2026-11.md`.
+  - **Contrôles stricts** : les listes de migration `METADATA_PENDING` et `MERMAID_PENDING` sont supprimées. Tout guide de `docs/` doit porter son bloc de métadonnées. Les dates ne peuvent être ni futures ni incohérentes : une « Dernière vérification » antérieure à la « Mise à jour » échoue.
+  - **Fins de ligne** : six fichiers étaient entrés dans `main` en CRLF avec C8, contrairement à `.editorconfig` : quatre pages de `docs/`, deux pages d'historique et `tests/test_docs_integrity.py`. Ils sont repassés en LF, et le test refuse désormais tout fichier suivi en CRLF.
+  - **Tests** : `test_docs_integrity_behavior.py` passe à 19 cas. Les cas des listes de migration sont remplacés par ceux des nouvelles règles.
+  - **Cohérence** : `CI_VALIDATION.md` nomme les huit workflows qu'exige `release.yml`. Le README et le portail renvoient à la feuille de route, qui marque la refonte comme réalisée. Aucun tutoiement ni statut périmé n'a été trouvé dans les pages courantes, et chaque guide figure dans le portail et reçoit au moins deux liens.
+
 - Documentation (chantier C8, développement et référence) : les dix derniers guides sont relus contre le code et reçoivent leurs métadonnées ; `METADATA_PENDING` est vide.
   - **Inventaire logiciel** : il avait dérivé des manifests. Il omettait Gaming, AppImage et Gear Lever, `adw-gtk3-theme`, `localsearch`, `xdg-user-dirs-gtk` et `kmod`, et citait `xorriso`, que le projet n'installe pas. La partie hôte reproduit désormais chaque manifest, et `test_docs_integrity.py` vérifie qu'elle reste identique (trois nouveaux cas dans `test_docs_integrity_behavior.py`, 18 au total). La partie VM est relue contre `bootstrap-devops.sh` : dépôts EPEL et CRB ajoutés, versions épinglées présentées en tableau.
   - **CI** : la page est réorganisée en fiches par contexte obligatoire (ce que vérifie le job, ce qu'il ne prouve pas), puis en tableau des autres workflows. Corrigé : elle disait que certaines images Fedora venaient encore d'ECR Public, alors que toutes viennent de `registry.fedoraproject.org`.

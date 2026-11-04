@@ -30,7 +30,7 @@ Tout passe par un point d'entrée unique, `./control.sh`. Rien ne s'applique san
 
 ## État réel
 
-Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce qui reste à prouver sur le vrai PC. Dernière mise à jour : 2026-11-03.
+Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce qui reste à prouver sur le vrai PC. Dernière mise à jour : 2026-11-04.
 
 | Élément | Statut | Preuve |
 |---|---|---|
@@ -41,7 +41,7 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 | Contrôle du PC depuis le Live USB | Non vérifié | À faire sur le matériel |
 | Installation, application et qualification (Gate 3) | Non vérifié | À faire sur le matériel ([qualification](docs/QUALIFICATION.md)) |
 
-**Une CI verte ne certifie pas le PC.** Seule la Gate 3, exécutée sur la machine installée, peut établir le statut « Golden runtime-certified ». Les versions publiées sont listées dans les [releases](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/releases).
+**Une CI verte ne certifie pas le PC.** Seule la Gate 3, exécutée sur la machine installée, peut établir le statut « Golden runtime-certified ». Les versions publiées sont listées dans les [releases](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/releases) ; les prochaines étapes, dans la [feuille de route](docs/ROADMAP.md).
 
 ## Par où commencer
 

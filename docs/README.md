@@ -1,7 +1,7 @@
 # Documentation
 
-> Mise à jour : 2026-11-03 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-03 — liens, ancres et commandes contrôlés par `tests/test_docs_integrity.py` ; contenu des guides cités : non relu dans ce chantier — matériel : non vérifié
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — liens, ancres et commandes contrôlés par `tests/test_docs_integrity.py` ; chaque guide cité relu contre le code (chantiers C4 à C8) — matériel : non vérifié
 
 Cette page oriente vers le bon guide. La cible d'installation neuve est **Fedora 45 Workstation / GNOME 51** ; son profil est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)). L'état réel du projet, de la CI au matériel, est résumé dans le [README](../README.md#état-réel).
 
@@ -10,6 +10,7 @@ Cette page oriente vers le bon guide. La cible d'installation neuve est **Fedora
 | Je veux… | Lire |
 |---|---|
 | Comprendre le projet | [Vision et architecture](ARCHITECTURE.md), [glossaire](GLOSSARY.md), [décisions (ADR)](adr/README.md) |
+| Savoir où en est le projet | [État réel](../README.md#état-réel), [feuille de route](ROADMAP.md) |
 | Installer ce PC | [Contrôle Live](FEDORA45_LIVE_PREFLIGHT.md), puis [installation](INSTALLATION_GUIDE.md) |
 | Utiliser et entretenir le poste | [Centre de contrôle](CONTROL_CENTER.md), [maintenance](DESKTOP_LIFECYCLE.md), [sauvegardes](BACKUP_RESTORE.md) |
 | Le bureau, les jeux, les VM | [GNOME](GNOME.md), [Gaming](GAMING.md), [démarrage KVM](KVM_QUICKSTART.md) |
