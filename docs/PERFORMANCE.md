@@ -1,4 +1,7 @@
-# Performance runtime — profil « Fedora Linux »
+# Performance du poste
+
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — valeurs relues contre `config/performance-runtime.policy`, scripts relus dans `scripts/performance/` — matériel : non vérifié
 
 ## Objectif
 
@@ -10,16 +13,13 @@ La règle est :
 mesurer → activer temporairement → observer → restaurer → certifier
 ```
 
-Le matériel cible est le Ryzen 7 7700, l'Intel Arc B580 et les deux Crucial T705 du profil Golden. Les optimisations restent donc compatibles avec GNOME/Wayland, SELinux, KVM/libvirt et les outils DevOps.
+Le matériel cible est le Ryzen 7 7700, l'Intel Arc B580 et les deux Crucial T705. Les optimisations restent donc compatibles avec GNOME/Wayland, SELinux, KVM/libvirt et les outils DevOps.
 
 ## Noyau officiel Linux amont
 
 Le profil utilise uniquement Kernel Vanilla stable, sans patch ni ordonnanceur personnalisé. La version doit correspondre à `latest_stable` sur kernel.org ; `@kernel-vanilla/stable` fournit les RPM indépendamment du calendrier Fedora. Le packaging peut prendre du temps : une archive de sources téléchargée n'est pas une installation. Voir [Linux amont](UPSTREAM_LINUX.md) et [ADR 0015](adr/0015-official-upstream-linux.md).
 
-```bash
-KERNEL_CHANNEL="vanilla"
-./diagnostics/kernel-doctor
-```
+Le canal est fixé par `KERNEL_CHANNEL="vanilla"` dans `config/kernel.conf` ; `./diagnostics/kernel-doctor` contrôle le noyau réellement démarré.
 
 La politique conserve N et N-1 sur le même canal `kernel-core`. Aucun réglage SELinux de chargement de modules n'est ajouté par le changement de noyau.
 
@@ -36,12 +36,12 @@ Valeurs importantes :
 - EPP attendu `balance_performance` en usage normal et `performance` pour un workload temporaire ;
 - TuneD/tuned-ppd reste le pont GNOME/Fedora ;
 - `sched_ext` est `auto`, mais **désactivé par défaut** ;
-- zram conserve les defaults Fedora ;
+- zram conserve les valeurs par défaut de Fedora ;
 - le scheduler NVMe est **benchmark-only** ;
-- les schedulers I/O expérimentaux ne sont jamais activés par le profil Golden ;
+- les ordonnanceurs d'E/S expérimentaux ne sont jamais activés ;
 - GameMode applique un mode temporaire par jeu et restaure l'état après le workload.
 
-## Profils CPU / TuneD
+## Profils CPU et TuneD
 
 État courant :
 
@@ -57,15 +57,15 @@ Basculer explicitement :
 ./control.sh perf powersave
 ```
 
-Ces commandes mutantes sont bare-metal only. Le projet ne désactive ni SMT, ni C-States et n'applique aucun PBO/overclock automatique.
+Ces commandes modifient le système et ne s'exécutent que sur le PC physique. Le projet ne désactive ni SMT, ni C-States et n'applique aucun PBO/overclock automatique.
 
 Le profil `performance` n'est pas un mode permanent recommandé : il sert aux compilations, VM ou tests où une politique temporaire agressive est utile. Le mode normal reste `balanced`.
 
-## Gaming dynamique
+## Jeu : profil temporaire
 
-GameMode reste le mécanisme par jeu. La configuration Golden ne contient aucun overclock GPU et ne remplace ni Mesa ni le pilote `xe`.
+GameMode reste le mécanisme par jeu. La configuration ne contient aucun overclock GPU et ne remplace ni Mesa ni le pilote `xe`.
 
-Pour une commande explicite avec bascule TuneD + GameMode + restauration :
+Pour lancer une commande avec bascule TuneD et GameMode, puis restauration de l'état initial :
 
 ```bash
 ./scripts/performance/game-performance.sh COMMAND [ARG ...]
@@ -73,23 +73,23 @@ Pour une commande explicite avec bascule TuneD + GameMode + restauration :
 
 Pour Steam, `gamemoderun %command%` reste la chaîne simple par titre.
 
-## sched_ext / SCX
+## sched_ext (SCX)
 
 Le projet installe l'outillage Fedora mais ne lance aucun scheduler SCX globalement.
 
-État read-only :
+État, en lecture seule :
 
 ```bash
 ./control.sh perf sched-status
 ```
 
-Smoke test explicite, borné et bare-metal :
+Essai explicite, borné dans le temps, sur le PC physique uniquement :
 
 ```bash
 ./control.sh perf sched-smoke
 ```
 
-Le doctor exige notamment `CONFIG_SCHED_CLASS_EXT`, le BTF du noyau et un binaire SCX. Le smoke utilise `timeout`, puis rend la main au scheduler du noyau. Une erreur BPF/BTF ou un échec de chargement est un KO du test, mais `sched_ext_policy=auto` laisse le runtime Golden sur le scheduler standard.
+Le doctor exige notamment `CONFIG_SCHED_CLASS_EXT`, le BTF du noyau et un binaire SCX. Le smoke utilise `timeout`, puis rend la main au scheduler du noyau. Une erreur BPF/BTF ou un échec de chargement est un KO du test, mais `sched_ext_policy=auto` laisse le poste sur l'ordonnanceur standard.
 
 Cette prudence est volontaire : Fedora 45 a connu en septembre 2026 un problème BTF empêchant le chargement de schedulers `sched_ext` sur certains noyaux (Bugzilla #2514913). Le projet teste donc **le noyau réellement démarré** au lieu de supposer la compatibilité.
 
@@ -112,7 +112,7 @@ Aucun scheduler NVMe n'est imposé par défaut.
 ./control.sh perf nvme-benchmark
 ```
 
-Le benchmark mutant est réservé au second T705 monté sur `/data`, utilise un fichier scratch, compare uniquement `none` et `mq-deadline` lorsqu'ils sont disponibles, puis restaure toujours le scheduler initial via `trap`.
+Le benchmark, qui modifie temporairement l'ordonnanceur, est réservé au second T705 monté sur `/data`, utilise un fichier scratch, compare uniquement `none` et `mq-deadline` lorsqu'ils sont disponibles, puis restaure toujours le scheduler initial via `trap`.
 
 Le script refuse un modèle autre que `CT1000T705SSD3` et n'effectue aucune écriture brute sur le block device.
 
@@ -124,9 +124,9 @@ Pour l'écran 240 Hz, la moyenne FPS ne suffit pas. Le doctor sait analyser un C
 ./control.sh perf frametime /chemin/mangohud.csv
 ```
 
-Il produit les percentiles de frametime p50/p95/p99/p99.9 et leur FPS équivalent. Ces mesures servent aux comparaisons A/B : baseline Fedora, profil balanced, profil performance et éventuellement SCX après smoke PASS.
+Il produit les percentiles de frametime p50/p95/p99/p99.9 et leur FPS équivalent. Ces mesures servent aux comparaisons A/B : Fedora par défaut, profil `balanced`, profil `performance` et, éventuellement, SCX après un essai réussi.
 
-## Certification Golden
+## Ce que vérifie la certification
 
 La performance fait partie du contrat Gate 3, mais la certification ne transforme pas les expérimentations en réglages permanents.
 
@@ -142,11 +142,12 @@ Ce mode exige notamment :
 - zram Fedora réellement instancié et actif comme swap ;
 - SCX fail-safe selon `sched_ext_policy` ;
 - politique NVMe toujours `benchmark-only` ;
-- GameMode disponible lorsque le profil Gaming canonique est actif.
+- GameMode disponible lorsque le profil de jeu est actif.
 
 Une divergence EPP visible par rapport au profil TuneD est signalée pour diagnostic ; elle n'est pas masquée par une écriture forcée dans sysfs. Le smoke SCX et le benchmark NVMe restent des opérations explicites : ils ne sont pas déclenchés automatiquement par la certification.
 
-Le fichier `config/performance-runtime.policy` entre dans `effective_config_sha256`. Toute modification de cette politique invalide donc les preuves Golden liées à l'ancienne configuration. Le bundle Golden embarque aussi une copie exacte de cette policy et son SHA-256.
+Le fichier `config/performance-runtime.policy` entre dans `effective_config_sha256`. Toute modification de cette politique invalide donc les preuves liées à l'ancienne configuration. Le bundle Golden embarque aussi une copie exacte de cette politique et son SHA-256.
+
 ## Interdictions
 
 Cette couche ne doit pas introduire :
@@ -164,25 +165,14 @@ Les optimisations CPU spécifiques peuvent être utilisées dans des workloads o
 
 ## Mesures reproductibles après qualification
 
-Après un certificat Gate 3 valide, mesurer un workload identique au moins cinq
-fois avec la même version des sources et les mêmes données :
+Après un certificat Gate 3 valide, mesurer un workload identique au moins cinq fois avec la même version des sources et les mêmes données :
 
 ```bash
 ./scripts/performance/measure-workload.sh balanced 5 -- /chemin/absolu/workload-reproductible.sh
 ```
 
-Le wrapper ne change aucun profil : il conserve commit, empreintes configuration
-et runtime, noyau, commande exacte, sorties brutes, durées et dispersion dans
-`reports/`. Une commande en échec ne produit jamais une mesure PASS. Le PASS
-signifie uniquement que toutes les répétitions ont réussi.
+Le wrapper ne change aucun profil : il conserve commit, empreintes configuration et runtime, noyau, commande exacte, sorties brutes, durées et dispersion dans `reports/`. Une commande en échec ne produit jamais une mesure PASS. Le PASS signifie uniquement que toutes les répétitions ont réussi.
 
-Pour chaque comparaison A/B, conserver BIOS, fréquence RAM, version Mesa,
-résolution, données, protocole de cache et charge d'arrière-plan identiques.
-Changer un seul paramètre, alterner A/B pour limiter les effets de chauffe et
-requalifier si l'identité certifiée change. Comparer médiane **et dispersion** ;
-un écart inférieur à la variabilité ne prouve pas un gain. Pour le gaming,
-ajouter les p95/p99/p99.9 des frametimes, les températures et la consommation.
-Une mesure de durée de compilation ne prouve pas une baisse de latence GNOME.
+Pour chaque comparaison A/B, conserver BIOS, fréquence RAM, version Mesa, résolution, données, protocole de cache et charge d'arrière-plan identiques. Changer un seul paramètre, alterner A/B pour limiter les effets de chauffe et requalifier si l'identité certifiée change. Comparer médiane **et dispersion** ; un écart inférieur à la variabilité ne prouve pas un gain. Pour le gaming, ajouter les p95/p99/p99.9 des frametimes, les températures et la consommation. Une mesure de durée de compilation ne prouve pas une baisse de latence GNOME.
 
-Aucun gain de performance du noyau Linux amont n'est acquis sans ces mesures.
-Les tests CI de ce dépôt ne comparent pas les performances de la machine cible.
+Aucun gain de performance du noyau Linux amont n'est acquis sans ces mesures. Les tests CI de ce dépôt ne comparent pas les performances de la machine cible.

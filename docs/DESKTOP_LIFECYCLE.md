@@ -1,17 +1,20 @@
-# Desktop & Lifecycle — politique Golden Workstation
+# Entretien du poste : mises à jour et cycle de vie
 
-La version applicable est celle de [`../VERSION`](../VERSION).
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — politiques relues contre `modules/desktop/27_lifecycle.sh`, `config/desktop.conf` et les scripts de sauvegarde — matériel : non vérifié
+
+Cette page décrit comment le poste se maintient au quotidien : mises à jour des RPM et des Flatpak, rôle de GNOME Logiciels, sauvegarde quotidienne et preuves sensibles aux mises à jour. Les commandes elles-mêmes sont dans le [centre de contrôle](CONTROL_CENTER.md).
 
 ## Capacités quotidiennes
 
-La workstation certifie notamment :
+La certification du poste couvre notamment :
 
 - GNOME Keyring / Secret Service ;
-- portals Wayland ;
-- impression/scan driverless ;
+- portails Wayland ;
+- impression et numérisation sans pilote (driverless) ;
 - VPN NetworkManager ;
 - TuneD PPD ;
-- français/dictionnaires/polices ;
+- langue française, dictionnaires et polices ;
 - Remmina ;
 - support mobile ;
 - Intel Arc compute.
@@ -24,9 +27,7 @@ La workstation certifie notamment :
 - installation automatique : **non** ;
 - reboot automatique : **jamais**.
 
-`dnf5-automatic.timer`, `fstrim.timer` et, lorsqu'il existe, `fwupd-refresh.timer` sont activés.
-
-Le timer fwupd rafraîchit les métadonnées ; il ne flashe aucun firmware de façon autonome.
+`dnf5-automatic.timer`, `fstrim.timer` et, lorsqu'il existe, `fwupd-refresh.timer` sont activés (`modules/desktop/27_lifecycle.sh`). Le timer fwupd rafraîchit les métadonnées ; il ne flashe jamais un firmware.
 
 ## Flatpak
 
@@ -44,7 +45,7 @@ Les applications Flatpak sont mises à jour volontairement avec `flatpak update`
 
 Le mode complet met aussi à jour Flatpak lorsque les RPM sont déjà à jour, sans demander de redémarrage dans ce cas. Une transaction RPM préparée reste appliquée et finalisée après le redémarrage prévu.
 
-Le projet ne crée aucun timer/service d'installation Flatpak silencieuse.
+Le projet ne crée aucun timer ni service qui installerait des Flatpak en silence.
 
 ## GNOME Logiciels
 
@@ -56,36 +57,30 @@ GNOME Disques (`gnome-disk-utility`) fait partie de la couche d'intégration ; F
 
 ## Sauvegarde quotidienne
 
-Le timer Borg sauvegarde les données utilisateur uniquement lorsque le disque externe (ou le dépôt distant) est accessible.
+Le timer Borg sauvegarde les données utilisateur dès que le support externe, ou le dépôt distant, est accessible :
 
-Contrat :
+- dépôt non chiffré, par décision du propriétaire ([ADR 0014](adr/0014-borg-unencrypted-backups.md)) ;
+- clés privées `.ssh` et `.gnupg`, et dossier `secrets` du projet, toujours exclus ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)) ;
+- rétention automatique selon la politique versionnée, qui ne touche jamais les archives pré-APPLY ;
+- support absent : run enregistré `skipped`, timer intact ;
+- sauvegarde pré-APPLY indépendante, qui échoue fermée.
 
-- dépôt non chiffré par décision du propriétaire (ADR 0014) ;
-- dossier `secrets` exclu des archives ;
-- rétention automatique selon la politique configurée, séparée des archives pré-APPLY ;
-- absence du disque externe = skip propre ;
-- backup pré-APPLY indépendant et fail-closed.
+Sources, exclusions et restauration : [sauvegarde et restauration](BACKUP_RESTORE.md).
 
-## Veille / affichage
+## Veille et affichage
 
-Chaque preuve suspend possède un `cycle_id` unique et un fingerprint runtime incluant la stack graphique critique.
-
-Un changement de kernel, firmware GPU, Mesa, Mutter ou GNOME Shell impose de nouvelles preuves sensibles.
+Chaque preuve de veille porte un `cycle_id` unique et une empreinte d'exécution qui inclut la pile graphique. Un changement de noyau, de firmware GPU, de Mesa, de Mutter ou de GNOME Shell impose de refaire ces preuves.
 
 ## KVM
 
-Le host KVM fait partie de `final-certification` lorsque `ENABLE_KVM=true`.
-
-La certification des invités reste une étape runtime distincte :
+L'hôte KVM fait partie de la certification finale lorsque `ENABLE_KVM=true`. La certification des invités reste une étape distincte :
 
 ```bash
 scripts/kvm/runtime_certification.sh
 ```
 
-Le réseau KVM lui-même utilise un guard fail-closed : un changement de connectivité passe d'abord en mode d'urgence avant reconstruction des règles normales.
+Le réseau KVM utilise un garde qui échoue fermé : un changement de connectivité passe d'abord en mode d'urgence, avant la reconstruction des règles normales ([réseau KVM](KVM_NETWORK.md)).
 
-## Limite physique
+## Limites
 
-La CI ne simule pas Arc B580/Wayland/240 Hz/suspend, les deux NVMe ni le LAN physique réel.
-
-La certification finale reste bare-metal.
+La CI ne simule ni l'Arc B580 sous Wayland à 240 Hz, ni la veille, ni les deux NVMe, ni le réseau local réel : la certification finale se fait uniquement sur le PC physique.

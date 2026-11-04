@@ -1,6 +1,9 @@
-# Workstation Control Center
+# Centre de contrôle
 
-`./control.sh` est la façade opérateur de **FEDORA_GNOME_CUSTOM**. Elle reste mince : installation, Borg, DNF5, kernel lifecycle, KVM et diagnostics restent implémentés dans leurs moteurs dédiés.
+> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-04 — commandes relues contre `control.sh` et `lib/control_center.sh`, rétention contre `config/operator-retention.policy` — matériel : non vérifié
+
+`./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
 ```bash
 ./control.sh
@@ -10,7 +13,7 @@
 
 Avant les premiers enrôlements matériels, `./control.sh install prepare-tools` installe explicitement les outils de baseline. Cette préparation est proposée dans le menu Installation ; elle ne lance aucune mesure ni certification.
 
-## Le Control Center : une façade, des moteurs spécialisés
+## Une façade, des moteurs spécialisés
 
 ![Schéma du centre de contrôle : l'opérateur, la façade control.sh et les huit domaines avec leurs moteurs](assets/diagrams/centre-de-controle.svg)
 
@@ -18,12 +21,12 @@ L'opérateur passe toujours par `./control.sh`, une façade sans logique métier
 
 Source éditable : [`centre-de-controle.drawio`](assets/diagrams/centre-de-controle.drawio).
 
-`control.sh` expose des commandes compréhensibles mais **n'élimine aucun garde-fou**. Les moteurs `install.sh`, mises à jour, sauvegardes, virtualisation et diagnostics restent séparés, vérifiables et soumis aux mêmes préconditions.
+`control.sh` expose des commandes lisibles mais **ne retire aucun garde-fou**. Les moteurs `install.sh`, mises à jour, sauvegardes, virtualisation et diagnostics restent séparés, vérifiables et soumis aux mêmes préconditions.
 
 | Intention | Exemple | Effet |
 |---|---|---|
 | Comprendre l'état | `./control.sh status` | observation |
-| Diagnostiquer | `./control.sh doctor all` | lecture / contrôles |
+| Diagnostiquer | `./control.sh doctor all` | lecture seule |
 | Préparer une installation | `./control.sh install dry-run` | plan non mutant |
 | Installer réellement | `./control.sh install apply` | **mutation protégée, bare-metal uniquement** |
 
@@ -35,7 +38,7 @@ Fedora 45 / GNOME 51 est la cible sélectionnée et son profil est promu (`ready
 ./control.sh status
 ```
 
-Le dashboard affiche :
+Le tableau de bord affiche :
 
 - version et SHA Git ;
 - Fedora / environnement runtime ;
@@ -52,21 +55,9 @@ Le dashboard affiche :
 
 Une certification dont le fingerprint runtime, la configuration effective ou le plan de modules ne correspond plus est affichée `STALE`. Le certificat doit également contenir le contrat performance Golden.
 
-## Validation Live USB puis système installé
+## Validation : Live USB, puis système installé
 
-La CI vérifie le logiciel. Les essais opérateur utilisent directement le PC :
-
-```text
-Live USB Fedora 45 / GNOME 51 : observations avant installation
-        ↓ export du compte rendu hors du HOME temporaire
-Installation Fedora sur SSD et import au même commit
-        ↓
-Configuration finale → baseline → dry-run → backup vérifié → APPLY
-        ↓
-Redémarrage, diagnostics hôte puis création/qualification Rocky
-        ↓
-Gate 3 : matériel + bureau + Performance + KVM + Gaming + backup
-```
+La CI vérifie le logiciel ; ces commandes vérifient le PC. L'ordre des étapes fait foi dans le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours).
 
 Depuis le Live :
 
@@ -79,7 +70,7 @@ Depuis le Live :
 Après installation et redémarrage sur SSD :
 
 ```bash
-./control.sh validate import /chemin/live-<commit>.json
+./control.sh validate import /chemin/live-SHA_DU_COMMIT_AUDITE.json
 ./control.sh validate status
 ./control.sh validate gate3 status
 ```
@@ -102,7 +93,7 @@ prepare-preapply-backup.sh
 install.sh --apply
 ```
 
-Le chemin APPLY conserve ses protections : bare-metal, Git propre, baseline, cohérence dry-run/configuration/plan, **backup complet Borg** relu depuis le dépôt et confirmation opérateur.
+Le chemin APPLY conserve ses protections : PC physique, Git propre, baseline, cohérence entre dry-run, configuration et plan, sauvegarde pré-APPLY relue depuis le dépôt Borg, et phrase de confirmation.
 
 ## Mises à jour
 
@@ -118,7 +109,7 @@ Le chemin APPLY conserve ses protections : bare-metal, Git propre, baseline, coh
 ./control.sh update finalize
 ```
 
-`update all` et `update dnf` préparent une transaction **DNF5 offline** après backup complet Borg.
+`update all` et `update dnf` préparent une transaction **DNF5 hors ligne** après une sauvegarde complète Borg.
 
 ```text
 backup complet Borg
@@ -139,9 +130,9 @@ N-1 = kernel précédent
 
 La finalisation vérifie la transaction, `dnf5 check`, le kernel N, le défaut GRUB, retire les noyaux amont plus anciens que N-1 en conservant le noyau Fedora de secours, puis converge Flatpak si nécessaire et lance les diagnostics.
 
-Pour le firmware : **aucun flash automatique**. `fwupdmgr` reste une surface d'inventaire/consultation.
+Pour le firmware : **aucun flash automatique**. `fwupdmgr` ne sert qu'à l'inventaire et à la consultation.
 
-## Kernel — N / N-1
+## Noyau — N / N-1
 
 La politique **Kernel Vanilla stable** suit Linux amont officiel : version de kernel.org, dernier stable direct, puis rétention N / N-1.
 
@@ -152,7 +143,7 @@ La politique **Kernel Vanilla stable** suit Linux amont officiel : version de ke
 - un noyau Fedora signé conservé comme entrée GRUB de secours, jamais par défaut ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)) ;
 - récupération Fedora complète explicite (`rollback-fedora`).
 
-Les mises à niveau majeures ont un parcours séparé : `./control.sh upgrade plan|prepare|reboot|finalize|status`. Fedora 45 reste bloqué tant que son profil final n'est pas promu ([guide](UPGRADE_FEDORA_45.md)).
+Les mises à niveau majeures d'un système déjà installé ont un parcours séparé : `./control.sh upgrade plan|prepare|reboot|finalize|status` ([mise à niveau 44 → 45](UPGRADE_FEDORA_45.md)). Une installation neuve n'en a pas besoin.
 
 ```bash
 ./control.sh kernel status
@@ -187,15 +178,15 @@ Si ni N ni N-1 ne démarrent, maintenir **Maj** ou appuyer sur **Échap** au dé
 ./control.sh doctor backup
 ```
 
-`doctor data` contrôle le second T705 EXT4 et les racines `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`, `/data/IA/Openclaw`.
+`doctor all` lance `diagnostic.sh`, qui regroupe plus de vingt doctors : certains (KVM, jeu, accès distant) ne réussissent qu'une fois la Gate 3 menée. `doctor data` contrôle le second T705 EXT4 et les racines `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`, `/data/IA/Openclaw`. `doctor polish` contrôle les réglages de finition du bureau ([GNOME](GNOME.md)).
 
-`doctor gaming` contrôle le profil Gaming canonique, `/data/Jeux`, Steam/Vulkan et les invariants Arc/Wayland/display disponibles sur bare-metal.
+`doctor gaming` contrôle le profil de jeu, `/data/Jeux`, Steam et Vulkan, et les invariants Arc, Wayland et affichage observables sur le PC physique.
 
 `remote status` (alias `doctor remote`) contrôle le profil optionnel d'accès distant ; `remote info` affiche la MAC, la diffusion LAN et l'adresse Tailscale à reporter sur le relais Wake-on-LAN. Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
 
 ## Performance Fedora Linux
 
-Le socle Performance est une surface opérateur de première classe du Control Center. Le mode Golden normal reste `balanced` ; les modes `performance` et `powersave` sont des bascules explicites et réversibles.
+Le mode normal du poste est `balanced` ; `performance` et `powersave` sont des bascules explicites et réversibles ([performance](PERFORMANCE.md)).
 
 ```bash
 ./control.sh perf status
@@ -213,8 +204,9 @@ Le socle Performance est une surface opérateur de première classe du Control C
 
 Le menu interactif **Performance Fedora Linux** expose les mêmes diagnostics et mutations sûres. Le smoke test SCX et le benchmark NVMe demandent une action explicite ; le benchmark restaure toujours le scheduler initial.
 
-La certification finale appelle `performance-doctor --certify` : TuneD doit être revenu sur le profil Golden normal, zram doit respecter le contrat Fedora, SCX reste fail-safe selon sa politique, le scheduler NVMe reste `benchmark-only` et GameMode doit être disponible lorsque Gaming est activé.
-## KVM / machines virtuelles
+La certification finale appelle `performance-doctor --certify` : TuneD doit être revenu sur le profil Golden normal, zram doit respecter le contrat Fedora, SCX reste fail-safe selon sa politique, le scheduler NVMe reste `benchmark-only` et GameMode doit être disponible lorsque le profil de jeu est activé.
+
+## KVM et machines virtuelles
 
 ### Diagnostic et réseau
 
@@ -226,7 +218,7 @@ La certification finale appelle `performance-doctor --certify` : TuneD doit êtr
 ./control.sh kvm nautilus-refresh
 ```
 
-Le guard reste fail-closed. `guard-reconcile` passe d'abord par un état restrictif avant de reconstruire les règles normales.
+Le garde réseau échoue fermé. `guard-reconcile` passe d'abord par un état restrictif avant de reconstruire les règles normales ([réseau KVM](KVM_NETWORK.md)).
 
 ### Création Rocky DevOps
 
@@ -241,7 +233,7 @@ CLI :
 
 `CHECKSUM` et `CHECKSUM.asc` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.
 
-## Backup / restauration
+## Sauvegarde et restauration
 
 ```bash
 ./control.sh backup now
@@ -254,7 +246,7 @@ CLI :
 ./control.sh backup prune
 ```
 
-Les restaurations passent par une zone de staging à inspecter avant récupération. Borg protège le HOST et les données utilisateur, dont `/data/IA/Openclaw` ; les disques et métadonnées de VM restent exclus. Le propriétaire réalise ses exports de VM manuellement, hors des scripts de sauvegarde. Voir [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
+Les restaurations passent par un dossier d'essai (staging) à inspecter avant toute copie. Borg protège l'hôte et les données utilisateur, dont `/data/IA/Openclaw` ; les disques et métadonnées des VM restent exclus et s'exportent à la main. Détail des sources, de la rétention et des restaurations : [sauvegarde et restauration](BACKUP_RESTORE.md).
 
 ## Certification
 
@@ -266,7 +258,7 @@ Les restaurations passent par une zone de staging à inspecter avant récupérat
 ./control.sh cert baseline-certify
 ```
 
-La certification finale exige la preuve Live courante importée, les preuves physiques, cinq cycles veille/réveil, hardware/display, `/data`, Gaming, backup et KVM selon le profil canonique.
+La certification finale exige la preuve Live courante importée, les preuves physiques, cinq cycles de veille, le matériel et l'affichage, `/data`, le jeu, la sauvegarde et KVM selon le profil ([qualification](QUALIFICATION.md#certification-finale)).
 
 ### Archive Golden longue durée
 
@@ -280,7 +272,7 @@ Après certification réelle :
 
 Le moteur exige un certificat PASS courant et scelle les payloads fournis par l'opérateur. Il ne télécharge aucun média externe automatiquement.
 
-## Logs et rétention
+## Journaux et rétention
 
 ```text
 logs = 90 jours
