@@ -10,7 +10,7 @@ Cette page dit où en est le projet et ce qui vient ensuite. Elle ne promet pas 
 | Étape | Statut | Preuve |
 |---|---|---|
 | Profil Fedora 45 / GNOME 51 promu `ready` | Vérifié le 2026-11-03 | média final 1.4 authentifié, RPM stables ([fiche Fedora 45](FEDORA45_PRIMARY.md)) |
-| Préversion 0.24.0 publiée | Réalisé | release `v0.24.0-rc.1`, publiée par `release.yml` après la CI verte du commit exact |
+| Préversions 0.24.0 et 0.24.1 publiées | Réalisé | releases `v0.24.0-rc.1` et `v0.24.1-rc.1`, publiées par `release.yml` après la CI verte du commit exact |
 | Refonte de la documentation | Réalisé | chantiers C1 à C9 ([compte rendu](history/DOCUMENTATION_OVERHAUL_2026-11.md)) |
 | Contrôle du PC depuis le Live USB | Prévu | [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) |
 | Installation, APPLY et Gate 3 sur le PC | Prévu | [guide d'installation](INSTALLATION_GUIDE.md), [qualification](QUALIFICATION.md) |
