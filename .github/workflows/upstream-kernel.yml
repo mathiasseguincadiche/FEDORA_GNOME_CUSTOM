@@ -25,7 +25,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Trust the checkout inside the container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Resolve exact official upstream packages and exercise the DNF lock
         shell: bash
         run: |

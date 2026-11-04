@@ -116,7 +116,8 @@ Ces workflows ne sont pas des contextes obligatoires. Un échec reste à corrige
 | `live-preflight.yml` | PR et push sur les fichiers du Live | sonde Live en lecture seule, audit couleur sans écriture, refus hors Live |
 | `fedora-installer-audit.yml` | push sur `main`, manuel | même audit que le job `installer-audit`, qui le couvre sur les PR ; exigé par `release.yml` |
 | `fedora45-package-preflight.yml` | PR, hebdomadaire | toutes les résolutions Fedora 45, espace utilisateur Intel Arc (Vulkan, VA-API), transaction du noyau amont |
-| `release-readiness.yml` | PR sur les profils, hebdomadaire | état réel des dépôts Fedora et des verrous candidats |
+| `release-readiness.yml` | PR sur les profils, hebdomadaire | état réel des dépôts Fedora et des verrous candidats ; l'activation de RPM Fusion, des deux COPR et le rafraîchissement des métadonnées y tolèrent l'échec (`\|\| true`), car ce workflow fait un état des lieux, sans rien valider |
+| `external-links.yml` | hebdomadaire, manuel | les liens externes de tous les fichiers Markdown (`scripts/ci/check-external-links.py`) : une page disparue (404, 410) ou un nom introuvable échoue ; un refus anti-robot (401, 403, 429) ou une erreur serveur n'est qu'un avertissement |
 | `fedora45-gnome-preview.yml` | PR, hebdomadaire | laboratoire GNOME natif, rapport de prévisualisation |
 | `weekly-log-retention.yml` | push, PR | purge prudente des journaux (`scripts/maintenance/weekly-log-cleanup.py`) |
 | `security-scanning.yml` | push, PR, hebdomadaire | CodeQL pour Python, Gitleaks sur chaque commit de la PR |

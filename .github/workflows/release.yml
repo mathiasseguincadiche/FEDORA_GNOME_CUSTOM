@@ -49,7 +49,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           ready=false
-          for attempt in {1..400}; do
+          for _ in {1..400}; do  # up to 100 minutes, 15 s apart
             gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&event=push&per_page=100" > /tmp/release-runs.json
             rc=0
             python3 scripts/ci/check-release-gate.py "$GITHUB_SHA" "$GITHUB_REPOSITORY" < /tmp/release-runs.json || rc=$?
