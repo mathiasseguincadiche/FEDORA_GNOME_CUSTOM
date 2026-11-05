@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Documentation (troisième passe de relecture) :
+  - **Statuts et preuves** : `CONTRIBUTING.md` compte sept statuts (« Abandonné » et « Échec constaté » s'ajoutent) et précise la portée d'une preuve : elle vaut pour le commit et l'environnement contrôlés. Le tableau du matériel de l'architecture décrit ce que le code contrôle, pas un résultat, et dit que la version du BIOS est relevée mais jamais comparée au minimum. Le README reçoit une section « Contexte du projet ».
+  - **Procédures** : le guide d'installation nomme ses trois points de non-retour (installation sur le T705 système, formatage d'un second T705 neuf, APPLY) et ce qu'il faut confirmer avant chacun. La durée des essais de baseline devient une estimation tirée de `diagnostics/baseline-doctor`. Le dépannage s'ouvre sur une section « En urgence » : PC qui ne démarre plus, session GNOME absente, `/data` disparu, fichiers perdus.
+  - **Commandes** : six routes de `./control.sh` n'étaient documentées nulle part (`help`, `validate help`, `doctor polish`, `doctor remote`, `remote doctor`, `logs list|tail|boot-failure`). Le centre de contrôle les décrit, et `tests/test_docs_integrity.py` échoue désormais si une route manque à cette page ; deux nouveaux cas de `tests/test_docs_integrity_behavior.py` (21 au total) le prouvent.
+  - **Vocabulaire** : le glossaire fixe un terme par concept (hôte, noyau, sauvegarde, garde réseau, matériel physique, fermé par défaut), appliqué aux guides courants. `SECURITY.md` est réécrit en français, avec la même politique.
+  - **Schémas** : les pages disent que le `.svg` est écrit par le générateur, pas exporté de diagrams.net, et pourquoi un export de diagrams.net ne doit pas le remplacer.
+  - **ADR** : l'index marque l'ADR 0001 comme remplacée par l'ADR 0018 et donne le plan d'une nouvelle ADR, avec ses options écartées.
+
 - CI (chantier D6, lisibilité) :
   - **Noms d'étapes** : les huit étapes de workflow sans nom ont maintenant un nom qui dit ce qu'elles vérifient (job `borg-fedora`, et l'étape `safe.directory` de trois workflows). Les étapes `run: bash tests/…` de `logic-contracts` gardent leur libellé : GitHub y affiche déjà le test lancé.
   - **actionlint** : il ne signale plus rien. La variable `attempt`, inutile, disparaît de `release.yml`. Dans `non-regression.yml`, les motifs entre guillemets simples, qui cherchent un `$` littéral, portent la directive ShellCheck qui le dit.
