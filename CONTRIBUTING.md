@@ -116,7 +116,7 @@ Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son
 ### Schémas
 
 - Un schéma n'existe que s'il répond à une question du lecteur qu'un tableau ou une liste ne règle pas aussi bien.
-- Chaque schéma est une paire de fichiers de même nom de base dans `docs/assets/diagrams/` : la source éditable `<nom>.drawio` (format diagrams.net, XML non compressé) et l'export `<nom>.svg`.
+- Chaque schéma est une paire de fichiers de même nom de base dans `docs/assets/diagrams/` : la source éditable `<nom>.drawio` (format diagrams.net, XML non compressé) et l'image `<nom>.svg` affichée par GitHub. Le générateur écrit les deux à partir du même modèle : le `.svg` n'est pas un export de diagrams.net.
 - Le SVG a un fond opaque, un `<title>` et une `<desc>`. Il reste lisible dans les thèmes clair et sombre de GitHub et ne porte aucune information par la couleur seule.
 - Dans la page, l'image est suivie d'une description textuelle des relations importantes et d'un lien vers sa source `.drawio`.
 - Mermaid n'est pas utilisé.
