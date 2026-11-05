@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Corrections :
+  - **`./repair.sh display` ne réparait plus rien.** Depuis que le script de réparation de l'affichage vérifie seulement (`--check`) quand il est lancé sans argument, l'action « display » de `repair.sh`, et donc l'entrée « Réparation affichage » du menu, affichait l'état sans le corriger. Elle passe maintenant `--reset-certified`, qui réapplique le mode certifié sur le seul écran certifié et refuse plusieurs écrans. `tests/test_golden_workstation_behavior.sh` vérifie l'argument transmis.
+  - **`kvm-io-doctor benchmark` échouait sans la variable `USER`** (`USER: unbound variable`). Le propriétaire du dossier de mesure vient désormais de `id -un`, comme ailleurs dans le dépôt ; `tests/test_hardware_kvm_behavior.sh` passe sans `USER`.
+  - **Guide d'installation, section 7** : il dit que `prepare-preapply-backup.sh` installe Borg et ses outils avec `sudo dnf` s'ils manquent, et que la phrase de confirmation n'est demandée qu'à la création d'un dépôt Borg neuf.
+
 - Documentation (troisième passe de relecture) :
   - **Statuts et preuves** : `CONTRIBUTING.md` compte sept statuts (« Abandonné » et « Échec constaté » s'ajoutent) et précise la portée d'une preuve : elle vaut pour le commit et l'environnement contrôlés. Le tableau du matériel de l'architecture décrit ce que le code contrôle, pas un résultat, et dit que la version du BIOS est relevée mais jamais comparée au minimum. Le README reçoit une section « Contexte du projet ».
   - **Procédures** : le guide d'installation nomme ses trois points de non-retour (installation sur le T705 système, formatage d'un second T705 neuf, APPLY) et ce qu'il faut confirmer avant chacun. La durée des essais de baseline devient une estimation tirée de `diagnostics/baseline-doctor`. Le dépannage s'ouvre sur une section « En urgence » : PC qui ne démarre plus, session GNOME absente, `/data` disparu, fichiers perdus.

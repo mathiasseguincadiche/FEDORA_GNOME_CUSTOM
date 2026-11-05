@@ -108,6 +108,12 @@ for policy in 'DISPLAY_REPAIR_ENABLED=false DISPLAY_REPAIR_ON_RESUME=true' 'DISP
   read -r -a lines <<<"$policy"
   [[ -z "$(watch "${lines[@]}")" && ! -e "$T_LOG" ]] || fail "watcher acted with: $policy"
 done
+# The operator repair (./repair.sh display, menu "RÉPARATION AFFICHAGE") reapplies the
+# certified profile; a bare call would only run the read-only --check.
+rm -f "$T_LOG"
+bash "$fixture/repair.sh" display || fail 'repair.sh display failed'
+[[ "$(grep '^repair ' "$T_LOG" | paste -sd'|')" == 'repair --reset-certified' ]] \
+  || fail "repair.sh display must call --reset-certified, got: $(cat "$T_LOG" 2>/dev/null)"
 rm -f "$state/display-policy.env"
 rc=0; bash "$fixture/scripts/gnome/display-watch.sh" 2>/dev/null || rc=$?
 [[ "$rc" == 1 ]] || fail 'missing display policy not reported'
