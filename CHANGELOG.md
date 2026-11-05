@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Documentation (repères d'exécution et alertes de non-retour) :
+  - **Résumés d'exécution** : le [guide d'installation](docs/INSTALLATION_GUIDE.md), le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) et la [reprise isolée](docs/ISOLATED_RECOVERY_RUNBOOK.md) ouvrent sur un résumé de cases à cocher qui dit où en est l'exécution d'un coup d'œil ; la [restauration](docs/BACKUP_RESTORE.md) reçoit le même résumé en tête de sa procédure. Une exécution interrompue s'y reprend à la première case non cochée, règle d'arrêt relue. Les résumés ne remplacent ni les prérequis ni les validations.
+  - **Alertes GitHub** : les points de non-retour du guide d'installation et l'étape `APPLY` affichent un encadré `> [!CAUTION]` ; la charte réservait déjà les citations aux avertissements importants. Le contenu des avertissements recopie les conditions déjà écrites (sauvegarde pré-APPLY vérifiée, support branché), sans règle nouvelle.
+  - **Métadonnées** : les quatre guides modifiés portent « Mise à jour » au 2026-11-05 et disent que les vérifications de code antérieures n'ont pas été rejouées. `tests/test_docs_integrity.py` passe sur l'archive contrôlée (72 pages, 16 domaines de commandes).
+
 - Corrections :
   - **`./repair.sh display` ne réparait plus rien.** Depuis que le script de réparation de l'affichage vérifie seulement (`--check`) quand il est lancé sans argument, l'action « display » de `repair.sh`, et donc l'entrée « Réparation affichage » du menu, affichait l'état sans le corriger. Elle passe maintenant `--reset-certified`, qui réapplique le mode certifié sur le seul écran certifié et refuse plusieurs écrans. `tests/test_golden_workstation_behavior.sh` vérifie l'argument transmis.
   - **`kvm-io-doctor benchmark` échouait sans la variable `USER`** (`USER: unbound variable`). Le propriétaire du dossier de mesure vient désormais de `id -un`, comme ailleurs dans le dépôt ; `tests/test_hardware_kvm_behavior.sh` passe sans `USER`.

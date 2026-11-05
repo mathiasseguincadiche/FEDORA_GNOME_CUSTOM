@@ -1,9 +1,23 @@
 # Reprise isolée avant qualification Golden
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — commandes relues contre `scripts/backup/` (`backup-now.sh --staging-root`, `restore.sh list|verify|restore`, `disaster-recovery.sh`) — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — résumé d'exécution ajouté et relu contre les étapes de ce guide ; commandes relues le 2026-11-04 contre `scripts/backup/` (`backup-now.sh --staging-root`, `restore.sh list|verify|restore`, `disaster-recovery.sh`), non rejoué — matériel : non vérifié
 
 Objectif : démontrer que les données, Fedora et les VM peuvent être récupérés, puis démarrés, sans écrire sur les disques d'origine. Les essais GitHub sont décrits dans [le laboratoire CI](FEDORA_GNOME_CI_LAB.md) ; cette procédure couvre la vraie configuration et les archives de production.
+
+## Résumé d'exécution
+
+L'exercice se joue sur plusieurs supports et plusieurs sessions : ce résumé dit où en est la reprise d'un coup d'œil. Reprendre à la première case non cochée, en relisant la section d'origine :
+
+- [ ] Commit, configuration, plan de modules et preuve Live conservés hors de la workstation
+- [ ] Sauvegarde complète sans VM créée, doctor consulté, plan de récupération lu
+- [ ] Disques cibles physiquement séparés, identifiés par numéro de série
+- [ ] Fichiers restaurés en staging et comparés (contenu, modes, liens, propriétaires)
+- [ ] Fedora reconstruite sur le disque de test, convergence rejouée
+- [ ] VM reprise depuis l'export manuel, isolation vérifiée
+- [ ] Preuves conservées, puis reprise de la Gate 3
+
+Ce résumé ne remplace pas les critères d'acceptation de chaque étape : un état ambigu ou un membre manquant arrête l'exercice.
 
 ## Préparer la preuve
 

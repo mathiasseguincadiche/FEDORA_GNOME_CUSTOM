@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
 > Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — section 7 relue contre `prepare-preapply-backup.sh` ; commandes, sous-commandes et garde-fous relus contre le code de `main` ; durées des essais contre `diagnostics/baseline-doctor` — matériel : non vérifié
+> Dernière vérification : 2026-11-05 — section 7 relue contre `prepare-preapply-backup.sh` ; commandes, sous-commandes et garde-fous relus contre le code de `main` ; durées des essais contre `diagnostics/baseline-doctor` ; résumé d'exécution et alertes de non-retour ajoutés et relus contre le parcours — matériel : non vérifié
 
 Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
@@ -10,6 +10,21 @@ Ce guide installe le poste de bout en bout : vérification du média, contrôle 
 **Public :** l'opérateur qui installe le PC physique cible.
 **Résultat attendu :** une Fedora 45 installée, convergée, redémarrée sur Linux amont, puis certifiée par la Gate 3. Le poste n'est « Golden runtime-certified » qu'après ce dernier contrôle.
 **État de cette procédure :** la CI en exerce certaines étapes en VM jetable (vérification du média, dry-run, sauvegarde et restauration Borg, session GNOME) ; le parcours complet sur le PC est suivi dans l'[état réel](../README.md#état-réel) et la [fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md). Tout écart constaté lors d'un passage réel se corrige dans ce guide.
+
+## Résumé d'exécution
+
+Pour une installation interrompue ou reprise plus tard, ce résumé dit où en est le parcours d'un coup d'œil. Relire d'abord la [règle d'arrêt](#règle-darrêt), puis reprendre à la première case non cochée :
+
+- [ ] Média Fedora 45 authentifié (section 1)
+- [ ] Contrôle Live `GO`, compte rendu exporté (section 2)
+- [ ] Fedora installée sur le T705 système, preuve importée au même commit (section 2)
+- [ ] Outils et `config/local.conf` prêts, second T705 monté sur `/data` (sections 3 et 4)
+- [ ] Baseline certifiée, dry-run final, sauvegarde pré-APPLY vérifiée (sections 5 à 7)
+- [ ] APPLY terminé, redémarrage sur Linux amont N (sections 8 et 9)
+- [ ] Premier login GNOME contrôlé (section 10)
+- [ ] Gate 3 `PASS`, état certifié vérifié (sections 11 et 12)
+
+Ce résumé ne remplace ni les prérequis ni les validations : il rend l'état d'une exécution visible sans relire le guide.
 
 ## Avant de commencer
 
@@ -54,7 +69,8 @@ La section [En cas d'échec](#en-cas-déchec) liste les refus les plus probables
 
 ### Points de non-retour
 
-Trois étapes changent l'état du PC d'une façon qu'un simple retour en arrière ne défait pas. Avant chacune, confirmer ce qui est indiqué :
+> [!CAUTION]
+> Trois étapes changent l'état du PC d'une façon qu'un simple retour en arrière ne défait pas. Avant chacune, confirmer ce qui est indiqué :
 
 | Étape | Ce qui devient irréversible | À confirmer avant |
 | --- | --- | --- |
@@ -254,6 +270,9 @@ cible externe prouvée (ext4, 20 Gio libres au minimum)
 ## 8. Appliquer la configuration
 
 **But :** faire converger le PC vers la configuration du dépôt. **C'est la seule étape qui modifie réellement le système.**
+
+> [!CAUTION]
+> Point de non-retour : la sauvegarde pré-APPLY doit être vérifiée et son support branché ([points de non-retour](#points-de-non-retour)).
 
 ```bash
 ./install.sh --apply

@@ -1,11 +1,24 @@
 # Fedora 45 / GNOME 51 — vérifier le PC depuis le Live USB
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — points, niveaux et décisions relus contre `lib/live_preflight_probe.sh` et `diagnostics/live-preflight.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — résumé d'exécution ajouté et relu contre les sections de ce guide ; points, niveaux et décisions relus le 2026-11-04 contre `lib/live_preflight_probe.sh` et `diagnostics/live-preflight.sh`, non rejoué — matériel : non vérifié
 
 Ce contrôle se fait directement sur le PC prévu pour l’installation neuve. Il vérifie le démarrage et les fonctions utilisables depuis **Try Fedora**, avant de toucher aux SSD. La CI Linux teste le code séparément ; aucune VM n’est à préparer pour suivre ce parcours.
 
 Un résultat Live réussi signifie **compatibilité de préinstallation observée** (`PREINSTALL_ONLY`). La configuration personnalisée, les services installés, les sauvegardes et Rocky Linux seront qualifiés après l’installation. Le profil Fedora 45 est promu (`ready`) par l’authentification du média final signé et des composants stables ; le contrôle Live ne modifie jamais ce profil.
+
+## Résumé d'exécution
+
+Le contrôle s'étale du Live USB jusqu'au système installé : ce résumé dit où en est l'essai d'un coup d'œil. Reprendre à la première case non cochée :
+
+- [ ] Média Fedora 45 final authentifié, session `Try Fedora` démarrée (section 1)
+- [ ] Support d'export repéré, hors des SSD internes (section 1)
+- [ ] Dépôt détaché au commit audité, SHA noté (section 2)
+- [ ] Observations lancées, questions répondues (section 4)
+- [ ] Décision `GO`, JSON portable et SHA-256 exportés avant redémarrage (section 5)
+- [ ] Après installation : import au même commit, `./control.sh validate status` vérifié (section 6)
+
+Ce résumé ne remplace pas les critères : un point complémentaire `NOT_TESTED` reste visible dans le rapport, même avec un `GO`.
 
 ## 1. Préparer le média et le compte rendu
 

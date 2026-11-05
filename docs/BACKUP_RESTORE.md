@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — sources, exclusions, rétention et commandes relues contre `config/backup.conf`, `lib/backup_runtime.sh` et `scripts/backup/` ; procédure de restauration relue contre `scripts/backup/restore.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — résumé d'exécution de la restauration ajouté et relu contre les étapes de ce guide ; sources, exclusions, rétention et commandes relues le 2026-11-04 contre `config/backup.conf`, `lib/backup_runtime.sh` et `scripts/backup/`, non rejoué — matériel : non vérifié
 
 Le projet sauvegarde avec **Borg 1.x, dans un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une sauvegarde n'est jamais tenue pour bonne parce qu'une commande s'est terminée : elle doit prouver son intégrité et, pour les sauvegardes pré-APPLY et complètes, réussir une vraie restauration d'un fichier témoin (*canary*).
 
@@ -119,6 +119,14 @@ Le timer `fedora-gnome-backup-retention.timer` l'applique chaque dimanche à 04:
 ## Restaurer
 
 Une restauration passe **toujours** par un dossier d'essai vide (staging), à l'intérieur de la racine `BACKUP_RESTORE_STAGING_ROOT` (`~/Restores/fedora-gnome-custom` par défaut). Le projet ne restaure jamais automatiquement en place `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images`. Les commandes se lancent depuis le dossier du dépôt, sans `sudo`, support de sauvegarde branché.
+
+**Résumé d'exécution — où en est la restauration :** reprendre à la première case non cochée ; une erreur de `verify` est un arrêt, pas un obstacle à contourner.
+
+- [ ] Support branché, dépôt listé, `verify` terminé sans erreur
+- [ ] Archive choisie extraite dans un dossier vide de la racine de staging
+- [ ] Staging inspecté : contenus, droits, liens symboliques, propriétaires
+- [ ] Seuls les fichiers voulus copiés à la main, destination vérifiée avant écrasement
+- [ ] Copie de `config/local.conf` vérifiée par `sha256sum --check` si elle est reprise
 
 1. Lister les archives et vérifier le dépôt :
 
