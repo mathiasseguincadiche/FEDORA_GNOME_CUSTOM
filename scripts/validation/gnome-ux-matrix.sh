@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# GNOME UX matrix for the Gate 3: status reads, gate3 runs the guided checks in the real
+# session and records their evidence.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

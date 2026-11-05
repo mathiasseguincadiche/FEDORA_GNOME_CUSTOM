@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of the top-bar monitor: CPU, RAM, disk, network and B580 sources,
+# and the panel position.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

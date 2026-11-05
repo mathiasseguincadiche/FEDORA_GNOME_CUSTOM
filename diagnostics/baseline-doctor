@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Pre-APPLY hardware baseline. status, snapshot and storage-identity only read;
+# prepare-tools, enroll-*, run-*-test and certify write the baseline state (and
+# prepare-tools installs packages). See docs/INSTALLATION_GUIDE.md, section 5.
 # shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

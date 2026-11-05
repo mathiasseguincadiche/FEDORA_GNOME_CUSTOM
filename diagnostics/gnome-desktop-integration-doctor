@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Aggregates the GNOME integration doctors (runtime, Nautilus, Ptyxis, portals,
+# default apps, XDG dirs) and the Gate 3 GNOME evidence. Read-only.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of "Open in Terminal": Nautilus binding to Ptyxis, D-Bus activation,
+# working-directory API and no conflicting menu entry.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

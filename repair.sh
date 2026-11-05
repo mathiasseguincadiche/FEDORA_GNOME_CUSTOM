@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Targeted recovery shortcuts after a diagnosis: display mode, Nautilus cold start, kernel
+# status, rollback to N-1 and emergency return to Fedora kernels. Only display,
+# kernel-rollback and kernel-fedora-recovery change the system.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repair_help() {

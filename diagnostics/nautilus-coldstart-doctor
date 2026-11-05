@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Measures Nautilus cold start (new window until org.gnome.Nautilus is on D-Bus), so it
+# opens a Files window. Writes a report, and on the physical machine the Gate 3 proof.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

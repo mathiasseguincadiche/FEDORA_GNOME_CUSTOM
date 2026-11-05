@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# nftables guard of devops-nat: blocks VM traffic to and from the host's protected routes.
+# check reads; emergency, reconcile and remove change the table. See docs/KVM_NETWORK.md.
 set -Eeuo pipefail
 
 TABLE_FAMILY="inet"

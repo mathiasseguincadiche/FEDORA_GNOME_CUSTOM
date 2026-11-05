@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Gate 3 physical evidence: Bluetooth and cooling enrolment locks, CPU temperature, soak
+# parameters, and the fingerprinted evidence files written and checked by the doctors.
 
 physical_hw_state_dir() { printf '%s/hardware\n' "$STATE_ROOT"; }
 physical_bt_lock_path() { printf '%s/bluetooth-identity.env\n' "$(physical_hw_state_dir)"; }

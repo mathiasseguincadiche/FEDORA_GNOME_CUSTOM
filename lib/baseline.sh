@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Hardware baseline helpers: state paths, read-only sysfs inventory (CPU, GPU, NVMe,
+# memory, EDID) and the fingerprint the pre-APPLY baseline is bound to.
 
 baseline_state_dir(){ printf '%s/baseline' "$STATE_ROOT"; }
 baseline_evidence_dir(){ printf '%s/evidence' "$(baseline_state_dir)"; }

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks codecs and VA-API decoding on the B580. Read-only for the system; writes the
+# VA-API smoke output under reports/.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

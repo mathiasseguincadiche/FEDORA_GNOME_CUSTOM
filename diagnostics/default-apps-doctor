@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check that xdg-mime opens each file type with the application chosen in
+# config/applications.conf (--native: GNOME applications only).
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

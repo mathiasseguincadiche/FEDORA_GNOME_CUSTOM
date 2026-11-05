@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Daily user backup run by the systemd user timer: refuses a /data that is not the second
+# T705, skips when the repository is unreachable, and records the result under state/.
 set -Eeuo pipefail
 umask 077
 

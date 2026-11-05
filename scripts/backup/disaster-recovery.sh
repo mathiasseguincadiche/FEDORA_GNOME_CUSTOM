@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Disaster recovery plan: verifies the latest full archive (borg check, canary extraction)
+# and writes a plan with the commit and manifest needed to rebuild the host. Restores
+# nothing in place. See docs/BACKUP_RESTORE.md.
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

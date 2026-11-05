@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Read-only check of the Ptyxis package, the GNOME session and the login shell it opens.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of the KVM stack: storage mount and pool, devops-nat network and
+# bridge, firewalld zone, nftables network guard, TPM emulator and VM profiles.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

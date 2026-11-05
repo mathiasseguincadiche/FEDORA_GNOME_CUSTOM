@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Shows or switches the TuneD power profile (balanced, performance, powersave).
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Loads the backup engine for the daily and retention timers: from the installed runtime
+# bundle when FEDORA_GNOME_CUSTOM_RUNTIME_ROOT is set (integrity checked against its
+# MANIFEST.sha256 and APPLIED_SHA), otherwise from this repository.
 
 backup_runtime_bundle_init() {
   export LC_ALL=C

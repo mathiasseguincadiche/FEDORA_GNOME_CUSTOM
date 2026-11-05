@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of sched_ext support. --smoke (physical machine) runs scx_rusty or
+# scx_lavd with sudo for a few seconds and logs it under reports/.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

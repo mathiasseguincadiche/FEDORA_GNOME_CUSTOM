@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Display watcher (user service): snapshot before sleep and restore after resume; monitor
+# and DRM changes only trigger --check. Driven by display-policy.env.
 set -Eeuo pipefail
 repair="$HOME/.local/libexec/fedora-gnome-display-repair"
 [[ -x "$repair" ]] || exit 0

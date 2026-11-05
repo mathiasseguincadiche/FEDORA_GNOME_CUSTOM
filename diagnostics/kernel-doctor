@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of the kernel lifecycle: running kernel, N and N-1, the Fedora
+# fallback, GRUB default and installonly_limit. See docs/UPSTREAM_LINUX.md.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

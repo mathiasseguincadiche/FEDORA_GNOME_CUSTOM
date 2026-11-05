@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of KVM: libvirt access without sudo, cgroups v2, QEMU domain
+# capabilities and the runtime certification of rocky-devops.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

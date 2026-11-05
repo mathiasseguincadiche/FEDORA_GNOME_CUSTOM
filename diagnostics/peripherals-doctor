@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# list reads audio and camera devices; enroll writes the peripheral identity lock;
+# test-camera and test-audio run a real capture on the physical machine.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

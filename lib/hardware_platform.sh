@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only identity of the target platform from sysfs and DMI: board and BIOS, CPU
+# frequency policy, Wi-Fi identity lock and hardware sensors.
 
 hardware_platform_sysfs_root() { printf '%s\n' "${HARDWARE_SYSFS_ROOT:-/sys}"; }
 hardware_platform_dmi_root() { printf '%s/class/dmi/id\n' "$(hardware_platform_sysfs_root)"; }

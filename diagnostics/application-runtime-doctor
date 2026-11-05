@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Launches each application of manifests/application-runtime-contract.tsv with its smoke
+# argument. Read-only for the system; writes reports/<RUN_ID>-application-runtime.txt.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

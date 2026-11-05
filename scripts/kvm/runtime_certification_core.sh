@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# KVM runtime certification of rocky-devops: domain, guest agent, network, SSH, DevOps stack
+# and LAN isolation tested from inside the VM. Prints OK/WARN/KO and fails on any KO.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

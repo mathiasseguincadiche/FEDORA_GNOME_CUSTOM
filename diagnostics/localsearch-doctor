@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks the LocalSearch indexer. In a GNOME session it writes a canary file in $HOME,
+# checks it gets indexed, and removes it on exit.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

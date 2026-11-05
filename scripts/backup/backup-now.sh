@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Full Borg backup of the host and user data (./control.sh backup now): never VMs;
+# --prune also applies the retention policy, --staging-root sets the canary restore area.
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

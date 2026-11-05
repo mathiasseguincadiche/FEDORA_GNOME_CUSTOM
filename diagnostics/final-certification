@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Gate 3 certification. status reads; record-suspend and certify write state/final/
+# (certify creates certified.ok only when every required proof is present and current).
 # shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

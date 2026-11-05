@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Global read-only diagnosis (./control.sh doctor all). On the physical machine it runs
+# diagnostics/workstation-doctor --summary; in CI, a VM or a container it reports that
+# hardware certification is not possible there.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"

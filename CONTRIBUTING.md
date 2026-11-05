@@ -156,6 +156,8 @@ Texte `#0F172A`, flèches `#334155` (10,4:1 sur blanc), police Arial, fond de sc
 
 `set -Eeuo pipefail` quand le script le permet, code propre au ShellCheck de la CI (0.9), messages courts, aucune mutation cachée derrière un diagnostic, `NO_COLOR=1` utilisable.
 
+Chaque point d'entrée, doctor, script et bibliothèque commence, juste après le shebang, par un commentaire qui dit son rôle et ce qu'il peut modifier : rien, un rapport dans `reports/`, une preuve dans `state/`, ou le système. Les modules en sont dispensés, car leur fonction `plan` les décrit déjà. `tests/test_structure.sh` refuse un fichier sans ce commentaire. Un commentaire dans le code explique une intention ou une précaution, jamais ce que la ligne dit déjà.
+
 ## Matériel et Gate 3
 
 Un résultat CI ne prouve rien sur le matériel. Toute modification du noyau, du firmware, des pilotes, du stockage, de l'affichage, de KVM, du Gaming ou de la veille peut demander une nouvelle preuve Gate 3 et rendre une certification `STALE`.

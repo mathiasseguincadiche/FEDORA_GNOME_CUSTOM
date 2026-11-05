@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Borg restore: list and verify read; restore extracts an archive into the staging root
+# (~/Restores/fedora-gnome-custom), never in place.
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Installs one GNOME extension (DING, SHOW_DESKTOP_PLUS, RESOURCE_MONITOR, TILING_ASSISTANT)
+# from the reviewed archive of the release lock, after checking its SHA-256 and metadata.
 set -Eeuo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 prefix="${1:-}"

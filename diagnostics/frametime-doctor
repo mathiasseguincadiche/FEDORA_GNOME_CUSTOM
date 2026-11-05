@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Analyses a MangoHud CSV given as argument against config/performance-runtime.policy.
+# Reads the file only.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

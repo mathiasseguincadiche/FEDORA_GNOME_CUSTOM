@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Keeps the GRUB menu to the kernels of the policy (two upstream entries and the Fedora
+# fallback). --check reads; --apply (default) also removes dracut-config-rescue and the
+# rescue entries. Physical machine only.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

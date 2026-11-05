@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Creates the rocky-devops VM from an authenticated Rocky 10.2 cloud image (--cloud-image),
+# with cloud-init and the operator SSH key. Refuses to overwrite an existing domain.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

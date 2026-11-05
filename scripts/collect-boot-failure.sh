@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Saves the previous boot's warnings, kernel errors, coredumps, pstore and failed units to
+# reports/. Read-only for the system; first step after a failed boot.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$REPO_ROOT/reports/$(date -u +%Y%m%dT%H%M%SZ)-previous-boot-failure.txt"

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Creates the pre-APPLY Borg backup: requires a clean Git tree and a current dry-run proof,
+# installs missing Borg prerequisites with dnf, then archives, verifies (--verify-data),
+# restores a canary and writes a marker bound to the dry-run state. Never archives VMs.
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks SFTP access to the Rocky VM from GIO: writes a canary file on the VM, reads it
+# back and removes it.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

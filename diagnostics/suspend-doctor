@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Prints the last pre-suspend and post-resume captures and the current boot's suspend
+# signals. Read-only.
 set -Eeuo pipefail
 ROOT=/var/lib/fedora-gnome-custom/suspend
 printf 'mem_sleep: '; cat /sys/power/mem_sleep 2>/dev/null || echo unknown

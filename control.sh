@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Operator entrypoint (Workstation Control Center): routes ./control.sh DOMAIN ACTION to
+# the engines (install.sh, scripts/, diagnostics/, lib/control_center.sh). It holds no
+# business logic and removes no safeguard. Reference: docs/CONTROL_CENTER.md.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
