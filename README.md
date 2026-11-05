@@ -52,6 +52,10 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 | Utiliser et entretenir le poste | Le [centre de contrôle](docs/CONTROL_CENTER.md), puis le [dépannage](docs/TROUBLESHOOTING.md) |
 | Voir tous les guides | Le [portail de la documentation](docs/README.md) |
 
+## Contexte du projet
+
+C'est un projet personnel, mené par le propriétaire du PC ([@mathiasseguincadiche](https://github.com/mathiasseguincadiche)) pour son propre poste et comme terrain d'apprentissage. Il en fixe les objectifs, les décisions d'architecture, consignées dans les [ADR](docs/adr/README.md), et le niveau de preuve exigé. Chaque changement passe par une pull request qu'il fusionne lui-même.
+
 ## Contribuer
 
 Les changements passent par pull request, avec les tests adaptés à leur portée. Les [consignes de contribution](CONTRIBUTING.md) décrivent le flux de travail, la CI et les règles de rédaction ; l'[historique des versions](CHANGELOG.md) retrace les changements.

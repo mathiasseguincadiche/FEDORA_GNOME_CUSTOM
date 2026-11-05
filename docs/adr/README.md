@@ -2,7 +2,7 @@
 
 Les ADR documentent les décisions qui structurent la Golden Workstation. Ils expliquent **pourquoi** un choix existe afin d'éviter qu'une future maintenance ne le supprime comme s'il s'agissait d'une simple préférence.
 
-- [0001 — Fedora 44 + GNOME 50](0001-fedora44-gnome50.md)
+- [0001 — Fedora 44 + GNOME 50 — remplacé par ADR 0018](0001-fedora44-gnome50.md)
 - [0002 — Secure Boot OFF et aucun LUKS local](0002-no-secureboot-no-local-luks.md)
 - [0003 — Kernel Vanilla candidate/certified — remplacé par ADR 0010](0003-kernel-vanilla-candidate-certified.md)
 - [0004 — Btrfs root + EXT4 KVM — remplacé par ADR 0011](0004-btrfs-root-ext4-kvm.md)
@@ -23,3 +23,27 @@ Les ADR documentent les décisions qui structurent la Golden Workstation. Ils ex
 - [0019 — Validation native Live USB puis système installé](0019-native-live-usb-validation.md)
 - [0020 — Noyau Fedora de secours à côté de Linux amont N / N-1](0020-fedora-kernel-boot-fallback.md)
 - [0021 — Aucune clé privée dans les sauvegardes non chiffrées](0021-no-private-keys-in-unencrypted-backups.md)
+
+## Écrire une nouvelle ADR
+
+Une ADR s'écrit pour un choix durable et coûteux à inverser, au moment où il est pris. Les ADR existantes gardent leur forme d'origine ; une nouvelle suit ce plan :
+
+```markdown
+# ADR NNNN — La décision, en une phrase
+
+**Statut : proposé | accepté | remplacé par ADR NNNN**
+
+## Contexte
+Les faits qui rendent la décision nécessaire.
+
+## Décision
+Ce qui est retenu.
+
+## Options écartées
+Chaque option sérieuse et la raison de son rejet.
+
+## Conséquences
+Ce que la décision apporte, ce qu'elle coûte, et ce qu'elle interdit.
+```
+
+Une décision remplacée n'est jamais effacée : son statut devient « remplacé par ADR NNNN », et cette liste le reprend. Une raison inconnue s'écrit « raison non documentée » ; elle ne se reconstitue pas après coup.

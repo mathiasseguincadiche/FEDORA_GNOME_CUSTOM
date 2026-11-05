@@ -1,7 +1,7 @@
 # Vision et architecture
 
 > Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — contrat d'exécution relu contre `lib/apply_gate.sh` et `config/apply-gate.conf`, invariants contre `config/kernel.conf`, `config/virtualization.conf` et `config/backup.conf`, ADR cités présents dans `docs/adr/` — matériel : non vérifié
+> Dernière vérification : 2026-11-04 — contrat d'exécution relu contre `lib/apply_gate.sh` et `config/apply-gate.conf`, invariants contre `config/kernel.conf`, `config/virtualization.conf` et `config/backup.conf`, ADR cités présents dans `docs/adr/`, tableau du matériel contre `lib/hardware_platform.sh` et `config/baseline.conf` — matériel : non vérifié
 
 ## Pourquoi ce projet
 
@@ -23,16 +23,18 @@ Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (un
 | Composant | Modèle | Ce que le projet en fait |
 |---|---|---|
 | Processeur | AMD Ryzen 7 7700 (8C/16T, 65 W) | amd-pstate, profils d'énergie, contrôle de stabilité |
-| Carte mère | MSI MAG B850M Mortar WiFi, BIOS 1.A66 ou plus récent | identité vérifiée ; BIOS mis à jour par le propriétaire, version non contrôlée par le code |
-| Mémoire | 48 Go DDR5-6000 CL30 (2 × 24 Go G.Skill) | testée à 5600 puis 6000 MT/s (EXPO/XMP) |
+| Carte mère | MSI MAG B850M Mortar WiFi, BIOS 1.A66 ou plus récent | identité contrôlée ; version du BIOS relevée dans la baseline mais jamais comparée à ce minimum : sa mise à jour revient au propriétaire |
+| Mémoire | 48 Go DDR5-6000 CL30 (2 × 24 Go G.Skill) | essais de stabilité à 5600 puis 6000 MT/s (EXPO/XMP) pendant la baseline |
 | GPU | ASRock Intel Arc B580 Challenger 12 Go | pilote `xe` et Mesa de Fedora, réservé à l'hôte |
 | Stockage | 2 × Crucial T705 1 To (PCIe 5.0) | système Btrfs sur le premier, `/data` EXT4 persistant sur le second |
 | Sauvegarde | Kingston XS1000 USB 3.2 (~1,8 To) | cible Borg externe en ext4 |
-| Réseau | Wi-Fi 7 Qualcomm FastConnect 7800, Realtek 5 GbE, Bluetooth Qualcomm | identités et pilotes vérifiés |
-| Audio, webcam | Realtek ALC4080, Logitech Brio 100 | identités vérifiées |
+| Réseau | Wi-Fi 7 Qualcomm FastConnect 7800, Realtek 5 GbE, Bluetooth Qualcomm | identités et pilotes contrôlés par les doctors |
+| Audio, webcam | Realtek ALC4080, Logitech Brio 100 | identités contrôlées par les doctors |
 | Écran | ASUS ROG Strix XG27AQDMES, 27" QD-OLED 1440p 240 Hz | 2560×1440 à 240 Hz, reprise après veille, soin OLED |
 | Refroidissement | DeepCool LD240 (AIO 240 mm), 3 × Arctic P12 Pro | surveillance ; afficheur LD240 en option manuelle |
 | Alimentation, boîtier | Corsair RM650e, ASUS Prime AP201 | — |
+
+La colonne de droite décrit ce que le code contrôle, pas un résultat obtenu : ces contrôles tourneront sur le PC pendant la baseline puis la Gate 3, et leur état est suivi dans l'[état réel](../README.md#état-réel) du projet.
 
 ## Décisions du propriétaire
 

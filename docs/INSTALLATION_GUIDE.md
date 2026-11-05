@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
 > Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — commandes, sous-commandes et garde-fous relus contre le code de `main` — matériel : non vérifié
+> Dernière vérification : 2026-11-04 — commandes, sous-commandes et garde-fous relus contre le code de `main` ; durées des essais contre `diagnostics/baseline-doctor` — matériel : non vérifié
 
 Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
@@ -9,6 +9,7 @@ Ce guide installe le poste de bout en bout : vérification du média, contrôle 
 
 **Public :** l'opérateur qui installe le PC physique cible.
 **Résultat attendu :** une Fedora 45 installée, convergée, redémarrée sur Linux amont, puis certifiée par la Gate 3. Le poste n'est « Golden runtime-certified » qu'après ce dernier contrôle.
+**État de cette procédure :** la CI en exerce certaines étapes en VM jetable (vérification du média, dry-run, sauvegarde et restauration Borg, session GNOME) ; le parcours complet sur le PC est suivi dans l'[état réel](../README.md#état-réel) et la [fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md). Tout écart constaté lors d'un passage réel se corrige dans ce guide.
 
 ## Avant de commencer
 
@@ -50,6 +51,16 @@ Le parcours échoue fermé : **ne pas continuer** quand une précondition, un do
 - le dépôt Git contient des modifications.
 
 La section [En cas d'échec](#en-cas-déchec) liste les refus les plus probables et leur correction.
+
+### Points de non-retour
+
+Trois étapes changent l'état du PC d'une façon qu'un simple retour en arrière ne défait pas. Avant chacune, confirmer ce qui est indiqué :
+
+| Étape | Ce qui devient irréversible | À confirmer avant |
+| --- | --- | --- |
+| Section 2, confirmation de l'installateur Fedora (ou phrase du Kickstart) | le T705 choisi est effacé | numéro de série du disque relu ; preuve Live exportée hors des deux T705 |
+| Section 4, formatage d'un second T705 **neuf** | tout contenu de ce disque est perdu | numéro de série ; le disque ne contient aucune donnée à garder |
+| Section 8, `./install.sh --apply` | le système converge vers le dépôt ; revenir en arrière demande une restauration manuelle | sauvegarde pré-APPLY vérifiée et support branché |
 
 ---
 
@@ -195,7 +206,7 @@ Régler ensuite 6000 MT/s dans l'UEFI, redémarrer, puis terminer :
 ./diagnostics/baseline-doctor certify
 ```
 
-Les essais durent environ deux heures et demie au total : 60 minutes par passe mémoire et 30 minutes de charge CPU. Le projet ne change jamais les réglages de l'UEFI ; chaque essai vérifie la vitesse réellement configurée. Les essais NVMe écrivent un fichier temporaire, jamais sur le disque brut.
+Les essais mémoire et CPU durent environ deux heures et demie, d'après les durées par défaut de `diagnostics/baseline-doctor` : 3 600 secondes par passe mémoire (5600 puis 6000 MT/s) et 1 800 secondes de charge CPU. C'est une estimation à partir de ces durées, à laquelle s'ajoutent les essais NVMe. Le projet ne change jamais les réglages de l'UEFI ; chaque essai vérifie la vitesse réellement configurée. Les essais NVMe écrivent un fichier temporaire, jamais sur le disque brut.
 
 **Réussite :** `certify` réussit. Le profil d'écran certifié est alors enregistré dans `~/.local/state/fedora-gnome-custom/display-profile.env`. Un échec matériel arrête le parcours.
 
@@ -343,7 +354,7 @@ Chaque cause ci-dessous reste une hypothèse tant que la vérification indiquée
 | APPLY refusé : Secure Boot | Secure Boot actif ou état illisible | `mokutil --sb-state` | Désactiver Secure Boot dans l'UEFI | Section 8 |
 | Démarrage sur N-1 ou échec de N | Régression du noyau N | `./control.sh kernel status`, journal du démarrage précédent | `./control.sh kernel rollback` ; si aucun noyau amont ne démarre, choisir l'entrée Fedora dans GRUB ([dépannage](TROUBLESHOOTING.md)) | `kernel-doctor` |
 
-**Retour arrière.** L'APPLY ne supprime aucune donnée de `/data`. Pour revenir à l'état d'avant l'APPLY, restaurer l'archive pré-APPLY en staging, puis remettre les fichiers voulus à la main, selon [sauvegardes et restauration](BACKUP_RESTORE.md). Une réinstallation complète repart de la section 2 et réutilise le second T705 sans le reformater.
+**Retour arrière.** L'APPLY ne supprime aucune donnée de `/data`. Pour revenir à l'état d'avant l'APPLY, restaurer l'archive pré-APPLY en staging, puis remettre les fichiers voulus à la main, selon [sauvegardes et restauration](BACKUP_RESTORE.md). Une réinstallation complète repart de la section 2 et réutilise le second T705 sans le reformater. La CI restaure une archive Borg réelle en VM ; le retour arrière après un APPLY sur le PC reste à essayer pendant la qualification.
 
 ## Après la certification
 

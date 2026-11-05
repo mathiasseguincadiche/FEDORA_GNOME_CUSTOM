@@ -83,10 +83,16 @@ Toute affirmation sur ce que fait le projet porte l'un de ces statuts, explicite
 | Prévu | Décidé, pas commencé | Aucune |
 | En cours | Commencé, non terminé | Référence au travail (branche, PR) |
 | Réalisé | Présent dans le code ou la configuration | Fichier identifiable |
+| Abandonné | Prévu ou commencé, puis retiré | Raison et date, si elles sont connues |
 | Vérifié | Contrôlé par une méthode traçable | Date, méthode, environnement et résultat |
+| Échec constaté | Contrôlé, et le résultat attendu n'est pas obtenu | Comme « Vérifié », avec le résultat réel |
 | Non vérifié | Contrôle non fait ou impossible | Ce qui n'a pas été contrôlé, et pourquoi |
 
+Les trois premiers statuts et « Abandonné » disent où en est le travail ; « Vérifié », « Échec constaté » et « Non vérifié » disent s'il a été contrôlé. Un élément porte souvent les deux, par exemple « Réalisé — Non vérifié » : la présence du code ne prouve pas qu'il fonctionne.
+
 « Vérifié par la CI » et « vérifié sur le matériel » ne se confondent jamais : seule la Gate 3 vérifie le PC. Une sortie de commande donnée en exemple est signalée comme telle ; elle n'est jamais présentée comme un résultat observé.
+
+**Portée d'une preuve.** Un « Vérifié » vaut pour le commit, l'environnement et le périmètre contrôlés, et les nomme (« au commit `0007d97`, en VM jetable »). Quand l'élément change ensuite, son contrôle redevient « Non vérifié » jusqu'au suivant. Un échec corrigé reste consigné, suivi de la nouvelle validation.
 
 ### Ton et vocabulaire
 
