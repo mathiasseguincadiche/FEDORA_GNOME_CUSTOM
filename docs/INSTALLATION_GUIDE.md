@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — commandes, sous-commandes et garde-fous relus contre le code de `main` ; durées des essais contre `diagnostics/baseline-doctor` — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — section 7 relue contre `prepare-preapply-backup.sh` ; commandes, sous-commandes et garde-fous relus contre le code de `main` ; durées des essais contre `diagnostics/baseline-doctor` — matériel : non vérifié
 
 Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
@@ -239,7 +239,7 @@ Le dry-run exécute precheck, plan, apply et postcheck avec toutes les mutations
 ./prepare-preapply-backup.sh
 ```
 
-Le script demande la phrase de confirmation définie dans `config/backup.conf`, puis enchaîne :
+Le script exige un dépôt Git propre et le dry-run du même état. Si Borg ou l'un de ses outils manque, il l'installe d'abord avec `sudo dnf` *(modifie le système)*. Si le dépôt Borg n'existe pas encore sur le support, il demande la phrase de confirmation définie dans `config/backup.conf` avant de le créer, sans chiffrement ([ADR 0014](adr/0014-borg-unencrypted-backups.md)). Il enchaîne ensuite :
 
 ```text
 cible externe prouvée (ext4, 20 Gio libres au minimum)

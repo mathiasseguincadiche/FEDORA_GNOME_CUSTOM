@@ -17,7 +17,7 @@ require_target(){
 run_profile(){
   local engine="$1" out="$2" path="${KVM_DATA_MOUNT:-/data}/libvirt/benchmarks"
   sudo install -d -m 0755 "$path"
-  sudo chown "$USER":"$(id -gn)" "$path"
+  sudo chown "$(id -un)":"$(id -gn)" "$path"
   fio --name="kvm-${engine}" --filename="$path/kvm-io-test.bin" --size="${KVM_IO_BENCHMARK_SIZE:-2G}" \
     --runtime="${KVM_IO_BENCHMARK_RUNTIME_S:-20}" --time_based=1 --rw=randrw --rwmixread=70 \
     --bs="${KVM_IO_BENCHMARK_BS:-4k}" --iodepth="${KVM_IO_BENCHMARK_IODEPTH:-32}" --direct=1 \

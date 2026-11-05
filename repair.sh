@@ -23,7 +23,8 @@ EOF
 
 case "${1:-help}" in
  display)
-   exec "$HOME/.local/libexec/fedora-gnome-display-repair"
+   # Without an argument the helper only runs --check (the watchers rely on that).
+   exec "$HOME/.local/libexec/fedora-gnome-display-repair" --reset-certified
    ;;
  kernel-status)
    exec "$REPO_ROOT/diagnostics/kernel-doctor"
