@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check, through the public GitHub API, that main keeps its ruleset: required
+# contexts, merge commits only, no force-push or deletion. Changes nothing.
 set -Eeuo pipefail
 
 repo="${1:-mathiasseguincadiche/FEDORA_GNOME_CUSTOM}"

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Retention of logs/ and reports/ (./control.sh logs retention|prune): --check lists what
+# would go, --apply deletes it. state/ and Golden evidence are never touched.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# One stable Bash diagnostics entrypoint: Shell quality audits diagnostics/*.
+# Read-only report of the AV1 VA-API capabilities of the Arc B580 (not a Sunshine or
+# Moonlight certification). Bash entrypoint for scripts/validation/arc-b580-av1.py,
+# because Shell quality audits every diagnostics/* file as Bash.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 exec python3 "$ROOT/scripts/validation/arc-b580-av1.py" "$@"

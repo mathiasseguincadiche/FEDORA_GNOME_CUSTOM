@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Reports the recorded KVM I/O profile. The benchmark action (physical machine, no VM
+# running) creates /data/libvirt/benchmarks, runs fio on a 2 GiB test file, removes it
+# and records the result under ~/.local/state.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

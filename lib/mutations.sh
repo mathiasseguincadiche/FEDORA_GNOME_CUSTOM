@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Mutation wrapper: run_mutating logs and skips its command when DRY_RUN is true, so
+# modules share one code path for the dry-run and the APPLY.
 
 run_readonly() {
   local scope="$1"; shift

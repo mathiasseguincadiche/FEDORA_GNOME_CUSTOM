@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks the certified display profile (2560x1440, ~240 Hz, full RGB) and DRM/xe journal
+# signals. Read-only for the system; saves gdctl and drm_info output under reports/.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Imports a Live USB proof on the installed system after checking its commit, module plan
+# and hardware identities.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

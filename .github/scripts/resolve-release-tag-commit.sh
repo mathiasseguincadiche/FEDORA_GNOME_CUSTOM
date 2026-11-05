@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# CI helper for release.yml: resolves a vX.Y.Z-rc.N tag to the commit it points to, through
+# the GitHub API (gh, jq).
 set -Eeuo pipefail
 
 tag="${1:-}"

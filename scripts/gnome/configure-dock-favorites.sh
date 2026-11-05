@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Writes the GNOME dock favourites (org.gnome.shell favorite-apps) from the given list or
+# GNOME_DOCK_FAVORITES, after checking each launcher ID.
 set -Eeuo pipefail
 
 favorites="${1:-${GNOME_DOCK_FAVORITES:-}}"

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Live USB checks behind ./control.sh validate live: plan lists, run observes and asks,
+# status reads. Never installs packages or writes to the SSDs.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"

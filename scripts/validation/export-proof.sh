@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copies the Live USB proof (gate 2) and its SHA-256 to an external directory.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

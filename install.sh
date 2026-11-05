@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Runs the modules of manifests/module-plan.conf in order. --dry-run (default) neutralises
+# every mutation and writes the dry-run proof; --collect-all visits every module without
+# writing it. --apply opens the apply gate (lib/apply_gate.sh) first, then converges the
+# system. Reference: docs/ARCHITECTURE.md#contrat-dexécution.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="${1:---dry-run}"

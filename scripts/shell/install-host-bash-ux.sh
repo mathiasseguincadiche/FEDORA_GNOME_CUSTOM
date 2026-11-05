@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Installs the host Bash profile from FGC_SHELL_SOURCE_DIR into ~/.config and adds one
+# marked block to ~/.bashrc, after backing up the original file once.
 set -Eeuo pipefail
 
 source_dir="${FGC_SHELL_SOURCE_DIR:?FGC_SHELL_SOURCE_DIR is required}"

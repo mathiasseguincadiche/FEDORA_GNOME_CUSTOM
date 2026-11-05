@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Private engine behind installer/verify-fedora-media.sh: checks the ISO name and SHA-256,
+# the CHECKSUM signature and the signing key pinned in the release media lock. Read-only.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck disable=SC1091

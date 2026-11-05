@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# CI laboratory: boots the pinned Rocky Linux 10.2 cloud image in a throw-away QEMU VM on
+# the runner and runs the DevOps guest checks; writes .vm-pretest/report.txt.
 set -Eeuo pipefail
 
 ROOT="${GITHUB_WORKSPACE:-$(pwd)}"

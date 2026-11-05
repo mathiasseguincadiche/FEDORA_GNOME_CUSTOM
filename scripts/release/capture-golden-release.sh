@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Captures a Golden release under state/releases/<release_id>/ on the installed, certified
+# PC: golden-release.json (commit, configuration, hardware) and the software inventory
+# files with their MANIFEST.sha256. Refuses when a proof is missing.
 set -Eeuo pipefail
 umask 077
 

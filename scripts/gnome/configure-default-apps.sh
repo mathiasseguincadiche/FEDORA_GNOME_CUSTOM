@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Sets the default application of each file type with xdg-mime (native: GNOME applications
+# only; full: browser included). Called by the applications module during APPLY.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

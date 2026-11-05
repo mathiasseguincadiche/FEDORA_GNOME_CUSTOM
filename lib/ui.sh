@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Console output helpers shared by the engines and doctors (banner, check line, summary).
 
 ui_banner() { printf '\n==== %s :: %s ====\n' "$1" "$2"; }
 ui_meta() { printf '%-22s %s\n' "$1:" "$2"; }

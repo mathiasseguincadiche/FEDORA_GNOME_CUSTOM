@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of the driver contract: xe for the B580, NVMe for both T705, 5 GbE,
+# Wi-Fi, xHCI, and no foreign GPU stack.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

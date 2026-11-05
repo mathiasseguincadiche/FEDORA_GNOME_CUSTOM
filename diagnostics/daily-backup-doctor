@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of the daily user backup: timers, runtime bundle, last archive,
+# retention run and refused (fgc-pending-*) archives.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

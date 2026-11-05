@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks AppImage support: /dev/fuse, Type 1 and Type 2 detection, Gear Lever and the
+# compatibility runner. Writes only two temporary probe files, removed on exit.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

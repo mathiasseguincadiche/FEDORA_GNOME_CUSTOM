@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Private engine behind installer/generate-fedora-kickstart.sh: writes a Kickstart that
+# erases only the disk given by --disk. The caller must pass --release explicitly.
 set -Eeuo pipefail
 umask 077
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

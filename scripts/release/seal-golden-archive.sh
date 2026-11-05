@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Seals a long-term Golden archive: copies the operator's payloads to DESTINATION with
+# their SHA-256, behind a current PASS certificate. Downloads nothing.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

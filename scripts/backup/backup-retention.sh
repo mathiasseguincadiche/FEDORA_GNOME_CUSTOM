@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Applies the versioned Borg retention policy (borg prune, then one borg compact). Run by
+# the weekly timer, where a missing target is a skip; --strict makes it an error.
 set -Eeuo pipefail
 umask 077
 

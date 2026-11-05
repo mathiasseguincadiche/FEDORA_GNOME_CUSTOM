@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Real VA-API decode test on the Arc B580 render node: encodes small fixtures with ffmpeg
+# and decodes H.264, HEVC, VP9 and AV1 in hardware.
 set -Eeuo pipefail
 
 command -v ffmpeg >/dev/null || { echo 'ffmpeg missing' >&2; exit 1; }

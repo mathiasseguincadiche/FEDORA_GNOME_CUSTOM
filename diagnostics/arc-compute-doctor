@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Runs real Level Zero and OpenCL compute probes on the Arc B580. Read-only for the
+# system; writes the OpenCL smoke output under reports/.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

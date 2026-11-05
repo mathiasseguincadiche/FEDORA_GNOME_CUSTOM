@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Runs a game with gamemoderun under the TuneD performance profile, then restores the
+# previous profile on exit. Physical machine only.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

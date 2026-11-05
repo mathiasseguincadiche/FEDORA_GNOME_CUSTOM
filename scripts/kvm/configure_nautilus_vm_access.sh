@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Adds, refreshes, shows or removes the Nautilus SFTP bookmark of rocky-devops, and opens it
+# (open-rocky). No host directory is shared with the VM.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

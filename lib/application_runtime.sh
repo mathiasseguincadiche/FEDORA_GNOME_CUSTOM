@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Application runtime contract: validates each RPM or Flatpak of
+# manifests/application-runtime-contract.tsv against manifests/application-provenance.tsv,
+# and fingerprints the contract for the certification.
 
 application_runtime_contract_path() { printf '%s/manifests/application-runtime-contract.tsv\n' "$REPO_ROOT"; }
 application_runtime_provenance_path() { printf '%s/manifests/application-provenance.tsv\n' "$REPO_ROOT"; }

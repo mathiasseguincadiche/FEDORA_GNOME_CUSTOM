@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Read-only summary of the validation pipeline: Live proof, installed system and Gate 3.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

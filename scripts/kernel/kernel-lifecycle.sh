@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Kernel lifecycle commands behind ./control.sh kernel: status reads; install-latest, prune,
+# rollback and the fallback actions change the installed kernels or the GRUB default.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

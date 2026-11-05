@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# KVM contract: expected I/O profile, validation of the libvirt domain capabilities and
+# guest XML, and the fingerprint used by the KVM certification.
 
 kvm_contract_expected_io() {
   local state="${KVM_IO_PROFILE_STATE:-${HOME}/.local/state/fedora-gnome-custom/kvm-io-profile.env}" selected=""

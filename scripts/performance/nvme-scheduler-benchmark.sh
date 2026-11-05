@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Benchmarks the I/O schedulers of the T705 with fio (physical machine, benchmark-only
+# policy); never changes the scheduler in use.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

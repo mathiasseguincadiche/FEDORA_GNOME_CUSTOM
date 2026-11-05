@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Gate 3 commands behind ./control.sh validate gate3: status reads; record-suspend and
+# certify write the final evidence on the installed physical machine.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

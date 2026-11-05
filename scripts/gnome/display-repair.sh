@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Display repair, installed as ~/.local/libexec/fedora-gnome-display-repair. --check (default)
+# only prints the layout; --snapshot and --restore keep the layout across sleep;
+# --reset-certified reapplies the certified mode on the single certified screen.
 set -Eeuo pipefail
 
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-gnome-custom"

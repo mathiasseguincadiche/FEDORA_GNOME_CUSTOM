@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Validates the keys and value types of config/*.conf and config/local.conf against
+# config/schema.digest and config/schema-enums.tsv; --emit-schema prints the type digests.
 set -Eeuo pipefail
 
 config_dir="${1:-}"

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of CPU microcode, Intel GPU (xe) and RTL8126 firmware, in packages and
+# in the boot journal. Never flashes firmware (ADR 0008).
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

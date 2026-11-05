@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Aggregates the host doctors (baseline, board, security policy, GNOME, Bash, backup,
+# KVM I/O, remote access) into one summary. Read-only.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# System updates behind ./control.sh update: check, prepare an offline DNF5 transaction
+# after a full backup, reboot into it and finalize (kernel N, GRUB, Flatpak, doctors).
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

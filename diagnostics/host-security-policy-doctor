@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only check of the owner's security policy (ADR 0002): Secure Boot off and no
+# LUKS/dm-crypt, as configured in config/golden-host.policy.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

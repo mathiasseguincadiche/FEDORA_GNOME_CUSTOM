@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Starts a standalone Ptyxis in a temporary directory and checks the child shell and
+# its working directory. Temporary files are removed on exit.
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap

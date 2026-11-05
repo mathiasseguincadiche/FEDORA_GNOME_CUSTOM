@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Read-only identity check of the board components: DMI/BIOS, NCT6687D sensors,
+# cooling, 5 GbE, Wi-Fi 6 GHz, Bluetooth, ALC4080 audio and Brio 100 camera.
 # shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

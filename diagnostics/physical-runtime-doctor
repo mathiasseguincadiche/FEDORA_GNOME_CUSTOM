@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Gate 3 physical proofs: GPU Vulkan soak, network, audio and display capabilities.
+# status reads; the other actions run real tests, write evidence and invalidate
+# state/final/certified.ok.
 # shellcheck disable=SC2015
 set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
