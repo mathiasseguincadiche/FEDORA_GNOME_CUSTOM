@@ -2,23 +2,23 @@
 
 ## Unreleased
 
-- CI (chantier D6, lisibilité, prompts V4) :
+- CI (chantier D6, lisibilité) :
   - **Noms d'étapes** : les huit étapes de workflow sans nom ont maintenant un nom qui dit ce qu'elles vérifient (job `borg-fedora`, et l'étape `safe.directory` de trois workflows). Les étapes `run: bash tests/…` de `logic-contracts` gardent leur libellé : GitHub y affiche déjà le test lancé.
   - **actionlint** : il ne signale plus rien. La variable `attempt`, inutile, disparaît de `release.yml`. Dans `non-regression.yml`, les motifs entre guillemets simples, qui cherchent un `$` littéral, portent la directive ShellCheck qui le dit.
   - **Liens externes** : nouveau workflow hebdomadaire et non bloquant, `external-links.yml` (`scripts/ci/check-external-links.py`). Une page disparue (404, 410) ou un nom introuvable le fait échouer ; un refus anti-robot ou une erreur serveur n'est qu'un avertissement. `tests/test_external_links_behavior.py` vérifie ce classement hors ligne.
   - **Tolérances** : la page CI documente les tolérances d'échec (`|| true`) de `release-readiness.yml`, un workflow d'état des lieux qui ne valide rien.
 
-- Documentation (chantier D5, navigation et cohérence, prompts V4) : les guides d'installation, de qualification et la fiche physique se terminent par une « étape suivante ». Les lignes « Vérifié par la CI » du README donnent leur date, le commit de la préversion v0.24.1-rc.1 et le lien du run. La ligne « Installation » de `CONTRIBUTING.md` nomme le job qui contrôle les PR depuis #182. « Autres workflows » devient « Workflows non obligatoires ». Le superlatif de l'architecture est remplacé par un objectif mesurable. Le compte rendu de la refonte reçoit une section sur la seconde passe V4 : modules utilisés et écartés, vérifications réelles, et points non vérifiés.
+- Documentation (chantier D5, navigation et cohérence) : les guides d'installation, de qualification et la fiche physique se terminent par une « étape suivante ». Les lignes « Vérifié par la CI » du README donnent leur date, le commit de la préversion v0.24.1-rc.1 et le lien du run. La ligne « Installation » de `CONTRIBUTING.md` nomme le job qui contrôle les PR depuis #182. « Autres workflows » devient « Workflows non obligatoires ». Le superlatif de l'architecture est remplacé par un objectif mesurable. Le compte rendu de la refonte reçoit une section sur la seconde passe de relecture : axes traités et écartés, vérifications réelles, et points non vérifiés.
 
-- Documentation (chantier D4, pédagogie, prompts V4) : nouvelle page [notions clés](docs/CONCEPTS.md). Elle explique sept idées qui reviennent dans tous les guides, chacune par le problème qu'elle règle, son principe, sa place dans le projet, sa vérification, ses limites et l'erreur fréquente : fermé par défaut, preuve liée à un état, trois niveaux de preuve, baseline et certification, sauvegarde vérifiée par restauration, noyau N / N-1 et secours Fedora, garde réseau des VM. Les guides d'installation, de qualification, de sauvegarde et de KVM s'ouvrent sur ce qu'ils permettent de faire, et le README, le portail et l'architecture renvoient à la page.
+- Documentation (chantier D4, pédagogie) : nouvelle page [notions clés](docs/CONCEPTS.md). Elle explique sept idées qui reviennent dans tous les guides, chacune par le problème qu'elle règle, son principe, sa place dans le projet, sa vérification, ses limites et l'erreur fréquente : fermé par défaut, preuve liée à un état, trois niveaux de preuve, baseline et certification, sauvegarde vérifiée par restauration, noyau N / N-1 et secours Fedora, garde réseau des VM. Les guides d'installation, de qualification, de sauvegarde et de KVM s'ouvrent sur ce qu'ils permettent de faire, et le README, le portail et l'architecture renvoient à la page.
 
-- Documentation (chantier D3, diagnostic et procédures, prompts V4) :
+- Documentation (chantier D3, diagnostic et procédures) :
   - **Restauration** : le guide donnait l'exemple `restore NOM /chemin/du/staging/vide`, que `restore.sh` refuse, car toute cible doit être dans la racine de staging (`~/Restores/fedora-gnome-custom`). Les exemples sont corrigés, et chaque étape reçoit un critère de réussite et une règle d'arrêt.
   - **Création de VM** : critères de réussite et d'arrêt. La reconstruction de l'invité, destructive, est maintenant écrite avec ses commandes exactes et leur portée, au lieu de « retirer explicitement le domaine ».
   - **Dépannage** : un tableau « Pannes fréquentes » donne, pour neuf cas, la cause possible, la vérification sûre, la correction et la nouvelle validation. Chaque commande qui modifie le système porte la mention *(modifie le système)* ; les autres observent seulement.
   - **CI** : la page annonçait, pour chaque job, « où regarder s'il échoue » sans le dire. Le tableau des jobs de `Tests` reçoit une colonne « Si rouge » avec les artefacts à ouvrir, et les autres fiches une ligne « Si rouge ».
 
-- Documentation (chantiers D1 et D2, application des prompts V4) :
+- Documentation (chantiers D1 et D2, seconde passe de relecture) :
   - **D1, vérifications réelles.** Rendu GitHub contrôlé dans le navigateur : 35 guides et README, en thème clair, sombre et en largeur mobile ; images chargées, ancres valides, aucune page ne déborde. Les 47 liens externes répondent. Les sept sources `.drawio` se rouvrent dans diagrams.net, avec des libellés identiques à leurs exports. Deux schémas étaient périmés depuis #182 : le laboratoire partait encore d'une « seed Cloud Beta », et le schéma de la CI ignorait l'exception des PR de documentation. Ils sont corrigés, comme la phrase de la fiche Fedora 45 sur les « images Beta » des laboratoires.
   - **D2, schémas maintenables.** Le générateur des schémas, resté hors du dépôt, est versionné dans `tools/diagrams/` avec son mode d'emploi. `tests/test_diagram_sources.py` vérifie que chaque paire est reproduite octet pour octet et que les contrastes passent. `CONTRIBUTING.md` reçoit une charte graphique : structure des pages, et palette des schémas avec la fonction et le contraste mesuré de chaque couleur. Le contrôle des chemins cités couvre aussi `tools/`.
 
@@ -300,7 +300,7 @@ Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI 
 - Correctif trouvé par la CI de `main` (Fedora, Borg 1.4.5) : `borg prune --keep-last` est un alias de `--keep-secondly` et ne garde qu'une archive par seconde. Des archives refusées créées dans la même seconde étaient donc supprimées de façon imprévisible, d'où un échec intermittent. La purge des `fgc-pending-*` trie désormais les noms (horodatage UTC à la nanoseconde) et supprime exactement tout sauf les `BACKUP_KEEP_PENDING` plus récentes.
 - Test rejoué 3 fois avec Borg 1.2.8 et 3 fois avec Borg 1.4.5 (binaire officiel) : PASS.
 
-## 0.21.1 — Audit Claude du 6 octobre 2026
+## 0.21.1 — Audit du 6 octobre 2026
 
 - **Mises à jour non bloquées par le noyau** : quand kernel.org est injoignable ou que le RPM du dernier noyau stable n'est pas encore publié, la mise à jour système reporte **uniquement le noyau** (exclu de la transaction DNF, noyau courant conservé) et applique toutes les autres mises à jour, sécurité comprise. Avant, toute la mise à jour s'arrêtait. Nouveau code `EXIT_KERNEL_DEFERRED=75`, état `kernel_deferred`, bilan final explicite, réglage `KERNEL_DEFER_WHEN_UNAVAILABLE` (défaut `true`). Toute autre erreur noyau bloque toujours. Test comportemental sur le vrai script, contrôlé par mutation.
 - **Sauvegardes quotidiennes fiables pendant la session** : reproduit avec un vrai Borg, un fichier modifié pendant sa lecture (profil de navigateur, Flatpak) faisait échouer chaque sauvegarde quotidienne. Seul cet avertissement exact est désormais toléré, et seulement pour `daily` ; pré-APPLY et sauvegarde complète restent strictes ; tout autre avertissement refuse l'archive. Le nombre de fichiers concernés est enregistré et affiché.
@@ -391,9 +391,9 @@ Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI 
 - Nouveau test réel `tests/test_borg_roundtrip.sh` (runtime installé, `--verify-data`, permissions, lien symbolique, exclusion des secrets, rétention, preuve pré-APPLY exacte, refus d'un dépôt chiffré) ; garde-fous de tests adaptés à Borg.
 - Documentation : ADR 0014, guide de sauvegarde réécrit, une vingtaine de documents alignés ; ADR 0002/0009/0011/0012 annotées.
 
-## 0.17.0 — 2026-09-27 (audit croisé Claude + ChatGPT)
+## 0.17.0 — 2026-09-27 (audit croisé)
 
-Version de consolidation : intègre les PR #69 et #71 (ChatGPT), corrige leurs échecs de CI et leurs interactions, et ajoute une relecture indépendante. Détail et preuves : `docs/AUDIT_RUNTIME_2026-09-27.md`.
+Version de consolidation : intègre les PR #69 et #71, corrige leurs échecs de CI et leurs interactions, et ajoute une relecture indépendante. Détail et preuves : `docs/AUDIT_RUNTIME_2026-09-27.md`.
 
 Moteur (PR #71, relu et conservé) :
 
@@ -402,7 +402,7 @@ Moteur (PR #71, relu et conservé) :
 - Références des extensions GNOME centralisées dans `config/gnome-extensions.lock` (constantes non surchargeables dans `local.conf`) et installateur unique ; compatibilité GNOME validée sur le champ `shell-version` réel (plus de faux positif « 50 n'importe où »).
 - Lecture complète des journaux noyau avant recherche d'erreurs CPU/NVMe (plus de faux « aucune erreur » par SIGPIPE ou journal illisible) ; manifestes de paquets manquants refusés ; restaurations confinées à la zone de staging.
 
-Consolidation et relecture (Claude) :
+Consolidation et relecture :
 
 - CI de la PR #71 réparée : `non-regression.yml` cherchait encore des clés déplacées dans le lock ; le conteneur Fedora refusait Git (*dubious ownership*), ce qui faisait échouer `backup.daily` — reproduit puis corrigé (`safe.directory`).
 - Fusion de la PR #69 : 8 conflits résolus. Lanceur de #71 conservé (celui de #69 relançait tout le démarrage pour chaque module et dispersait les journaux) ; protections d'erreur de #69 intégrées au canal noyau CachyOS.
