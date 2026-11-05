@@ -1,7 +1,7 @@
 # Vision et architecture
 
 > Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — contrat d'exécution relu contre `lib/apply_gate.sh` et `config/apply-gate.conf`, invariants contre `config/kernel.conf`, `config/virtualization.conf` et `config/backup.conf`, ADR cités présents dans `docs/adr/` — matériel : non vérifié
+> Dernière vérification : 2026-11-04 — contrat d'exécution relu contre `lib/apply_gate.sh` et `config/apply-gate.conf`, invariants contre `config/kernel.conf`, `config/virtualization.conf` et `config/backup.conf`, ADR cités présents dans `docs/adr/`, tableau du matériel contre `lib/hardware_platform.sh` et `config/baseline.conf` — matériel : non vérifié
 
 ## Pourquoi ce projet
 
@@ -16,23 +16,25 @@ Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (un
 | Finition GNOME | dock, bureau avec icônes, tuilage, apps GTK3 harmonisées, soin OLED | [GNOME](GNOME.md), [ADR 0013](adr/0013-ubuntu-grade-gnome-polish.md) |
 | Performance | noyau stable le plus récent, réglages mesurés, aucun réglage aveugle | [performance](PERFORMANCE.md), [Linux amont](UPSTREAM_LINUX.md) |
 | Fiabilité et sauvegardes | rien sans dry-run, baseline et sauvegarde ; restauration prouvée | [qualification](QUALIFICATION.md), [sauvegardes](BACKUP_RESTORE.md) |
-| Outils DevOps | KVM isolé, labo Rocky en VM, terminal et Bash soignés | [KVM](KVM_QUICKSTART.md), [Ptyxis](PTYXIS.md) |
+| Outils DevOps | KVM isolé, laboratoire Rocky en VM, terminal et Bash soignés | [KVM](KVM_QUICKSTART.md), [Ptyxis](PTYXIS.md) |
 
 ## Le matériel cible
 
 | Composant | Modèle | Ce que le projet en fait |
 |---|---|---|
 | Processeur | AMD Ryzen 7 7700 (8C/16T, 65 W) | amd-pstate, profils d'énergie, contrôle de stabilité |
-| Carte mère | MSI MAG B850M Mortar WiFi, BIOS 1.A66 ou plus récent | identité vérifiée ; BIOS mis à jour par le propriétaire, version non contrôlée par le code |
-| Mémoire | 48 Go DDR5-6000 CL30 (2 × 24 Go G.Skill) | testée à 5600 puis 6000 MT/s (EXPO/XMP) |
+| Carte mère | MSI MAG B850M Mortar WiFi, BIOS 1.A66 ou plus récent | identité contrôlée ; version du BIOS relevée dans la baseline mais jamais comparée à ce minimum : sa mise à jour revient au propriétaire |
+| Mémoire | 48 Go DDR5-6000 CL30 (2 × 24 Go G.Skill) | essais de stabilité à 5600 puis 6000 MT/s (EXPO/XMP) pendant la baseline |
 | GPU | ASRock Intel Arc B580 Challenger 12 Go | pilote `xe` et Mesa de Fedora, réservé à l'hôte |
 | Stockage | 2 × Crucial T705 1 To (PCIe 5.0) | système Btrfs sur le premier, `/data` EXT4 persistant sur le second |
 | Sauvegarde | Kingston XS1000 USB 3.2 (~1,8 To) | cible Borg externe en ext4 |
-| Réseau | Wi-Fi 7 Qualcomm FastConnect 7800, Realtek 5 GbE, Bluetooth Qualcomm | identités et pilotes vérifiés |
-| Audio, webcam | Realtek ALC4080, Logitech Brio 100 | identités vérifiées |
+| Réseau | Wi-Fi 7 Qualcomm FastConnect 7800, Realtek 5 GbE, Bluetooth Qualcomm | identités et pilotes contrôlés par les doctors |
+| Audio, webcam | Realtek ALC4080, Logitech Brio 100 | identités contrôlées par les doctors |
 | Écran | ASUS ROG Strix XG27AQDMES, 27" QD-OLED 1440p 240 Hz | 2560×1440 à 240 Hz, reprise après veille, soin OLED |
 | Refroidissement | DeepCool LD240 (AIO 240 mm), 3 × Arctic P12 Pro | surveillance ; afficheur LD240 en option manuelle |
 | Alimentation, boîtier | Corsair RM650e, ASUS Prime AP201 | — |
+
+La colonne de droite décrit ce que le code contrôle, pas un résultat obtenu : ces contrôles tourneront sur le PC pendant la baseline puis la Gate 3, et leur état est suivi dans l'[état réel](../README.md#état-réel) du projet.
 
 ## Décisions du propriétaire
 
@@ -41,7 +43,7 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 - **aucun chiffrement** des disques (ADR 0002) ni des sauvegardes (ADR 0014), mais jamais de clé SSH ou GnuPG dans Borg (ADR 0021) ;
 - **Secure Boot désactivé** (ADR 0002) ; le projet ne le désactive ni ne gère de clé MOK lui-même ;
 - **noyau** : Linux amont officiel stable (ADR 0015), avec un noyau Fedora signé en secours (ADR 0020) ; un retard de publication du noyau ne bloque jamais les autres mises à jour ;
-- **labo DevOps** : Rocky Linux 10.2 en VM KVM, créée uniquement à la demande ;
+- **laboratoire DevOps** : Rocky Linux 10.2 en VM KVM, créée uniquement à la demande ;
 - **pas de nouvelle fonctionnalité avant la Gate 3** : la priorité est la première installation réelle certifiée. On améliore par petites étapes vérifiées, et chaque ajout sert un pilier.
 
 ## Ce que contient le dépôt
@@ -105,10 +107,10 @@ Trois niveaux à ne jamais confondre (expliqués pas à pas dans les [notions cl
 - **Noyau** : Linux amont stable depuis `@kernel-vanilla/stable`, version comparée à kernel.org, plancher dans `config/kernel.conf`, RC et paquets en retard refusés. N est le défaut, N-1 le retour arrière, un noyau Fedora signé le secours. Voir [Linux amont](UPSTREAM_LINUX.md).
 - **Stockage** : root et `/data` sur deux NVMe physiques distincts. L'APPLY crée `Documents`, `Projets`, `ISO`, `Jeux`, `IA/Openclaw` et `libvirt` sans supprimer leur contenu (`0750`, `user_home_t` ; `virt_image_t` pour libvirt). XDG Documents pointe vers `/data/Documents`, sans lien symbolique bricolé dans le HOME. Aucun test n'écrit sur un disque brut.
 - **GPU** : `8086:e20b` sur `xe` ; le projet valide noyau, firmware, Mesa, Vulkan, VA-API et calcul au lieu de forcer quoi que ce soit.
-- **Affichage** : 2560×1440 à ~240 Hz, échelle 1.0, SDR, RGB complet. Un texte dégradé après veille est d'abord un problème DRM/KMS/Mutter, pas Fontconfig. Le watcher capture la disposition avant la veille et ne la rétablit que si les mêmes écrans et modes existent (échelle, position, écran principal, HDR et plage RGB conservés ; aucune écriture si rien ne change). Les options `DISPLAY_REPAIR_ON_*` contrôlent les watchers ; `~/.local/libexec/fedora-gnome-display-repair --reset-certified` réimpose le profil et refuse plusieurs écrans.
+- **Affichage** : 2560×1440 à ~240 Hz, échelle 1.0, SDR, RGB complet. Un texte dégradé après veille est d'abord un problème DRM/KMS/Mutter, pas Fontconfig. Le service de surveillance de l'affichage capture la disposition avant la veille et ne la rétablit que si les mêmes écrans et modes existent (échelle, position, écran principal, HDR et plage RGB conservés ; aucune écriture si rien ne change). Les options `DISPLAY_REPAIR_ON_*` contrôlent ces services ; `~/.local/libexec/fedora-gnome-display-repair --reset-certified` réimpose le profil et refuse plusieurs écrans.
 - **Nautilus** : démarrage à froid mesuré de `nautilus --new-window` jusqu'à l'apparition de `org.gnome.Nautilus` sur D-Bus ; cible 1200 ms, limite 2000 ms. Le préchauffage du login touche Portal/GIO mais ne lance jamais Nautilus.
 - **Performance** : P-State/EPP observé, TuneD/tuned-ppd, zram aux valeurs Fedora, GameMode par jeu, sched_ext jamais imposé sans essai, T705 en `benchmark-only`, frametimes comparés. Le mode certifiable reste `balanced` ([performance](PERFORMANCE.md)).
-- **KVM** : `qemu:///system`, pool sur `/data/libvirt/images`, réseau `devops-nat` IPv4 seulement, guard fail-closed, image Rocky authentifiée avant création du disque ([virtualisation](VIRTUALIZATION.md), [réseau KVM](KVM_NETWORK.md)).
+- **KVM** : `qemu:///system`, pool sur `/data/libvirt/images`, réseau `devops-nat` IPv4 seulement, garde réseau fermé par défaut, image Rocky authentifiée avant création du disque ([virtualisation](VIRTUALIZATION.md), [réseau KVM](KVM_NETWORK.md)).
 - **Sauvegarde** : dépôt Borg non chiffré refusant un dépôt chiffré, cible externe, sauvegarde pré-APPLY liée à l'état, `borg check --verify-data`, restauration canari, restauration toujours en staging. Les disques QCOW2, le XML libvirt et la NVRAM ne sont jamais sauvegardés automatiquement.
 
 La 1.0 se justifiera par une installation complète sur le PC et une période d'usage réel stable, pas par l'ajout de fonctionnalités.

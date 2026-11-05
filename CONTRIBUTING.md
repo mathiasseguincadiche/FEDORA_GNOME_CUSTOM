@@ -6,7 +6,7 @@ La source de vérité est le **code, la configuration et les tests**. Viennent e
 
 ## Principes
 
-1. **Ne pas affaiblir les garde-fous** : matériel physique, dry-run, sauvegarde pré-APPLY, SELinux, firewalld, réseau KVM fail-closed et vérifications de provenance restent obligatoires.
+1. **Ne pas affaiblir les garde-fous** : matériel physique, dry-run, sauvegarde pré-APPLY, SELinux, firewalld, réseau KVM fermé par défaut et vérifications de provenance restent obligatoires.
 2. **Pas de réglage global non mesuré** : pas de `force_probe`, Mesa git/COPR, noyau gaming tiers ou `sysctl` global sans décision d'architecture explicite (ADR).
 3. **Réutiliser les moteurs** : `control.sh` reste une façade ; la logique appartient à `install.sh`, `scripts/`, `diagnostics/` et `lib/`.
 4. **Séparer les environnements** : la CI teste le logiciel, le Live USB observe le PC avant installation, la Gate 3 qualifie le système installé.
@@ -83,16 +83,23 @@ Toute affirmation sur ce que fait le projet porte l'un de ces statuts, explicite
 | Prévu | Décidé, pas commencé | Aucune |
 | En cours | Commencé, non terminé | Référence au travail (branche, PR) |
 | Réalisé | Présent dans le code ou la configuration | Fichier identifiable |
+| Abandonné | Prévu ou commencé, puis retiré | Raison et date, si elles sont connues |
 | Vérifié | Contrôlé par une méthode traçable | Date, méthode, environnement et résultat |
+| Échec constaté | Contrôlé, et le résultat attendu n'est pas obtenu | Comme « Vérifié », avec le résultat réel |
 | Non vérifié | Contrôle non fait ou impossible | Ce qui n'a pas été contrôlé, et pourquoi |
 
+Les trois premiers statuts et « Abandonné » disent où en est le travail ; « Vérifié », « Échec constaté » et « Non vérifié » disent s'il a été contrôlé. Un élément porte souvent les deux, par exemple « Réalisé — Non vérifié » : la présence du code ne prouve pas qu'il fonctionne.
+
 « Vérifié par la CI » et « vérifié sur le matériel » ne se confondent jamais : seule la Gate 3 vérifie le PC. Une sortie de commande donnée en exemple est signalée comme telle ; elle n'est jamais présentée comme un résultat observé.
+
+**Portée d'une preuve.** Un « Vérifié » vaut pour le commit, l'environnement et le périmètre contrôlés, et les nomme (« au commit `0007d97`, en VM jetable »). Quand l'élément change ensuite, son contrôle redevient « Non vérifié » jusqu'au suivant. Un échec corrigé reste consigné, suivi de la nouvelle validation.
 
 ### Ton et vocabulaire
 
 - **Registre** : infinitif impersonnel pour les consignes (« Lancer… », « Vérifier… »), phrases complètes pour les explications. Ni tutoiement, ni vouvoiement.
 - **Une idée par paragraphe.** Une énumération devient une liste, une comparaison un tableau.
-- **Gras réservé** aux avertissements et à la première occurrence d'un terme défini.
+- **Le besoin avant le mécanisme.** Une section importante s'ouvre par deux ou trois phrases qui disent quel problème elle règle et ce qu'elle permet ; le détail vient ensuite. Un terme technique s'explique dans la phrase qui l'introduit. Un contrôle dit ce qu'il garantit et ce qu'il ne prouve pas.
+- **Gras de repère**, un à trois par paragraphe ou par puce : un avertissement, un terme défini à sa première occurrence, l'intention d'une étape ou sa conclusion (« **Réussite :** »). Jamais une phrase entière ni un mot mis en valeur sans raison.
 - **Pas de qualificatif non démontré** (« robuste », « sécurisé », « complet ») : décrire ce qui est contrôlé et comment.
 - **Lexique** : les commandes, options, noms de fichiers et noms de produits restent en version originale (`doctor`, `APPLY`, `Gate 3`, Borg). Les titres et les notions sont en français ; le terme anglais d'usage figure entre parenthèses à sa première occurrence. Un terme garde le même sens dans tout le dépôt ; le [glossaire](docs/GLOSSARY.md) fait foi.
 
@@ -110,7 +117,7 @@ Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son
 ### Schémas
 
 - Un schéma n'existe que s'il répond à une question du lecteur qu'un tableau ou une liste ne règle pas aussi bien.
-- Chaque schéma est une paire de fichiers de même nom de base dans `docs/assets/diagrams/` : la source éditable `<nom>.drawio` (format diagrams.net, XML non compressé) et l'export `<nom>.svg`.
+- Chaque schéma est une paire de fichiers de même nom de base dans `docs/assets/diagrams/` : la source éditable `<nom>.drawio` (format diagrams.net, XML non compressé) et l'image `<nom>.svg` affichée par GitHub. Le générateur écrit les deux à partir du même modèle : le `.svg` n'est pas un export de diagrams.net.
 - Le SVG a un fond opaque, un `<title>` et une `<desc>`. Il reste lisible dans les thèmes clair et sombre de GitHub et ne porte aucune information par la couleur seule.
 - Dans la page, l'image est suivie d'une description textuelle des relations importantes et d'un lien vers sa source `.drawio`.
 - Mermaid n'est pas utilisé.
@@ -143,7 +150,7 @@ Texte `#0F172A`, flèches `#334155` (10,4:1 sur blanc), police Arial, fond de sc
 
 ### Contrôles
 
-`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées et les chemins du dépôt cités. Il contrôle aussi le bloc de métadonnées de chaque guide (dates valides, jamais futures, vérification jamais antérieure à la mise à jour), les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, l'inventaire logiciel de l'hôte, qui doit reproduire exactement `manifests/`, et les fins de ligne LF de tous les fichiers suivis. Ces règles s'appliquent sans liste d'exceptions ; `tests/test_docs_integrity_behavior.py` prouve chacune d'elles. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
+`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées, la présence de chaque commande routée dans le [centre de contrôle](docs/CONTROL_CENTER.md) et les chemins du dépôt cités. Il contrôle aussi le bloc de métadonnées de chaque guide (dates valides, jamais futures, vérification jamais antérieure à la mise à jour), les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, l'inventaire logiciel de l'hôte, qui doit reproduire exactement `manifests/`, et les fins de ligne LF de tous les fichiers suivis. Ces règles s'appliquent sans liste d'exceptions ; `tests/test_docs_integrity_behavior.py` prouve chacune d'elles. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
 
 ## Shell
 

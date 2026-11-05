@@ -5,14 +5,14 @@
 
 ## Objectif
 
-L'hôte prend en charge les AppImage **actuelles et anciennes** sans remplacer le kernel Fedora, sans désactiver SELinux et sans installer de pile graphique tierce.
+L'hôte prend en charge les AppImage **actuelles et anciennes** sans remplacer le noyau Fedora, sans désactiver SELinux et sans installer de pile graphique tierce.
 
 Le contrat couvre :
 
 - AppImage **Type 2** actuel, basé sur SquashFS ;
 - AppImage **Type 1** historique/legacy, basé sur ISO9660 ;
 - runtimes x86_64 ;
-- anciens runtimes 32 bits i686 lorsque leur architecture reste exécutable sur le HOST x86_64 ;
+- anciens runtimes 32 bits i686 lorsque leur architecture reste exécutable sur l'hôte x86_64 ;
 - FUSE 2, encore utilisé par de nombreux runtimes AppImage ;
 - FUSE 3 en coexistence avec FUSE 2 ;
 - exécution sans FUSE via mécanismes d'extraction de secours ;
@@ -128,7 +128,7 @@ Le doctor vérifie :
 - `/dev/fuse` sur bare metal ;
 - détection synthétique Type 1 et Type 2 sans lancement d'un binaire tiers.
 
-L'absence de `/dev/fuse` dans un conteneur ou certaines VM est un avertissement et non une preuve de panne bare-metal.
+L'absence de `/dev/fuse` dans un conteneur ou certaines VM est un avertissement et non une preuve de panne du matériel physique.
 
 ## CI Fedora 45
 
@@ -145,6 +145,6 @@ La CI **n'exécute aucun AppImage téléchargé depuis Internet**. La compatibil
 
 ## Limites
 
-Le système fournit toutes les briques génériques raisonnables pour exécuter les formats AppImage Type 1 et Type 2 sur Fedora 45. Il ne peut toutefois pas garantir qu'un binaire arbitraire datant de plusieurs décennies fonctionnera si celui-ci dépend d'un ABI retiré, d'un pilote propriétaire obsolète, d'une architecture CPU non supportée ou d'un comportement incompatible avec un kernel moderne.
+Le système fournit toutes les briques génériques raisonnables pour exécuter les formats AppImage Type 1 et Type 2 sur Fedora 45. Il ne peut toutefois pas garantir qu'un binaire arbitraire datant de plusieurs décennies fonctionnera si celui-ci dépend d'un ABI retiré, d'un pilote propriétaire obsolète, d'une architecture CPU non supportée ou d'un comportement incompatible avec un noyau moderne.
 
 Dans ce cas, le problème vient de l'application elle-même, pas du socle AppImage du projet.

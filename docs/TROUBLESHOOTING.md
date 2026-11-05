@@ -1,7 +1,7 @@
 # Dépannage
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — chaque doctor, script et sous-commande cités existent dans le dépôt ; commandes `./control.sh` contrôlées par `tests/test_docs_integrity.py` — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — chaque doctor, script et sous-commande cités existent dans le dépôt ; commandes `./control.sh` contrôlées par `tests/test_docs_integrity.py` ; section « En urgence » relue contre `scripts/collect-boot-failure.sh`, `scripts/backup/restore.sh` et `lib/control_center.sh` — matériel : non vérifié
 
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
@@ -15,6 +15,21 @@ Chaque ligne `KO` nomme le contrôle en échec. Corriger le **premier** défaut 
 **À ne jamais faire** : désactiver SELinux ou firewalld ; supprimer les règles nftables KVM ; ajouter `force_probe`, ou forcer ASPM, APST, C-States ou un mode de veille sans preuve ; reformater `/data` ; `chmod 777` ; éditer ou recréer un marqueur de preuve à la main ; modifier une configuration avant d'avoir conservé les journaux.
 
 Sauf mention *(modifie le système)*, les commandes de cette page observent sans rien changer au poste ; certaines écrivent seulement un rapport ou une preuve dans le dépôt (`logs/`, `state/`, `reports/`). Une commande marquée change l'état du poste ; la lancer seulement une fois la cause confirmée.
+
+## En urgence
+
+Quand le PC ne démarre plus ou que des données semblent perdues, le but immédiat n'est pas de comprendre la panne : c'est de **retrouver un système démarrable sans rien détruire**. Les gestes ci-dessous n'effacent aucune donnée ; la section indiquée explique ensuite la cause.
+
+| Situation | Gestes, dans l'ordre | Retour à la normale |
+|---|---|---|
+| Le PC ne démarre plus après un nouveau noyau | 1. Au démarrage, maintenir **Maj** ou appuyer sur **Échap** pour afficher GRUB. 2. Choisir le noyau amont précédent (N-1), sinon l'entrée Fedora sans `vanilla`. 3. Une fois connecté, conserver les journaux du démarrage raté : `./scripts/collect-boot-failure.sh`. 4. `./control.sh kernel rollback`, ou `./control.sh kernel fallback` si N-1 ne démarre pas non plus *(modifie le système)*. | `./control.sh kernel status` montre le noyau choisi par défaut ; suite dans [Noyau](#noyau) |
+| Le système démarre, mais la session GNOME ne s'ouvre pas | 1. Ouvrir une console texte (**Ctrl+Alt+F3**) et se connecter. 2. `journalctl -b -p err --no-pager` pour lire les erreurs du démarrage en cours. 3. `./control.sh doctor all` pour trouver le premier défaut. | session GNOME ouverte, `doctor all` sans nouveau `KO` ; suite dans [GPU, écran et veille](#gpu-écran-et-veille) |
+| `/data` a disparu | Ne rien formater ni recréer. `findmnt -n -T /data -o SOURCE,FSTYPE` et `lsblk -f`, puis remonter le disque existant. | `./control.sh doctor data` sans `KO` ; suite dans [Données `/data` et Gaming](#données-data-et-gaming) |
+| Des fichiers ont été effacés ou écrasés | Cesser d'écrire dans le dossier concerné. Restaurer dans le staging avec `scripts/backup/restore.sh restore latest`, inspecter, puis recopier à la main. | fichiers relus dans le staging ; suite dans [sauvegardes](BACKUP_RESTORE.md#restaurer) |
+
+**Pourquoi conserver les journaux d'abord ?** Un redémarrage ou une correction efface la trace qui explique la panne ; sans elle, le défaut reviendra au prochain noyau. Le piège classique est de tenir le problème pour réglé parce que le poste redémarre : une panne qui disparaît après un redémarrage ne prouve rien.
+
+**Si aucun noyau ne démarre**, le poste se réinstalle depuis le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours), section 2, en conservant le second T705 ; la [reprise après une perte totale](BACKUP_RESTORE.md#reprendre-après-une-perte-totale) décrit la remise en place des données. Après l'incident, consigner la cause et la correction dans la fiche d'incident ([Journaux et incidents](#journaux-et-incidents)).
 
 ## Par où commencer
 
@@ -209,6 +224,6 @@ Trouver la première cause, pas masquer le job final :
 | `toomanyrequests` à l'initialisation des conteneurs | registre limité | images Fedora depuis `registry.fedoraproject.org` |
 | `Cannot download openh264` | dépôt Cisco injoignable depuis le runner | isoler ce dépôt s'il n'est pas requis, sans retirer de paquet requis |
 | coredump dans `fedora-gnome-vm / lab` | crash ou blocage GNOME/Mutter | lire GDM, Wayland/XWayland, unités utilisateur, `systemd-coredump` |
-| `Tests / contracts` rouge | une dépendance a échoué ou été sautée | corriger le job amont ; `contracts` reste fail-closed |
+| `Tests / contracts` rouge | une dépendance a échoué ou été sautée | corriger le job amont ; `contracts` reste fermé par défaut |
 
 Ne jamais désactiver `journal_health`, retirer une assertion bloquante, ajouter `|| true` ou ignorer un coredump. Voir [CI](CI_VALIDATION.md) et le [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md).

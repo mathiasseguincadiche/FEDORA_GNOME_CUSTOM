@@ -10,7 +10,7 @@ Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu d
 Rocky se crée **après** l'installation de Fedora et les premiers contrôles de l'hôte, et **avant** la certification finale (Gate 3). Le Live USB et l'installation n'exigent aucune VM ; l'APPLY n'en crée jamais.
 
 ```text
-HOST Fedora
+Hôte Fedora
 ├── connexion libvirt : qemu:///system
 ├── pool              : devops-data → /data/libvirt/images
 ├── réseau            : devops-nat  → virbr50 → 192.168.50.0/24
@@ -62,7 +62,7 @@ L'utilisateur de l'invité est fixé par `ROCKY_SERVER_USERNAME` dans `config/vm
 ./control.sh kvm nautilus-refresh
 ```
 
-Le script découvre l'IP de Rocky (Guest Agent ou bail DHCP) et crée ou met à jour le favori `sftp://mathias@192.168.50.x/home/mathias` dans `~/.config/gtk-3.0/bookmarks`. Relancer après un changement d'IP. Autres actions de `scripts/kvm/configure_nautilus_vm_access.sh` : `show`, `remove` (retire seulement ce favori), `open-rocky`. L'accès garde les permissions réelles de `mathias` ; aucun répertoire du HOST n'est partagé.
+Le script découvre l'IP de Rocky (Guest Agent ou bail DHCP) et crée ou met à jour le favori `sftp://mathias@192.168.50.x/home/mathias` dans `~/.config/gtk-3.0/bookmarks`. Relancer après un changement d'IP. Autres actions de `scripts/kvm/configure_nautilus_vm_access.sh` : `show`, `remove` (retire seulement ce favori), `open-rocky`. L'accès garde les permissions réelles de `mathias` ; aucun répertoire de l'hôte n'est partagé.
 
 ### Outils avancés
 
@@ -108,7 +108,7 @@ Les exports de la VM sont **manuels**, au moment choisi par le propriétaire : a
 ./control.sh kvm guard-check      # attendu : guard_mode=normal
 ```
 
-Si la reconstruction échoue, garder le mode d'urgence et diagnostiquer ; ne pas supprimer la table nftables pour retrouver Internet ([réseau KVM](KVM_NETWORK.md#fail-closed-lors-dun-changement-réseau)).
+Si la reconstruction échoue, garder le mode d'urgence et diagnostiquer ; ne pas supprimer la table nftables pour retrouver Internet ([réseau KVM](KVM_NETWORK.md#fermé-par-défaut-lors-dun-changement-réseau)).
 
 **Rocky ne démarre pas.** `virsh --connect qemu:///system dominfo rocky-devops`, `domblklist`, `dumpxml`, `journalctl -u virtqemud -b`. Vérifier `/data/libvirt/images/rocky-devops.qcow2`, le seed cloud-init et le réseau.
 

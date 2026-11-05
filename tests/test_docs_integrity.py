@@ -5,6 +5,7 @@ Checks what can actually mislead an operator, never phrasing:
 - local Markdown links resolve inside the repository;
 - every guide in docs/ is reachable from README.md;
 - every `./control.sh DOMAIN ACTION` quoted in Markdown is routed by the code;
+- every routed command is listed on the Control Center page, its source of truth;
 - every repository path quoted in backticks exists;
 - code and workflows only reference documentation files that exist;
 - guides carry the metadata block defined in CONTRIBUTING.md;
@@ -98,6 +99,25 @@ for path in CURRENT:
                 for action in words[1].split("|"):
                     if action not in routes[domain]:
                         errors.append(f"{rel(path)}:{line_no}: unknown command ./control.sh {domain} {action}")
+
+# 3b. The Control Center page is the reference for commands: it lists every route.
+# Option-style aliases (-h, --help) are spelled out once, through the `help` action.
+listed = set()
+CENTER_PAGE = ROOT / "docs/CONTROL_CENTER.md"
+for match in COMMAND.finditer(CENTER_PAGE.read_text(encoding="utf-8")):
+    words = match.group(1).split()
+    if words:
+        listed.add((words[0], None))
+        for action in (words[1].split("|") if len(words) > 1 else []):
+            listed.add((words[0], action))
+for domain, actions in sorted(routes.items()):
+    if domain.startswith("-"):
+        continue
+    if (domain, None) not in listed:
+        errors.append(f"{rel(CENTER_PAGE)}: does not document ./control.sh {domain}")
+    for action in sorted(a for a in actions if not a.startswith("-")):
+        if (domain, action) not in listed:
+            errors.append(f"{rel(CENTER_PAGE)}: does not document ./control.sh {domain} {action}")
 
 # 4. Repository paths quoted in backticks exist (placeholders and globs are skipped).
 PATH = re.compile(r"`((?:\./)?(?:scripts|diagnostics|installer|config|lib|modules|manifests|profiles|tests|guest|systemd|remote|virtualization|tools)/[A-Za-z0-9_./@-]+)")

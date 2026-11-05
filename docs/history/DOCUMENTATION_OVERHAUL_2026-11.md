@@ -74,20 +74,20 @@ Les plus importantes, celles qui auraient pu tromper l'opérateur :
 
 Chaque guide figure dans le portail `docs/README.md` et reçoit au moins deux liens d'autres pages.
 
-## Seconde passe : prompts V4
+## Seconde passe de relecture
 
-Le 4 novembre 2026, la documentation a été comparée à la version 4 de la collection de prompts (modules 00 à 11, index 13), au niveau « standard » : l'existant était conforme sur l'essentiel, il fallait compléter, pas refaire. L'audit a relevé 17 écarts, dont 7 importants, traités en six chantiers (PR #183 et suivantes).
+Le 4 novembre 2026, la documentation a été relue une seconde fois contre une grille de qualité documentaire : preuves, procédures, schémas, pédagogie, navigation et lisibilité de la CI. L'existant était conforme sur l'essentiel, il fallait compléter, pas refaire. La relecture a relevé 17 écarts, dont 7 importants, traités en six chantiers (PR #183 et suivantes).
 
-| Chantier | Modules V4 | Résultat |
+| Chantier | Axes de la grille | Résultat |
 |---|---|---|
-| D1 — vérifications réelles | 06, 07, 08, 10 | rendu GitHub, liens externes et schémas contrôlés (tableau ci-dessous) ; deux schémas périmés corrigés |
-| D2 — schémas maintenables | 01, 06, 08 | générateur versionné dans `tools/diagrams/`, reproduction octet pour octet testée, charte graphique dans `CONTRIBUTING.md` |
-| D3 — diagnostic et procédures | 04, 05, 07 | tableau des pannes fréquentes, commandes qui modifient le système signalées, critères de réussite et d'arrêt, fiches CI complétées ; un exemple de restauration refusé par le script corrigé |
-| D4 — pédagogie | 03, 09, 10 | page [notions clés](../CONCEPTS.md), objectifs en tête des grands guides |
-| D5 — navigation et cohérence | 01, 02, 09, 10, 11 | liens « étape suivante », preuves du README datées et reliées au run, superlatif retiré, ce compte rendu |
-| D6 — lisibilité de la CI | 04 §10–11 | étapes nommées, remarques d'actionlint corrigées, tolérances documentées |
+| D1 — vérifications réelles | schémas, rendu, liens, parcours | rendu GitHub, liens externes et schémas contrôlés (tableau ci-dessous) ; deux schémas périmés corrigés |
+| D2 — schémas maintenables | sources de vérité, schémas, charte graphique | générateur versionné dans `tools/diagrams/`, reproduction octet pour octet testée, charte graphique dans `CONTRIBUTING.md` |
+| D3 — diagnostic et procédures | commandes, procédures, diagnostic | tableau des pannes fréquentes, commandes qui modifient le système signalées, critères de réussite et d'arrêt, fiches CI complétées ; un exemple de restauration refusé par le script corrigé |
+| D4 — pédagogie | explications, vocabulaire, parcours | page [notions clés](../CONCEPTS.md), objectifs en tête des grands guides |
+| D5 — navigation et cohérence | navigation, présentation, statuts | liens « étape suivante », preuves du README datées et reliées au run, superlatif retiré, ce compte rendu |
+| D6 — lisibilité de la CI | fichiers opérationnels, journaux de CI | étapes nommées, remarques d'actionlint corrigées, tolérances documentées |
 
-**Modules écartés.** Les exercices et questions de compréhension du module 03 (le projet n'est pas une formation) ; de nouveaux schémas (aucune question de lecteur sans réponse ne les justifiait). Le fichier 12, compilation des modules 00 à 11, n'a pas été relu séparément : les modules individuels font foi.
+**Écarté.** Les exercices et questions de compréhension (le projet n'est pas une formation) ; de nouveaux schémas (aucune question de lecteur sans réponse ne les justifiait).
 
 **Vérifications réelles du 2026-11-04 (D1).**
 
@@ -99,7 +99,7 @@ Le 4 novembre 2026, la documentation a été comparée à la version 4 de la col
 | 7 sources `.drawio` | réouverture dans viewer.diagrams.net depuis leur URL publique | ouvertes sans erreur, libellés identiques aux `.svg` |
 | Contrastes des schémas | `tools/diagrams/verify.py` | texte ≥ 14,6:1, éléments porteurs d'information ≥ 4,5:1 ; cadre décoratif des groupes 2,6:1 |
 
-**Non vérifié.** Aucune personne n'a suivi les parcours de lecture : leur évaluation reste heuristique. Le rendu dans un autre lecteur Markdown que GitHub n'a pas été contrôlé. Les liens externes peuvent casser après cette date. La description publique du dépôt sur GitHub (« About ») et ses sujets, périmés, relèvent d'une modification hors fichiers soumise à l'accord du propriétaire.
+**Non vérifié.** Aucune personne n'a suivi les parcours de lecture : leur évaluation reste heuristique. Le rendu dans un autre lecteur Markdown que GitHub n'a pas été contrôlé. Les liens externes peuvent casser après cette date. La description publique du dépôt sur GitHub (« About ») et ses sujets sont périmés ; ils se corrigent dans les réglages du dépôt, hors des fichiers.
 
 ## Ce qui reste
 

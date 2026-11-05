@@ -138,9 +138,16 @@ case("inventory lists a package no manifest installs",
 case("new manifest left out of the inventory",
      lambda w: (w / "manifests/packages-exemple.txt").write_text("exemple\n", encoding="utf-8"),
      False, "manifests/packages-exemple.txt is not listed")
+case("routed command missing from the Control Center page",
+     lambda w: edit(w / "lib/control_center.sh", "        tail) cc_tail_latest_log ;;\n",
+                    "        tail) cc_tail_latest_log ;;\n        exemple) cc_show_logs ;;\n"),
+     False, "docs/CONTROL_CENTER.md: does not document ./control.sh logs exemple")
+case("Control Center page drops a documented command",
+     lambda w: edit(w / "docs/CONTROL_CENTER.md", "./control.sh logs tail\n", ""),
+     False, "docs/CONTROL_CENTER.md: does not document ./control.sh logs tail")
 
 if failures:
     print("documentation integrity behavior: FAIL", file=sys.stderr)
     print("\n".join(failures), file=sys.stderr)
     sys.exit(1)
-print("documentation integrity behavior: PASS (19 cases)")
+print("documentation integrity behavior: PASS (21 cases)")

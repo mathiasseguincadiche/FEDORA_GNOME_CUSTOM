@@ -1,9 +1,24 @@
 # Glossaire
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — termes rapprochés du code (`lib/live_validation.py`, `config/virtualization.conf`, `config/golden-host.policy`, `manifests/`) ; un terme absent du code retiré — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — termes retenus relevés dans les guides courants ; le 2026-11-04, termes rapprochés du code (`lib/live_validation.py`, `config/virtualization.conf`, `config/golden-host.policy`, `manifests/`) ; un terme absent du code retiré — matériel : non vérifié
 
 Définitions courtes des termes du projet, pour la compréhension pratique. Les conventions de rédaction sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation).
+
+## Termes retenus
+
+Un même concept porte le même nom dans tous les guides. Les variantes anglaises restent permises dans les commandes, les noms de fichiers, les variables et les noms propres, qui gardent leur orthographe exacte.
+
+| Terme retenu | Variantes à éviter dans le texte | Où la variante reste correcte |
+|---|---|---|
+| hôte | HOST, host | `HOST_BASH_UX.md`, variables comme `HOST_*` |
+| matériel physique, PC physique | bare-metal | messages affichés par le code |
+| noyau | kernel | `./control.sh kernel`, paquets `kernel-*`, Kernel Vanilla, kernel.org |
+| sauvegarde | backup | `./control.sh backup`, `scripts/backup/`, `backup-doctor` |
+| garde réseau | guard | `guard-check`, `guard_mode`, `kvm-network-guard` |
+| restauration canari, fichier témoin | canary | — |
+| laboratoire | labo | — |
+| fermé par défaut | — | *fail-closed*, entre parenthèses, à la première occurrence |
 
 ## Système et projet
 
@@ -33,11 +48,11 @@ Définitions courtes des termes du projet, pour la compréhension pratique. Les 
 
 **N / N-1** — le noyau Linux amont courant et le précédent, gardé pour le retour arrière ; un noyau Fedora signé reste en secours ([Linux amont](UPSTREAM_LINUX.md)).
 
-**Hôte (HOST)** — la machine Fedora physique, le poste de travail principal.
+**Hôte** (*host*) — la machine Fedora physique, le poste de travail principal.
 
 **Invité (guest)** — système d'exploitation exécuté dans une machine virtuelle, ici `rocky-devops`.
 
-**Bare-metal** — système exécuté directement sur le matériel physique, et non dans une VM, un conteneur ou WSL2.
+**Matériel physique** (*bare-metal*) — système exécuté directement sur le PC, et non dans une VM, un conteneur ou WSL2.
 
 **Golden Workstation** — état de référence recherché par le projet : configuration installée, mesurée, sauvegardable et certifiée sur le matériel réel.
 
@@ -45,7 +60,7 @@ Définitions courtes des termes du projet, pour la compréhension pratique. Les 
 
 **Preflight / dry-run** — contrôles et plan non-mutants exécutés avant APPLY. Le projet ne prétend pas simuler transactionnellement toutes les mutations.
 
-**Doctor** — script de diagnostic/validation du projet, généralement read-only.
+**Doctor** — script de diagnostic ou de validation du projet, en général en lecture seule.
 
 **Certification** — preuve que plusieurs contrôles exigés sont réellement passés sur l'environnement prévu.
 
@@ -93,7 +108,7 @@ Définitions courtes des termes du projet, pour la compréhension pratique. Les 
 
 **SPICE** — protocole d’affichage/console de machines virtuelles. Le profil Rocky du projet est headless, administré par SSH.
 
-**GPU passthrough / VFIO** — attribution directe d'un GPU physique à une VM. Ce projet l'interdit pour l'Arc B580, qui reste au HOST.
+**GPU passthrough / VFIO** — attribution directe d'un GPU physique à une VM. Ce projet l'interdit pour l'Arc B580, qui reste à l'hôte.
 
 ## Stockage persistant et KVM
 
@@ -117,7 +132,7 @@ Définitions courtes des termes du projet, pour la compréhension pratique. Les 
 
 **Bridge** — interface virtuelle reliant plusieurs interfaces/VM sur un même segment. `virbr50` est le bridge libvirt de `devops-nat`; ce n'est ni le port Ethernet ni l'interface Wi-Fi physique.
 
-**NAT** — traduction d'adresses permettant aux VM privées d'accéder à Internet en utilisant la connectivité du HOST sans être directement exposées comme des machines du LAN.
+**NAT** — traduction d'adresses permettant aux VM privées d'accéder à Internet en utilisant la connectivité de l'hôte sans être directement exposées comme des machines du LAN.
 
 **DHCP** — attribution automatique d'adresses IP. `devops-nat` distribue des adresses `192.168.50.100-200`.
 
@@ -159,10 +174,10 @@ Définitions courtes des termes du projet, pour la compréhension pratique. Les 
 
 **AppIndicator** — extension qui affiche les icônes d'état des applications (AppIndicator, KStatusNotifierItem).
 
-## Backup
+## Sauvegarde
 
 **Borg (BorgBackup)** — outil de sauvegarde dédupliquée et compressée utilisé par le projet, ici avec un dépôt **non chiffré** ([ADR 0014](adr/0014-borg-unencrypted-backups.md)).
 
-**Canary restore** — petit fichier réellement restauré puis comparé afin de prouver qu'un backup n'est pas seulement lisible mais restaurable.
+**Restauration canari** (*canary restore*) — petit fichier témoin réellement restauré puis comparé, pour prouver qu'une sauvegarde n'est pas seulement lisible mais restaurable.
 
 **Staging-first** — restauration d'abord dans un répertoire intermédiaire afin d'inspecter le contenu avant de modifier le système live.

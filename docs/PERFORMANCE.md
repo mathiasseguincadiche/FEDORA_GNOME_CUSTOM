@@ -5,7 +5,7 @@
 
 ## Objectif
 
-Cette couche importe dans Fedora 45 les mécanismes de réactivité utiles d'une workstation orientée performance **sans transformer Fedora en distribution dérivée** et sans toucher aveuglément aux paramètres kernel, GPU, NVMe ou réseau.
+Cette couche importe dans Fedora 45 les mécanismes de réactivité utiles d'une workstation orientée performance **sans transformer Fedora en distribution dérivée** et sans toucher aveuglément aux paramètres du noyau, du GPU, du NVMe ou du réseau.
 
 La règle est :
 
@@ -156,7 +156,7 @@ Cette couche ne doit pas introduire :
 - `nohz_full` ;
 - désactivation globale ASPM/APST ;
 - ADIOS/BORE/BMQ imposé ;
-- kernel Cachy/Zen/Liquorix ;
+- noyau Cachy, Zen ou Liquorix ;
 - Mesa git/COPR ou `force_probe` ;
 - overclock GPU via GameMode ;
 - recompilation globale Fedora en `znver4`.

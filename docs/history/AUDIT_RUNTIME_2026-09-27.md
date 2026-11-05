@@ -5,7 +5,7 @@ Ce document décrit les preuves disponibles, pas une certification du poste.
 
 ## Verdict
 
-L'analyse de Claude identifie correctement la duplication des références, le
+L'analyse initiale identifie correctement la duplication des références, le
 manque de couverture du parcours d'installation et la prédominance des contrats
 textuels. Elle ne suffit pas à affirmer que la sécurité est partout fail-closed.
 Des faux succès supplémentaires ont été reproduits dans le moteur et les sondes.

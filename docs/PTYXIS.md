@@ -15,7 +15,7 @@ Le contrat sépare volontairement :
 - **Bash UX** : historique, prompt, complétions, navigation et aliases ;
 - **KVM** : frontière d'isolation principale pour les environnements DevOps lourds.
 
-Cette séparation évite de transformer le HOST Fedora en VM de développement implicite.
+Cette séparation évite de transformer l'hôte Fedora en VM de développement implicite.
 
 ## Installation
 
@@ -25,7 +25,7 @@ Le profil conserve le paquet Fedora natif ; le projet n'installe aucune version 
 
 ## Bash géré
 
-Ptyxis utilise le login shell Bash du HOST. La couche versionnée est décrite dans [`HOST_BASH_UX.md`](HOST_BASH_UX.md) et fournit notamment :
+Ptyxis utilise le login shell Bash de l'hôte. La couche versionnée est décrite dans [`HOST_BASH_UX.md`](HOST_BASH_UX.md) et fournit notamment :
 
 - `bash-completion` ;
 - `fzf` ;
@@ -60,13 +60,13 @@ Ptyxis sait s'intégrer à Podman, Distrobox et Toolbx. Cette capacité n'en fai
 Pour le profil actuel :
 
 ```text
-HOST Fedora          minimal et administrable
+Hôte Fedora          minimal et administrable
 Ptyxis + Bash        outils opérateur locaux
 KVM Rocky DevOps    environnement DevOps principal
 Toolbx               non imposé par défaut
 ```
 
-Toolbx pourra être ajouté ultérieurement comme profil explicitement optionnel si un besoin de sandbox CLI légère sur le HOST est validé. Il ne doit pas apparaître implicitement dans `packages-shell.txt`.
+Toolbx pourra être ajouté ultérieurement comme profil explicitement optionnel si un besoin de sandbox CLI légère sur l'hôte est validé. Il ne doit pas apparaître implicitement dans `packages-shell.txt`.
 
 ## Contrôles
 

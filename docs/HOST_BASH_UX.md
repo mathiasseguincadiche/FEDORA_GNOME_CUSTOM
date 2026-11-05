@@ -12,7 +12,7 @@ Le contrat distingue deux couches :
 - [`PTYXIS.md`](PTYXIS.md) décrit le terminal GNOME natif, son paquet Fedora et son doctor ;
 - ce document décrit le shell Bash chargé dans Ptyxis et utilisable également depuis une console/TTY.
 
-Toolbx/Podman ne sont pas ajoutés implicitement au HOST. KVM reste l'environnement DevOps principal ; un éventuel profil Toolbx devra faire l'objet d'une option explicite future.
+Toolbx/Podman ne sont pas ajoutés implicitement à l'hôte. KVM reste l'environnement DevOps principal ; un éventuel profil Toolbx devra faire l'objet d'une option explicite future.
 
 ## Paquets Fedora
 

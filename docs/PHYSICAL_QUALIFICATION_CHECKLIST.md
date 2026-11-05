@@ -46,7 +46,7 @@ Cible : Ryzen 7 7700, MSI MAG B850M Mortar WiFi, Intel Arc B580, 48 Gio DDR5, de
 | Arrêt et reboot GNOME | NON EXÉCUTÉ | fermeture normale, reboot avec bureau ouvert et reboot précoce : aucune extension désactivée ni crash dans le journal du boot précédent |
 | Applications | NON EXÉCUTÉ | `application-usage-doctor --interactive` : modification enregistrée, PDF, Flatpak démarrés |
 | Gaming | NON EXÉCUTÉ | jeu réellement lancé, durée, erreurs, frametimes |
-| Rocky DevOps | NON EXÉCUTÉ | VM démarrée, guard réseau, SFTP depuis Nautilus, réseau Docker qualifié |
+| Rocky DevOps | NON EXÉCUTÉ | VM démarrée, garde réseau, SFTP depuis Nautilus, réseau Docker qualifié |
 | Sauvegarde et restauration | NON EXÉCUTÉ | `backup-doctor --certify`, restauration en staging, contenu/modes/liens comparés |
 | Reprise isolée Fedora / VM | NON EXÉCUTÉ | voir [reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md) |
 | Noyau de secours Fedora | NON EXÉCUTÉ | entrée GRUB présente, démarrage testé une fois, retour sur N |

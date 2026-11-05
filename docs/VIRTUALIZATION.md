@@ -8,7 +8,7 @@ Pour l'usage quotidien et le dépannage, voir le [démarrage KVM](KVM_QUICKSTART
 ## Architecture
 
 ```text
-Fedora 45 (HOST)
+Fedora 45 (hôte)
 ├── KVM / QEMU / libvirt : qemu:///system
 │   ├── domaine rocky-devops
 │   ├── pool devops-data → /data/libvirt/images
@@ -16,14 +16,14 @@ Fedora 45 (HOST)
 ├── second T705, /data EXT4
 │   ├── Documents/  Projets/  ISO/  Jeux/  IA/Openclaw/   (utilisateur, 0750, user_home_t)
 │   └── libvirt/ images/ iso/ cloud-init/ nvram/ snapshots/ exports/   (virt_image_t)
-└── Intel Arc B580 → reste au HOST, pilote xe
+└── Intel Arc B580 → reste à l'hôte, pilote xe
 ```
 
 - **Matériel** : AMD-V/SVM, `/dev/kvm` et `kvm_amd` obligatoires sur le PC. Démons libvirt modulaires de Fedora (`virtqemud`, `virtnetworkd`, `virtstoraged`, `virtlogd`, `virtlockd`), `libvirtd` seulement en repli.
-- **GPU** : aucun VFIO ni passthrough. Rocky s'administre par console série et SSH, sans affichage ; le contrat 2560×1440/~240 Hz du HOST reste prioritaire.
+- **GPU** : aucun VFIO ni passthrough. Rocky s'administre par console série et SSH, sans affichage ; le contrat 2560×1440/~240 Hz de l'hôte reste prioritaire.
 - **Stockage** : le projet ne partitionne ni ne formate jamais le second T705. `/data/ISO` est une bibliothèque utilisateur ; seuls les médias placés dans `/data/libvirt/iso` sont exposés à QEMU. Pool `devops-data`, type `dir`, autostart. Les VM utilisent le profil I/O mesuré par `kvm-io-doctor benchmark` (sur un fichier, jamais sur le disque brut), avec `cache=none` et `discard=unmap`.
-- **Réseau** : `devops-nat`, `virbr50`, `192.168.50.0/24`, passerelle `192.168.50.254`, DHCP `192.168.50.100-200`, DNS 9.9.9.9 et 1.1.1.1, NAT IPv4, zone firewalld `libvirt`. HOST↔VM, VM↔VM et VM→Internet autorisés ; VM→LAN et LAN→VM bloqués ; aucun forwarding implicite depuis Internet. Quand la connexion sortante change, le garde réseau passe d'abord en mode d'urgence, puis reconstruit les règles ; si cela échoue, l'état restrictif reste actif. Détails : [réseau KVM](KVM_NETWORK.md).
-- **Fichiers** : accès Fedora → Rocky par SFTP/SSH uniquement ; aucun partage HOST↔VM (pas de VirtioFS).
+- **Réseau** : `devops-nat`, `virbr50`, `192.168.50.0/24`, passerelle `192.168.50.254`, DHCP `192.168.50.100-200`, DNS 9.9.9.9 et 1.1.1.1, NAT IPv4, zone firewalld `libvirt`. hôte↔VM, VM↔VM et VM→Internet autorisés ; VM→LAN et LAN→VM bloqués ; aucun forwarding implicite depuis Internet. Quand la connexion sortante change, le garde réseau passe d'abord en mode d'urgence, puis reconstruit les règles ; si cela échoue, l'état restrictif reste actif. Détails : [réseau KVM](KVM_NETWORK.md).
+- **Fichiers** : accès Fedora → Rocky par SFTP/SSH uniquement ; aucun partage hôte↔VM (pas de VirtioFS).
 
 ## Profil `rocky-devops`
 
@@ -45,7 +45,7 @@ utilisateur        mathias (mot de passe saisi à la création, pour console et 
 autostart          non
 ```
 
-Sur le HOST de 8 cœurs / 16 threads et 48 Gio, il reste environ 32 Gio avant la consommation du système et des applications. Rocky 10 exige un CPU x86-64-v3 : `host-passthrough` expose les capacités du Ryzen 7 7700 ; un modèle CPU générique sans AVX2 l'empêcherait de démarrer. Le noyau de l'invité est celui de Rocky (EL10) ; le suivi Linux amont N/N-1 ne concerne que le HOST.
+Sur l'hôte de 8 cœurs / 16 threads et 48 Gio, il reste environ 32 Gio avant la consommation du système et des applications. Rocky 10 exige un CPU x86-64-v3 : `host-passthrough` expose les capacités du Ryzen 7 7700 ; un modèle CPU générique sans AVX2 l'empêcherait de démarrer. Le noyau de l'invité est celui de Rocky (EL10) ; le suivi Linux amont N/N-1 ne concerne que l'hôte.
 
 ## Image source authentifiée
 
