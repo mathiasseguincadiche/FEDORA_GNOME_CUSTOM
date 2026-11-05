@@ -1,15 +1,16 @@
 # Centre de contrôle
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — commandes relues contre `control.sh` et `lib/control_center.sh`, rétention contre `config/operator-retention.policy` — matériel : non vérifié
+> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-05 — chaque commande routée par `control.sh` et `lib/control_center.sh` présente sur cette page (contrôlé par `tests/test_docs_integrity.py`), rétention contre `config/operator-retention.policy` — matériel : non vérifié
 
 `./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
 ```bash
 ./control.sh
+./control.sh help
 ```
 
-`./menu.sh` lance la même interface pour compatibilité.
+Sans argument, `./control.sh` ouvre le menu interactif ; `help` affiche la liste des commandes et de leurs actions, sans rien exécuter. `./menu.sh` lance la même interface pour compatibilité.
 
 Avant les premiers enrôlements matériels, `./control.sh install prepare-tools` installe explicitement les outils de baseline. Cette préparation est proposée dans le menu Installation ; elle ne lance aucune mesure ni certification.
 
@@ -73,7 +74,10 @@ Après installation et redémarrage sur SSD :
 ./control.sh validate import /chemin/live-SHA_DU_COMMIT_AUDITE.json
 ./control.sh validate status
 ./control.sh validate gate3 status
+./control.sh validate help
 ```
+
+`validate help` rappelle la syntaxe exacte de ces commandes.
 
 La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](QUALIFICATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d’[installation](INSTALLATION_GUIDE.md).
 
@@ -174,6 +178,8 @@ Si ni N ni N-1 ne démarrent, maintenir **Maj** ou appuyer sur **Échap** au dé
 ./control.sh doctor apps
 ./control.sh doctor media
 ./control.sh doctor gaming
+./control.sh doctor polish
+./control.sh doctor remote
 ./control.sh doctor kvm
 ./control.sh doctor backup
 ```
@@ -182,7 +188,15 @@ Si ni N ni N-1 ne démarrent, maintenir **Maj** ou appuyer sur **Échap** au dé
 
 `doctor gaming` contrôle le profil de jeu, `/data/Jeux`, Steam et Vulkan, et les invariants Arc, Wayland et affichage observables sur le PC physique.
 
-`remote status` (alias `doctor remote`) contrôle le profil optionnel d'accès distant ; `remote info` affiche la MAC, la diffusion LAN et l'adresse Tailscale à reporter sur le relais Wake-on-LAN. Voir [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
+Le profil facultatif d'accès distant a ses propres commandes, toutes en lecture seule :
+
+```bash
+./control.sh remote status
+./control.sh remote doctor
+./control.sh remote info
+```
+
+`remote status`, `remote doctor` et `doctor remote` lancent le même contrôle, `diagnostics/remote-doctor`. `remote info` affiche la MAC, la diffusion LAN et l'adresse Tailscale à reporter sur le relais Wake-on-LAN. Voir l'[accès distant](REMOTE_ACCESS.md).
 
 ## Performance Fedora Linux
 
@@ -273,6 +287,18 @@ Après certification réelle :
 Le moteur exige un certificat PASS courant et scelle les payloads fournis par l'opérateur. Il ne télécharge aucun média externe automatiquement.
 
 ## Journaux et rétention
+
+Les commandes de consultation lisent les journaux sans rien modifier :
+
+```bash
+./control.sh logs list
+./control.sh logs tail
+./control.sh logs boot-failure
+```
+
+`logs list` affiche les dix derniers runs, les rapports et les preuves d'état ; `logs tail` montre la fin du `main.log` du dernier run. `logs boot-failure` lance `scripts/collect-boot-failure.sh`, qui écrit dans `reports/` les avertissements, erreurs noyau, coredumps et unités en échec du **démarrage précédent** : c'est le premier geste après un démarrage raté ([dépannage en urgence](TROUBLESHOOTING.md#en-urgence)).
+
+La rétention s'applique aux journaux et rapports transitoires :
 
 ```text
 logs = 90 jours
