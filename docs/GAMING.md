@@ -5,7 +5,7 @@
 
 ## Périmètre
 
-Le profil Gaming fait partie de la **Golden Workstation canonique**. Il ajoute le runtime de jeu Linux sans modifier la frontière DevOps/KVM, sans remplacer le kernel/Mesa Fedora et sans appliquer de tuning global agressif.
+Le profil Gaming fait partie de la **Golden Workstation canonique**. Il ajoute le runtime de jeu Linux sans modifier la frontière DevOps/KVM, sans remplacer le noyau ni Mesa de Fedora et sans appliquer de tuning global agressif.
 
 La configuration canonique est :
 
@@ -33,7 +33,7 @@ Steam est installé en RPM natif : aucune permission filesystem Flatpak n'est n�
 
 Le projet ne génère et ne réécrit pas `libraryfolders.vdf`. Après le premier lancement, enregistrer `/data/Jeux` depuis **Steam → Settings → Storage**. Le contrat Golden reste ainsi indépendant du format privé de Steam et le même répertoire peut être utilisé ultérieurement par d'autres launchers.
 
-`/data/Jeux` est exclu des backups Borg daily/full automatiques par défaut, car les jeux installés sont volumineux et généralement retéléchargeables. Toute donnée non reproductible stockée directement sous `/data/Jeux` nécessite une politique de backup explicite.
+`/data/Jeux` est exclu par défaut des sauvegardes Borg automatiques, quotidienne et complète, car les jeux installés sont volumineux et généralement retéléchargeables. Toute donnée non reproductible stockée directement sous `/data/Jeux` nécessite une politique de sauvegarde explicite.
 
 ## Composants installés
 
@@ -142,14 +142,14 @@ Un premier lancement de jeu réel reste un test d'acceptation opérateur : authe
 
 La Golden Gaming ne :
 
-- remplace pas Fedora par un kernel gaming ;
+- remplace pas Fedora par un noyau « gaming » ;
 - ajoute pas Mesa git/COPR ni dépôt GPU tiers ;
 - applique pas de `sysctl`, scheduler ou governor hack global ;
 - force pas Gamescope ou MangoHud partout ;
 - force pas Proton-GE globalement ;
 - installe pas Heroic/Lutris/Wine dans le socle Steam initial.
 
-Heroic ou Lutris pourront être évalués plus tard comme intégrations optionnelles après certification de la base Steam/Proton sur bare-metal.
+Heroic ou Lutris pourront être évalués plus tard comme intégrations optionnelles après certification de la base Steam/Proton sur le PC physique.
 
 ## Définition du dépôt Steam sur Fedora 45
 

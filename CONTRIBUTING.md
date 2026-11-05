@@ -6,7 +6,7 @@ La source de vérité est le **code, la configuration et les tests**. Viennent e
 
 ## Principes
 
-1. **Ne pas affaiblir les garde-fous** : matériel physique, dry-run, sauvegarde pré-APPLY, SELinux, firewalld, réseau KVM fail-closed et vérifications de provenance restent obligatoires.
+1. **Ne pas affaiblir les garde-fous** : matériel physique, dry-run, sauvegarde pré-APPLY, SELinux, firewalld, réseau KVM fermé par défaut et vérifications de provenance restent obligatoires.
 2. **Pas de réglage global non mesuré** : pas de `force_probe`, Mesa git/COPR, noyau gaming tiers ou `sysctl` global sans décision d'architecture explicite (ADR).
 3. **Réutiliser les moteurs** : `control.sh` reste une façade ; la logique appartient à `install.sh`, `scripts/`, `diagnostics/` et `lib/`.
 4. **Séparer les environnements** : la CI teste le logiciel, le Live USB observe le PC avant installation, la Gate 3 qualifie le système installé.
@@ -98,7 +98,8 @@ Les trois premiers statuts et « Abandonné » disent où en est le travail ; «
 
 - **Registre** : infinitif impersonnel pour les consignes (« Lancer… », « Vérifier… »), phrases complètes pour les explications. Ni tutoiement, ni vouvoiement.
 - **Une idée par paragraphe.** Une énumération devient une liste, une comparaison un tableau.
-- **Gras réservé** aux avertissements et à la première occurrence d'un terme défini.
+- **Le besoin avant le mécanisme.** Une section importante s'ouvre par deux ou trois phrases qui disent quel problème elle règle et ce qu'elle permet ; le détail vient ensuite. Un terme technique s'explique dans la phrase qui l'introduit. Un contrôle dit ce qu'il garantit et ce qu'il ne prouve pas.
+- **Gras de repère**, un à trois par paragraphe ou par puce : un avertissement, un terme défini à sa première occurrence, l'intention d'une étape ou sa conclusion (« **Réussite :** »). Jamais une phrase entière ni un mot mis en valeur sans raison.
 - **Pas de qualificatif non démontré** (« robuste », « sécurisé », « complet ») : décrire ce qui est contrôlé et comment.
 - **Lexique** : les commandes, options, noms de fichiers et noms de produits restent en version originale (`doctor`, `APPLY`, `Gate 3`, Borg). Les titres et les notions sont en français ; le terme anglais d'usage figure entre parenthèses à sa première occurrence. Un terme garde le même sens dans tout le dépôt ; le [glossaire](docs/GLOSSARY.md) fait foi.
 

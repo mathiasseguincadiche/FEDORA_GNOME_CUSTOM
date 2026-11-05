@@ -16,7 +16,7 @@ Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (un
 | Finition GNOME | dock, bureau avec icônes, tuilage, apps GTK3 harmonisées, soin OLED | [GNOME](GNOME.md), [ADR 0013](adr/0013-ubuntu-grade-gnome-polish.md) |
 | Performance | noyau stable le plus récent, réglages mesurés, aucun réglage aveugle | [performance](PERFORMANCE.md), [Linux amont](UPSTREAM_LINUX.md) |
 | Fiabilité et sauvegardes | rien sans dry-run, baseline et sauvegarde ; restauration prouvée | [qualification](QUALIFICATION.md), [sauvegardes](BACKUP_RESTORE.md) |
-| Outils DevOps | KVM isolé, labo Rocky en VM, terminal et Bash soignés | [KVM](KVM_QUICKSTART.md), [Ptyxis](PTYXIS.md) |
+| Outils DevOps | KVM isolé, laboratoire Rocky en VM, terminal et Bash soignés | [KVM](KVM_QUICKSTART.md), [Ptyxis](PTYXIS.md) |
 
 ## Le matériel cible
 
@@ -43,7 +43,7 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 - **aucun chiffrement** des disques (ADR 0002) ni des sauvegardes (ADR 0014), mais jamais de clé SSH ou GnuPG dans Borg (ADR 0021) ;
 - **Secure Boot désactivé** (ADR 0002) ; le projet ne le désactive ni ne gère de clé MOK lui-même ;
 - **noyau** : Linux amont officiel stable (ADR 0015), avec un noyau Fedora signé en secours (ADR 0020) ; un retard de publication du noyau ne bloque jamais les autres mises à jour ;
-- **labo DevOps** : Rocky Linux 10.2 en VM KVM, créée uniquement à la demande ;
+- **laboratoire DevOps** : Rocky Linux 10.2 en VM KVM, créée uniquement à la demande ;
 - **pas de nouvelle fonctionnalité avant la Gate 3** : la priorité est la première installation réelle certifiée. On améliore par petites étapes vérifiées, et chaque ajout sert un pilier.
 
 ## Ce que contient le dépôt
@@ -107,10 +107,10 @@ Trois niveaux à ne jamais confondre (expliqués pas à pas dans les [notions cl
 - **Noyau** : Linux amont stable depuis `@kernel-vanilla/stable`, version comparée à kernel.org, plancher dans `config/kernel.conf`, RC et paquets en retard refusés. N est le défaut, N-1 le retour arrière, un noyau Fedora signé le secours. Voir [Linux amont](UPSTREAM_LINUX.md).
 - **Stockage** : root et `/data` sur deux NVMe physiques distincts. L'APPLY crée `Documents`, `Projets`, `ISO`, `Jeux`, `IA/Openclaw` et `libvirt` sans supprimer leur contenu (`0750`, `user_home_t` ; `virt_image_t` pour libvirt). XDG Documents pointe vers `/data/Documents`, sans lien symbolique bricolé dans le HOME. Aucun test n'écrit sur un disque brut.
 - **GPU** : `8086:e20b` sur `xe` ; le projet valide noyau, firmware, Mesa, Vulkan, VA-API et calcul au lieu de forcer quoi que ce soit.
-- **Affichage** : 2560×1440 à ~240 Hz, échelle 1.0, SDR, RGB complet. Un texte dégradé après veille est d'abord un problème DRM/KMS/Mutter, pas Fontconfig. Le watcher capture la disposition avant la veille et ne la rétablit que si les mêmes écrans et modes existent (échelle, position, écran principal, HDR et plage RGB conservés ; aucune écriture si rien ne change). Les options `DISPLAY_REPAIR_ON_*` contrôlent les watchers ; `~/.local/libexec/fedora-gnome-display-repair --reset-certified` réimpose le profil et refuse plusieurs écrans.
+- **Affichage** : 2560×1440 à ~240 Hz, échelle 1.0, SDR, RGB complet. Un texte dégradé après veille est d'abord un problème DRM/KMS/Mutter, pas Fontconfig. Le service de surveillance de l'affichage capture la disposition avant la veille et ne la rétablit que si les mêmes écrans et modes existent (échelle, position, écran principal, HDR et plage RGB conservés ; aucune écriture si rien ne change). Les options `DISPLAY_REPAIR_ON_*` contrôlent ces services ; `~/.local/libexec/fedora-gnome-display-repair --reset-certified` réimpose le profil et refuse plusieurs écrans.
 - **Nautilus** : démarrage à froid mesuré de `nautilus --new-window` jusqu'à l'apparition de `org.gnome.Nautilus` sur D-Bus ; cible 1200 ms, limite 2000 ms. Le préchauffage du login touche Portal/GIO mais ne lance jamais Nautilus.
 - **Performance** : P-State/EPP observé, TuneD/tuned-ppd, zram aux valeurs Fedora, GameMode par jeu, sched_ext jamais imposé sans essai, T705 en `benchmark-only`, frametimes comparés. Le mode certifiable reste `balanced` ([performance](PERFORMANCE.md)).
-- **KVM** : `qemu:///system`, pool sur `/data/libvirt/images`, réseau `devops-nat` IPv4 seulement, guard fail-closed, image Rocky authentifiée avant création du disque ([virtualisation](VIRTUALIZATION.md), [réseau KVM](KVM_NETWORK.md)).
+- **KVM** : `qemu:///system`, pool sur `/data/libvirt/images`, réseau `devops-nat` IPv4 seulement, garde réseau fermé par défaut, image Rocky authentifiée avant création du disque ([virtualisation](VIRTUALIZATION.md), [réseau KVM](KVM_NETWORK.md)).
 - **Sauvegarde** : dépôt Borg non chiffré refusant un dépôt chiffré, cible externe, sauvegarde pré-APPLY liée à l'état, `borg check --verify-data`, restauration canari, restauration toujours en staging. Les disques QCOW2, le XML libvirt et la NVRAM ne sont jamais sauvegardés automatiquement.
 
 La 1.0 se justifiera par une installation complète sur le PC et une période d'usage réel stable, pas par l'ajout de fonctionnalités.

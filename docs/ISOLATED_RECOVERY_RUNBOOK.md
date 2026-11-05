@@ -9,7 +9,7 @@ Objectif : démontrer que les données, Fedora et les VM peuvent être récupér
 
 Conserver hors de la workstation le commit exact, la configuration effective, le plan de modules et la preuve Live native correspondante, l'identité du dépôt et le nom/id de l'archive. Borg doit être non chiffré. Il ne faut aucune clé de chiffrement ; il faut conserver les accès au dépôt, le média Fedora verrouillé et le support physique de sauvegarde.
 
-Créer un backup complet du HOST et des données utilisateur, avec un staging dimensionné, **sans inclure de VM** :
+Créer une sauvegarde complète de l'hôte et des données utilisateur, avec un staging dimensionné, **sans inclure de VM** :
 
 ```bash
 scripts/backup/backup-now.sh --staging-root /chemin/absolu/staging
@@ -17,7 +17,7 @@ scripts/backup/backup-now.sh --staging-root /chemin/absolu/staging
 scripts/backup/disaster-recovery.sh
 ```
 
-Lire le plan de récupération du HOST et le commit qu'il désigne. Les archives Borg **ne couvrent ni les disques ni les métadonnées libvirt**. Une reprise de VM dépend uniquement de l'export manuel que le propriétaire a choisi de réaliser et de conserver séparément. Les archives `fgc-pending-*` ne sont jamais une base de reprise automatique.
+Lire le plan de récupération de l'hôte et le commit qu'il désigne. Les archives Borg **ne couvrent ni les disques ni les métadonnées libvirt**. Une reprise de VM dépend uniquement de l'export manuel que le propriétaire a choisi de réaliser et de conserver séparément. Les archives `fgc-pending-*` ne sont jamais une base de reprise automatique.
 
 ## Séparer physiquement les cibles
 
@@ -25,7 +25,7 @@ Utiliser un support de récupération neuf/jetable et identifier chaque disque p
 
 Pour la copie VM, arrêter l'originale et utiliser un hôte libvirt de laboratoire séparé. Conserver les identités de l’export sans définir deux domaines portant le même UUID sur le même hôte. Aucun réseau de production, partage de données, SFTP ou périphérique passthrough ne doit être attaché à la copie. Démarrer sans carte réseau, ou dans un réseau de laboratoire sans routage sortant, NAT ni accès LAN.
 
-Le staging doit pouvoir contenir les fichiers et disques extraits avec la réserve prévue ; vérifier la capacité avant copie. Un laboratoire virtuel ne permet pas de contourner la restriction bare-metal de l'APPLY production.
+Le staging doit pouvoir contenir les fichiers et disques extraits avec la réserve prévue ; vérifier la capacité avant copie. Un laboratoire virtuel ne permet pas de contourner l'exigence de matériel physique de l'APPLY de production.
 
 ## 1. Restaurer les fichiers
 
@@ -62,7 +62,7 @@ Ne mélanger aucun état TPM/NVRAM d'une autre date ou d'un autre domaine. Remet
 
 Démarrer la copie isolée. Vérifier système invité, documents et applications. Effectuer un redémarrage supplémentaire et revérifier les données. Préserver l'original jusqu'à la fin de l'essai.
 
-**Acceptation :** invité amorçable, état UEFI correspondant (et TPM si présent), données accessibles et isolation effective. Le canary TPM Linux du CI reste un test logiciel distinct ; Rocky ne nécessite pas de TPM émulé.
+**Acceptation :** invité amorçable, état UEFI correspondant (et TPM si présent), données accessibles et isolation effective. Le test canari TPM Linux de la CI reste un test logiciel distinct ; Rocky ne nécessite pas de TPM émulé.
 
 ## Preuves minimales et arrêt sur échec
 

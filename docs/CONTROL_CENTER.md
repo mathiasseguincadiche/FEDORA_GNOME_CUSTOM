@@ -29,7 +29,7 @@ Source éditable : [`centre-de-controle.drawio`](assets/diagrams/centre-de-contr
 | Comprendre l'état | `./control.sh status` | observation |
 | Diagnostiquer | `./control.sh doctor all` | lecture seule |
 | Préparer une installation | `./control.sh install dry-run` | plan non mutant |
-| Installer réellement | `./control.sh install apply` | **mutation protégée, bare-metal uniquement** |
+| Installer réellement | `./control.sh install apply` | **mutation protégée, PC physique uniquement** |
 
 Fedora 45 / GNOME 51 est la cible sélectionnée et son profil est promu (`ready`) ; l’APPLY reste soumis à ses autres gardes. Le [schéma d'architecture expliqué](ARCHITECTURE.md) détaille les relations entre commandes et moteurs.
 
@@ -43,13 +43,13 @@ Le tableau de bord affiche :
 
 - version et SHA Git ;
 - Fedora / environnement runtime ;
-- kernel courant et politique **N / N-1 · max 2 par canal** ;
+- noyau courant et politique **N / N-1 · max 2 par canal** ;
 - Intel Arc B580 / `xe` ;
 - état Git ;
 - second T705 `/data` EXT4 ;
 - profil Gaming / Steam / Vulkan ;
 - état Performance Fedora Linux et profil TuneD actif ;
-- backup Borg ;
+- sauvegarde Borg ;
 - certification Golden ;
 - KVM / `devops-nat` ;
 - besoin de reboot.
@@ -116,7 +116,7 @@ Le chemin APPLY conserve ses protections : PC physique, Git propre, baseline, co
 `update all` et `update dnf` préparent une transaction **DNF5 hors ligne** après une sauvegarde complète Borg.
 
 ```text
-backup complet Borg
+sauvegarde complète Borg
         ↓
 résolution latest-stable du canal configuré
         ↓
@@ -126,13 +126,13 @@ dnf5 --refresh upgrade --offline
         ↓
 ./control.sh update reboot
         ↓
-N = nouveau kernel par défaut
-N-1 = kernel précédent
+N = nouveau noyau par défaut
+N-1 = noyau précédent
         ↓
 ./control.sh update finalize
 ```
 
-La finalisation vérifie la transaction, `dnf5 check`, le kernel N, le défaut GRUB, retire les noyaux amont plus anciens que N-1 en conservant le noyau Fedora de secours, puis converge Flatpak si nécessaire et lance les diagnostics.
+La finalisation vérifie la transaction, `dnf5 check`, le noyau N, le défaut GRUB, retire les noyaux amont plus anciens que N-1 en conservant le noyau Fedora de secours, puis converge Flatpak si nécessaire et lance les diagnostics.
 
 Pour le firmware : **aucun flash automatique**. `fwupdmgr` ne sert qu'à l'inventaire et à la consultation.
 

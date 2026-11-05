@@ -68,7 +68,7 @@ Fichier : `.github/workflows/non-regression.yml`. Vérifie les invariants d'arch
 - Wayland comme contrat, sans `force_probe`, passthrough GPU ni partage VirtioFS de l'hôte ;
 - garde réseau KVM, refus de purger le pare-feu, aucun formatage dans les modules ;
 - invité Rocky : pas de SSH par mot de passe ni de sudo sans mot de passe, AWS CLI vérifié par sa signature, Kubernetes limité à `v1.37` ;
-- Kickstart épinglé, sauvegarde fail-closed, absence de secret évident dans le dépôt.
+- Kickstart épinglé, sauvegarde fermée par défaut, absence de secret évident dans le dépôt.
 
 **Si rouge :** l'étape en échec nomme l'invariant ; chercher dans le diff l'élément qu'elle interdit. Une garde ne s'assouplit pas pour faire passer un changement : le changement s'adapte, ou une décision écrite (ADR) modifie la règle.
 

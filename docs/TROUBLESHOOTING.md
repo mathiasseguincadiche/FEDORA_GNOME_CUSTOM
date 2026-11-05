@@ -224,6 +224,6 @@ Trouver la première cause, pas masquer le job final :
 | `toomanyrequests` à l'initialisation des conteneurs | registre limité | images Fedora depuis `registry.fedoraproject.org` |
 | `Cannot download openh264` | dépôt Cisco injoignable depuis le runner | isoler ce dépôt s'il n'est pas requis, sans retirer de paquet requis |
 | coredump dans `fedora-gnome-vm / lab` | crash ou blocage GNOME/Mutter | lire GDM, Wayland/XWayland, unités utilisateur, `systemd-coredump` |
-| `Tests / contracts` rouge | une dépendance a échoué ou été sautée | corriger le job amont ; `contracts` reste fail-closed |
+| `Tests / contracts` rouge | une dépendance a échoué ou été sautée | corriger le job amont ; `contracts` reste fermé par défaut |
 
 Ne jamais désactiver `journal_health`, retirer une assertion bloquante, ajouter `|| true` ou ignorer un coredump. Voir [CI](CI_VALIDATION.md) et le [laboratoire Fedora/GNOME](FEDORA_GNOME_CI_LAB.md).
