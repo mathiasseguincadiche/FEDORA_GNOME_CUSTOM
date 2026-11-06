@@ -153,6 +153,6 @@ Heroic ou Lutris pourront être évalués plus tard comme intégrations optionne
 
 ## Définition du dépôt Steam sur Fedora 45
 
-Le RPM Fedora `fedora-workstation-repositories` fournit maintenant `rpmfusion-nonfree-steam.repo` dans `/usr/share/dnf5/repos.d/`. L’installation et le doctor utilisent le fichier réellement fourni, vérifient son propriétaire RPM et la visibilité du dépôt par DNF5. Les systèmes ayant encore la définition dans `/etc/yum.repos.d/` restent reconnus. Le dépôt Steam est activé uniquement pour la transaction demandée. Aucun fichier de dépôt de remplacement n’est fabriqué.
+Le RPM Fedora `fedora-workstation-repositories` fournit maintenant `rpmfusion-nonfree-steam.repo` dans `/usr/share/dnf5/repos.d/`. L'installation et le doctor utilisent le fichier réellement fourni, vérifient son propriétaire RPM et la visibilité du dépôt par DNF5. Les systèmes ayant encore la définition dans `/etc/yum.repos.d/` restent reconnus. Le dépôt Steam est activé uniquement pour la transaction demandée. Aucun fichier de dépôt de remplacement n'est fabriqué.
 
 Source : [paquet officiel Fedora](https://packages.fedoraproject.org/pkgs/fedora-third-party-repos/fedora-workstation-repositories/fedora-45.html).

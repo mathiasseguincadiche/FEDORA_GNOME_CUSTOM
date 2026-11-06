@@ -57,7 +57,7 @@ Si `NAUTILUS_ENABLE_PREVIEWS=false`, le module converge explicitement `show-imag
 
 ## Archives et aperçu rapide
 
-`file-roller-nautilus` fournit l’extension native de File Roller pour ouvrir et extraire les archives prises en charge.
+`file-roller-nautilus` fournit l'extension native de File Roller pour ouvrir et extraire les archives prises en charge.
 
 `Sushi` est l'outil d'aperçu de référence de GNOME. Son paquet est obligatoire ; aucune extension Nautilus tierce n'est nécessaire pour cette fonction.
 
