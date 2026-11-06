@@ -308,6 +308,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_kernel_channel_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_kernel_ci_deferred_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_gnome_polish_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_extension_variants_behavior.sh

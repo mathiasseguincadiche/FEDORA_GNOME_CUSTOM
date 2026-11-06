@@ -1,7 +1,7 @@
 # Centre de contrôle
 
-> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — chaque commande routée par `control.sh` et `lib/control_center.sh` présente sur cette page (contrôlé par `tests/test_docs_integrity.py`), rétention contre `config/operator-retention.policy` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — nature des commandes relue contre leurs moteurs ; routes contrôlées par `tests/test_docs_integrity.py`, rétention contre `config/operator-retention.policy` — matériel : non vérifié
 
 `./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
@@ -24,12 +24,18 @@ Source éditable : [`centre-de-controle.drawio`](assets/diagrams/centre-de-contr
 
 `control.sh` expose des commandes lisibles mais **ne retire aucun garde-fou**. Les moteurs `install.sh`, mises à jour, sauvegardes, virtualisation et diagnostics restent séparés, vérifiables et soumis aux mêmes préconditions.
 
-| Intention | Exemple | Effet |
+| Intention | Exemple | Effet et garde principal |
 |---|---|---|
-| Comprendre l'état | `./control.sh status` | observation |
-| Diagnostiquer | `./control.sh doctor all` | lecture seule |
-| Préparer une installation | `./control.sh install dry-run` | plan non mutant |
-| Installer réellement | `./control.sh install apply` | **mutation protégée, PC physique uniquement** |
+| Comprendre l'état | `./control.sh status` | lecture du système et des preuves existantes |
+| Diagnostiquer | `./control.sh doctor all` | observations ; ne répare pas le système |
+| Collecter une preuve | `./control.sh logs boot-failure` | **écrit un rapport** dans `reports/`, sans réparer le démarrage |
+| Préparer une installation | `./control.sh install dry-run` | n'applique pas les modules ; **écrit une preuve et des journaux** |
+| Modifier un profil courant | `./control.sh perf balanced` | **bascule TuneD** sur le PC physique ; pas d'APPLY, ni de sauvegarde pré-APPLY obligatoire pour cette action |
+| Préparer une mise à jour | `./control.sh update all` | sauvegarde complète Borg, puis préparation de la transaction DNF5 hors ligne |
+| Installer la configuration | `./control.sh install apply` | **mutation protégée** : baseline, dry-run, sauvegarde pré-APPLY, confirmation et PC physique |
+| Nettoyer des artefacts transitoires | `./control.sh logs prune` | **suppression explicite**, limitée par la politique de rétention ; les preuves Golden restent protégées |
+
+Un garde-fou se décrit **par opération**, pas par une promesse globale. Les commandes de consultation peuvent créer un **rapport** sans modifier la configuration du système ; les commandes de maintenance disposent de leurs préconditions spécifiques. Les opérations manuelles de partitionnement du [guide d'installation](INSTALLATION_GUIDE.md) ne passent pas par la façade.
 
 Fedora 45 / GNOME 51 est la cible sélectionnée et son profil est promu (`ready`) ; l'APPLY reste soumis à ses autres gardes. Le [schéma d'architecture expliqué](ARCHITECTURE.md) détaille les relations entre commandes et moteurs.
 
@@ -288,7 +294,7 @@ Le moteur exige un certificat PASS courant et scelle les payloads fournis par l'
 
 ## Journaux et rétention
 
-Les commandes de consultation lisent les journaux sans rien modifier :
+Ces commandes consultent des traces ; les deux premières lisent seulement, tandis que la troisième collecte et **écrit un rapport** dans `reports/` :
 
 ```bash
 ./control.sh logs list

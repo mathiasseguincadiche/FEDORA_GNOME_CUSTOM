@@ -1,7 +1,7 @@
 # CI et validation
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — workflows, jobs, étapes et images relus dans `.github/workflows/` ; contextes obligatoires lus dans le ruleset de `main` ; durées mesurées sur les runs de la PR #180 — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — contrôles documentaires et tests d'ancres relus contre `tests/test_docs_integrity.py` et ses fixtures ; revue des workflows et mesures CI du 2026-11-04 conservées — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -45,13 +45,13 @@ Fichier : `.github/workflows/tests.yml`. Déclenché par chaque PR et chaque pus
 | `logic-contracts` | plus de cent tests de contrat et de comportement (`tests/`), dont la sonde Docker sur le runner | ce qui demande Fedora, une VM ou le PC | ouvrir la première étape en échec : elle nomme le test ; le rejouer en local, par exemple `bash tests/test_structure.sh` |
 | `installer-audit` | le catalogue des modules dans un conteneur Fedora 45, sans certifier ce conteneur ; refuse les blocages inattendus | un APPLY réel | lire le blocage listé par `scripts/ci/check-installer-audit.py`, puis l'artefact `installer-audit-<run_id>` |
 | `borg-fedora` | sauvegarde et restauration Borg réelles, certification de sauvegarde, avertissements quotidiens, aller-retour `IA/Openclaw` | le disque externe du PC | l'étape en échec nomme le test ; le rejouer sur une machine où `borg` est installé |
-| `upstream-kernel / rpm` | la transaction des RPM du noyau amont stable sur Fedora 45, version égale à kernel.org, verrou DNF5 | le démarrage de ce noyau | comparer, dans le journal, la version kernel.org et celle du COPR ; un COPR en retard se règle en attendant sa publication, jamais en contournant le contrôle ; artefact `upstream-linux-rpm-<run_id>` |
+| `upstream-kernel / rpm` | **PASS** : transaction des RPM exacts de la dernière stable kernel.org avec verrou DNF5 ; **DEFERRED** : retard de publication COPR identifié et prouvé, sans transaction RPM | en état DEFERRED, ni la disponibilité du dernier RPM ni son installation ; le démarrage réel n'est jamais prouvé ici | lire `status=PASS` ou `status=DEFERRED` dans l'artefact `upstream-linux-rpm-<run_id>` et le résumé ; toute autre erreur reste bloquante |
 | `fedora-gnome-vm / lab` | laboratoire GNOME natif ([fiche](FEDORA_GNOME_CI_LAB.md)) | les six extensions, le matériel | `report.json` de l'artefact indique l'exercice en échec ; les journaux du démarrage concerné disent pourquoi ([rapports](FEDORA_GNOME_CI_LAB.md#rapports)) |
 | `fedora45-gnome-vm / lab` | laboratoire à six extensions ([fiche](FEDORA_GNOME_CI_LAB.md)) | l'installation depuis l'ISO, le matériel | idem, plus l'état `ACTIVE` de chaque extension dans le rapport |
 | `rocky-devops-vm` | vraie VM Rocky 10.2 : image authentifiée, bootstrap exact, redémarrage, restauration Borg à froid | le KVM et le réseau de l'hôte réel | artefact `fedora-gnome-custom-rocky-vm-pretest-<run_id>` : journal du bootstrap et inventaire ; distinguer panne d'un dépôt externe et défaut du bootstrap |
 | `contracts` | que chaque job ci-dessus a réussi (seule exception : les VM sautées sur une PR de documentation) | rien par lui-même | corriger le job amont qu'il nomme ; `contracts` n'a jamais de défaut propre |
 
-Pour `upstream-kernel / rpm`, seule la version annoncée stable par kernel.org et présente dans le COPR autorisé est recevable. Si le COPR n'a pas encore publié ce RPM exact, le job échoue volontairement : une série plus récente publiée en avance ne prouve pas sa stabilité.
+Pour `upstream-kernel / rpm`, seule la version annoncée stable par kernel.org et présente dans le COPR autorisé est recevable **pour une transaction RPM**. Quand le flux kernel.org est accessible et qu'un RPM Vanilla stable plus ancien est identifié dans le COPR autorisé, le job CI peut conclure en état **DEFERRED** (avertissement et preuve conservés) : **un workflow GitHub vert dans ce cas ne prouve pas que le noyau demandé est installable**. Il ne télécharge aucun RPM et les tests de refus de ce scénario tournent séparément. Si la provenance ou la version ne peuvent pas être vérifiées, la CI échoue ; un téléchargement de RPM qui échoue après les tentatives reste un échec. Le moteur d'installation physique ne change pas et refuse toujours tout RPM en retard.
 
 `logic-contracts` démarre sans attendre les laboratoires : une régression de code apparaît en quelques minutes.
 
@@ -139,14 +139,14 @@ Pour diagnostiquer un échec, suivre le [runbook CI](TROUBLESHOOTING.md#un-contr
 
 `tests/test_docs_integrity.py` bloque :
 
-- un lien local ou une ancre cassés, un guide inaccessible depuis le README ;
+- un lien local cassé, une ancre Markdown absente (y compris les titres accentués ou répétés), un guide inaccessible depuis le README ;
 - une commande `./control.sh` que le code ne connaît pas ;
 - un chemin du dépôt cité qui n'existe pas ;
 - un guide sans bloc de métadonnées ;
 - un bloc Mermaid, un schéma sans sa paire `.drawio` / `.svg`, ou une paire qui diffère de ce que produit `tools/diagrams/build.py` (`tests/test_diagram_sources.py`) ;
 - un inventaire logiciel différent des manifests.
 
-`tests/test_docs_integrity_behavior.py` prouve, sur des copies du dépôt, que chacune de ces règles accepte et refuse ce qu'elle doit. Les conventions sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation).
+`tests/test_docs_integrity_behavior.py` exerce les règles sur des copies jetables du dépôt : notamment un lien valide, des ancres absentes, des titres répétés et un faux titre dans un bloc de code. Les conventions sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation). La validation des ancres concerne les liens Markdown locaux, pas les URL externes ni un rendu visuel sur le PC.
 
 ## Ce qui reste à prouver sur le PC
 

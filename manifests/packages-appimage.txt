@@ -1,4 +1,4 @@
-# Fedora 44 native runtime/support for current and legacy AppImages
+# Fedora 45 primary runtime; compatible with the historical Fedora 44 AppImage path.
 # FUSE 2 remains required by many Type 1/Type 2 runtimes; keep both arches for legacy 32-bit images.
 fuse
 fuse-libs.x86_64

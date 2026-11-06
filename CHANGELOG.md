@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Finalisation documentaire (référentiel V9.6)** : contrôle des fragments Markdown locaux avec essais négatifs et titres répétés ; parcours du README aligné sur l'installation Fedora puis la baseline, le dry-run, la sauvegarde pré-APPLY et l'APPLY ; garanties de sauvegarde formulées par opération plutôt qu'absolument ; restauration avec exemple exécutable ; état CI présenté comme preuve datée, sans assimiler une ancienne réussite à `main` courant ; libellés hérités du manifeste AppImage et du modèle de bug corrigés. Aucun changement au fonctionnement des modules, aux verrous GNOME, aux sauvegardes ni aux politiques matérielles.
+
+Les notes suivantes retracent **les itérations précédentes** de la documentation. Certaines présentations ont été remplacées ; le README courant et les guides font foi pour l'état présent. Ces entrées sont conservées pour la traçabilité des décisions et des PR.
+
 - Documentation (README, décision du propriétaire) :
   - **Parcours présenté en détail** : chaque étape du parcours (Live USB → dry-run → qualification → install → configurer → backup → restore → Gate 3) devient une sous-section avec une ligne de flux, un bloc `bash` copiable, la paire « prouve / ne prouve pas » et le guide qui fait foi ; alerte `> [!CAUTION]` sur le point de non-retour de l'APPLY ; accroche « trois promesses » ; le centre de contrôle est présenté en tableau des 12 domaines avec exemples de commandes. Toujours 100 % texte (0 image, 0 badge).
 
