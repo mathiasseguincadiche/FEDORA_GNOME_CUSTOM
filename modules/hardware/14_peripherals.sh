@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Certification des périphériques : LAN 5G, Wi-Fi 6 GHz, Bluetooth, ALC4080/PipeWire et xHCI, sans appliquer de quirk USB ou d'énergie non sûre.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 hardware_peripherals_precheck() { command_exists dnf; }
 hardware_peripherals_plan() { echo 'Install and certify 5G LAN, Wi-Fi/6GHz, Bluetooth, ALC4080/PipeWire and xHCI tooling without applying unsafe power/USB quirks.'; }
 hardware_peripherals_apply() { run_mutating HARDWARE sudo dnf -y install usbutils pciutils ethtool v4l-utils pipewire-utils iw bluez alsa-utils; }

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Stockage KVM dédié : second SSD monté manuellement en /data, jamais partitionné ni formaté ; arborescence /data/libvirt, règle SELinux virt_image_t, pool devops-data défini et démarré de façon idempotente.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_storage_validate_mount() {
   persistent_data_validate_mount_at "${KVM_DATA_MOUNT:-/data}" || return 1
   local mount="${KVM_DATA_MOUNT:-/data}" target fstype root_source data_source

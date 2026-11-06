@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# La phase 0 exige la preuve opérateur des SPD DDR5-5600 et XMP DDR5-6000 après test mémoire ; aucun réglage BIOS n'est changé automatiquement.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_memory_precheck() { [[ -r /proc/meminfo ]]; }
 baseline_memory_plan() { echo 'Phase 0 requires operator evidence for both DDR5-5600 SPD and DDR5-6000 XMP after memory testing; no BIOS memory setting is changed automatically.'; }
 baseline_memory_apply() { log_info BASELINE 'memory certification remains operator-controlled'; }

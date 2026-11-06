@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Compatibilité AppImage : FUSE 2 et 3, bibliothèques x86_64/i686, extraction ISO9660 et SquashFS, commande appimage-run gérée et intégration Gear Lever depuis Flathub.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 applications_appimage_precheck() {
   [[ -r "$REPO_ROOT/manifests/packages-appimage.txt" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/manifests/flatpaks-appimage.txt" ]] || return "$EXIT_PRECHECK_FAILED"

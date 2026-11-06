@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Gestion KVM en CLI : virsh et virt-admin, virt-host-validate et virt-xml-validate, virt-install/virt-clone/virt-xml, qemu-img/qemu-io/qemu-nbd/storage-daemon, guestfish et guestfs-tools.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_cli_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   return 0

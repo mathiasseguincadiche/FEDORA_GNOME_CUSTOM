@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Durcissement SSH : clés publiques seules, pas de root, utilisateur unique autorisé, drop-in validé par sshd -t ; service hors de la zone LAN par défaut sauf REMOTE_SSH_LAN=true.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/remote_access.sh"
 
 remote_ssh_precheck() {

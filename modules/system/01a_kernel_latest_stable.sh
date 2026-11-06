@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Noyau amont : installer la dernière version stable du canal amont (minimum KERNEL_MIN_VERSION), la définir par défaut dans GRUB, garder N/N-1 de ce canal plus un noyau Fedora signé en repli, désactiver l'entrée rescue.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/kernel_lifecycle.sh"
 
 system_kernel_precheck() {

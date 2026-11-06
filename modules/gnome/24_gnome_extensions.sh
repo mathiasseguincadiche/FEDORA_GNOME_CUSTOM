@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Extensions : Dash to Dock et AppIndicator depuis les RPM Fedora ; Desktop Icons NG et Show Desktop depuis les artefacts relus GNOME, aux versions épinglées.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 gnome_extensions_precheck() {
   is_true "${ENABLE_GNOME_EXTENSIONS:-false}" || return 0
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"

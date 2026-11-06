@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Validation des deux Crucial T705 depuis sysfs et inspection des erreurs NVMe/PCIe fatales ; les SMART étendus relèvent de storage-doctor.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_nvme_health_precheck() { [[ -d /sys/class/nvme ]]; }
 baseline_nvme_health_plan() { echo 'Validate both Crucial T705 devices from sysfs and inspect kernel NVMe/PCIe fatal errors; extended SMART data is collected later by storage-doctor when nvme-cli is present.'; }
 baseline_nvme_health_apply() { log_info BASELINE 'read-only NVMe health inventory'; }

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Pile de jeu : Vulkan multilib natif Fedora, GameMode, MangoHud, GOverlay, Gamescope, Steam Input et Steam depuis le dépôt RPM Fusion nonfree ; /data/Jeux racine de la bibliothèque ; Proton géré par Steam.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/persistent_data.sh"
 source "$REPO_ROOT/lib/gaming_repositories.sh"
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Contrat réseau KVM : devops-nat 192.168.50.0/24 sur virbr50, DHCP, IPv4 seul (IPv6 fermé par défaut), NAT avec relais DNS Quad9/Cloudflare, zone firewalld libvirt, garde nftables du projet bloquant les VM vers les réseaux protégés.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_network_source_xml() { printf '%s\n' "$REPO_ROOT/virtualization/xml/networks/devops-nat.xml"; }
 kvm_network_validate_xml() {
   local xml="$1"

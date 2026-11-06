@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Arc B580 : noyau, firmware et Mesa Fedora uniquement ; pilote xe prouvé sur 8086:e20b, Vulkan et VA-API validés ; aucun force_probe ni dépôt GPU tiers.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 graphics_find_gpu() {
   local dev vendor device driver
   for dev in /sys/bus/pci/devices/*; do

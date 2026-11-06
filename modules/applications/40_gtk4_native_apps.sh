@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Applications GTK4 : installer l'ensemble applicatif GNOME libadwaita ; Ptyxis est le terminal géré ; hors GTK4, seules les exceptions professionnelles et virtualisation sont admises.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 applications_gtk4_precheck() {
   command_exists dnf
   [[ -r "$REPO_ROOT/manifests/packages-applications-gtk4.txt" ]]

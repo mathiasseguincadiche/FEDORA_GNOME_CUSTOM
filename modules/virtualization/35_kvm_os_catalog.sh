@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Catalogue d'OS invités : métadonnées osinfo-db Fedora, détection des médias tolérante pour une version plus récente que la base, Rocky Linux 10.2 invité explicite ; aucun média d'installation téléchargé automatiquement.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_catalog_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   is_true "${KVM_REQUIRE_OSINFO:-true}" || return 0

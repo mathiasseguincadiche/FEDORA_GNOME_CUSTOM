@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Observabilité matérielle ; AMD P-State avec boost exigé ; pilote hwmon NCT6687D du noyau Fedora ; 48 Gio validés et vitesse DDR5 inventoriée sans changer le BIOS.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 hardware_cpu_memory_precheck() { command_exists dnf; }
 hardware_cpu_memory_plan() { echo 'Install hardware observability, require Ryzen 7 7700 AMD P-State plus boost, load the Fedora in-tree NCT6687D hwmon driver, validate 48 GiB RAM and inventory configured DDR5 speed without changing BIOS settings.'; }
 hardware_cpu_memory_apply() {

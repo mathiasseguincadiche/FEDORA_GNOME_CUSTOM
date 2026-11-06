@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Préflight sauvegardes : Borg 1.x seul moteur géré, dépôt non chiffré (ADR 0014), cible externe prouvée pour la sauvegarde pré-APPLY, marqueur lié au commit, à la configuration, au plan et au matériel.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 backup_preflight_precheck() {
   command_exists dnf && command_exists findmnt && command_exists lsblk && command_exists df
 }

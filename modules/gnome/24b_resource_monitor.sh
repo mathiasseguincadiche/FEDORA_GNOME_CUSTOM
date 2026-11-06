@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Moniteur de ressources : Vitals depuis l'artefact relu, télémétrie compacte en haut à droite ; la charge de l'Arc B580 reste non mesurée tant qu'un fondation xe n'est pas qualifiée.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 resource_monitor_extension_dir() {
   printf '%s/%s' "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" "${RESOURCE_MONITOR_UUID:-Vitals@CoreCoding.com}"
 }

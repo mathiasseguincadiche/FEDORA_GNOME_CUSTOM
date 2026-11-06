@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Validation matérielle : doctors de firmware, de composants, de liaisons de pilotes strictes, de GPU et de stockage lancés après la convergence.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 hardware_validation_precheck() { :; }
 hardware_validation_plan() { echo 'Run firmware, board-component, strict driver-binding, GPU and storage doctors after convergence.'; }
 hardware_validation_apply() { :; }

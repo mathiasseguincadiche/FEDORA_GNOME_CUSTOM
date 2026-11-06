@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Pile libvirt Fedora : QEMU/KVM, clients et pilotes, activation modulaire préférée avec repli libvirtd, virt-manager et virt-viewer comme exceptions explicites à la politique GTK4, OVMF, swtpm, guestfs et libosinfo.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_stack_operator() {
   local operator="${SUDO_USER:-${USER:-}}"
   [[ -n "$operator" && "$operator" != root ]] || return 1

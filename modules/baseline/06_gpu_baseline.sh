@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Validation de l'identité PCI de l'Arc B580 et de sa liaison au pilote xe depuis sysfs ; aucun dépôt GPU tiers, force_probe ni argument de noyau expérimental.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_gpu_precheck() { return 0; }
 baseline_gpu_plan() { echo 'Validate Intel Arc B580 PCI identity and xe binding directly from sysfs; no third-party GPU repository, force_probe or experimental kernel argument.'; }
 baseline_gpu_apply() { log_info BASELINE 'read-only GPU baseline'; }

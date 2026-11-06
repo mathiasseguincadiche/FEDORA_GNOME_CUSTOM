@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Pile Nautilus native Fedora : LocalSearch, GVfs et ses fondations, Sushi, File Roller ; SMB et MTP selon leurs drapeaux Golden ; retrait de l'extension gnome-terminal-nautilus pour garder le chemin Ptyxis sans ambiguïté.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 gnome_nautilus_precheck() {
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"
   case "${NAUTILUS_PREVIEW_POLICY:-local-only}" in

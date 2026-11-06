@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Exiger la preuve fio PASS automatisée sur les systèmes de fichiers T705 racine et /data ; jamais de test destructif sur périphérique brut.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_nvme_io_precheck() { return 0; }
 baseline_nvme_io_plan() { echo 'Require automated fio PASS evidence on both root and dedicated /data T705 filesystems. No destructive raw-device benchmark is ever run.'; }
 baseline_nvme_io_apply() { log_info BASELINE 'NVMe certification is operator-triggered through baseline-doctor run-nvme-test root/data'; }

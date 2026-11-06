@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Relever la base Wayland/affichage et l'état des connecteurs DRM sans forcer VRR, HDR, taux de rafraîchissement ni réglage Mutter expérimental.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_display_precheck() { return 0; }
 baseline_display_plan() { echo 'Record Wayland/display baseline and DRM connector state without forcing VRR, HDR, refresh rate or experimental Mutter settings.'; }
 baseline_display_apply() { log_info BASELINE 'read-only display baseline'; }

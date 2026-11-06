@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Wayland canonique : inventaire Mutter/EDID et 2560x1440 à 240 Hz attendus, sans forcer de drapeau d'affichage expérimental ni de rendu des polices.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 hardware_display_precheck() { :; }
 hardware_display_plan() { echo 'Treat GNOME Wayland as canonical; inventory Mutter DisplayConfig/EDID and expected 2560x1440@240 without forcing experimental display flags or font rendering.'; }
 hardware_display_apply() { :; }

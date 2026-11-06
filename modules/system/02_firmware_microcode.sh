@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Firmware Fedora plus microcode AMD et firmware Arc explicites ; fwupd en inventaire seul, jamais de flash automatique.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 system_firmware_precheck() { command_exists dnf; }
 
 system_firmware_plan() {

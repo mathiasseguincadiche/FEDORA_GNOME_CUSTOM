@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Disques des VM, NVRAM, TPM et média cloud-init : exportés manuellement par le propriétaire, exclus explicitement de Borg.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 # Contract: no automated VM disk backup or copy, even with local.conf overrides.
 backup_vm_precheck() {
   ! is_true "${BACKUP_VM_DISKS:-false}" || return "${EXIT_CONFIG_FAILED:-60}"

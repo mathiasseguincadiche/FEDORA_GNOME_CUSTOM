@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Réparation de l'affichage GNOME/Wayland : disposition, échelle et HDR d'avant mise en veille intégralement préservés ; changements d'écran observés sans écraser les réglages de l'utilisateur.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 gnome_display_repair_precheck() { is_true "${DISPLAY_REPAIR_ENABLED:-true}" || return 0; [[ -r "$REPO_ROOT/scripts/gnome/display-repair.sh" && -r "$REPO_ROOT/scripts/gnome/display-watch.sh" ]]; }
 gnome_display_repair_plan() { echo 'Install GNOME/Wayland display recovery: preserve the complete pre-suspend layout, scale and HDR; observe monitor/hotplug changes without overwriting user settings.'; }
 gnome_display_repair_apply() {

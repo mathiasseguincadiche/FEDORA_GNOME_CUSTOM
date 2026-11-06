@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Documentation du code (décision du propriétaire après la passe d'audit du code) :
+  - **En-têtes de modules** : les 77 modules de `modules/` portent un en-tête en français qui dit ce que le module fait, et le contrat `precheck / plan / apply / postcheck` (`docs/ARCHITECTURE.md`, section « Contrat d'exécution »). Aucune ligne de code modifiée.
+  - **Configuration** : les fichiers restés sans commentaire (`apply-gate.conf`, `hardware.conf`, `shell.conf`, `workstation.conf`) et `vm-profiles.conf` ouvrent sur un en-tête qui explique leur rôle ; aucune valeur, aucune clé changées.
+  - Validation : `bash -n` sur les 77 modules ; `validate-config.sh` ; tests rejoués identiques avant et après (structure, catalogue de modules, points d'entrée publics, politique, schéma de configuration, intégrité documentaire).
+
 - Documentation (décisions du propriétaire après l'audit de la passe 2) :
   - **Charte des apostrophes** : les apostrophes typographiques restantes passent aux apostrophes droites, style du reste du corpus — `FEDORA45_LIVE_PREFLIGHT` (33), `FEDORA45_PRIMARY` (23) et deux intruses dans `ISOLATED_RECOVERY_RUNBOOK`, repérées en appliquant la charte. Aucun mot, aucun lien changés.
   - **Résumé d'exécution** : l'activation du profil distant ([accès distant](docs/REMOTE_ACCESS.md), section 3) ouvre sur un résumé de cases à cocher, comme la restauration et le guide d'installation ; il recopie les étapes et la règle d'arrêt existantes de la section.

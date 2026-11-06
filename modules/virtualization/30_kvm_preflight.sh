@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Préflight KVM en lecture seule : AMD-V/SVM, /dev/kvm et kvm_amd, Arc B580 toujours au pilote xe de l'hôte, absence de chevauchement de devops-nat, firewalld actif ; jamais de VFIO ni passthrough GPU.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_preflight_arc_owned_by_host() {
   local dev vendor device driver
   for dev in /sys/bus/pci/devices/*; do

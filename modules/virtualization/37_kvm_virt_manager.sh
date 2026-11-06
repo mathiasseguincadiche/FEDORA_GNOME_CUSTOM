@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Administration graphique : virt-manager comme outil principal, virt-viewer pour les consoles, exception explicite à la politique GTK4, qemu:///system sans second domaine en mode session ; réglages par utilisateur fragiles évités.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_virt_manager_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   return 0

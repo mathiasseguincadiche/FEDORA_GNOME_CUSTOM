@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Validation de l'accès distant : tailnet non connecté = avertissement ; la qualification physique (cycles WoL, streaming) reste une mesure de Gate 3.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/remote_access.sh"
 
 remote_validation_precheck() { return 0; }

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Réglages GNOME : rendu amont des polices et réglages Mutter expérimentaux préservés ; boutons réduire, agrandir et fermer exposés à droite.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 gnome_settings_precheck() {
   is_true "${GNOME_WINDOW_BUTTONS_ENABLED:-true}" || return 0
   command_exists gsettings || return "$EXIT_PRECHECK_FAILED"
