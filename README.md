@@ -11,18 +11,18 @@ Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation av
 
 ## Démarrage rapide
 
-Six parcours, du coup d'œil au poste installé. Une commande quand il y en a une, un guide quand il faut le détail.
+| Objectif | Par où passer |
+|---|---|
+| Comprendre le projet | Les [notions clés](docs/CONCEPTS.md) : les sept idées qui reviennent dans tous les guides |
+| Vérifier le code, sans matériel | Après un clone : `python3 -B tests/test_docs_integrity.py` ; la [CI](docs/CI_VALIDATION.md) reste l'autorité |
+| Vérifier le PC avant d'installer | Démarrer sur le média Fedora, puis le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) : rien ne s'écrit sur les disques |
+| Installer | Le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) ; premier pas : l'essai à blanc `./install.sh --dry-run` |
+| Configurer et utiliser au quotidien | `./control.sh`, le point d'entrée unique, ouvre le [centre de contrôle](docs/CONTROL_CENTER.md) ; réglages propres au poste dans `config/local.conf` |
+| Voir tous les guides | Le [portail de la documentation](docs/README.md) |
 
-| Objectif | Par où passer | Pour aller plus loin |
-|---|---|---|
-| Comprendre le projet | Les [notions clés](docs/CONCEPTS.md) : les sept idées qui reviennent dans tous les guides | L'[architecture](docs/ARCHITECTURE.md), les [décisions (ADR)](docs/adr/README.md), le [glossaire](docs/GLOSSARY.md) |
-| Vérifier le code, sans matériel | `python3 -B tests/test_docs_integrity.py`, après un clone du dépôt | Les [runs de la CI](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml) et la [page CI](docs/CI_VALIDATION.md) |
-| Vérifier le PC avant d'installer | Démarrer le PC sur le média Fedora, puis suivre le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) : rien ne s'écrit sur les disques | La [fiche Fedora 45](docs/FEDORA45_PRIMARY.md), média promu et signature |
-| Installer | Le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours), en cinq phases ; l'essai à blanc `./install.sh --dry-run` en est le premier pas | La [qualification](docs/QUALIFICATION.md), qui fait foi pour le statut « Golden » |
-| Configurer et utiliser au quotidien | `./control.sh`, le point d'entrée unique, ouvre le [centre de contrôle](docs/CONTROL_CENTER.md) | Les réglages propres au poste dans `config/local.conf` ; le [dépannage](docs/TROUBLESHOOTING.md) quand quelque chose résiste |
-| Voir tous les guides | Le [portail de la documentation](docs/README.md) | La [feuille de route](docs/ROADMAP.md) et l'[état réel](#état-réel) ci-dessous |
+Pour aller plus loin : l'[architecture](docs/ARCHITECTURE.md), les [décisions (ADR)](docs/adr/README.md), le [glossaire](docs/GLOSSARY.md), le [dépannage](docs/TROUBLESHOOTING.md), la [qualification](docs/QUALIFICATION.md), la [feuille de route](docs/ROADMAP.md).
 
-Ce tableau oriente, il ne remplace ni les guides ni les preuves : le [Live USB ne déverrouille jamais l'APPLY](docs/CONCEPTS.md#3-trois-niveaux-de-preuve-ci-live-usb-gate-3), et ce qui est vérifié, par quoi, est dans [État réel](#état-réel).
+Ce tableau oriente, il ne remplace ni les guides ni les preuves : le Live USB ne déverrouille jamais l'APPLY, et ce qui est vérifié, par quoi, est dans [État réel](#état-réel).
 
 ## Le problème et l'objectif
 
