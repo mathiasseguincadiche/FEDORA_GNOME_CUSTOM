@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Documentation (README, décision du propriétaire) :
+  - **Parcours présenté en détail** : chaque étape du parcours (Live USB → dry-run → qualification → install → configurer → backup → restore → Gate 3) devient une sous-section avec une ligne de flux, un bloc `bash` copiable, la paire « prouve / ne prouve pas » et le guide qui fait foi ; alerte `> [!CAUTION]` sur le point de non-retour de l'APPLY ; accroche « trois promesses » ; le centre de contrôle est présenté en tableau des 12 domaines avec exemples de commandes. Toujours 100 % texte (0 image, 0 badge).
+
+- Documentation (README, décision du propriétaire) :
   - **Parcours du poste en colonne vertébrale du README** : la page déroule le cycle de vie dans l'ordre retenu par le propriétaire — Live USB (`./control.sh validate live plan` / `run`, preuve `PREINSTALL_ONLY`) → dry-run (`./install.sh --dry-run`) → qualification du matériel (baseline : `./control.sh cert baseline-status` / `baseline-certify`) → install (`./control.sh install apply`, gate protégé exigeant la sauvegarde pré-APPLY `./control.sh install backup`) → configuration (modules de l'APPLY, vérification `./control.sh doctor all`) → backup quotidien (`./control.sh backup now`) → restore si besoin (`./control.sh backup restore`, en dossier d'essai d'abord). La Gate 3 (`./control.sh validate gate3 status`) conclut le parcours. Chaque étape cite sa commande et le guide qui fait foi, et la page rappelle les trois niveaux à ne pas confondre (CI / Live `PREINSTALL_ONLY` / Gate 3).
 
 - Documentation (README, décision du propriétaire) :

@@ -9,37 +9,121 @@ Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation / 
 
 **Le contexte.** Projet personnel de [@mathiasseguincadiche](https://github.com/mathiasseguincadiche), pour son propre PC ([Le poste cible](#le-poste-cible)), et comme terrain d'apprentissage des pratiques DevOps : configuration déclarative, tests de comportement, intégration continue et preuves.
 
-**État réel en une ligne :** le logiciel est vérifié par la CI à chaque commit ; le PC n'est pas encore qualifié — le Live USB, l'installation et la Gate 3 restent à faire sur le matériel ([État réel](#état-réel)).
+**Trois promesses.** **Reproductible** : la même Fedora sur le même PC, reconstruite à l'identique, avec un essai à blanc avant toute action. **Prouvé** : la CI contrôle chaque commit, et l'état réel distingue ce qui est vérifié de ce qui ne l'est pas. **Gardé** : rien ne s'applique sans sauvegarde vérifiée et confirmation explicite, uniquement sur le PC physique.
 
-## Le parcours du poste, étape par étape
+**État réel en une ligne :** le logiciel est vérifié par la CI à chaque commit ; le PC n'est pas encore qualifié — Live USB, installation et Gate 3 restent à faire sur le matériel ([État réel](#état-réel)).
 
-Tout passe par `./control.sh`, et l'ordre a un sens : **observer le PC (Live USB), essayer à blanc (dry-run), qualifier le matériel, puis installer, configurer, sauvegarder — et savoir restaurer**.
+## Le parcours du poste
 
-1. **Live USB — tester le PC avant d'installer** : `./control.sh validate live plan` puis `./control.sh validate live run`. La preuve porte `PREINSTALL_ONLY` : aucun paquet installé, aucun SSD touché. → [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md)
-2. **Dry-run — voir le plan sans rien écrire** : `./install.sh --dry-run`. Le plan complet s'affiche, avec une preuve liée au commit. → [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
-3. **Qualification — certifier le matériel avant toute mutation** : `./control.sh cert baseline-status` puis `./control.sh cert baseline-certify`. La baseline matérielle qualifie le PC (identités, SSD, affichage) avant l'APPLY. → [qualification](docs/QUALIFICATION.md)
-4. **Install — appliquer réellement** : le gate exige machine approuvée, dépôt propre, dry-run réussi du même commit et sauvegarde pré-APPLY vérifiée (`./control.sh install backup`) ; puis `./control.sh install apply`, uniquement sur le PC physique. → [parcours d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
-5. **Configurer — et vérifier** : les modules (système, bureau GNOME, gaming, KVM, réseau…) s'appliquent pendant l'APPLY ; `./control.sh doctor all` relit ensuite tout le poste en lecture seule. → [architecture](docs/ARCHITECTURE.md), [centre de contrôle](docs/CONTROL_CENTER.md)
-6. **Backup — sauvegarder au quotidien** : `./control.sh backup now` (un timer quotidien existe aussi). → [sauvegardes et restauration](docs/BACKUP_RESTORE.md)
-7. **Restore — restaurer si besoin** : `./control.sh backup restore [snapshot]`, d'abord dans un dossier d'essai. → [sauvegardes et restauration](docs/BACKUP_RESTORE.md)
+```text
+Live USB → dry-run → qualification → install → configurer → backup → restore → Gate 3
+```
+
+Tout passe par `./control.sh`, et l'ordre a un sens : on observe le PC, on essaie à blanc, on qualifie le matériel, puis on installe, on configure, on sauvegarde — et on sait restaurer. Chaque étape dit ce qu'elle prouve et ce qu'elle ne prouve pas.
+
+### 1. Live USB — tester le PC avant d'installer
+
+Depuis la clé Live, le poste est observé sans rien écrire : aucun paquet installé, aucun SSD touché.
+
+```bash
+./control.sh validate live plan
+./control.sh validate live run
+./control.sh validate export live /chemin/support-externe
+```
+
+**Prouve :** le matériel répond au contrat (affichage, stockage, réseau, KVM) ; la preuve porte `PREINSTALL_ONLY` et est liée au commit. **Ne prouve pas :** que le système installé fonctionnera — c'est le rôle de la Gate 3. → [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md)
+
+### 2. Dry-run — voir le plan sans rien écrire
+
+```bash
+./install.sh --dry-run
+```
+
+**Prouve :** le plan complet des modules (ordre, portée), avec une preuve écrite liée au commit. **Ne prouve pas :** qu'une application réelle réussira — d'où la sauvegarde et le gate de l'étape 4. → [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
+
+### 3. Qualification — certifier le matériel
+
+```bash
+./control.sh cert baseline-status
+./control.sh cert baseline-certify
+```
+
+**Prouve :** la baseline matérielle (identités, SSD, affichage, veille) est conforme et certifiée avant toute mutation. **Ne prouve pas :** le comportement après APPLY — un changement de matériel rend la preuve caduque (`STALE`). → [qualification](docs/QUALIFICATION.md)
+
+### 4. Install — appliquer réellement
+
+> [!CAUTION]
+> Point de non-retour : `install apply` fait converger le système vers le dépôt. Le gate exige au préalable une sauvegarde pré-APPLY vérifiée et un dry-run réussi du même commit.
+
+```bash
+./control.sh install backup
+./control.sh install apply
+```
+
+**Prouve :** le système converge vers le dépôt, sur le PC physique uniquement. **Ne prouve pas :** la certification — seule la Gate 3 la délivre. → [parcours d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
+
+### 5. Configurer — et vérifier
+
+Les modules (système, bureau GNOME, gaming, KVM, réseau…) ont été appliqués par l'APPLY ; le poste se relit en lecture seule :
+
+```bash
+./control.sh status
+./control.sh doctor all
+```
+
+**Prouve :** l'état courant du poste (version, noyau, sauvegarde, certification). **Ne prouve pas :** la santé matérielle — les doctors lisent, ils ne réparent pas. → [architecture](docs/ARCHITECTURE.md), [centre de contrôle](docs/CONTROL_CENTER.md)
+
+### 6. Backup — sauvegarder au quotidien
+
+```bash
+./control.sh backup now
+./control.sh backup check
+```
+
+**Prouve :** une archive Borg vérifiée (`borg check --verify-data`) sur support externe. **Ne prouve pas :** qu'une restauration fonctionnera — d'où l'essai de restauration. → [sauvegardes](docs/BACKUP_RESTORE.md)
+
+### 7. Restore — restaurer si besoin
+
+```bash
+./control.sh backup restore [snapshot]
+```
+
+Toujours d'abord dans un dossier d'essai, jamais directement sur les données. → [sauvegardes et restauration](docs/BACKUP_RESTORE.md)
 
 **Puis la Gate 3** (`./control.sh validate gate3 status`) conclut le parcours : seule elle établit le statut « Golden runtime-certified ».
 
-**Trois niveaux à ne jamais confondre** : une CI verte prouve le logiciel testé ; le Live (`PREINSTALL_ONLY`) n'observe que le PC avant installation ; seule la Gate 3 qualifie le système installé.
+**Trois niveaux à ne jamais confondre :** une CI verte prouve le logiciel testé ; le Live (`PREINSTALL_ONLY`) n'observe que le PC avant installation ; seule la Gate 3 qualifie le système installé.
 
 ## Démarrer sans matériel
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
-python3 -B tests/test_docs_integrity.py    # vérifier le dépôt
+python3 -B tests/test_docs_integrity.py    # vérifier le dépôt (72 pages, 16 domaines de commandes)
 ./install.sh --dry-run                     # le plan d'installation, à blanc
 ./control.sh                               # ouvrir le centre de contrôle
 ```
 
 ## Le centre de contrôle
 
-`./control.sh` est la façade unique : sans argument, menu interactif ; `./control.sh help` liste toutes les commandes sans rien exécuter. Les domaines : `status`, `install`, `update`, `backup`, `doctor`, `kernel`, `kvm`, `remote`, `perf`, `cert`, `logs`, `validate`. La liste complète des commandes, qui fait foi : le [centre de contrôle](docs/CONTROL_CENTER.md). Rien ne s'applique sans essai à blanc, sauvegarde vérifiée et confirmation explicite, et uniquement sur le PC physique. Les réglages propres au poste : `config/local.conf`.
+`./control.sh` est la façade unique : sans argument, menu interactif ; `./control.sh help` liste toutes les commandes sans rien exécuter. La liste complète des commandes, qui fait foi : le [centre de contrôle](docs/CONTROL_CENTER.md).
+
+| Domaine | Exemples | Rôle |
+|---|---|---|
+| `status` | `./control.sh status` | tableau de bord, lecture seule |
+| `install` | `./control.sh install dry-run`, `./control.sh install apply` | dry-run non mutant, APPLY protégé |
+| `validate` | `./control.sh validate live run`, `./control.sh validate gate3 status` | preuve Live USB, Gate 3 |
+| `cert` | `./control.sh cert baseline-certify` | baseline et certification |
+| `backup` | `./control.sh backup now`, `./control.sh backup restore` | sauvegardes et restauration |
+| `doctor` | `./control.sh doctor all` | diagnostics, lecture seule |
+| `update` | `./control.sh update all` | mises à jour, sauvegarde d'abord |
+| `kernel` | `./control.sh kernel status` | noyau N / N-1, secours Fedora signé |
+| `kvm` | `./control.sh kvm status` | VM et garde réseau fermé par défaut |
+| `remote` | `./control.sh remote status` | SSH, Tailscale, Wake-on-LAN |
+| `perf` | `./control.sh perf status` | profils d'énergie mesurés |
+| `logs` | `./control.sh logs tail` | journaux et rétention |
+
+Rien ne s'applique sans essai à blanc, sauvegarde vérifiée et confirmation explicite, et uniquement sur le PC physique. Les réglages propres au poste : `config/local.conf`.
 
 ## Le poste cible
 
