@@ -9,6 +9,21 @@ Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation av
 
 *Maquette illustrative, pas une capture réelle. Les captures du poste seront ajoutées après sa qualification matérielle.*
 
+## Démarrage rapide
+
+| Objectif | Par où passer |
+|---|---|
+| Comprendre le projet | Les [notions clés](docs/CONCEPTS.md) : les sept idées qui reviennent dans tous les guides |
+| Vérifier le code, sans matériel | Après un clone : `python3 -B tests/test_docs_integrity.py` ; la [CI](docs/CI_VALIDATION.md) reste l'autorité |
+| Vérifier le PC avant d'installer | Démarrer sur le média Fedora, puis le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) : rien ne s'écrit sur les disques |
+| Installer | Le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) ; premier pas : l'essai à blanc `./install.sh --dry-run` |
+| Configurer et utiliser au quotidien | `./control.sh`, le point d'entrée unique, ouvre le [centre de contrôle](docs/CONTROL_CENTER.md) ; réglages propres au poste dans `config/local.conf` |
+| Voir tous les guides | Le [portail de la documentation](docs/README.md) |
+
+Pour aller plus loin : l'[architecture](docs/ARCHITECTURE.md), les [décisions (ADR)](docs/adr/README.md), le [glossaire](docs/GLOSSARY.md), le [dépannage](docs/TROUBLESHOOTING.md), la [qualification](docs/QUALIFICATION.md), la [feuille de route](docs/ROADMAP.md).
+
+Ce tableau oriente, il ne remplace ni les guides ni les preuves : le Live USB ne déverrouille jamais l'APPLY, et ce qui est vérifié, par quoi, est dans [État réel](#état-réel).
+
 ## Le problème et l'objectif
 
 Une installation faite à la main se perd : après une réinstallation, il faut retrouver chaque réglage, chaque logiciel et chaque correctif, sans savoir si le résultat est le même. Ce projet écrit tout cela dans un dépôt Git. Chaque réglage y est versionné, expliqué, testé et rejouable.
@@ -42,15 +57,6 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 | Installation, application et qualification (Gate 3) | Non vérifié | À faire sur le matériel ([qualification](docs/QUALIFICATION.md)) |
 
 **Une CI verte ne certifie pas le PC.** Seule la Gate 3, exécutée sur la machine installée, peut établir le statut « Golden runtime-certified ». Les versions publiées sont listées dans les [releases](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/releases) ; les prochaines étapes, dans la [feuille de route](docs/ROADMAP.md).
-
-## Par où commencer
-
-| Je veux… | Lire |
-|---|---|
-| Comprendre le projet et ses choix | Les [notions clés](docs/CONCEPTS.md), l'[architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
-| Installer ce PC | Le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md), puis le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) et la [qualification](docs/QUALIFICATION.md) |
-| Utiliser et entretenir le poste | Le [centre de contrôle](docs/CONTROL_CENTER.md), puis le [dépannage](docs/TROUBLESHOOTING.md) |
-| Voir tous les guides | Le [portail de la documentation](docs/README.md) |
 
 ## Contexte du projet
 

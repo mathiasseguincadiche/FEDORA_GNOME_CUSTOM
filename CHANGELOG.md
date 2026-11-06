@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Documentation (README, décision du propriétaire) :
+  - **Démarrage rapide** : le README s'ouvre désormais sur un tableau de six parcours (comprendre, vérifier le code, vérifier le PC avant d'installer, installer, configurer et utiliser, voir tous les guides), avec une commande quand il y en a une et le guide qui fait foi. L'ancienne table « Par où commencer » est absorbée par la nouvelle ; « État réel » et les autres sections ne changent pas. `tests/test_docs_integrity.py` passe : toutes les pages restent accessibles depuis le README.
+
 - Documentation du code (décision du propriétaire après la passe d'audit du code) :
   - **En-têtes de modules** : les 77 modules de `modules/` portent un en-tête en français qui dit ce que le module fait, et le contrat `precheck / plan / apply / postcheck` (`docs/ARCHITECTURE.md`, section « Contrat d'exécution »). Aucune ligne de code modifiée.
   - **Configuration** : les fichiers restés sans commentaire (`apply-gate.conf`, `hardware.conf`, `shell.conf`, `workstation.conf`) et `vm-profiles.conf` ouvrent sur un en-tête qui explique leur rôle ; aucune valeur, aucune clé changées.
