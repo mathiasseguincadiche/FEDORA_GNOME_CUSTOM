@@ -3,11 +3,15 @@
 > Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
 > Dernière vérification : 2026-11-06 — contrat et chemin de validation relus contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `config/kernel.conf` et les décisions d'architecture ; matériel cible non testé — matériel : non vérifié
 
-Cette page explique **comment les pièces du dépôt travaillent ensemble**. Pour installer le PC sans se perdre dans les détails, suivre le [guide d'installation](INSTALLATION_GUIDE.md) ; pour connaître les critères de réussite, utiliser la [qualification](QUALIFICATION.md). Ici, le sujet est le *pourquoi* des choix et la séparation des responsabilités.
+**Comprendre le poste avant d'en modifier la configuration.** Cette page présente le matériel, les composants logiciels et les raisons de leur séparation. Elle sert à répondre à « pourquoi ce choix ? » et à « quel composant en est responsable ? ».
+
+Les opérations suivent le [guide d'installation](INSTALLATION_GUIDE.md) ; leurs critères de réussite figurent dans la [qualification](QUALIFICATION.md). Cette page d'architecture n'est pas une procédure d'installation.
 
 ## Pourquoi ce projet
 
-Faire de **Fedora + GNOME l'OS principal** du propriétaire, sur **son PC exact**, avec un objectif précis : la version la plus récente (Fedora 45 / GNOME 51), la finition (l'ergonomie qu'Ubuntu apporte à GNOME), une réactivité mesurée plutôt que supposée, et une installation **reproductible et récupérable**. Un dépôt plutôt qu'une installation à la main : chaque réglage est écrit, expliqué, vérifiable et rejouable, ce qui sert aussi d'apprentissage des pratiques DevOps (configuration déclarative, tests, CI, preuves).
+Le projet vise à faire de **Fedora 45 et GNOME 51 le système principal** d'un PC précisément identifié. L'objectif n'est pas seulement de personnaliser le bureau : il faut aussi pouvoir retrouver les réglages, mesurer le comportement de la machine et récupérer les données après un incident.
+
+Pour cela, la configuration est décrite dans le dépôt. Les scripts l'appliquent sous conditions, les diagnostics observent le résultat et les guides expliquent le raisonnement. Ce fonctionnement permet également de pratiquer des méthodes DevOps : versionnement, automatisation, tests, gestion des changements et preuves.
 
 **Golden** veut dire *installation de référence reproductible et vérifiable*, pas « ISO modifiée » ni « certification déjà acquise ». Le profil Fedora 45 est `ready` depuis la promotion du média final ([fiche Fedora 45](FEDORA45_PRIMARY.md)) ; la certification de la machine reste à acquérir.
 
@@ -81,7 +85,7 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 
 ![Schéma du poste : le PC et Fedora 45, quatre usages, le système sur le premier T705, /data sur le second et la sauvegarde Borg](assets/diagrams/architecture-poste.svg)
 
-Le PC exécute Fedora 45 Workstation, qui porte quatre usages : le bureau GNOME 51, l'environnement DevOps avec KVM, le jeu vidéo et le noyau Linux amont avec secours Fedora. Le premier T705 contient le système Btrfs, reconstruit depuis le dépôt à chaque réinstallation. Le second porte `/data` en EXT4 et survit à une réinstallation. Seuls Documents, Projets et IA y sont sauvegardés par Borg sur le SSD externe ; ISO et Jeux sont hors Borg par défaut, et les disques des VM s'exportent à la main.
+Le PC exécute Fedora 45 Workstation pour quatre usages : GNOME 51, le travail DevOps avec KVM, le jeu vidéo et le noyau Linux amont avec secours Fedora. Le premier T705 reçoit Fedora en Btrfs ; après sa réinstallation, les scripts rejouent le profil du dépôt. Le second T705 conserve `/data` en ext4. Sur ce second disque, Documents, Projets et IA sont couverts par Borg ; ISO et Jeux sont exclus par défaut, et les disques des VM s'exportent manuellement. Le [guide de sauvegarde](BACKUP_RESTORE.md) décrit les autres dossiers personnels et réglages protégés.
 
 Source éditable : [`architecture-poste.drawio`](assets/diagrams/architecture-poste.drawio).
 

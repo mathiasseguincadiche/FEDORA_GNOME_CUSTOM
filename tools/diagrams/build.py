@@ -9,33 +9,28 @@ out.mkdir(parents=True, exist_ok=True)
 diagrams = []
 
 # 1. ARCHITECTURE — what the workstation contains and where the data lives.
-d = Diagram("architecture-poste", "Le poste obtenu : usages et stockage",
-            "Le PC cible exécute Fedora 45 Workstation (Wayland, SELinux, firewalld). Fedora porte quatre usages : "
-            "bureau GNOME 51, DevOps avec KVM, jeu vidéo et noyau Linux amont avec secours Fedora. Le premier T705 "
-            "contient le système Btrfs, réinstallé depuis le dépôt. Le second T705 porte /data en EXT4, conservé lors "
-            "d'une réinstallation : documents, projets et IA sont sauvegardés par Borg sur le SSD externe XS1000 ; "
-            "ISO et jeux sont hors Borg par défaut ; les disques des VM s'exportent à la main.", 1320, 760)
-d.node("pc", ["PC cible", "Ryzen 7 7700 · Arc B580 · 48 Gio"], 60, 80, 300, 70)
-d.node("host", ["Fedora 45 Workstation", "Wayland · SELinux · firewalld"], 60, 200, 300, 70, "main")
-d.group("g_use", "Usages", 440, 80, 840, 200)
-for i, (nid, lines) in enumerate([("gnome", ["Bureau GNOME 51", "Nautilus · Ptyxis", "six extensions"]),
-                                  ("dev", ["DevOps", "Git · Bash", "KVM / libvirt"]),
-                                  ("game", ["Jeu vidéo", "Steam · Proton", "Vulkan"]),
-                                  ("kernel", ["Noyau", "Linux amont N / N-1", "secours : noyau Fedora"])]):
-    d.node(nid, lines, 460 + i * 205, 130, 190, 120)
-d.node("root", ["T705 nº1 : système Btrfs", "réinstallé depuis le dépôt"], 60, 360, 360, 76)
-d.node("data", ["T705 nº2 : /data EXT4", "conservé à la réinstallation"], 520, 360, 360, 76, "data")
-d.node("files", ["Documents, Projets, IA", "sauvegardés par Borg"], 380, 510, 260, 76, "data")
-d.node("media", ["ISO, Jeux", "hors Borg par défaut"], 670, 510, 260, 76, "muted")
-d.node("vms", ["Disques des VM", "libvirt · export manuel"], 980, 510, 260, 76, "muted")
-d.node("borg", ["Borg · SSD externe XS1000", "ext4 · non chiffré"], 380, 650, 260, 76)
-d.edge("e1", "pc", "host")
-d.edge("e_use", "host", "g_use")
-d.edge("e_root", "host", "root")
-d.edge("e_data", "host", "data")
-for nid in ("files", "media", "vms"):
-    d.edge("c_" + nid, "data", nid)
-d.edge("e_borg", "files", "borg", "sauvegarde quotidienne")
+d = Diagram("architecture-poste", "Un poste Fedora, deux rôles de stockage",
+            "Le PC cible utilise Fedora 45 avec GNOME 51, DevOps/KVM, jeu et noyau Linux amont. "
+            "Sur deux SSD Crucial T705 distincts, le système Btrfs peut être réinstallé tandis que /data ext4 "
+            "est conservé. Sur /data, Documents, Projets et IA sont inclus dans Borg, mais ISO et Jeux ne le "
+            "sont pas automatiquement ; disques VM exportés manuellement. Borg sauvegarde également des "
+            "dossiers personnels et réglages décrits dans BACKUP_RESTORE.md. Le SSD Kingston XS1000 est externe. "
+            "Les contrôles physiques Live USB et Gate 3 restent à réaliser.", 1440, 820)
+d.group("g_work", "01  ENVIRONNEMENT DE TRAVAIL", 40, 94, 1360, 270)
+d.node("pc", ["PC cible", "Ryzen 7 7700 · Intel Arc B580", "48 Go DDR5 · Wi-Fi 7 · 5 GbE"], 65, 163, 360, 138)
+d.node("host", ["Fedora 45 Workstation", "GNOME 51 · SELinux · firewalld", "Configuration pilotée par Git"], 534, 163, 360, 138, "main")
+d.group("g_uses", "Quatre usages", 1005, 145, 350, 173)
+d.node("desktop", ["Bureau GNOME"], 1020, 183, 162, 52)
+d.node("dev", ["DevOps · KVM"], 1188, 183, 162, 52)
+d.node("game", ["Jeux · Vulkan"], 1020, 248, 162, 52)
+d.node("kernel", ["Noyau Linux"], 1188, 248, 162, 52)
+d.edge("pc_to_host", "pc", "host")
+d.edge("host_to_uses", "host", "g_uses")
+d.group("g_storage", "02  STOCKAGE ET PROTECTION DES DONNÉES", 40, 419, 1360, 345)
+d.node("root", ["SSD 01 · Système Btrfs", "Crucial T705 · Fedora et logiciels", "Fedora réinstallé, profil Git rejoué"], 65, 509, 390, 174)
+d.node("data", ["SSD 02 · Données /data ext4", "Crucial T705 · données conservées", "Borg : Documents, Projets, IA", "Hors Borg : ISO, Jeux, disques VM"], 520, 498, 415, 196, "main")
+d.node("borg", ["SSD externe · Borg", "Kingston XS1000 · dépôt non chiffré", "Contrôler, restaurer en zone isolée"], 1005, 509, 350, 174, "data")
+d.edge("data_to_borg", "data", "borg")
 diagrams.append(d)
 
 # 2. BACKUP_RESTORE — what Borg protects, where, and how a restore happens.
@@ -138,29 +133,35 @@ for a, b in zip(chain, chain[1:]):
 diagrams.append(d)
 
 # 6. QUALIFICATION — from the CI to the Golden release.
-d = Diagram("chaine-qualification", "La chaîne de qualification",
+d = Diagram("chaine-qualification", "De la CI à la certification du poste",
             "Onze étapes : 1, CI au commit exact sur GitHub ; 2, contrôle Live USB sur le PC (PREINSTALL_ONLY, preuve "
             "exportée) ; 3, analyse des résultats et décision humaine GO ou NO-GO avant installation ; "
             "4, installation de Fedora et import de la preuve ; 5, baseline matérielle ; 6, dry-run ; "
             "7, sauvegarde Borg pré-APPLY vérifiée ; 8, APPLY protégé sur le PC physique ; 9, redémarrage sur Linux "
             "amont N ; 10, Gate 3 du système installé ; 11, Golden release. Une évolution du matériel, du code ou de la configuration "
-            "invalide les preuves concernées.", 1320, 600)
-grid = [(60, 90), (370, 90), (680, 90), (990, 90), (990, 260), (680, 260), (370, 260), (60, 260), (60, 430), (370, 430), (680, 430)]
-steps = [(["1. CI au commit exact", "GitHub : contrats,", "laboratoires QEMU"], "box"),
-         (["2. Live USB sur le PC", "PREINSTALL_ONLY", "preuve exportée"], "box"),
-         (["3. Accord du propriétaire", "résultats relus : GO / NO-GO", "avant tout effacement"], "warn"),
-         (["4. Installation", "Fedora sur le SSD", "import de la preuve Live"], "box"),
-         (["5. Baseline", "santé matérielle", "avant l'APPLY"], "box"),
-         (["6. Dry-run", "plan de convergence", "aucun module appliqué"], "box"),
-         (["7. Sauvegarde", "Borg pré-APPLY", "vérifiée, canari restauré"], "box"),
-         (["8. APPLY protégé", "phrase de confirmation", "PC physique uniquement"], "box"),
-         (["9. Redémarrage", "Linux amont N"], "box"),
-         (["10. Gate 3", "doctors, cinq veilles", "certification du PC"], "main"),
-         (["11. Golden release", "statut certifié", "preuves liées à l'état"], "data")]
-for i, ((x, y), (lines, style)) in enumerate(zip(grid, steps)):
-    d.node(f"q{i}", lines, x, y, 270, 110, style)
-for i in range(len(steps) - 1):
-    d.edge(f"eq{i}", f"q{i}", f"q{i + 1}")
+            "invalide les preuves concernées.", 1440, 855)
+d.group("g_before", "01  AVANT INSTALLATION", 40, 90, 408, 715)
+d.group("g_change", "02  INSTALLER ET CONFIGURER", 513, 90, 414, 715)
+d.group("g_after", "03  QUALIFIER ET PUBLIER", 992, 90, 408, 715)
+steps_before = [(["1. CI au commit exact", "Contrats et laboratoires logiciels"], "box"),
+                (["2. Gate 2 · Live USB", "PREINSTALL_ONLY · preuve exportée"], "main"),
+                (["3. Revue et accord humain", "GO / NO-GO avant tout effacement"], "warn")]
+steps_change = [(["4. Installer Fedora", "SSD système et preuve Live importée"], "box"),
+                (["5. Certifier la baseline", "Contrôles de santé matérielle"], "box"),
+                (["6. Exécuter le dry-run", "Plan sans modification réelle"], "box"),
+                (["7. Sauvegarder avec Borg", "Pré-APPLY vérifié et canari restauré"], "box"),
+                (["8. Exécuter l'APPLY", "Gardes et confirmation physique"], "main")]
+steps_after = [(["9. Redémarrer", "Linux amont N sur le vrai PC"], "box"),
+               (["10. Gate 3 · système installé", "Diagnostics et essais physiques"], "main"),
+               (["11. Golden release", "Preuves courantes et certification"], "data")]
+for i, (lines, style) in enumerate(steps_before):
+    d.node(f"b{i}", lines, 63, 162 + i * 175, 362, 114, style)
+for i, (lines, style) in enumerate(steps_change):
+    d.node(f"m{i}", lines, 536, 142 + i * 128, 366, 102, style)
+for i, (lines, style) in enumerate(steps_after):
+    d.node(f"a{i}", lines, 1014, 162 + i * 175, 362, 114, style)
+d.edge("stage_one_to_two", "g_before", "g_change")
+d.edge("stage_two_to_three", "g_change", "g_after")
 diagrams.append(d)
 
 # 7. REMOTE_ACCESS — tablet, Tailscale, relay and PC.
@@ -174,7 +175,7 @@ d.node("ts", ["Tailscale", "tunnel privé chiffré", "aucun port sur Internet"],
 d.node("pc", ["PC Fedora", "sshd : clés uniquement", "Sunshine, si activé", "repli manuel : GNOME Remote Desktop",
               "zone firewalld fgc-tailnet"], 840, 80, 440, 170, "main")
 d.node("relay", ["Relais toujours allumé", "sur le réseau local"], 380, 330, 250, 100)
-d.node("note", ["Profil désactivé par défaut", "REMOTE_ENABLE=false", "Gate 3 à faire"], 40, 330, 260, 100, "muted")
+d.node("note", ["Profil désactivé par défaut", "REMOTE_ENABLE=false", "Gate 3 à faire"], 40, 330, 280, 100, "muted")
 d.edge("e1", "tablet", "ts", both=True)
 d.edge("e2", "ts", "pc", "SSH · flux vidéo", both=True)
 d.edge("e3", "ts", "relay", "réveil")

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Laboratoire Rocky CI (PR #202)** : installation des dépendances du runner limitée aux dépôts Ubuntu officiels et aux paquets strictement nécessaires, comme pour ShellCheck ; journal APT conservé en artefact lors d'un échec. La qualification réelle de Rocky, ses preuves et ses critères de succès restent obligatoires.
+- **Direction éditoriale et graphique V9.7** : nouvelle page d'accueil organisée par objectif du lecteur ; introduction, transitions et garde-fous clarifiés dans le portail et les guides d'installation, d'architecture, de qualification et de sauvegarde. Les sept couples de schémas `.drawio` / `.svg` sont régénérés avec un langage graphique commun ; l'architecture et le parcours de qualification disposent d'une disposition entièrement repensée. Les trois Gates, les conditions d'installation et les scripts opérationnels restent inchangés. Aucun test physique Gate 2 ou Gate 3 n'est revendiqué.
 - **Refonte éditoriale du parcours Fedora** : README réorganisé autour du besoin, des fonctions réelles et de l'installation progressive ; portail documentaire orienté par lecteur ; guides renforcés sur le fonctionnement des preuves, de la CI, des sauvegardes et du dépannage.
 - **Accord humain avant installation** : après Gate 2 (Live USB), les résultats sont exportés et examinés, puis le propriétaire donne un GO / NO-GO explicite avant toute opération sur le SSD. Les rôles techniques des Gates 1, 2 et 3, les gardes de l'APPLY et les scripts de validation restent inchangés.
 - **Schéma de qualification actualisé** : le point d'arrêt humain apparaît comme étape distincte entre Live USB et installation ; sources `.drawio` et exports `.svg` régénérés ensemble.
