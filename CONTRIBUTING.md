@@ -102,10 +102,11 @@ Les trois premiers statuts et « Abandonné » disent où en est le travail ; «
 - **Gras de repère**, un à trois par paragraphe ou par puce : un avertissement, un terme défini à sa première occurrence, l'intention d'une étape ou sa conclusion (« **Réussite :** »). Jamais une phrase entière ni un mot mis en valeur sans raison.
 - **Pas de qualificatif non démontré** (« robuste », « sécurisé », « complet ») : décrire ce qui est contrôlé et comment.
 - **Lexique** : les commandes, options, noms de fichiers et noms de produits restent en version originale (`doctor`, `APPLY`, `Gate 3`, Borg). Les titres et les notions sont en français ; le terme anglais d'usage figure entre parenthèses à sa première occurrence. Un terme garde le même sens dans tout le dépôt ; le [glossaire](docs/GLOSSARY.md) fait foi.
+- **Charte des apostrophes** : l'apostrophe droite (`'`) s'emploie partout, dans les guides comme dans le code, pour rester cohérent avec le shell et les recherches ; `tests/test_docs_integrity.py` la contrôle hors archives. Les archives (`docs/adr/`, `docs/history/`, `CHANGELOG.md`) conservent leur formulation d'origine, y compris leurs apostrophes typographiques.
 
 ### Métadonnées des guides
 
-Chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commence, sous son titre, par ce bloc :
+Le `README.md` racine et chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commencent, sous leur titre, par ce bloc :
 
 ```markdown
 > Mise à jour : AAAA-MM-JJ · Responsable : @mathiasseguincadiche
@@ -132,7 +133,7 @@ La documentation s'affiche dans le rendu natif de GitHub : le projet ne choisit 
 - Un seul titre de niveau 1 par page, sans saut de niveau.
 - Un tableau compare ; au-delà de quatre colonnes, il défile sur un écran de téléphone : préférer alors une liste ou deux tableaux.
 - Un bloc de code annonce son langage (`bash`, `text`, `ini`…) et ne contient que ce qui se copie.
-- Une citation (`>`) est réservée au bloc de métadonnées et aux avertissements importants ; pas d'emoji, pas de badge décoratif.
+- Une citation (`>`) est réservée au bloc de métadonnées et aux avertissements importants ; pas d'emoji, pas de badge décoratif. Aucun badge statique : le seul badge autorisé est le badge dynamique du workflow `Tests` dans le README, qui reflète un run réel de `main` ; la licence se cite en texte, avec un lien vers `LICENSE`.
 - Une image a un texte alternatif qui dit ce qu'elle montre.
 
 **Schémas** — palette « conteneur clair », définie dans `tools/diagrams/diagramkit.py`. Chaque couleur a une fonction ; le libellé du nœud porte toujours le sens, la couleur ne fait que le renforcer.
@@ -150,13 +151,15 @@ Texte `#0F172A`, flèches `#334155` (10,4:1 sur blanc), police Arial, fond de sc
 
 ### Contrôles
 
-`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées, la présence de chaque commande routée dans le [centre de contrôle](docs/CONTROL_CENTER.md) et les chemins du dépôt cités. Il contrôle aussi le bloc de métadonnées de chaque guide (dates valides, jamais futures, vérification jamais antérieure à la mise à jour), les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, l'inventaire logiciel de l'hôte, qui doit reproduire exactement `manifests/`, et les fins de ligne LF de tous les fichiers suivis. Ces règles s'appliquent sans liste d'exceptions ; `tests/test_docs_integrity_behavior.py` prouve chacune d'elles. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
+`tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées, la présence de chaque commande routée dans le [centre de contrôle](docs/CONTROL_CENTER.md) et les chemins du dépôt cités. Il contrôle aussi le bloc de métadonnées de chaque guide (dates valides, jamais futures, vérification jamais antérieure à la mise à jour), les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, l'inventaire logiciel de l'hôte, qui doit reproduire exactement `manifests/`, et les fins de ligne LF de tous les fichiers suivis. Il contrôle aussi le bloc de métadonnées du `README.md` racine, chaque visuel de `docs/assets/` référencé par au moins une page Markdown (et tout lien vers un visuel existant), l'accessibilité de chaque export SVG hors `docs/assets/diagrams/` (viewBox, titre, description, fond opaque, aucune ressource distante), et l'absence d'apostrophe typographique (U+2019) hors archives. Ces règles s'appliquent sans liste d'exceptions ; `tests/test_docs_integrity_behavior.py` prouve chacune d'elles. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
 
 ## Shell
 
 `set -Eeuo pipefail` quand le script le permet, code propre au ShellCheck de la CI (0.9), messages courts, aucune mutation cachée derrière un diagnostic, `NO_COLOR=1` utilisable.
 
 Chaque point d'entrée, doctor, script et bibliothèque commence, juste après le shebang, par un commentaire qui dit son rôle et ce qu'il peut modifier : rien, un rapport dans `reports/`, une preuve dans `state/`, ou le système. Les modules en sont dispensés, car leur fonction `plan` les décrit déjà. `tests/test_structure.sh` refuse un fichier sans ce commentaire. Un commentaire dans le code explique une intention ou une précaution, jamais ce que la ligne dit déjà.
+
+**Langue des commentaires** : l'en-tête de rôle des modules (`modules/`) et des fichiers de `config/` est en français, comme la documentation ; celui des bibliothèques (`lib/`) et des points d'entrée racine (`*.sh`) reste en anglais, héritage du socle. Un fichier ne mélange pas les deux langues dans ses commentaires.
 
 ## Matériel et Gate 3
 
