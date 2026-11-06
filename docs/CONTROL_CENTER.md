@@ -31,7 +31,7 @@ Source éditable : [`centre-de-controle.drawio`](assets/diagrams/centre-de-contr
 | Préparer une installation | `./control.sh install dry-run` | plan non mutant |
 | Installer réellement | `./control.sh install apply` | **mutation protégée, PC physique uniquement** |
 
-Fedora 45 / GNOME 51 est la cible sélectionnée et son profil est promu (`ready`) ; l’APPLY reste soumis à ses autres gardes. Le [schéma d'architecture expliqué](ARCHITECTURE.md) détaille les relations entre commandes et moteurs.
+Fedora 45 / GNOME 51 est la cible sélectionnée et son profil est promu (`ready`) ; l'APPLY reste soumis à ses autres gardes. Le [schéma d'architecture expliqué](ARCHITECTURE.md) détaille les relations entre commandes et moteurs.
 
 ## Tableau de bord
 
@@ -79,7 +79,7 @@ Après installation et redémarrage sur SSD :
 
 `validate help` rappelle la syntaxe exacte de ces commandes.
 
-La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](QUALIFICATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d’[installation](INSTALLATION_GUIDE.md).
+La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](QUALIFICATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d'[installation](INSTALLATION_GUIDE.md).
 
 ## Installation
 

@@ -9,7 +9,7 @@ Fedora 45 Workstation et GNOME 51 sont la cible unique de l’installation neuve
 
 La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l’APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
 
-Le média final a été publié par Fedora ([page officielle Workstation](https://fedoraproject.org/workstation/download/)) et authentifié avant la création du verrou. L'image Cloud utilisée par les laboratoires CI est un support de test ; elle ne sert jamais à installer le PC.
+Le média final a été publié par Fedora ([page officielle Workstation](https://fedoraproject.org/workstation/download/)) et authentifié avant la création du verrou. L’image Cloud utilisée par les laboratoires CI est un support de test ; elle ne sert jamais à installer le PC.
 
 ## Média promu
 

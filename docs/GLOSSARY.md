@@ -100,13 +100,13 @@ Un même concept porte le même nom dans tous les guides. Les variantes anglaise
 
 **OVMF** — implémentation UEFI utilisée par les VM QEMU/KVM.
 
-**swtpm** — émulation logicielle d’un TPM, utilisée par certains exercices Linux de reprise CI. Le profil Rocky géré ne l’exige pas.
+**swtpm** — émulation logicielle d'un TPM, utilisée par certains exercices Linux de reprise CI. Le profil Rocky géré ne l'exige pas.
 
 **VirtIO** — familles de périphériques para-virtualisés performants pour disque, réseau, RNG, balloon mémoire, etc.
 
 **QEMU Guest Agent / QGA** — agent exécuté dans le guest permettant à libvirt/QEMU d'obtenir des informations et d'effectuer certaines opérations propres dans la VM.
 
-**SPICE** — protocole d’affichage/console de machines virtuelles. Le profil Rocky du projet est headless, administré par SSH.
+**SPICE** — protocole d'affichage/console de machines virtuelles. Le profil Rocky du projet est headless, administré par SSH.
 
 **GPU passthrough / VFIO** — attribution directe d'un GPU physique à une VM. Ce projet l'interdit pour l'Arc B580, qui reste à l'hôte.
 
