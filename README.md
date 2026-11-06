@@ -7,30 +7,27 @@ Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation / 
 
 **Le problème que ce dépôt règle.** Une installation faite à la main ne survit pas à une réinstallation : chaque réglage, chaque logiciel et chaque correctif sont à retrouver, sans savoir si le résultat est le même. Ici, tout vit dans un dépôt Git — chaque réglage est versionné, expliqué, testé et rejouable.
 
-**Le contexte.** Projet personnel de [@mathiasseguincadiche](https://github.com/mathiasseguincadiche), pour son propre PC (voir [Le poste cible](#le-poste-cible)), et comme terrain d'apprentissage des pratiques DevOps : configuration déclarative, tests de comportement, intégration continue et preuves.
+**Le contexte.** Projet personnel de [@mathiasseguincadiche](https://github.com/mathiasseguincadiche), pour son propre PC ([Le poste cible](#le-poste-cible)), et comme terrain d'apprentissage des pratiques DevOps : configuration déclarative, tests de comportement, intégration continue et preuves.
 
-**État réel en une ligne :** le logiciel est vérifié par la CI à chaque commit ; le PC n'est pas encore qualifié — le contrôle Live USB, l'installation et la Gate 3 restent à faire sur le matériel ([État réel](#état-réel)).
+**État réel en une ligne :** le logiciel est vérifié par la CI à chaque commit ; le PC n'est pas encore qualifié — le Live USB, l'installation et la Gate 3 restent à faire sur le matériel ([État réel](#état-réel)).
 
-## Démarrer : le centre de contrôle
+## Le parcours du poste, étape par étape
 
-Chaque interaction avec le poste passe par `./control.sh`, le point d'entrée unique. Sans argument, il ouvre le menu interactif ; `./control.sh help` liste toutes les commandes sans rien exécuter.
+Tout passe par `./control.sh`, et l'ordre a un sens : **observer le PC (Live USB), essayer à blanc (dry-run), qualifier le matériel, puis installer, configurer, sauvegarder — et savoir restaurer**.
 
-| Je veux… | Commande | Effet |
-|---|---|---|
-| Voir l'état du poste | `./control.sh status` | tableau de bord, lecture seule |
-| Diagnostiquer | `./control.sh doctor all` | tous les diagnostics, lecture seule |
-| Voir le plan d'installation | `./control.sh install dry-run` | plan complet, sans rien écrire |
-| Installer réellement | `./control.sh install apply` | mutation protégée, PC physique uniquement |
-| Mettre à jour le système | `./control.sh update all` | paquets, flatpaks, firmware |
-| Sauvegarder | `./control.sh backup now` | sauvegarde Borg vérifiée |
-| Voir le noyau | `./control.sh kernel status` | N / N-1, secours Fedora signé |
-| Voir les machines virtuelles | `./control.sh kvm status` | KVM et garde réseau fermé par défaut |
-| Voir l'accès à distance | `./control.sh remote status` | SSH, Tailscale, Wake-on-LAN, Sunshine |
-| Voir la certification | `./control.sh cert status` | baseline et Gate 3 |
+1. **Live USB — tester le PC avant d'installer** : `./control.sh validate live plan` puis `./control.sh validate live run`. La preuve porte `PREINSTALL_ONLY` : aucun paquet installé, aucun SSD touché. → [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md)
+2. **Dry-run — voir le plan sans rien écrire** : `./install.sh --dry-run`. Le plan complet s'affiche, avec une preuve liée au commit. → [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
+3. **Qualification — certifier le matériel avant toute mutation** : `./control.sh cert baseline-status` puis `./control.sh cert baseline-certify`. La baseline matérielle qualifie le PC (identités, SSD, affichage) avant l'APPLY. → [qualification](docs/QUALIFICATION.md)
+4. **Install — appliquer réellement** : le gate exige machine approuvée, dépôt propre, dry-run réussi du même commit et sauvegarde pré-APPLY vérifiée (`./control.sh install backup`) ; puis `./control.sh install apply`, uniquement sur le PC physique. → [parcours d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
+5. **Configurer — et vérifier** : les modules (système, bureau GNOME, gaming, KVM, réseau…) s'appliquent pendant l'APPLY ; `./control.sh doctor all` relit ensuite tout le poste en lecture seule. → [architecture](docs/ARCHITECTURE.md), [centre de contrôle](docs/CONTROL_CENTER.md)
+6. **Backup — sauvegarder au quotidien** : `./control.sh backup now` (un timer quotidien existe aussi). → [sauvegardes et restauration](docs/BACKUP_RESTORE.md)
+7. **Restore — restaurer si besoin** : `./control.sh backup restore [snapshot]`, d'abord dans un dossier d'essai. → [sauvegardes et restauration](docs/BACKUP_RESTORE.md)
 
-La liste complète des commandes, qui fait foi : le [centre de contrôle](docs/CONTROL_CENTER.md). Rien ne s'applique sans essai à blanc, sauvegarde vérifiée et confirmation explicite, et uniquement sur le PC physique. Les réglages propres au poste : `config/local.conf`.
+**Puis la Gate 3** (`./control.sh validate gate3 status`) conclut le parcours : seule elle établit le statut « Golden runtime-certified ».
 
-Sans matériel, rien ne s'écrit :
+**Trois niveaux à ne jamais confondre** : une CI verte prouve le logiciel testé ; le Live (`PREINSTALL_ONLY`) n'observe que le PC avant installation ; seule la Gate 3 qualifie le système installé.
+
+## Démarrer sans matériel
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
@@ -40,7 +37,9 @@ python3 -B tests/test_docs_integrity.py    # vérifier le dépôt
 ./control.sh                               # ouvrir le centre de contrôle
 ```
 
-Sur le PC cible : le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) d'abord, puis le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours), puis la [qualification Gate 3](docs/QUALIFICATION.md).
+## Le centre de contrôle
+
+`./control.sh` est la façade unique : sans argument, menu interactif ; `./control.sh help` liste toutes les commandes sans rien exécuter. Les domaines : `status`, `install`, `update`, `backup`, `doctor`, `kernel`, `kvm`, `remote`, `perf`, `cert`, `logs`, `validate`. La liste complète des commandes, qui fait foi : le [centre de contrôle](docs/CONTROL_CENTER.md). Rien ne s'applique sans essai à blanc, sauvegarde vérifiée et confirmation explicite, et uniquement sur le PC physique. Les réglages propres au poste : `config/local.conf`.
 
 ## Le poste cible
 
