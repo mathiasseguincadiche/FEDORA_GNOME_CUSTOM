@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Documentation (README, décision du propriétaire) :
+  - **README 100 % texte** : les trois visuels SVG de `docs/assets/` (`hero-banner.svg`, `console-mockup.svg`, `desktop-preview.svg`) sont supprimés — plus aucune image dans le README. La page s'ouvre sur le projet et son contexte, met en avant le centre de contrôle `./control.sh` avec un tableau des commandes principales, présente le poste cible et ses composants, puis renvoie vers la documentation par besoin. Seul le badge dynamique du workflow `Tests` demeure. Le contrôle anti-orphelin ajouté par la PR #195 rend cette suppression obligatoire : aucun visuel non référencé ne peut rester dans `docs/assets/`.
+
 - Documentation et contrôles (demande du propriétaire) :
   - **README vitrine** : les trois visuels de `docs/assets/` (`hero-banner.svg`, `console-mockup.svg`, `desktop-preview.svg`), devenus orphelins à la refonte précédente, sont réintégrés avec leur texte alternatif et la mention « maquette illustrative » ; le badge de licence statique est supprimé (redondant avec le lien `LICENSE` en texte), seul le badge dynamique du workflow `Tests` reste ; le README porte désormais le bloc de métadonnées et un tableau « État réel » à statuts et preuves datés.
   - **Chartes consignées dans `CONTRIBUTING.md`** : apostrophe droite partout hors archives (l'apostrophe typographique résiduelle de `scripts/validation/gnome-ux-matrix.sh` est corrigée), et langue des commentaires (en-têtes de `modules/` et `config/` en français — les huit en-têtes restés en anglais sont traduits — ; `lib/` et points d'entrée racine restent en anglais).
