@@ -1,7 +1,9 @@
 # Vision et architecture
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — contrat d'exécution relu contre `lib/apply_gate.sh` et `config/apply-gate.conf`, invariants contre `config/kernel.conf`, `config/virtualization.conf` et `config/backup.conf`, ADR cités présents dans `docs/adr/`, tableau du matériel contre `lib/hardware_platform.sh` et `config/baseline.conf` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — contrat et chemin de validation relus contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `config/kernel.conf` et les décisions d'architecture ; matériel cible non testé — matériel : non vérifié
+
+Cette page explique **comment les pièces du dépôt travaillent ensemble**. Pour installer le PC sans se perdre dans les détails, suivre le [guide d'installation](INSTALLATION_GUIDE.md) ; pour connaître les critères de réussite, utiliser la [qualification](QUALIFICATION.md). Ici, le sujet est le *pourquoi* des choix et la séparation des responsabilités.
 
 ## Pourquoi ce projet
 
@@ -17,6 +19,18 @@ Quatre piliers d'importance égale ; aucun n'a le droit d'en casser un autre (un
 | Performance | noyau stable le plus récent, réglages mesurés, aucun réglage aveugle | [performance](PERFORMANCE.md), [Linux amont](UPSTREAM_LINUX.md) |
 | Fiabilité et sauvegardes | rien sans dry-run, baseline et sauvegarde ; restauration prouvée | [qualification](QUALIFICATION.md), [sauvegardes](BACKUP_RESTORE.md) |
 | Outils DevOps | KVM isolé, laboratoire Rocky en VM, terminal et Bash soignés | [KVM](KVM_QUICKSTART.md), [Ptyxis](PTYXIS.md) |
+
+**Un exemple concret.** Changer un réglage GNOME ne consiste pas à cliquer une fois dans Paramètres en espérant le retrouver après réinstallation. Le réglage cible appartient à la configuration du dépôt, un module sait l'appliquer et un diagnostic vérifie ce qui a été obtenu. Si l'application échoue, les journaux et les points de retour permettent d'en rechercher la cause. C'est cette chaîne, plutôt qu'un simple script d'installation, qui rend le projet exploitable.
+
+## Trois couches, trois responsabilités
+
+| Couche | Fichiers et outils | Responsabilité |
+|---|---|---|
+| **Décrire** | `config/`, `manifests/`, `profiles/` | Définir le poste désiré : versions, paquets, règles et composants attendus. |
+| **Agir** | `control.sh`, `install.sh`, `modules/`, `scripts/`, `lib/` | Préparer et exécuter les opérations selon leurs préconditions. `control.sh` oriente ; les moteurs spécialisés réalisent le travail. |
+| **Constater** | `diagnostics/`, `tests/`, `.github/workflows/` et preuves sous `state/` | Expliquer ce qui a été vérifié, dans quel environnement et pour quel état du code. |
+
+**La documentation n'est pas une quatrième couche d'exécution.** Elle décrit et enseigne le comportement de ces fichiers. Un exemple dans un guide n'est jamais une preuve de réussite sur le PC physique.
 
 ## Le matériel cible
 

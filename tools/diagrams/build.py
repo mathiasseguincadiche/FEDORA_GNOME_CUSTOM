@@ -139,22 +139,24 @@ diagrams.append(d)
 
 # 6. QUALIFICATION — from the CI to the Golden release.
 d = Diagram("chaine-qualification", "La chaîne de qualification",
-            "Dix étapes : 1, CI au commit exact sur GitHub ; 2, contrôle Live USB sur le PC (PREINSTALL_ONLY, preuve "
-            "exportée) ; 3, installation de Fedora et import de la preuve ; 4, baseline matérielle ; 5, dry-run ; "
-            "6, sauvegarde Borg pré-APPLY vérifiée ; 7, APPLY protégé sur le PC physique ; 8, redémarrage sur Linux "
-            "amont N ; 9, Gate 3 ; 10, Golden release. Une évolution du matériel, du code ou de la configuration "
+            "Onze étapes : 1, CI au commit exact sur GitHub ; 2, contrôle Live USB sur le PC (PREINSTALL_ONLY, preuve "
+            "exportée) ; 3, analyse des résultats et décision humaine GO ou NO-GO avant installation ; "
+            "4, installation de Fedora et import de la preuve ; 5, baseline matérielle ; 6, dry-run ; "
+            "7, sauvegarde Borg pré-APPLY vérifiée ; 8, APPLY protégé sur le PC physique ; 9, redémarrage sur Linux "
+            "amont N ; 10, Gate 3 du système installé ; 11, Golden release. Une évolution du matériel, du code ou de la configuration "
             "invalide les preuves concernées.", 1320, 600)
-grid = [(60, 90), (370, 90), (680, 90), (990, 90), (990, 260), (680, 260), (370, 260), (370, 430), (680, 430), (990, 430)]
+grid = [(60, 90), (370, 90), (680, 90), (990, 90), (990, 260), (680, 260), (370, 260), (60, 260), (60, 430), (370, 430), (680, 430)]
 steps = [(["1. CI au commit exact", "GitHub : contrats,", "laboratoires QEMU"], "box"),
          (["2. Live USB sur le PC", "PREINSTALL_ONLY", "preuve exportée"], "box"),
-         (["3. Installation", "Fedora sur le SSD", "import de la preuve Live"], "box"),
-         (["4. Baseline", "santé matérielle", "avant l'APPLY"], "box"),
-         (["5. Dry-run", "toutes les mutations", "neutralisées"], "box"),
-         (["6. Sauvegarde", "Borg pré-APPLY", "vérifiée, canari restauré"], "box"),
-         (["7. APPLY protégé", "phrase de confirmation", "PC physique uniquement"], "box"),
-         (["8. Redémarrage", "Linux amont N"], "box"),
-         (["9. Gate 3", "doctors, cinq veilles", "certification"], "main"),
-         (["10. Golden release", "statut certifié", "invalidé si tout change"], "data")]
+         (["3. Accord du propriétaire", "résultats relus : GO / NO-GO", "avant tout effacement"], "warn"),
+         (["4. Installation", "Fedora sur le SSD", "import de la preuve Live"], "box"),
+         (["5. Baseline", "santé matérielle", "avant l'APPLY"], "box"),
+         (["6. Dry-run", "plan de convergence", "aucun module appliqué"], "box"),
+         (["7. Sauvegarde", "Borg pré-APPLY", "vérifiée, canari restauré"], "box"),
+         (["8. APPLY protégé", "phrase de confirmation", "PC physique uniquement"], "box"),
+         (["9. Redémarrage", "Linux amont N"], "box"),
+         (["10. Gate 3", "doctors, cinq veilles", "certification du PC"], "main"),
+         (["11. Golden release", "statut certifié", "preuves liées à l'état"], "data")]
 for i, ((x, y), (lines, style)) in enumerate(zip(grid, steps)):
     d.node(f"q{i}", lines, x, y, 270, 110, style)
 for i in range(len(steps) - 1):

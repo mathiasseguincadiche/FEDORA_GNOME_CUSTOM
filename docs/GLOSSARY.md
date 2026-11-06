@@ -1,7 +1,7 @@
 # Glossaire
 
-> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — termes retenus relevés dans les guides courants ; le 2026-11-04, termes rapprochés du code (`lib/live_validation.py`, `config/virtualization.conf`, `config/golden-host.policy`, `manifests/`) ; un terme absent du code retiré — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — terminologie de Gate 2, Gate 3 et GO / NO-GO relue contre `lib/validation_gates.sh` et le guide Live USB — matériel : non vérifié
 
 Définitions courtes des termes du projet, pour la compréhension pratique. Les conventions de rédaction sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation).
 
@@ -34,7 +34,15 @@ Un même concept porte le même nom dans tous les guides. Les variantes anglaise
 
 **`STALE`** — preuve devenue obsolète après changement significatif de code, matériel, noyau ou configuration : requalification nécessaire.
 
-**Validation / Gate 3** — la CI vérifie le logiciel ; le Live USB collecte des observations avant installation (`PREINSTALL_ONLY`) ; la Gate 3 qualifie le système installé sur le PC physique ([qualification](QUALIFICATION.md)).
+**Gate 1 / CI** — contrôles logiciels exécutés sur les machines de la plateforme GitHub, pour un commit donné. Aucune preuve physique sur le PC cible.
+
+**Gate 2 / Live USB** — observations sur le PC physique avant installation. Le rapport porte `PREINSTALL_ONLY` et ne certifie pas le système installé.
+
+**Gate 3** — qualification finale de Fedora installé et configuré sur le PC physique, après les essais prescrits ([qualification](QUALIFICATION.md)).
+
+**`GO`, `NO-GO`, `A_VERIFIER` (contrôle Live)** — décision calculée à partir des observations de Gate 2 : requis réussis sans échec, défaut constaté, ou observation requise manquante. Le résultat `GO` n'est pas une autorisation de formater le disque.
+
+**Décision humaine GO / NO-GO** — accord ou refus explicite du propriétaire *après* examen et export des résultats Live USB. C'est un point d'arrêt avant installation, **pas une quatrième Gate** ni un remplacement de la Gate 3.
 
 **Compte rendu Live** — résultat du contrôle depuis le Live USB, lié au commit et au matériel ; exporté puis importé sur le système installé. Il vaut `PREINSTALL_ONLY` et ne déverrouille jamais l'APPLY.
 

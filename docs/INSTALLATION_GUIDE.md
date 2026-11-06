@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — section 7 relue contre `prepare-preapply-backup.sh` ; commandes, sous-commandes et garde-fous relus contre le code de `main` ; durées des essais contre `diagnostics/baseline-doctor` ; résumé d'exécution et alertes de non-retour ajoutés et relus contre le parcours — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — séparation entre `GO` Live et autorisation humaine relue contre `lib/validation_gates.sh` et `scripts/validation/live-usb.sh` ; séquence technique conservée — matériel : non vérifié
 
 Ce guide installe le poste de bout en bout : vérification du média, contrôle du PC depuis le Live USB, installation de Fedora, préparation, application de la configuration, puis qualification. Il fait foi pour **l'ordre des opérations** ; la [qualification](QUALIFICATION.md) fait foi pour **les critères** de chaque preuve et pour le détail de la Gate 3.
 
@@ -16,7 +16,8 @@ Ce guide installe le poste de bout en bout : vérification du média, contrôle 
 Pour une installation interrompue ou reprise plus tard, ce résumé dit où en est le parcours d'un coup d'œil. Relire d'abord la [règle d'arrêt](#règle-darrêt), puis reprendre à la première case non cochée :
 
 - [ ] Média Fedora 45 authentifié (section 1)
-- [ ] Contrôle Live `GO`, compte rendu exporté (section 2)
+- [ ] Contrôle Live `GO`, compte rendu exporté puis examiné (section 2)
+- [ ] **GO humain explicite** avant toute installation sur SSD (section 2)
 - [ ] Fedora installée sur le T705 système, preuve importée au même commit (section 2)
 - [ ] Outils et `config/local.conf` prêts, second T705 monté sur `/data` (sections 3 et 4)
 - [ ] Baseline certifiée, dry-run final, sauvegarde pré-APPLY vérifiée (sections 5 à 7)
@@ -46,7 +47,7 @@ Le profil Fedora 45 est `ready` : son média et ses composants sont promus ([fic
 
 | Phase | Sections | Résultat attendu |
 | --- | --- | --- |
-| Préinstaller | 1 et 2 | Média authentifié, observations Live `GO` et preuve exportée |
+| Préinstaller | 1 et 2 | Média authentifié, observations Live `GO`, preuve exportée **et accord humain** |
 | Installer Fedora | 2 | Fedora sur le T705 système, preuve Live importée au même commit |
 | Préparer la configuration | 3 à 5 | Outils, `config/local.conf`, `/data` et baseline certifiée |
 | Appliquer | 6 à 9 | Dry-run final, sauvegarde vérifiée, APPLY, redémarrage sur Linux amont N |
@@ -116,6 +117,9 @@ git rev-parse HEAD                  # doit afficher le commit audité
 ```
 
 **Réussite :** décision `GO` (les six points requis en `PASS`, aucun point en `FAIL`), puis le JSON et son fichier SHA-256 présents sur le support externe. Le HOME du Live disparaît au redémarrage : exporter avant de quitter. Ne pas utiliser l'un des deux T705 comme support de transfert.
+
+> [!IMPORTANT]
+> **Arrêt obligatoire avant l'installation.** Un `GO` calculé par le script n'est pas une autorisation de formater le SSD. Relire le compte rendu, les éventuels points `NOT_TESTED` et les symptômes observés, puis obtenir une décision explicite du propriétaire du PC. Le [guide Live USB, section « Décider avant toute installation »](FEDORA45_LIVE_PREFLIGHT.md#6-décider-avant-toute-installation) détaille ce passage de relais. Si l'accord manque, **ne pas continuer**.
 
 ### Installer Fedora sur le T705 système
 

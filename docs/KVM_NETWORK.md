@@ -1,7 +1,7 @@
 # Réseau KVM `devops-nat` — architecture et isolement
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — contrat relu contre `config/virtualization.conf`, garde contre `scripts/kvm/kvm_network_guard.sh`, unité et dispatcher contre `virtualization/` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — terminologie et renvoi vers l'accès distant corrigés ; contrat du garde relu contre `config/virtualization.conf` et `scripts/kvm/kvm_network_guard.sh` — matériel : non vérifié
 
 Ce document explique le réseau KVM privé de la workstation. Il complète [`VIRTUALIZATION.md`](VIRTUALIZATION.md) avec un niveau de détail suffisant pour comprendre **qui fournit l'adresse IP, qui fait le NAT, qui filtre les réseaux protégés de l'hôte et ce qui se passe lors d'un changement Ethernet/Wi-Fi**.
 
@@ -130,7 +130,7 @@ L'hôte lui-même peut toujours parler aux VM parce que ce trafic n'est pas du f
 
 Le contrat courant bloque toutes les **routes IPv4 explicites non-default de la table principale de l'hôte** : réseaux directement connectés, LAN, routes VPN/entreprise et tunnels explicitement routés. Le CIDR KVM lui-même et le loopback sont exclus.
 
-Des plages peuvent aussi être protégées de façon statique avec `KVM_EXTRA_PROTECTED_CIDRS`, même si aucune route ne les annonce encore. Le profil d'accès distant y place la plage Tailscale `100.64.0.0/10`, car `tailscale0` n'émet aucun événement NetworkManager ([accès distant](REMOTE_ACCESS.md#1-ce-que-lanalyse-a-changé-dans-larchitecture-demandée)).
+Des plages peuvent aussi être protégées de façon statique avec `KVM_EXTRA_PROTECTED_CIDRS`, même si aucune route ne les annonce encore. Le profil d'accès distant y place la plage Tailscale `100.64.0.0/10`, car `tailscale0` n'émet aucun événement NetworkManager ([décisions d'accès distant](REMOTE_ACCESS.md#1-les-décisions-indispensables-à-un-accès-distant-fiable)).
 
 La route IPv4 `default` reste volontairement hors du set afin de conserver **VM → Internet**. Un nouveau VPN ou une nouvelle route d'entreprise déclenche le reconcile via NetworkManager ; si la nouvelle table ne peut pas être découverte, validée ou appliquée, le garde conserve le mode `emergency` qui bloque tout forwarding via `virbr50`.
 

@@ -1,7 +1,7 @@
 # Générateur des schémas de la documentation
 
-> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — libellés HTML des sources et éléments `<text>` des images relus dans `diagramkit.py` ; le 2026-11-04, les sept paires régénérées sont identiques octet pour octet à `docs/assets/diagrams/` ; sources rouvertes dans diagrams.net, contrastes mesurés par `verify.py` — matériel : non concerné
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — schéma de qualification enrichi du GO / NO-GO humain ; source et exports régénérés et contrôlés par `tests/test_diagram_sources.py` — matériel : non concerné
 
 Les schémas de `docs/assets/diagrams/` sont produits par ce générateur, pas dessinés à la main. Chaque schéma est une paire : une source `.drawio`, éditable dans diagrams.net, et une image `.svg`, affichée par GitHub. Les deux sortent du même modèle, donc leurs libellés, leurs couleurs et leur géométrie sont identiques ; le `.svg` est écrit par le générateur, il n'est pas exporté depuis diagrams.net.
 
