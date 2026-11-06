@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Intégration du poste de travail : Secret Service/GNOME Keyring, impression CUPS/IPP sans pilote, Avahi/AirScan, intégration VPN GNOME, pont TuneD, dictionnaires français et polices compatibles.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 desktop_integration_precheck() {
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"
 }

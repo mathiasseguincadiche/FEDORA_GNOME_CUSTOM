@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Cœur GNOME : paquets Fedora, portails et Flatpak ; rendu par défaut préservé ; l'intégration Nautilus relève du module dédié.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 gnome_core_precheck() { command_exists dnf; }
 gnome_core_plan() { echo 'Install/validate Fedora GNOME core, portals and Flatpak; preserve font/rendering defaults and let GNOME Shell close its own children before final service cleanup. Nautilus integration is converged by the dedicated gnome.nautilus module.'; }
 gnome_core_apply() {

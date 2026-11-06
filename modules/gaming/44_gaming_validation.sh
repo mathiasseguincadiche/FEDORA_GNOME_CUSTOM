@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Validation de la pile de jeu ; les preuves Arc B580 physique, rendu Vulkan, Wayland et 1440p/240 Hz restent réservées au bare-metal.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 gaming_validation_enabled() { is_true "${GAMING_ENABLE:-false}"; }
 
 gaming_validation_precheck() { return 0; }

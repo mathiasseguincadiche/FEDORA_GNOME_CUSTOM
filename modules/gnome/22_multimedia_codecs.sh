@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Multimédia : GStreamer Fedora, OpenH264, oneVPL, passage à l'ffmpeg complet RPM Fusion, codecs freeworld et VA-API Arc uniquement sur le nœud de rendu prouvé 8086:e20b.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 multimedia_arc_b580_present() {
   lspci -Dn 2>/dev/null | grep -Eqi '030[02]:[[:space:]]+8086:e20b'
 }

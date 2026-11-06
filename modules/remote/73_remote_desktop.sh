@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Poste de travail à distance, chaque étape sur adhésion explicite REMOTE_* : Sunshine depuis le COPR LizardByte, service utilisateur, autologin GDM optionnel avec verrouillage immédiat, extinction sans mot de passe optionnelle.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/remote_access.sh"
 
 remote_desktop_precheck() {

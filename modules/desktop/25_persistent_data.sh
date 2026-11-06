@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Données persistantes sur le second T705 : /data préparé par l'opérateur, jamais partitionné ni formaté ; création sans perte des dossiers Documents, Projets, ISO, Jeux, IA/Openclaw et libvirt.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/persistent_data.sh"
 
 desktop_persistent_data_precheck() {

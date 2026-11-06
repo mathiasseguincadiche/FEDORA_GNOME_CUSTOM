@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Ubuntu-grade finishing layer on top of upstream GNOME 51 (ADR 0013).
-# Every setting is declared in config/gnome-polish.conf, applied here and
-# re-verified by postcheck and diagnostics/polish-doctor.
+# Soin du bureau au-dessus du GNOME 51 amont (ADR 0013) : dock à gauche pleine hauteur
+# intellihide OLED-safe, style sombre, veille de l'écran, session ouverte sur le bureau,
+# couleur d'accent et adw-gtk3 pour les GTK3. Chaque réglage vient de config/gnome-polish.conf,
+# est appliqué ici, puis revérifié par postcheck et diagnostics/polish-doctor.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 set -Eeuo pipefail
 
 POLISH_DOCK_SCHEMA='org.gnome.shell.extensions.dash-to-dock'

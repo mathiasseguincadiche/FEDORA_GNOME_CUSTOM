@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Lecture seule : version Fedora sélectionnée, identité matérielle, montages, SELinux, disponibilité KVM, rapport d'inventaire préservé.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 system_preflight_collect() {
   local report="$REPORT_ROOT/$RUN_ID-system-preflight.txt"
   {

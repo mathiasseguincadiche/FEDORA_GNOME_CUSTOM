@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# sched_ext optionnel et sûr : outillage installé, jamais de scheduler SCX activé globalement, fumée bare-metal explicite exigée avant usage.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 source "$REPO_ROOT/lib/performance_runtime.sh"
 
 performance_sched_ext_precheck() { performance_runtime_validate_policy; }

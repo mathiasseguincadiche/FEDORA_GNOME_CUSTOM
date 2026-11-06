@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Favoris du dock GNOME, gérés par la liste GNOME_DOCK_FAVORITES (désactivée par défaut).
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 dock_favorites_variant() {
   local favorites="${GNOME_DOCK_FAVORITES:-}" app variant='['
   local -a apps=()

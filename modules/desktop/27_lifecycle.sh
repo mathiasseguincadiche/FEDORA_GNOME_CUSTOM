@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Cycle de vie : télécharger automatiquement les mises à jour RPM Fedora sans installer ni redémarrer sans surveillance ; mises à jour Flatpak explicites ; fstrim et fwupd actifs.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 desktop_lifecycle_precheck() {
   command_exists dnf || return "$EXIT_PRECHECK_FAILED"
   [[ "${LIFECYCLE_AUTOMATIC_INSTALLS:-false}" == false && "${LIFECYCLE_AUTOMATIC_REBOOT:-never}" == never ]] || return "$EXIT_CONFIG_FAILED"

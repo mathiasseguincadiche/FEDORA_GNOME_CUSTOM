@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Inventaire de la capacité de mise en veille ; la qualité veille/reprise se certifie après l'APPLY correctif et le redémarrage, jamais pour bloquer l'installation.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_suspend_resume_precheck() {
   [[ -r /sys/power/mem_sleep ]] && return 0
   log_error BASELINE '/sys/power/mem_sleep is not readable: this kernel exposes no suspend states to inventory'

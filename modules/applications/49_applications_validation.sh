@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Validation du domaine applications : GTK4/libadwaita, provenance RPM et Flatpak professionnelles, démarrage réel, AppImage, intégration Nautilus/Ptyxis et associations GNOME par défaut.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 applications_validation_precheck() {
   [[ -r "$REPO_ROOT/manifests/packages-applications-gtk4.txt" ]] || return "$EXIT_PRECHECK_FAILED"
   [[ -r "$REPO_ROOT/manifests/packages-applications-professional-fedora.txt" ]] || return "$EXIT_PRECHECK_FAILED"

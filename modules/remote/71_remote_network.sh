@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Réseau distant : Tailscale depuis son dépôt signé, zone firewalld du tailnet, protection de la plage tailnet contre le réseau des VM, Wake-on-LAN dans le profil filaire ; première connexion manuelle ; rien d'exposé à Internet.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/remote_access.sh"
 
 remote_network_precheck() {

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Sélection et preuve du dépôt Borg à l'exécution ; un dépôt pré-APPLY local doit résoudre vers un système de fichiers externe amovible.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 # Borg 1.x, unencrypted repository by explicit owner decision (ADR 0014).
 backup_repository_precheck() {
   [[ "${BACKUP_ENGINE:-borg}" == borg ]] || return "$EXIT_PRECHECK_FAILED"

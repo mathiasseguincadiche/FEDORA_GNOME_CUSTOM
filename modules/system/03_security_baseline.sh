@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# SELinux Enforcing préservé, firewalld installé et activé ; jamais de désactivation des contrôles Fedora par commodité.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 system_security_precheck() { command_exists dnf; }
 system_security_plan() { echo 'Preserve SELinux Enforcing; install/enable firewalld; never disable Fedora security controls for convenience.'; }
 system_security_apply() {

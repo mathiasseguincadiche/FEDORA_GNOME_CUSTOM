@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Outillage de performance natif Fedora ; TuneD/tuned-ppd comme pont de profil GNOME ; profil équilibré versionné sur le poste ; pas de hack BIOS, overclock ni sysctl.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 source "$REPO_ROOT/lib/performance_runtime.sh"
 
 performance_cpu_power_precheck() {

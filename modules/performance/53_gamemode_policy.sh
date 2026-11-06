@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Politique GameMode conservatrice : gouverneur performance et priorité E/S temporaires pendant le jeu, restauration automatique à la sortie, pas d'overclock GPU ni de gouverneur global persistant.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 source "$REPO_ROOT/lib/performance_runtime.sh"
 
 performance_gamemode_precheck() {

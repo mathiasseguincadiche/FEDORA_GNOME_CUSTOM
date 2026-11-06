@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Porte de la phase 0, en lecture seule : version Fedora sélectionnée, UEFI et identité matérielle validés avant toute personnalisation du poste.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_preflight_precheck() {
   grep -Eq '^ID=fedora$|^ID="fedora"$' /etc/os-release || return "$EXIT_PRECHECK_FAILED"
   fedora_require_selected || return "$EXIT_PRECHECK_FAILED"

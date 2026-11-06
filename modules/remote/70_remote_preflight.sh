@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Préflight accès distant, sans mutation : outils, SELinux/firewalld, ports Sunshine valides, clé publique pour le SSH par clé seule, interface filaire pour le Wake-on-LAN.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 source "$REPO_ROOT/lib/remote_access.sh"
 
 remote_preflight_precheck() {

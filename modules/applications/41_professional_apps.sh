@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Applications professionnelles : VLC, LibreOffice et FileZilla depuis Fedora ; VS Code et Brave depuis leurs dépôts RPM signés ; Bitwarden, Slack, MarkText, draw.io et Flatseal depuis Flathub sur liste blanche versionnée.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 professional_apps_unverified_allowed() {
   local id="$1"
   [[ " ${UNVERIFIED_FLATHUB_ALLOWLIST:-} " == *" $id "* ]]

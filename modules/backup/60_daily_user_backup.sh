@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Sauvegarde quotidienne de l'utilisateur : paquet d'exécution vérifié par contenu, installé par SHA appliqué sous ~/.local/lib, unités systemd utilisateur liées à ce paquet immuable, indépendantes du checkout Git.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 backup_daily_runtime_base() {
   printf '%s\n' "$HOME/.local/lib/fedora-gnome-custom/backup-runtime"
 }

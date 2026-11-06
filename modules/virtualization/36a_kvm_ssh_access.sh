@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Accès SSH hôte vers invité : outillage client sur l'hôte, clés appartenant à l'opérateur, jamais générées ni écrasées ; aucun affaiblissement des politiques ; rocky-devops s'administre par SSH sur devops-nat.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_ssh_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   return 0

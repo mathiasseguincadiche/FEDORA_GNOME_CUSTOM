@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Validation KVM : AMD-V, accès opérateur direct à qemu:///system, capacités de domaine, UEFI/TPM, pool T705 dédié, NAT isolé, pile CLI complète, profil Rocky et outillage d'E/S mesuré.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 kvm_validation_precheck() { :; }
 kvm_validation_plan() { echo 'Validate AMD KVM, direct qemu:///system operator access, domain capabilities, UEFI/TPM, dedicated T705 pool, isolated NAT, complete CLI stack, the Rocky guest profile and measured I/O tooling.'; }
 kvm_validation_apply() { :; }

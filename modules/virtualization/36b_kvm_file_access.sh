@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Accès aux fichiers de la VM depuis GNOME/Nautilus : SFTP sur le service SSH existant, signet Nautilus maintenu de façon idempotente depuis le DHCP libvirt ; aucune couche de partage de dossier hôte.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_file_access_precheck() {
   is_true "${ENABLE_KVM:-true}" || return 0
   is_true "${VM_NAUTILUS_ACCESS_ENABLED:-true}" || return 0

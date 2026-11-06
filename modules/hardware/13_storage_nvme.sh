@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Outils NVMe/SMART ; validation des deux T705 : santé, erreurs média, alertes critiques et températures ; jamais de modification du scheduler, d'APST ni d'ASPM.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 hardware_storage_precheck() { command_exists dnf; }
 hardware_storage_plan() { echo 'Install NVMe/SMART tools; validate both Crucial T705 devices, health, media errors, critical warnings and temperatures. Never alter scheduler/APST/ASPM automatically.'; }
 hardware_storage_apply() { run_mutating HARDWARE sudo dnf -y install nvme-cli smartmontools; }

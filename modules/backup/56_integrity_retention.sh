@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Intégrité et rétention : borg check avec vérification complète des données et restauration canari sur chaque archive protégée ; rétention quotidienne, hebdomadaire et mensuelle, jamais appliquée aux archives pré-APPLY.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 backup_integrity_precheck() {
   is_true "${BACKUP_INTEGRITY_CHECK_REQUIRED:-true}" && is_true "${BACKUP_RESTORE_TEST_REQUIRED:-true}"
 }

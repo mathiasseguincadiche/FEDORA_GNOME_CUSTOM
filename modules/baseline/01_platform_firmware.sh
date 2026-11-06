@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Inventaire de la carte mère, du BIOS/UEFI, du Secure Boot, du noyau et de l'IOMMU, sans changer aucun réglage firmware.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_platform_firmware_precheck() { [[ -r /sys/class/dmi/id/board_name && -r /sys/class/dmi/id/bios_version ]]; }
 baseline_platform_firmware_plan() { echo 'Inventory motherboard, BIOS/UEFI, Secure Boot, kernel and IOMMU without changing firmware settings.'; }
 baseline_platform_firmware_apply() { log_info BASELINE 'read-only platform inventory'; }

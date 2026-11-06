@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Inventaire des éléments protégés : paquets, unités systemd, stockage, réseau, sources du projet et configuration privilégiée de /etc et /boot ; les éléments des VM sont exclus de Borg (export manuel du propriétaire).
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 backup_inventory_precheck() { [[ -r "$REPO_ROOT/scripts/backup/backup-now.sh" ]]; }
 backup_inventory_plan() {
   cat <<'EOF'

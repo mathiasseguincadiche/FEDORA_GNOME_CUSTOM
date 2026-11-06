@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# UEFI/TPM des invités : firmware edk2-ovmf Fedora, UEFI pour le profil Rocky sans Secure Boot imposé, état TPM jamais partagé entre invités, NVRAM/TPM hors Borg dans les exportations manuelles.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 kvm_firmware_find_ovmf() {
   find /usr/share -maxdepth 5 -type f \( -name 'OVMF_CODE*.fd' -o -name '*OVMF*.json' -o -path '*/qemu/firmware/*.json' \) -print 2>/dev/null
 }

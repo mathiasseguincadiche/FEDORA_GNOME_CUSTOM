@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# RPM Fusion pour les paquets multimédia et jeu explicitement approuvés, Flathub pour les applications du bureau ; jamais de dépôt de pilote GPU.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 system_sources_precheck() { command_exists dnf; }
 system_sources_plan() { echo 'Enable RPM Fusion only for explicitly approved multimedia and gaming packages and Flathub for curated desktop apps; never add GPU driver repositories.'; }
 system_sources_apply() {

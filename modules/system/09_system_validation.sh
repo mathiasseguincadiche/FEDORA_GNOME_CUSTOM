@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Validation système : version Fedora, santé DNF/RPM, SELinux, firewalld et outillage Python de l'hôte après la convergence.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 system_validation_precheck() { :; }
 system_validation_plan() { echo 'Validate Fedora release, DNF/RPM health, SELinux, firewalld and the host Python toolchain after system convergence.'; }
 system_validation_apply() { :; }

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# UX Bash de l'hôte, sans remplacer Bash ni ajouter de cadre d'invite : bash-completion, fzf, zoxide et direnv, profil modulaire géré, historique append-only synchronisé, alias sans commande destructive.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
+
 desktop_shell_ux_precheck() {
   is_true "${SHELL_UX_ENABLED:-true}" || return 0
   command_exists bash || return "$EXIT_PRECHECK_FAILED"

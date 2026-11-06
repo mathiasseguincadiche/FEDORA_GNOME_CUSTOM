@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# Identité Ryzen et AMD-V validées, inspection du noyau courant (MCE, thermique) ; aucun réglage de gouverneur ni de C-State.
+# Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 baseline_cpu_stability_precheck() { command_exists lscpu; }
 baseline_cpu_stability_plan() { echo 'Validate Ryzen identity, AMD-V and inspect the current kernel for MCE/thermal failures; no governor or C-State tuning.'; }
 baseline_cpu_stability_apply() { log_info BASELINE 'read-only CPU stability check'; }
