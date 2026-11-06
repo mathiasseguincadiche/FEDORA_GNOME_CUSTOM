@@ -20,6 +20,8 @@ sudo reboot
 
 Les RPM sont empaquetés par les mainteneurs Kernel Vanilla : kernel.org ne distribue pas de binaires. Leur cadence est indépendante des noyaux Fedora, mais la compilation et la publication COPR peuvent retarder leur disponibilité.
 
+**En CI uniquement**, un décalage de publication formellement identifié entre kernel.org et COPR est enregistré comme `DEFERRED`, pas comme une transaction RPM réussie : le résumé et l'artefact du workflow conservent cette distinction, même si son statut GitHub est vert. Les autres erreurs restent bloquantes. **Cela ne change pas la règle du poste réel** : aucune installation du dernier noyau n'est autorisée tant que les cinq RPM exacts ne sont pas disponibles et vérifiés. Voir [CI et validation](CI_VALIDATION.md).
+
 Si le RPM de la dernière stable manque, ou si kernel.org est injoignable, le projet n'installe jamais une RC ou un ancien noyau en le présentant comme dernier stable :
 
 - lors d'une **mise à jour système**, seul le noyau est reporté : il est exclu de la transaction DNF, le noyau en cours reste N, et toutes les autres mises à jour, sécurité comprise, sont appliquées. L'état enregistre `kernel_deferred=true`, le bilan final l'indique, et relancer la mise à jour plus tard installe le noyau. Pour bloquer toute la mise à jour dans ce cas, régler `KERNEL_DEFER_WHEN_UNAVAILABLE="false"` ;

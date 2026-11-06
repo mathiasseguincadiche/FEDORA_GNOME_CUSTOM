@@ -64,6 +64,15 @@ if grep -Fq 'public.ecr.aws/docker/library/fedora:' "$ROOT/.github/workflows/ups
   echo 'upstream kernel preflight may not fetch Fedora from ECR Public' >&2
   exit 1
 fi
+grep -Fq 'kernel_ci_expected_packaging_delay' "$ROOT/.github/workflows/upstream-kernel.yml" || {
+  echo 'kernel RPM preflight must distinguish verified packaging delay from a genuine failure' >&2; exit 1;
+}
+grep -Fq 'status=DEFERRED' "$ROOT/.github/workflows/upstream-kernel.yml" || {
+  echo 'kernel RPM preflight must preserve a visible DEFERRED status' >&2; exit 1;
+}
+grep -Fq 'status=PASS' "$ROOT/.github/workflows/upstream-kernel.yml" || {
+  echo 'kernel RPM preflight must distinguish validated RPM transactions from deferral' >&2; exit 1;
+}
 
 
 grep -Fq 'Install Fedora-native base contract' "$ROOT/.github/workflows/fedora-host-pretest.yml"

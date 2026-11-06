@@ -27,6 +27,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Trust the checkout inside the container
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Verify kernel fail-closed deferral contract
+        shell: bash
+        run: bash tests/test_kernel_channel_behavior.sh && bash tests/test_kernel_ci_deferred_behavior.sh
       - name: Resolve exact official upstream packages and exercise the DNF lock
         shell: bash
         run: |
@@ -36,11 +39,29 @@ jobs:
           source lib/bootstrap.sh
           engine_bootstrap
           source lib/kernel_lifecycle.sh
+          source scripts/ci/kernel-rpm-deferred.sh
           mkdir -p upstream-evidence
-          if ! target="$(kernel_lifecycle_resolve_latest_stable 2>upstream-evidence/resolution.log)"; then
+          if target="$(kernel_lifecycle_resolve_latest_stable 2>upstream-evidence/resolution.log)"; then
+            :
+          else
+            resolution_rc=$?
             cat upstream-evidence/resolution.log >&2
+            if pending="$(kernel_ci_expected_packaging_delay "$resolution_rc" upstream-evidence/resolution.log)"; then
+              printf 'status=DEFERRED\n%s\ncommit=%s\nscope=Latest RPM not available; no RPM download or certification\n' \
+                "$pending" "$(git rev-parse HEAD)" > upstream-evidence/result.env
+              {
+                echo '### Kernel RPM preflight: DEFERRED (not PASS)'
+                echo 'The current kernel.org stable release is not yet packaged by the authorized COPR.'
+                echo 'No RPM transaction was attempted. Host installation remains fail-closed.'
+                echo '```text'
+                cat upstream-evidence/result.env
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo '::warning::Upstream RPM preflight DEFERRED (not verified): COPR is behind kernel.org. Real kernel APPLY stays blocked.'
+              exit 0
+            fi
             echo "::error::Kernel target could not be verified against kernel.org and COPR; RPM download was not attempted."
-            exit 40
+            exit "$resolution_rc"
           fi
           mapfile -t packages < <(kernel_lifecycle_latest_nevras "$target")
           (( ${#packages[@]} >= 5 ))
@@ -68,6 +89,7 @@ jobs:
           fi
           mkdir -p upstream-evidence
           printf 'target=%s\ncommit=%s\nscope=RPM preflight; kernel boot and hardware DEFERRED\n' "$target" "$(git rev-parse HEAD)" > upstream-evidence/target.env
+          printf 'status=PASS\ntarget=%s\ncommit=%s\n' "$target" "$(git rev-parse HEAD)" > upstream-evidence/result.env
           cp /etc/dnf/versionlock.toml upstream-evidence/
           printf '%s\n' "${packages[@]}" > upstream-evidence/packages.txt
           cat upstream-evidence/target.env >> "$GITHUB_STEP_SUMMARY"
