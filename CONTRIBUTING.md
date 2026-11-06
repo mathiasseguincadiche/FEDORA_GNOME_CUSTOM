@@ -120,6 +120,16 @@ Les trois premiers statuts et « Abandonné » disent où en est le travail ; «
 - **Lexique** : les commandes, options, noms de fichiers et noms de produits restent en version originale (`doctor`, `APPLY`, `Gate 3`, Borg). Les titres et les notions sont en français ; le terme anglais d'usage figure entre parenthèses à sa première occurrence. Un terme garde le même sens dans tout le dépôt ; le [glossaire](docs/GLOSSARY.md) fait foi.
 - **Charte des apostrophes** : l'apostrophe droite (`'`) s'emploie partout, dans les guides comme dans le code, pour rester cohérent avec le shell et les recherches ; `tests/test_docs_integrity.py` la contrôle hors archives. Les archives (`docs/adr/`, `docs/history/`, `CHANGELOG.md`) conservent leur formulation d'origine, y compris leurs apostrophes typographiques.
 
+### Révision éditoriale avant une refonte importante
+
+1. **Attribuer un rôle à chaque page.** Le README présente et oriente ; `docs/README.md` est un répertoire ; les guides enseignent ou guident l'action ; les références décrivent le contrat précis. Un même point technique ne doit pas être développé intégralement dans trois pages différentes.
+2. **Travailler d'abord sur deux pages pilotes.** Examiner le rendu d'une page d'accueil et d'une procédure représentative avant de généraliser le style. Pour une procédure, conserver le besoin, les prérequis, le contexte d'exécution, le point d'arrêt, la commande, la preuve et la reprise.
+3. **Réviser le fond avant les phrases.** Réordonner les idées, supprimer les redites, relier les sections, puis corriger le vocabulaire et la typographie. Aucun raccourcissement ne doit retirer une condition de sécurité.
+4. **Privilégier deux vitesses de lecture.** Un débutant doit comprendre le besoin et les termes nouveaux ; un technicien doit localiser sans détour les commandes, les contrats et les limites de validation.
+5. **Comparer au code après la réécriture.** Préserver les paramètres, les chemins, les identités matérielles, les Gates et les preuves. Inspecter le rendu GitHub à largeur normale et étroite lorsque les outils le permettent ; une CI verte n'est pas une validation de l'esthétique.
+
+Pour les schémas, valider une vue pilote avant de décliner la même palette et la même hiérarchie sur les sept paires. Préférer les cartes alignées et les flèches lisibles aux parcours en zigzag ; distinguer schémas de présentation et vues techniques détaillées.
+
 ### Métadonnées des guides
 
 Le `README.md` racine et chaque guide de `docs/` (hors `docs/adr/` et `docs/history/`) commencent, sous leur titre, par ce bloc :
@@ -152,18 +162,18 @@ La documentation s'affiche dans le rendu natif de GitHub : le projet ne choisit 
 - Une citation (`>`) est réservée au bloc de métadonnées et aux avertissements importants ; pas d'emoji, pas de badge décoratif. Aucun badge statique : le seul badge autorisé est le badge dynamique du workflow `Tests` dans le README, qui reflète un run réel de `main` ; la licence se cite en texte, avec un lien vers `LICENSE`.
 - Une image a un texte alternatif qui dit ce qu'elle montre.
 
-**Schémas** — palette « conteneur clair », définie dans `tools/diagrams/diagramkit.py`. Chaque couleur a une fonction ; le libellé du nœud porte toujours le sens, la couleur ne fait que le renforcer.
+**Schémas** — palette « cartes claires », définie dans `tools/diagrams/diagramkit.py`. Chaque couleur a une fonction ; le libellé porte toujours le sens, la couleur ne fait que le renforcer.
 
 | Fonction | Fond | Bordure | Texte sur fond | Bordure sur blanc |
 |---|---|---|---|---|
-| Élément central (contrôle, décision) | `#DBEAFE` | `#1D4ED8` | 14,6:1 | 6,7:1 |
-| Élément ordinaire | `#F1F5F9` | `#334155` | 16,3:1 | 10,4:1 |
-| Données et résultats | `#DCFCE7` | `#15803D` | 16,3:1 | 5,0:1 |
-| Attention | `#FEF3C7` | `#B45309` | 16,0:1 | 5,0:1 |
-| Hors périmètre, manuel (trait pointillé) | `#FFFFFF` | `#64748B` | 17,9:1 | 4,8:1 |
-| Groupe | `#F8FAFC` | `#94A3B8` | titre `#334155` : 9,9:1 | 2,6:1, cadre décoratif |
+| Élément central (contrôle, décision) | `#EAF2FF` | `#346AC4` | 12,55:1 | 5,24:1 |
+| Élément ordinaire | `#FFFFFF` | `#C4D5E8` | 14,14:1 | 1,50:1, cadre décoratif |
+| Données et résultats | `#E8F6EF` | `#198263` | 12,70:1 | 4,76:1 |
+| Attention | `#FFF3DE` | `#AC731B` | 12,88:1 | 4,02:1 |
+| Hors périmètre, manuel (trait pointillé) | `#FFFFFF` | `#7C8A9C` | 14,14:1 | 3,52:1 |
+| Groupe | `#FFFFFF` | `#D9E3EF` | titre `#2959B4` : 6,60:1 | 1,30:1, cadre décoratif |
 
-Texte `#0F172A`, flèches `#334155` (10,4:1 sur blanc), police Arial, fond de schéma blanc opaque. Contrastes mesurés selon la formule WCAG 2.x par `tools/diagrams/verify.py`, le 2026-11-04 : AA est atteint pour le texte (4,5:1) et pour les éléments graphiques porteurs d'information (3:1). Le cadre des groupes est sous 3:1 ; il ne porte aucune information, puisque le titre du groupe la donne.
+Texte `#1A2C43`, flèches `#547BB4` (4,09:1 sur le fond `#F7F9FC`), police Arial, fond opaque. Contrastes calculés selon WCAG par `tools/diagrams/verify.py`, le 2026-11-06 : les libellés atteignent au moins 4,5:1 et les flèches au moins 3:1. Les cadres ordinaires ou de groupe sous 3:1 ne portent aucune information seuls ; le texte et les titres des zones les identifient.
 
 ### Contrôles
 

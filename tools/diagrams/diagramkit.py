@@ -1,26 +1,26 @@
-"""Describe a diagram once, emit a diagrams.net source (.drawio) and a matching SVG export.
+"""Describe a diagram once, emit an editable Draw.io source and a matching SVG.
 
-Light container palette (WCAG AA on white): text #0F172A, borders and arrows #334155.
-Meaning never relies on colour alone: optional or manual elements use a dashed border
-and say so in their label; groups carry a written title.
+The editorial palette uses white cards on an opaque off-white canvas, consistent
+spacing, restrained blues and semantic green/amber states. Meaning never relies
+on colour alone: optional and manual elements have a dashed border and label.
 """
 from dataclasses import dataclass, field
 from html import escape
 from xml.sax.saxutils import quoteattr
 
 FONT = "Arial, Helvetica, sans-serif"
-TEXT = "#0F172A"
-LINE = "#334155"
+TEXT = "#1A2C43"
+LINE = "#547BB4"
 STYLES = {
     # name: (fill, stroke, dashed)
-    "main": ("#DBEAFE", "#1D4ED8", False),
-    "box": ("#F1F5F9", "#334155", False),
-    "data": ("#DCFCE7", "#15803D", False),
-    "warn": ("#FEF3C7", "#B45309", False),
-    "muted": ("#FFFFFF", "#64748B", True),
+    "main": ("#EAF2FF", "#346AC4", False),
+    "box": ("#FFFFFF", "#C4D5E8", False),
+    "data": ("#E8F6EF", "#198263", False),
+    "warn": ("#FFF3DE", "#AC731B", False),
+    "muted": ("#FFFFFF", "#7C8A9C", True),
 }
-TITLE_SIZE, LABEL_SIZE, SUB_SIZE, EDGE_SIZE = 20, 15, 13, 12
-CHAR = 0.56  # average glyph width / font size for Arial, used to check that text fits
+TITLE_SIZE, LABEL_SIZE, SUB_SIZE, EDGE_SIZE = 29, 17, 13, 12
+CHAR = 0.53  # conservative average glyph width / font size, checked at build time
 
 
 @dataclass
@@ -65,6 +65,13 @@ class Diagram:
     groups: list = field(default_factory=list)
     edges: list = field(default_factory=list)
 
+    def type_sizes(self):
+        # Presentation diagrams appear full-width in README and overview guides.
+        # Slightly larger text lets their key message survive that reduction.
+        if self.name in {"architecture-poste", "chaine-qualification"}:
+            return 20, 16
+        return LABEL_SIZE, SUB_SIZE
+
     def node(self, *args, **kwargs):
         self.nodes.append(Node(*args, **kwargs))
 
@@ -76,6 +83,7 @@ class Diagram:
 
     # ---- checks -------------------------------------------------------------
     def check(self):
+        label_size, sub_size = self.type_sizes()
         ids = [n.id for n in self.nodes] + [g.id for g in self.groups]
         assert len(ids) == len(set(ids)), f"{self.name}: duplicate ids"
         known = {n.id for n in self.nodes} | {g.id for g in self.groups}
@@ -83,10 +91,10 @@ class Diagram:
             assert e.src in known and e.dst in known, f"{self.name}: edge {e.id} points nowhere"
         for n in self.nodes:
             for i, line in enumerate(n.lines):
-                size = LABEL_SIZE if i == 0 else SUB_SIZE
+                size = label_size if i == 0 else sub_size
                 need = len(line) * size * CHAR + 24
                 assert need <= n.w, f"{self.name}: '{line}' needs {need:.0f}px in {n.id} ({n.w}px)"
-            need_h = LABEL_SIZE + (len(n.lines) - 1) * (SUB_SIZE + 6) + 22
+            need_h = label_size + (len(n.lines) - 1) * (sub_size + 6) + 22
             assert need_h <= n.h, f"{self.name}: {n.id} too short ({need_h:.0f} > {n.h})"
             assert 0 <= n.x and n.x + n.w <= self.width and 0 <= n.y and n.y + n.h <= self.height, \
                 f"{self.name}: {n.id} outside the canvas"
@@ -134,6 +142,7 @@ class Diagram:
 
     # ---- SVG ----------------------------------------------------------------
     def svg(self):
+        label_size, sub_size = self.type_sizes()
         out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.width} {self.height}" '
                f'width="{self.width}" height="{self.height}" role="img" aria-labelledby="title desc">',
                f'  <title id="title">{escape(self.title)}</title>',
@@ -142,11 +151,12 @@ class Diagram:
                f'    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">'
                f'<path d="M0,0 L10,5 L0,10 z" fill="{LINE}"/></marker>',
                '  </defs>',
-               f'  <rect width="{self.width}" height="{self.height}" fill="#FFFFFF"/>',
-               f'  <text x="32" y="44" font-family="{FONT}" font-size="{TITLE_SIZE}" font-weight="bold" fill="{TEXT}">{escape(self.title)}</text>']
+               f'  <rect width="{self.width}" height="{self.height}" fill="#F7F9FC"/>',
+               f'  <rect x="0" y="0" width="{self.width}" height="7" fill="#346AC4"/>',
+               f'  <text x="40" y="57" font-family="{FONT}" font-size="{TITLE_SIZE}" font-weight="bold" fill="{TEXT}">{escape(self.title)}</text>']
         for g in self.groups:
-            out.append(f'  <rect x="{g.x}" y="{g.y}" width="{g.w}" height="{g.h}" rx="14" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5"/>')
-            out.append(f'  <text x="{g.x + 16}" y="{g.y + 26}" font-family="{FONT}" font-size="{SUB_SIZE + 1}" font-weight="bold" fill="#334155">{escape(g.title)}</text>')
+            out.append(f'  <rect x="{g.x}" y="{g.y}" width="{g.w}" height="{g.h}" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>')
+            out.append(f'  <text x="{g.x + 20}" y="{g.y + 33}" font-family="{FONT}" font-size="{SUB_SIZE + 2}" font-weight="bold" fill="#2959B4">{escape(g.title)}</text>')
         for e in self.edges:
             x1, y1, x2, y2 = self._segment(e)
             dash = ' stroke-dasharray="7 5"' if e.dashed else ""
@@ -155,14 +165,14 @@ class Diagram:
         for n in self.nodes:
             fill, stroke, dashed = STYLES[n.style]
             dash = ' stroke-dasharray="7 5"' if dashed else ""
-            out.append(f'  <rect x="{n.x}" y="{n.y}" width="{n.w}" height="{n.h}" rx="10" fill="{fill}" stroke="{stroke}" stroke-width="2"{dash}/>')
-            total = LABEL_SIZE + (len(n.lines) - 1) * (SUB_SIZE + 6)
-            y = n.y + (n.h - total) / 2 + LABEL_SIZE - 2
+            out.append(f'  <rect x="{n.x}" y="{n.y}" width="{n.w}" height="{n.h}" rx="14" fill="{fill}" stroke="{stroke}" stroke-width="1.8"{dash}/>')
+            total = label_size + (len(n.lines) - 1) * (sub_size + 6)
+            y = n.y + (n.h - total) / 2 + label_size - 2
             for i, line in enumerate(n.lines):
-                size = LABEL_SIZE if i == 0 else SUB_SIZE
+                size = label_size if i == 0 else sub_size
                 weight = ' font-weight="bold"' if i == 0 else ""
                 out.append(f'  <text x="{n.x + n.w / 2:.1f}" y="{y:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{size}"{weight} fill="{TEXT}">{escape(line)}</text>')
-                y += (SUB_SIZE + 6)
+                y += (sub_size + 6)
         for e in self.edges:
             if not e.label:
                 continue
@@ -176,24 +186,25 @@ class Diagram:
 
     # ---- diagrams.net -------------------------------------------------------
     def drawio(self):
+        label_size, sub_size = self.type_sizes()
         def label(lines):
             first = f"<b>{escape(lines[0])}</b>"
-            rest = "".join(f'<br><span style="font-size:{SUB_SIZE}px">{escape(l)}</span>' for l in lines[1:])
+            rest = "".join(f'<br><span style="font-size:{sub_size}px">{escape(l)}</span>' for l in lines[1:])
             return first + rest
 
         cells = ['<mxCell id="0"/>', '<mxCell id="1" parent="0"/>',
                  f'<mxCell id="title" value={quoteattr(escape(self.title))} style="text;html=1;fontSize={TITLE_SIZE};fontStyle=1;'
                  f'fontColor={TEXT};fontFamily=Arial;align=left;verticalAlign=middle;" vertex="1" parent="1">'
-                 f'<mxGeometry x="32" y="22" width="{self.width - 64}" height="32" as="geometry"/></mxCell>']
+                 f'<mxGeometry x="40" y="23" width="{self.width - 80}" height="46" as="geometry"/></mxCell>']
         for g in self.groups:
             cells.append(f'<mxCell id={quoteattr(g.id)} value={quoteattr(escape(g.title))} style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;'
-                         f'fillColor=#F8FAFC;strokeColor=#94A3B8;fontColor=#334155;fontStyle=1;fontSize={SUB_SIZE + 1};fontFamily=Arial;'
-                         f'verticalAlign=top;align=left;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">'
+                         f'fillColor=#FFFFFF;strokeColor=#D9E3EF;fontColor=#2959B4;fontStyle=1;fontSize={SUB_SIZE + 2};fontFamily=Arial;'
+                         f'verticalAlign=top;align=left;spacingLeft=19;spacingTop=10;" vertex="1" parent="1">'
                          f'<mxGeometry x="{g.x}" y="{g.y}" width="{g.w}" height="{g.h}" as="geometry"/></mxCell>')
         for n in self.nodes:
             fill, stroke, dashed = STYLES[n.style]
-            style = (f"rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor={fill};strokeColor={stroke};strokeWidth=2;"
-                     f"fontColor={TEXT};fontSize={LABEL_SIZE};fontFamily=Arial;" + ("dashed=1;dashPattern=7 5;" if dashed else ""))
+            style = (f"rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor={fill};strokeColor={stroke};strokeWidth=1.8;"
+                     f"fontColor={TEXT};fontSize={label_size};fontFamily=Arial;" + ("dashed=1;dashPattern=7 5;" if dashed else ""))
             cells.append(f'<mxCell id={quoteattr(n.id)} value={quoteattr(label(n.lines))} style="{style}" vertex="1" parent="1">'
                          f'<mxGeometry x="{n.x}" y="{n.y}" width="{n.w}" height="{n.h}" as="geometry"/></mxCell>')
         for e in self.edges:
@@ -216,5 +227,5 @@ class Diagram:
                 f'  <diagram id={quoteattr(self.name)} name={quoteattr(self.title)}>\n'
                 f'    <mxGraphModel dx="{self.width}" dy="{self.height}" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" '
                 f'arrows="1" fold="1" page="1" pageScale="1" pageWidth="{self.width}" pageHeight="{self.height}" '
-                f'background="#FFFFFF" math="0" shadow="0">\n      <root>\n        {body}\n      </root>\n    </mxGraphModel>\n'
+                f'background="#F7F9FC" math="0" shadow="0">\n      <root>\n        {body}\n      </root>\n    </mxGraphModel>\n'
                 f'  </diagram>\n</mxfile>\n')

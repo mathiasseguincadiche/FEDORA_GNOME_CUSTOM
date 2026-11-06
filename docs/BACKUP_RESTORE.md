@@ -3,11 +3,13 @@
 > Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
 > Dernière vérification : 2026-11-06 — types d'archives et restitution relus contre `prepare-preapply-backup.sh`, `scripts/backup/restore.sh` et `config/backup.conf` ; essais physiques non rejoués — matériel : non vérifié
 
-Le projet sauvegarde avec **Borg 1.x, dans un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une sauvegarde n'est jamais tenue pour bonne parce qu'une commande s'est terminée : elle doit prouver son intégrité et, pour les sauvegardes pré-APPLY et complètes, réussir une vraie restauration d'un fichier témoin (*canary*).
+**Une sauvegarde doit permettre de récupérer quelque chose, pas seulement produire un fichier.**
 
-**À la fin de ce guide :** savoir ce que contient chaque sauvegarde, en vérifier une, et restaurer un fichier sans toucher au système. Pourquoi une sauvegarde n'est bonne que restaurée : [notions clés](CONCEPTS.md#5-une-sauvegarde-nest-bonne-que-restaurée).
+Si l'APPLY modifie une configuration de façon inattendue, une archive pré-APPLY doit permettre de retrouver les réglages précédents. Si un document personnel disparaît plusieurs semaines plus tard, une archive quotidienne ou complète doit permettre de le récupérer. Les deux situations n'utilisent pas les mêmes sauvegardes.
 
-**Une sauvegarde répond à un incident concret.** Si l'APPLY modifie une configuration de façon inattendue, le point de retour pré-APPLY permet de retrouver les réglages précédents. Si un document personnel est effacé plusieurs semaines après l'installation, ce sont les archives de données quotidiennes ou complètes qu'il faut consulter. Dans les deux cas, **créer une archive** et **savoir la restaurer** sont deux opérations différentes.
+Le projet utilise **Borg 1.x** dans un dépôt **non chiffré** — un choix explicite du propriétaire ([ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une archive créée sans erreur n'est pas automatiquement une bonne sauvegarde : le projet contrôle son intégrité et, pour les archives pré-APPLY et complètes, essaie une restauration d'un fichier témoin (*canary*).
+
+**Dans ce guide :** comprendre le périmètre de chaque archive, préparer le SSD externe, sauvegarder, vérifier puis restaurer **sans écraser les fichiers d'origine**. Le principe de la restauration est expliqué dans les [notions clés](CONCEPTS.md#5-une-sauvegarde-nest-bonne-que-restaurée).
 
 ## Comprendre la stratégie
 
@@ -29,7 +31,8 @@ La sauvegarde pré-APPLY n'est validée qu'après `borg check --verify-data` et 
 
 Source éditable : [`sauvegarde-restauration.drawio`](assets/diagrams/sauvegarde-restauration.drawio).
 
-**Deux SSD ne font pas deux sauvegardes.** Le second T705, monté sur `/data`, survit à une réinstallation du système : c'est une première protection. Il ne protège ni contre sa propre panne, ni contre un effacement : c'est le rôle de Borg, sur un support externe. Le dépôt n'étant pas chiffré, ce support se range comme un document sensible.
+> [!IMPORTANT]
+> **Séparer les SSD n'est pas sauvegarder.** Le second T705 peut survivre à une réinstallation, mais pas nécessairement à une panne ni à un effacement. Borg apporte une copie indépendante. Son dépôt n'étant pas chiffré, le support externe doit être protégé physiquement comme un document sensible.
 
 ## Ce qui est sauvegardé
 

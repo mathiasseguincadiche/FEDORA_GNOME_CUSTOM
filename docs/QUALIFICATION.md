@@ -3,9 +3,11 @@
 > Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
 > Dernière vérification : 2026-11-06 — rôles des Gates et conditions du passage Live → installation relus contre `lib/validation_gates.sh`, `scripts/validation/live-usb.sh` et le guide d'installation — matériel : non vérifié
 
-Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./control.sh validate gate3 certify` a réussi sur le PC installé, pour ses identités matérielles et sa configuration courantes. Entre les deux : le Live USB, l'installation, la baseline et la Gate 3.
+**Une machine n'est pas certifiée parce que son code passe les tests.** Une CI verte concerne un commit ; la Gate 2 observe le PC avant installation ; la Gate 3 vérifie le système effectivement installé, dans son environnement réel.
 
-**À la fin de ce guide :** savoir dire ce que prouve chaque étape, de la CI à la Gate 3, et reconnaître une preuve valide, périmée ou absente. Le principe des trois niveaux est expliqué dans les [notions clés](CONCEPTS.md#3-trois-niveaux-de-preuve--ci-live-usb-gate-3).
+Le statut **Golden runtime-certified** exige que `./control.sh validate gate3 certify` ait réussi pour l'identité matérielle et la configuration courantes. Entre la CI et cette certification se trouvent l'essai Live, la décision humaine, l'installation, la baseline, le dry-run et l'APPLY protégé.
+
+**Dans ce guide :** comprendre ce que prouve chaque étape, reconnaître une preuve valide ou périmée, et savoir ce qui doit être rejoué lorsqu'un composant change. Les [notions clés](CONCEPTS.md#3-trois-niveaux-de-preuve--ci-live-usb-gate-3) expliquent les trois niveaux sans commandes.
 
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 

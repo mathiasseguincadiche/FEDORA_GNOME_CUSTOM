@@ -1,9 +1,10 @@
-"""Check the diagram pairs: WCAG contrast of every colour pair used, and label parity between .drawio and .svg."""
+"""Check meaningful colour contrast and text parity between editable sources and SVG."""
 import html
 import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from diagramkit import LINE, STYLES, TEXT
 
 folder = Path(sys.argv[1])
 
@@ -19,16 +20,15 @@ def ratio(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
-TEXT, LINE = "#0F172A", "#334155"
-fills = {"#FFFFFF", "#DBEAFE", "#F1F5F9", "#DCFCE7", "#FEF3C7", "#F8FAFC"}
-borders = {"#1D4ED8", "#334155", "#15803D", "#B45309", "#64748B", "#94A3B8"}
+fills = {style[0] for style in STYLES.values()} | {"#FFFFFF", "#F7F9FC"}
+borders = {style[1] for style in STYLES.values()} | {"#D9E3EF"}
 worst_text = min(ratio(TEXT, f) for f in fills)
-group_title = ratio("#334155", "#F8FAFC")
+group_title = ratio("#2959B4", "#FFFFFF")
 worst_border = min(ratio(b, "#FFFFFF") for b in borders)
-print(f"text #0F172A on fills: min {worst_text:.2f}:1 (needs 4.5)")
-print(f"group titles #334155 on #F8FAFC: {group_title:.2f}:1 (needs 4.5)")
-print(f"arrows #334155 on white: {ratio(LINE, '#FFFFFF'):.2f}:1 (needs 3)")
-print(f"borders on white: min {worst_border:.2f}:1 (needs 3; group frame #94A3B8 is decorative)")
+print(f"text {TEXT} on fills: min {worst_text:.2f}:1 (needs 4.5)")
+print(f"group titles #2959B4 on white: {group_title:.2f}:1 (needs 4.5)")
+print(f"arrows {LINE} on #F7F9FC: {ratio(LINE, '#F7F9FC'):.2f}:1 (needs 3)")
+print(f"borders on white: min {worst_border:.2f}:1 (decorative frames may be < 3)")
 assert worst_text >= 4.5 and group_title >= 4.5 and ratio(LINE, "#FFFFFF") >= 3
 
 SVG = "{http://www.w3.org/2000/svg}"
