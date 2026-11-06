@@ -1,13 +1,25 @@
 # Sauvegarde, restauration et reprise après sinistre
 
-> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — résumé d'exécution de la restauration ajouté et relu contre les étapes de ce guide ; sources, exclusions, rétention et commandes relues le 2026-11-04 contre `config/backup.conf`, `lib/backup_runtime.sh` et `scripts/backup/`, non rejoué — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — types d'archives et restitution relus contre `prepare-preapply-backup.sh`, `scripts/backup/restore.sh` et `config/backup.conf` ; essais physiques non rejoués — matériel : non vérifié
 
 Le projet sauvegarde avec **Borg 1.x, dans un dépôt non chiffré** (décision du propriétaire, [ADR 0014](adr/0014-borg-unencrypted-backups.md)). Une sauvegarde n'est jamais tenue pour bonne parce qu'une commande s'est terminée : elle doit prouver son intégrité et, pour les sauvegardes pré-APPLY et complètes, réussir une vraie restauration d'un fichier témoin (*canary*).
 
 **À la fin de ce guide :** savoir ce que contient chaque sauvegarde, en vérifier une, et restaurer un fichier sans toucher au système. Pourquoi une sauvegarde n'est bonne que restaurée : [notions clés](CONCEPTS.md#5-une-sauvegarde-nest-bonne-que-restaurée).
 
+**Une sauvegarde répond à un incident concret.** Si l'APPLY modifie une configuration de façon inattendue, le point de retour pré-APPLY permet de retrouver les réglages précédents. Si un document personnel est effacé plusieurs semaines après l'installation, ce sont les archives de données quotidiennes ou complètes qu'il faut consulter. Dans les deux cas, **créer une archive** et **savoir la restaurer** sont deux opérations différentes.
+
 ## Comprendre la stratégie
+
+Le projet distingue trois moments. Ils n'ont pas le même objectif :
+
+| Moment | Ce qui est protégé | Pourquoi |
+|---|---|---|
+| **Avant APPLY** | Configuration et éléments système sélectionnés | Revenir sur une modification de configuration risquée ; preuve exigée par le garde d'installation. |
+| **Pendant l'exploitation** | Données personnelles et projets sélectionnés | Retrouver un fichier supprimé ou endommagé ; sauvegardes quotidiennes. |
+| **À la demande** | Données et inventaire de l'hôte, sans VM | Conserver une vue plus large de l'état et préparer une récupération. |
+
+Le second SSD `/data` sert à séparer les données du système ; le SSD externe Borg sert à disposer d'une autre copie. Ces deux rôles ne sont pas interchangeables.
 
 ![Schéma de la sauvegarde : trois familles de sources vers un dépôt Borg externe, contrôles, restauration en staging puis copie manuelle](assets/diagrams/sauvegarde-restauration.svg)
 
@@ -117,6 +129,8 @@ Le timer `fedora-gnome-backup-retention.timer` l'applique chaque dimanche à 04:
 `data-storage-doctor` vérifie que `/data` est l'EXT4 dédié et que `Documents`, `Projets`, `ISO`, `Jeux`, `IA` et `IA/Openclaw` sont de vrais dossiers, séparés de `/data/libvirt`, avec le bon propriétaire, le mode `0750` et le label SELinux `user_home_t`.
 
 ## Restaurer
+
+**Pourquoi un dossier d'essai ?** Restaurer directement dans un répertoire de travail risquerait d'écraser la version actuelle d'un fichier. Le *staging* est un espace de réception temporaire : on y contrôle ce que contient l'archive avant de choisir, manuellement, quels fichiers remettre en place.
 
 Une restauration passe **toujours** par un dossier d'essai vide (staging), à l'intérieur de la racine `BACKUP_RESTORE_STAGING_ROOT` (`~/Restores/fedora-gnome-custom` par défaut). Le projet ne restaure jamais automatiquement en place `/`, `/etc`, `/boot`, `$HOME`, `/data` ou `/data/libvirt/images`. Les commandes se lancent depuis le dossier du dépôt, sans `sudo`, support de sauvegarde branché.
 

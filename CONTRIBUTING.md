@@ -9,7 +9,7 @@ La source de vérité est le **code, la configuration et les tests**. Viennent e
 1. **Ne pas affaiblir les garde-fous** : matériel physique, dry-run, sauvegarde pré-APPLY, SELinux, firewalld, réseau KVM fermé par défaut et vérifications de provenance restent obligatoires.
 2. **Pas de réglage global non mesuré** : pas de `force_probe`, Mesa git/COPR, noyau gaming tiers ou `sysctl` global sans décision d'architecture explicite (ADR).
 3. **Réutiliser les moteurs** : `control.sh` reste une façade ; la logique appartient à `install.sh`, `scripts/`, `diagnostics/` et `lib/`.
-4. **Séparer les environnements** : la CI teste le logiciel, le Live USB observe le PC avant installation, la Gate 3 qualifie le système installé.
+4. **Séparer les environnements** : la CI teste le logiciel, la Gate 2 observe le PC depuis le Live USB, la Gate 3 qualifie le système installé. Après la Gate 2, le propriétaire examine le compte rendu et autorise explicitement l'installation ; un `GO` logiciel ne vaut pas cet accord.
 5. **Tester le comportement** : un invariant nouveau s'accompagne d'un test qui exécute le code (fixtures, faux binaires), pas d'un `grep` qui recopie une chaîne du code ou une phrase de la doc.
 
 ## Où vit chaque parcours
@@ -66,13 +66,29 @@ Cette section est la source de vérité des conventions de rédaction. Elle s'ap
 ### Contenu
 
 - Le `README.md` racine est une vitrine ; les détails vivent dans `docs/`, avec un guide par sujet. Un détail déjà écrit ailleurs se lie, il ne se recopie pas.
-- Une commande documentée existe, avec ses paramètres obligatoires ; une procédure dit comment reconnaître le succès et quand **ne pas continuer**.
+- Une commande documentée existe, avec ses paramètres obligatoires ; une procédure dit depuis quel environnement et quel répertoire la lancer, ce qu'elle modifie, comment reconnaître le succès et quand **ne pas continuer**.
 - Distinguer lecture seule, dry-run, mutation protégée et opération manuelle ou destructive. Une commande destructive n'est jamais noyée dans une séquence sans précondition.
 - Les valeurs réseau, stockage et VM viennent de `config/*.conf` ; les citer depuis la config plutôt que les recopier.
 - Ne jamais proposer de désactiver SELinux, firewalld ou un garde-fou pour faire passer un test.
 - « Code prêt » et « Golden runtime-certified » restent distincts jusqu'à la Gate 3.
 - Les schémas ne montrent aucun raccourci vers `install.sh --apply` et ne confondent jamais CI, Live et Gate 3.
 - Une maquette est étiquetée comme telle ; une preuve physique porte son contexte.
+- La Gate 2 et la Gate 3 conservent leurs rôles. Le passage **Live USB → installation** mentionne toujours l'export et la revue des résultats, puis l'autorisation humaine explicite, avant de toucher au SSD.
+
+### Expliquer pour transmettre
+
+Un guide doit aider à comprendre une opération, pas simplement l'exécuter. Pour un mécanisme nouveau ou risqué, présenter dans un ordre naturel :
+
+1. **Le besoin** : quel problème concret est résolu et pourquoi il importe ici.
+2. **Le principe** : fonctionnement expliqué avec un vocabulaire accessible, en définissant les termes techniques à leur première apparition.
+3. **Le choix du projet** : quel composant ou mécanisme répond au besoin, et pourquoi.
+4. **La manipulation** : prérequis, précontrôles, emplacement de lancement, commandes et effets possibles.
+5. **La validation** : résultat observable, portée de la preuve et limites.
+6. **Le diagnostic** : premier symptôme, cause à établir, condition d'arrêt et retour arrière sûr.
+
+Adapter la profondeur au risque : un danger de formatage ou de perte de données demande une procédure détaillée ; un inventaire d'options peut rester direct. Le README oriente et motive, le guide d'installation fixe l'ordre, la qualification définit les critères et le centre de contrôle fait foi pour les commandes. **Ne pas recopier les mêmes étapes dans chaque page.**
+
+Pour la relecture, vérifier trois profils de lecteur : une personne découvrant Linux, un utilisateur qui veut accomplir une tâche précise et un ingénieur qui cherche la source du comportement. Les informations doivent être faciles à trouver pour les trois, sans promettre de contrôle physique non effectué.
 
 ### Statuts
 

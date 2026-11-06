@@ -1,7 +1,7 @@
 # Qualifier la workstation
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — commandes, doctors et critères relus contre `diagnostics/` et `scripts/validation/` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — rôles des Gates et conditions du passage Live → installation relus contre `lib/validation_gates.sh`, `scripts/validation/live-usb.sh` et le guide d'installation — matériel : non vérifié
 
 Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./control.sh validate gate3 certify` a réussi sur le PC installé, pour ses identités matérielles et sa configuration courantes. Entre les deux : le Live USB, l'installation, la baseline et la Gate 3.
 
@@ -9,9 +9,9 @@ Une CI verte vérifie un commit. **Golden runtime-certified** veut dire que `./c
 
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 
-![Schéma de la chaîne de qualification : dix étapes, de la CI au commit exact jusqu'à la Golden release](assets/diagrams/chaine-qualification.svg)
+![Schéma de la qualification : onze étapes, avec décision humaine après Live USB et Gate 3 sur le système installé](assets/diagrams/chaine-qualification.svg)
 
-La qualification enchaîne dix étapes : la CI au commit exact, le contrôle Live USB sur le PC, l'installation de Fedora avec import de la preuve Live, la baseline matérielle, le dry-run, la sauvegarde pré-APPLY vérifiée, l'APPLY protégé, le redémarrage sur Linux amont N, la Gate 3, puis la Golden release. Seules les étapes 2 à 10 ont lieu sur le PC ; un changement du matériel, du code ou de la configuration invalide les preuves concernées.
+Le parcours comporte **onze étapes opérationnelles** : CI au commit exact, contrôle Live USB, **revue et accord humain**, installation de Fedora avec import de la preuve, baseline matérielle, dry-run, sauvegarde pré-APPLY vérifiée, APPLY protégé, redémarrage sur Linux amont N, Gate 3 et Golden release. Le contrôle Live, l'installation et la qualification ont lieu sur le PC cible ; la décision du propriétaire est obligatoire avant l'installation. Ce point d'arrêt humain ne modifie ni les trois Gates ni les préconditions imposées par le code. Un changement de matériel, de code ou de configuration invalide les preuves concernées.
 
 Source éditable : [`chaine-qualification.drawio`](assets/diagrams/chaine-qualification.drawio).
 
@@ -30,7 +30,7 @@ Consulter les contrôles GitHub du **commit exact** à installer ([CI](CI_VALIDA
 
 ## 2. Live USB
 
-Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) fait foi pour les commandes et les décisions. La preuve (schéma 2) porte `environment=live-usb` et `hardware_certification=PREINSTALL_ONLY`. Elle est liée au commit, au plan de modules et à l'identité stable du PC (dont les séries des deux T705), pas au noyau ni à l'UUID racine qui changeront. **L'exporter avant de redémarrer** : le HOME du Live est temporaire. Elle est ensuite importée sur le système installé, au même commit ([guide d'installation](INSTALLATION_GUIDE.md#premier-démarrage-sur-le-ssd)). Une preuve d'une autre machine, d'un autre commit ou plan, ou d'un ancien schéma est refusée.
+Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) fait foi pour les commandes et les décisions. La preuve (schéma 2) porte `environment=live-usb` et `hardware_certification=PREINSTALL_ONLY`. Elle est liée au commit, au plan de modules et à l'identité stable du PC (dont les séries des deux T705), pas au noyau ni à l'UUID racine qui changeront. **L'exporter avant de redémarrer** : le HOME du Live est temporaire. Le propriétaire examine ensuite le rapport et donne ou refuse son accord pour installer. Cette décision est indépendante du `GO` calculé par le script. Après autorisation et installation, la preuve est importée sur le système au même commit ([guide d'installation](INSTALLATION_GUIDE.md#premier-démarrage-sur-le-ssd)). Une preuve d'une autre machine, d'un autre commit ou plan, ou d'un ancien schéma est refusée.
 
 ## 3. Baseline matérielle avant APPLY
 

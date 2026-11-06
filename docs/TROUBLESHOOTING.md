@@ -1,7 +1,7 @@
 # Dépannage
 
-> Mise à jour : 2026-11-05 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-05 — chaque doctor, script et sous-commande cités existent dans le dépôt ; commandes `./control.sh` contrôlées par `tests/test_docs_integrity.py` ; section « En urgence » relue contre `scripts/collect-boot-failure.sh`, `scripts/backup/restore.sh` et `lib/control_center.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — diagnostic de préinstallation relu contre `lib/live_validation.py` et `scripts/validation/live-usb.sh` ; routes du centre de contrôle contrôlées statiquement — matériel : non vérifié
 
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
@@ -36,6 +36,7 @@ Quand le PC ne démarre plus ou que des données semblent perdues, le but imméd
 | Symptôme | Première commande | Section |
 |---|---|---|
 | `install.sh --apply` ou la sauvegarde pré-APPLY refusés | `./install.sh --dry-run` | [Installation et APPLY](#installation-et-apply) |
+| Gate 2 Live `NO-GO` ou `A_VERIFIER` | lire le TSV `state/validation/live-preflight.tsv` depuis la session Live | [Préinstallation Live](#préinstallation-live-usb) |
 | Paquet, dépôt, Flatpak ou codec en échec | `dnf repolist`, `./diagnostics/media-doctor` | [Paquets et applications](#paquets-et-applications) |
 | GPU, écran, couleurs ou veille | `./diagnostics/graphics-doctor`, `./diagnostics/display-doctor` | [GPU, écran et veille](#gpu-écran-et-veille) |
 | Identité de la carte mère, CPU, mémoire, T705 | `./diagnostics/hardware-components-doctor` | [Carte mère, CPU, mémoire et stockage](#carte-mère-cpu-mémoire-et-stockage) |
@@ -64,6 +65,19 @@ Une cause possible reste une hypothèse tant que la vérification ne l'a pas con
 | VM sans Internet, garde en mode d'urgence | LAN en conflit avec `192.168.50.0/24`, changement de réseau | `./control.sh kvm guard-check`, `ip -4 route` | `./control.sh kvm guard-reconcile` *(modifie le système)* | `guard_mode=normal` ([détail](KVM_QUICKSTART.md#dépannage)) |
 
 ## Installation et APPLY
+
+### Préinstallation Live USB
+
+**Aucune installation n'a encore commencé : c'est le bon moment pour s'arrêter.** Si la Gate 2 retourne `NO-GO`, au moins un point a échoué ; si elle retourne `A_VERIFIER`, une observation obligatoire manque. Ne pas lancer l'installateur Fedora pour « voir si cela passe ».
+
+1. Dans la session Live, examiner `state/validation/live-preflight.tsv` et noter les points `FAIL` ou `NOT_TESTED` ; ne jamais remplacer une absence d'essai par une réussite supposée.
+2. Vérifier uniquement le composant ou la situation en cause : connexion réseau, réglage d'affichage, périphérique ou essai humain manquant.
+3. Refaire les observations concernées avec le [guide Live USB](FEDORA45_LIVE_PREFLIGHT.md) et exporter un nouveau compte rendu si la décision devient `GO`.
+4. Transmettre ce compte rendu à la revue du propriétaire. **Même un `GO` technique exige son autorisation avant installation.**
+
+La Gate 3 ne s'exécute pas depuis la clé Live : elle qualifie Fedora **après** installation et configuration. Le [guide de qualification](QUALIFICATION.md) distingue ces preuves.
+
+### APPLY refusé
 
 **`install.sh --apply` refusé.** C'est une protection, pas une panne. Vérifier :
 

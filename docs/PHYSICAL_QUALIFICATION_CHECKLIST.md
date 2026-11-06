@@ -1,7 +1,7 @@
 # Fiche de qualification physique
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — fiche relue contre la qualification et les doctors cités — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — ordre Live, autorisation humaine, installation et Gate 3 relu contre `docs/FEDORA45_LIVE_PREFLIGHT.md` et `docs/QUALIFICATION.md` — matériel : non vérifié
 
 Copier cette fiche dans le dossier de preuves de l'essai. Les commandes et critères sont dans [la qualification](QUALIFICATION.md) ; cette fiche sert à consigner ce qui a réellement été fait. Tout commence **NON EXÉCUTÉ** : un résultat ne devient PASS qu'après l'essai sur le PC, et cette fiche ne remplace aucun fichier de preuve Live ou Gate 3.
 
@@ -19,11 +19,24 @@ Ne pas lancer ces essais depuis un runner GitHub ou une VM en prétendant tester
 
 Cible : Ryzen 7 7700, MSI MAG B850M Mortar WiFi, Intel Arc B580, 48 Gio DDR5, deux Crucial T705, Kingston XS1000 externe, ASUS ROG Strix OLED XG27AQDMES 2560×1440/~240 Hz. Relever l'inventaire réel au moment de l'essai et noter tout remplacement.
 
-## Avant installation et APPLY
+## Avant installation : Live USB et décision
+
+Le contrôle depuis « Try Fedora » constitue la **Gate 2**. Il produit une preuve de préinstallation, pas une preuve du fonctionnement de Fedora installé. Le résultat calculé par le script et la décision du propriétaire sont à consigner séparément.
 
 | Essai | État | Preuve attendue |
 |---|---|---|
-| Live USB Fedora 45 / GNOME 51 | NON EXÉCUTÉ | JSON `PREINSTALL_ONLY` + SHA exportés hors du Live, puis importés sur le SSD |
+| Média Fedora et commit | NON EXÉCUTÉ | Signature et SHA du média, SHA Git exact |
+| Live USB Fedora 45 / GNOME 51 | NON EXÉCUTÉ | JSON `PREINSTALL_ONLY`, SHA-256, TSV de détail, export hors du Live |
+| Revue des résultats | NON EXÉCUTÉ | Six critères requis, échecs, points `NOT_TESTED` et réserves examinés |
+| **Décision humaine GO / NO-GO** | **NON RENSEIGNÉ** | Date, personne qui autorise et décision explicite **avant** l'installation |
+
+**Si la décision humaine n'est pas GO : ne pas lancer l'installateur et ne pas formater de SSD.** Suivre le [guide Live USB](FEDORA45_LIVE_PREFLIGHT.md#6-décider-avant-toute-installation).
+
+## Sur Fedora installé, avant APPLY
+
+| Essai | État | Preuve attendue |
+|---|---|---|
+| Preuve Live importée au même commit | NON EXÉCUTÉ | JSON accepté, SHA et identités correspondant au PC |
 | Identités Wi-Fi, Bluetooth, refroidissement, `/data` | NON EXÉCUTÉ | verrous enrôlés, trois canaux de ventilation distincts |
 | RAM 5600 puis 6000 | NON EXÉCUTÉ | vitesse UEFI réelle, 60 min chacune, durée et erreurs consignées |
 | CPU | NON EXÉCUTÉ | 30 min, températures, aucune erreur MCE/EDAC |

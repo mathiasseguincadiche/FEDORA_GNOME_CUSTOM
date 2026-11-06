@@ -1,11 +1,13 @@
 # Les notions clés du projet
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — chaque notion relue contre le code qu'elle décrit (`lib/apply_gate.sh`, `diagnostics/baseline-doctor`, `diagnostics/software-matrix-doctor`, `lib/backup_runtime.sh`, `scripts/kvm/kvm_network_guard.sh`, `config/kernel.conf`) — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — notions relues contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `lib/backup_runtime.sh`, `scripts/kvm/kvm_network_guard.sh` et le parcours d'installation — matériel : non vérifié
 
 Le projet repose sur sept idées, qui reviennent dans tous les guides. Cette page les explique une à une : le problème qu'elles règlent, leur principe, leur place dans le projet, comment les vérifier et ce qu'elles ne garantissent pas.
 
-**Objectif de la page :** pouvoir expliquer pourquoi `install.sh --apply` refuse parfois de s'exécuter, ce que prouve une CI verte, et pourquoi une preuve devient périmée. Les termes sont définis dans le [glossaire](GLOSSARY.md) ; la vue d'ensemble est dans l'[architecture](ARCHITECTURE.md).
+**Objectif de la page :** savoir expliquer pourquoi `install.sh --apply` peut refuser de s'exécuter, ce que prouve une CI verte, pourquoi une preuve devient périmée et à quel moment le propriétaire doit décider. Les termes sont définis dans le [glossaire](GLOSSARY.md) ; la vue d'ensemble est dans l'[architecture](ARCHITECTURE.md).
+
+**Pour lire progressivement :** commence par les trois premières notions avant une installation ; reviens aux sauvegardes, au noyau et au réseau KVM au moment de les utiliser. Les explications donnent le principe ; les procédures détaillées restent dans les guides spécialisés.
 
 ## 1. Fermé par défaut (fail-closed)
 
@@ -40,10 +42,14 @@ Le projet repose sur sept idées, qui reviennent dans tous les guides. Cette pag
 | Niveau | Où | Ce qu'il prouve | Ce qu'il ne prouve pas |
 |---|---|---|---|
 | CI | machines jetables de GitHub | le logiciel au commit testé : contrats, paquets, sessions GNOME et VM en émulation | rien sur le vrai PC |
-| Live USB | le PC, avant installation | le matériel tel qu'observé, sans rien écrire (`PREINSTALL_ONLY`) | le système installé |
+| Live USB (Gate 2) | le PC, avant installation | les fonctions observées, sans écrire sur les SSD internes (`PREINSTALL_ONLY`) | le système installé |
 | Gate 3 | le PC installé | le poste réel, lié au commit et à la configuration | les versions suivantes |
 
-**Dans le projet.** Le Live USB ne déverrouille jamais l'APPLY, et la CI ne certifie jamais le matériel. Le détail de chaque niveau est dans la [qualification](QUALIFICATION.md) et la [page CI](CI_VALIDATION.md).
+**Le passage entre Gate 2 et l'installation.** Imaginons que les six critères obligatoires de la session Live soient tous réussis : le script calcule `GO`. Ce résultat dit que les observations attendues sont présentes. Il ne confirme pas que chaque périphérique facultatif a été essayé, et il **ne donne pas la permission d'effacer un SSD**.
+
+La suite est volontairement humaine : exporter le rapport, relire les résultats et les points `NOT_TESTED`, puis demander au propriétaire s'il autorise l'installation. Un assistant peut expliquer les résultats et recommander une décision, mais l'accord appartient au propriétaire. La [procédure Live USB](FEDORA45_LIVE_PREFLIGHT.md#6-décider-avant-toute-installation) décrit ce point d'arrêt.
+
+**Dans le projet.** Le Live USB ne déverrouille jamais l'APPLY, et la CI ne certifie jamais le matériel. Le détail technique des niveaux se trouve dans la [qualification](QUALIFICATION.md) et la [page CI](CI_VALIDATION.md).
 
 **Limites.** Même la Gate 3 qualifie un état donné ; une évolution du code ou du matériel la rend `STALE`.
 

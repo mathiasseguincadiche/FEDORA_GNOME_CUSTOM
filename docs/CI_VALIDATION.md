@@ -5,6 +5,18 @@
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
+**Pour commencer.** Une pull request (PR) propose un changement ; GitHub Actions lance les contrôles associés avant sa fusion. Un *job* est une tâche de ce contrôle, et une *étape* (*step*) est une commande ou une opération à l'intérieur du job. Un indicateur vert signifie seulement que le périmètre de ce contrôle a réussi : il ne prouve ni l'installation sur le vrai SSD, ni le fonctionnement de l'Arc B580.
+
+### Lire un échec sans se tromper de cause
+
+1. Ouvrir l'onglet **Actions**, choisir le run lié au **commit SHA exact** de la PR et repérer le premier job rouge.
+2. Ouvrir sa première étape réellement échouée. Conserver le message d'erreur, l'environnement de test et les artefacts utiles : le dernier job rouge n'est pas toujours l'origine du défaut.
+3. Identifier s'il s'agit d'une régression du code, d'une hypothèse de test incorrecte ou d'un fournisseur externe indisponible. Un nouveau lancement peut aider au diagnostic, mais ne remplace pas une correction.
+4. Corriger la cause dans une branche, rejouer le test concerné et attendre les autres contrôles. Ne jamais désactiver un contrôle bloquant pour obtenir une couleur verte.
+5. Après fusion, vérifier les workflows sur le **nouveau commit de `main`** : il diffère du SHA testé sur la PR.
+
+Exemple : si `contracts` est rouge parce qu'un laboratoire GNOME a échoué, ouvrir les journaux du laboratoire, pas seulement ceux de `contracts`. Ce dernier résume l'état de ses dépendances ; il ne répare pas leurs erreurs. Le [runbook de dépannage CI](TROUBLESHOOTING.md#un-contrôle-github-actions-devient-rouge) donne les symptômes connus et les premiers contrôles.
+
 ## Ce que chaque preuve démontre
 
 | Contrôle | Ce qui est démontré | Ce qui ne l'est pas |

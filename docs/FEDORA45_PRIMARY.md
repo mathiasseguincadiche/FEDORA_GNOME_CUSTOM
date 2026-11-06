@@ -1,7 +1,7 @@
 # Installation neuve Fedora 45 / GNOME 51 : référence du projet
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — média, verrous et profil relus contre `installer/fedora45-media.lock` et `profiles/fedora45/` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — média et profil relus contre `installer/fedora45-media.lock` et `profiles/fedora45/` ; ordre de préinstallation relu contre le guide Live — matériel : non vérifié
 
 Fedora 45 Workstation et GNOME 51 sont la cible unique de l'installation neuve : `config/workstation.conf` sélectionne `HOST_RELEASE="45"`. Le [guide d'installation](INSTALLATION_GUIDE.md) est le parcours principal. Aucun Fedora 44 préalable et aucune commande de migration ne sont nécessaires.
 
@@ -61,6 +61,6 @@ Le module `gnome.core` installe aussi un drop-in utilisateur `org.gnome.Shell@us
 
 Le second Crucial T705 reste monté en EXT4 sur `/data` : `Documents/`, `Projets/`, `ISO/`, `Jeux/`, `IA/Openclaw/` et `libvirt/`. Borg protège `/data/IA/Openclaw` comme `/data/Projets`, en conservant les exclusions des disques de VM. Aucune migration d'OS ne doit reformater ce disque.
 
-Le parcours d'installation fait foi dans le [guide](INSTALLATION_GUIDE.md#le-parcours). Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l'installation sur SSD ; la configuration finale, le dry-run, la sauvegarde vérifiée et l'APPLY se font sur Fedora installé ; les mesures complètes du matériel, le bureau et Rocky appartiennent à la [Gate 3](QUALIFICATION.md#4-gate-3--système-installé).
+Le parcours d'installation fait foi dans le [guide](INSTALLATION_GUIDE.md#le-parcours). Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l'installation sur SSD ; **ses résultats sont revus et le propriétaire donne son accord avant toute installation**. La configuration finale, le dry-run, la sauvegarde vérifiée et l'APPLY se font sur Fedora installé ; les mesures complètes du matériel, le bureau et Rocky appartiennent à la [Gate 3](QUALIFICATION.md#4-gate-3--système-installé).
 
 La [mise à niveau 44 → 45](UPGRADE_FEDORA_45.md) ne concerne que les anciens systèmes déjà installés.

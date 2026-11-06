@@ -87,6 +87,8 @@ Après installation et redémarrage sur SSD :
 
 La preuve Live porte `PREINSTALL_ONLY`. Les essais du système installé et la certification complète sont décrits dans [le protocole](QUALIFICATION.md), avec les procédures de [préinstallation Live](FEDORA45_LIVE_PREFLIGHT.md) et d'[installation](INSTALLATION_GUIDE.md).
 
+**Entre les deux blocs de commandes se trouve une décision humaine.** L'opérateur exporte le compte rendu Live et fait examiner les résultats. Même si le script affiche `GO`, l'installation sur SSD ne commence qu'après autorisation explicite du propriétaire. La commande `validate import` est utilisée **après** l'installation, jamais comme un raccourci pour contourner cette décision. Voir le [point d'arrêt préinstallation](FEDORA45_LIVE_PREFLIGHT.md#6-décider-avant-toute-installation).
+
 ## Installation
 
 ```bash

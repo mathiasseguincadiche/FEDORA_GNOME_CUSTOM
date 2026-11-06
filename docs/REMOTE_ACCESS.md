@@ -7,7 +7,7 @@
 **Statut :** code réalisé ; profil **désactivé par défaut** (`REMOTE_ENABLE="false"`) ; qualification physique (Gate 3) non faite.
 **Décision d'architecture :** [ADR 0017](adr/0017-remote-access.md).
 
-Ce guide répond à trois questions : ce que le projet automatise, ce que l'analyse a changé dans l'architecture demandée, et dans quel ordre activer le profil.
+Ce guide explique **comment atteindre le PC sans l'exposer directement à Internet**, quelles fonctions sont automatisées et ce qui demande encore une intervention manuelle. L'activation est volontaire : un poste qui fonctionne localement ne doit pas perdre son accès réseau à cause d'un profil distant mal préparé.
 
 ## Le scénario : un PC puissant, une tablette comme terminal
 
@@ -19,23 +19,23 @@ Source éditable : [`acces-distant.drawio`](assets/diagrams/acces-distant.drawio
 
 Le PC fixe reste l'unique environnement de travail : la tablette n'héberge ni les projets ni les VM, elle sert d'écran et de clavier à distance.
 
-Sur le PC, le trafic du tailnet arrive dans la zone firewalld `fgc-tailnet`, et le garde réseau KVM interdit aux VM d'atteindre la plage Tailscale `100.64.0.0/10`. À la maison, la tablette peut aussi passer par Tailscale : la connexion devient alors directe sur le réseau local, avec une latence quasi identique, sans ouvrir SSH côté LAN.
+Sur le PC, le trafic du tailnet arrive dans la zone firewalld `fgc-tailnet`, et le garde réseau KVM interdit aux VM d'atteindre la plage Tailscale `100.64.0.0/10`. À la maison, Tailscale peut établir un chemin direct sur le réseau local ; le débit et la latence devront être mesurés sur les appareils réels. Il n'est pas nécessaire d'ouvrir SSH dans la zone LAN pour cette utilisation.
 
-## 1. Ce que l'analyse a changé dans l'architecture demandée
+## 1. Les décisions indispensables à un accès distant fiable
 
-L'idée centrale est conservée : le PC reste l'unique poste de travail, la tablette n'est qu'un terminal. Cela évite deux machines à maintenir, et Git, les clés, les VM et les conteneurs restent au même endroit. L'analyse a cependant relevé sept points où le cahier des charges initial, tel qu'écrit, ne fonctionnerait pas seul ou serait moins sûr qu'il n'y paraît.
+Le PC reste l'unique poste de travail ; la tablette n'est qu'un terminal. Git, les clés, les VM et les conteneurs restent donc sur la machine principale. Pour que cet accès fonctionne avec des préconditions vérifiables, **sept questions d'architecture** doivent être résolues : réveil, session graphique, encodage, pare-feu, identité Tailscale, configuration Wake-on-LAN et isolation des VM.
 
 | # | Point | Constat | Réponse du projet |
 |---|---|---|---|
 | 1 | Le réveil à distance exige un relais | Tailscale ne peut pas réveiller un PC éteint : son client n'y tourne plus. Un appareil toujours allumé du réseau local doit envoyer le Magic Packet. | `scripts/remote/wol-send.py` pour le relais ; procédure à la [section 6](#6-relais-wake-on-lan). Le choix du matériel du relais reste à faire. |
 | 2 | Sunshine sous GNOME/Wayland est la partie fragile | La capture passe par le portail (autorisation demandée) ou par KMS (capacité `cap_sys_admin`). Une mise à jour début 2026 a fait passer le portail avant KMS. Sunshine lancé avant l'ouverture de session n'a pas d'environnement graphique. | Profil optionnel (`REMOTE_SUNSHINE_ENABLE`), ouverture de session automatique sur option, mesures en Gate 3. Repli intégré à GNOME à la [section 5](#5-bureau-distant--sunshine-ou-gnome-remote-desktop). |
-| 3 | L'AV1 de la B580 n'est pas confirmé de bout en bout | Le pilote média Intel gère l'encodage AV1 sur Battlemage, mais aucune source trouvée ne teste Sunshine sur B580. Sunshine retombe silencieusement sur H.264 logiciel si l'encodeur n'est pas utilisable. | `arc-b580-av1` vérifie l'encodage AV1 VA-API ; le journal Sunshine doit confirmer l'encodeur choisi (Gate 3). |
+| 3 | L'AV1 de la B580 n'est pas confirmé de bout en bout | Les capacités VA-API seules ne démontrent pas que Sunshine utilise réellement l'encodeur attendu. Une solution de repli peut masquer cette différence. | `arc-b580-av1` vérifie l'encodage AV1 VA-API ; le journal Sunshine doit confirmer l'encodeur choisi (Gate 3). |
 | 4 | Le pare-feu Fedora Workstation laisse déjà passer beaucoup | La zone `FedoraWorkstation` ouvre `ssh` et tous les ports 1025-65535 (TCP et UDP) sur le réseau local : les ports de Sunshine y sont atteignables, protégés seulement par l'appairage. | `REMOTE_SSH_LAN="false"` retire SSH de cette zone. Les ports hauts sont un risque assumé et documenté ([section 7](#7-sécurité--ce-qui-est-protégé-et-ce-qui-ne-lest-pas)). |
 | 5 | L'expiration de clé Tailscale peut bloquer l'accès | Un nœud dont la clé expire quitte le tailnet : plus d'accès distant, alors que le PC est peut-être éteint. | Désactiver l'expiration de clé pour le PC et le relais ([section 4](#4-tailscale--expiration-de-clé-et-acl)). |
-| 6 | Wake-on-LAN : trois couches, pas une | Il faut le BIOS, le pilote réseau et le profil NetworkManager ; NetworkManager n'active pas le Wake-on-LAN par défaut. Aucune source trouvée ne confirme le comportement du Realtek 5 GbE (RTL8126, pilote `r8169`) depuis un arrêt complet. | Profil NetworkManager en mode `magic`, filet `.link` optionnel, cinq cycles mesurés ([section 9](#9-qualification-gate-3--fiabilité)). |
+| 6 | Wake-on-LAN : trois couches, pas une | Il faut le BIOS, le pilote réseau et le profil NetworkManager ; un réglage logiciel ne prouve pas que le Realtek 5 GbE se réveillera depuis un arrêt complet. | Profil NetworkManager en mode `magic`, filet `.link` optionnel, cinq cycles mesurés ([section 9](#9-qualification-gate-3--fiabilité)). |
 | 7 | Isolation des VM et du tailnet | Le garde réseau KVM protège les routes qu'il découvre, mais `tailscale0` n'émet aucun événement NetworkManager : les routes Tailscale pouvaient apparaître après sa dernière reconstruction. | Le garde protège désormais `100.64.0.0/10` de façon statique (`KVM_EXTRA_PROTECTED_CIDRS`, posé par `remote.network`), avec un test. |
 
-**Ce qui reste comme demandé :** Tailscale comme réseau privé, SSH par clés comme mode léger, Wake-on-LAN sur l'Ethernet filaire via NetworkManager, Sunshine et Moonlight pour le mode graphique, arrêt par `systemctl poweroff`, et la séquence de connexion du cahier des charges.
+**Le périmètre retenu** est volontairement limité : Tailscale pour le réseau privé, SSH par clés pour le terminal, Wake-on-LAN via l'Ethernet filaire, Sunshine/Moonlight pour le mode graphique optionnel et `systemctl poweroff` pour l'arrêt. Ces fonctions n'ont pas toutes une preuve matérielle tant que la Gate 3 n'a pas été exécutée.
 
 ### Alternatives examinées
 

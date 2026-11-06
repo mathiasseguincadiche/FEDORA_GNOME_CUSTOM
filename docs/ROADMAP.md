@@ -1,7 +1,7 @@
 # Feuille de route
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — états relus contre `profiles/fedora45/profile.json`, `VERSION`, les releases GitHub et l'historique des PR — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — ordre des opérations relu contre les guides Live USB, installation et qualification ; état matériel conservé « prévu » — matériel : non vérifié
 
 Cette page dit où en est le projet et ce qui vient ensuite. Elle ne promet pas de date : chaque étape commence quand la précédente est prouvée. L'état détaillé, preuve par preuve, est dans le [README](../README.md#état-réel).
 
@@ -18,10 +18,11 @@ Cette page dit où en est le projet et ce qui vient ensuite. Elle ne promet pas 
 
 ## Prochaines étapes, dans l'ordre
 
-1. **Contrôler le PC depuis le Live USB**, au commit publié : matériel, pilotes, les deux T705, sans aucune écriture. Le compte rendu est exporté pour l'installation.
-2. **Installer et qualifier** : installation Fedora 45, import du compte rendu Live, baseline, dry-run, sauvegarde pré-APPLY, APPLY, redémarrage, Gate 3.
-3. **Corriger ce que la Gate 3 révèle**, par petites PR, puis requalifier.
-4. **Utiliser le poste** une période significative avant de déclarer la 1.0.
+1. **Contrôler le PC depuis le Live USB**, au commit publié : matériel, pilotes, les deux T705, sans aucune écriture sur les SSD internes. Exporter le rapport `PREINSTALL_ONLY` et sa somme SHA-256.
+2. **Examiner les résultats et décider** : revue du rapport Gate 2, correction des échecs et des incertitudes importantes, puis **GO humain explicite** avant tout effacement du SSD système.
+3. **Installer et qualifier** après accord : installation Fedora 45, import du compte rendu Live, baseline, dry-run, sauvegarde pré-APPLY, APPLY, redémarrage, Gate 3.
+4. **Corriger ce que la Gate 3 révèle**, par petites PR, puis requalifier.
+5. **Utiliser le poste** une période significative avant de déclarer la 1.0.
 
 Aucune nouvelle fonctionnalité n'est ajoutée avant la Gate 3 ([décisions du propriétaire](ARCHITECTURE.md#décisions-du-propriétaire)).
 

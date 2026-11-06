@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Refonte éditoriale du parcours Fedora** : README réorganisé autour du besoin, des fonctions réelles et de l'installation progressive ; portail documentaire orienté par lecteur ; guides renforcés sur le fonctionnement des preuves, de la CI, des sauvegardes et du dépannage.
+- **Accord humain avant installation** : après Gate 2 (Live USB), les résultats sont exportés et examinés, puis le propriétaire donne un GO / NO-GO explicite avant toute opération sur le SSD. Les rôles techniques des Gates 1, 2 et 3, les gardes de l'APPLY et les scripts de validation restent inchangés.
+- **Schéma de qualification actualisé** : le point d'arrêt humain apparaît comme étape distincte entre Live USB et installation ; sources `.drawio` et exports `.svg` régénérés ensemble.
+- **Nettoyage rédactionnel** : terminologie unifiée dans le glossaire, la feuille de route et la fiche physique ; guide d'accès distant débarrassé de formulations de compte rendu d'analyse. Aucun script ou profil historique actif supprimé sans preuve de son obsolescence.
+
+## Itérations documentaires antérieures — conservées pour traçabilité
+
 - **Finalisation documentaire (référentiel V9.6)** : contrôle des fragments Markdown locaux avec essais négatifs et titres répétés ; parcours du README aligné sur l'installation Fedora puis la baseline, le dry-run, la sauvegarde pré-APPLY et l'APPLY ; garanties de sauvegarde formulées par opération plutôt qu'absolument ; restauration avec exemple exécutable ; état CI présenté comme preuve datée, sans assimiler une ancienne réussite à `main` courant ; libellés hérités du manifeste AppImage et du modèle de bug corrigés. Aucun changement au fonctionnement des modules, aux verrous GNOME, aux sauvegardes ni aux politiques matérielles.
 
 Les notes suivantes retracent **les itérations précédentes** de la documentation. Certaines présentations ont été remplacées ; le README courant et les guides font foi pour l'état présent. Ces entrées sont conservées pour la traçabilité des décisions et des PR.

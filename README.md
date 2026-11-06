@@ -1,115 +1,84 @@
 # Fedora Golden Workstation
 
 > Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — parcours relu contre le guide d'installation et les moteurs ; liens, ancres et commandes contrôlés par `tests/test_docs_integrity.py` — matériel : non vérifié
+> Dernière vérification : 2026-11-06 — parcours et commandes relus contre les scripts de validation, d'installation et de sauvegarde ; contrôles documentaires et contrats des Gates exécutés localement — matériel : non vérifié
 
-Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation / GNOME 51** : la même Fedora, sur le même matériel, reconstruite à l'identique et vérifiée par des contrôles reproductibles.
+**Préparer, configurer et maintenir un poste Fedora avec des opérations traçables.** Ce dépôt réunit les scripts, configurations, diagnostics et procédures d'un poste personnel sous **Fedora 45 Workstation / GNOME 51**. Il vise une installation reproductible sur le matériel cible, sans prétendre qu'un test logiciel certifie déjà ce matériel.
 
-**Le problème que ce dépôt règle.** Une installation faite à la main ne survit pas à une réinstallation : chaque réglage, chaque logiciel et chaque correctif sont à retrouver, sans savoir si le résultat est le même. Ici, tout vit dans un dépôt Git — chaque réglage est versionné, expliqué, testé et rejouable.
+## Pourquoi ce projet ?
 
-**Le contexte.** Projet personnel de [@mathiasseguincadiche](https://github.com/mathiasseguincadiche), pour son propre PC ([Le poste cible](#le-poste-cible)), et comme terrain d'apprentissage des pratiques DevOps : configuration déclarative, tests de comportement, intégration continue et preuves.
+Après une réinstallation classique, il faut retrouver les logiciels, reconstituer les réglages et espérer n'avoir oublié aucune étape. Deux installations faites manuellement peuvent donc aboutir à deux postes différents, difficiles à dépanner ou à restaurer.
 
-**Trois engagements.** **Reproductibilité recherchée** : le dépôt définit la configuration du poste et permet un essai à blanc avant l'APPLY. **Preuves limitées à leur portée** : la CI teste le logiciel ; l'état réel distingue ce qui est vérifié de ce qui ne l'est pas. **APPLY protégé** : l'application complète des modules exige le PC physique, une baseline, un dry-run du même état, une sauvegarde pré-APPLY vérifiée et une confirmation. Les opérations courantes possèdent leurs propres préconditions.
+Avec Fedora Golden Workstation, les choix importants sont conservés dans Git : chacun peut être relu, expliqué, corrigé et contrôlé. L'installation de Fedora reste une opération distincte ; le projet prépare ensuite le poste, applique sa configuration et accompagne son exploitation.
 
-**État réel en une ligne :** le logiciel est vérifié par la CI à chaque commit ; le PC n'est pas encore qualifié — Live USB, installation et Gate 3 restent à faire sur le matériel ([État réel](#état-réel)).
+Ce projet personnel de [@mathiasseguincadiche](https://github.com/mathiasseguincadiche) sert aussi à apprendre les pratiques d'exploitation et d'automatisation d'infrastructure : **scripts Bash, contrôle des changements, validation, CI/CD, sauvegardes Borg et virtualisation KVM**.
+
+**Où en est-on ?** Le code dispose de tests automatisés, mais le parcours Live USB et la certification du PC réel restent **non vérifiés**. Voir l'[état réel et ses preuves](#état-réel).
+
+## Ce que le dépôt apporte
+
+| Fonction | Ce qu'elle permet concrètement |
+|---|---|
+| Configuration versionnée | Retrouver les choix et les modules qui composent le poste. |
+| Précontrôles | Vérifier les prérequis et arrêter les opérations si les conditions de sécurité manquent. |
+| Exécution à blanc | Examiner le plan des modifications avant de les appliquer. |
+| Installation protégée | Exiger une baseline, un dry-run cohérent, une sauvegarde pré-APPLY vérifiée et une confirmation humaine. |
+| Diagnostics | Observer l'état du système, du bureau GNOME, du réseau, du stockage et des composants matériels. |
+| Sauvegarde et restauration | Protéger des données sélectionnées avec Borg et restaurer d'abord dans un dossier d'essai. |
+| Qualification | Distinguer les preuves logicielles, les observations Live USB et les résultats du système installé. |
+
+![Vue de l'architecture du poste Fedora : système, stockage, composants et services](docs/assets/diagrams/architecture-poste.svg)
+
+Schéma de présentation du poste ; [source modifiable draw.io](docs/assets/diagrams/architecture-poste.drawio) et [explications techniques de l'architecture](docs/ARCHITECTURE.md).
 
 ## Le parcours du poste
 
-```text
-Live USB → installer Fedora → préparer /data → baseline → dry-run → sauvegarde → APPLY → vérifier → Gate 3
-```
+Ce parcours sépare **ce qui doit être observé avant l'installation** de **ce qui ne peut être vérifié qu'après**. Le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) fait foi pour l'ordre et les commandes détaillées.
 
-L'installation graphique de Fedora précède la configuration du projet. Ensuite, `./control.sh` orchestre les contrôles et les opérations, selon le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) qui fait foi pour l'ordre exact. Chaque étape distingue ce qu'elle prouve de ce qu'elle ne prouve pas.
+| Quand ? | Étape | Pourquoi elle compte | Guide |
+|---|---|---|---|
+| Avant le Live | **1. Préparer** | Vérifier l'ISO signée, la clé USB, le commit Git et les supports externes. | [Installation](docs/INSTALLATION_GUIDE.md) |
+| Depuis « Try Fedora » | **2. Gate 2 — Live USB** | Observer les 16 points prévus, enregistrer les résultats et exporter la preuve `PREINSTALL_ONLY`. | [Contrôle Live](docs/FEDORA45_LIVE_PREFLIGHT.md) |
+| **Avant toute installation** | **3. Revue et décision humaine** | Examiner les résultats, les échecs et les points non testés ; le propriétaire donne ou refuse son accord. | [Décision GO / NO-GO](docs/FEDORA45_LIVE_PREFLIGHT.md#6-décider-avant-toute-installation) |
+| Après accord | **4. Installer Fedora** | Installer sur le T705 système seulement, puis importer la preuve Live au même commit. | [Installation](docs/INSTALLATION_GUIDE.md#2-contrôler-le-pc-en-live-puis-installer-fedora) |
+| Sur Fedora installé | **5. Préparer et mesurer** | Configurer `/data`, certifier la baseline matérielle et lancer le dry-run. | [Installation](docs/INSTALLATION_GUIDE.md#le-parcours) |
+| Avant l'APPLY | **6. Sauvegarder** | Créer et vérifier un point de retour Borg avant toute convergence du système. | [Sauvegarde pré-APPLY](docs/BACKUP_RESTORE.md#sauvegarde-pré-apply) |
+| Après les prérequis | **7. Configurer** | Appliquer les modules, redémarrer et contrôler le système obtenu. | [Installation](docs/INSTALLATION_GUIDE.md#le-parcours) |
+| Sur le poste configuré | **8. Gate 3 — certification finale** | Exécuter les essais physiques et fonctionnels du système installé, puis certifier si les critères sont remplis. | [Qualification](docs/QUALIFICATION.md#4-gate-3--système-installé) |
+| En exploitation | **9. Protéger et récupérer** | Vérifier les sauvegardes régulières installées par l'APPLY et éprouver la restauration dans un dossier d'essai. | [Sauvegardes et restauration](docs/BACKUP_RESTORE.md) |
 
-### 1. Live USB — tester le PC avant d'installer
+> [!IMPORTANT]
+> **Entre la Gate 2 et l'installation, le parcours s'arrête volontairement.** Un `GO` calculé par le script confirme uniquement les observations obligatoires de préinstallation. Il n'autorise pas, à lui seul, l'effacement du disque. Conserver le compte rendu, l'analyser et obtenir la décision explicite du propriétaire avant de lancer l'installateur Fedora.
 
-Depuis la clé Live, le poste est observé sans installer de paquet ni modifier les deux SSD. Le contrôle peut produire des preuves temporaires ; leur export écrit sur le support externe choisi.
+### Première manipulation : tester sans installer
 
-```bash
-./control.sh validate live plan
-./control.sh validate live run
-./control.sh validate export live /chemin/support-externe
-```
-
-**Prouve :** le matériel répond au contrat (affichage, stockage, réseau, KVM) ; la preuve porte `PREINSTALL_ONLY` et est liée au commit. **Ne prouve pas :** que le système installé fonctionnera — c'est le rôle de la Gate 3. → [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md)
-
-### 2. Installer Fedora — avant de configurer le poste
-
-Après le contrôle Live et l'export des preuves, installer **Fedora 45 Workstation sur le T705 système** avec l'installateur graphique. Ne pas formater le second T705 réservé à `/data`. Après le premier démarrage sur le SSD, cloner le dépôt **au même commit**, importer la preuve Live, puis préparer les outils et le montage `/data`.
-
-**Prouve :** le système Fedora démarre et la preuve Live a été importée pour le même état. **Ne prouve pas :** la bonne application des modules ni la certification matérielle. → [installation et premier démarrage](docs/INSTALLATION_GUIDE.md#2-contrôler-le-pc-en-live-puis-installer-fedora)
-
-### 3. Baseline — qualifier le matériel avant APPLY
-
-Sur **Fedora installé**, après les prérequis et l'enrôlement des identités décrits dans le guide :
+Sur le **PC cible démarré depuis la clé USB**, dans le dépôt positionné sur le commit audité :
 
 ```bash
-./control.sh cert baseline-status
-./control.sh cert baseline-certify
+./control.sh validate live plan                         # lire les points à contrôler
+./control.sh validate live run                          # effectuer les observations
+./control.sh validate live status                       # consulter l'état de la preuve
+./control.sh validate export live /chemin/support-externe # sauvegarder la preuve hors de la session Live
 ```
 
-**Prouve :** la baseline matérielle (identités, SSD, affichage, veille) est conforme aux critères et certifiée avant APPLY. **Ne prouve pas :** le comportement après application ; un changement de matériel rend la preuve caduque (`STALE`). → [qualification](docs/QUALIFICATION.md)
+Les commandes Live ne préparent pas le disque à l'installation et ne certifient pas GNOME installé. Le [guide Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) explique les prérequis, les réponses humaines, l'export et l'analyse des résultats. Le support d'export doit être un volume externe distinct des deux SSD internes.
 
-### 4. Dry-run — voir le plan sans appliquer les changements
+### Après autorisation : configurer sans brûler les étapes
 
-```bash
-./install.sh --dry-run
-```
+L'installation graphique précède les scripts de configuration. Une fois Fedora démarré sur le SSD, les opérations de baseline, de dry-run et de sauvegarde pré-APPLY sont **des conditions de sécurité**, pas des étapes facultatives. L'APPLY refuse de s'exécuter si ses preuves ne correspondent plus à l'état courant du système.
 
-**Prouve :** le plan complet des modules (ordre, portée), avec une preuve écrite liée au commit et à la configuration. **Ne prouve pas :** qu'une application réelle réussira — d'où la sauvegarde et les protections de l'étape suivante. → [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
+Après l'APPLY, la **Gate 3** vérifie notamment le bureau réel, les périphériques, le réseau, la veille, les sauvegardes et la virtualisation. La commande `./control.sh validate gate3 status` consulte un état : elle ne remplace pas `./control.sh validate gate3 certify` ni les essais qui la précèdent.
 
-### 5. APPLY — sauvegarder puis appliquer les modules
+**À retenir :** Gate 1 = logiciel en CI ; Gate 2 = compatibilité observée en Live USB ; Gate 3 = qualification du poste installé. Ces trois preuves ne sont pas interchangeables.
 
-> [!CAUTION]
-> Point de non-retour : `install apply` fait converger le système vers le dépôt. Le gate exige au préalable une sauvegarde pré-APPLY vérifiée et un dry-run réussi du même commit.
-
-```bash
-./control.sh install backup
-./control.sh install apply
-```
-
-**Prouve :** le système converge vers le dépôt, sur le PC physique uniquement. **Ne prouve pas :** la certification — seule la Gate 3 la délivre. → [parcours d'installation](docs/INSTALLATION_GUIDE.md#le-parcours)
-
-### 6. Vérifier — examiner la configuration appliquée
-
-Les modules (système, bureau GNOME, gaming, KVM, réseau…) ont été appliqués par l'APPLY ; le poste se relit en lecture seule :
-
-```bash
-./control.sh status
-./control.sh doctor all
-```
-
-**Prouve :** l'état courant du poste (version, noyau, sauvegarde, certification). **Ne prouve pas :** la santé matérielle — les doctors lisent, ils ne réparent pas. → [architecture](docs/ARCHITECTURE.md), [centre de contrôle](docs/CONTROL_CENTER.md)
-
-### 7. Backup — sauvegarder au quotidien
-
-```bash
-./control.sh backup now
-./control.sh backup check
-```
-
-**Prouve :** une archive Borg vérifiée (`borg check --verify-data`) sur support externe. **Ne prouve pas :** qu'une restauration fonctionnera — d'où l'essai de restauration. → [sauvegardes](docs/BACKUP_RESTORE.md)
-
-### 8. Restore — savoir restaurer si besoin
-
-```bash
-./control.sh backup restore latest
-```
-
-Toujours d'abord dans un dossier d'essai, jamais directement sur les données. → [sauvegardes et restauration](docs/BACKUP_RESTORE.md)
-
-**La Gate 3** est la qualification finale du système installé. Consulter son état avec `./control.sh validate gate3 status` et suivre les essais prescrits par le [guide de qualification](docs/QUALIFICATION.md) : consulter un statut n'établit pas, à lui seul, la certification « Golden runtime-certified ».
-
-**Trois niveaux à ne jamais confondre :** une CI verte prouve le logiciel testé ; le Live (`PREINSTALL_ONLY`) n'observe que le PC avant installation ; seule la Gate 3 qualifie le système installé.
-
-## Démarrer sans matériel
+## Explorer sans toucher au PC cible
 
 ```bash
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
 python3 -B tests/test_docs_integrity.py    # vérifier liens, ancres, guides et routes
+./control.sh help                          # voir les commandes disponibles
 ./install.sh --dry-run                     # plan à blanc ; peut refuser hors PC cible
-./control.sh                               # ouvrir le centre de contrôle
 ```
 
 ## Le centre de contrôle
@@ -148,7 +117,7 @@ L'**APPLY** exige baseline, essai à blanc, sauvegarde pré-APPLY vérifiée et 
 
 Le détail complet et les contrôles associés : [architecture — le matériel cible](docs/ARCHITECTURE.md#le-matériel-cible).
 
-## La documentation, selon le besoin
+## Trouver le bon guide
 
 | Je veux… | Lire |
 |---|---|
