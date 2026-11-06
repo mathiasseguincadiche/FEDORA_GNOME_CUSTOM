@@ -3,13 +3,13 @@
 > Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
 > Dernière vérification : 2026-11-04 — média, verrous et profil relus contre `installer/fedora45-media.lock` et `profiles/fedora45/` — matériel : non vérifié
 
-Fedora 45 Workstation et GNOME 51 sont la cible unique de l’installation neuve : `config/workstation.conf` sélectionne `HOST_RELEASE="45"`. Le [guide d’installation](INSTALLATION_GUIDE.md) est le parcours principal. Aucun Fedora 44 préalable et aucune commande de migration ne sont nécessaires.
+Fedora 45 Workstation et GNOME 51 sont la cible unique de l'installation neuve : `config/workstation.conf` sélectionne `HOST_RELEASE="45"`. Le [guide d'installation](INSTALLATION_GUIDE.md) est le parcours principal. Aucun Fedora 44 préalable et aucune commande de migration ne sont nécessaires.
 
 ## Configuration sélectionnée et installation autorisée
 
-La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l’APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
+La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l'APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
 
-Le média final a été publié par Fedora ([page officielle Workstation](https://fedoraproject.org/workstation/download/)) et authentifié avant la création du verrou. L’image Cloud utilisée par les laboratoires CI est un support de test ; elle ne sert jamais à installer le PC.
+Le média final a été publié par Fedora ([page officielle Workstation](https://fedoraproject.org/workstation/download/)) et authentifié avant la création du verrou. L'image Cloud utilisée par les laboratoires CI est un support de test ; elle ne sert jamais à installer le PC.
 
 ## Média promu
 
@@ -37,7 +37,7 @@ La promotion exige :
 | Besoin | Composant retenu |
 |---|---|
 | Dock | Dash to Dock, RPM Fedora épinglé |
-| Indicateurs d’applications | AppIndicator, RPM Fedora épinglé |
+| Indicateurs d'applications | AppIndicator, RPM Fedora épinglé |
 | Bureau et Corbeille | Gtk4 DING v145, review 75162 |
 | Afficher le bureau | Show Desktop Button v59, review 75965 |
 | CPU, RAM, réseau | Vitals v85, review 74743 |
@@ -45,22 +45,22 @@ La promotion exige :
 
 `config/gnome-extensions.lock` et le verrou du profil Fedora 45 doivent rester identiques. Même règle pour les manifestes Nautilus : Fedora 45 utilise File Roller et son extension Nautilus, sans `gvfs-archive` supprimé en amont. Le validateur détecte toute divergence avant promotion.
 
-Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l’interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME.md](GNOME.md).
+Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l'interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME.md](GNOME.md).
 
 ## Ce que vérifie la CI
 
-Les conteneurs principaux (paquets, installation en dry-run, Borg, bureau, jeux, AppImage et télémétrie) utilisent Fedora 45. Les deux laboratoires obligatoires démarrent Fedora 45 / GNOME 51 : l’un natif, l’autre avec les six extensions. Le second installe les deux RPM d’extensions aux versions exactes du verrou, en ajoutant `updates-testing` dans la VM jetable seulement ; ces mêmes versions sont présentes dans les dépôts stables depuis la promotion. Aucun dépôt de test n’est activé sur la machine de production ([laboratoire](FEDORA_GNOME_CI_LAB.md)).
+Les conteneurs principaux (paquets, installation en dry-run, Borg, bureau, jeux, AppImage et télémétrie) utilisent Fedora 45. Les deux laboratoires obligatoires démarrent Fedora 45 / GNOME 51 : l'un natif, l'autre avec les six extensions. Le second installe les deux RPM d'extensions aux versions exactes du verrou, en ajoutant `updates-testing` dans la VM jetable seulement ; ces mêmes versions sont présentes dans les dépôts stables depuis la promotion. Aucun dépôt de test n'est activé sur la machine de production ([laboratoire](FEDORA_GNOME_CI_LAB.md)).
 
-Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même si le rapport d’état se termine correctement. Le laboratoire [Fedora 44 historique](history/HISTORICAL_FEDORA44.md) est facultatif et lancé manuellement.
+Un résultat `pending` ou `DEFERRED` reste une absence de qualification, même si le rapport d'état se termine correctement. Le laboratoire [Fedora 44 historique](history/HISTORICAL_FEDORA44.md) est facultatif et lancé manuellement.
 
-Le scénario QEMU ferme ses applications de test (action D-Bus `quit` de Nautilus) avant la déconnexion et vérifie l’absence réelle des processus Nautilus et Ptyxis. Nautilus utilise une instance D-Bus : l’arrêt de son seul lanceur ne suffit pas. Les journaux, les états de service et les processus avant/après fermeture sont conservés ; un blocage du compositeur, une unité en échec ou un coredump fait échouer le scénario. Cette vérification ne remplace pas l’essai de déconnexion avec des applications ouvertes lors de la qualification interactive.
+Le scénario QEMU ferme ses applications de test (action D-Bus `quit` de Nautilus) avant la déconnexion et vérifie l'absence réelle des processus Nautilus et Ptyxis. Nautilus utilise une instance D-Bus : l'arrêt de son seul lanceur ne suffit pas. Les journaux, les états de service et les processus avant/après fermeture sont conservés ; un blocage du compositeur, une unité en échec ou un coredump fait échouer le scénario. Cette vérification ne remplace pas l'essai de déconnexion avec des applications ouvertes lors de la qualification interactive.
 
-Le module `gnome.core` installe aussi un drop-in utilisateur `org.gnome.Shell@user.service.d/50-fgc-child-lifecycle.conf` et vérifie que `KillMode=mixed` est effectif. Le signal d’arrêt est d’abord envoyé à Shell pour que Mutter ferme ses enfants Xwayland dans son ordre normal ; systemd conserve le nettoyage final de tout le groupe. Le délai d’arrêt reste celui du paquet en production. Le laboratoire utilise exactement le même fichier et exerce cet ordre avec deux services de test réels, dont un témoin négatif reproduisant l’arrêt prématuré d’un enfant. Les déconnexions GNOME complètes restent contrôlées séparément.
+Le module `gnome.core` installe aussi un drop-in utilisateur `org.gnome.Shell@user.service.d/50-fgc-child-lifecycle.conf` et vérifie que `KillMode=mixed` est effectif. Le signal d'arrêt est d'abord envoyé à Shell pour que Mutter ferme ses enfants Xwayland dans son ordre normal ; systemd conserve le nettoyage final de tout le groupe. Le délai d'arrêt reste celui du paquet en production. Le laboratoire utilise exactement le même fichier et exerce cet ordre avec deux services de test réels, dont un témoin négatif reproduisant l'arrêt prématuré d'un enfant. Les déconnexions GNOME complètes restent contrôlées séparément.
 
 ## Données et parcours final
 
-Le second Crucial T705 reste monté en EXT4 sur `/data` : `Documents/`, `Projets/`, `ISO/`, `Jeux/`, `IA/Openclaw/` et `libvirt/`. Borg protège `/data/IA/Openclaw` comme `/data/Projets`, en conservant les exclusions des disques de VM. Aucune migration d’OS ne doit reformater ce disque.
+Le second Crucial T705 reste monté en EXT4 sur `/data` : `Documents/`, `Projets/`, `ISO/`, `Jeux/`, `IA/Openclaw/` et `libvirt/`. Borg protège `/data/IA/Openclaw` comme `/data/Projets`, en conservant les exclusions des disques de VM. Aucune migration d'OS ne doit reformater ce disque.
 
-Le parcours d’installation fait foi dans le [guide](INSTALLATION_GUIDE.md#le-parcours). Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l’installation sur SSD ; la configuration finale, le dry-run, la sauvegarde vérifiée et l’APPLY se font sur Fedora installé ; les mesures complètes du matériel, le bureau et Rocky appartiennent à la [Gate 3](QUALIFICATION.md#4-gate-3--système-installé).
+Le parcours d'installation fait foi dans le [guide](INSTALLATION_GUIDE.md#le-parcours). Le [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) précède l'installation sur SSD ; la configuration finale, le dry-run, la sauvegarde vérifiée et l'APPLY se font sur Fedora installé ; les mesures complètes du matériel, le bureau et Rocky appartiennent à la [Gate 3](QUALIFICATION.md#4-gate-3--système-installé).
 
 La [mise à niveau 44 → 45](UPGRADE_FEDORA_45.md) ne concerne que les anciens systèmes déjà installés.

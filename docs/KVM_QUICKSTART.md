@@ -1,7 +1,7 @@
 # KVM au quotidien
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — commandes relues contre `scripts/kvm/`, profil contre `config/vm-profiles.conf` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — encadré de non-retour de la reconstruction de l'invité ajouté, conditions recopiées de la section ; commandes relues le 2026-11-04 contre `scripts/kvm/`, profil contre `config/vm-profiles.conf`, non rejoué — matériel : non vérifié
 
 Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu du profil sont dans la [référence virtualisation](VIRTUALIZATION.md), l'isolation réseau dans le [réseau KVM](KVM_NETWORK.md).
 
@@ -123,6 +123,9 @@ Si la reconstruction échoue, garder le mode d'urgence et diagnostiquer ; ne pas
 **Nautilus ne voit plus Rocky.** `./control.sh kvm nautilus-refresh`, puis vérifier le service SSH de l'invité.
 
 **Reconstruire l'invité.** Opération destructive : elle efface le disque de la VM et tout ce qu'il contient. D'abord sauver les données utiles de l'invité (copie SFTP ou [export](#5-exports)), puis, depuis Fedora :
+
+> [!CAUTION]
+> Point de non-retour : `undefine --remove-all-storage` efface le domaine, sa NVRAM et son disque, sans retour arrière. Les données utiles de l'invité doivent être sauvegardées avant (copie SFTP ou [export](#5-exports)).
 
 ```bash
 virsh --connect qemu:///system shutdown rocky-devops                              # arrêt propre

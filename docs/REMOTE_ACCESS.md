@@ -1,7 +1,7 @@
 # Accès distant — Tailscale, SSH, Wake-on-LAN et Sunshine
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — variables relues contre `config/remote.conf`, modules `modules/remote/`, `scripts/remote/wol-send.py` et `diagnostics/arc-b580-av1` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — résumé d'exécution de l'activation du profil ajouté et relu contre les étapes de la section 3 ; variables relues le 2026-11-04 contre `config/remote.conf`, modules `modules/remote/`, `scripts/remote/wol-send.py` et `diagnostics/arc-b580-av1`, non rejoué — matériel : non vérifié
 
 **Objectif :** utiliser le PC Fedora depuis une tablette Android, à la maison ou à l'extérieur, sans ouvrir de port sur Internet, et pouvoir le réveiller quand il est éteint.
 **Statut :** code réalisé ; profil **désactivé par défaut** (`REMOTE_ENABLE="false"`) ; qualification physique (Gate 3) non faite.
@@ -67,6 +67,14 @@ Le profil `remote` compte cinq modules, un doctor et un fichier de configuration
 ## 3. Activer le profil, pas à pas
 
 **Préconditions :** Gate 3 du poste réussie, sauvegarde pré-APPLY du même commit, et une console physique à portée. La réactivation du profil réseau coupe brièvement la liaison : **ne pas appliquer ce module par SSH sur la même carte réseau.**
+
+**Résumé d'exécution — où en est l'activation du profil :** reprendre à la première case non cochée ; un KO de `./control.sh remote status` sur SSH, SELinux ou l'isolation KVM est un arrêt, pas un obstacle à contourner.
+
+- [ ] Clé SSH de la tablette ajoutée à `~/.ssh/authorized_keys`
+- [ ] `REMOTE_ENABLE="true"` appliqué : dry-run puis APPLY, sauvegarde pré-APPLY comprise
+- [ ] Tailscale connecté une seule fois, expiration de clé et ACL réglées
+- [ ] BIOS réglé, relais Wake-on-LAN préparé
+- [ ] `./control.sh remote status` affiche **0 KO**
 
 1. **Clé SSH de la tablette.** Générer une clé sur la tablette, avec son client SSH, puis ajouter sa partie publique à `~/.ssh/authorized_keys` sur le PC. Sans clé, le préflight refuse de continuer : désactiver les mots de passe sans clé couperait tout accès.
 2. **Activer le profil** dans `config/local.conf` :
