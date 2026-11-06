@@ -37,7 +37,7 @@ Lire le plan de récupération de l'hôte et le commit qu'il désigne. Les archi
 
 Utiliser un support de récupération neuf/jetable et identifier chaque disque par numéro de série et `/dev/disk/by-id`. Déconnecter les deux T705 originaux lors d'une réinstallation sur support de test. Le support externe de sauvegarde reste distinct du disque cible. Ne réutiliser aucun Kickstart visant un numéro de série de production.
 
-Pour la copie VM, arrêter l'originale et utiliser un hôte libvirt de laboratoire séparé. Conserver les identités de l’export sans définir deux domaines portant le même UUID sur le même hôte. Aucun réseau de production, partage de données, SFTP ou périphérique passthrough ne doit être attaché à la copie. Démarrer sans carte réseau, ou dans un réseau de laboratoire sans routage sortant, NAT ni accès LAN.
+Pour la copie VM, arrêter l'originale et utiliser un hôte libvirt de laboratoire séparé. Conserver les identités de l'export sans définir deux domaines portant le même UUID sur le même hôte. Aucun réseau de production, partage de données, SFTP ou périphérique passthrough ne doit être attaché à la copie. Démarrer sans carte réseau, ou dans un réseau de laboratoire sans routage sortant, NAT ni accès LAN.
 
 Le staging doit pouvoir contenir les fichiers et disques extraits avec la réserve prévue ; vérifier la capacité avant copie. Un laboratoire virtuel ne permet pas de contourner l'exigence de matériel physique de l'APPLY de production.
 
@@ -59,7 +59,7 @@ Le chemin doit rester sous `BACKUP_RESTORE_STAGING_ROOT`. L'extraction refuse le
 
 Vérifier le média Workstation selon [le guide](INSTALLATION_GUIDE.md). Installer uniquement sur le disque de récupération identifié par son propre numéro de série. Récupérer le commit et la configuration indiqués par l'archive. Restaurer d'abord en staging ; remettre ensuite les seuls fichiers nécessaires en respectant propriétaires et labels SELinux, sans écraser globalement `/etc`, `/boot` ou les périphériques.
 
-Sur le matériel physique autorisé, suivre la baseline, le dry-run, la sauvegarde pré-APPLY et l'APPLY du guide. Redémarrer, vérifier le noyau réellement utilisé, GNOME/Wayland, Nautilus/Ptyxis, données et services. Rejouer la convergence et archiver les diagnostics. Une VM peut servir à des exercices de fichiers et de démarrage isolés ; l’APPLY de production y reste bloqué.
+Sur le matériel physique autorisé, suivre la baseline, le dry-run, la sauvegarde pré-APPLY et l'APPLY du guide. Redémarrer, vérifier le noyau réellement utilisé, GNOME/Wayland, Nautilus/Ptyxis, données et services. Rejouer la convergence et archiver les diagnostics. Une VM peut servir à des exercices de fichiers et de démarrage isolés ; l'APPLY de production y reste bloqué.
 
 **Acceptation :** démarrage autonome du disque de récupération, données accessibles, diagnostics cohérents et convergence répétable. Documenter les applications/services réellement réinstallés et toute partie non récupérée.
 

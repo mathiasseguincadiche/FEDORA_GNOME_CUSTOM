@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Documentation (décisions du propriétaire après l'audit de la passe 2) :
+  - **Charte des apostrophes** : les apostrophes typographiques restantes passent aux apostrophes droites, style du reste du corpus — `FEDORA45_LIVE_PREFLIGHT` (33), `FEDORA45_PRIMARY` (23) et deux intruses dans `ISOLATED_RECOVERY_RUNBOOK`, repérées en appliquant la charte. Aucun mot, aucun lien changés.
+  - **Résumé d'exécution** : l'activation du profil distant ([accès distant](docs/REMOTE_ACCESS.md), section 3) ouvre sur un résumé de cases à cocher, comme la restauration et le guide d'installation ; il recopie les étapes et la règle d'arrêt existantes de la section.
+  - **Alerte GitHub** : la reconstruction de l'invité du [guide KVM](docs/KVM_QUICKSTART.md) affiche un encadré `> [!CAUTION]` ; le contenu recopie la mise en garde déjà écrite, sans règle nouvelle. `tests/test_docs_integrity.py` passe sur l'archive contrôlée (72 pages, 16 domaines de commandes).
+
 - Documentation (repères d'exécution et alertes de non-retour) :
   - **Résumés d'exécution** : le [guide d'installation](docs/INSTALLATION_GUIDE.md), le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) et la [reprise isolée](docs/ISOLATED_RECOVERY_RUNBOOK.md) ouvrent sur un résumé de cases à cocher qui dit où en est l'exécution d'un coup d'œil ; la [restauration](docs/BACKUP_RESTORE.md) reçoit le même résumé en tête de sa procédure. Une exécution interrompue s'y reprend à la première case non cochée, règle d'arrêt relue. Les résumés ne remplacent ni les prérequis ni les validations.
   - **Alertes GitHub** : les points de non-retour du guide d'installation et l'étape `APPLY` affichent un encadré `> [!CAUTION]` ; la charte réservait déjà les citations aux avertissements importants. Le contenu des avertissements recopie les conditions déjà écrites (sauvegarde pré-APPLY vérifiée, support branché), sans règle nouvelle.
