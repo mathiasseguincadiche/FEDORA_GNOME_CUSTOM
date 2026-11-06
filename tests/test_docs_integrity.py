@@ -8,8 +8,11 @@ Checks what can actually mislead an operator, never phrasing:
 - every routed command is listed on the Control Center page, its source of truth;
 - every repository path quoted in backticks exists;
 - code and workflows only reference documentation files that exist;
-- guides carry the metadata block defined in CONTRIBUTING.md;
-- diagrams are .drawio/.svg pairs and no Mermaid block remains;
+- the README and every guide carry the metadata block defined in CONTRIBUTING.md;
+- diagrams are .drawio/.svg pairs, every asset under docs/assets/ is referenced
+  by a Markdown page, and every SVG export is accessible (viewBox, title, desc,
+  opaque background, no remote resources); no Mermaid block remains;
+- no typographic apostrophe (U+2019) remains outside the archives;
 - the HOST software inventory reproduces the package manifests;
 - tracked text files use LF line endings (.editorconfig).
 """
@@ -41,9 +44,12 @@ def links(path):
             yield target, (path.parent / target).resolve()
 
 
-# 1. Local links resolve inside the repository.
+# 1. Local links resolve inside the repository; their targets are recorded
+#    for the reverse check on assets (rule 8c).
+referenced = set()
 for path in MARKDOWN:
     for target, resolved in links(path):
+        referenced.add(resolved)
         if not resolved.is_relative_to(ROOT):
             errors.append(f"{rel(path)}: link escapes the repository: {target}")
         elif not resolved.exists():
@@ -157,9 +163,9 @@ def body_after_title(path):
     return title, rest.lstrip("\n")
 
 
-# 6. Guides carry the metadata block (CONTRIBUTING.md, « Métadonnées des guides »).
+# 6. The README and every guide carry the metadata block (CONTRIBUTING.md, « Métadonnées des guides »).
 # Every guide, without exception: the documentation overhaul (C1-C9) migrated them all.
-for path in sorted((ROOT / "docs").glob("*.md")):
+for path in sorted((ROOT / "docs").glob("*.md")) + [ROOT / "README.md"]:
     title, rest = body_after_title(path)
     match = METADATA.match(rest) if title.startswith("# ") else None
     if match is None:
@@ -183,9 +189,30 @@ for path in CURRENT:
     if re.search(r"^\s*```\s*mermaid\b", path.read_text(encoding="utf-8"), re.M):
         errors.append(f"{rel(path)}: Mermaid block; use a .drawio source with its .svg export")
 
-# 8. Each diagram is a valid .drawio/.svg pair with an accessible, opaque export.
+# 8. Each diagram is a valid .drawio/.svg pair; every SVG export is accessible,
+# opaque and self-contained, and every asset is referenced by a Markdown page.
 SVG_NS = "{http://www.w3.org/2000/svg}"
-diagrams = ROOT / "docs/assets/diagrams"
+assets = ROOT / "docs/assets"
+diagrams = assets / "diagrams"
+
+
+def check_svg(path):
+    try:
+        tree = ET.parse(path).getroot()
+    except ET.ParseError as error:
+        errors.append(f"{rel(path)}: invalid XML ({error})")
+        return
+    if tree.tag != SVG_NS + "svg" or not tree.get("viewBox"):
+        errors.append(f"{rel(path)}: SVG root without a viewBox")
+    if not (tree.findtext(SVG_NS + "title") or "").strip() or not (tree.findtext(SVG_NS + "desc") or "").strip():
+        errors.append(f"{rel(path)}: SVG needs a non-empty <title> and <desc>")
+    background = next((c for c in tree if c.tag == SVG_NS + "rect"), None)
+    if background is None or background.get("fill") in (None, "none", "transparent"):
+        errors.append(f"{rel(path)}: SVG needs an opaque background rectangle first")
+    if re.search(r"<script|href=\"https?:", path.read_text(encoding="utf-8")):
+        errors.append(f"{rel(path)}: SVG must not load scripts or remote resources")
+
+
 for path in sorted(diagrams.glob("*")) if diagrams.is_dir() else []:
     if path.suffix not in (".drawio", ".svg"):
         errors.append(f"{rel(path)}: only .drawio sources and .svg exports belong here")
@@ -193,32 +220,35 @@ for path in sorted(diagrams.glob("*")) if diagrams.is_dir() else []:
     twin = path.with_suffix(".svg" if path.suffix == ".drawio" else ".drawio")
     if not twin.exists():
         errors.append(f"{rel(path)}: missing its pair {twin.name}")
+    if path.suffix == ".svg":
+        check_svg(path)
+        continue
     try:
         tree = ET.parse(path).getroot()
     except ET.ParseError as error:
         errors.append(f"{rel(path)}: invalid XML ({error})")
         continue
-    if path.suffix == ".drawio":
-        cells = tree.findall(".//mxCell")
-        ids = [cell.get("id") for cell in cells]
-        if tree.tag != "mxfile" or not tree.findall("diagram/mxGraphModel"):
-            errors.append(f"{rel(path)}: not an uncompressed diagrams.net file")
-        if len(ids) != len(set(ids)):
-            errors.append(f"{rel(path)}: duplicate cell ids")
-        for cell in cells:
-            for ref in ("parent", "source", "target"):
-                if cell.get(ref) and cell.get(ref) not in ids:
-                    errors.append(f"{rel(path)}: cell {cell.get('id')} has an orphan {ref}")
-    else:
-        if tree.tag != SVG_NS + "svg" or not tree.get("viewBox"):
-            errors.append(f"{rel(path)}: SVG root without a viewBox")
-        if not (tree.findtext(SVG_NS + "title") or "").strip() or not (tree.findtext(SVG_NS + "desc") or "").strip():
-            errors.append(f"{rel(path)}: SVG needs a non-empty <title> and <desc>")
-        background = next((c for c in tree if c.tag == SVG_NS + "rect"), None)
-        if background is None or background.get("fill") in (None, "none", "transparent"):
-            errors.append(f"{rel(path)}: SVG needs an opaque background rectangle first")
-        if re.search(r"<script|href=\"https?:", path.read_text(encoding="utf-8")):
-            errors.append(f"{rel(path)}: SVG must not load scripts or remote resources")
+    cells = tree.findall(".//mxCell")
+    ids = [cell.get("id") for cell in cells]
+    if tree.tag != "mxfile" or not tree.findall("diagram/mxGraphModel"):
+        errors.append(f"{rel(path)}: not an uncompressed diagrams.net file")
+    if len(ids) != len(set(ids)):
+        errors.append(f"{rel(path)}: duplicate cell ids")
+    for cell in cells:
+        for ref in ("parent", "source", "target"):
+            if cell.get(ref) and cell.get(ref) not in ids:
+                errors.append(f"{rel(path)}: cell {cell.get('id')} has an orphan {ref}")
+
+# 8b. Every SVG export under docs/assets/, not only the diagram pairs, is checked.
+for path in sorted(assets.rglob("*.svg")):
+    if diagrams not in path.parents:
+        check_svg(path)
+
+# 8c. Every asset under docs/assets/ is referenced by at least one Markdown page
+# (rule 1 already checks that every referenced file exists).
+for path in sorted(p for p in assets.rglob("*") if p.is_file()):
+    if path not in referenced:
+        errors.append(f"{rel(path)}: asset not referenced from any Markdown page")
 
 # 9. The HOST inventory reproduces every package manifest exactly.
 inventory = ROOT / "docs/SOFTWARE_INVENTORY.md"
@@ -253,6 +283,24 @@ for name in TRACKED:
         continue
     if b"\0" not in data and b"\r\n" in data:
         errors.append(f"{name}: CRLF line endings; use LF (.editorconfig)")
+
+# 11. Straight apostrophes only outside the archives (CONTRIBUTING.md, « Charte des apostrophes »).
+# CHANGELOG.md, docs/adr/ and docs/history/ keep their original wording on purpose.
+for name in TRACKED:
+    if name == "CHANGELOG.md" or name.startswith(("docs/adr/", "docs/history/")):
+        continue
+    try:
+        data = (ROOT / name).read_bytes()
+    except (FileNotFoundError, IsADirectoryError):
+        continue
+    if b"\0" in data:
+        continue
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        continue
+    if chr(0x2019) in text:
+        errors.append(f"{name}: typographic apostrophe U+2019 outside the archives (straight apostrophes only)")
 
 if errors:
     print("documentation integrity: FAIL", file=sys.stderr)

@@ -26,6 +26,7 @@ DRAWIO = ('<mxfile host="app.diagrams.net"><diagram id="d" name="Exemple"><mxGra
           '<mxCell id="e" edge="1" parent="1" source="a" target="{target}"><mxGeometry relative="1" as="geometry"/></mxCell>'
           '</root></mxGraphModel></diagram></mxfile>\n')
 failures = []
+cases = []
 
 
 def fixture():
@@ -78,6 +79,7 @@ def crlf(path):
 
 
 def case(name, change, expect_pass, message=None):
+    cases.append(name)
     work = fixture()
     try:
         change(work)
@@ -97,6 +99,12 @@ def diagram(work, svg=SVG, drawio=DRAWIO.format(target="b"), pair=True):
     (folder / "exemple.svg").write_text(svg, encoding="utf-8")
     if pair:
         (folder / "exemple.drawio").write_text(drawio, encoding="utf-8")
+    # Rule 8c: an asset must be referenced by a Markdown page, so the fixture
+    # links the new pair from an existing guide.
+    page = work / gnome
+    page.write_text(page.read_text(encoding="utf-8")
+                    + "\n![Exemple](assets/diagrams/exemple.svg) — source : [exemple.drawio](assets/diagrams/exemple.drawio)\n",
+                    encoding="utf-8")
 
 
 gnome = "docs/GNOME.md"
@@ -145,9 +153,35 @@ case("routed command missing from the Control Center page",
 case("Control Center page drops a documented command",
      lambda w: edit(w / "docs/CONTROL_CENTER.md", "./control.sh logs tail\n", ""),
      False, "docs/CONTROL_CENTER.md: does not document ./control.sh logs tail")
+case("README loses its metadata", lambda w: strip_metadata(w / "README.md"),
+     False, "README.md: missing or malformed metadata block")
+
+
+def orphan_asset(work):
+    (work / "docs/assets/orphelin.svg").write_text(SVG, encoding="utf-8")
+
+
+case("asset not referenced by any page", orphan_asset,
+     False, "docs/assets/orphelin.svg: asset not referenced from any Markdown page")
+
+
+def apostrophe_in_code(work):
+    (work / "scripts/exemple.sh").write_text("#!/usr/bin/env bash\n# d" + chr(0x2019) + "erreur\n", encoding="utf-8")
+
+
+case("typographic apostrophe in code", apostrophe_in_code,
+     False, "scripts/exemple.sh: typographic apostrophe U+2019")
+
+
+def apostrophe_in_archive(work):
+    path = work / "CHANGELOG.md"
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + chr(0x2019) + "\n", encoding="utf-8")
+
+
+case("typographic apostrophe kept in an archive", apostrophe_in_archive, True)
 
 if failures:
     print("documentation integrity behavior: FAIL", file=sys.stderr)
     print("\n".join(failures), file=sys.stderr)
     sys.exit(1)
-print("documentation integrity behavior: PASS (21 cases)")
+print(f"documentation integrity behavior: PASS ({len(cases)} cases)")

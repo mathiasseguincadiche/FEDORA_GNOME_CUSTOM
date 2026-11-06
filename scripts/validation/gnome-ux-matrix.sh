@@ -28,7 +28,7 @@ if is_true "${ENABLE_KVM:-true}"; then "$REPO_ROOT/diagnostics/nautilus-vm-live-
 probe_dir="$HOME/FGC Ptyxis CWD Test"; mkdir -p "$probe_dir"; nautilus --new-window "$probe_dir" >/dev/null 2>&1 &
 cleanup(){ rm -rf -- "$probe_dir"; }; trap cleanup EXIT
 ask(){ local label="$1" answer; printf '\n[%s]\nTapez PASS uniquement après vérification visuelle : ' "$label"; read -r answer; if [[ "$answer" != PASS ]]; then ui_error "Visual check refused: $label"; exit "$EXIT_PRECHECK_FAILED"; fi; ui_check OK "$label" PASS; }
-ask "GNOME Overview : ouverture fluide, aucune corruption graphique ni bannière d’erreur"
+ask "GNOME Overview : ouverture fluide, aucune corruption graphique ni bannière d'erreur"
 ask 'Dock : ordre Golden correct, lancement et focus des favoris cohérents'
 ask 'DING : contenu réel de ~/Bureau visible, Corbeille visible, pas de volumes parasites'
 ask 'Afficher le bureau : bouton et Super+D masquent/restaurent correctement les fenêtres'
