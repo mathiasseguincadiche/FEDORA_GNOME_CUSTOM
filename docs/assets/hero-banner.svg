@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" font-family="Arial, sans-serif">
+  <title>Bannière Fedora Golden Workstation</title>
+  <desc>Bannière sombre du projet : titre, pile cible Fedora 45 Workstation et GNOME 51, fenêtre de la console control.sh et parcours du poste en cinq étapes.</desc>
+  <rect width="960" height="360" fill="#0F172A"/>
+  <text x="48" y="96" font-size="38" font-weight="bold" fill="#F8FAFC">Fedora Golden Workstation</text>
+  <text x="48" y="136" font-size="20" font-weight="bold" fill="#93C5FD">Fedora 45 Workstation · GNOME 51</text>
+  <text x="48" y="172" font-size="17" fill="#CBD5E1">Un poste de référence reconstruit à l'identique,</text>
+  <text x="48" y="196" font-size="17" fill="#CBD5E1">piloté par une seule interface de contrôle.</text>
+  <rect x="620" y="56" width="292" height="200" rx="10" fill="#1E293B" stroke="#64748B"/>
+  <path d="M 630 56 h 272 a 10 10 0 0 1 10 10 v 20 h -292 v -20 a 10 10 0 0 1 10 -10 z" fill="#334155"/>
+  <text x="638" y="80" font-size="13" font-weight="bold" fill="#F8FAFC">./control.sh</text>
+  <circle cx="868" cy="70" r="5" fill="#94A3B8"/>
+  <circle cx="888" cy="70" r="5" fill="#94A3B8"/>
+  <circle cx="908" cy="70" r="5" fill="#94A3B8"/>
+  <text x="638" y="122" font-size="14" font-weight="bold" fill="#93C5FD">› status</text>
+  <text x="638" y="148" font-size="14" fill="#E2E8F0">doctor</text>
+  <text x="638" y="174" font-size="14" fill="#E2E8F0">install</text>
+  <text x="638" y="200" font-size="14" fill="#E2E8F0">update</text>
+  <text x="638" y="226" font-size="14" fill="#E2E8F0">backup · cert · logs</text>
+  <text x="638" y="248" font-size="14" font-weight="bold" fill="#F8FAFC">$</text>
+  <rect x="656" y="236" width="9" height="14" fill="#E2E8F0"/>
+  <rect x="82" y="270" width="140" height="38" rx="8" fill="#1E293B" stroke="#94A3B8"/>
+  <text x="152" y="294" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">1 · Live USB</text>
+  <line x1="224" y1="289" x2="240" y2="289" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="240,284 248,289 240,294" fill="#94A3B8"/>
+  <rect x="246" y="270" width="140" height="38" rx="8" fill="#1E293B" stroke="#94A3B8"/>
+  <text x="316" y="294" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">2 · dry-run</text>
+  <line x1="388" y1="289" x2="404" y2="289" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="404,284 412,289 404,294" fill="#94A3B8"/>
+  <rect x="410" y="270" width="140" height="38" rx="8" fill="#FCD34D"/>
+  <text x="480" y="294" text-anchor="middle" font-size="15" font-weight="bold" fill="#0F172A">3 · APPLY</text>
+  <line x1="552" y1="289" x2="568" y2="289" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="568,284 576,289 568,294" fill="#94A3B8"/>
+  <rect x="574" y="270" width="140" height="38" rx="8" fill="#1E293B" stroke="#94A3B8"/>
+  <text x="644" y="294" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">4 · Gate 3</text>
+  <line x1="716" y1="289" x2="732" y2="289" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="732,284 740,289 732,294" fill="#94A3B8"/>
+  <rect x="738" y="270" width="140" height="38" rx="8" fill="#4ADE80"/>
+  <text x="808" y="294" text-anchor="middle" font-size="15" font-weight="bold" fill="#0F172A">5 · Golden</text>
+  <text x="480" y="338" text-anchor="middle" font-size="13" fill="#94A3B8">Parcours du poste : contrôle Live USB, essai à blanc, application protégée, qualification Gate 3, certification Golden.</text>
+</svg>

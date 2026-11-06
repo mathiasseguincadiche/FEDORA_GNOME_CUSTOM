@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" font-family="Arial, sans-serif">
+  <title>Maquette de l'interface de contrôle du poste</title>
+  <desc>Console control.sh en thème sombre : barre de titre, menu des dix domaines, tableau de bord à six cartes reprenant l'état réel, rappel des garde-fous et ligne de commande. Maquette illustrative, pas une capture réelle.</desc>
+  <rect width="960" height="680" fill="#0F172A"/>
+  <rect x="20" y="20" width="920" height="600" rx="12" fill="#0F172A" stroke="#334155"/>
+  <path d="M 32 20 h 896 a 12 12 0 0 1 12 12 v 44 h -920 v -44 a 12 12 0 0 1 12 -12 z" fill="#1E293B"/>
+  <text x="44" y="58" font-size="15" font-weight="bold" fill="#F8FAFC">./control.sh — Fedora Golden Workstation</text>
+  <circle cx="880" cy="48" r="6" fill="#94A3B8"/>
+  <circle cx="902" cy="48" r="6" fill="#94A3B8"/>
+  <circle cx="924" cy="48" r="6" fill="#94A3B8"/>
+  <rect x="20" y="76" width="220" height="544" fill="#1E293B"/>
+  <text x="44" y="102" font-size="12" font-weight="bold" fill="#94A3B8">MENU</text>
+  <rect x="32" y="112" width="196" height="32" rx="6" fill="#0F172A" stroke="#93C5FD"/>
+  <text x="52" y="133" font-size="15" font-weight="bold" fill="#93C5FD">status</text>
+  <text x="52" y="170" font-size="15" fill="#E2E8F0">doctor</text>
+  <text x="52" y="200" font-size="15" fill="#E2E8F0">install</text>
+  <text x="52" y="230" font-size="15" fill="#E2E8F0">update</text>
+  <text x="52" y="260" font-size="15" fill="#E2E8F0">kernel</text>
+  <text x="52" y="290" font-size="15" fill="#E2E8F0">kvm</text>
+  <text x="52" y="320" font-size="15" fill="#E2E8F0">backup</text>
+  <text x="52" y="350" font-size="15" fill="#E2E8F0">perf</text>
+  <text x="52" y="380" font-size="15" fill="#E2E8F0">cert</text>
+  <text x="52" y="410" font-size="15" fill="#E2E8F0">logs</text>
+  <text x="44" y="580" font-size="12" fill="#94A3B8">help : tout lister,</text>
+  <text x="44" y="598" font-size="12" fill="#94A3B8">sans rien exécuter</text>
+  <text x="272" y="112" font-size="20" font-weight="bold" fill="#F8FAFC">Tableau de bord</text>
+  <text x="272" y="136" font-size="13" fill="#94A3B8">affiché par ./control.sh status</text>
+  <rect x="272" y="156" width="204" height="140" rx="10" fill="#1E293B" stroke="#334155"/>
+  <text x="288" y="184" font-size="12" fill="#94A3B8">CI</text>
+  <circle cx="454" cy="180" r="5" fill="#4ADE80"/>
+  <text x="288" y="216" font-size="20" font-weight="bold" fill="#4ADE80">verte</text>
+  <text x="288" y="242" font-size="11" fill="#94A3B8">chaque pull request,</text>
+  <text x="288" y="258" font-size="11" fill="#94A3B8">chaque commit de main</text>
+  <rect x="488" y="156" width="204" height="140" rx="10" fill="#1E293B" stroke="#334155"/>
+  <text x="504" y="184" font-size="12" fill="#94A3B8">Tests de comportement</text>
+  <circle cx="670" cy="180" r="5" fill="#4ADE80"/>
+  <text x="504" y="216" font-size="20" font-weight="bold" fill="#4ADE80">vérifiés</text>
+  <text x="504" y="242" font-size="11" fill="#94A3B8">21 cas,</text>
+  <text x="504" y="258" font-size="11" fill="#94A3B8">en VM jetable</text>
+  <rect x="704" y="156" width="204" height="140" rx="10" fill="#1E293B" stroke="#334155"/>
+  <text x="720" y="184" font-size="12" fill="#94A3B8">Session GNOME 51</text>
+  <circle cx="886" cy="180" r="5" fill="#4ADE80"/>
+  <text x="720" y="216" font-size="20" font-weight="bold" fill="#4ADE80">vérifiée</text>
+  <text x="720" y="242" font-size="11" fill="#94A3B8">six extensions,</text>
+  <text x="720" y="258" font-size="11" fill="#94A3B8">redémarrage, restauration</text>
+  <rect x="272" y="308" width="204" height="140" rx="10" fill="#1E293B" stroke="#334155"/>
+  <text x="288" y="336" font-size="12" fill="#94A3B8">Média Fedora 45</text>
+  <circle cx="454" cy="332" r="5" fill="#4ADE80"/>
+  <text x="288" y="368" font-size="20" font-weight="bold" fill="#4ADE80">prêt</text>
+  <text x="288" y="394" font-size="11" fill="#94A3B8">ISO signée,</text>
+  <text x="288" y="410" font-size="11" fill="#94A3B8">RPM stables</text>
+  <rect x="488" y="308" width="204" height="140" rx="10" fill="#1E293B" stroke="#334155"/>
+  <text x="504" y="336" font-size="12" fill="#94A3B8">Live USB</text>
+  <circle cx="670" cy="332" r="5" fill="#FCD34D"/>
+  <text x="504" y="368" font-size="20" font-weight="bold" fill="#FCD34D">non vérifié</text>
+  <text x="504" y="394" font-size="11" fill="#94A3B8">contrôle du PC,</text>
+  <text x="504" y="410" font-size="11" fill="#94A3B8">à faire sur le matériel</text>
+  <rect x="704" y="308" width="204" height="140" rx="10" fill="#1E293B" stroke="#334155"/>
+  <text x="720" y="336" font-size="12" fill="#94A3B8">Gate 3</text>
+  <circle cx="886" cy="332" r="5" fill="#FCD34D"/>
+  <text x="720" y="368" font-size="20" font-weight="bold" fill="#FCD34D">non vérifié</text>
+  <text x="720" y="394" font-size="11" fill="#94A3B8">qualification du poste,</text>
+  <text x="720" y="410" font-size="11" fill="#94A3B8">à faire sur le matériel</text>
+  <rect x="272" y="468" width="636" height="36" rx="8" fill="#1E293B" stroke="#334155"/>
+  <text x="590" y="491" text-anchor="middle" font-size="13" fill="#E2E8F0">Garde-fous : essai à blanc · sauvegarde vérifiée · confirmation explicite · PC physique</text>
+  <rect x="272" y="524" width="636" height="48" rx="8" fill="#1E293B" stroke="#64748B"/>
+  <text x="292" y="554" font-size="16" font-weight="bold" fill="#F8FAFC">$ ./control.sh</text>
+  <rect x="420" y="540" width="9" height="18" fill="#F8FAFC"/>
+  <text x="480" y="660" text-anchor="middle" font-size="14" fill="#94A3B8">Maquette de l'interface de contrôle, pas une capture réelle. Statuts conformes à l'état réel au 2026-11-06.</text>
+</svg>

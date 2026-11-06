@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Documentation (README, décision du propriétaire, vitrine visuelle) :
+  - **Console au centre** : le README devient une page d'accueil illustrée. Une bannière sombre ouvre la page (titre, pile cible Fedora 45 / GNOME 51, fenêtre `./control.sh`, parcours Live USB, dry-run, APPLY, Gate 3, Golden) ; la nouvelle section « Tout se pilote depuis la console » affiche une maquette de l'interface de contrôle (menu des dix domaines, six cartes reprenant l'état réel, rappel des garde-fous, ligne de commande) suivie du parcours du poste avec les commandes réelles ; trois promesses (reproductible, prouvé, gardé) et une fiche du poste remplacent les tableaux de présentation. « État réel » est conservé tel quel, ancre `#état-réel` comprise. Les deux maquettes SVG sont étiquetées comme telles et vivent dans `docs/assets/`, hors générateur `tools/diagrams/`, comme `desktop-preview.svg`. Toutes les commandes citées restent routées et toutes les pages restent accessibles depuis le README (`tests/test_docs_integrity.py`).
+
 - Documentation (README, décision du propriétaire) :
   - **Démarrage rapide** : le README s'ouvre désormais sur un tableau de six parcours (comprendre, vérifier le code, vérifier le PC avant d'installer, installer, configurer et utiliser, voir tous les guides), avec une commande quand il y en a une et le guide qui fait foi. L'ancienne table « Par où commencer » est absorbée par la nouvelle ; « État réel » et les autres sections ne changent pas. `tests/test_docs_integrity.py` passe : toutes les pages restent accessibles depuis le README.
 
