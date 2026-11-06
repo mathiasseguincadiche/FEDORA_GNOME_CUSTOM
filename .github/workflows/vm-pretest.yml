@@ -28,6 +28,7 @@ jobs:
           name: fedora-gnome-custom-rocky-vm-pretest-${{ github.run_id }}
           path: |
             .vm-pretest/report.txt
+            .vm-pretest/host-apt.log
             .vm-pretest/console.log
             .vm-pretest/bootstrap.log
             .vm-pretest/verify.log

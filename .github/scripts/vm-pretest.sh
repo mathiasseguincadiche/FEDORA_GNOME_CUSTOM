@@ -33,13 +33,29 @@ report '=== FEDORA_GNOME_CUSTOM REAL ROCKY LINUX 10.2 VM PRE-TEST ==='
 report "commit=$(git -C "$ROOT" rev-parse HEAD)"
 
 report '[1/10] Host VM dependencies'
-# Bounded network waits and an overall limit: a stalled Ubuntu mirror must fail
-# this step quickly instead of holding the runner until the job timeout.
-apt_opts=(-o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3)
-timeout 600 sudo apt-get "${apt_opts[@]}" update -qq
-timeout 900 sudo DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" install -y -qq \
+# Keep the guest-lab dependency set minimal: the Fedora VM lab uses the same
+# --no-install-recommends policy. Ubuntu's recommended GUI/QEMU packages are not
+# part of this headless Rocky qualification and can stall the runner mirror.
+# Use the same Ubuntu-only APT source policy as the passing Shell quality job.
+# Third-party sources on hosted runners are irrelevant and may stall setup.
+# Retain apt output as CI evidence: suppressing it hid the cause of two
+# consecutive 900-second timeouts before the VM was even started.
+sources=/etc/apt/sources.list.d/ubuntu.sources
+[[ -r "$sources" ]] || { report 'FAIL: Ubuntu APT source file unavailable'; exit 15; }
+apt_opts=(
+  -o "Dir::Etc::sourcelist=$sources"
+  -o 'Dir::Etc::sourceparts=-'
+  -o APT::Get::List-Cleanup=0
+  -o Acquire::http::Timeout=30
+  -o Acquire::https::Timeout=30
+  -o Acquire::Retries=3
+  -o DPkg::Lock::Timeout=60
+)
+timeout 600 sudo apt-get "${apt_opts[@]}" update 2>&1 | tee "$LAB/host-apt.log"
+timeout 900 sudo DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" install -y --no-install-recommends \
   qemu-system-x86 qemu-utils cloud-image-utils openssh-client curl ca-certificates \
-  gnupg dnsutils ovmf borgbackup jq >/dev/null
+  gnupg dnsutils ovmf borgbackup jq 2>&1 | tee -a "$LAB/host-apt.log"
+report 'Host VM dependencies installed (minimal headless set)'
 
 report '[2/10] Authenticate Rocky production cloud image'
 cd "$LAB"

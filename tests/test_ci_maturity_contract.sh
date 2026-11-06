@@ -84,6 +84,10 @@ grep -Fq 'guest/rocky-devops/bootstrap-devops.sh' "$ROOT/.github/scripts/vm-pret
 grep -Fq 'docker run --rm hello-world' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'sudo systemctl reboot' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq "actions/upload-artifact@$UPLOAD_ARTIFACT_SHA" "$ROOT/.github/workflows/vm-pretest.yml"
+grep -Fq 'sources=/etc/apt/sources.list.d/ubuntu.sources' "$ROOT/.github/scripts/vm-pretest.sh"
+grep -Fq 'Dir::Etc::sourceparts=-' "$ROOT/.github/scripts/vm-pretest.sh"
+grep -Fq -- '--no-install-recommends' "$ROOT/.github/scripts/vm-pretest.sh"
+grep -Fq '.vm-pretest/host-apt.log' "$ROOT/.github/workflows/vm-pretest.yml"
 grep -Fq 'Backup fail-closed invariants' "$ROOT/.github/workflows/non-regression.yml"
 
 # Shell quality must not depend on unrelated third-party APT repositories
