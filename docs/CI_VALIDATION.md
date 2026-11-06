@@ -1,7 +1,7 @@
 # CI et validation
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — workflows, jobs, étapes et images relus dans `.github/workflows/` ; contextes obligatoires lus dans le ruleset de `main` ; durées mesurées sur les runs de la PR #180 — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — contrôles documentaires et tests d'ancres relus contre `tests/test_docs_integrity.py` et ses fixtures ; revue des workflows et mesures CI du 2026-11-04 conservées — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -139,14 +139,14 @@ Pour diagnostiquer un échec, suivre le [runbook CI](TROUBLESHOOTING.md#un-contr
 
 `tests/test_docs_integrity.py` bloque :
 
-- un lien local ou une ancre cassés, un guide inaccessible depuis le README ;
+- un lien local cassé, une ancre Markdown absente (y compris les titres accentués ou répétés), un guide inaccessible depuis le README ;
 - une commande `./control.sh` que le code ne connaît pas ;
 - un chemin du dépôt cité qui n'existe pas ;
 - un guide sans bloc de métadonnées ;
 - un bloc Mermaid, un schéma sans sa paire `.drawio` / `.svg`, ou une paire qui diffère de ce que produit `tools/diagrams/build.py` (`tests/test_diagram_sources.py`) ;
 - un inventaire logiciel différent des manifests.
 
-`tests/test_docs_integrity_behavior.py` prouve, sur des copies du dépôt, que chacune de ces règles accepte et refuse ce qu'elle doit. Les conventions sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation).
+`tests/test_docs_integrity_behavior.py` exerce les règles sur des copies jetables du dépôt : notamment un lien valide, des ancres absentes, des titres répétés et un faux titre dans un bloc de code. Les conventions sont dans le [guide du contributeur](../CONTRIBUTING.md#écrire-la-documentation). La validation des ancres concerne les liens Markdown locaux, pas les URL externes ni un rendu visuel sur le PC.
 
 ## Ce qui reste à prouver sur le PC
 

@@ -56,6 +56,10 @@ def edit(path, old, new):
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
+def append(path, text):
+    path.write_text(path.read_text(encoding="utf-8") + text, encoding="utf-8")
+
+
 def add_metadata(path):
     title, _, rest = path.read_text(encoding="utf-8").partition("\n")
     path.write_text(title + "\n\n" + METADATA + "\n" + rest.lstrip("\n"), encoding="utf-8")
@@ -109,6 +113,23 @@ def diagram(work, svg=SVG, drawio=DRAWIO.format(target="b"), pair=True):
 
 gnome = "docs/GNOME.md"
 case("unchanged repository", lambda w: None, True)
+case("valid accented Markdown anchor", lambda w: append(w / gnome,
+     "\n[Revenir aux extensions](#les-six-extensions)\n"), True)
+case("missing Markdown anchor in another file",
+     lambda w: append(w / "README.md", "\n[Section absente](docs/INSTALLATION_GUIDE.md#section-inexistante)\n"),
+     False, "README.md: missing Markdown anchor")
+case("missing same-file Markdown anchor",
+     lambda w: append(w / gnome, "\n[Section absente](#section-inexistante)\n"),
+     False, "docs/GNOME.md: missing Markdown anchor")
+case("duplicate heading receives second anchor",
+     lambda w: append(w / gnome, "\n## Exemple répété\n\n## Exemple répété\n\n[Deuxième](#exemple-répété-1)\n"),
+     True)
+case("nonexistent duplicate heading anchor",
+     lambda w: append(w / gnome, "\n## Exemple répété\n\n## Exemple répété\n\n[Troisième](#exemple-répété-2)\n"),
+     False, "docs/GNOME.md: missing Markdown anchor")
+case("code fence does not define a heading",
+     lambda w: append(w / gnome, "\n```markdown\n## Section fictive\n```\n\n[Lien](#section-fictive)\n"),
+     False, "docs/GNOME.md: missing Markdown anchor")
 case("new Mermaid block", lambda w: edit(w / gnome, "## Les six extensions", "```mermaid\nflowchart LR\n  A --> B\n```\n\n## Les six extensions"),
      False, "docs/GNOME.md: Mermaid block")
 case("guide loses its metadata", lambda w: strip_metadata(w / gnome),

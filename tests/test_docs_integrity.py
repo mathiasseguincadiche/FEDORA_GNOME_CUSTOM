@@ -18,9 +18,11 @@ Checks what can actually mislead an operator, never phrasing:
 """
 from datetime import date
 from pathlib import Path
+import html
 import re
 import subprocess
 import sys
+from urllib.parse import unquote
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,6 +56,61 @@ for path in MARKDOWN:
             errors.append(f"{rel(path)}: link escapes the repository: {target}")
         elif not resolved.exists():
             errors.append(f"{rel(path)}: broken link: {target}")
+
+
+def markdown_anchors(path):
+    """Build the anchors rendered for Markdown headings, including duplicate slugs.
+
+    GitHub keeps accented letters in heading fragments and adds -1, -2, etc.
+    to duplicate headings. Explicit HTML id/name anchors are supported too.
+    """
+    anchors, counts = set(), {}
+    fenced = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if re.match(r"^\s*(`{3,}|~{3,})", line):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        for attr in re.findall(r'<(?:a|span|div|h[1-6])\b[^>]*\b(?:id|name)=["\']([^"\']+)["\']', line, re.I):
+            anchors.add(html.unescape(attr))
+        heading = re.match(r"^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if heading is None:
+            continue
+        title = heading.group(1)
+        title = re.sub(r"!?(?:\[([^\]]+)\]\([^)]+\))", r"\1", title)
+        title = re.sub(r"<[^>]+>", "", title)
+        title = html.unescape(title)
+        title = re.sub(r"[`*_~]", "", title)
+        # GitHub's generated fragments retain letters (including accents),
+        # digits, underscores and hyphens; punctuation is removed.
+        slug = re.sub(r"[^\w\s-]", "", title.lower()).replace(" ", "-")
+        if not slug:
+            continue
+        index = counts.get(slug, 0)
+        counts[slug] = index + 1
+        anchors.add(f"{slug}-{index}" if index else slug)
+    return anchors
+
+
+# 1b. A Markdown link can name an existing file yet point to a missing section.
+# Check the fragment as well, including links that refer only to #heading.
+anchor_cache = {}
+for path in MARKDOWN:
+    for link in LINK.findall(path.read_text(encoding="utf-8")):
+        if "#" not in link or link.startswith(("http://", "https://", "mailto:")):
+            continue
+        name, fragment = link.split("#", 1)
+        if not fragment:
+            continue
+        destination = (path.parent / name).resolve() if name else path
+        if not destination.is_relative_to(ROOT) or not destination.is_file() or destination.suffix != ".md":
+            continue  # missing targets and escapes are diagnosed by rule 1
+        fragment = unquote(fragment)
+        if destination not in anchor_cache:
+            anchor_cache[destination] = markdown_anchors(destination)
+        if fragment not in anchor_cache[destination]:
+            errors.append(f"{rel(path)}: missing Markdown anchor: {link}")
 
 # 2. Every guide is reachable from the landing page.
 seen, queue = set(), [ROOT / "README.md"]
