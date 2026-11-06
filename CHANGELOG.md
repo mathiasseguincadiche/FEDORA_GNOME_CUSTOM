@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Documentation (README, décision du propriétaire) :
+  - **Parcours du poste en colonne vertébrale du README** : la page déroule le cycle de vie dans l'ordre retenu par le propriétaire — Live USB (`./control.sh validate live plan` / `run`, preuve `PREINSTALL_ONLY`) → dry-run (`./install.sh --dry-run`) → qualification du matériel (baseline : `./control.sh cert baseline-status` / `baseline-certify`) → install (`./control.sh install apply`, gate protégé exigeant la sauvegarde pré-APPLY `./control.sh install backup`) → configuration (modules de l'APPLY, vérification `./control.sh doctor all`) → backup quotidien (`./control.sh backup now`) → restore si besoin (`./control.sh backup restore`, en dossier d'essai d'abord). La Gate 3 (`./control.sh validate gate3 status`) conclut le parcours. Chaque étape cite sa commande et le guide qui fait foi, et la page rappelle les trois niveaux à ne pas confondre (CI / Live `PREINSTALL_ONLY` / Gate 3).
+
+- Documentation (README, décision du propriétaire) :
   - **README 100 % texte** : les trois visuels SVG de `docs/assets/` (`hero-banner.svg`, `console-mockup.svg`, `desktop-preview.svg`) sont supprimés — plus aucune image dans le README. La page s'ouvre sur le projet et son contexte, met en avant le centre de contrôle `./control.sh` avec un tableau des commandes principales, présente le poste cible et ses composants, puis renvoie vers la documentation par besoin. Seul le badge dynamique du workflow `Tests` demeure. Le contrôle anti-orphelin ajouté par la PR #195 rend cette suppression obligatoire : aucun visuel non référencé ne peut rester dans `docs/assets/`.
 
 - Documentation et contrôles (demande du propriétaire) :
