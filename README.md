@@ -9,6 +9,21 @@ Un dépôt qui décrit, installe et vérifie un poste **Fedora 45 Workstation av
 
 *Maquette illustrative, pas une capture réelle. Les captures du poste seront ajoutées après sa qualification matérielle.*
 
+## Démarrage rapide
+
+Six parcours, du coup d'œil au poste installé. Une commande quand il y en a une, un guide quand il faut le détail.
+
+| Objectif | Par où passer | Pour aller plus loin |
+|---|---|---|
+| Comprendre le projet | Les [notions clés](docs/CONCEPTS.md) : les sept idées qui reviennent dans tous les guides | L'[architecture](docs/ARCHITECTURE.md), les [décisions (ADR)](docs/adr/README.md), le [glossaire](docs/GLOSSARY.md) |
+| Vérifier le code, sans matériel | `python3 -B tests/test_docs_integrity.py`, après un clone du dépôt | Les [runs de la CI](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/workflows/tests.yml) et la [page CI](docs/CI_VALIDATION.md) |
+| Vérifier le PC avant d'installer | Démarrer le PC sur le média Fedora, puis suivre le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md) : rien ne s'écrit sur les disques | La [fiche Fedora 45](docs/FEDORA45_PRIMARY.md), média promu et signature |
+| Installer | Le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours), en cinq phases ; l'essai à blanc `./install.sh --dry-run` en est le premier pas | La [qualification](docs/QUALIFICATION.md), qui fait foi pour le statut « Golden » |
+| Configurer et utiliser au quotidien | `./control.sh`, le point d'entrée unique, ouvre le [centre de contrôle](docs/CONTROL_CENTER.md) | Les réglages propres au poste dans `config/local.conf` ; le [dépannage](docs/TROUBLESHOOTING.md) quand quelque chose résiste |
+| Voir tous les guides | Le [portail de la documentation](docs/README.md) | La [feuille de route](docs/ROADMAP.md) et l'[état réel](#état-réel) ci-dessous |
+
+Ce tableau oriente, il ne remplace ni les guides ni les preuves : le [Live USB ne déverrouille jamais l'APPLY](docs/CONCEPTS.md#3-trois-niveaux-de-preuve-ci-live-usb-gate-3), et ce qui est vérifié, par quoi, est dans [État réel](#état-réel).
+
 ## Le problème et l'objectif
 
 Une installation faite à la main se perd : après une réinstallation, il faut retrouver chaque réglage, chaque logiciel et chaque correctif, sans savoir si le résultat est le même. Ce projet écrit tout cela dans un dépôt Git. Chaque réglage y est versionné, expliqué, testé et rejouable.
@@ -42,15 +57,6 @@ Ce tableau distingue ce que le dépôt contient, ce que la CI a vérifié et ce 
 | Installation, application et qualification (Gate 3) | Non vérifié | À faire sur le matériel ([qualification](docs/QUALIFICATION.md)) |
 
 **Une CI verte ne certifie pas le PC.** Seule la Gate 3, exécutée sur la machine installée, peut établir le statut « Golden runtime-certified ». Les versions publiées sont listées dans les [releases](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/releases) ; les prochaines étapes, dans la [feuille de route](docs/ROADMAP.md).
-
-## Par où commencer
-
-| Je veux… | Lire |
-|---|---|
-| Comprendre le projet et ses choix | Les [notions clés](docs/CONCEPTS.md), l'[architecture](docs/ARCHITECTURE.md), puis les [décisions (ADR)](docs/adr/README.md) et le [glossaire](docs/GLOSSARY.md) |
-| Installer ce PC | Le [contrôle Live USB](docs/FEDORA45_LIVE_PREFLIGHT.md), puis le [guide d'installation](docs/INSTALLATION_GUIDE.md#le-parcours) et la [qualification](docs/QUALIFICATION.md) |
-| Utiliser et entretenir le poste | Le [centre de contrôle](docs/CONTROL_CENTER.md), puis le [dépannage](docs/TROUBLESHOOTING.md) |
-| Voir tous les guides | Le [portail de la documentation](docs/README.md) |
 
 ## Contexte du projet
 
