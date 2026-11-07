@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — parcours Live, préparation de `/data`, provenance du média et effets des étapes recoupés avec les moteurs ; opérations physiques non rejouées — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — parcours Live, préparation de `/data`, dépendances `gpg`/`gpgv`, provenance du média et effets des étapes relus contre les moteurs ; opérations physiques non rejouées — matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 
@@ -88,7 +88,7 @@ La section [En cas d'échec](#en-cas-déchec) liste les refus les plus probables
 
 **But :** prouver que l'ISO à écrire sur la clé USB est bien le média final promu, signé par Fedora.
 
-**Où :** une machine Linux disposant du dépôt, de `gpgv`, `python3` et `sha256sum`, avant d'écrire la clé.
+**Où :** une machine Linux disposant du dépôt, de `gpg` (pour convertir la clé), de `gpgv` (pour vérifier la signature), de `python3` et de `sha256sum`, avant d'écrire la clé. Les deux commandes GnuPG ont des rôles distincts : posséder `gpgv` seul ne suffit pas à exécuter l'exemple ci-dessous.
 
 Le verrou `installer/fedora45-media.lock` fixe le média attendu : `Fedora-Workstation-Live-45-1.4.x86_64.iso`, SHA-256 `68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb`. Le vérificateur demande un trousseau contenant la clé Fedora 45. Sur une Fedora, il se prépare à partir du paquet `fedora-gpg-keys` ; ailleurs, la clé publique est sur la [page sécurité de Fedora](https://fedoraproject.org/security/).
 
