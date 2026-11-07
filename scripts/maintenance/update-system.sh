@@ -9,6 +9,7 @@ install_lock_acquire || exit $?
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 source "$REPO_ROOT/lib/kernel_lifecycle.sh"
+source "$REPO_ROOT/lib/gaming_repositories.sh"
 
 UPDATE_STATE_FILE="$STATE_ROOT/last-system-update.status"
 UPDATE_REBOOT_REQUIRED="unknown"
@@ -34,6 +35,7 @@ Usage: update-system.sh [ACTION]
   --offline-log     Show the latest DNF5 offline transaction log
   --flatpak-only    Update Flatpak applications only
   --firmware-check  Show firmware updates only; never flashes firmware
+  --scope           Explain which update domains are managed, external or pinned
 EOF
 }
 
@@ -110,42 +112,129 @@ check_dnf() {
   require_dnf5
   printf '\n--- Fedora packages ---\n'
   if dnf5 check-upgrade; then
-    ui_check PASS 'Fedora updates' 'no pending package upgrade reported'
+    ui_check PASS 'Mises à jour Fedora' 'aucun paquet à mettre à jour signalé'
   else
     rc=$?
     if ((rc == 100)); then
-      ui_check WARN 'Fedora updates' 'updates are available'
+      ui_check WARN 'Mises à jour Fedora' 'des mises à jour sont disponibles'
     else
-      ui_check KO 'Fedora updates' "dnf5 check-upgrade rc=$rc"
+      ui_check KO 'Mises à jour Fedora' "recherche DNF5 impossible (rc=$rc)"
       return "$rc"
     fi
   fi
 }
 
 check_kernel() {
+  local rc=0
   printf '\n--- Kernel Vanilla rolling N/N-1 ---\n'
   if is_true "${ENABLE_KERNEL_VANILLA_STABLE:-true}"; then
-    kernel_lifecycle_status || true
+    kernel_lifecycle_status || rc=$?
+    if ((rc != 0)); then
+      ui_check KO 'État du noyau' "inventaire du canal impossible (rc=$rc) ; noyau non vérifié"
+      return "$rc"
+    fi
   else
-    ui_check EXPECTED 'Kernel Vanilla' 'disabled by configuration'
+    ui_check EXPECTED 'Noyau Vanilla' 'désactivé par la configuration'
   fi
 }
 
 check_flatpak() {
-  local pending=''
+  local pending='' rc=0
   printf '\n--- Flatpak ---\n'
-  if ! command_exists flatpak; then ui_check EXPECTED 'Flatpak updates' 'flatpak unavailable'; return 0; fi
-  pending="$(flatpak remote-ls --updates --columns=application 2>/dev/null | sed '/^[[:space:]]*$/d' || true)"
-  if [[ -n "$pending" ]]; then printf '%s\n' "$pending"; ui_check WARN 'Flatpak updates' 'updates are available'; else ui_check PASS 'Flatpak updates' 'no pending application update reported'; fi
+  if ! command_exists flatpak; then ui_check EXPECTED 'Mises à jour Flatpak' 'Flatpak absent'; return 0; fi
+  pending="$(flatpak remote-ls --updates --columns=application 2>&1)" || rc=$?
+  if ((rc != 0)); then
+    ui_check KO 'Mises à jour Flatpak' "consultation impossible (rc=$rc) ; état à jour non vérifié"
+    ui_info "Flatpak diagnostic: ${pending//$'\n'/ }"
+    return "$rc"
+  fi
+  pending="$(sed '/^[[:space:]]*$/d' <<<"$pending")"
+  if [[ -n "$pending" ]]; then printf '%s\n' "$pending"; ui_check WARN 'Mises à jour Flatpak' 'des mises à jour sont disponibles'; else ui_check PASS 'Mises à jour Flatpak' 'aucune mise à jour disponible signalée'; fi
+}
+
+# Steam's Fedora-owned repository is enabled only for its installation by the
+# Gaming module. An ordinary DNF upgrade must enable it again if Steam is
+# installed, otherwise "update all" could silently omit the Steam RPM.
+# Only the exact Fedora-owned repository definition is permitted.
+update_steam_repository_flag() {
+  local repo_file owner repos
+  command_exists rpm || return 0
+  rpm -q steam >/dev/null 2>&1 || return 0
+  repo_file="$(gaming_steam_repository_file /)" || {
+    ui_error 'Steam RPM installé, mais définition de son dépôt Fedora introuvable'
+    return "$EXIT_PRECHECK_FAILED"
+  }
+  if [[ ! -f "$repo_file" || -L "$repo_file" ]] || ! grep -Fxq '[rpmfusion-nonfree-steam]' "$repo_file"; then
+    ui_error 'Définition du dépôt Steam non conforme (fichier ou section inattendue)'
+    return "$EXIT_SECURITY_BLOCK"
+  fi
+  owner="$(rpm -qf --qf '%{NAME}\n' "$repo_file" 2>/dev/null)" || return "$EXIT_PRECHECK_FAILED"
+  [[ "$owner" == fedora-workstation-repositories ]] || {
+    ui_error 'Le dépôt Steam ne provient pas du paquet Fedora fedora-workstation-repositories'
+    return "$EXIT_SECURITY_BLOCK"
+  }
+  repos="$(dnf5 repolist --all 2>/dev/null)" || {
+    ui_error 'Impossible de consulter les dépôts DNF5 pour Steam RPM'
+    return "$EXIT_PRECHECK_FAILED"
+  }
+  awk '$1 == "rpmfusion-nonfree-steam" { found=1 } END { exit !found }' <<<"$repos" || {
+    ui_error 'Dépôt Steam RPM installé mais invisible pour DNF5'
+    return "$EXIT_PRECHECK_FAILED"
+  }
+  printf '%s\n' '--enablerepo=rpmfusion-nonfree-steam'
+}
+
+check_update_scope() {
+  local steam_repo='' rc=0
+  printf '\n--- Périmètre de maintenance ---\n'
+  ui_check INFO 'RPM / codecs / Mesa' 'DNF5 : paquets installés, dans les dépôts actifs et disponibles'
+  ui_check INFO 'Noyau / microcode' 'RPM et noyau N/N-1 protégé ; version amont éventuellement reportée'
+  if command_exists rpm && rpm -q steam >/dev/null 2>&1; then
+    steam_repo="$(update_steam_repository_flag)" || rc=$?
+    if ((rc == 0)) && [[ "$steam_repo" == --enablerepo=rpmfusion-nonfree-steam ]]; then
+      ui_check PASS 'Dépôt Steam RPM' 'source Fedora vérifiée et disponible pour la prochaine mise à jour DNF5'
+    else
+      ui_check KO 'Dépôt Steam RPM' 'source non vérifiable ; corriger le dépôt avant la mise à jour RPM'
+      return "$EXIT_PRECHECK_FAILED"
+    fi
+    ui_check EXPECTED 'Proton / jeux Steam' 'mises à jour gérées par Steam, hors DNF5 et centre de contrôle'
+  else
+    ui_check EXPECTED 'Steam RPM / Proton' 'aucun Steam RPM installé ; mise à jour Steam non revendiquée'
+  fi
+  if is_true "${ENABLE_GNOME_EXTENSIONS:-false}"; then
+    ui_check INFO 'Extensions GNOME' 'RPM via DNF5 ; artefacts épinglés à revoir et approuver séparément'
+  else
+    ui_check EXPECTED 'Extensions GNOME' 'profil des extensions du projet désactivé'
+  fi
+  ui_check EXPECTED 'AppImage autonomes' 'hors DNF5/Flatpak ; mise à jour et validation propres à chaque éditeur'
+  ui_check EXPECTED 'Firmware périphériques' 'fwupdmgr consulte les versions ; aucun flash automatique'
+  ui_check INFO 'Modules et configuration' 'modifications à reconverger puis valider via les diagnostics et Gates applicables'
+}
+
+check_updates_overview() {
+  local failed=0
+  check_dnf || failed=1
+  check_kernel || failed=1
+  check_flatpak || failed=1
+  check_firmware || failed=1
+  check_update_scope || failed=1
+  show_offline_status
+  if ((failed != 0)); then
+    ui_check KO 'Bilan mises à jour' 'au moins un domaine non vérifié ; consulter les contrôles ci-dessus'
+    return "$EXIT_PRECHECK_FAILED"
+  fi
 }
 
 check_firmware() {
+  local response='' rc=0
   printf '\n--- Firmware ---\n'
-  if ! command_exists fwupdmgr; then ui_check EXPECTED 'Firmware updates' 'fwupdmgr unavailable'; return 0; fi
-  if fwupdmgr get-updates --no-metadata-check 2>/dev/null; then
-    ui_check PASS 'Firmware query' 'completed — no firmware was flashed'
+  if ! command_exists fwupdmgr; then ui_check EXPECTED 'Firmware matériel' 'fwupdmgr absent'; return 0; fi
+  response="$(fwupdmgr get-updates --no-metadata-check 2>&1)" || rc=$?
+  [[ -z "$response" ]] || printf '%s\n' "$response"
+  if ((rc == 0)); then
+    ui_check PASS 'Consultation firmware' 'terminée selon les métadonnées locales ; aucun flash ; état matériel non certifié'
   else
-    ui_check WARN 'Firmware query' 'no update or provider returned non-zero; no firmware was flashed'
+    ui_check WARN 'Consultation firmware' "retour fwupdmgr=$rc : aucune mise à jour ou consultation incertaine ; aucun flash"
   fi
 }
 
@@ -187,12 +276,16 @@ prepare_kernel_rolling_target() {
 
 prepare_dnf_offline() {
   local mode="$1"
+  local steam_repo_flag=''
   require_dnf5
   if [[ -s "$UPDATE_STATE_FILE" && "$(update_state_value phase)" =~ ^(prepared|reboot-requested)$ ]]; then
     ui_error 'A project-owned offline update is already pending; finalize it before preparing another one'
     exit "$EXIT_SECURITY_BLOCK"
   fi
   ui_banner 'FEDORA WORKSTATION UPDATE' 'PREPARE DNF5 OFFLINE TRANSACTION'
+  # Resolve all required package sources before pinning a kernel target or
+  # creating a DNF5 transaction: a missing Gaming repository must fail early.
+  steam_repo_flag="$(update_steam_repository_flag)" || return $?
   prepare_kernel_rolling_target || exit $?
   UPDATE_SOURCE_BOOT_ID="$(update_current_boot_id)"
   UPDATE_TRANSACTION_COMMENT="fgc-offline-$(python3 -c 'import uuid; print(uuid.uuid4())')"
@@ -201,7 +294,9 @@ prepare_dnf_offline() {
   if is_true "$UPDATE_KERNEL_DEFERRED"; then
     kernel_exclusion=(--exclude="$(kernel_lifecycle_managed_packages_csv)")
   fi
-  sudo dnf5 --refresh upgrade --offline -y --comment="$UPDATE_TRANSACTION_COMMENT" "${kernel_exclusion[@]}"
+  local -a steam_repo_args=()
+  [[ -z "$steam_repo_flag" ]] || steam_repo_args=("$steam_repo_flag")
+  sudo dnf5 --refresh upgrade --offline -y --comment="$UPDATE_TRANSACTION_COMMENT" "${kernel_exclusion[@]}" "${steam_repo_args[@]}"
   if ! sudo test -e /usr/lib/sysimage/libdnf5/offline/transaction.json; then
     UPDATE_REBOOT_REQUIRED=false
     if [[ "$mode" == full ]]; then
@@ -359,7 +454,7 @@ require_fedora
 case "$mode" in
   --check)
     ui_banner 'FEDORA WORKSTATION UPDATE' 'READ-ONLY UPDATE OVERVIEW'
-    check_dnf; check_kernel; check_flatpak; check_firmware; show_offline_status
+    check_updates_overview
     ;;
   --apply)
     require_baremetal_update; mandatory_preupdate_backup; prepare_dnf_offline full
@@ -384,6 +479,9 @@ case "$mode" in
     ;;
   --firmware-check)
     check_firmware
+    ;;
+  --scope)
+    check_update_scope
     ;;
   *) usage >&2; exit "$EXIT_USAGE" ;;
 esac

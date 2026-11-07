@@ -286,7 +286,7 @@ Usage:
   ./control.sh                                      Menu interactif
   ./control.sh status                               Tableau de bord read-only
   ./control.sh install prepare-tools|dry-run|backup|apply
-  ./control.sh update check|all|dnf|flatpak|firmware
+  ./control.sh update check|scope|all|dnf|flatpak|firmware|status|log|reboot|finalize
   ./control.sh update status|log|reboot|finalize
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|polish|remote|kvm|backup

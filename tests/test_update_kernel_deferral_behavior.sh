@@ -84,6 +84,11 @@ run_update() {
       fi
       return "$kernel_rc"
     }
+    if [[ "${T_STEAM_FLAG:-false}" == true ]]; then
+      update_steam_repository_flag() { printf '%s\n' '--enablerepo=rpmfusion-nonfree-steam'; }
+    elif [[ "${T_STEAM_REJECT:-false}" == true ]]; then
+      update_steam_repository_flag() { return "$EXIT_SECURITY_BLOCK"; }
+    fi
     capture_offline_log() { :; }
     check_firmware() { :; }
     mkdir -p "$tmp/fake-root/scripts/maintenance"
@@ -130,6 +135,16 @@ reset
 run_update 0 prepare || fail "normal update failed: $(tail -5 "$tmp/out.log")"
 grep -Eq -- '^--refresh upgrade --offline -y --comment=fgc-offline-[0-9a-f-]{36}$' "$tmp/dnf.log" || fail "unexpected transaction: $(cat "$tmp/dnf.log")"
 [[ "$(cat "$tmp/pinned")" == 7.2.10-200.vanilla.fc44.x86_64 && "$(state kernel_deferred)" == false ]] || fail 'normal kernel target not pinned'
+
+# An installed RPM Steam is updated from its Fedora-owned repository, which is
+# disabled for ordinary DNF transactions after installation.
+reset
+T_STEAM_FLAG=true run_update 0 prepare || fail 'Steam-aware offline preparation failed'
+grep -Eq -- '^--refresh upgrade --offline -y --comment=fgc-offline-[0-9a-f-]{36} --enablerepo=rpmfusion-nonfree-steam$' "$tmp/dnf.log" \
+  || fail "Steam repository was not passed to the DNF5 transaction: $(cat "$tmp/dnf.log")"
+reset
+rc=0; T_STEAM_REJECT=true run_update 0 prepare || rc=$?
+[[ "$rc" -eq 50 && ! -s "$tmp/dnf.log" && ! -e "$tmp/pinned" ]] || fail 'Steam provenance failure modified the kernel target or DNF5 transaction'
 
 # A previous offline journal and a clean packagedb cannot prove this update ran.
 for scenario in same-boot staged old-history failed-history; do

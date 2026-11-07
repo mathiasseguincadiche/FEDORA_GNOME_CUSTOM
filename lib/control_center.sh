@@ -443,6 +443,11 @@ cc_update_menu() {
     cc_option 3 'Mise à jour Fedora seulement' 'DNF, backup obligatoire'
     cc_option 4 'Mise à jour Flatpak seulement'
     cc_option 5 'Firmware disponible' 'consultation uniquement'
+    cc_option 6 'État de la transaction' 'préparée / redémarrage / finalisation'
+    cc_option 7 'Journal DNF5 hors ligne' 'preuve de la dernière transaction'
+    cc_option 8 'Redémarrer pour appliquer' 'après préparation ; confirmation requise'
+    cc_option 9 'Finaliser après redémarrage' 'noyau / RPM / Flatpak / diagnostics'
+    cc_option 10 'Périmètre des mises à jour' 'RPM / Steam / Proton / extensions / AppImage'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
@@ -459,6 +464,15 @@ cc_update_menu() {
         ;;
       4) cc_interactive_exec 'MISE À JOUR FLATPAK' "$REPO_ROOT/scripts/maintenance/update-system.sh" --flatpak-only ;;
       5) cc_interactive_exec 'FIRMWARE DISPONIBLE — AUCUN FLASH' "$REPO_ROOT/scripts/maintenance/update-system.sh" --firmware-check ;;
+      6) cc_interactive_view 'ÉTAT DE LA TRANSACTION' "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-status ;;
+      7) cc_interactive_view 'JOURNAL DNF5 HORS LIGNE' "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-log ;;
+      8)
+        if cc_confirm 'Redémarrer maintenant pour appliquer la transaction DNF5 déjà préparée ?'; then
+          cc_interactive_exec 'REDÉMARRAGE DNF5 HORS LIGNE' "$REPO_ROOT/scripts/maintenance/update-system.sh" --offline-reboot
+        fi
+        ;;
+      9) cc_interactive_exec 'FINALISATION ET DIAGNOSTICS' "$REPO_ROOT/scripts/maintenance/update-system.sh" --finalize ;;
+      10) cc_interactive_view 'COUVERTURE DES MISES À JOUR' "$REPO_ROOT/scripts/maintenance/update-system.sh" --scope ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -770,7 +784,7 @@ Usage:
   ./control.sh                         Menu interactif
   ./control.sh status                  Tableau de bord read-only
   ./control.sh install prepare-tools|dry-run|backup|apply
-  ./control.sh update check|all|dnf|flatpak|firmware
+  ./control.sh update check|scope|all|dnf|flatpak|firmware|status|log|reboot|finalize
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
@@ -802,6 +816,7 @@ cc_cli_dispatch() {
     update)
       case "$action" in
         check) "$REPO_ROOT/scripts/maintenance/update-system.sh" --check ;;
+        scope) "$REPO_ROOT/scripts/maintenance/update-system.sh" --scope ;;
         all) "$REPO_ROOT/scripts/maintenance/update-system.sh" --apply ;;
         dnf) "$REPO_ROOT/scripts/maintenance/update-system.sh" --dnf-only ;;
         flatpak) "$REPO_ROOT/scripts/maintenance/update-system.sh" --flatpak-only ;;
