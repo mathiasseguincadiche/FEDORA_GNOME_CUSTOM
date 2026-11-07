@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
 > Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — séparation entre `GO` Live et autorisation humaine relue contre `lib/validation_gates.sh` et `scripts/validation/live-usb.sh` ; séquence technique conservée — matériel : non vérifié
+> Dernière vérification : 2026-11-06 — parcours Live, préparation de `/data`, provenance du média et effets des étapes recoupés avec les moteurs ; opérations physiques non rejouées — matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 
@@ -92,15 +92,28 @@ La section [En cas d'échec](#en-cas-déchec) liste les refus les plus probables
 
 Le verrou `installer/fedora45-media.lock` fixe le média attendu : `Fedora-Workstation-Live-45-1.4.x86_64.iso`, SHA-256 `68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb`. Le vérificateur demande un trousseau contenant la clé Fedora 45. Sur une Fedora, il se prépare à partir du paquet `fedora-gpg-keys` ; ailleurs, la clé publique est sur la [page sécurité de Fedora](https://fedoraproject.org/security/).
 
+Depuis la racine du dépôt, préparer un trousseau **temporaire hors du clone**. Le chemin de la clé ci-dessous est celui du paquet Fedora ; sur une autre distribution, importer uniquement la clé obtenue depuis la source officielle et en vérifier l'empreinte.
+
 ```bash
-# Écrit la clé Fedora 45 au format attendu par gpgv dans ./fedora45.gpg ; ne modifie rien d'autre.
-gpg --dearmor -o fedora45.gpg /usr/share/pki/rpm-gpg/RPM-GPG-KEY-fedora-45-primary
+# Préparation locale : ce répertoire temporaire ne sera jamais suivi par Git.
+MEDIA_KEY_DIR="$(mktemp -d)"
+gpg --dearmor -o "$MEDIA_KEY_DIR/fedora45.gpg" \
+  /usr/share/pki/rpm-gpg/RPM-GPG-KEY-fedora-45-primary
 
 installer/verify-fedora-media.sh --release 45 \
   --iso /chemin/Fedora-Workstation-Live-45-1.4.x86_64.iso \
   --checksum /chemin/Fedora-Workstation-45-1.4-x86_64-CHECKSUM \
-  --keyring fedora45.gpg
+  --keyring "$MEDIA_KEY_DIR/fedora45.gpg"
 ```
+
+Après avoir **constaté et noté le résultat**, nettoyer uniquement les éléments créés pour ce contrôle (et uniquement si `MEDIA_KEY_DIR` contient toujours le chemin retourné par `mktemp`) :
+
+```bash
+rm -- "$MEDIA_KEY_DIR/fedora45.gpg"
+rmdir -- "$MEDIA_KEY_DIR"  # refuse de supprimer un répertoire non vide
+```
+
+Le fichier de clé publique ne constitue pas une preuve à conserver ; préserver plutôt le journal du vérificateur et le SHA du commit.
 
 Le vérificateur contrôle le nom des deux fichiers, le SHA-256 de l'ISO, la signature du CHECKSUM, l'empreinte de la clé qui l'a signé (`4F50A611…F577861E`, épinglée dans le verrou) et la ligne qui lie l'ISO à son hash. Il ne modifie rien.
 
@@ -178,7 +191,7 @@ La configuration effective comprend les fichiers versionnés **et** `config/loca
 
 **But :** monter le second T705 sur `/data` et l'enregistrer comme disque de données, sans jamais le formater par le projet.
 
-Ce disque conserve les documents, projets, ISO, jeux et disques de VM lors d'une réinstallation du système. S'il contient déjà des données, réutiliser son EXT4 tel quel. S'il est neuf, le formater soi-même en EXT4, après avoir vérifié son numéro de série. Le monter durablement sur `/data`, de préférence par UUID dans `/etc/fstab`, puis :
+Ce disque conserve les documents, projets, ISO, jeux et disques de VM lors d'une réinstallation du système. **S'il contient déjà des données, ne pas le reformater.** S'il est neuf, la création d'un système de fichiers est une opération manuelle et destructive, distincte de l'APPLY. Les étapes vérifiables pour **les deux situations** sont décrites dans la [procédure dédiée au stockage `/data`](DATA_DISK_PREPARATION.md). La suivre jusqu'à la vérification du montage avant de continuer ici :
 
 ```bash
 findmnt /data                                            # lecture seule
@@ -276,7 +289,7 @@ cible externe prouvée (ext4, 20 Gio libres au minimum)
 
 ## 8. Appliquer la configuration
 
-**But :** faire converger le PC vers la configuration du dépôt. **C'est la seule étape qui modifie réellement le système.**
+**But :** appliquer le profil de configuration du dépôt au système préparé. **L'APPLY n'est pas la première modification du PC** : l'installation de Fedora, la préparation des outils, le montage de `/data` et la sauvegarde pré-APPLY peuvent déjà modifier son état. Chacune possède ses préconditions et points d'arrêt dans les sections précédentes.
 
 > [!CAUTION]
 > Point de non-retour : la sauvegarde pré-APPLY doit être vérifiée et son support branché ([points de non-retour](#points-de-non-retour)).

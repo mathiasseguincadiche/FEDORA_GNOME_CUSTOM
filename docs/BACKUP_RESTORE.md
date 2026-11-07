@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
 > Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — types d'archives et restitution relus contre `prepare-preapply-backup.sh`, `scripts/backup/restore.sh` et `config/backup.conf` ; essais physiques non rejoués — matériel : non vérifié
+> Dernière vérification : 2026-11-06 — archives, export séparé des clés, staging et diagnostic après échec relus contre `prepare-preapply-backup.sh`, `scripts/backup/restore.sh` et `config/backup.conf` ; essais physiques non rejoués — matériel : non vérifié
 
 **Une sauvegarde doit permettre de récupérer quelque chose, pas seulement produire un fichier.**
 
@@ -61,14 +61,29 @@ Les dossiers XDG sont résolus avec `xdg-user-dir` au moment de chaque sauvegard
 Ces clés se gardent dans un emplacement chiffré, hors Borg :
 
 - **SSH** : enregistrer chaque clé privée dans un gestionnaire de mots de passe (par exemple un élément « Clé SSH » de Bitwarden) ou sur un support chiffré. Après réinstallation, la recopier dans `~/.ssh` avec les droits `0600`. Une clé perdue peut aussi être régénérée, puis redéclarée sur GitHub et sur les serveurs ; `authorized_keys`, qui contient par exemple la clé de la tablette pour l'accès distant, se redéclare de la même façon.
-- **GnuPG** : exporter, stocker dans le même emplacement chiffré, puis supprimer les fichiers en clair :
+- **GnuPG** : conserver l'export des clés **uniquement sur un support chiffré déjà déverrouillé et monté**, hors dépôt Git et hors Borg. Vérifier d'abord le point de montage et son chiffrement :
 
   ```bash
-  gpg --export-secret-keys --armor IDENTIFIANT > cle.asc
-  gpg --export-ownertrust > confiance.txt
+  # Remplacer ce chemin par le point de montage exact du support CHIFFRÉ.
+  GPG_MOUNT="/chemin/absolu/du/support-chiffre-monte"
+  mountpoint -q -- "$GPG_MOUNT" && findmnt --target "$GPG_MOUNT"
+  lsblk -f  # vérifier que la cible dépend bien du volume chiffré déverrouillé
   ```
 
-  À la restauration : `gpg --import cle.asc`, puis `gpg --import-ownertrust confiance.txt`.
+  **Arrêt :** si le chemin n'est pas un montage distinct, si le volume n'est pas chiffré ou si l'identité du support est incertaine, ne pas lancer la suite. Une fois ces contrôles réussis :
+
+  ```bash
+  umask 077
+  GPG_EXPORT_DIR="$GPG_MOUNT/cles-gpg"
+  mkdir -m 0700 -- "$GPG_EXPORT_DIR"  # refuser de réutiliser un dossier existant par erreur
+  gpg --export-secret-keys --armor IDENTIFIANT > "$GPG_EXPORT_DIR/cles-privees.asc"
+  gpg --export-ownertrust > "$GPG_EXPORT_DIR/confiance.txt"
+  test -s "$GPG_EXPORT_DIR/cles-privees.asc"
+  test -f "$GPG_EXPORT_DIR/confiance.txt"  # peut être vide si aucune confiance propriétaire n'est définie
+  stat -c '%a %n' "$GPG_EXPORT_DIR"/*
+  ```
+
+  Les fichiers doivent rester lisibles uniquement par le propriétaire (`0600` avec cet `umask`). **Arrêter la procédure si `mkdir` échoue** : ne pas réutiliser un ancien répertoire d'export. Un export de clé privée reste sensible **même si la clé est protégée par phrase secrète**. Le fichier `confiance.txt` peut légitimement être vide si aucune confiance propriétaire n'a été définie. Vérifier la présence des deux fichiers sur le support chiffré avant de le démonter proprement ; ne pas en créer de copie temporaire dans le clone. Lors d'une restauration autorisée, remonter ce même support chiffré puis exécuter `gpg --import "$GPG_EXPORT_DIR/cles-privees.asc"` et `gpg --import-ownertrust "$GPG_EXPORT_DIR/confiance.txt"`. Le succès de l'import doit être vérifié avant de déclarer la clé récupérée.
 
 ## Préparer le support de sauvegarde
 
@@ -152,7 +167,7 @@ Une restauration passe **toujours** par un dossier d'essai vide (staging), à l'
    scripts/backup/restore.sh verify    # borg check --verify-data : relit toutes les données, long
    ```
 
-   **Réussite :** l'archive voulue apparaît dans la liste et `verify` se termine sans erreur. **Arrêt :** une erreur de `verify` signale un dépôt endommagé ; ne rien extraire, garder le support tel quel et lancer `./control.sh backup deep` pour le diagnostic.
+   **Réussite :** l'archive voulue apparaît dans la liste et `verify` se termine sans erreur. **Arrêt :** une erreur de `verify` signale une intégrité **non démontrée** (dépôt, accès au stockage ou données) ; ne rien extraire et ne lancer ni sauvegarde ni rétention sur ce dépôt. Conserver le message exact, puis consulter `./control.sh backup check` (état du support, dépôt et marqueurs), `findmnt`/`lsblk -f` (montage et périphérique exacts) et les erreurs noyau avec `sudo journalctl -k -b --no-pager` (lecture seule). Si le support paraît défaillant, arrêter les sollicitations et organiser une récupération sur copie saine. `./control.sh backup deep` **relance le même contrôle intégral `borg check --verify-data`** : ne l'utiliser qu'après avoir identifié la raison d'un nouveau passage, pas comme premier diagnostic automatique. Les erreurs restent à documenter et à résoudre avant toute restauration.
 
 2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide de la racine de staging. Cette étape écrit seulement dans le staging :
 
@@ -190,7 +205,7 @@ Pour obtenir un plan de reconstruction ordonné :
 
 ## Exports de VM
 
-Le projet ne sauvegarde ni n'exporte jamais une VM. Les outils libvirt servent à créer, exploiter et diagnostiquer les VM, pas à les archiver. Le propriétaire choisit quand arrêter ses VM et quels fichiers conserver ensemble : disque virtuel, XML, NVRAM et état TPM s'il existe. Aucune preuve Borg ne vaut preuve de récupération d'une VM ; la reprise d'une VM repose uniquement sur cet export manuel ([reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md#3-reprendre-une-vm)).
+Le projet ne sauvegarde ni n'exporte jamais automatiquement une VM. Les outils libvirt servent à créer, exploiter et diagnostiquer les VM, pas à les archiver. Le propriétaire décide quand arrêter sa VM et effectuer un export manuel **hors Borg**. Le parcours détaillé, la vérification des fichiers exportés et l'essai de redémarrage en laboratoire se trouvent dans la [procédure d'export et de reprise libvirt](KVM_EXPORT_RESTORE.md). Aucune preuve Borg ne vaut preuve de récupération d'une VM ; voir également la [reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md#3-reprendre-une-vm).
 
 ## Référence : fonctionnement interne
 

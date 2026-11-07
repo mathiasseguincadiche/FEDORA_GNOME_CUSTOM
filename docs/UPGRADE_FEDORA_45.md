@@ -39,7 +39,7 @@ Réussite : `./control.sh update status` ne signale aucune transaction en attent
 
 `prepare` refuse de continuer sans : le PC physique, Fedora 44 avec `HOST_RELEASE="44"`, le profil 45 promu, Secure Boot désactivé, un dépôt Git propre, un système à jour et aucune mise à jour du projet en attente.
 
-Il résout ensuite la dernière version stable de Linux amont pour Fedora 45, puis fait une sauvegarde Borg de l'hôte et des fichiers de l'utilisateur, certifiée par `backup-doctor`. Cette sauvegarde n'arrête, ne copie et n'exporte aucune VM : disques, XML, NVRAM et TPM des VM restent sous la responsabilité du propriétaire, par export manuel ([sauvegardes](BACKUP_RESTORE.md)).
+Il résout ensuite la dernière version stable de Linux amont pour Fedora 45, puis fait une sauvegarde Borg de l'hôte et des fichiers de l'utilisateur, certifiée par `backup-doctor`. Cette sauvegarde n'arrête, ne copie et n'exporte aucune VM : disques, XML, NVRAM et TPM des VM restent sous la responsabilité du propriétaire, par [export manuel préventif](KVM_EXPORT_RESTORE.md) avant le changement de version.
 
 Enfin, il télécharge la transaction `dnf5 system-upgrade`, sans `--allowerasing`, sans ignorer de paquet et sans redémarrer.
 

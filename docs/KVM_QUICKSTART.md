@@ -90,7 +90,7 @@ La certification demande le mot de passe sudo de la VM dans un terminal SSH. Ell
 
 ## 5. Exports
 
-Les exports de la VM sont **manuels**, au moment choisi par le propriétaire : arrêter Rocky, puis garder ensemble disque, XML et NVRAM ([référence](VIRTUALIZATION.md#exports-des-vm)). Borg ne sauvegarde ni les disques ni le XML libvirt.
+Les exports de la VM sont **manuels**, au moment choisi par le propriétaire. Avant toute modification importante, arrêter Rocky et suivre la [procédure complète d'export et de reprise](KVM_EXPORT_RESTORE.md) : inventaire XML/disques/NVRAM, copie cohérente, empreintes et test isolé. Borg ne sauvegarde ni les disques ni le XML libvirt.
 
 ## Dépannage
 
