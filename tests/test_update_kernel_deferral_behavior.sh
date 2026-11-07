@@ -90,7 +90,7 @@ run_update() {
       update_steam_repository_flag() { return "$EXIT_SECURITY_BLOCK"; }
     fi
     capture_offline_log() { :; }
-    check_firmware() { :; }
+    check_firmware() { (( ${T_FW_RC:-0} == 0 )) || return "$T_FW_RC"; }
     mkdir -p "$tmp/fake-root/scripts/maintenance"
     cp "$ROOT/scripts/maintenance/verify-offline-history.py" "$tmp/fake-root/scripts/maintenance/"
     # shellcheck disable=SC2016 # evaluated by the disposable diagnostic process
@@ -183,6 +183,17 @@ run_update 0 prepare-full || fail 'staged full update failed'
 [[ ! -e "$tmp/flatpak.log" && -e "$tmp/flatpak-pending" && "$(state phase)" == prepared ]] || fail 'Flatpak ran before the staged RPM transaction'
 run_update 0 newboot finalize || fail 'staged full update did not finalize'
 [[ "$(cat "$tmp/flatpak.log")" == 'update -y' && ! -e "$tmp/flatpak-pending" && "$(state phase)" == completed ]] || fail 'staged full update did not update Flatpak exactly once'
+
+# An uncertain firmware inventory must not silently certify that domain or
+# invalidate a completed software transaction (which cannot be re-applied).
+reset
+T_NO_PLAN=true T_FW_RC=20 run_update 0 prepare-full || fail 'firmware warning aborted a completed RPM/Flatpak update'
+[[ "$(state phase)" == completed && "$(state doctor_rc)" == 0 ]] || fail 'firmware warning corrupted the completed software state'
+grep -Fq 'FIRMWARE NON VÉRIFIÉ' "$tmp/out.log" || fail 'firmware uncertainty omitted from the final verdict'
+
+reset
+T_FW_RC=20 run_update "$EXIT_KERNEL_DEFERRED_TEST" prepare reboot newboot finalize || fail 'combined firmware/kernel deferral aborted safe software updates'
+grep -Fq 'NOYAU REPORTÉ, FIRMWARE NON VÉRIFIÉ' "$tmp/out.log" || fail 'combined partial outcomes were hidden'
 
 # Errors from Flatpak and the global diagnostic must stay failures, including
 # when the caller captures the function status with a conditional.

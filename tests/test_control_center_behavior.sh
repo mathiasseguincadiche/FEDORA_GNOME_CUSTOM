@@ -10,6 +10,15 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 fail() { echo "control center behavior: FAIL: $*" >&2; exit 1; }
 
+# The core dispatch and interactive presentation must not compete to define
+# the same menu: a single source of truth prevents silent future overrides.
+for function_name in cc_header cc_doctor_menu cc_kvm_menu cc_main_menu cc_help; do
+  [[ "$(grep -Ec "^${function_name}[(][)] [{]" "$ROOT/lib/control_center.sh" "$ROOT/lib/control_center_presentation.sh" | awk -F: '{total += $2} END {print total+0}')" == 1 ]] ||
+    fail "multiple/missing definitions of $function_name"
+  grep -Eq "^${function_name}[(][)] [{]" "$ROOT/lib/control_center_presentation.sh" ||
+    fail "interactive $function_name must belong to the presentation layer"
+done
+
 fixture="$tmp/repo"
 mkdir -p "$fixture" "$tmp/bin"
 (cd "$ROOT" && git ls-files -z | xargs -0 cp --parents -t "$fixture")
@@ -23,6 +32,12 @@ exec "$@"
 SH
 chmod +x "$tmp/bin/sudo"
 export PATH="$tmp/bin:$PATH"
+
+"$fixture/control.sh" help > "$tmp/help" || fail 'public help failed'
+[[ "$(grep -Fc './control.sh update check|scope|all|dnf|flatpak|firmware|status|log|reboot|finalize' "$tmp/help")" == 1 ]] ||
+  fail 'update lifecycle help is duplicated or incomplete'
+grep -Fq './control.sh upgrade plan|prepare|status|reboot|finalize' "$tmp/help" ||
+  fail 'upgrade status is missing from the public help'
 
 engines=(
   install.sh prepare-preapply-backup.sh diagnostic.sh

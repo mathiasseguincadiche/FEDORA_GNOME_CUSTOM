@@ -1,7 +1,7 @@
 # Centre de contrôle
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — nature des commandes relue contre leurs moteurs ; routes contrôlées par `tests/test_docs_integrity.py`, rétention contre `config/operator-retention.policy` — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — aide et routes du centre de contrôle, retours du diagnostic virtuel et bilan firmware relus contre les tests isolés — matériel : non vérifié
 
 `./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
@@ -147,7 +147,7 @@ N-1 = noyau précédent
 
 La finalisation vérifie la transaction, `dnf5 check`, le noyau N, le défaut GRUB, retire les noyaux amont plus anciens que N-1 en conservant le noyau Fedora de secours, puis converge Flatpak si nécessaire et lance les diagnostics.
 
-Pour le firmware : **aucun flash automatique**. `fwupdmgr` ne sert qu'à l'inventaire et à la consultation.
+Pour le firmware : **aucun flash automatique**. `fwupdmgr` ne sert qu'à l'inventaire et à la consultation. Une réponse incertaine produit `WARN` et `rc=20` pour `update firmware` ou `update check` ; après une mise à jour logicielle réellement terminée, la finalisation conserve explicitement la mention « firmware non vérifié », sans relancer les paquets.
 
 ## Noyau — N / N-1
 
@@ -197,7 +197,7 @@ Si ni N ni N-1 ne démarrent, maintenir **Maj** ou appuyer sur **Échap** au dé
 ./control.sh doctor backup
 ```
 
-`doctor all` lance `diagnostic.sh`, qui regroupe plus de vingt doctors : certains (KVM, jeu, accès distant) ne réussissent qu'une fois la Gate 3 menée. `doctor data` contrôle le second T705 EXT4 et les racines `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`, `/data/IA/Openclaw`. `doctor polish` contrôle les réglages de finition du bureau ([GNOME](GNOME.md)).
+`doctor all` lance `diagnostic.sh`, qui regroupe plus de vingt doctors sur le PC physique : certains (KVM, jeu, accès distant) ne réussissent qu'une fois la Gate 3 menée. En VM ou conteneur, la qualification est refusée (`KO`, `rc=20`) ; dans la CI, son absence est signalée comme attendue. `doctor data` contrôle le second T705 EXT4 et les racines `/data/Documents`, `/data/Projets`, `/data/ISO`, `/data/Jeux`, `/data/IA/Openclaw`. `doctor polish` contrôle les réglages de finition du bureau ([GNOME](GNOME.md)).
 
 `doctor gaming` contrôle le profil de jeu, `/data/Jeux`, Steam et Vulkan, et les invariants Arc, Wayland et affichage observables sur le PC physique.
 

@@ -57,8 +57,9 @@ diagnostic() { rm -f "$T_LOG"; env -u CI -u GITHUB_ACTIONS -u GITLAB_CI "$@" bas
 diagnostic T_VIRT=none || fail 'bare-metal diagnostic failed'
 grep -Fxq 'workstation-doctor --summary' "$T_LOG" || fail 'bare metal did not run the workstation doctor'
 for virt in kvm docker; do
-  diagnostic T_VIRT="$virt" || fail "$virt diagnostic failed"
-  [[ ! -e "$T_LOG" ]] && grep -Fq 'REAL APPLY and hardware certification are blocked' "$tmp/out" || fail "$virt not blocked from certification"
+  rc=0; diagnostic T_VIRT="$virt" || rc=$?
+  [[ "$rc" == 20 ]] || fail "$virt diagnostic did not report its KO as an unsuccessful result (rc=$rc)"
+  [[ ! -e "$T_LOG" ]] && grep -Fq 'Certification et APPLY réels interdits' "$tmp/out" || fail "$virt not blocked from certification"
 done
 diagnostic CI=true && [[ ! -e "$T_LOG" ]] && grep -Fq 'CI RUNTIME DETECTED' "$tmp/out" || fail 'CI not routed to CI evidence'
 rc=0; diagnostic T_VIRT=ambiguous || rc=$?

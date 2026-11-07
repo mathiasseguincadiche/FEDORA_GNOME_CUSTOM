@@ -1,7 +1,7 @@
 # Comprendre les résultats, les journaux et les réexécutions
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — parcours de `control.sh`, `lib/logging.sh`, `lib/ui.sh`, `lib/orchestrator.sh`, `scripts/maintenance/update-system.sh` et politique de rétention relus contre le code ; tests de journalisation isolés — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — diagnostics virtuels, retour firmware et messages du centre de contrôle comparés aux tests isolés — matériel : non vérifié
 
 Cette page explique **ce que l'opérateur peut réellement conclure**, sans masquer les messages techniques et sans promettre une idempotence générale. Pour les commandes, voir le [centre de contrôle](CONTROL_CENTER.md) ; pour le parcours d'installation, suivre le [guide officiel](INSTALLATION_GUIDE.md).
 
@@ -19,6 +19,8 @@ Cette page explique **ce que l'opérateur peut réellement conclure**, sans masq
 | `rc=N` | Code numérique retourné par un moteur | Consulter la phase et son message ; **ne pas deviner** le sens de `N` seul |
 
 Ces états ne garantissent pas tous le même niveau de preuve : un `PASS` d'inventaire logiciel n'est pas une certification de démarrage physique, et un `WARN` n'est pas nécessairement une panne.
+
+**Exemple de contrat de résultat :** hors du PC physique, `./control.sh doctor all` affiche un `KO` d'environnement et renvoie `rc=20` : la qualification est refusée, même si le rapport a été produit. Dans la CI, l'impossibilité de certifier le matériel est `EXPECTED`, non une preuve physique. Un outil qui lit seulement le code de sortie ne doit jamais prendre un `KO` de virtualisation pour un succès.
 
 ## 2. Où se trouvent les informations ?
 
@@ -88,6 +90,8 @@ L'**idempotence** concerne une action précise : répéter une action idempotent
 Pour le tableau **complet** des domaines (pilotes, codecs, Steam/Proton, GNOME, AppImage, firmware) et les étapes d'exécution, utiliser la [procédure de couverture transversale des mises à jour](UPDATE_COVERAGE.md). Cette page conserve les règles de lecture des logs et des résultats, sans dupliquer cette procédure.
 
 La mise à jour n'est **pas terminée** tant que le redémarrage requis, la finalisation et les diagnostics ne sont pas effectués. Un noyau `DEFERRED` reste en attente ; un échec de consultation Flatpak est `KO`, jamais « aucune mise à jour ».
+
+Une consultation firmware non concluante produit `WARN` et un échec du bilan de **recherche** (`update check`, `rc=20`). Lors de la **finalisation** d'une transaction logicielle effectivement réussie, le contrôle firmware reste consultatif : le résumé annonce « firmware non vérifié » sans annuler ni relancer une transaction RPM déjà appliquée. Le résultat logiciel et l'état du firmware doivent donc être lus séparément.
 
 ### Contrôle après une mise à jour
 

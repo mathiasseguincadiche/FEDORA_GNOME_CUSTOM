@@ -1,7 +1,7 @@
 # Couverture transversale des mises à jour
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — routes et tests de mise à jour relus contre le code — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — routes et tests de mise à jour revus, traitement de l'incertitude firmware vérifié localement — matériel : non vérifié
 
 Références d'exécution : `scripts/maintenance/update-system.sh`, `lib/control_center.sh`, modules système, GNOME, applications et Gaming ; tests `test_update_transversal_behavior.sh` et `test_update_kernel_deferral_behavior.sh`.
 
@@ -20,6 +20,8 @@ Depuis la racine du dépôt :
 Dans le menu `./control.sh`, choisir **Mises à jour → Périmètre des mises à jour** pour le même bilan. `scope` est en lecture seule du point de vue du système ; le démarrage des moteurs peut néanmoins créer une session de journalisation. L'inventaire ne vérifie pas à lui seul la compatibilité de chaque version ni la santé physique du PC.
 
 La vérification `update check` passe successivement sur Fedora/DNF5, noyau, Flatpak, firmware et périmètre complémentaire. Si la consultation Flatpak échoue, elle affiche `KO` et le bilan global échoue ; une erreur réseau ne devient plus un faux « aucune mise à jour ». Si Steam est installé comme RPM mais que son dépôt n'est pas identifiable et vérifiable, la couverture Steam est également `KO`.
+
+Si `fwupdmgr` répond avec un code d'échec, la consultation firmware est `WARN` et le **bilan `update check` renvoie un échec de vérification** (`rc=20`), même si les autres domaines ont pu être examinés. Cela ne prouve ni la présence ni l'absence d'une nouvelle version de firmware. Si `fwupdmgr` est absent, le domaine est `EXPECTED` : aucune consultation firmware n'est alors revendiquée.
 
 ## 2. Domaines et limites réelles
 
@@ -48,7 +50,7 @@ Lancer les commandes **une étape à la fois**, ou utiliser les actions équival
 2. **Préparer** : `./control.sh update all`. Le système réalise une sauvegarde Borg obligatoire, sélectionne la cible noyau admissible et prépare la transaction DNF5 hors ligne. La préparation n'est **pas** une installation réussie.
 3. **Contrôler** : `./control.sh update status`. Si aucune transaction RPM n'a été créée, le mode complet peut appliquer Flatpak et terminer les diagnostics sans redémarrage DNF5.
 4. **Appliquer les RPM préparés** : si le statut réclame un redémarrage, `./control.sh update reboot` lance explicitement le redémarrage dans l'environnement DNF5 hors ligne. Ne pas couper l'alimentation pendant cette opération.
-5. **Finaliser sur le système démarré** : `./control.sh update finalize`. Cette étape vérifie la bonne transaction, DNF5, le noyau et sa rétention, puis les Flatpak et diagnostics. Un échec laisse un état à examiner, pas un certificat de réussite.
+5. **Finaliser sur le système démarré** : `./control.sh update finalize`. Cette étape vérifie la bonne transaction, DNF5, le noyau et sa rétention, puis les Flatpak et diagnostics. Si la consultation firmware est incertaine mais que les mises à jour logicielles et leurs diagnostics réussissent, le bilan indique explicitement **« firmware non vérifié »** ; la transaction logicielle reste terminée et ne doit pas être relancée aveuglément. Un échec de diagnostic logiciel laisse un état à examiner, pas un certificat de réussite.
 6. **Vérifier les usages du poste** : `./control.sh doctor all`, `./control.sh doctor graphics`, `./control.sh doctor media`, `./control.sh doctor gaming` et `./control.sh logs tail` selon les composants présents. Vérifier aussi Steam/Proton, extensions épinglées, AppImage et firmwares **par leurs procédures propres**.
 7. **Requalifier si nécessaire** : une modification de composants ou de configuration peut invalider les preuves Golden précédentes ; vérifier les états `STALE` et suivre la [qualification physique](QUALIFICATION.md) et les Gates applicables.
 
@@ -59,6 +61,7 @@ Une sauvegarde préalable et un rollback du noyau **ne garantissent pas à eux s
 | Situation observée | Interprétation | Action sûre |
 | --- | --- | --- |
 | Recherche Flatpak `KO` | Impossible de déterminer les mises à jour disponibles | Vérifier la connexion, les remotes et relancer la consultation ; ne pas conclure « à jour » |
+| Consultation `fwupdmgr` `WARN` / `rc=20` | Etat firmware indéterminé ; le bilan `update check` n'est pas entièrement vérifié | Consulter le message natif et la provenance des métadonnées ; relancer `update firmware` plus tard, sans flasher automatiquement |
 | Source Steam RPM `KO` | Mise à jour Steam non vérifiable | Vérifier `fedora-workstation-repositories` et la définition `rpmfusion-nonfree-steam` ; ne pas activer une source inconnue |
 | Noyau `DEFERRED` | Noyau amont exact non vérifiable ou non disponible en RPM | Conserver le noyau courant ; installer les autres correctifs autorisés et réessayer plus tard |
 | Transaction DNF5 `prepared` | Paquets téléchargés et opération en attente | Consulter `update status`, puis décider du redémarrage explicite |

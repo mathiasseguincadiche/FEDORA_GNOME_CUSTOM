@@ -64,7 +64,8 @@ d = Diagram("ci-fusion-release", "Ce qui doit être vert : fusion puis release",
             "fedora45-gnome-vm avec six extensions, upstream-kernel et rocky-devops-vm. Le job contracts exige leurs sept "
             "succès ; sur une pull request qui ne change que la documentation, il accepte seulement que les trois VM soient sautées. La fusion dans main exige contracts et cinq autres contextes : shellcheck, guards, packages, "
             "packages-and-integration et nautilus-ptyxis. Après la fusion, les mêmes workflows et le scan de sécurité "
-            "tournent sur le commit de main ; release.yml ne publie la préversion que si tout est vert sur ce même commit.",
+            "tournent sur le commit de main. Le workflow release.yml ne démarre que si son manifeste ou ses fichiers "
+            "de workflow/résolution changent ; il exige alors les contrôles verts du même commit avant publication.",
             1320, 760)
 d.group("g_tests", "Workflow Tests : 7 jobs", 40, 80, 360, 520)
 jobs = ["logic-contracts", "installer-audit", "borg-fedora", "fedora-gnome-vm (natif)",
@@ -76,12 +77,12 @@ d.node("other", ["Autres contrôles obligatoires", "shellcheck · guards · pack
                  "nautilus-ptyxis"], 900, 110, 360, 124)
 d.node("merge", ["Fusion autorisée", "6 contextes obligatoires verts"], 880, 300, 400, 90, "main")
 d.node("push", ["push sur main", "mêmes workflows + Security scanning"], 880, 460, 400, 80)
-d.node("release", ["release.yml", "préversion si tout est vert", "sur le même commit"], 880, 610, 400, 100, "data")
+d.node("release", ["release.yml (déclenchement conditionnel)", "préversion après contrôles verts", "sur le même commit"], 880, 610, 400, 100, "data")
 d.edge("e_c", "g_tests", "contracts")
 d.edge("e_m1", "contracts", "merge")
 d.edge("e_m2", "other", "merge")
 d.edge("e_p", "merge", "push", "après la fusion")
-d.edge("e_r", "push", "release")
+d.edge("e_r", "push", "release", "si fichiers release modifiés")
 diagrams.append(d)
 
 # 4. CONTROL_CENTER — a thin façade over specialised engines.
