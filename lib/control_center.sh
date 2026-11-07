@@ -22,6 +22,8 @@ cc_init_colors() {
     CC_RESET=$'\033[0m'
     CC_BOLD=$'\033[1m'
     CC_DIM=$'\033[2m'
+    # CC_BLUE is consumed by the presentation layer sourced after this file.
+    # shellcheck disable=SC2034
     CC_BLUE=$'\033[34m'
     CC_CYAN=$'\033[36m'
     CC_GREEN=$'\033[32m'
