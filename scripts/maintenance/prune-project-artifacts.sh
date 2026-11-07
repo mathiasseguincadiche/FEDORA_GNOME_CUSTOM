@@ -53,7 +53,9 @@ case "$mode" in
 esac
 
 mapfile -d '' old_logs < <(
-  find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime "+$logs_days" ! -path "$LOG_DIR" -print0 2>/dev/null || true
+  # The incident store is permanent evidence, never a transient run directory.
+  find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime "+$logs_days" \
+    ! -path "$LOG_DIR" ! -name incidents -print0 2>/dev/null || true
 )
 mapfile -d '' old_reports < <(
   find "$REPORT_ROOT" -mindepth 1 -maxdepth 1 -type f -mtime "+$reports_days" -print0 2>/dev/null || true
@@ -64,14 +66,45 @@ printf 'Golden evidence: state/=preserved, state/releases/=preserved\n'
 printf 'Old log runs: %d\n' "${#old_logs[@]}"
 printf 'Old transient reports: %d\n' "${#old_reports[@]}"
 
-for path in "${old_logs[@]}"; do printf '  log: %s\n' "$path"; done
+safe_old_logs=()
+for path in "${old_logs[@]}"; do
+  run="${path##*/}"
+  # An open/unknown incident must never be deleted by a separate retention
+  # engine. Resolved incidents are handled by the weekly lifecycle as well.
+  if [[ -e "$LOG_ROOT/incidents/$run.json" || -L "$LOG_ROOT/incidents/$run.json" ]]; then
+    printf '  preserved (incident): %s\n' "$path"
+    continue
+  fi
+  # If the weekly incident scanner has not run, preserve error-bearing logs.
+  # Only regular *.log files are inspected. Unexpected files/types fail closed.
+  unexpected="$(find "$path" -mindepth 1 -maxdepth 1 \( ! -type f -o ! -name '*.log' \) -print -quit 2>/dev/null)"
+  if [[ -n "$unexpected" ]]; then
+    printf '  preserved (unexpected content): %s\n' "$path"
+    continue
+  fi
+  log_files=("$path"/*.log)
+  if [[ -e "${log_files[0]}" ]]; then
+    if grep -Eiq '\[(ERROR|KO|FAIL|FATAL)\]|TRACEBACK|SECURITY BLOCK|FAILED' "${log_files[@]}"; then
+      printf '  preserved (unresolved error): %s\n' "$path"
+      continue
+    else
+      grep_rc=$?
+      if ((grep_rc != 1)); then
+        printf '  preserved (unreadable log): %s\n' "$path"
+        continue
+      fi
+    fi
+  fi
+  safe_old_logs+=("$path")
+  printf '  log: %s\n' "$path"
+done
 for path in "${old_reports[@]}"; do printf '  report: %s\n' "$path"; done
 
 if [[ "$mode" == --check ]]; then
   exit 0
 fi
 
-for path in "${old_logs[@]}"; do
+for path in "${safe_old_logs[@]}"; do
   [[ "$path" == "$LOG_ROOT"/* ]] || { echo "Refusing unexpected log path: $path" >&2; exit "$EXIT_SECURITY_BLOCK"; }
   rm -rf -- "$path"
 done
@@ -80,4 +113,4 @@ for path in "${old_reports[@]}"; do
   rm -f -- "$path"
 done
 
-printf 'Pruned %d old log runs and %d old transient reports.\n' "${#old_logs[@]}" "${#old_reports[@]}"
+printf 'Pruned %d safe old log runs and %d old transient reports.\n' "${#safe_old_logs[@]}" "${#old_reports[@]}"

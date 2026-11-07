@@ -8,11 +8,15 @@ logging_init() {
   REPORT_ROOT="$REPO_ROOT/reports"
   STATE_ROOT="$REPO_ROOT/state"
   LOG_DIR="$LOG_ROOT/$RUN_ID"
-  mkdir -p "$LOG_DIR" "$REPORT_ROOT" "$STATE_ROOT" "$STATE_ROOT/releases"
+  (umask 077; mkdir -p "$LOG_DIR")
+  [[ ! -L "$LOG_DIR" ]] || { printf 'Refus : dossier de journaux symbolique.\n' >&2; return 1; }
+  chmod 0700 "$LOG_DIR"
+  mkdir -p "$REPORT_ROOT" "$STATE_ROOT" "$STATE_ROOT/releases"
   MAIN_LOG="$LOG_DIR/main.log"
   MODULE_LOG="$LOG_DIR/modules.log"
-  : >> "$MAIN_LOG"
-  : >> "$MODULE_LOG"
+  [[ ! -L "$MAIN_LOG" && ! -L "$MODULE_LOG" ]] || { printf 'Refus : fichier journal symbolique.\n' >&2; return 1; }
+  (umask 077; : >> "$MAIN_LOG"; : >> "$MODULE_LOG")
+  chmod 0600 "$MAIN_LOG" "$MODULE_LOG"
   export RUN_ID LOG_ROOT REPORT_ROOT STATE_ROOT LOG_DIR MAIN_LOG MODULE_LOG
 }
 

@@ -123,6 +123,8 @@ Le chemin APPLY conserve ses protections : PC physique, Git propre, baseline, co
 
 `update all` et `update dnf` préparent une transaction **DNF5 hors ligne** après une sauvegarde complète Borg.
 
+Pour distinguer les pilotes RPM, le noyau Vanilla reporté, le microcode et le firmware matériel **non flashé**, voir la [lecture des mises à jour et de leurs bilans](OPERATOR_RELIABILITY.md#4-mettre-à-jour-sans-confondre-noyau-pilotes-et-firmware-matériel).
+
 ```text
 sauvegarde complète Borg
         ↓
@@ -304,7 +306,9 @@ Ces commandes consultent des traces ; les deux premières lisent seulement, tand
 ./control.sh logs boot-failure
 ```
 
-`logs list` affiche les dix derniers runs, les rapports et les preuves d'état ; `logs tail` montre la fin du `main.log` du dernier run. `logs boot-failure` lance `scripts/collect-boot-failure.sh`, qui écrit dans `reports/` les avertissements, erreurs noyau, coredumps et unités en échec du **démarrage précédent** : c'est le premier geste après un démarrage raté ([dépannage en urgence](TROUBLESHOOTING.md#en-urgence)).
+`logs list` affiche les dix derniers runs, les rapports et les preuves d'état ; `logs tail` choisit la **dernière exécution contenant des traces utiles**, sans sélectionner un dossier vide créé par sa propre invocation. Dans le menu interactif, il peut donc montrer une opération effectuée pendant la session en cours. Il présente d'abord `operator.log` (événements applicatifs horodatés), puis les traces `main.log` et `modules.log` si elles existent. `modules.log` conserve des sorties techniques natives non systématiquement horodatées. `logs boot-failure` lance `scripts/collect-boot-failure.sh`, qui écrit dans `reports/` les avertissements, erreurs noyau, coredumps et unités en échec du **démarrage précédent** : c'est le premier geste après un démarrage raté ([dépannage en urgence](TROUBLESHOOTING.md#en-urgence)).
+
+Les messages du terminal et leurs statuts ne sont pas tous des preuves de certification. Pour comprendre `PASS`, `WARN`, `KO`, les codes de retour, la structure des rapports et les conditions de réexécution, consulter le [guide de fiabilité opérateur](OPERATOR_RELIABILITY.md).
 
 La rétention s'applique aux journaux et rapports transitoires :
 
@@ -314,6 +318,8 @@ reports = 180 jours
 state/ = conservé
 state/releases/ = conservé
 ```
+
+Cette politique concerne le **nettoyage manuel**. Un autre mécanisme, hebdomadaire et optionnel, analyse les sessions de plus de **7 jours** : il conserve les incidents non résolus et crée des fiches explicatives lorsqu'il détecte des erreurs. La commande manuelle `logs prune` préserve aussi le dossier d'incidents, les sessions associées à un incident et les journaux où une erreur est détectée. Voir les [deux politiques de rétention](OPERATOR_RELIABILITY.md#rétention--deux-mécanismes-distincts).
 
 ```bash
 ./control.sh logs retention

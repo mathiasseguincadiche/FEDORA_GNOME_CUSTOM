@@ -229,6 +229,19 @@ grep -q 'Old log runs: 1' "$tmp/retention" || fail 'old log run not reported'
 [[ ! -e "$fixture/logs/old-run" && ! -e "$fixture/reports/old.txt" ]] || fail 'old logs or reports not pruned'
 [[ -d "$fixture/logs/recent-run" && -f "$fixture/reports/recent.txt" ]] || fail 'recent logs or reports pruned'
 [[ -f "$fixture/state/old.ok" && -f "$fixture/state/releases/old.tar" ]] || fail 'Golden state or release pruned'
+# Incident metadata and unclassified failures survive even the manual 90-day
+# pruning route; the incident directory itself must never be removed.
+mkdir -p "$fixture/logs/incidents" "$fixture/logs/incident-open" "$fixture/logs/error-no-marker"
+printf '{"status":"open"}\n' > "$fixture/logs/incidents/incident-open.json"
+printf '2026-01-01T00:00:00Z [ERROR] [SYSTEM] operation failed\n' > "$fixture/logs/error-no-marker/main.log"
+touch -d '200 days ago' "$fixture/logs/incidents" "$fixture/logs/incident-open" "$fixture/logs/error-no-marker"
+"$fixture/control.sh" logs prune > /dev/null
+[[ -d "$fixture/logs/incidents" && -f "$fixture/logs/incidents/incident-open.json" ]] || fail 'incident store deleted by retention'
+[[ -d "$fixture/logs/incident-open" ]] || fail 'open incident evidence deleted by retention'
+[[ -d "$fixture/logs/error-no-marker" ]] || fail 'unclassified error evidence deleted by retention'
+"$fixture/control.sh" logs prune > "$tmp/prune-repeat"
+grep -Fq 'Pruned 0 safe old log runs' "$tmp/prune-repeat" || fail 'repeated prune was not a safe no-op'
+[[ -d "$fixture/logs/incident-open" && -d "$fixture/logs/error-no-marker" ]] || fail 'repeat prune lost incident evidence'
 sed -i 's/^preserve_state=true$/preserve_state=false/' "$fixture/config/operator-retention.policy"
 rc=0; "$fixture/control.sh" logs prune > /dev/null 2>&1 || rc=$?
 [[ "$rc" != 0 ]] || fail 'retention ran with a policy that does not preserve state/'

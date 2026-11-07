@@ -43,6 +43,7 @@ Le projet cible **Fedora 45 Workstation / GNOME 51** sur un matériel précis. L
 ### Usage quotidien
 
 - [Centre de contrôle](CONTROL_CENTER.md) : commandes disponibles, préconditions et effets.
+- [Fiabilité opérateur](OPERATOR_RELIABILITY.md) : lire les logs, comprendre les résultats, distinguer les actions rejouables et suivre une mise à jour.
 - [Maintenance du poste](DESKTOP_LIFECYCLE.md) et [noyau Linux amont](UPSTREAM_LINUX.md) : garder un système exploitable et récupérable.
 - [Sauvegardes et restauration](BACKUP_RESTORE.md) : politique Borg, contrôles, restitution des fichiers.
 - [Performance](PERFORMANCE.md) et [accès distant](REMOTE_ACCESS.md) : comportement du poste et accès réseau.
