@@ -179,6 +179,8 @@ Texte `#1A2C43`, flèches `#547BB4` (4,09:1 sur le fond `#F7F9FC`), police Arial
 
 `tests/test_docs_integrity.py` vérifie les liens, l'accessibilité de chaque page depuis le README, les commandes `./control.sh` citées, la présence de chaque commande routée dans le [centre de contrôle](docs/CONTROL_CENTER.md) et les chemins du dépôt cités. Il contrôle aussi le bloc de métadonnées de chaque guide (dates valides, jamais futures, vérification jamais antérieure à la mise à jour), les paires de schémas `.drawio` / `.svg`, l'absence de Mermaid, l'inventaire logiciel de l'hôte, qui doit reproduire exactement `manifests/`, et les fins de ligne LF de tous les fichiers suivis. Il contrôle aussi le bloc de métadonnées du `README.md` racine, chaque visuel de `docs/assets/` référencé par au moins une page Markdown (et tout lien vers un visuel existant), l'accessibilité de chaque export SVG hors `docs/assets/diagrams/` (viewBox, titre, description, fond opaque, aucune ressource distante), et l'absence d'apostrophe typographique (U+2019) hors archives. Ces règles s'appliquent sans liste d'exceptions ; `tests/test_docs_integrity_behavior.py` prouve chacune d'elles. Le test ne vérifie jamais la formulation : la relecture reste nécessaire.
 
+Le contrôle structurel vérifie également la progression des niveaux de titres Markdown hors blocs de code (un titre `#` ne passe pas directement à `###`). Il ignore les archives historiques ; le test de comportement couvre les titres réels et les exemples littéraux.
+
 ## Shell
 
 `set -Eeuo pipefail` quand le script le permet, code propre au ShellCheck de la CI (0.9), messages courts, aucune mutation cachée derrière un diagnostic, `NO_COLOR=1` utilisable.
