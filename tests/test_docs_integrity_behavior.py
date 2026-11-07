@@ -130,6 +130,13 @@ case("nonexistent duplicate heading anchor",
 case("code fence does not define a heading",
      lambda w: append(w / gnome, "\n```markdown\n## Section fictive\n```\n\n[Lien](#section-fictive)\n"),
      False, "docs/GNOME.md: missing Markdown anchor")
+case("heading jumps from H1 to H3",
+     lambda w: append(w / gnome, "\n# Chapitre d'essai\n\n### Sous-section sans H2\n"),
+     False, "Markdown heading jumps from H1 to H3")
+case("consecutive heading levels are accepted",
+     lambda w: append(w / gnome, "\n# Chapitre d'essai\n\n## Section\n\n### Sous-section\n"), True)
+case("heading examples inside code fences are ignored",
+     lambda w: append(w / gnome, "\n```markdown\n# Chapitre fictif\n### Saut fictif\n```\n"), True)
 case("new Mermaid block", lambda w: edit(w / gnome, "## Les six extensions", "```mermaid\nflowchart LR\n  A --> B\n```\n\n## Les six extensions"),
      False, "docs/GNOME.md: Mermaid block")
 case("guide loses its metadata", lambda w: strip_metadata(w / gnome),
