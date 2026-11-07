@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Core Control Center actions and CLI dispatch. Interactive presentation
+# (cc_header, cc_doctor_menu, cc_kvm_menu, cc_main_menu, cc_help) has one
+# authoritative definition in lib/control_center_presentation.sh.
 # Workstation Control Center — operator UI and dispatcher only.
 # Business logic remains in install.sh, diagnostics/* and scripts/*.
 # REPO_ROOT, STATE_ROOT, LOG_ROOT, REPORT_ROOT and versioned config are loaded by bootstrap.
@@ -19,6 +22,8 @@ cc_init_colors() {
     CC_RESET=$'\033[0m'
     CC_BOLD=$'\033[1m'
     CC_DIM=$'\033[2m'
+    # CC_BLUE is consumed by the presentation layer sourced after this file.
+    # shellcheck disable=SC2034
     CC_BLUE=$'\033[34m'
     CC_CYAN=$'\033[36m'
     CC_GREEN=$'\033[32m'
@@ -220,49 +225,6 @@ cc_reboot_state() {
   else
     printf 'REBOOT'
   fi
-}
-
-cc_header() {
-  local version fedora runtime kernel sha gpu
-  local git_state backup_state backup_detail cert_state kvm_state reboot_state
-  version="$(cc_version)"
-  fedora="$(cc_fedora_version)"
-  runtime="${RUNTIME_ENVIRONMENT^^}"
-  kernel="$(uname -r 2>/dev/null || printf unknown)"
-  sha="$(cc_project_sha)"
-  gpu="$(cc_gpu_detail)"
-  git_state="$(cc_git_state)"
-  backup_state="$(cc_backup_state)"
-  backup_detail="$(cc_backup_detail)"
-  cert_state="$(cc_cert_state)"
-  kvm_state="$(cc_kvm_state)"
-  reboot_state="$(cc_reboot_state)"
-
-  printf '%s%s' "$CC_BLUE" "$CC_BOLD"
-  cc_double_rule
-  printf '%s' "$CC_RESET"
-  printf '%s%s  FEDORA GOLDEN WORKSTATION — CENTRE DE CONTRÔLE%s\n' "$CC_BOLD" "$CC_CYAN" "$CC_RESET"
-  printf '%s' "$CC_BLUE"
-  cc_double_rule
-  printf '%s' "$CC_RESET"
-  printf '  Projet      %-10s  SHA %-10s  Fedora %-6s  Runtime %-10s\n' "$version" "$sha" "$fedora" "$runtime"
-  printf '  Kernel      %-32s Canal %s latest-stable\n' "$kernel" "${KERNEL_CHANNEL:-vanilla}"
-  printf '  GPU         %-32s Git      ' "$gpu"
-  cc_badge "$git_state"
-  printf '\n'
-  printf '  Backup      '
-  cc_badge "$backup_state"
-  printf ' %-24s Certification ' "$backup_detail"
-  cc_badge "$cert_state"
-  printf '\n'
-  printf '  KVM         '
-  cc_badge "$kvm_state"
-  printf ' %-24s Reboot        ' "${KVM_NETWORK_NAME:-devops-nat}"
-  cc_badge "$reboot_state"
-  printf '\n'
-  printf '%s' "$CC_BLUE"
-  cc_double_rule
-  printf '%s' "$CC_RESET"
 }
 
 cc_section() {
@@ -518,43 +480,6 @@ cc_backup_menu() {
   done
 }
 
-cc_doctor_menu() {
-  local choice=''
-  while true; do
-    cc_clear
-    cc_header
-    cc_section '4 — DIAGNOSTICS & SANTÉ'
-    cc_option 1 'Diagnostic global'
-    cc_option 2 'Baseline matérielle'
-    cc_option 3 'Kernel / B580 / xe'
-    cc_option 4 'Graphics / compute'
-    cc_option 5 'Stockage / T705'
-    cc_option 6 'Affichage 1440p / 240 Hz'
-    cc_option 7 'GNOME / Desktop'
-    cc_option 8 'Applications'
-    cc_option 9 'Multimédia / codecs'
-    cc_option 10 'Virtualisation / KVM'
-    cc_option 11 'Backup / recovery'
-    cc_option 0 'Retour'
-    read -r -p 'Choix : ' choice
-    case "$choice" in
-      1) cc_interactive_exec 'DIAGNOSTIC GLOBAL' "$REPO_ROOT/diagnostic.sh" ;;
-      2) cc_interactive_exec 'BASELINE DOCTOR' "$REPO_ROOT/diagnostics/baseline-doctor" status ;;
-      3) cc_interactive_exec 'KERNEL DOCTOR' "$REPO_ROOT/diagnostics/kernel-doctor" ;;
-      4) cc_interactive_exec 'GRAPHICS DOCTOR' "$REPO_ROOT/diagnostics/graphics-doctor" ;;
-      5) cc_interactive_exec 'STORAGE DOCTOR' "$REPO_ROOT/diagnostics/storage-doctor" ;;
-      6) cc_interactive_exec 'DISPLAY DOCTOR' "$REPO_ROOT/diagnostics/display-doctor" ;;
-      7) cc_interactive_exec 'GNOME DOCTOR' "$REPO_ROOT/diagnostics/gnome-doctor" ;;
-      8) cc_interactive_exec 'APPLICATIONS DOCTOR' "$REPO_ROOT/diagnostics/applications-doctor" ;;
-      9) cc_interactive_exec 'MEDIA DOCTOR' "$REPO_ROOT/diagnostics/media-doctor" ;;
-      10) cc_interactive_exec 'VIRTUALIZATION DOCTOR' "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
-      11) cc_interactive_exec 'BACKUP DOCTOR' "$REPO_ROOT/diagnostics/backup-doctor" ;;
-      0) return 0 ;;
-      *) printf 'Choix invalide.\n'; sleep 1 ;;
-    esac
-  done
-}
-
 cc_kernel_menu() {
   local choice=''
   while true; do
@@ -578,37 +503,6 @@ cc_kernel_menu() {
         fi
         ;;
       5) cc_interactive_exec 'COLLECTE PANNE DE BOOT' "$REPO_ROOT/scripts/collect-boot-failure.sh" ;;
-      0) return 0 ;;
-      *) printf 'Choix invalide.\n'; sleep 1 ;;
-    esac
-  done
-}
-
-cc_kvm_menu() {
-  local choice=''
-  while true; do
-    cc_clear
-    cc_header
-    cc_section '6 — KVM / MACHINES VIRTUELLES'
-    cc_option 1 'Virtualization doctor'
-    cc_option 2 'Contrôler guard réseau' 'fail-closed'
-    cc_option 3 'Réconcilier guard réseau' 'emergency → normal'
-    cc_option 4 'Certification runtime KVM'
-    cc_option 5 'Rafraîchir accès Nautilus aux VM'
-    cc_option 6 'Créer Rocky DevOps'
-    cc_option 0 'Retour'
-    read -r -p 'Choix : ' choice
-    case "$choice" in
-      1) cc_interactive_exec 'VIRTUALIZATION DOCTOR' "$REPO_ROOT/diagnostics/virtualization-doctor" ;;
-      2) cc_interactive_exec 'KVM NETWORK GUARD — CHECK' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" check ;;
-      3)
-        if cc_confirm 'Réconcilier les règles KVM fail-closed ?'; then
-          cc_interactive_exec 'KVM NETWORK GUARD — RECONCILE' sudo "$REPO_ROOT/scripts/kvm/kvm_network_guard.sh" reconcile
-        fi
-        ;;
-      4) cc_interactive_exec 'KVM RUNTIME CERTIFICATION' "$REPO_ROOT/scripts/kvm/runtime_certification.sh" ;;
-      5) cc_interactive_exec 'NAUTILUS VM ACCESS' "$REPO_ROOT/scripts/kvm/configure_nautilus_vm_access.sh" refresh ;;
-      6) cc_interactive_exec 'CRÉATION ROCKY DEVOPS' "$REPO_ROOT/scripts/kvm/create_rocky_devops_vm.sh" ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
@@ -738,64 +632,6 @@ cc_logs_menu() {
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
   done
-}
-
-cc_main_menu() {
-  local choice=''
-  while true; do
-    cc_clear
-    cc_header
-    cc_section 'SOCLES OPÉRATEUR'
-    cc_option 1 'Installation & convergence' 'préflight / backup / APPLY'
-    cc_option 2 'Mises à jour' 'Fedora / Flatpak / kernel / firmware check'
-    cc_option 3 'Sauvegarde & restauration' 'Borg / staging / DR'
-    cc_option 4 'Diagnostics & santé' 'doctors par domaine'
-    cc_option 5 'Kernel & boot' "canal ${KERNEL_CHANNEL:-vanilla} N/N-1 + recovery"
-    cc_option 6 'KVM / machines virtuelles' 'réseau fail-closed / runtime'
-    cc_option 7 'Performance Fedora Linux' 'P-State / TuneD / SCX / zram / NVMe'
-    cc_option 8 'Maintenance' 'état et réparations ciblées'
-    cc_option 9 'Certification' 'baseline / suspend / Golden'
-    cc_option 10 'Logs & preuves' 'traçabilité opérateur'
-    cc_option 0 'Quitter'
-    printf '\n%sLes opérations critiques conservent leurs garde-fous natifs.%s\n' "$CC_DIM" "$CC_RESET"
-    read -r -p 'Choix : ' choice
-    case "$choice" in
-      1) cc_install_menu ;;
-      2) cc_update_menu ;;
-      3) cc_backup_menu ;;
-      4) cc_doctor_menu ;;
-      5) cc_kernel_menu ;;
-      6) cc_kvm_menu ;;
-      7) cc_performance_menu ;;
-      8) cc_maintenance_menu ;;
-      9) cc_cert_menu ;;
-      10) cc_logs_menu ;;
-      0) return 0 ;;
-      *) printf 'Choix invalide.\n'; sleep 1 ;;
-    esac
-  done
-}
-
-cc_help() {
-  cat <<'EOF'
-FEDORA GOLDEN WORKSTATION — Workstation Control Center
-
-Usage:
-  ./control.sh                         Menu interactif
-  ./control.sh status                  Tableau de bord read-only
-  ./control.sh install prepare-tools|dry-run|backup|apply
-  ./control.sh update check|scope|all|dnf|flatpak|firmware|status|log|reboot|finalize
-  ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
-  ./control.sh doctor all|baseline|kernel|graphics|storage|display|gnome|apps|media|kvm|backup
-  ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
-  ./control.sh kernel status|doctor|install-latest|prune|rollback|fallback|refresh-fallback|rollback-fedora
-  ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh|create-rocky
-  ./control.sh cert status|record-suspend|certify|baseline-status|baseline-certify
-  ./control.sh logs list|tail|boot-failure
-
-Compatibilité : ./menu.sh lance le même centre de contrôle.
-NO_COLOR=1 désactive les couleurs ANSI.
-EOF
 }
 
 cc_cli_dispatch() {

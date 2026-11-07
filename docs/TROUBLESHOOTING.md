@@ -1,7 +1,7 @@
 # Dépannage
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — diagnostic de préinstallation relu contre `lib/live_validation.py` et `scripts/validation/live-usb.sh` ; routes du centre de contrôle contrôlées statiquement — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — parcours de dépannage applicatif et consultation firmware relus contre les moteurs et tests isolés — matériel : non vérifié
 
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
@@ -99,6 +99,10 @@ Causes courantes : exécution hors du PC physique (VM, conteneur, WSL), dépôt 
 **DNF ou un dépôt échoue.** `dnf repolist`, `dnf check`, `dnf repoquery --available bash`. Pour VS Code ou Brave, vérifier le dépôt (`dnf repoquery --available code`, `brave-browser`) plutôt que de télécharger un RPM sur un site tiers. Une rupture côté éditeur peut être temporaire : la CI de préflight des paquets la verrait aussi.
 
 **Application Flathub absente.** `flatpak remotes`, `flatpak list`, `flatpak remote-info flathub <APP_ID>`. Les mises à jour Flatpak sont manuelles (`flatpak update` ou `./control.sh update flatpak`) : aucun timer automatique, c'est normal.
+
+**Validation d'une application en échec.** Relever la ligne `Applications : RPM` ou `Applications : Flatpak` : elle indique l'identifiant manquant et le manifeste à comparer. Si un doctor échoue, relancer la commande `./diagnostics/...` indiquée **sans `--quiet`** pour lire le détail, puis vérifier l'installation et la provenance. Ne pas remplacer un paquet manquant par une source non validée.
+
+**Recherche firmware incertaine.** Si `./control.sh update firmware` affiche `WARN` et renvoie `rc=20`, lire le message exact de `fwupdmgr` puis vérifier sa disponibilité et ses métadonnées avant de réessayer. Le firmware n'est ni déclaré à jour ni flashé automatiquement. Cette consultation ne doit pas provoquer une nouvelle transaction RPM déjà appliquée ([périmètre des mises à jour](UPDATE_COVERAGE.md)).
 
 **Codecs ou accélération vidéo.** `./diagnostics/media-doctor`, `vainfo`, `ffmpeg -decoders | grep -Ei 'h264|hevc|av1|vp9'`. Le pilote média Intel est choisi sur les capacités mesurées : si VA-API expose H.264/HEVC/AV1/VP9, garder le fournisseur courant même si un forum en conseille un autre.
 

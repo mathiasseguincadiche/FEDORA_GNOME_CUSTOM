@@ -54,4 +54,25 @@ for id in $usage_ids; do
   grep -Fxq "$id" <<<"$installed_flatpaks" || { echo "application-usage-doctor requires a Flatpak no manifest installs: $id" >&2; exit 1; }
 done
 
+# A postcheck must identify the missing package/Flatpak or failed doctor instead
+# of returning only a generic module failure code. This uses no host mutations.
+source "$ROOT/lib/constants.sh"
+source "$ROOT/modules/applications/49_applications_validation.sh"
+REPO_ROOT="$ROOT"
+DRY_RUN=false
+ui_check() { printf '[%s] %s — %s\n' "$1" "$2" "$3"; }
+is_true() { [[ "${1,,}" == true ]]; }
+rpm() { [[ "${1:-}" == -q ]] && return 1; }
+first_pkg="$(awk '!/^([[:space:]]*#|[[:space:]]*$)/ { print; exit }' "$ROOT/manifests/packages-applications-gtk4.txt")"
+rc=0
+report="$(applications_validation_postcheck)" || rc=$?
+[[ "$rc" == "$EXIT_POSTCHECK_FAILED" && "$report" == *"$first_pkg"* && "$report" == *'packages-applications-gtk4.txt'* ]] || {
+  echo 'missing RPM identity or manifest hidden by applications postcheck' >&2; exit 1;
+}
+rc=0
+report="$(applications_validation_require_doctor 'Démarrage des applications' /bin/false --quiet)" || rc=$?
+[[ "$rc" == "$EXIT_POSTCHECK_FAILED" && "$report" == *'Démarrage des applications'* && "$report" == *'rc=1'* ]] || {
+  echo 'failed application doctor has no actionable explanation' >&2; exit 1;
+}
+
 echo 'professional applications contract: PASS'

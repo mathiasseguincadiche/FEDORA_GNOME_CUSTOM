@@ -2,19 +2,79 @@
 # Hardware baseline helpers: state paths, read-only sysfs inventory (CPU, GPU, NVMe,
 # memory, EDID) and the fingerprint the pre-APPLY baseline is bound to.
 
-baseline_state_dir(){ printf '%s/baseline' "$STATE_ROOT"; }
-baseline_evidence_dir(){ printf '%s/evidence' "$(baseline_state_dir)"; }
-baseline_certification_path(){ printf '%s/certified.ok' "$(baseline_state_dir)"; }
-baseline_ensure_dirs(){ mkdir -p "$(baseline_evidence_dir)"; }
-baseline_hw_value(){ local path="$1" fallback="${2:-unknown}"; if [[ -r "$path" ]]; then tr -d '\000' < "$path" | head -n1; else printf '%s\n' "$fallback"; fi; }
-baseline_cpu_model(){ awk -F: '/model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo 2>/dev/null || printf 'unknown\n'; }
+baseline_state_dir() { printf '%s/baseline' "$STATE_ROOT"; }
+baseline_evidence_dir() { printf '%s/evidence' "$(baseline_state_dir)"; }
+baseline_certification_path() { printf '%s/certified.ok' "$(baseline_state_dir)"; }
+baseline_ensure_dirs() { mkdir -p "$(baseline_evidence_dir)"; }
 
-baseline_find_expected_gpu(){ local dev vendor device driver expected_vendor expected_device; expected_vendor="$(normalize_hex "${EXPECTED_GPU_PCI_VENDOR:-8086}")"; expected_device="$(normalize_hex "${EXPECTED_GPU_PCI_DEVICE:-e20b}")"; for dev in /sys/bus/pci/devices/*; do [[ -r "$dev/vendor" && -r "$dev/device" ]] || continue; vendor="$(normalize_hex "$(<"$dev/vendor")")"; device="$(normalize_hex "$(<"$dev/device")")"; [[ "$vendor" == "$expected_vendor" && "$device" == "$expected_device" ]] || continue; driver=unbound; [[ -L "$dev/driver" ]] && driver="$(basename "$(readlink -f "$dev/driver")")"; printf '%s|%s\n' "${dev##*/}" "$driver"; return 0; done; return 1; }
-baseline_gpu_inventory(){ local found driver; found="$(baseline_find_expected_gpu 2>/dev/null || true)"; [[ -n "$found" ]] || { printf 'missing\n'; return; }; driver="${found#*|}"; printf '%s:%s|driver=%s\n' "${EXPECTED_GPU_PCI_VENDOR:-8086}" "${EXPECTED_GPU_PCI_DEVICE:-e20b}" "$driver"; }
-baseline_nvme_inventory(){ local d; for d in /sys/class/nvme/nvme*; do [[ -d "$d" ]] || continue; printf 'model=%s|serial=%s|firmware=%s\n' "$(baseline_hw_value "$d/model")" "$(baseline_hw_value "$d/serial")" "$(baseline_hw_value "$d/firmware_rev")"; done | sort; }
-baseline_nvme_model_count(){ baseline_nvme_inventory | grep -Fc "model=${EXPECTED_NVME_MODEL:-CT1000T705SSD3}" || true; }
-baseline_memory_inventory(){ printf 'mem_total_kib=%s|expected_gib=%s|tested_mt_s=%s,%s\n' "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" "${EXPECTED_RAM_GIB:-48}" "${BASELINE_MEMORY_SPD_MT_S:-5600}" "${BASELINE_MEMORY_XMP_MT_S:-6000}"; }
-baseline_edid_hashes(){ local f; for f in /sys/class/drm/card*-*/edid; do [[ -s "$f" ]] || continue; printf 'edid=%s\n' "$(sha256sum "$f" | awk '{print $1}')"; done | sort; }
+baseline_hw_value() {
+  local path="$1" fallback="${2:-unknown}"
+  if [[ -r "$path" ]]; then
+    tr -d '\000' < "$path" | head -n1
+  else
+    printf '%s\n' "$fallback"
+  fi
+}
+
+baseline_cpu_model() {
+  awk -F: '/model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo 2>/dev/null || printf 'unknown\n'
+}
+
+baseline_find_expected_gpu() {
+  local dev vendor device driver expected_vendor expected_device
+  expected_vendor="$(normalize_hex "${EXPECTED_GPU_PCI_VENDOR:-8086}")"
+  expected_device="$(normalize_hex "${EXPECTED_GPU_PCI_DEVICE:-e20b}")"
+  for dev in /sys/bus/pci/devices/*; do
+    [[ -r "$dev/vendor" && -r "$dev/device" ]] || continue
+    vendor="$(normalize_hex "$(<"$dev/vendor")")"
+    device="$(normalize_hex "$(<"$dev/device")")"
+    [[ "$vendor" == "$expected_vendor" && "$device" == "$expected_device" ]] || continue
+    driver=unbound
+    [[ -L "$dev/driver" ]] && driver="$(basename "$(readlink -f "$dev/driver")")"
+    printf '%s|%s\n' "${dev##*/}" "$driver"
+    return 0
+  done
+  return 1
+}
+
+baseline_gpu_inventory() {
+  local found driver
+  found="$(baseline_find_expected_gpu 2>/dev/null || true)"
+  [[ -n "$found" ]] || { printf 'missing\n'; return; }
+  driver="${found#*|}"
+  printf '%s:%s|driver=%s\n' "${EXPECTED_GPU_PCI_VENDOR:-8086}" "${EXPECTED_GPU_PCI_DEVICE:-e20b}" "$driver"
+}
+
+baseline_nvme_inventory() {
+  local d
+  for d in /sys/class/nvme/nvme*; do
+    [[ -d "$d" ]] || continue
+    printf 'model=%s|serial=%s|firmware=%s\n' \
+      "$(baseline_hw_value "$d/model")" \
+      "$(baseline_hw_value "$d/serial")" \
+      "$(baseline_hw_value "$d/firmware_rev")"
+  done | sort
+}
+
+baseline_nvme_model_count() {
+  baseline_nvme_inventory | grep -Fc "model=${EXPECTED_NVME_MODEL:-CT1000T705SSD3}" || true
+}
+
+baseline_memory_inventory() {
+  printf 'mem_total_kib=%s|expected_gib=%s|tested_mt_s=%s,%s\n' \
+    "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" \
+    "${EXPECTED_RAM_GIB:-48}" \
+    "${BASELINE_MEMORY_SPD_MT_S:-5600}" \
+    "${BASELINE_MEMORY_XMP_MT_S:-6000}"
+}
+
+baseline_edid_hashes() {
+  local f
+  for f in /sys/class/drm/card*-*/edid; do
+    [[ -s "$f" ]] || continue
+    printf 'edid=%s\n' "$(sha256sum "$f" | awk '{print $1}')"
+  done | sort
+}
 
 baseline_fingerprint_payload(){
   printf 'board_vendor=%s\n' "$(baseline_hw_value /sys/class/dmi/id/board_vendor)"
@@ -33,9 +93,20 @@ baseline_fingerprint_payload(){
   printf '[edid]\n%s\n' "$(baseline_edid_hashes)"
   printf 'persistent_data=%s\n' "$(persistent_data_probe 2>/dev/null || echo unavailable)"
 }
-baseline_fingerprint(){ baseline_fingerprint_payload | sha256sum | awk '{print $1}'; }
+baseline_fingerprint() {
+  baseline_fingerprint_payload | sha256sum | awk '{print $1}'
+}
 
-baseline_write_evidence(){ runtime_is_baremetal || return "$EXIT_SECURITY_BLOCK"; local name="$1" status="$2" detail="${3:-}" path; baseline_ensure_dirs; path="$(baseline_evidence_dir)/$name.ok"; { printf 'name=%s\nstatus=%s\nutc=%s\nfingerprint=%s\ndetail=%s\n' "$name" "$status" "$(date -u +%FT%TZ)" "$(baseline_fingerprint)" "$detail"; } | evidence_atomic_write "$path" 0600; }
+baseline_write_evidence() {
+  runtime_is_baremetal || return "$EXIT_SECURITY_BLOCK"
+  local name="$1" status="$2" detail="${3:-}" path
+  baseline_ensure_dirs
+  path="$(baseline_evidence_dir)/$name.ok"
+  {
+    printf 'name=%s\nstatus=%s\nutc=%s\nfingerprint=%s\ndetail=%s\n' \
+      "$name" "$status" "$(date -u +%FT%TZ)" "$(baseline_fingerprint)" "$detail"
+  } | evidence_atomic_write "$path" 0600
+}
 baseline_evidence_valid(){
   runtime_is_baremetal || return 1
   local name="$1" file detail
@@ -49,7 +120,9 @@ baseline_evidence_valid(){
   esac
   case "$name" in memory-5600|memory-6000|nvme-root|nvme-data|cpu-soak) grep -Eq '^detail=.*automated=true.*sha256=[0-9a-f]{64}' "$file";; esac
 }
-baseline_evidence_device(){ awk -F'device=' '/^detail=/ {split($2,a," "); print a[1]; exit}' "$(baseline_evidence_dir)/$1.ok"; }
+baseline_evidence_device() {
+  awk -F'device=' '/^detail=/ {split($2,a," "); print a[1]; exit}' "$(baseline_evidence_dir)/$1.ok"
+}
 
 baseline_automatic_health_check(){
   runtime_is_baremetal || return 1
@@ -106,6 +179,26 @@ baseline_certification_valid(){
   [[ "$(evidence_marker_value "$marker" display_edid_sha256 2>/dev/null || true)" == "$(hardware_b580_expected_edid_sha256)" ]]
 }
 
-runtime_component_version(){ rpm_installed_query '%{VERSION}-%{RELEASE}.%{ARCH}' "$1" || printf 'missing\n'; }
-workstation_runtime_fingerprint_payload(){ local pkg; printf 'hardware=%s\n' "$(baseline_fingerprint)"; printf 'kernel=%s\n' "$(uname -r)"; if runtime_is_baremetal; then printf 'drivers=%s\n' "$(driver_contract_fingerprint)"; printf 'applications=%s\n' "$(application_runtime_fingerprint)"; if is_true "${ENABLE_KVM:-true}"; then printf 'kvm=%s\n' "$(kvm_contract_fingerprint)"; fi; fi; for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell}; do printf '%s=%s\n' "$pkg" "$(runtime_component_version "$pkg")"; done; }
-workstation_runtime_fingerprint(){ workstation_runtime_fingerprint_payload | sha256sum | awk '{print $1}'; }
+runtime_component_version() {
+  rpm_installed_query '%{VERSION}-%{RELEASE}.%{ARCH}' "$1" || printf 'missing\n'
+}
+
+workstation_runtime_fingerprint_payload() {
+  local pkg
+  printf 'hardware=%s\n' "$(baseline_fingerprint)"
+  printf 'kernel=%s\n' "$(uname -r)"
+  if runtime_is_baremetal; then
+    printf 'drivers=%s\n' "$(driver_contract_fingerprint)"
+    printf 'applications=%s\n' "$(application_runtime_fingerprint)"
+    if is_true "${ENABLE_KVM:-true}"; then
+      printf 'kvm=%s\n' "$(kvm_contract_fingerprint)"
+    fi
+  fi
+  for pkg in ${FINAL_CERT_FINGERPRINT_PACKAGES:-linux-firmware intel-gpu-firmware mesa-dri-drivers mesa-vulkan-drivers mutter gnome-shell}; do
+    printf '%s=%s\n' "$pkg" "$(runtime_component_version "$pkg")"
+  done
+}
+
+workstation_runtime_fingerprint() {
+  workstation_runtime_fingerprint_payload | sha256sum | awk '{print $1}'
+}
