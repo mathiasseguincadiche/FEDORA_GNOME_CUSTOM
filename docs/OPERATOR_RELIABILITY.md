@@ -77,23 +77,17 @@ L'**idempotence** concerne une action précise : répéter une action idempotent
 ## 4. Mettre à jour sans confondre noyau, pilotes et firmware matériel
 
 ```bash
-./control.sh update check      # état : Fedora, Flatpak, noyau et firmware disponible
+./control.sh update check      # recherche Fedora / Flatpak / noyau / firmware / périmètre
+./control.sh update scope      # frontières RPM, Steam, Proton, extensions, AppImage
 ./control.sh update all        # sauvegarde Borg puis préparation DNF5 hors ligne
 ./control.sh update status     # vérifier l'étape en attente
 ./control.sh update reboot     # redémarrage explicite pour la transaction préparée
 ./control.sh update finalize   # vérifier RPM, noyau, Flatpak et diagnostics
 ```
 
-| Élément | Traité par quelle opération ? | Limite à connaître |
-| --- | --- | --- |
-| Paquets Fedora et pilotes distribués en RPM | DNF5 pendant `update all` / `update dnf` | Version réellement disponible dans les dépôts configurés |
-| Modules pilotes intégrés au noyau | Nouveau noyau installé dans le cycle de vie | Le matériel doit être pris en charge et fonctionner après redémarrage |
-| `linux-firmware`, `intel-gpu-firmware`, microcode AMD | Paquets installés par le profil, puis mis à jour lorsqu'un RPM est disponible | **Ne signifie pas** flash du BIOS/UEFI ou du SSD |
-| Noyau Linux amont stable | Politique du canal Vanilla et conservation N/N-1 | Reporté si publication ou RPM exact impossible à vérifier ; Secure Boot non compatible avec ce chemin non signé |
-| Applications Flatpak | `update flatpak` ou finalisation de `update all` | Séparées des mises à jour RPM |
-| BIOS, UEFI, firmware embarqué des périphériques | `update firmware` = **consultation uniquement** | Aucun flash automatique ; opération distincte après validation humaine |
+Pour le tableau **complet** des domaines (pilotes, codecs, Steam/Proton, GNOME, AppImage, firmware) et les étapes d'exécution, utiliser la [procédure de couverture transversale des mises à jour](UPDATE_COVERAGE.md). Cette page conserve les règles de lecture des logs et des résultats, sans dupliquer cette procédure.
 
-La mise à jour n'est **pas terminée** tant que le redémarrage requis, la finalisation et les diagnostics ne sont pas effectués. Si le noyau est `DEFERRED`, les autres paquets peuvent être mis à jour et le noyau actuel reste conservé : ne pas afficher « tout à jour » pour le noyau tant que sa cible n'est pas disponible.
+La mise à jour n'est **pas terminée** tant que le redémarrage requis, la finalisation et les diagnostics ne sont pas effectués. Un noyau `DEFERRED` reste en attente ; un échec de consultation Flatpak est `KO`, jamais « aucune mise à jour ».
 
 ### Contrôle après une mise à jour
 

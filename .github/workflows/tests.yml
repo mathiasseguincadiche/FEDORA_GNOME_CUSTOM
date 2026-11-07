@@ -236,6 +236,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: bash tests/test_update_dispatch_behavior.sh
       - if: ${{ !cancelled() }}
+        run: bash tests/test_update_transversal_behavior.sh
+      - if: ${{ !cancelled() }}
         run: bash tests/test_golden_workstation_contract.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_golden_workstation_behavior.sh

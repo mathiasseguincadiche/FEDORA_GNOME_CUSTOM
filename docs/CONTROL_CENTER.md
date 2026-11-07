@@ -111,6 +111,7 @@ Le chemin APPLY conserve ses protections : PC physique, Git propre, baseline, co
 
 ```bash
 ./control.sh update check
+./control.sh update scope
 ./control.sh update all
 ./control.sh update dnf
 ./control.sh update flatpak
@@ -123,7 +124,9 @@ Le chemin APPLY conserve ses protections : PC physique, Git propre, baseline, co
 
 `update all` et `update dnf` préparent une transaction **DNF5 hors ligne** après une sauvegarde complète Borg.
 
-Pour distinguer les pilotes RPM, le noyau Vanilla reporté, le microcode et le firmware matériel **non flashé**, voir la [lecture des mises à jour et de leurs bilans](OPERATOR_RELIABILITY.md#4-mettre-à-jour-sans-confondre-noyau-pilotes-et-firmware-matériel).
+Le sous-menu interactif **Mises à jour** présente désormais aussi `status`, `log`, `reboot`, `finalize` et `scope` : l'opérateur peut terminer le cycle DNF5 depuis le menu, sans passer obligatoirement par la ligne de commande. Le redémarrage nécessite une confirmation explicite. Une transaction préparée n'est pas encore une mise à jour appliquée.
+
+Pour vérifier quelles mises à jour sont réellement couvertes — **RPM, Steam/Proton, Flatpak, codecs, extensions, AppImage, firmware** — et suivre la procédure étape par étape, voir la [couverture transversale des mises à jour](UPDATE_COVERAGE.md). La [lecture des journaux et bilans](OPERATOR_RELIABILITY.md#4-mettre-à-jour-sans-confondre-noyau-pilotes-et-firmware-matériel) complète cette procédure.
 
 ```text
 sauvegarde complète Borg
