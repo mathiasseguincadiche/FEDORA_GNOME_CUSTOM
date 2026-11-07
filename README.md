@@ -21,9 +21,15 @@ Le terme *Golden* désigne ici une **configuration de référence que l'on cherc
 
 **L'utilisateur pilote le projet avec `./control.sh`.** Cette commande donne accès au tableau de bord, aux opérations d'installation, de mise à jour, de sauvegarde, de restauration et de qualification. Elle transmet ensuite le travail aux scripts spécialisés : un seul point d'entrée pour l'opérateur, sans supprimer les protections propres à chaque action.
 
-![Centre de contrôle : une interface opérateur qui oriente l'installation, les mises à jour, les sauvegardes, les diagnostics et les trois Gates vers leurs moteurs dédiés](docs/assets/diagrams/centre-de-controle.svg)
+![Aperçu illustratif du bureau Fedora 45 sous GNOME 51 : Dash to Dock à gauche et terminal Ptyxis affichant le menu du centre de contrôle](docs/assets/illustrations/centre-controle-fedora45-gnome51.webp)
 
-[Source modifiable Draw.io](docs/assets/diagrams/centre-de-controle.drawio) · [Toutes les commandes et leurs effets](docs/CONTROL_CENTER.md)
+*Aperçu de l'expérience visée **après configuration** : GNOME, dock latéral et menu `./control.sh` ouvert dans Ptyxis. Il s'agit d'une **maquette illustrative**, pas d'une capture du PC physique ni d'une preuve de validation.*
+
+**Ce que montre l'image :** depuis le dépôt, on lance `./control.sh` dans un terminal. Le menu donne accès aux fonctions courantes et dirige chaque action vers le script qui la réalise. Il ne faut pas confondre cet **aperçu du système configuré** avec la session **Live USB de Gate 2** : avant installation, la personnalisation GNOME et le dock du projet ne sont pas encore appliqués.
+
+Les deux qualifications se lancent aussi depuis `./control.sh`, mais par des **sous-commandes explicites** : `validate live` pour Gate 2 **avant installation**, puis `validate gate3` pour Gate 3 **après installation et configuration**. Elles ne figurent pas comme entrées distinctes dans le menu illustré.
+
+[Architecture technique de la façade et des moteurs](docs/assets/diagrams/centre-de-controle.svg) · [Source modifiable Draw.io](docs/assets/diagrams/centre-de-controle.drawio) · [Toutes les commandes et leurs effets](docs/CONTROL_CENTER.md)
 
 Depuis le dossier du dépôt :
 
