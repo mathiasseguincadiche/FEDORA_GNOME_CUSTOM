@@ -278,8 +278,11 @@ cc_result() {
   local rc="$1"
   if ((rc == 0)); then
     printf '\n%s✓ Opération terminée avec succès.%s\n' "$CC_GREEN" "$CC_RESET"
+    ui_record PASS 'Centre de contrôle' 'Opération du menu terminée'
   else
     printf '\n%s✗ Opération terminée avec rc=%s.%s\n' "$CC_RED" "$rc" "$CC_RESET"
+    printf '  Une erreur a interrompu cette action. Consultez « Logs & preuves » puis le dernier journal utile avant de relancer.\n'
+    ui_record KO 'Centre de contrôle' "Action interrompue, code rc=$rc ; consulter les journaux et la phase en échec avant de relancer"
   fi
 }
 
@@ -290,6 +293,7 @@ cc_interactive_exec() {
   cc_clear
   cc_header
   cc_section "$title"
+  ui_record INFO 'Action du menu' "$title"
   if "$@"; then
     rc=0
   else
@@ -338,15 +342,45 @@ cc_show_logs() {
 }
 
 cc_tail_latest_log() {
-  local latest=''
-  latest="$(find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -r | head -n 1)"
-  if [[ -z "$latest" || ! -r "$LOG_ROOT/$latest/main.log" ]]; then
-    printf 'Aucun main.log disponible.\n'
+  local latest='' candidate='' file='' shown=0
+  # `control.sh logs tail` creates its own *empty* run at bootstrap. Select
+  # only runs with evidence; an interactive session may legitimately have
+  # produced useful evidence in its current run.
+  while IFS= read -r candidate; do
+    [[ ! -L "$LOG_ROOT/$candidate" ]] || continue
+    if [[ -s "$LOG_ROOT/$candidate/operator.log" || -s "$LOG_ROOT/$candidate/main.log" || -s "$LOG_ROOT/$candidate/modules.log" ]]; then
+      latest="$candidate"
+      break
+    fi
+  done < <(find "$LOG_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -r)
+  if [[ -z "$latest" ]]; then
+    printf "Aucun journal renseigné dans les exécutions disponibles.\n"
     return 0
   fi
-  printf '=== %s ===\n' "$LOG_ROOT/$latest/main.log"
-  tail -n 80 "$LOG_ROOT/$latest/main.log"
+  printf 'Exécution utile : %s\n' "$latest"
+  for file in operator.log main.log modules.log; do
+    if [[ -s "$LOG_ROOT/$latest/$file" && -f "$LOG_ROOT/$latest/$file" && ! -L "$LOG_ROOT/$latest/$file" ]]; then
+      printf '\n=== %s ===\n' "$LOG_ROOT/$latest/$file"
+      tail -n 60 "$LOG_ROOT/$latest/$file"
+      shown=1
+    fi
+  done
+  ((shown == 1)) || printf 'Journaux inaccessibles ; vérifier les permissions et les chemins.\n'
 }
+
+cc_interactive_view() {
+  # Read-only views must not manufacture the newest "useful" log event by
+  # recording their own launch or success before showing previous operations.
+  local title="$1"
+  shift
+  cc_clear
+  cc_header
+  cc_section "$title"
+  "$@"
+  cc_pause
+}
+
+cc_view_latest_log() { cc_interactive_view 'DERNIER JOURNAL UTILE' cc_tail_latest_log; }
 
 cc_show_git_source() {
   git -C "$REPO_ROOT" status --short --branch
@@ -676,16 +710,16 @@ cc_logs_menu() {
     cc_header
     cc_section '10 — LOGS & PREUVES'
     cc_option 1 'Lister logs / rapports / markers'
-    cc_option 2 'Afficher dernier main.log'
+    cc_option 2 'Afficher dernier journal utile' 'opérateur puis détails techniques'
     cc_option 3 'Collecter panne de boot'
     cc_option 4 'Afficher commit courant'
     cc_option 0 'Retour'
     read -r -p 'Choix : ' choice
     case "$choice" in
-      1) cc_interactive_exec 'LOGS & PREUVES' cc_show_logs ;;
-      2) cc_interactive_exec 'DERNIER MAIN.LOG' cc_tail_latest_log ;;
+      1) cc_interactive_view 'LOGS & PREUVES' cc_show_logs ;;
+      2) cc_view_latest_log ;;
       3) cc_interactive_exec 'COLLECTE PANNE DE BOOT' "$REPO_ROOT/scripts/collect-boot-failure.sh" ;;
-      4) cc_interactive_exec 'SOURCE DE VÉRITÉ GIT' cc_show_git_source ;;
+      4) cc_interactive_view 'SOURCE DE VÉRITÉ GIT' cc_show_git_source ;;
       0) return 0 ;;
       *) printf 'Choix invalide.\n'; sleep 1 ;;
     esac
