@@ -7,7 +7,7 @@ La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 ré
 
 **Pour commencer.** Une pull request (PR) propose un changement ; GitHub Actions lance les contrôles associés avant sa fusion. Un *job* est une tâche de ce contrôle, et une *étape* (*step*) est une commande ou une opération à l'intérieur du job. Un indicateur vert signifie seulement que le périmètre de ce contrôle a réussi : il ne prouve ni l'installation sur le vrai SSD, ni le fonctionnement de l'Arc B580.
 
-### Lire un échec sans se tromper de cause
+## Lire un échec sans se tromper de cause
 
 1. Ouvrir l'onglet **Actions**, choisir le run lié au **commit SHA exact** de la PR et repérer le premier job rouge.
 2. Ouvrir sa première étape réellement échouée. Conserver le message d'erreur, l'environnement de test et les artefacts utiles : le dernier job rouge n'est pas toujours l'origine du défaut.
@@ -32,7 +32,18 @@ Exemple : si `contracts` est rouge parce qu'un laboratoire GNOME a échoué, ouv
 
 ![Schéma des contrôles : sept jobs du workflow Tests vers contracts, cinq autres contextes, fusion, push sur main puis release](assets/diagrams/ci-fusion-release.svg)
 
-Le workflow `Tests` lance sept jobs, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main`. **La release n'est pas déclenchée par chaque push** : `release.yml` ne s'exécute que si `.github/release-manifest.env`, le workflow ou son résolveur change. Lorsqu'il se déclenche, il ne publie la préversion que si huit workflows ont réussi sur ce même commit : `Tests`, la qualité du shell, la non-régression, le préflight des paquets, l'intégration de l'hôte et du bureau, l'audit de l'installateur et le scan de sécurité (`scripts/ci/check-release-gate.py`).
+Le workflow `Tests` lance sept jobs de contrôle, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main`.
+
+**La release n'est pas déclenchée par chaque push** : `release.yml` ne s'exécute que si `.github/release-manifest.env`, le workflow ou son résolveur change. Lorsqu'il se déclenche, il ne publie la préversion que si **huit workflows distincts** ont réussi sur **ce même commit** de `main` (liste exacte dans `scripts/ci/check-release-gate.py`) :
+
+1. `tests.yml` — contrats et laboratoires.
+2. `shell-quality.yml` — qualité des scripts shell.
+3. `non-regression.yml` — gardes et invariants.
+4. `fedora-package-preflight.yml` — résolution des paquets.
+5. `fedora-host-pretest.yml` — intégration de l'hôte.
+6. `desktop-integration-pretest.yml` — intégration Nautilus et Ptyxis.
+7. `fedora-installer-audit.yml` — audit de l'installateur.
+8. `security-scanning.yml` — contrôles de sécurité.
 
 Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-release.drawio).
 
