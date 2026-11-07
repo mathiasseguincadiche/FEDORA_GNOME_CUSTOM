@@ -55,7 +55,7 @@ grep -Fq 'retour fwupdmgr=9' "$tmp/firmware-uncertain" || fail 'firmware error c
 grep -Fq 'source firmware temporairement indisponible' "$tmp/firmware-uncertain" || fail 'firmware diagnostic was hidden'
 
 T_STEAM_INSTALLED=false
-T_STEAM_OWNER=fedora-workstation-repositories
+T_STEAM_OWNER='fedora-workstation-repositories'
 T_STEAM_REPO=true
 T_STEAM_SOURCE=true
 printf '[rpmfusion-nonfree-steam]\n' > "$tmp/fedora-owned-steam.repo"
@@ -85,10 +85,10 @@ T_STEAM_SOURCE=false
 rc=0; update_steam_repository_flag > "$tmp/steam-source-missing" 2>&1 || rc=$?
 [[ "$rc" -ne 0 ]] || fail 'missing Steam repository was accepted'
 T_STEAM_SOURCE=true
-T_STEAM_OWNER=untrusted-repo
+T_STEAM_OWNER='untrusted-repo'
 rc=0; update_steam_repository_flag > "$tmp/steam-owner-wrong" 2>&1 || rc=$?
 [[ "$rc" -eq "$EXIT_SECURITY_BLOCK" ]] || fail 'foreign Steam repository ownership was accepted'
-T_STEAM_OWNER=fedora-workstation-repositories
+T_STEAM_OWNER='fedora-workstation-repositories'
 T_STEAM_REPO=false
 rc=0; update_steam_repository_flag > "$tmp/steam-unavailable" 2>&1 || rc=$?
 [[ "$rc" -ne 0 ]] || fail 'unavailable Steam DNF repository was accepted'
