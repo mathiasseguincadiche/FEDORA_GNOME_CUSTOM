@@ -1,7 +1,7 @@
 # CI et validation
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — contrôles documentaires et tests d'ancres relus contre `tests/test_docs_integrity.py` et ses fixtures ; revue des workflows et mesures CI du 2026-11-04 conservées — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — déclencheurs de release vérifiés contre le workflow et schéma régénéré ; mesures CI antérieures distinguées — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -32,7 +32,7 @@ Exemple : si `contracts` est rouge parce qu'un laboratoire GNOME a échoué, ouv
 
 ![Schéma des contrôles : sept jobs du workflow Tests vers contracts, cinq autres contextes, fusion, push sur main puis release](assets/diagrams/ci-fusion-release.svg)
 
-Le workflow `Tests` lance sept jobs, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main` ; `release.yml` ne publie la préversion que si huit workflows ont réussi sur ce même commit : `Tests`, la qualité du shell, la non-régression, le préflight des paquets, l'intégration de l'hôte et du bureau, l'audit de l'installateur et le scan de sécurité (`scripts/ci/check-release-gate.py`).
+Le workflow `Tests` lance sept jobs, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main`. **La release n'est pas déclenchée par chaque push** : `release.yml` ne s'exécute que si `.github/release-manifest.env`, le workflow ou son résolveur change. Lorsqu'il se déclenche, il ne publie la préversion que si huit workflows ont réussi sur ce même commit : `Tests`, la qualité du shell, la non-régression, le préflight des paquets, l'intégration de l'hôte et du bureau, l'audit de l'installateur et le scan de sécurité (`scripts/ci/check-release-gate.py`).
 
 Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-release.drawio).
 

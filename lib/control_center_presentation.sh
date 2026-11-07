@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Presentation layer loaded after the base Control Center and kernel rolling UI.
-# It only refines operator-facing wording/status; business logic remains in the
-# dedicated diagnostics and scripts.
+# Single authoritative presentation layer, loaded after the Control Center
+# core and kernel menu. Business logic stays in diagnostics and scripts.
 
 cc_data_state() {
   local mount="${KVM_DATA_MOUNT:-/data}"
@@ -287,11 +286,10 @@ Usage:
   ./control.sh status                               Tableau de bord read-only
   ./control.sh install prepare-tools|dry-run|backup|apply
   ./control.sh update check|scope|all|dnf|flatpak|firmware|status|log|reboot|finalize
-  ./control.sh update status|log|reboot|finalize
   ./control.sh backup now|daily|list|check|deep|restore [snapshot]|dr-plan|prune
   ./control.sh doctor all|baseline|kernel|graphics|storage|data|display|gnome|apps|media|gaming|polish|remote|kvm|backup
   ./control.sh remote status|doctor|info
-  ./control.sh upgrade plan|prepare|reboot|finalize
+  ./control.sh upgrade plan|prepare|status|reboot|finalize
   ./control.sh perf status|balanced|performance|powersave|sched-status|sched-smoke|zram|nvme|nvme-benchmark|frametime FILE|game COMMAND...
   ./control.sh kernel status|doctor|install-latest|prune|rollback|fallback|refresh-fallback|rollback-fedora
   ./control.sh kvm status|guard-check|guard-reconcile|certify|nautilus-refresh

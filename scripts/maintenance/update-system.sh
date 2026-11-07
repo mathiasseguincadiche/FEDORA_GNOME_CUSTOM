@@ -234,7 +234,8 @@ check_firmware() {
   if ((rc == 0)); then
     ui_check PASS 'Consultation firmware' 'terminée selon les métadonnées locales ; aucun flash ; état matériel non certifié'
   else
-    ui_check WARN 'Consultation firmware' "retour fwupdmgr=$rc : aucune mise à jour ou consultation incertaine ; aucun flash"
+    ui_check WARN 'Consultation firmware' "retour fwupdmgr=$rc : résultat indéterminé (ceci ne signifie pas « aucun firmware à mettre à jour ») ; aucun flash"
+    return "$EXIT_PRECHECK_FAILED"
   fi
 }
 
@@ -377,7 +378,7 @@ require_applied_offline_transaction() {
 }
 
 complete_update() {
-  local mode="$1" transaction="${2:-offline}" doctor_rc=0 flatpak_rc=0
+  local mode="$1" transaction="${2:-offline}" doctor_rc=0 flatpak_rc=0 firmware_rc=0
   UPDATE_REBOOT_REQUIRED=false
   if [[ "$mode" == full ]]; then
     apply_flatpak || flatpak_rc=$?
@@ -387,7 +388,9 @@ complete_update() {
       return "$flatpak_rc"
     fi
   fi
-  check_firmware
+  # The firmware consultation is advisory to the RPM/Flatpak transaction.
+  # Keep a successful package update distinct from an unverified firmware state.
+  check_firmware || firmware_rc=$?
 
   if "$REPO_ROOT/diagnostic.sh"; then
     ui_check PASS 'Post-update diagnostic' 'global doctor completed'
@@ -398,7 +401,11 @@ complete_update() {
 
   if ((doctor_rc == 0)); then
     write_update_state completed "$mode" 0
-    if is_true "$UPDATE_KERNEL_DEFERRED"; then
+    if ((firmware_rc != 0)) && is_true "$UPDATE_KERNEL_DEFERRED"; then
+      ui_summary 'MISE À JOUR LOGICIELLE TERMINÉE — NOYAU REPORTÉ, FIRMWARE NON VÉRIFIÉ' 'RPM/FLATPAK ET DIAGNOSTIC VALIDÉS ; NOYAU À RECHERCHER PLUS TARD ; CONTRÔLER SÉPARÉMENT ./control.sh update firmware' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    elif ((firmware_rc != 0)); then
+      ui_summary 'MISE À JOUR LOGICIELLE TERMINÉE — FIRMWARE NON VÉRIFIÉ' 'RPM/FLATPAK ET DIAGNOSTIC VALIDÉS ; CONSULTER ./control.sh update firmware AVANT DE CONCLURE SUR LE MATÉRIEL' "$UPDATE_STATE_FILE" "$LOG_DIR"
+    elif is_true "$UPDATE_KERNEL_DEFERRED"; then
       ui_summary 'UPDATE COMPLETED (KERNEL DEFERRED)' 'ALL OTHER PACKAGES UPDATED + POSTCHECK PASS; KERNEL STILL PENDING UPSTREAM PACKAGING: RERUN ./control.sh update LATER' "$UPDATE_STATE_FILE" "$LOG_DIR"
     elif [[ "$transaction" == no-offline ]]; then
       ui_summary 'UPDATE COMPLETED' 'RPM PACKAGES ALREADY CURRENT; FLATPAK + POSTCHECK PASS; NO OFFLINE REBOOT REQUIRED' "$UPDATE_STATE_FILE" "$LOG_DIR"

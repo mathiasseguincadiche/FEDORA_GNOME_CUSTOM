@@ -19,8 +19,9 @@ case "$RUNTIME_ENVIRONMENT" in
   wsl2|vm|container)
     ui_banner 'FEDORA WORKSTATION CONTROL' 'VIRTUALIZED RUNTIME DETECTED'
     ui_meta Runtime "$RUNTIME_ENVIRONMENT"
-    ui_check KO 'Bare-metal runtime' 'REAL APPLY and hardware certification are blocked inside VMs/containers'
-    ui_summary 'VIRTUALIZED ENVIRONMENT' 'USE DRY-RUN/CI ONLY; RUN CERTIFICATION ON PHYSICAL HOST' "$REPORT_ROOT" "$LOG_DIR"
+    ui_check KO 'Environnement physique' 'Certification et APPLY réels interdits en VM ou conteneur'
+    ui_summary 'ENVIRONNEMENT VIRTUALISÉ — DIAGNOSTIC NON VALIDÉ' 'UTILISER LE DRY-RUN OU LA CI ; QUALIFIER SUR LE PC PHYSIQUE' "$REPORT_ROOT" "$LOG_DIR"
+    exit "$EXIT_PRECHECK_FAILED"
     ;;
   baremetal)
     ui_banner 'FEDORA WORKSTATION CONTROL' 'DIAGNOSTIC GLOBAL — READ ONLY'

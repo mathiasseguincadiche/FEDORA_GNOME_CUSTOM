@@ -50,9 +50,12 @@ rc=0; check_kernel > "$tmp/kernel-error" || rc=$?
 grep -Fq 'noyau non vérifié' "$tmp/kernel-error" || fail 'kernel inventory was wrongly treated as healthy'
 
 fwupdmgr() { printf 'source firmware temporairement indisponible\n' >&2; return 9; }
-check_firmware > "$tmp/firmware-uncertain" || fail 'firmware uncertainty must be reported as a warning, not a flash'
+rc=0; check_firmware > "$tmp/firmware-uncertain" || rc=$?
+[[ "$rc" -eq "$EXIT_PRECHECK_FAILED" ]] || fail "firmware uncertainty was accepted as a successful verification (rc=$rc)"
+grep -Fq '[WARN' "$tmp/firmware-uncertain" || fail 'firmware uncertainty lacked a warning'
 grep -Fq 'retour fwupdmgr=9' "$tmp/firmware-uncertain" || fail 'firmware error code was hidden'
 grep -Fq 'source firmware temporairement indisponible' "$tmp/firmware-uncertain" || fail 'firmware diagnostic was hidden'
+if grep -Fq 'aucune mise à jour disponible' "$tmp/firmware-uncertain"; then fail 'uncertain firmware lookup was mistaken for no updates'; fi
 
 T_STEAM_INSTALLED=false
 T_STEAM_OWNER='fedora-workstation-repositories'
