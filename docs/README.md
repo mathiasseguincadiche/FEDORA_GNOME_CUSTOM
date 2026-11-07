@@ -14,7 +14,7 @@ Le projet cible **Fedora 45 Workstation / GNOME 51** sur un matériel précis. L
 | Si vous souhaitez… | Commencer ici | Puis approfondir |
 |---|---|---|
 | **Comprendre** le projet sans prérequis | [Notions clés](CONCEPTS.md) | [Architecture](ARCHITECTURE.md) et [glossaire](GLOSSARY.md) |
-| **Préparer** une première installation | [Guide d'installation](INSTALLATION_GUIDE.md) | [Essais Live USB](FEDORA45_LIVE_PREFLIGHT.md) et [points de non-retour](INSTALLATION_GUIDE.md#points-de-non-retour) |
+| **Préparer** une première installation | [Essais Live USB — Gate 2](FEDORA45_LIVE_PREFLIGHT.md) | [Installation pas à pas](INSTALLATION_GUIDE.md) et [points de non-retour](INSTALLATION_GUIDE.md#points-de-non-retour) |
 | **Utiliser** et maintenir Fedora | [Centre de contrôle](CONTROL_CENTER.md) | [Maintenance](DESKTOP_LIFECYCLE.md) et [Borg](BACKUP_RESTORE.md) |
 | **Diagnostiquer** un problème | [Dépannage](TROUBLESHOOTING.md) | [CI](CI_VALIDATION.md) et guides du domaine concerné |
 | **Qualifier** une machine installée | [Qualification](QUALIFICATION.md) | [Fiche physique](PHYSICAL_QUALIFICATION_CHECKLIST.md) et [état réel](../README.md#état-réel) |
