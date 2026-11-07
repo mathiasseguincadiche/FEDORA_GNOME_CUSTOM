@@ -39,17 +39,6 @@ Depuis le dossier du dépôt :
 ./control.sh status   # présente l'état du poste et les preuves connues
 ```
 
-Le menu permet de découvrir les grands domaines du projet. **Les commandes de validation Live USB et Gate 3 se lancent par la même façade, en ligne de commande** : `./control.sh validate ...`. Elles ne sont pas toutes présentes dans le menu interactif.
-
-| Je veux… | Commande de départ | Quand l'utiliser |
-| --- | --- | --- |
-| Vérifier le PC **avant installation** | `./control.sh validate live plan` | Depuis la session *Try Fedora* (Gate 2). |
-| Préparer la configuration du poste | `./control.sh install dry-run` | Sur Fedora installé, après les prérequis matériels. |
-| Appliquer la configuration | `./control.sh install apply` | Après baseline, dry-run et sauvegarde pré-APPLY validés. |
-| Vérifier le système **installé** | `./control.sh validate gate3 status` | Pendant la qualification physique (Gate 3). |
-| Sauvegarder ou restaurer | `./control.sh backup now` / `backup restore latest` | Pendant l'exploitation, avec le support Borg. |
-| Entretenir Fedora | `./control.sh update check` | Pour commencer une maintenance contrôlée. |
-
 > [!NOTE]
 > Le centre de contrôle pilote les **opérations automatisées du dépôt**. Le démarrage sur clé USB, le choix du SSD dans l'installateur Fedora, les réglages UEFI, certains enrôlements matériels et les observations humaines restent des gestes explicites. Aucun script ne doit faire passer ces décisions pour des tâches automatiques.
 
