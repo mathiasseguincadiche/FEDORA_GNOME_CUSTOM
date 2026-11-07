@@ -1,7 +1,7 @@
 # Chaîne d'approvisionnement et provenance
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — relu contre `installer/fedora45-media.lock`, `config/kernel.conf`, `config/gnome-extensions.lock`, `scripts/kvm/verify_rocky_cloud_image.sh`, `guest/rocky-devops/bootstrap-devops.sh` et `scripts/packages/install-rpmfusion-release.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-06 — sources de provenance et politique Flatpak relues contre `installer/fedora45-media.lock`, les verrous, les moteurs d'installation et `modules/desktop/27_lifecycle.sh` — matériel : non vérifié
 
 Cette page dit d'où vient chaque logiciel installé et comment le projet vérifie qu'il n'a pas été altéré. La liste complète des paquets est dans l'[inventaire logiciel](SOFTWARE_INVENTORY.md).
 
@@ -101,7 +101,7 @@ Rien n'est installé sans `REMOTE_ENABLE="true"`.
 ## Mises à jour
 
 - RPM Fedora : téléchargement automatique autorisé ; installation et redémarrage automatiques interdits.
-- Flatpak : mise à jour manuelle, par GNOME Software ou `flatpak update`. Le projet ne crée aucun timer de mise à jour Flatpak.
+- Flatpak : mise à jour volontaire avec `./control.sh update flatpak` (ou `flatpak update` directement). Le projet ne crée aucun timer de mise à jour Flatpak. **GNOME Logiciels reste un catalogue d'installation mais ses fonctions de mise à jour sont verrouillées**, pour éviter une voie parallèle. Voir la [politique de maintenance](DESKTOP_LIFECYCLE.md#gnome-logiciels).
 
 ## Ce que la CI apporte
 

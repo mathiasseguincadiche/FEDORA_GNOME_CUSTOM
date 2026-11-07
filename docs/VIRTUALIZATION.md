@@ -112,7 +112,7 @@ Une preuve complète LAN → VM demande un second appareil du LAN ([réseau KVM]
 
 ## Exports des VM
 
-Les exports sont manuels, quand le propriétaire le décide : arrêter Rocky, puis conserver ensemble disque (autonome ou chaîne de backing complète), XML et NVRAM UEFI. Ni Borg, ni le centre de contrôle, ni la mise à niveau Fedora ne copient les disques QCOW2 ou le XML libvirt. Une reprise se vérifie sur une copie isolée ([reprise isolée](ISOLATED_RECOVERY_RUNBOOK.md)). `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` sont dans Borg ; `/data/ISO` et `/data/Jeux` non.
+Les exports sont **manuels** et déclenchés par le propriétaire. La [procédure libvirt](KVM_EXPORT_RESTORE.md) documente l'arrêt, le recensement des membres, le disque autonome ou sa chaîne de dépendances, le XML, l'UEFI/NVRAM, les empreintes, et la reprise isolée. Ni Borg, ni le centre de contrôle, ni la mise à niveau Fedora ne copient les disques QCOW2 ou le XML libvirt. `/data/Documents`, `/data/Projets` et `/data/IA/Openclaw` sont dans Borg ; `/data/ISO` et `/data/Jeux` non.
 
 ## Interdictions
 
