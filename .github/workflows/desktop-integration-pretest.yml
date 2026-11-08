@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: fedora-45-desktop-integration-${{ github.ref }}
-  cancel-in-progress: true
+  group: fedora-45-desktop-integration-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # This job is a required main-protection status check. Keep the pull_request

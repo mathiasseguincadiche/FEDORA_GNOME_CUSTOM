@@ -8,8 +8,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: rocky-102-vm-pretest-${{ github.ref }}
-  cancel-in-progress: true
+  group: rocky-102-vm-pretest-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   rocky-102-real-vm:

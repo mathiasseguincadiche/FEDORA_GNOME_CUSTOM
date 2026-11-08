@@ -1,7 +1,7 @@
 # CI et validation
 
-> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-07 — déclencheurs de release vérifiés contre le workflow et schéma régénéré ; mesures CI antérieures distinguées — matériel : non vérifié
+> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-08 — concurrence des workflows de validation revue ; mesures CI antérieures distinguées — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -53,7 +53,7 @@ Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-releas
 
 **Exception : une PR qui ne change que la documentation.** Le job `changes` classe les fichiers modifiés (`.github/scripts/docs-only-change.py`). Si tous sont en Markdown ou sous `docs/`, les trois VM sont sautées : les deux laboratoires GNOME et la VM Rocky, qui ne lisent aucun de ces fichiers. `contracts` n'accepte ce saut que pour ces trois jobs, seulement si `changes` a réussi et a conclu à une PR de documentation ; tous les autres jobs, dont les tests de documentation de `logic-contracts`, doivent réussir. Le push sur `main` exécute toujours les trois VM, et `release.yml` exige ce run. Cette optimisation réduit les travaux de VM sur les PR documentaires, **sans garantir une durée de CI** : consulter le run courant pour le temps effectivement observé.
 
-**Un nouveau push annule le run précédent de la même PR** (`concurrency`, `cancel-in-progress`). Sur `main`, aucun run n'est annulé.
+**Un nouveau push dans une PR annule sa tentative précédente** (`concurrency`, `cancel-in-progress`). Les workflows de validation déclenchés par un push sur `main` conservent leurs exécutions précédentes, même si un nouveau commit arrive : ces résultats sont nécessaires pour distinguer la validation de chaque SHA après fusion. Cette règle couvre aussi le laboratoire Rocky réutilisé par `Tests`. Les workflows purement planifiés ou lancés manuellement ont leurs propres règles de concurrence.
 
 ## Fiches des contextes obligatoires
 

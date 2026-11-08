@@ -11,8 +11,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: fedora-45-host-pretest-${{ github.ref }}
-  cancel-in-progress: true
+  group: fedora-45-host-pretest-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   packages-and-integration:

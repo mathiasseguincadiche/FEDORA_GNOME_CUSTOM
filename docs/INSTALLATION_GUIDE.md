@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-07 — parcours Live, préparation de `/data`, dépendances `gpg`/`gpgv`, provenance du média et effets des étapes relus contre les moteurs ; opérations physiques non rejouées — matériel : non vérifié
+> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-08 — validité de la preuve pré-APPLY et reprise après échec relues contre les moteurs ; opérations physiques non rejouées — matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 
@@ -28,7 +28,7 @@ Cette liste sert de **journal de progression** si l'installation est interrompue
 - [ ] Premier login GNOME contrôlé (section 10)
 - [ ] Gate 3 `PASS`, état certifié vérifié (sections 11 et 12)
 
-Ce résumé ne remplace ni les prérequis ni les validations : il rend l'état d'une exécution visible sans relire le guide.
+Ce résumé ne remplace ni les prérequis ni les validations : il rend l'état d'une exécution visible sans relire le guide. **Si un APPLY a déjà commencé puis échoué, ne pas simplement reprendre à la case non cochée** : suivre d'abord le [diagnostic d'un APPLY partiel](TROUBLESHOOTING.md#installation-et-apply).
 
 ## Avant de commencer
 
@@ -297,6 +297,8 @@ cible externe prouvée (ext4, 20 Gio libres au minimum)
 
 **Réussite :** le script se termine en confirmant le marqueur. Le canari et le contrôle de `local.conf` prouvent des **extractions ciblées**, pas une restauration complète de Fedora. Au moment de l'APPLY, le projet rouvre réellement le dépôt Borg et vérifie que l'archive exacte existe toujours : le marqueur seul ne suffit pas. Garder le support externe branché.
 
+**Durée de validité :** le marqueur `state/preapply-backup.ok` reste recevable pendant **24 heures par défaut** après sa création (`BACKUP_MAX_AGE_HOURS` dans `config/backup.conf`). Passé ce délai, l'APPLY refuse de démarrer, même si l'archive Borg existe toujours : avant un premier APPLY, refaire la sauvegarde vérifiée sous l'état courant, après le dry-run requis. **Si un APPLY a déjà partiellement modifié le système, conserver d'abord l'archive antérieure** et suivre le [diagnostic d'incident](TROUBLESHOOTING.md#installation-et-apply) : une nouvelle sauvegarde de l'état partiel ne remplace pas le point de retour d'origine.
+
 ## 8. Appliquer la configuration
 
 **But :** appliquer le profil de configuration du dépôt au système préparé. **L'APPLY n'est pas la première modification du PC** : l'installation de Fedora, la préparation des outils, le montage de `/data` et la sauvegarde pré-APPLY peuvent déjà modifier son état. Chacune possède ses préconditions et points d'arrêt dans les sections précédentes.
@@ -400,7 +402,9 @@ Chaque cause ci-dessous reste une hypothèse tant que la vérification indiquée
 | `baseline-doctor certify` échoue | Essai manquant, vitesse mémoire différente de l'essai, matériel non conforme | Sortie de `certify` et `./diagnostics/baseline-doctor status` | Refaire l'essai indiqué ; un défaut matériel arrête le parcours | `certify` |
 | APPLY refusé : dry-run périmé | Commit, `config/local.conf` ou matériel modifiés après le dry-run | `git status` et date de la dernière retouche | Relancer le dry-run, puis la sauvegarde | Sections 6 et 7 |
 | APPLY refusé : sauvegarde | Support Borg débranché ou archive introuvable | Support monté, `./diagnostics/backup-doctor` | Rebrancher le support ou refaire la sauvegarde | Section 7 |
+| APPLY refusé : marqueur trop ancien | Marqueur pré-APPLY de plus de 24 h par défaut | Âge de `state/preapply-backup.ok` et `BACKUP_MAX_AGE_HOURS` | Avant le premier APPLY, refaire la sauvegarde sous l'état validé | Section 7 |
 | APPLY refusé : Secure Boot | Secure Boot actif ou état illisible | `mokutil --sb-state` | Désactiver Secure Boot dans l'UEFI | Section 8 |
+| APPLY commencé puis échoué | Un ou plusieurs modules ont pu modifier Fedora avant le premier échec | Rapport `reports/run-<identifiant>.json` et journaux `logs/<identifiant>/` | **Ne pas relancer automatiquement** ; qualifier l'état partiel avant de décider entre réparation et reprise en staging ([procédure](TROUBLESHOOTING.md#installation-et-apply)) | Refaire les contrôles concernés et, si reprise autorisée, les préconditions 6 à 8 |
 | Démarrage sur N-1 ou échec de N | Régression du noyau N | `./control.sh kernel status`, journal du démarrage précédent | `./control.sh kernel rollback` ; si aucun noyau amont ne démarre, choisir l'entrée Fedora dans GRUB ([dépannage](TROUBLESHOOTING.md)) | `kernel-doctor` |
 
 **Retour arrière.** L'APPLY ne supprime aucune donnée de `/data`. Pour revenir à l'état d'avant l'APPLY, restaurer l'archive pré-APPLY en staging, puis remettre les fichiers voulus à la main, selon [sauvegardes et restauration](BACKUP_RESTORE.md). Une réinstallation complète repart de la section 2 et réutilise le second T705 sans le reformater. La CI restaure une archive Borg réelle en VM ; le retour arrière après un APPLY sur le PC reste à essayer pendant la qualification.

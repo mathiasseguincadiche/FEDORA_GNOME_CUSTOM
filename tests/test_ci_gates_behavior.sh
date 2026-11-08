@@ -6,11 +6,32 @@ import importlib.util
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
 
 root = pathlib.Path(sys.argv[1])
+# PR pushes may cancel superseded attempts. A new main commit must never
+# cancel a preceding post-merge validation, including a reusable VM workflow.
+for workflow_name in (
+    "tests.yml",
+    "fedora-host-pretest.yml",
+    "desktop-integration-pretest.yml",
+    "vm-pretest.yml",
+    "fedora-gaming-pretest.yml",
+    "fedora-appimage-pretest.yml",
+):
+    workflow = (root / ".github/workflows" / workflow_name).read_text(encoding="utf-8")
+    assert re.search(
+        r"(?m)^  group: [^\n]*\$\{\{ github\.event\.pull_request\.number \|\| github\.run_id \}\}$",
+        workflow,
+    ), f"{workflow_name}: main runs must use distinct concurrency groups"
+    assert re.search(
+        r"(?m)^  cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}$",
+        workflow,
+    ), f"{workflow_name}: main runs must never be cancelled by a newer run"
+
 spec = importlib.util.spec_from_file_location("gate", root / "scripts/ci/check-release-gate.py")
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)

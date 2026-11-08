@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
-> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-07 — exclusions appliquées avant la création de l'archive système, tests sur arborescence factice ; essais physiques non rejoués — matériel : non vérifié
+> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-08 — exclusions et durée de validité du marqueur pré-APPLY relues contre les moteurs ; essais physiques non rejoués — matériel : non vérifié
 
 **Une sauvegarde doit permettre de récupérer quelque chose, pas seulement produire un fichier.**
 
@@ -110,6 +110,8 @@ Elle précède tout APPLY, après un dry-run réussi au même commit ([guide d'i
 ```
 
 Si `BACKUP_REPOSITORY` est vide, le script cherche exactement **un** support externe monté et utilise `Backup-Fedora/borg` dessus ; plusieurs supports montés le bloquent. Au premier lancement, il crée le dépôt avec `borg init --encryption=none` après une confirmation tapée à la main. Il écrit ensuite l'archive `fgc-preapply-<date>`, la relit intégralement (`borg check --verify-data`), extrait et compare un fichier témoin, puis écrit `state/preapply-backup.ok`. Ce marqueur est lié au commit Git du dry-run et à l'archive exacte (nom et identifiant) ; l'APPLY rouvre le dépôt pour vérifier que cette archive existe toujours.
+
+Le marqueur expire **24 heures après sa création par défaut** (`BACKUP_MAX_AGE_HOURS`, `config/backup.conf`) : une archive encore présente ne rend pas un marqueur ancien valide. Avant un premier APPLY, recréer une sauvegarde vérifiée si ce délai est dépassé. Après un APPLY partiellement exécuté, **ne pas substituer une nouvelle archive à la sauvegarde d'avant incident** ; suivre d'abord la [procédure de diagnostic](TROUBLESHOOTING.md#installation-et-apply).
 
 ### Sauvegarde complète
 
