@@ -1,7 +1,7 @@
 # Préparer ou réutiliser le disque de données `/data`
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — contrat d'identité relu contre `config/hardware.conf`, `lib/persistent_data_identity.py` et `diagnostics/baseline-doctor` ; opérations de partitionnement et montage **non exécutées** — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — contrat d'identité relu contre `lib/persistent_data_identity.py` et `diagnostics/baseline-doctor` ; opérations de partitionnement et montage **non exécutées** — matériel : non vérifié
 
 **Objectif :** rendre le second Crucial T705 disponible en EXT4 sous `/data`, sans toucher au disque système ni détruire un disque déjà utilisé. Le [guide d'installation](INSTALLATION_GUIDE.md#4-préparer-le-second-t705-pour-data) fixe le moment où exécuter cette procédure : **après l'installation de Fedora sur le T705 système, avant la baseline et l'APPLY**.
 
@@ -30,7 +30,7 @@ findmnt -no SOURCE,TARGET,FSTYPE,UUID /
 ls -l /dev/disk/by-id/
 ```
 
-Noter sur papier ou dans un inventaire privé : numéro de série du SSD qui porte `/`, numéro de série du second T705 et état de ses partitions. Comparer aux identités relevées en [Gate 2](FEDORA45_LIVE_PREFLIGHT.md). **Arrêt immédiat** si les séries ne sont pas distinctes et connues, si un disque affiche des données non sauvegardées ou si les chemins ne sont pas univoques.
+Noter sur papier ou dans un inventaire privé : numéro de série du SSD qui porte `/`, numéro de série du second T705 et état de ses partitions. Comparer avec `inventaire-disques-live.txt`, conservé **hors des SSD internes** pendant la [Gate 2](FEDORA45_LIVE_PREFLIGHT.md#5-exporter-avant-le-redémarrage). Le JSON Live conserve une **empreinte** des identités, pas les séries en clair. Les noms `/dev/nvme…` peuvent changer : comparer les **numéros de série**, pas leur ordre. **Arrêt immédiat** si les séries ne sont pas distinctes et connues, si un disque affiche des données non sauvegardées ou si les chemins ne sont pas univoques.
 
 Dans les commandes ci-dessous, `CHEMIN_BY_ID_DU_T705_DATA` et `CHEMIN_BY_ID_DE_SA_PARTITION_EXT4` sont des **repères à remplacer** après lecture de `ls -l /dev/disk/by-id/` ; ils ne sont jamais à exécuter tels quels. Un disque et une partition n'ont pas le même chemin.
 
@@ -75,9 +75,13 @@ ls -l /dev/disk/by-id/
 DATA_PART="/dev/disk/by-id/CHEMIN_BY_ID_DE_SA_PARTITION_EXT4"
 readlink -e -- "$DATA_PART"
 lsblk -o NAME,TYPE,MODEL,SERIAL,SIZE,FSTYPE,MOUNTPOINTS "$DATA_PART"
+
+# Lire la chaîne partition → disque parent (sans aucune écriture).
+# La ligne TYPE=disk doit désigner le T705 /data approuvé, jamais le SSD de /.
+lsblk --inverse --paths -o NAME,TYPE,MODEL,SERIAL,SIZE,FSTYPE,MOUNTPOINTS "$(readlink -e -- "$DATA_PART")"
 ```
 
-**Dernier arrêt :** relire à nouveau l'identité du **parent physique** de `DATA_PART`, s'assurer qu'elle est la seule partition neuve prévue et qu'elle n'est pas montée. Lorsque ces contrôles et l'accord d'effacement sont confirmés :
+**Dernier arrêt :** relever la ligne `TYPE=disk` du dernier résultat et comparer son **numéro de série** avec celui du T705 `/data` inventorié, distinct de celui de `/`. Vérifier que `DATA_PART` est la seule partition neuve prévue et qu'elle n'est pas montée. **Si la chaîne ne révèle pas un parent unique ou si le numéro de série diffère, ne pas formater.** Lorsque ces contrôles et l'accord d'effacement sont confirmés :
 
 ```bash
 # DESTRUCTIF : formate uniquement la partition DATA_PART vérifiée.
@@ -96,10 +100,24 @@ Pour **les deux parcours**, relever l'UUID de la partition EXT4 sélectionnée (
 ```bash
 sudo install -d -m 0755 /data  # point de montage ; ne crée pas de données utilisateur
 sudo cp -a --backup=numbered /etc/fstab /etc/fstab.avant-fgc-data  # conserve les copies précédentes
+```
+
+**Avant de modifier `/etc/fstab`**, contrôler les entrées déjà présentes et le répertoire qui sera masqué par le montage :
+
+```bash
+# Une sortie pour /data indique une entrée existante : ne pas en ajouter une seconde.
+sudo grep -nE '^[[:space:]]*[^#[:space:]]+[[:space:]]+/data[[:space:]]' /etc/fstab
+# Le répertoire doit être vide avant le premier montage ; ne jamais masquer des fichiers.
+sudo ls -A /data
+```
+
+Une sortie vide de `grep` signifie qu'aucune entrée active `/data` n'a été trouvée (code de retour `1`, normal dans ce cas). Une sortie vide de `ls -A` signifie que le répertoire est vide. Si `/data` contient déjà des fichiers non montés ou si plusieurs entrées actives ciblent `/data`, **arrêter et clarifier**. Si une ligne `/data` existe déjà, la vérifier et la corriger au besoin au lieu d'en ajouter une deuxième. Sinon, ouvrir le fichier :
+
+```bash
 sudoedit /etc/fstab
 ```
 
-Ajouter **une seule ligne**, en remplaçant `UUID_EXT4_DU_T705_DATA` par l'UUID **réel** de la partition :
+Ajouter **une seule ligne si elle est absente**, en remplaçant `UUID_EXT4_DU_T705_DATA` par l'UUID **réel** de la partition :
 
 ```fstab
 UUID=UUID_EXT4_DU_T705_DATA /data ext4 defaults 0 2
@@ -126,7 +144,7 @@ Reprendre le numéro de série exact du second T705 retourné par `storage-ident
 ./diagnostics/baseline-doctor storage-identity
 ```
 
-L'enrôlement est une écriture **de l'identité approuvée**, pas un formatage. Il lie le SSD, son système de fichiers et l'UUID au matériel attendu. Un changement ultérieur de SSD ou de montage doit provoquer un refus, pas une adaptation silencieuse.
+L'enrôlement est une écriture **de l'identité approuvée**, pas un formatage. Il lie le SSD, son système de fichiers et l'UUID au matériel attendu. Le code vérifie que le numéro de série saisi correspond **au `/data` effectivement monté** : un numéro erroné est refusé. Une relance sur la **même identité physique** remplace le fichier d'identité par les mêmes valeurs, sans partitionner ni formater. En revanche, **ne pas utiliser un nouvel enrôlement pour contourner une différence de disque** : s'arrêter et reprendre l'inventaire et l'approbation humaine avant toute nouvelle identité.
 
 Revenir à la [section 4 du guide d'installation](INSTALLATION_GUIDE.md#4-préparer-le-second-t705-pour-data), puis continuer sur la baseline et le dry-run. **Les sous-dossiers `/data/Documents`, `/data/Projets`, `/data/libvirt`, etc. seront créés ou normalisés par l'APPLY** ; ne pas conclure à un échec de `data-storage-doctor` avant cette phase s'ils n'existent pas encore.
 
@@ -136,7 +154,7 @@ Revenir à la [section 4 du guide d'installation](INSTALLATION_GUIDE.md#4-prépa
 | --- | --- |
 | Mauvaise série / parent physique incertain | Aucun formatage, montage ou enrôlement ; reprendre l'inventaire |
 | Partition non vide ou fichiers inattendus | Arrêt ; préserver le contenu et décider explicitement de sa récupération |
-| Erreur de syntaxe fstab | Restaurer l'entrée précédente depuis la copie locale, relancer `findmnt --verify` ; ne pas masquer l'erreur par un montage sur `/` |
+| Erreur de syntaxe fstab | Examiner les copies `/etc/fstab.avant-fgc-data*` et restaurer **celle dont le contenu correspond au dernier état valide**, après comparaison ; ne pas choisir arbitrairement la première ou la plus récente. Relancer `findmnt --verify` ; ne pas masquer l'erreur par un montage sur `/` |
 | `/data` monte sur le mauvais SSD ou n'est pas EXT4 | Arrêt ; ne pas exécuter `install.sh --apply` ; corriger montage et identité |
 | Disque formaté par erreur | **Ne plus écrire sur le disque** ; escalader vers une récupération de données spécialisée. Le projet ne possède pas de commande de restauration du contenu effacé |
 
