@@ -170,6 +170,8 @@ BACKUP_PRIVATE_KEY_EXCLUDES=('*/.ssh' '*/.gnupg')
 # these restrictions at tar creation time for BOTH preapply and full backups.
 # This is a defense for known system secret locations, not a guarantee that
 # arbitrary administrator-created secrets elsewhere under /etc are absent.
+# Sourced library: the two entrypoints consume this array after bootstrap.
+# shellcheck disable=SC2034
 BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES=(
   --exclude='etc/libvirt'
   --exclude='etc/libvirt/*'

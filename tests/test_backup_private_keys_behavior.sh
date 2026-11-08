@@ -67,6 +67,8 @@ done
 
 # Both production paths must use the SAME exclusions at tar creation time.
 for script in "$ROOT/prepare-preapply-backup.sh" "$ROOT/scripts/backup/backup-now.sh"; do
+  # The string is intentionally literal: it must appear in each caller.
+  # shellcheck disable=SC2016
   grep -Fq '"${BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES[@]}"' "$script" || {
     echo "System-tar exclusions are not wired into $script" >&2; exit 1;
   }
