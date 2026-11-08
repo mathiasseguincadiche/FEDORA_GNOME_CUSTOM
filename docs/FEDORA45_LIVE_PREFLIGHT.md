@@ -1,7 +1,7 @@
 # Fedora 45 / GNOME 51 — vérifier le PC depuis le Live USB
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — parcours, états et export relus contre `scripts/validation/live-usb.sh` et `lib/validation_gates.sh` ; décision humaine distincte du `GO` logiciel — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — parcours et sérialisation des preuves relus contre `scripts/validation/live-usb.sh`, `lib/live_validation.py` et `lib/validation_gates.sh` — matériel : non vérifié
 
 Ce contrôle se fait directement sur le PC prévu pour l'installation neuve. Il vérifie le démarrage et les fonctions utilisables depuis **Try Fedora**, avant de toucher aux SSD. La CI Linux teste le code séparément ; aucune VM n'est à préparer pour suivre ce parcours.
 
@@ -17,7 +17,7 @@ Le contrôle s'étale du Live USB jusqu'au système installé : ce résumé dit 
 - [ ] Support d'export repéré, hors des SSD internes (section 1)
 - [ ] Dépôt détaché au commit audité, SHA noté (section 2)
 - [ ] Observations lancées, questions répondues (section 4)
-- [ ] Décision calculée (`GO`, `NO-GO` ou `A_VERIFIER`) comprise ; JSON et SHA-256 exportés si `GO` (sections 4 et 5)
+- [ ] Décision calculée (`GO`, `NO-GO` ou `A_VERIFIER`) comprise ; JSON et SHA-256 exportés si `GO`, TSV et inventaire privé conservés dans tous les cas (sections 4 et 5)
 - [ ] Compte rendu relu, réserves examinées et **autorisation humaine d'installer** obtenue (section 6)
 - [ ] Après installation : import au même commit, `./control.sh validate status` vérifié (section 7)
 
@@ -79,7 +79,7 @@ Les points complémentaires permettent de distinguer un périphérique non essay
 
 Répondre aux questions depuis le terminal : **o** pour un essai réussi, **n** pour un défaut constaté, **?** pour un point non essayé. Pour la veille, utiliser le menu GNOME au moment indiqué ; le script ne met pas le PC en veille automatiquement. Une réponse positive sans trace noyau de reprise reste non vérifiée.
 
-Le rapport TSV est enregistré dans `state/validation/live-preflight.tsv`. Les statuts sont :
+Le rapport TSV est enregistré dans `state/validation/live-preflight.tsv`, y compris lorsque la décision n'est pas `GO`. Les statuts sont :
 
 - `PASS` : l'observation décrite a réussi ;
 - `FAIL` : un défaut a été constaté ;
@@ -97,14 +97,36 @@ Un `GO` peut conserver des points complémentaires `NOT_TESTED` : ils restent ex
 
 ## 5. Exporter avant le redémarrage
 
-Adapter ce chemin au support externe réellement monté et accessible en écriture :
+Adapter ce chemin au support externe réellement monté et accessible en écriture. **Vérifier dans Fichiers qu'il ne désigne aucun des deux T705** avant de créer un dossier ou d'y écrire :
 
 ```bash
 SUPPORT="/run/media/$USER/SUPPORT_FGC/preinstallation"
+# Lecture seule : la cible doit dépendre d'un support externe monté, pas de / ou /data.
+findmnt -T "$(dirname "$SUPPORT")"
+```
+
+**Point d'arrêt :** examiner la sortie de `findmnt` et le support dans Fichiers. Si la cible dépend de `/`, de `/data` ou d'un SSD interne au lieu du support externe attendu, **ne pas lancer l'export ni les copies ci-dessous**.
+
+Seulement si la décision est `GO` **et** le support vérifié :
+
+```bash
 ./control.sh validate export live "$SUPPORT"
 ```
 
-L'export copie le JSON et son fichier SHA-256. Vérifier dans Fichiers que ces deux fichiers sont bien sur le support externe, puis conserver aussi le SHA du commit. Le TSV peut être copié sur ce support pour relire les détails ; **le fichier à importer est le JSON**, pas le TSV.
+L'export copie le JSON et son fichier SHA-256. Vérifier dans Fichiers que ces deux fichiers sont bien sur le support externe, puis conserver aussi le SHA du commit. **Le fichier à importer après installation est le JSON**, pas le TSV.
+
+**Pour les trois décisions (`GO`, `NO-GO`, `A_VERIFIER`)**, conserver aussi les observations et les identités permettant de distinguer les disques. Une fois le support externe vérifié dans Fichiers :
+
+```bash
+# Écrit uniquement sur le support externe que vous venez de vérifier.
+mkdir -p -- "$SUPPORT"
+(umask 077; cp -- state/validation/live-preflight.tsv "$SUPPORT/live-preflight-$(date -u +%Y%m%dT%H%M%SZ).tsv")
+(umask 077; lsblk -e7 -o NAME,TYPE,MODEL,SERIAL,SIZE,FSTYPE,MOUNTPOINTS > "$SUPPORT/inventaire-disques-live.txt")
+```
+
+La copie datée du TSV conserve les défauts de **chaque tentative**, même quand **aucun JSON n'est produit**. L'inventaire privé contient les numéros de série **en clair** et les noms de périphérique constatés **dans cette session Live seulement**. Noter séparément quel numéro de série est réservé au système et lequel doit conserver `/data`, après vérification physique. Ne jamais déduire ce choix de l'ordre `nvme0n1`/`nvme1n1` ; si les rôles restent ambigus, **arrêter avant l'installateur**.
+
+Le JSON de `GO` contient une **empreinte SHA-256 des identités matérielles**, mais **pas les numéros de série en clair**. Il permet de vérifier que le PC correspond à la preuve à l'import ; il ne remplace pas l'inventaire privé nécessaire au choix du disque.
 
 Les identités physiques du PC sont utilisées pour reconnaître la machine après installation. Ce compte rendu contient donc des informations de matériel ; le conserver personnellement et le relire avant un partage public.
 
@@ -112,7 +134,7 @@ Les identités physiques du PC sont utilisées pour reconnaître la machine apr�
 
 **Pourquoi cette pause ?** Le contrôle automatique vérifie des critères précis, mais il ne décide ni de l'effacement d'un disque ni de l'acceptation d'un risque. Les points complémentaires `NOT_TESTED` peuvent être acceptables ou nécessiter un nouvel essai selon les usages attendus du PC. C'est donc le bon moment pour examiner les preuves *avant* toute opération difficile à annuler.
 
-1. **Conserver les résultats.** Vérifier la présence du JSON exporté et du fichier `.sha256` sur un support externe. Conserver également le TSV de détail pour revoir chaque observation.
+1. **Conserver les résultats.** En cas de `GO`, vérifier la présence du JSON et de son `.sha256` sur le support externe. Dans **tous les cas**, conserver le TSV, l'inventaire privé des deux SSD et le SHA du commit ; un `NO-GO` ou `A_VERIFIER` ne fournit pas de JSON importable.
 2. **Transmettre un compte rendu pour analyse.** Indiquer le commit testé, la décision calculée, les six critères obligatoires, les points complémentaires en `NOT_TESTED`, les `FAIL` éventuels et les symptômes observés. La commande `./control.sh validate live status` résume l'état courant ; le TSV contient le détail des observations.
 3. **Examiner les réserves.** Un `FAIL` impose un `NO-GO` ; un point obligatoire non testé impose `A_VERIFIER`. Même avec un `GO`, les points complémentaires manquants restent des incertitudes à examiner. Une analyse assistée peut recommander une décision ; elle ne remplace pas l'essai physique ni la décision du propriétaire.
 4. **Prendre une décision explicite.** **GO humain** : le propriétaire confirme qu'il accepte de poursuivre vers l'installation sur le T705 système. **NO-GO humain** : on s'arrête, on diagnostique et on recommence les essais nécessaires. Ne jamais déduire cet accord du seul résultat `GO` du script.
@@ -120,7 +142,7 @@ Les identités physiques du PC sont utilisées pour reconnaître la machine apr�
 > [!CAUTION]
 > **Sans accord explicite, l'étape suivante est interdite.** L'installation graphique de Fedora peut effacer le SSD choisi. La Gate 2 n'exécute pas l'installateur, ne formate aucun SSD et ne certifie aucun service du futur système installé.
 
-Le JSON Live contient des identités matérielles : ne pas publier ses numéros de série ou identifiants privés dans une issue GitHub publique. Préparer un résumé expurgé pour un échange public et conserver l'original pour l'import au même commit.
+Le JSON Live contient une empreinte matérielle ; l'inventaire séparé, lui, contient les numéros de série en clair. **Ne publier ni inventaire privé ni identifiants sensibles** dans une issue GitHub publique. Préparer un résumé expurgé pour un échange public et conserver le JSON original pour l'import au même commit.
 
 ## 7. Après l'installation de Fedora
 

@@ -141,10 +141,20 @@ git rev-parse HEAD                  # doit afficher le commit audité
 
 Lancer l'installateur depuis la session Live.
 
-1. Identifier le T705 système **par son numéro de série**, jamais par un nom comme `/dev/nvme0n1`, qui peut changer d'un démarrage à l'autre.
+Avant d'ouvrir l'installateur, retrouver dans l'[inventaire privé enregistré depuis le Live](FEDORA45_LIVE_PREFLIGHT.md#5-exporter-avant-le-redémarrage) les **deux numéros de série** et le rôle prévu pour chacun. Dans **la même session Live**, vérifier la correspondance avec les périphériques effectivement présents :
+
+```bash
+# Lecture seule : les deux T705 ont le même modèle, pas le même numéro de série.
+lsblk -e7 -o NAME,TYPE,MODEL,SERIAL,SIZE,FSTYPE,MOUNTPOINTS
+ls -l /dev/disk/by-id/
+```
+
+Cette correspondance aide à interpréter les disques montrés par l'installateur **dans cette session** ; un nom `/dev/nvme…` n'est jamais une identité permanente. Si l'interface graphique ne permet pas d'associer **sans ambiguïté** le disque choisi à la série du T705 système, **quitter l'installateur sans confirmer l'effacement** et demander une vérification complémentaire. Ne pas choisir par ordre ou par modèle identique.
+
+1. Confirmer que le T705 système sélectionné correspond au **numéro de série approuvé**, et que le second T705 `/data` n'est pas sélectionné pour l'effacement.
 2. Choisir une installation Btrfs, sans LUKS, conformément à l'[ADR 0002](adr/0002-no-secureboot-no-local-luks.md).
 3. Ne pas toucher au second T705, réservé à `/data` : le dépôt ne le partitionne ni ne le formate jamais.
-4. Relire le récapitulatif des changements de stockage avant de confirmer.
+4. Relire le récapitulatif des changements de stockage **et la cible physique** avant de confirmer. En cas de doute, s'arrêter.
 
 L'installation graphique ne lance pas `install.sh` : la configuration du projet commence au premier démarrage. Pour une installation automatisée, voir l'[option Kickstart](#option-avancée--kickstart).
 
@@ -191,16 +201,15 @@ La configuration effective comprend les fichiers versionnés **et** `config/loca
 
 **But :** monter le second T705 sur `/data` et l'enregistrer comme disque de données, sans jamais le formater par le projet.
 
-Ce disque conserve les documents, projets, ISO, jeux et disques de VM lors d'une réinstallation du système. **S'il contient déjà des données, ne pas le reformater.** S'il est neuf, la création d'un système de fichiers est une opération manuelle et destructive, distincte de l'APPLY. Les étapes vérifiables pour **les deux situations** sont décrites dans la [procédure dédiée au stockage `/data`](DATA_DISK_PREPARATION.md). La suivre jusqu'à la vérification du montage avant de continuer ici :
+Ce disque conserve les documents, projets, ISO, jeux et disques de VM lors d'une réinstallation du système. **S'il contient déjà des données, ne pas le reformater.** S'il est neuf, la création d'un système de fichiers est une opération manuelle et destructive, distincte de l'APPLY. Les étapes vérifiables pour **les deux situations** sont décrites dans la [procédure dédiée au stockage `/data`](DATA_DISK_PREPARATION.md). La suivre **jusqu'à l'enrôlement de la section 3 compris**, puis revenir ici pour les contrôles de lecture :
 
 ```bash
 findmnt /data                                            # lecture seule
 ./diagnostics/baseline-doctor storage-identity           # lecture seule : modèles, séries, montages
-./diagnostics/baseline-doctor enroll-data NUMERO_DE_SERIE_DU_T705_DATA
 lsblk -f                                                 # lecture seule
 ```
 
-Recopier le numéro de série affiché par `storage-identity` ; ne pas le deviner. L'enrôlement enregistre modèles, séries, WWN et UUID. Un changement de disque ou de montage invalide ensuite la baseline et bloque les écritures sur `/data`.
+**Ne pas réexécuter `enroll-data` ici** : cette opération d'écriture n'a qu'un seul point d'entrée documentaire, la [section 3 de la procédure `/data`](DATA_DISK_PREPARATION.md#3-enrôler-le-disque-et-reprendre-linstallation). Elle enregistre modèles, séries, WWN et UUID. Un changement de disque ou de montage invalide ensuite la baseline et bloque les écritures sur `/data` jusqu'à nouvelle qualification explicite.
 
 L'APPLY créera ou normalisera cette arborescence, **sans supprimer de contenu** :
 
@@ -248,7 +257,7 @@ Les essais mémoire et CPU durent environ deux heures et demie, d'après les dur
 
 ## 6. Lancer le dry-run final
 
-**But :** exécuter tout le plan sans rien modifier, et produire une preuve liée à l'état exact qui sera appliqué.
+**But :** exécuter le plan **sans appliquer de modifications à la configuration cible**, et produire une preuve liée à l'état exact qui sera appliqué. Le dry-run **écrit des journaux et une preuve locale** ; ce n'est pas une commande sans aucune écriture.
 
 Fixer d'abord la configuration définitive dans `config/local.conf` :
 
@@ -269,23 +278,24 @@ Le dry-run exécute precheck, plan, apply et postcheck avec toutes les mutations
 
 ## 7. Créer la sauvegarde pré-APPLY
 
-**But :** disposer d'une sauvegarde Borg vérifiée et restaurable de l'état exact d'avant l'APPLY.
+**But :** disposer d'une sauvegarde Borg dont l'intégrité est contrôlée et dont **une restauration de vérification** a réussi avant l'APPLY. Cela ne certifie pas à lui seul le retour complet d'un PC physique à son état précédent.
 
 ```bash
 ./prepare-preapply-backup.sh
 ```
 
-Le script exige un dépôt Git propre et le dry-run du même état. Si Borg ou l'un de ses outils manque, il l'installe d'abord avec `sudo dnf` *(modifie le système)*. Si le dépôt Borg n'existe pas encore sur le support, il demande la phrase de confirmation définie dans `config/backup.conf` avant de le créer, sans chiffrement ([ADR 0014](adr/0014-borg-unencrypted-backups.md)). Il enchaîne ensuite :
+Le script exige un dépôt Git propre et le dry-run du même état. Si Borg ou l'un de ses outils manque, il l'installe d'abord avec `sudo dnf` **(modification de paquets, avant la capture de la sauvegarde)**. Cette installation de dépendances est **distincte de l'APPLY** ; elle est prévue dans le comportement du script et ne constitue pas une simple lecture. Si le dépôt Borg n'existe pas encore sur le support, le script demande la phrase de confirmation définie dans `config/backup.conf` avant de le créer, sans chiffrement ([ADR 0014](adr/0014-borg-unencrypted-backups.md)). Il enchaîne ensuite :
 
 ```text
 cible externe prouvée (ext4, 20 Gio libres au minimum)
   → archive Borg fgc-preapply-…
   → borg check --verify-data
   → restauration d'un fichier canari
+  → contrôle de restauration de config/local.conf, s'il est présent dans l'inventaire
   → marqueur lié au même état que le dry-run
 ```
 
-**Réussite :** le script se termine en confirmant le marqueur. Au moment de l'APPLY, le projet rouvre réellement le dépôt Borg et vérifie que l'archive exacte existe toujours : le marqueur seul ne suffit pas. Garder le support externe branché.
+**Réussite :** le script se termine en confirmant le marqueur. Le canari et le contrôle de `local.conf` prouvent des **extractions ciblées**, pas une restauration complète de Fedora. Au moment de l'APPLY, le projet rouvre réellement le dépôt Borg et vérifie que l'archive exacte existe toujours : le marqueur seul ne suffit pas. Garder le support externe branché.
 
 ## 8. Appliquer la configuration
 
