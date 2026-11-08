@@ -22,3 +22,11 @@ Chiffrer tout le dépôt Borg (`repokey-blake2`) protégerait aussi les profils 
 - Une restauration ne recrée ni `~/.ssh` ni `~/.gnupg` : clés, `known_hosts`, `config` et `authorized_keys` sont à restaurer depuis leur sauvegarde dédiée, ou à régénérer et redéclarer.
 - Un fichier dont le nom commence seulement par `.ssh` (par exemple `.ssh-notes.txt`) reste sauvegardé : seuls les dossiers exactement nommés `.ssh` et `.gnupg` sont exclus.
 - Les profils de navigateur restent lisibles sur le disque de sauvegarde ; le disque doit toujours être rangé comme un document sensible.
+
+## Précision technique — archive système imbriquée
+
+Les sauvegardes `preapply` et `full` créent d'abord `fedora-system-config.tar.gz` à partir de `/etc` et `/boot`, puis confient **ce fichier unique** à Borg. Les exclusions `*/.ssh` et `*/.gnupg` appliquées par Borg ne peuvent pas retirer des fichiers **à l'intérieur** du tarball. Ce point justifie un contrôle supplémentaire **avant** sa création dans les deux scripts.
+
+`BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES` (dans `lib/backup_runtime.sh`) exclut explicitement les emplacements usuels de secrets : empreintes de mots de passe `shadow`/`gshadow`, clés privées d'hôte SSH, connexions NetworkManager, WireGuard/OpenVPN, répertoires de clés privées TLS, Kerberos, authentification des conteneurs et état libvirt. Une archive factice est inspectée par `tests/test_backup_private_keys_behavior.sh` pour empêcher une réintroduction accidentelle de ces fichiers.
+
+**Limite assumée :** cette liste protège des emplacements **connus**, pas de tous les secrets arbitraires qu'un logiciel peut créer sous `/etc`. Le choix d'un dépôt non chiffré demeure ; les archives anciennes ne sont ni réécrites ni supprimées par ce correctif. Une restauration des éléments exclus exige une reconfiguration ou une sauvegarde sensible séparée, protégée par un support approprié. Ne jamais présenter Borg non chiffré comme une protection de confidentialité.

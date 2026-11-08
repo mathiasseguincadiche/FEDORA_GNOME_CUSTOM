@@ -58,7 +58,7 @@ printf 'fedora-gnome-custom restore canary\ncommit=%s\neffective_config_sha256=%
   "$(repo_commit)" "$(effective_config_sha256)" > "$staging/restore-canary.txt"
 
 printf 'Capturing privileged Fedora configuration metadata...\n'
-sudo tar -C / --exclude=etc/libvirt --exclude='etc/libvirt/*' --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
+sudo tar -C / "${BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES[@]}" --xattrs --acls --selinux --numeric-owner -czf "$staging/fedora-system-config.tar.gz" etc boot
 sudo chown "$(id -u):$(id -g)" "$staging/fedora-system-config.tar.gz"
 
 sources=("$staging")

@@ -165,6 +165,37 @@ PY
 # never archived, at any depth and whatever the configured sources (ADR 0021).
 BACKUP_PRIVATE_KEY_EXCLUDES=('*/.ssh' '*/.gnupg')
 
+# Borg only sees fedora-system-config.tar.gz after it has been created: its
+# --exclude rules cannot remove sensitive files *inside* that tarball. Apply
+# these restrictions at tar creation time for BOTH preapply and full backups.
+# This is a defense for known system secret locations, not a guarantee that
+# arbitrary administrator-created secrets elsewhere under /etc are absent.
+BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES=(
+  --exclude='etc/libvirt'
+  --exclude='etc/libvirt/*'
+  --exclude='etc/shadow'
+  --exclude='etc/shadow-'
+  --exclude='etc/gshadow'
+  --exclude='etc/gshadow-'
+  --exclude='etc/ssh/ssh_host_*_key*'
+  --exclude='etc/NetworkManager/system-connections'
+  --exclude='etc/NetworkManager/system-connections/*'
+  --exclude='etc/ssl/private'
+  --exclude='etc/ssl/private/*'
+  --exclude='etc/pki/tls/private'
+  --exclude='etc/pki/tls/private/*'
+  --exclude='etc/pki/CA/private'
+  --exclude='etc/pki/CA/private/*'
+  --exclude='etc/wireguard'
+  --exclude='etc/wireguard/*'
+  --exclude='etc/openvpn'
+  --exclude='etc/openvpn/*'
+  --exclude='etc/krb5.keytab'
+  --exclude='etc/containers/auth.json'
+  --exclude='etc/fedora-gnome-custom/secrets'
+  --exclude='etc/fedora-gnome-custom/secrets/*'
+)
+
 backup_engine_create() {
   local kind="$1" name pending json comment identity pattern
   shift

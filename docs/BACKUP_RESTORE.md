@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — archives, export séparé des clés, staging et diagnostic après échec relus contre `prepare-preapply-backup.sh`, `scripts/backup/restore.sh` et `config/backup.conf` ; essais physiques non rejoués — matériel : non vérifié
+> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-07 — exclusions appliquées avant la création de l'archive système, tests sur arborescence factice ; essais physiques non rejoués — matériel : non vérifié
 
 **Une sauvegarde doit permettre de récupérer quelque chose, pas seulement produire un fichier.**
 
@@ -42,7 +42,7 @@ Source éditable : [`sauvegarde-restauration.drawio`](assets/diagrams/sauvegarde
 | Bureau, Images, Vidéos, Musique (dossiers XDG), `~/Development` | oui | oui | non |
 | `.config` | oui | oui | oui |
 | `.mozilla`, `.var/app`, `.local/share` | oui | oui | `.local/share/gnome-shell` seulement |
-| Inventaire du système (paquets RPM et Flatpak, services, montages, PCI, réglages GNOME), `/etc` et `/boot`, copie privée de `config/local.conf` | non | oui | oui |
+| Inventaire du système (paquets RPM et Flatpak, services, montages, PCI, réglages GNOME), `/etc` et `/boot` **avec exclusions de secrets connus**, copie privée de `config/local.conf` | non | oui | oui |
 | Fichiers suivis du dépôt du projet | non | non | oui |
 
 La sauvegarde **pré-APPLY** est un point de retour de l'état du système avant l'APPLY, pas une sauvegarde des données : celles-ci sont protégées par les sauvegardes quotidienne et complète. Les listes exactes figurent dans `scripts/backup/daily-user-backup.sh`, `scripts/backup/backup-now.sh` et `prepare-preapply-backup.sh`.
@@ -55,6 +55,10 @@ Les dossiers XDG sont résolus avec `xdg-user-dir` au moment de chaque sauvegard
 - **`/data/ISO` et `/data/Jeux`** : volumineux et retéléchargeables. Une sauvegarde de partie, de mod rare ou de contenu irremplaçable stocké sous `/data/Jeux` demande une politique explicite de l'opérateur ; les sauvegardes de parties rangées dans les dossiers utilisateur restent couvertes.
 - **Le dossier Téléchargements.**
 - **Les clés privées** : tout dossier `.ssh` ou `.gnupg`, à n'importe quelle profondeur (y compris dans `/data/Projets`), est exclu de toutes les archives, même si la configuration locale le liste ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)). Le dossier `~/.config/fedora-gnome-custom/secrets` est exclu de la même façon.
+- **Des fichiers système sensibles connus** : avant de créer `fedora-system-config.tar.gz`, les sauvegardes pré-APPLY et complètes retirent notamment `/etc/shadow*`, `/etc/gshadow*`, les clés privées d'hôte `/etc/ssh/ssh_host_*_key*`, les connexions NetworkManager, les configurations WireGuard/OpenVPN, les répertoires de clés privées TLS et Kerberos, ainsi que les données libvirt. La liste exacte et testée est `BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES` dans `lib/backup_runtime.sh`. Il faudra reconfigurer manuellement ces éléments après une restauration.
+
+> [!CAUTION]
+> **Ces exclusions ne prouvent pas l'absence de tous les secrets.** Un administrateur ou une application peut en stocker ailleurs dans `/etc`, et les profils utilisateur restent lisibles dans un dépôt Borg non chiffré. Protéger physiquement le SSD et examiner les sources avant de sauvegarder. Les **archives créées avant cette correction** ne sont pas purgées automatiquement et peuvent encore contenir les anciens fichiers sensibles : ne pas les diffuser ; si le support a été perdu ou exposé, évaluer la rotation des identifiants concernés.
 
 ### Sauvegarder les clés privées à part
 

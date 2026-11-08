@@ -37,8 +37,13 @@ MOCK
 export TEST_DATA="$tmp/data" TEST_SYSROOT="$tmp/sysroot"
 mkdir -p "$TEST_DATA/Documents" "$TEST_DATA/Projets" "$TEST_DATA/Jeux" "$TEST_DATA/ISO"
 touch "$TEST_DATA/Documents/facture.pdf" "$TEST_DATA/Projets/main.py" "$TEST_DATA/Jeux/game.bin" "$TEST_DATA/ISO/fedora.iso"
-mkdir -p "$TEST_SYSROOT/etc/libvirt/qemu" "$TEST_SYSROOT/boot"
+mkdir -p "$TEST_SYSROOT/etc/libvirt/qemu" "$TEST_SYSROOT/etc/ssh" \
+  "$TEST_SYSROOT/etc/NetworkManager/system-connections" "$TEST_SYSROOT/boot"
 printf 'host\n' > "$TEST_SYSROOT/etc/hostname"
+printf 'sshd config fixture\n' > "$TEST_SYSROOT/etc/ssh/sshd_config"
+printf 'dummy private key fixture\n' > "$TEST_SYSROOT/etc/ssh/ssh_host_ed25519_key"
+printf 'dummy password-hash fixture\n' > "$TEST_SYSROOT/etc/shadow"
+printf 'dummy wireless secret fixture\n' > "$TEST_SYSROOT/etc/NetworkManager/system-connections/private.nmconnection"
 printf 'private domain XML\n' > "$TEST_SYSROOT/etc/libvirt/qemu/owner-managed.xml"
 touch "$TEST_SYSROOT/boot/vmlinuz-fixture"
 cat > "$REPO_ROOT/lib/bootstrap.sh" <<'MOCK'
@@ -215,8 +220,16 @@ mkdir "$tmp/system-config"
 system_tar="$(find "$tmp/system-config" -name fedora-system-config.tar.gz -print -quit)"
 tar -tzf "$system_tar" > "$tmp/system-members"
 grep -Fxq 'etc/hostname' "$tmp/system-members"
+grep -Fxq 'etc/ssh/sshd_config' "$tmp/system-members"
 grep -Fxq 'boot/vmlinuz-fixture' "$tmp/system-members"
 if grep -Fq 'etc/libvirt' "$tmp/system-members"; then echo 'libvirt domain XML leaked into the /etc snapshot' >&2; exit 1; fi
+for secret in etc/ssh/ssh_host_ed25519_key etc/shadow \
+  etc/NetworkManager/system-connections/private.nmconnection; do
+  if grep -Fxq "$secret" "$tmp/system-members"; then
+    echo "Sensitive configuration leaked into the full backup tarball: $secret" >&2
+    exit 1
+  fi
+done
 
 # --prune runs the strict retention right after the integrity check; a failing
 # retention stops the run before a new certificate is written.
