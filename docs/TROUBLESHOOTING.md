@@ -1,7 +1,7 @@
 # Dépannage
 
-> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-07 — parcours de dépannage applicatif et consultation firmware relus contre les moteurs et tests isolés — matériel : non vérifié
+> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-08 — reprise après APPLY interrompu relue contre l'orchestrateur et les preuves Borg — matériel : non vérifié
 
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
@@ -36,6 +36,7 @@ Quand le PC ne démarre plus ou que des données semblent perdues, le but imméd
 | Symptôme | Première commande | Section |
 |---|---|---|
 | `install.sh --apply` ou la sauvegarde pré-APPLY refusés | `./install.sh --dry-run` | [Installation et APPLY](#installation-et-apply) |
+| `install.sh --apply` a démarré puis échoué | lire le rapport du run en échec, sans relancer l'APPLY | [Installation et APPLY](#installation-et-apply) |
 | Gate 2 Live `NO-GO` ou `A_VERIFIER` | lire le TSV `state/validation/live-preflight.tsv` depuis la session Live | [Préinstallation Live](#préinstallation-live-usb) |
 | Paquet, dépôt, Flatpak ou codec en échec | `dnf repolist`, `./diagnostics/media-doctor` | [Paquets et applications](#paquets-et-applications) |
 | GPU, écran, couleurs ou veille | `./diagnostics/graphics-doctor`, `./diagnostics/display-doctor` | [GPU, écran et veille](#gpu-écran-et-veille) |
@@ -92,7 +93,21 @@ Causes courantes : exécution hors du PC physique (VM, conteneur, WSL), dépôt 
 
 **Sauvegarde pré-APPLY refusée.** Elle exige un dry-run réussi au même état, une cible Borg externe prouvée, un dépôt non chiffré (un dépôt chiffré est refusé), de l'espace libre, `borg check --verify-data` et la restauration réelle d'un canari. Un `borg create` terminé ne suffit pas.
 
-**Marqueur de sauvegarde présent mais archive absente.** L'APPLY reste bloqué : il relit l'archive exacte dans le dépôt. Refaire `./prepare-preapply-backup.sh`, et vérifier avec `borg list --glob-archives 'fgc-preapply-*' "$BACKUP_REPOSITORY"`.
+**Marqueur de sauvegarde présent mais archive absente.** L'APPLY reste bloqué : il relit l'archive exacte dans le dépôt. Avant tout APPLY initial, refaire `./prepare-preapply-backup.sh`, et vérifier avec `borg list --glob-archives 'fgc-preapply-*' "$BACKUP_REPOSITORY"`.
+
+**Marqueur de sauvegarde trop ancien.** L'APPLY refuse aussi un marqueur `state/preapply-backup.ok` créé il y a plus de **24 heures par défaut** (`BACKUP_MAX_AGE_HOURS` dans `config/backup.conf`). Si aucune modification APPLY n'a commencé, relancer la sauvegarde après le dry-run valide. Sinon, suivre le diagnostic ci-dessous avant toute nouvelle capture.
+
+### APPLY commencé puis interrompu
+
+Ce cas **n'est pas un simple refus de la Gate**. `install.sh` s'arrête au premier module en échec ; des modules précédents ont pu modifier Fedora. Le message `REAL APPLY FAILED` indique explicitement que le système peut être **partiellement configuré**. Même si le script est interrompu avant son résumé, ne pas supposer que rien n'a changé.
+
+1. **Arrêter les nouvelles modifications.** Ne pas relancer immédiatement `./install.sh --apply`, ne pas redémarrer uniquement pour « réessayer », ne pas reformater `/data` et ne pas supprimer les preuves ou l'archive pré-APPLY. Si l'hôte est instable, interrompre la procédure et demander une revue technique avant toute action.
+2. **Conserver le résultat du run.** Relever l'identifiant affiché par l'installeur, puis examiner `reports/run-<identifiant>.txt`, `reports/run-<identifiant>.json`, `logs/<identifiant>/main.log` et `logs/<identifiant>/modules.log`. Le répertoire peut aussi contenir `operator.log`. Si le processus a été tué avant l'écriture du rapport, les journaux existants restent utiles. Avant tout partage, masquer les chemins personnels et les données sensibles.
+3. **Identifier le premier module réellement en échec** et les modules déjà exécutés. Noter la phase (`precheck`, `apply`, `postcheck`), le code retour et la dernière opération documentée. Une ligne `OK` dans un module précédent ne prouve pas que tout le PC est sain. Vérifier l'état réel concerné avec les doctors dédiés ; pour le stockage, commencer en lecture seule par `findmnt --target /data` et `lsblk -f`.
+4. **Préserver le point de retour d'origine.** Brancher le support Borg et utiliser `scripts/backup/restore.sh list` puis `scripts/backup/restore.sh verify` pour examiner le dépôt, sans restaurer en place. Si un retour arrière est nécessaire, sélectionner **l'archive pré-APPLY créée avant l'incident** et l'extraire uniquement dans un staging vide selon la [procédure de restauration](BACKUP_RESTORE.md#restaurer). Une nouvelle archive capturée après des modifications partielles ne représente plus l'état initial ; certaines configurations sensibles sont exclues des archives non chiffrées et exigent une remise en place manuelle.
+5. **Décider avant de reprendre.** Après identification et correction de la cause, choisir explicitement entre récupération manuelle depuis le staging et nouvel essai de convergence. Ne relancer les étapes 6 à 8 du [guide d'installation](INSTALLATION_GUIDE.md) que si l'état courant, les préconditions, les preuves et la sauvegarde appropriée ont été réévalués. Un nouvel APPLY requiert toujours son GO humain et ne bénéficie d'aucune reprise automatique implicite. La qualification Gate 3 reste à refaire après résolution.
+
+**Arrêt impératif :** si l'état des disques, l'intégrité de la sauvegarde ou le module ayant échoué ne sont pas établis, ne pas retenter l'APPLY. Faire analyser les journaux et préparer un plan de récupération adapté à l'incident.
 
 ## Paquets et applications
 
