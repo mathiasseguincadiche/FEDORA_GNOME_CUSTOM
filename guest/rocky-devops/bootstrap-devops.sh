@@ -39,20 +39,31 @@ fail() { printf '[rocky-devops] ERROR: %s\n' "$*" >&2; exit 1; }
 # Fail closed on a persistent upstream HTTP error. Every caller still checks
 # its pinned SHA-256 or AWS CLI signature after this transport-only retry.
 download_reviewed_artifact() {
-  local label="$1" url="$2" destination="$3" rc
+  local label="$1" url="$2" destination="$3" fallback_url="${4:-}" rc
+  local -a curl_args=(--fail --location --silent --show-error
+    --proto '=https' --proto-redir '=https'
+    --retry 5 --retry-delay 5 --retry-max-time 240
+    --connect-timeout 20 --max-time 90 --remove-on-error)
   log "fetch $label from $url (at most 6 attempts)"
-  if curl --fail --location --silent --show-error \
-    --proto '=https' --proto-redir '=https' \
-    --retry 5 --retry-delay 5 --retry-max-time 240 \
-    --connect-timeout 20 --max-time 90 --remove-on-error \
-    --output "$destination" "$url"; then
+  if curl "${curl_args[@]}" --output "$destination" "$url"; then
     return 0
   else
     rc=$?
     rm -f -- "$destination"
-    printf '[rocky-devops] ERROR: %s download failed (curl exit %s): %s\n' "$label" "$rc" "$url" >&2
-    return "$rc"
   fi
+  if [[ -n "$fallback_url" ]]; then
+    log "primary source failed (curl exit $rc); try official GitHub release asset API: $fallback_url"
+    if curl "${curl_args[@]}" --header 'Accept: application/octet-stream' \
+      --output "$destination" "$fallback_url"; then
+      return 0
+    else
+      rc=$?
+      rm -f -- "$destination"
+    fi
+  fi
+  printf '[rocky-devops] ERROR: %s download failed (curl exit %s); primary=%s alternate=%s\n' \
+    "$label" "$rc" "$url" "${fallback_url:-none}" >&2
+  return "$rc"
 }
 
 write_aws_cli_public_key() {
@@ -300,7 +311,13 @@ rm -rf "$yq_tmp"
 log "install K9s ${K9S_VERSION} with pinned checksum"
 k9s_tmp="$(mktemp -d)"
 k9s_archive="$k9s_tmp/k9s_Linux_amd64.tar.gz"
-download_reviewed_artifact "K9s ${K9S_VERSION}" "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" "$k9s_archive"
+k9s_fallback=''
+# The official API asset is bound to this exact upstream release and digest.
+if [[ "$K9S_VERSION" == v0.51.0 &&
+      "$K9S_LINUX_AMD64_SHA256" == c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7 ]]; then
+  k9s_fallback='https://api.github.com/repos/derailed/k9s/releases/assets/440224321'
+fi
+download_reviewed_artifact "K9s ${K9S_VERSION}" "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" "$k9s_archive" "$k9s_fallback"
 printf '%s  %s\n' "$K9S_LINUX_AMD64_SHA256" "$k9s_archive" | sha256sum -c -
 tar -xzf "$k9s_archive" -C "$k9s_tmp" k9s
 install -m 0755 "$k9s_tmp/k9s" /usr/local/bin/k9s
