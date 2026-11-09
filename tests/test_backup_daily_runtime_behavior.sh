@@ -35,6 +35,10 @@ REPO_ROOT="$fixture"
 source "$fixture/lib/bootstrap.sh"
 engine_load_libraries
 source "$fixture/config/backup.conf"
+[[ "$BACKUP_ENCRYPTION" == none ]] || fail 'reference backup policy unexpectedly enables encryption'
+grep -Fxq 'Description=Daily unencrypted Fedora workstation user backup' \
+  "$fixture/systemd/user/fedora-gnome-daily-backup.timer" \
+  || fail 'daily timer advertises encryption inconsistent with the reference backup policy'
 BACKUP_REPOSITORY='ssh://backup@nas.example/./fgc'   # the owner's config/local.conf value
 log_info() { :; }; log_error() { :; }
 PERSISTENT_DATA_IDENTITY_FILE="$tmp/storage-identity.json"

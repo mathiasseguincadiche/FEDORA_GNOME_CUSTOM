@@ -1,7 +1,7 @@
 # Centre de contrôle
 
-> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-07 — aide et routes du centre de contrôle, retours du diagnostic virtuel et bilan firmware relus contre les tests isolés — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — aide, routes et modes de diagnostic relus contre les moteurs — matériel : non vérifié
 
 `./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
@@ -18,10 +18,10 @@ Avant les premiers enrôlements matériels, `./control.sh install prepare-tools`
 
 <picture>
   <source media="(min-width: 700px)" srcset="assets/diagrams/centre-de-controle.svg">
-  <img src="assets/diagrams/centre-de-controle-mobile.svg" alt="Schéma du centre de contrôle : opérateur, façade control.sh et huit moteurs spécialisés.">
+  <img src="assets/diagrams/centre-de-controle-mobile.svg" alt="Schéma simplifié du centre de contrôle : opérateur, façade control.sh et exemples de domaines et moteurs spécialisés.">
 </picture>
 
-L'opérateur passe toujours par `./control.sh`, une façade sans logique métier. Chaque domaine délègue à son moteur : `install.sh` pour le dry-run et l'APPLY, `scripts/maintenance/update-system.sh` pour les mises à jour, le cycle de vie du noyau, les scripts de sauvegarde, la création Rocky et le garde réseau KVM, les doctors en lecture seule, puis la validation Live, la Gate 3 et la certification.
+L'opérateur peut passer par `./control.sh`, une façade sans logique métier. Les **huit blocs du schéma sont des regroupements pédagogiques, pas une liste exhaustive** des commandes et sous-commandes : `./control.sh help` présente les routes disponibles. Chaque domaine délègue à son moteur : `install.sh` pour le dry-run et l'APPLY, `scripts/maintenance/update-system.sh` pour les mises à jour, le cycle de vie du noyau, les scripts de sauvegarde, la création Rocky et le garde réseau KVM, les doctors en mode observation, puis la validation Live, la Gate 3 et la certification. Certains modes actifs des diagnostics effectuent des essais ou produisent des fichiers : consulter leur aide et la [qualification](QUALIFICATION.md) avant de les lancer.
 
 **Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/centre-de-controle-mobile.svg) · [version large](assets/diagrams/centre-de-controle.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/centre-de-controle-mobile.drawio) · [large `.drawio`](assets/diagrams/centre-de-controle.drawio).
 

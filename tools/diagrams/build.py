@@ -91,17 +91,18 @@ d = Diagram("centre-de-controle", "Le centre de contrôle : une façade, des mot
             "L'opérateur passe par ./control.sh, une façade sans logique métier. Chaque domaine appelle son moteur : "
             "install (install.sh, dry-run et APPLY protégé), update (update-system.sh), kernel (kernel-lifecycle.sh et "
             "secours Fedora), backup (backup-now.sh, restore.sh), kvm (création Rocky DevOps et garde réseau), doctor "
-            "(diagnostics en lecture seule), validate et cert (Live USB, Gate 3, certification), status et logs.",
+            "(observations et essais actifs explicites), validate et cert (Live USB, Gate 3, certification), status et logs. "
+            "Les huit blocs représentent des regroupements, pas toutes les routes du centre de contrôle.",
             1160, 700)
 d.node("user", ["Opérateur"], 40, 300, 180, 70)
 d.node("cc", ["./control.sh", "façade mince", "aucune logique métier"], 280, 275, 240, 120, "main")
-d.group("g_dom", "Domaines et moteurs appelés", 620, 70, 500, 610)
+d.group("g_dom", "Exemples de domaines et moteurs", 620, 70, 500, 610)
 domains = [("install", "install.sh : dry-run, APPLY protégé"),
            ("update", "scripts/maintenance/update-system.sh"),
            ("kernel", "kernel-lifecycle.sh · secours Fedora"),
            ("backup", "backup-now.sh · restore.sh"),
            ("kvm", "Rocky DevOps · garde réseau"),
-           ("doctor", "diagnostics/*-doctor (lecture seule)"),
+           ("doctor", "observation · essais actifs explicites"),
            ("validate · cert", "Live USB · Gate 3 · certification"),
            ("status · logs", "état du poste et journaux")]
 for i, (name, engine) in enumerate(domains):

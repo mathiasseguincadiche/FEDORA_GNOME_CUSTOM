@@ -1,7 +1,7 @@
 # Vision et architecture
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — contrat et chemin de validation relus contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `config/kernel.conf` et les décisions d'architecture ; matériel cible non testé — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — contrat et chemin de validation relus contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `config/kernel.conf` et les modes actifs des diagnostics ; matériel cible non testé — matériel : non vérifié
 
 **Comprendre le poste avant d'en modifier la configuration.** Cette page présente le matériel, les composants logiciels et les raisons de leur séparation. Elle sert à répondre à « pourquoi ce choix ? » et à « quel composant en est responsable ? ».
 
@@ -98,7 +98,7 @@ Le PC exécute Fedora 45 Workstation pour quatre usages : GNOME 51, le travail D
 
 ## Contrat d'exécution
 
-- `./diagnostic.sh` et les doctors sont en **lecture seule** : aucun paquet, service ou périphérique modifié.
+- `./diagnostic.sh` et les modes d'**observation** des doctors n'appliquent pas de correction au système. Ils peuvent cependant écrire des journaux ou rapports. Certains modes **explicitement actifs** réalisent des essais : par exemple, `diagnostics/nautilus-vm-live-doctor --certify` écrit, relit et supprime un fichier canari SFTP et peut actualiser un signet ; les opérations `snapshot` et `run-memory-test` de `diagnostics/baseline-doctor` constituent aussi des actions distinctes. Consulter la [qualification](QUALIFICATION.md) et l'aide du doctor concerné avant toute certification : ne pas assimiler « diagnostic » à « absence totale d'écriture ».
 - `./install.sh --dry-run` exécute precheck, plan, apply et postcheck avec toutes les mutations neutralisées, et écrit une preuve liée au commit, à la configuration effective, au plan de modules et à l'empreinte matérielle. Hors du PC physique, il peut s'arrêter sur une preuve matérielle indisponible : ce refus n'autorise jamais l'APPLY.
 - `./install.sh --apply` exige : Fedora 45 installé et démarré sur le PC physique (jamais une VM, WSL, un conteneur, la CI ni la session Live) ; un profil `ready` ; `REAL_MACHINE_APPROVED=true` dans `config/local.conf` ; un terminal interactif ; un dépôt Git propre ; un dry-run réussi au même état ; une baseline valide pour l'empreinte courante ; une sauvegarde pré-APPLY récente, vérifiée et liée au même état ; la phrase exacte `APPLY FEDORA 45 WORKSTATION`.
 - Le Live USB observe le matériel sans installer de paquet ni toucher aux SSD ; sa preuve est exportée puis importée sur le système installé.
