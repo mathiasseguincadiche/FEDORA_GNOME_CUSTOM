@@ -36,6 +36,56 @@ trap diagnose_failure ERR
 log() { printf '[rocky-devops] %s\n' "$*"; }
 fail() { printf '[rocky-devops] ERROR: %s\n' "$*" >&2; exit 1; }
 
+# Fail closed on a persistent upstream HTTP error. Every caller still checks
+# its pinned SHA-256 or AWS CLI signature after this transport-only retry.
+download_reviewed_artifact() {
+  local label="$1" url="$2" destination="$3" fallback_url="${4:-}" rc
+  local -a curl_args=(--fail --location --silent --show-error
+    --proto '=https' --proto-redir '=https'
+    --retry 5 --retry-delay 5 --retry-max-time 240
+    --connect-timeout 20 --max-time 90 --remove-on-error)
+  log "fetch $label from $url (at most 6 attempts)"
+  if curl "${curl_args[@]}" --output "$destination" "$url"; then
+    return 0
+  else
+    rc=$?
+    rm -f -- "$destination"
+  fi
+  if [[ -n "$fallback_url" ]]; then
+    log "primary source failed (curl exit $rc); try official GitHub release asset API: $fallback_url"
+    if curl "${curl_args[@]}" --header 'Accept: application/octet-stream' \
+      --output "$destination" "$fallback_url"; then
+      return 0
+    else
+      rc=$?
+      rm -f -- "$destination"
+    fi
+  fi
+  printf '[rocky-devops] ERROR: %s download failed (curl exit %s); primary=%s alternate=%s\n' \
+    "$label" "$rc" "$url" "${fallback_url:-none}" >&2
+  return "$rc"
+}
+
+# These IDs are from the upstream GitHub release metadata, and only match the
+# reviewed exact version + digest. An override cannot silently reuse an old ID.
+github_asset_fallback() {
+  local tool="$1" version="$2" sha="$3"
+  case "$tool:$version:$sha" in
+    kubectx:v0.11.0:08e031c54fbffb3f100e904e4eae94bba2730fedf4869921fda79e4d7a8f5d4c)
+      printf '%s' 'https://api.github.com/repos/ahmetb/kubectx/releases/assets/382590978' ;;
+    kubens:v0.11.0:326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09)
+      printf '%s' 'https://api.github.com/repos/ahmetb/kubectx/releases/assets/382591017' ;;
+    kind:v0.33.0:aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d)
+      printf '%s' 'https://api.github.com/repos/kubernetes-sigs/kind/releases/assets/531396433' ;;
+    minikube:v1.38.1:099477eaf248bcb5bcea8ce78a2898e93ac01461c35189da1848c3de82ecd22e)
+      printf '%s' 'https://api.github.com/repos/kubernetes/minikube/releases/assets/358743871' ;;
+    yq:v4.53.3:fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4)
+      printf '%s' 'https://api.github.com/repos/mikefarah/yq/releases/assets/440146735' ;;
+    k9s:v0.51.0:c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7)
+      printf '%s' 'https://api.github.com/repos/derailed/k9s/releases/assets/440224321' ;;
+  esac
+}
+
 write_aws_cli_public_key() {
   cat > "$1" <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -195,7 +245,8 @@ for tool in kubectx kubens; do
     kubens) expected_sha=326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09 ;;
   esac
   archive="$tool"_v0.11.0_linux_x86_64.tar.gz
-  curl -fsSL "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/$archive" -o "$kubectx_tmp/$archive"
+  download_reviewed_artifact "$tool v0.11.0" "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/$archive" "$kubectx_tmp/$archive" \
+    "$(github_asset_fallback "$tool" v0.11.0 "$expected_sha")"
   printf '%s  %s\n' "$expected_sha" "$kubectx_tmp/$archive" | sha256sum -c -
   tar -xzf "$kubectx_tmp/$archive" -C "$kubectx_tmp" "$tool"
   install -m 0755 "$kubectx_tmp/$tool" "/usr/local/bin/$tool"
@@ -222,7 +273,7 @@ log 'install Helm from an explicit upstream release and its pinned SHA-256'
 helm_version="$HELM_VERSION"
 helm_tmp="$(mktemp -d)"
 helm_archive="helm-$helm_version-linux-amd64.tar.gz"
-curl -fsSL "https://get.helm.sh/$helm_archive" -o "$helm_tmp/$helm_archive"
+download_reviewed_artifact "Helm $helm_version" "https://get.helm.sh/$helm_archive" "$helm_tmp/$helm_archive"
 printf '%s  %s\n' "$HELM_LINUX_AMD64_SHA256" "$helm_tmp/$helm_archive" | sha256sum -c -
 tar -xzf "$helm_tmp/$helm_archive" -C "$helm_tmp" linux-amd64/helm
 install -m 0755 "$helm_tmp/linux-amd64/helm" /usr/local/bin/helm
@@ -245,8 +296,8 @@ else
   aws_actual_fpr="$(gpg --show-keys --with-colons "$aws_key" | awk -F: '$1 == "fpr" {print $10; exit}')"
   [[ "$aws_actual_fpr" == "$AWS_CLI_PGP_FINGERPRINT" ]] || fail "unexpected AWS CLI signing key fingerprint: $aws_actual_fpr"
   gpg --batch --yes --dearmor -o "$aws_keyring" "$aws_key"
-  curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o "$aws_zip"
-  curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip.sig -o "$aws_sig"
+  download_reviewed_artifact "AWS CLI ZIP" "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" "$aws_zip"
+  download_reviewed_artifact "AWS CLI signature" "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip.sig" "$aws_sig"
   gpgv --keyring "$aws_keyring" "$aws_sig" "$aws_zip" || fail 'AWS CLI signature verification failed'
   unzip -q "$aws_zip" -d "$aws_tmp"
   "$aws_tmp/aws/install" --install-dir /usr/local/aws-cli --bin-dir /usr/local/bin
@@ -257,7 +308,8 @@ aws --version 2>&1 | grep -q '^aws-cli/2[.]' || fail 'AWS CLI v2 required'
 log "install kind ${KIND_VERSION} with its pinned SHA-256"
 kind_version="$KIND_VERSION"
 kind_tmp="$(mktemp -d)"
-curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/${kind_version}/kind-linux-amd64" -o "$kind_tmp/kind-linux-amd64"
+download_reviewed_artifact "kind ${kind_version}" "https://github.com/kubernetes-sigs/kind/releases/download/${kind_version}/kind-linux-amd64" "$kind_tmp/kind-linux-amd64" \
+  "$(github_asset_fallback kind "$kind_version" "$KIND_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$KIND_LINUX_AMD64_SHA256" "$kind_tmp/kind-linux-amd64" | sha256sum -c -
 install -m 0755 "$kind_tmp/kind-linux-amd64" /usr/local/bin/kind
 rm -rf "$kind_tmp"
@@ -265,7 +317,8 @@ kind version | grep -Fq "$KIND_VERSION" || fail "kind version mismatch: $(kind v
 
 log "install Minikube ${MINIKUBE_VERSION} with its pinned SHA-256"
 minikube_tmp="$(mktemp -d)"
-curl -fsSL "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" -o "$minikube_tmp/minikube-linux-amd64"
+download_reviewed_artifact "Minikube ${MINIKUBE_VERSION}" "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" "$minikube_tmp/minikube-linux-amd64" \
+  "$(github_asset_fallback minikube "$MINIKUBE_VERSION" "$MINIKUBE_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$MINIKUBE_LINUX_AMD64_SHA256" "$minikube_tmp/minikube-linux-amd64" | sha256sum -c -
 install -m 0755 "$minikube_tmp/minikube-linux-amd64" /usr/local/bin/minikube
 rm -rf "$minikube_tmp"
@@ -273,7 +326,8 @@ rm -rf "$minikube_tmp"
 
 log "install yq ${YQ_VERSION} with pinned checksum"
 yq_tmp="$(mktemp -d)"
-curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o "$yq_tmp/yq"
+download_reviewed_artifact "yq ${YQ_VERSION}" "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" "$yq_tmp/yq" \
+  "$(github_asset_fallback yq "$YQ_VERSION" "$YQ_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$YQ_LINUX_AMD64_SHA256" "$yq_tmp/yq" | sha256sum -c -
 install -m 0755 "$yq_tmp/yq" /usr/local/bin/yq
 rm -rf "$yq_tmp"
@@ -281,7 +335,8 @@ rm -rf "$yq_tmp"
 log "install K9s ${K9S_VERSION} with pinned checksum"
 k9s_tmp="$(mktemp -d)"
 k9s_archive="$k9s_tmp/k9s_Linux_amd64.tar.gz"
-curl -fsSL "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" -o "$k9s_archive"
+download_reviewed_artifact "K9s ${K9S_VERSION}" "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" "$k9s_archive" \
+  "$(github_asset_fallback k9s "$K9S_VERSION" "$K9S_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$K9S_LINUX_AMD64_SHA256" "$k9s_archive" | sha256sum -c -
 tar -xzf "$k9s_archive" -C "$k9s_tmp" k9s
 install -m 0755 "$k9s_tmp/k9s" /usr/local/bin/k9s

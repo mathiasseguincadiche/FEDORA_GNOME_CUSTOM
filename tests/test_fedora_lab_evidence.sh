@@ -83,6 +83,19 @@ for script in (".github/scripts/fedora45-ci-install-extension.sh", ".github/scri
     assert (root / script).is_file()
 guest = (root / ".github/scripts/fedora-gnome-guest.sh").read_text()
 host = (root / ".github/scripts/fedora-gnome-vm.sh").read_text()
+# CDN 504s must be retried without bypassing any pinned extension digest.
+for transport_guard in (
+    'download_reviewed_extension "$prefix" "${!url_key}" "extensions/$prefix.zip"',
+    '--retry 5 --retry-delay 5 --retry-max-time 240',
+    '--connect-timeout 20 --max-time 90 --remove-on-error',
+    "--proto '=https' --proto-redir '=https'",
+    'return "$rc"',
+    "--header 'Accept: application/octet-stream'",
+    'https://api.github.com/repos/ubuntu/Tiling-Assistant/releases/assets/622961643',
+    '961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a',
+    'printf \'%s  %s\\n\' "${!sha_key}" "extensions/$prefix.zip" | sha256sum --check',
+):
+    assert transport_guard in host, f"missing Fedora VM extension guard: {transport_guard}"
 # The fourth extension has no dedicated *_SCHEMA identifier. Do not invent one.
 candidate_validator = (root / ".github/scripts/fedora45-ci-validate-candidate.py").read_text()
 candidate_installer = (root / ".github/scripts/fedora45-ci-install-extension.sh").read_text()

@@ -106,7 +106,13 @@ jobs:
             url_key="${prefix}_SOURCE_URL"; sha_key="${prefix}_SHA256"
             uuid_key="${prefix}_UUID"; shell_key="${prefix}_SHELL_VERSION"
             dir="$(mktemp -d)"
-            curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 "${!url_key}" --output "$dir/extension.zip"
+            echo "Checking reviewed extension ${prefix} from ${!url_key}"
+            if ! curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+                --retry 4 --retry-delay 5 --retry-max-time 300 --connect-timeout 20 --max-time 90 \
+                "${!url_key}" --output "$dir/extension.zip"; then
+              echo "::error::Extension ${prefix} download failed after bounded retries: ${!url_key}" >&2
+              exit 1
+            fi
             printf '%s  %s\n' "${!sha_key}" "$dir/extension.zip" | sha256sum --check --status
             unzip -p "$dir/extension.zip" metadata.json > "$dir/metadata.json"
             python3 scripts/gnome/validate-extension-metadata.py "$dir/metadata.json" "${!uuid_key}" "${!shell_key}"

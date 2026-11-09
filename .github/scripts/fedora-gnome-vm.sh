@@ -118,13 +118,47 @@ if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
 elif [[ "$LAB_RELEASE" == 44 ]]; then
   source "$ROOT/profiles/fedora44/gnome-extensions.lock"
 fi
+download_reviewed_extension() {
+  local label="$1" url="$2" destination="$3" fallback_url="${4:-}" rc
+  local -a curl_args=(--fail --location --silent --show-error
+    --proto '=https' --proto-redir '=https'
+    --retry 5 --retry-delay 5 --retry-max-time 240
+    --connect-timeout 20 --max-time 90 --remove-on-error)
+  printf 'Fetching GNOME extension %s from %s (at most 6 attempts)\n' "$label" "$url"
+  if curl "${curl_args[@]}" --output "$destination" "$url"; then
+    return 0
+  else
+    rc=$?
+    rm -f -- "$destination"
+  fi
+  if [[ -n "$fallback_url" ]]; then
+    printf 'GNOME extension %s primary failed (curl exit %s); try official GitHub asset API: %s\n' \
+      "$label" "$rc" "$fallback_url"
+    if curl "${curl_args[@]}" --header 'Accept: application/octet-stream' \
+      --output "$destination" "$fallback_url"; then
+      return 0
+    else
+      rc=$?
+      rm -f -- "$destination"
+    fi
+  fi
+  printf 'ERROR: GNOME extension %s download failed (curl exit %s); primary=%s alternate=%s\n' \
+    "$label" "$rc" "$url" "${fallback_url:-none}" >&2
+  return "$rc"
+}
 mkdir extensions
 if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
 for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
   url_key="${prefix}_SOURCE_URL"
   sha_key="${prefix}_SHA256"
-  curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 \
-    "${!url_key}" -o "extensions/$prefix.zip"
+  fallback_url=''
+  # Official GitHub release asset ID is tied to the reviewed Fedora 45 lock.
+  # Never use it for another Tiling Assistant version or a different SHA-256.
+  if [[ "$LAB_RELEASE" == 45 && "$prefix" == TILING_ASSISTANT &&
+        "${!sha_key}" == 961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a ]]; then
+    fallback_url='https://api.github.com/repos/ubuntu/Tiling-Assistant/releases/assets/622961643'
+  fi
+  download_reviewed_extension "$prefix" "${!url_key}" "extensions/$prefix.zip" "$fallback_url"
   printf '%s  %s\n' "${!sha_key}" "extensions/$prefix.zip" | sha256sum --check
 done
 fi

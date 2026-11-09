@@ -46,6 +46,27 @@ checks = (
 )
 for check in checks:
     assert check in source, f"Rocky kernel transaction invariant missing: {check}"
+# Transport retries remain bounded and every upstream artifact is still checked
+# against its pinned hash (or, for AWS CLI, its cryptographic signature).
+for required in (
+    'download_reviewed_artifact "$tool v0.11.0"',
+    '--retry 5 --retry-delay 5 --retry-max-time 240',
+    '--connect-timeout 20 --max-time 90 --remove-on-error',
+    "--proto '=https' --proto-redir '=https'",
+    'return "$rc"',
+    "--header 'Accept: application/octet-stream'",
+    'https://api.github.com/repos/derailed/k9s/releases/assets/440224321',
+    'https://api.github.com/repos/ahmetb/kubectx/releases/assets/382590978',
+    'https://api.github.com/repos/ahmetb/kubectx/releases/assets/382591017',
+    'https://api.github.com/repos/kubernetes-sigs/kind/releases/assets/531396433',
+    'https://api.github.com/repos/kubernetes/minikube/releases/assets/358743871',
+    'https://api.github.com/repos/mikefarah/yq/releases/assets/440146735',
+    'github_asset_fallback "$tool" v0.11.0 "$expected_sha"',
+    'c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7',
+    "printf '%s  %s\\n' \"$expected_sha\" \"$kubectx_tmp/$archive\" | sha256sum -c -",
+    'gpgv --keyring "$aws_keyring" "$aws_sig" "$aws_zip"',
+):
+    assert required in source, f"Rocky download protection missing: {required}"
 assert source.index("prepared_kernel=''") < source.index("dnf -y upgrade --refresh")
 assert source.index('rm -f -- "$reboot_pending"') > source.index(
     'mv -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp')
