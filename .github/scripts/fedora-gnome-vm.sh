@@ -118,13 +118,28 @@ if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
 elif [[ "$LAB_RELEASE" == 44 ]]; then
   source "$ROOT/profiles/fedora44/gnome-extensions.lock"
 fi
+download_reviewed_extension() {
+  local label="$1" url="$2" destination="$3" rc
+  printf 'Fetching GNOME extension %s from %s (at most 6 attempts)\n' "$label" "$url"
+  if curl --fail --location --silent --show-error \
+    --proto '=https' --proto-redir '=https' \
+    --retry 5 --retry-delay 5 --retry-max-time 240 \
+    --connect-timeout 20 --max-time 90 --remove-on-error \
+    --output "$destination" "$url"; then
+    return 0
+  else
+    rc=$?
+    rm -f -- "$destination"
+    printf 'ERROR: GNOME extension %s download failed (curl exit %s): %s\n' "$label" "$rc" "$url" >&2
+    return "$rc"
+  fi
+}
 mkdir extensions
 if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
 for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
   url_key="${prefix}_SOURCE_URL"
   sha_key="${prefix}_SHA256"
-  curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 \
-    "${!url_key}" -o "extensions/$prefix.zip"
+  download_reviewed_extension "$prefix" "${!url_key}" "extensions/$prefix.zip"
   printf '%s  %s\n' "${!sha_key}" "extensions/$prefix.zip" | sha256sum --check
 done
 fi
