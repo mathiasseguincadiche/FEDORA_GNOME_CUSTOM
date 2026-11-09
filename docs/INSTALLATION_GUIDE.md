@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
 > Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — préconditions de l'APPLY et verrouillage des overrides relus contre `lib/apply_gate.sh` et le schéma de configuration — matériel : non vérifié
+> Dernière vérification : 2026-11-09 — préconditions APPLY, préparation des outils et parcours d'échec relus contre les scripts ; essais physiques non rejoués — matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 
@@ -182,7 +182,11 @@ L'import vérifie le commit, le plan de modules et les identités physiques du P
 ./control.sh install prepare-tools
 ```
 
-Cette commande installe les paquets de `manifests/packages-baseline.txt`, dont `smartmontools`, sans rien mesurer ni certifier. Créer ensuite `config/local.conf`, fichier local non versionné, à partir de l'exemple :
+Cette commande installe les paquets de `manifests/packages-baseline.txt`, dont `smartmontools`, sans rien mesurer ni certifier.
+
+**Réussite :** la commande s'achève sans erreur. Vérifier en lecture seule que l'un des outils attendus est installé : `rpm -q smartmontools` doit afficher sa version. Si la préparation échoue, ne pas poursuivre vers la baseline.
+
+Créer ensuite `config/local.conf`, fichier local non versionné, à partir de l'exemple :
 
 ```bash
 test -e config/local.conf || cp config/local.conf.example config/local.conf
@@ -266,9 +270,11 @@ HOST_RELEASE="45"
 REAL_MACHINE_APPROVED="true"
 ```
 
-Ce drapeau confirme que ce PC est la machine réelle ; il ne contourne aucun verrou. Lancer ensuite :
+Ce drapeau confirme que ce PC est la machine réelle ; il ne contourne aucun verrou.
 
 Les exigences de dépôt Git propre, de dry-run au même état, de baseline certifiée et de sauvegarde pré-APPLY restent **obligatoires**. Le validateur refuse de les désactiver dans `config/local.conf` (`REQUIRE_CLEAN_GIT`, `REQUIRE_SAME_COMMIT_DRYRUN`, `REQUIRE_HARDWARE_BASELINE_CERTIFIED`, `REQUIRE_PREAPPLY_BACKUP`). Si l'une manque, corriger la cause puis refaire les contrôles ; ne pas essayer de la contourner.
+
+Lancer ensuite le dry-run :
 
 ```bash
 ./install.sh --dry-run
@@ -396,18 +402,18 @@ Consigner chaque résultat dans la [fiche physique](PHYSICAL_QUALIFICATION_CHECK
 
 Chaque cause ci-dessous reste une hypothèse tant que la vérification indiquée ne l'a pas confirmée.
 
-| Symptôme | Cause possible | Vérification sûre | Correction | Nouvelle validation |
-| --- | --- | --- | --- | --- |
-| `ISO SHA256 mismatch` ou `Unexpected Fedora signing key` | ISO corrompue, incomplète ou autre que le média promu | Taille et nom du fichier, comparés à la [fiche Fedora 45](FEDORA45_PRIMARY.md#média-promu) | Retélécharger l'ISO et le CHECKSUM officiels | Section 1 |
-| Décision Live `NO-GO` ou `A_VERIFIER` | Point en `FAIL`, ou point requis non essayé | `./control.sh validate live status` | Corriger le défaut ou faire l'essai manquant | `validate live run` |
-| Import Live refusé | Autre commit, autre plan de modules ou autre PC | `git rev-parse HEAD`, comparé au SHA conservé | Revenir au commit du Live, ou refaire le contrôle Live | `validate import` |
-| `baseline-doctor certify` échoue | Essai manquant, vitesse mémoire différente de l'essai, matériel non conforme | Sortie de `certify` et `./diagnostics/baseline-doctor status` | Refaire l'essai indiqué ; un défaut matériel arrête le parcours | `certify` |
-| APPLY refusé : dry-run périmé | Commit, `config/local.conf` ou matériel modifiés après le dry-run | `git status` et date de la dernière retouche | Relancer le dry-run, puis la sauvegarde | Sections 6 et 7 |
-| APPLY refusé : sauvegarde | Support Borg débranché ou archive introuvable | Support monté, `./diagnostics/backup-doctor` | Rebrancher le support ou refaire la sauvegarde | Section 7 |
-| APPLY refusé : marqueur trop ancien | Marqueur pré-APPLY de plus de 24 h par défaut | Âge de `state/preapply-backup.ok` et `BACKUP_MAX_AGE_HOURS` | Avant le premier APPLY, refaire la sauvegarde sous l'état validé | Section 7 |
-| APPLY refusé : Secure Boot | Secure Boot actif ou état illisible | `mokutil --sb-state` | Désactiver Secure Boot dans l'UEFI | Section 8 |
-| APPLY commencé puis échoué | Un ou plusieurs modules ont pu modifier Fedora avant le premier échec | Rapport `reports/run-<identifiant>.json` et journaux `logs/<identifiant>/` | **Ne pas relancer automatiquement** ; qualifier l'état partiel avant de décider entre réparation et reprise en staging ([procédure](TROUBLESHOOTING.md#installation-et-apply)) | Refaire les contrôles concernés et, si reprise autorisée, les préconditions 6 à 8 |
-| Démarrage sur N-1 ou échec de N | Régression du noyau N | `./control.sh kernel status`, journal du démarrage précédent | `./control.sh kernel rollback` ; si aucun noyau amont ne démarre, choisir l'entrée Fedora dans GRUB ([dépannage](TROUBLESHOOTING.md)) | `kernel-doctor` |
+| Symptôme et cause possible | Premier diagnostic | Correction et nouvelle vérification |
+| --- | --- | --- |
+| `ISO SHA256 mismatch` ou `Unexpected Fedora signing key` : média corrompu ou non conforme | Comparer la taille et le nom à la [fiche Fedora 45](FEDORA45_PRIMARY.md#média-promu) | Retélécharger l'ISO et le CHECKSUM officiels, puis recommencer la [vérification du média](#1-vérifier-le-média-fedora-45). |
+| Live `NO-GO` ou `A_VERIFIER` : échec ou point obligatoire non essayé | `./control.sh validate live status` | Corriger le défaut ou réaliser l'essai manquant, puis relancer `validate live run`. |
+| Import Live refusé : autre commit, autre plan ou autre PC | Comparer `git rev-parse HEAD` au SHA conservé | Revenir au commit du Live ou refaire le contrôle, puis relancer `validate import`. |
+| `baseline-doctor certify` échoue : essai manquant, vitesse mémoire différente ou matériel non conforme | Lire le message de `certify` et `./diagnostics/baseline-doctor status` | Refaire l'essai indiqué et relancer `certify` ; un défaut matériel arrête le parcours. |
+| APPLY refusé : dry-run périmé après un changement de commit, de configuration ou de matériel | `git status` et historique des modifications locales | Refaire le [dry-run](#6-lancer-le-dry-run-final), puis la [sauvegarde](#7-créer-la-sauvegarde-pré-apply). |
+| APPLY refusé : support Borg absent ou archive introuvable | Vérifier le montage et `./diagnostics/backup-doctor` | Rebrancher le support ou refaire la [sauvegarde vérifiée](#7-créer-la-sauvegarde-pré-apply). |
+| APPLY refusé : marqueur pré-APPLY trop ancien (24 h par défaut) | Examiner `state/preapply-backup.ok` et `BACKUP_MAX_AGE_HOURS` | **Avant un premier APPLY**, refaire la sauvegarde sous l'état validé ([section 7](#7-créer-la-sauvegarde-pré-apply)). |
+| APPLY refusé : Secure Boot actif ou état indéterminé | `mokutil --sb-state` | Désactiver Secure Boot dans l'UEFI, puis revérifier avant la [section 8](#8-appliquer-la-configuration). |
+| APPLY commencé puis échoué : Fedora potentiellement modifié en partie | Rapports `reports/run-<identifiant>.json` et journaux `logs/<identifiant>/` | **Ne pas relancer automatiquement** ; diagnostiquer l'état partiel et choisir réparation ou reprise en staging ([procédure](TROUBLESHOOTING.md#installation-et-apply)). Refaire ensuite les contrôles autorisés. |
+| Démarrage sur N-1 ou échec du noyau N | `./control.sh kernel status` et journal du boot précédent | `./control.sh kernel rollback` ; si aucun noyau amont ne démarre, choisir Fedora dans GRUB ([dépannage](TROUBLESHOOTING.md)), puis vérifier avec `kernel-doctor`. |
 
 **Retour arrière.** L'APPLY ne supprime aucune donnée de `/data`. Pour revenir à l'état d'avant l'APPLY, restaurer l'archive pré-APPLY en staging, puis remettre les fichiers voulus à la main, selon [sauvegardes et restauration](BACKUP_RESTORE.md). Une réinstallation complète repart de la section 2 et réutilise le second T705 sans le reformater. La CI restaure une archive Borg réelle en VM ; le retour arrière après un APPLY sur le PC reste à essayer pendant la qualification.
 

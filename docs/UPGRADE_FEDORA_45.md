@@ -1,7 +1,7 @@
 # Mise à niveau facultative de Fedora 44 vers Fedora 45
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — phases, préconditions et codes de sortie relus dans `scripts/maintenance/upgrade-fedora.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — enchaînement des mises à jour et condition de redémarrage recoupés avec les commandes et `docs/UPDATE_COVERAGE.md` — matériel : non vérifié
 
 Cette page ne concerne qu'un poste qui exécute déjà Fedora 44. **Une installation neuve passe directement à Fedora 45 / GNOME 51 par le [guide d'installation](INSTALLATION_GUIDE.md) ; aucune mise à niveau n'est nécessaire.**
 
@@ -11,7 +11,7 @@ La configuration principale cible Fedora 45. Un poste encore sous Fedora 44 gard
 
 | Phase | Commande | Résultat |
 |---|---|---|
-| Mettre Fedora 44 à jour | `./control.sh update all`, `update reboot`, `update finalize` | système source à jour, aucune mise à jour en attente |
+| Mettre Fedora 44 à jour | `./control.sh update all`, puis `update status` ; redémarrage et finalisation **si une transaction RPM est préparée** | système source à jour, aucune mise à jour en attente |
 | Planifier | `./control.sh upgrade plan` | étapes affichées, profil 45 vérifié ; rien n'est modifié |
 | Préparer | `./control.sh upgrade prepare` | sauvegarde vérifiée, transaction Fedora 45 téléchargée ; état `prepared` |
 | Redémarrer | `./control.sh upgrade reboot` | installation hors ligne de Fedora 45 |
@@ -23,11 +23,23 @@ La configuration principale cible Fedora 45. Un poste encore sous Fedora 44 gard
 
 ```bash
 ./control.sh update all
-./control.sh update reboot
-./control.sh update finalize
+./control.sh update status
 ```
 
-Réussite : `./control.sh update status` ne signale aucune transaction en attente. DNF exige un système source à jour avant une mise à niveau de version.
+**Lire le statut avant de redémarrer.** Si une transaction RPM hors ligne est préparée, lancer :
+
+```bash
+./control.sh update reboot  # déclenche le redémarrage et l'installation hors ligne
+```
+
+**Après le redémarrage et la reconnexion**, finaliser la transaction :
+
+```bash
+./control.sh update finalize
+./control.sh update status
+```
+
+Si aucune transaction RPM n'a été créée, la commande `update all` peut déjà terminer les opérations Flatpak et les diagnostics : **ne pas lancer `update reboot` pour rien**. Vérifier simplement `update status` et les messages du bilan. **Réussite :** aucune transaction en attente, aucun échec logiciel non résolu. DNF exige un système source à jour avant une mise à niveau de version.
 
 ## 2. Planifier et préparer
 

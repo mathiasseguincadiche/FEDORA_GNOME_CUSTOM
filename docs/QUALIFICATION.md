@@ -1,7 +1,7 @@
 # Qualifier la workstation
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — rôles des Gates et conditions du passage Live → installation relus contre `lib/validation_gates.sh`, `scripts/validation/live-usb.sh` et le guide d'installation — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — parcours Gate 3 et ordre des cycles de veille précisés contre les scripts ; essais physiques non exécutés — matériel : non vérifié
 
 **Une machine n'est pas certifiée parce que son code passe les tests.** Une CI verte concerne un commit ; la Gate 2 observe le PC avant installation ; la Gate 3 vérifie le système effectivement installé, dans son environnement réel.
 
@@ -155,7 +155,7 @@ Après les diagnostics de l'hôte, créer Rocky selon le [démarrage KVM](KVM_QU
 
 ### Veille, puis matrice UX
 
-Cinq cycles physiques distincts de veille/réveil, enregistrés un par un. Après les cycles, refaire la capture webcam, l'audio et le partage d'écran.
+Cinq cycles physiques distincts de veille/réveil, enregistrés un par un. **Pour chaque cycle :** mettre le PC en veille depuis le menu GNOME, attendre la suspension réelle, le réveiller, puis vérifier que la session et les périphériques répondent avant d'enregistrer la preuve avec la commande ci-dessous. **Lancer l'enregistrement rapidement après la reprise** : le code refuse un marqueur d'affichage vieux de plus de **5 minutes** ou un journal de reprise vieux de plus de **10 minutes**. La commande **n'endort pas le PC** et cinq appels successifs sans cinq veilles réelles ne constituent pas une qualification. Après les cycles, refaire la capture webcam, l'audio et le partage d'écran.
 
 ```bash
 ./control.sh validate gate3 record-suspend    # après chaque cycle
