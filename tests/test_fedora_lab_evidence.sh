@@ -90,6 +90,9 @@ for transport_guard in (
     '--connect-timeout 20 --max-time 90 --remove-on-error',
     "--proto '=https' --proto-redir '=https'",
     'return "$rc"',
+    "--header 'Accept: application/octet-stream'",
+    'https://api.github.com/repos/ubuntu/Tiling-Assistant/releases/assets/622961643',
+    '961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a',
     'printf \'%s  %s\\n\' "${!sha_key}" "extensions/$prefix.zip" | sha256sum --check',
 ):
     assert transport_guard in host, f"missing Fedora VM extension guard: {transport_guard}"
