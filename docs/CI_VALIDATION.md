@@ -45,6 +45,8 @@ Le workflow `Tests` lance sept jobs de contrôle, et le job `contracts` exige le
 7. `fedora-installer-audit.yml` — audit de l'installateur.
 8. `security-scanning.yml` — contrôles de sécurité.
 
+**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/ci-fusion-release.svg) pour examiner les détails avec le zoom du navigateur.
+
 Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-release.drawio).
 
 **Une PR verte ne prouve pas que `main` est vert.** Les workflows de PR testent le commit proposé (`github.event.pull_request.head.sha`) ; GitHub valide ensuite le commit de fusion, qui est un autre SHA. Après une fusion, filtrer la page Actions sur `main` et vérifier `Tests` pour ce SHA.

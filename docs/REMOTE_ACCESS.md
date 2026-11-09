@@ -15,6 +15,8 @@ Ce guide explique **comment atteindre le PC sans l'exposer directement à Intern
 
 La tablette Android atteint le PC Fedora par le tunnel privé Tailscale, sans port ouvert sur Internet : SSH par clés uniquement, Sunshine s'il est activé, GNOME Remote Desktop en repli configuré à la main. Pour réveiller le PC éteint, la tablette passe par le relais toujours allumé du réseau local, qui envoie le Magic Packet. Le profil est désactivé par défaut (`REMOTE_ENABLE=false`).
 
+**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/acces-distant.svg) pour examiner les détails avec le zoom du navigateur.
+
 Source éditable : [`acces-distant.drawio`](assets/diagrams/acces-distant.drawio).
 
 Le PC fixe reste l'unique environnement de travail : la tablette n'héberge ni les projets ni les VM, elle sert d'écran et de clavier à distance.
