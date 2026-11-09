@@ -1,7 +1,7 @@
 # Fedora Golden Workstation
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — parcours rapproché des scripts et guides ; validation sur le PC physique à réaliser — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — premiers pas relus contre `control.sh`, les guides et les limites des Gates — matériel : non vérifié
 
 **Préparer, personnaliser et entretenir une workstation Fedora depuis un centre de contrôle.**
 
@@ -13,6 +13,8 @@ Réinstaller un PC ne devrait pas obliger à retrouver de mémoire chaque comman
 
 Le projet applique aussi une démarche DevOps au poste personnel : code versionné, contrôles automatisés, opérations encadrées, preuves de validation et procédures de reprise. **« Golden » désigne une configuration de référence à reproduire et à qualifier**, pas une image ISO personnalisée ni une certification déjà obtenue.
 
+**Vous découvrez Fedora ou l'automatisation ?** Commencez par les [notions clés](docs/CONCEPTS.md), puis revenez au parcours ci-dessous. **Vous connaissez déjà Linux ?** Le [centre de contrôle](docs/CONTROL_CENTER.md) donne le détail des commandes et de leurs effets. Dans les deux cas, le [guide d'installation](docs/INSTALLATION_GUIDE.md) reste la référence avant toute modification du PC.
+
 ## Le centre de contrôle : votre point d'entrée
 
 Le cœur de l'expérience est **`./control.sh`**. Il regroupe l'accès aux opérations de préparation, d'installation, de mise à jour, de diagnostic, de sauvegarde, de restauration et de qualification. Chaque action est ensuite confiée à un script spécialisé, avec ses propres vérifications de sécurité.
@@ -21,7 +23,7 @@ Le cœur de l'expérience est **`./control.sh`**. Il regroupe l'accès aux opér
 
 *Maquette de l'expérience visée **après configuration** : elle montre comment ouvrir le centre de contrôle dans un terminal. Ce n'est ni une capture du PC réel ni une preuve de réussite. La session Live USB utilisée avant installation ne dispose pas encore de cette personnalisation.*
 
-### Premier contact, sans modifier le poste
+### Premier contact : explorer avant d'agir
 
 Depuis un terminal Linux avec Git disponible :
 
@@ -29,8 +31,10 @@ Depuis un terminal Linux avec Git disponible :
 git clone https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM.git
 cd FEDORA_GNOME_CUSTOM
 ./control.sh help  # découvrir les commandes, sans lancer d'opération
-./control.sh       # ouvrir le menu interactif
+./control.sh       # ouvrir le menu interactif, sans sélectionner d'action
 ```
+
+Le clonage crée une copie du dépôt sur le disque. La commande `help` se limite à présenter les choix ; ouvrir le menu ne lance pas d'installation. **En revanche, choisir une opération dans ce menu peut modifier le système.** Pour découvrir le projet sans intervenir sur Fedora, arrêtez-vous à `help` et lisez le guide correspondant.
 
 **Avant un essai réel**, utiliser le commit dont les contrôles CI ont été vérifiés, puis suivre les prérequis de la procédure concernée. Le centre de contrôle automatise les opérations prévues par le dépôt ; **le choix des disques, l'installation initiale de Fedora et certaines confirmations physiques restent manuels**.
 

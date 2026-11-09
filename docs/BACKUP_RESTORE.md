@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
-> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-08 — exclusions et durée de validité du marqueur pré-APPLY relues contre les moteurs ; essais physiques non rejoués — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — conduite à tenir après un échec Borg clarifiée sans changer les commandes ; essais physiques non rejoués — matériel : non vérifié
 
 **Une sauvegarde doit permettre de récupérer quelque chose, pas seulement produire un fichier.**
 
@@ -173,7 +173,10 @@ Une restauration passe **toujours** par un dossier d'essai vide (staging), à l'
    scripts/backup/restore.sh verify    # borg check --verify-data : relit toutes les données, long
    ```
 
-   **Réussite :** l'archive voulue apparaît dans la liste et `verify` se termine sans erreur. **Arrêt :** une erreur de `verify` signale une intégrité **non démontrée** (dépôt, accès au stockage ou données) ; ne rien extraire et ne lancer ni sauvegarde ni rétention sur ce dépôt. Conserver le message exact, puis consulter `./control.sh backup check` (état du support, dépôt et marqueurs), `findmnt`/`lsblk -f` (montage et périphérique exacts) et les erreurs noyau avec `sudo journalctl -k -b --no-pager` (lecture seule). Si le support paraît défaillant, arrêter les sollicitations et organiser une récupération sur copie saine. `./control.sh backup deep` **relance le même contrôle intégral `borg check --verify-data`** : ne l'utiliser qu'après avoir identifié la raison d'un nouveau passage, pas comme premier diagnostic automatique. Les erreurs restent à documenter et à résoudre avant toute restauration.
+   - **Réussite :** l'archive voulue apparaît dans la liste et `verify` se termine sans erreur.
+   - **Arrêt obligatoire :** si `verify` échoue, l'intégrité n'est **pas démontrée**. Ne rien extraire et ne lancer ni sauvegarde ni rétention sur ce dépôt. Conserver le message exact.
+   - **Diagnostic sans écriture sur les données :** consulter `./control.sh backup check` pour l'état du support, du dépôt et des marqueurs ; `findmnt` et `lsblk -f` pour les montages ; `sudo journalctl -k -b --no-pager` pour les erreurs noyau. Si le support paraît défaillant, arrêter les sollicitations et organiser une récupération sur copie saine.
+   - **Ne pas répéter le test aveuglément :** `./control.sh backup deep` relance le même `borg check --verify-data`. Le réserver à une nouvelle vérification justifiée, après diagnostic. Documenter et résoudre les erreurs avant toute restauration.
 
 2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide de la racine de staging. Cette étape écrit seulement dans le staging :
 
