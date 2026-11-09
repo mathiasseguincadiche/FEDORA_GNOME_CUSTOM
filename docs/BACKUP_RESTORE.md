@@ -23,15 +23,16 @@ Le projet distingue trois moments. Ils n'ont pas le même objectif :
 
 Le second SSD `/data` sert à séparer les données du système ; le SSD externe Borg sert à disposer d'une autre copie. Ces deux rôles ne sont pas interchangeables.
 
-![Schéma de la sauvegarde : trois familles de sources vers un dépôt Borg externe, contrôles, restauration en staging puis copie manuelle](assets/diagrams/sauvegarde-restauration.svg)
+<picture>
+  <source media="(min-width: 700px)" srcset="assets/diagrams/sauvegarde-restauration.svg">
+  <img src="assets/diagrams/sauvegarde-restauration-mobile.svg" alt="Schéma Borg : sources protégées, dépôt externe, contrôles avant restauration, staging puis inspection et copie manuelle.">
+</picture>
 
 Par les sauvegardes quotidienne et complète, trois familles de sources partent vers un dépôt Borg sur le SSD externe XS1000 (ext4, non chiffré) : les données de `/data` (Documents, Projets, IA/Openclaw), les dossiers personnels (Bureau, Images, Vidéos, Musique, `~/Development`) et les réglages (`.config`, `.mozilla`, `.var/app`, `.local/share`, configuration de l'hôte et du projet).
 
 La sauvegarde pré-APPLY n'est validée qu'après `borg check --verify-data` et une restauration canari. Une restauration se fait toujours dans `~/Restores` avant inspection et copie manuelle. Restent hors Borg : Téléchargements, ISO, Jeux et tout ce qui concerne les VM ; le système, lui, est reconstruit depuis le dépôt. Les listes exactes viennent de `config/backup.conf`.
 
-**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/sauvegarde-restauration.svg) pour examiner les détails avec le zoom du navigateur.
-
-Source éditable : [`sauvegarde-restauration.drawio`](assets/diagrams/sauvegarde-restauration.drawio).
+**Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/sauvegarde-restauration-mobile.svg) · [version large](assets/diagrams/sauvegarde-restauration.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/sauvegarde-restauration-mobile.drawio) · [large `.drawio`](assets/diagrams/sauvegarde-restauration.drawio).
 
 > [!IMPORTANT]
 > **Séparer les SSD n'est pas sauvegarder.** Le second T705 peut survivre à une réinstallation, mais pas nécessairement à une panne ni à un effacement. Borg apporte une copie indépendante. Son dépôt n'étant pas chiffré, le support externe doit être protégé physiquement comme un document sensible.

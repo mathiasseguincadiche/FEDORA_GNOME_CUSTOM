@@ -11,13 +11,14 @@ Le statut **Golden runtime-certified** exige que `./control.sh validate gate3 ce
 
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 
-![Schéma de la qualification : onze étapes, avec décision humaine après Live USB et Gate 3 sur le système installé](assets/diagrams/chaine-qualification.svg)
+<picture>
+  <source media="(min-width: 700px)" srcset="assets/diagrams/chaine-qualification.svg">
+  <img src="assets/diagrams/chaine-qualification-mobile.svg" alt="Qualification du poste en onze étapes : CI, Live USB, accord humain, installation, sauvegarde pré-APPLY, Gate 3 et Golden release.">
+</picture>
 
 Le parcours comporte **onze étapes opérationnelles** : CI au commit exact, contrôle Live USB, **revue et accord humain**, installation de Fedora avec import de la preuve, baseline matérielle, dry-run, sauvegarde pré-APPLY vérifiée, APPLY protégé, redémarrage sur Linux amont N, Gate 3 et Golden release. Le contrôle Live, l'installation et la qualification ont lieu sur le PC cible ; la décision du propriétaire est obligatoire avant l'installation. Ce point d'arrêt humain ne modifie ni les trois Gates ni les préconditions imposées par le code. Un changement de matériel, de code ou de configuration invalide les preuves concernées.
 
-**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/chaine-qualification.svg) pour examiner les détails avec le zoom du navigateur.
-
-Source éditable : [`chaine-qualification.drawio`](assets/diagrams/chaine-qualification.drawio).
+**Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/chaine-qualification-mobile.svg) · [version large](assets/diagrams/chaine-qualification.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/chaine-qualification-mobile.drawio) · [large `.drawio`](assets/diagrams/chaine-qualification.drawio).
 
 | Résultat | Ce qu'il démontre | Ce qu'il ne démontre pas |
 |---|---|---|

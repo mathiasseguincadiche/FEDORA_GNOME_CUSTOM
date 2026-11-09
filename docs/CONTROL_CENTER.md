@@ -16,13 +16,14 @@ Avant les premiers enrôlements matériels, `./control.sh install prepare-tools`
 
 ## Une façade, des moteurs spécialisés
 
-![Schéma du centre de contrôle : l'opérateur, la façade control.sh et les huit domaines avec leurs moteurs](assets/diagrams/centre-de-controle.svg)
+<picture>
+  <source media="(min-width: 700px)" srcset="assets/diagrams/centre-de-controle.svg">
+  <img src="assets/diagrams/centre-de-controle-mobile.svg" alt="Schéma du centre de contrôle : opérateur, façade control.sh et huit moteurs spécialisés.">
+</picture>
 
 L'opérateur passe toujours par `./control.sh`, une façade sans logique métier. Chaque domaine délègue à son moteur : `install.sh` pour le dry-run et l'APPLY, `scripts/maintenance/update-system.sh` pour les mises à jour, le cycle de vie du noyau, les scripts de sauvegarde, la création Rocky et le garde réseau KVM, les doctors en lecture seule, puis la validation Live, la Gate 3 et la certification.
 
-**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/centre-de-controle.svg) pour examiner les détails avec le zoom du navigateur.
-
-Source éditable : [`centre-de-controle.drawio`](assets/diagrams/centre-de-controle.drawio).
+**Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/centre-de-controle-mobile.svg) · [version large](assets/diagrams/centre-de-controle.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/centre-de-controle-mobile.drawio) · [large `.drawio`](assets/diagrams/centre-de-controle.drawio).
 
 `control.sh` expose des commandes lisibles mais **ne retire aucun garde-fou**. Les moteurs `install.sh`, mises à jour, sauvegardes, virtualisation et diagnostics restent séparés, vérifiables et soumis aux mêmes préconditions.
 
