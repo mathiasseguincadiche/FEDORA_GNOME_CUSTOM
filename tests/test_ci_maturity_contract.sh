@@ -55,10 +55,10 @@ fi
 # checksum/metadata verification and a hard failure remain mandatory.
 preflight="$ROOT/.github/workflows/fedora-package-preflight.yml"
 for contract in \
-  'echo "Checking reviewed extension ${prefix} from ${!url_key}"' \
+  "echo \"Checking reviewed extension \${prefix} from \${!url_key}\"" \
   'if ! curl --fail --location' \
   '--retry 4 --retry-delay 5 --retry-max-time 300 --connect-timeout 20 --max-time 90' \
-  'echo "::error::Extension ${prefix} download failed after bounded retries: ${!url_key}"' \
+  "echo \"::error::Extension \${prefix} download failed after bounded retries: \${!url_key}\"" \
   'sha256sum --check --status' \
   'scripts/gnome/validate-extension-metadata.py'; do
   grep -Fq -- "$contract" "$preflight" || { echo "unsafe reviewed-extension CI download: missing $contract" >&2; exit 1; }
