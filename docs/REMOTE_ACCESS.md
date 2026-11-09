@@ -1,7 +1,7 @@
 # Accès distant — Tailscale, SSH, Wake-on-LAN et Sunshine
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — résumé d'exécution de l'activation du profil ajouté et relu contre les étapes de la section 3 ; variables relues le 2026-11-04 contre `config/remote.conf`, modules `modules/remote/`, `scripts/remote/wol-send.py` et `diagnostics/arc-b580-av1`, non rejoué — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — présentation des profils vidéo relue sans changer les valeurs prévues ; activation et matériel non rejoués — matériel : non vérifié
 
 **Objectif :** utiliser le PC Fedora depuis une tablette Android, à la maison ou à l'extérieur, sans ouvrir de port sur Internet, et pouvoir le réveiller quand il est éteint.
 **Statut :** code réalisé ; profil **désactivé par défaut** (`REMOTE_ENABLE="false"`) ; qualification physique (Gate 3) non faite.
@@ -158,10 +158,12 @@ La zone LAN `FedoraWorkstation` peut déjà laisser passer ces ports hauts : vé
 
 Réglages de départ, issus du cahier des charges et à ajuster par la mesure :
 
-| Profil | Résolution | Fréquence | Codec | Débit |
-|---|---|---|---|---|
-| LAN | 1440p | 120 FPS | AV1 | 40–80 Mb/s |
-| Distant | 1080p/1200p ou 1440p | 60–90 FPS | AV1 | 15–40 Mb/s |
+| Usage | Image et fluidité visées | Codec | Débit initial à ajuster |
+|---|---|---|---|
+| Sur le réseau local (LAN) | 1440p à 120 images/s (FPS) | AV1 | 40–80 Mb/s |
+| Depuis l'extérieur | 1080p, 1200p ou 1440p à 60–90 images/s (FPS) | AV1 | 15–40 Mb/s |
+
+Ces valeurs sont des **objectifs de départ**, pas des performances constatées sur la tablette ou sur le PC. La mesure du réseau, de la qualité d'image et de la stabilité reste à faire en Gate 3.
 
 Points ouverts, à trancher par la mesure :
 

@@ -1,7 +1,7 @@
 # Dépannage
 
-> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-08 — reprise après APPLY interrompu relue contre l'orchestrateur et les preuves Borg — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — tableau des pannes réorganisé sans changer les décisions ni leurs commandes — matériel : non vérifié
 
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
@@ -53,17 +53,17 @@ Les journaux et fiches d'incident sont décrits dans [Journaux et incidents](#jo
 
 Une cause possible reste une hypothèse tant que la vérification ne l'a pas confirmée. Le détail de chaque cas est dans la section indiquée.
 
-| Symptôme | Cause possible | Vérification sûre | Correction | Nouvelle validation |
-|---|---|---|---|---|
-| `install.sh --apply` refusé | dépôt modifié, dry-run absent ou d'un autre état, sauvegarde pré-APPLY absente, Secure Boot actif | `git status --short`, `./install.sh --dry-run` | corriger la cause nommée par le refus, refaire le dry-run puis la sauvegarde | l'APPLY passe ses gardes ([détail](#installation-et-apply)) |
-| Arc B580 absente ou rendu instable | carte mal insérée, ReBAR désactivé, firmware manquant | `lspci -nnk -d 8086:e20b`, `./diagnostics/graphics-doctor` | vérifier slot et UEFI ; jamais de `force_probe` | `graphics-doctor` sans `KO` ([détail](#gpu-écran-et-veille)) |
-| Affichage dégradé après une veille | mode d'écran perdu au réveil | `./diagnostics/display-doctor` | `./repair.sh display` *(modifie le système)* | `display-doctor` sans `KO` |
-| Démarrage sur N-1 au lieu de N | entrée de démarrage par défaut | `./control.sh kernel status` | `./control.sh kernel install-latest` *(modifie le système)*, puis redémarrer | `kernel status` montre N démarré ([détail](#noyau)) |
-| Régression après un nouveau noyau | défaut du noyau amont | `./control.sh kernel doctor`, `journalctl -k -b` | `./control.sh kernel rollback` *(modifie le système)* | doctors sans `KO` sur N-1, puis recertifier |
-| `/data` absent | montage du second T705 perdu | `findmnt -n -T /data -o SOURCE,FSTYPE`, `lsblk -f` | remonter le disque existant, **sans formater** | `./control.sh doctor data` sans `KO` ([détail](#données-data-et-gaming)) |
-| Label SELinux incorrect sous `/data` | fichiers copiés hors de leur contexte | `ls -Zd /data/*` | `sudo restorecon -RFv` sur les dossiers concernés *(modifie le système)* | `./control.sh doctor data` sans `KO` |
-| Sauvegarde refusée | `/data` n'est pas le montage attendu, support externe absent | `./diagnostics/backup-doctor --certify-status` | rétablir le montage ou brancher le support | nouvelle sauvegarde, puis `./control.sh backup check` ([détail](#sauvegarde-et-restauration)) |
-| VM sans Internet, garde en mode d'urgence | LAN en conflit avec `192.168.50.0/24`, changement de réseau | `./control.sh kvm guard-check`, `ip -4 route` | `./control.sh kvm guard-reconcile` *(modifie le système)* | `guard_mode=normal` ([détail](KVM_QUICKSTART.md#dépannage)) |
+| Symptôme et hypothèses à confirmer | Premier diagnostic | Correction et nouvelle vérification |
+|---|---|---|
+| APPLY refusé : dépôt modifié, dry-run périmé, sauvegarde manquante ou Secure Boot actif | `git status --short`, `./install.sh --dry-run` | Corriger le refus indiqué, refaire le dry-run et la sauvegarde ; les gardes de l'APPLY doivent réussir ([détail](#installation-et-apply)). |
+| Arc B580 absente ou rendu instable : carte, ReBAR ou firmware en cause | `lspci -nnk -d 8086:e20b`, `./diagnostics/graphics-doctor` | Vérifier le slot et l'UEFI, sans `force_probe` ; `graphics-doctor` doit être sans `KO` ([détail](#gpu-écran-et-veille)). |
+| Affichage dégradé après une veille : mode d'écran possiblement perdu | `./diagnostics/display-doctor` | `./repair.sh display` *(modifie le système)*, puis `display-doctor` sans `KO`. |
+| Démarrage sur N-1 au lieu de N : entrée par défaut suspectée | `./control.sh kernel status` | `./control.sh kernel install-latest` *(modifie le système)*, puis redémarrer et vérifier que `kernel status` montre N démarré ([détail](#noyau)). |
+| Régression après un nouveau noyau : noyau amont suspecté | `./control.sh kernel doctor`, `journalctl -k -b` | `./control.sh kernel rollback` *(modifie le système)* ; doctors sans `KO` sur N-1, puis nouvelle certification. |
+| `/data` absent : montage du second T705 possiblement perdu | `findmnt -n -T /data -o SOURCE,FSTYPE`, `lsblk -f` | Remonter le disque existant, **sans formater** ; `./control.sh doctor data` sans `KO` ([détail](#données-data-et-gaming)). |
+| Contexte SELinux incorrect sous `/data` : fichiers copiés avec de mauvais labels | `ls -Zd /data/*` | Suivre la commande ciblée de [Données `/data`](#données-data-et-gaming) *(modifie le système)* ; `./control.sh doctor data` sans `KO`. |
+| Sauvegarde refusée : montage `/data` ou support externe suspect | `./diagnostics/backup-doctor --certify-status` | Rétablir le montage ou rebrancher le support ; refaire la sauvegarde, puis `./control.sh backup check` ([détail](#sauvegarde-et-restauration)). |
+| VM sans Internet et garde en urgence : conflit LAN ou changement de réseau | `./control.sh kvm guard-check`, `ip -4 route` | `./control.sh kvm guard-reconcile` *(modifie le système)* ; vérifier `guard_mode=normal` ([détail](KVM_QUICKSTART.md#dépannage)). |
 
 ## Installation et APPLY
 
