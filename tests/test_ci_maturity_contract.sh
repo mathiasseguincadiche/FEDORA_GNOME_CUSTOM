@@ -51,6 +51,19 @@ if grep -Eq -- '--no-gpg-verify|--disable-gpg-verify|--no-verify' "$ROOT/scripts
   echo 'Flathub bootstrap must never bypass signatures' >&2; exit 1;
 fi
 
+# An upstream GNOME extensions HTTP 504 is retried a bounded number of times;
+# checksum/metadata verification and a hard failure remain mandatory.
+preflight="$ROOT/.github/workflows/fedora-package-preflight.yml"
+for contract in \
+  'echo "Checking reviewed extension ${prefix} from ${!url_key}"' \
+  'if ! curl --fail --location' \
+  '--retry 4 --retry-delay 5 --retry-max-time 300 --connect-timeout 20 --max-time 90' \
+  'echo "::error::Extension ${prefix} download failed after bounded retries: ${!url_key}"' \
+  'sha256sum --check --status' \
+  'scripts/gnome/validate-extension-metadata.py'; do
+  grep -Fq -- "$contract" "$preflight" || { echo "unsafe reviewed-extension CI download: missing $contract" >&2; exit 1; }
+done
+
 # This reusable kernel preflight accepts both Fedora 45 and 45. It must use
 # Fedora's official registry for either input; the old dynamic ECR reference
 # bypassed the fixed-image checks and could fail before running any test.
