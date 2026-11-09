@@ -54,6 +54,9 @@ for required in (
     '--connect-timeout 20 --max-time 90 --remove-on-error',
     "--proto '=https' --proto-redir '=https'",
     'return "$rc"',
+    "--header 'Accept: application/octet-stream'",
+    'https://api.github.com/repos/derailed/k9s/releases/assets/440224321',
+    'c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7',
     "printf '%s  %s\\n' \"$expected_sha\" \"$kubectx_tmp/$archive\" | sha256sum -c -",
     'gpgv --keyring "$aws_keyring" "$aws_sig" "$aws_zip"',
 ):
