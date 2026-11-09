@@ -1,7 +1,7 @@
 # CI et validation
 
-> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-08 — concurrence des workflows de validation revue ; mesures CI antérieures distinguées — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — périmètre du contrôle documentaire revu contre `tests/test_docs_integrity.py` — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -163,6 +163,7 @@ Pour diagnostiquer un échec, suivre le [runbook CI](TROUBLESHOOTING.md#un-contr
 `tests/test_docs_integrity.py` bloque :
 
 - un lien local cassé, une ancre Markdown absente (y compris les titres accentués ou répétés), un guide inaccessible depuis le README ;
+- un guide courant sans titre principal unique, un saut dans les niveaux de titres, ou un bloc de code sans langage ou sans fermeture ;
 - une commande `./control.sh` que le code ne connaît pas ;
 - un chemin du dépôt cité qui n'existe pas ;
 - un guide sans bloc de métadonnées ;
