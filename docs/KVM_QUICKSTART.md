@@ -1,7 +1,7 @@
 # KVM au quotidien
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — encadré de non-retour de la reconstruction de l'invité ajouté, conditions recopiées de la section ; commandes relues le 2026-11-04 contre `scripts/kvm/`, profil contre `config/vm-profiles.conf`, non rejoué — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — cycle de vie de l'invité et encadré de non-retour relus contre `scripts/kvm/`, profil contre `config/vm-profiles.conf`, non rejoué — matériel : non vérifié
 
 Créer, utiliser et dépanner la VM Rocky DevOps. L'architecture et le contenu du profil sont dans la [référence virtualisation](VIRTUALIZATION.md), l'isolation réseau dans le [réseau KVM](KVM_NETWORK.md).
 
@@ -46,15 +46,23 @@ Le script authentifie l'image **avant** de créer le disque, demande le mot de p
 
 ## 3. Utiliser
 
+**Pour te connecter**, vérifier que le domaine existe, le démarrer **s'il est arrêté**, puis attendre que son réseau et son agent invité soient prêts :
+
 ```bash
 virsh --connect qemu:///system list --all
 virsh --connect qemu:///system start rocky-devops
-virsh --connect qemu:///system shutdown rocky-devops     # arrêt propre
 virsh --connect qemu:///system domifaddr rocky-devops --source agent
-ssh mathias@192.168.50.x
+ssh mathias@192.168.50.x  # remplacer x par l'adresse réellement relevée
 ```
 
-L'utilisateur de l'invité est fixé par `ROCKY_SERVER_USERNAME` dans `config/vm-profiles.conf` (`mathias`) ; l'adresse vient de la commande `domifaddr`. `virsh destroy` équivaut à couper l'alimentation : réservé au dépannage. SSH accepte uniquement la clé ; le mot de passe sert à la console et à `sudo`. `virt-manager --connect qemu:///system` reste disponible, mais tout se fait en ligne de commande.
+**Pour arrêter proprement Rocky après ton travail** (et non avant la connexion SSH) :
+
+```bash
+virsh --connect qemu:///system shutdown rocky-devops
+virsh --connect qemu:///system domstate rocky-devops  # attendre « shut off »
+```
+
+L'utilisateur de l'invité est fixé par `ROCKY_SERVER_USERNAME` dans `config/vm-profiles.conf` (`mathias`) ; l'adresse vient de la commande `domifaddr`. Si l'agent ne renvoie pas encore d'adresse, patienter puis consulter les baux avec `virsh --connect qemu:///system net-dhcp-leases devops-nat` ; ne pas deviner l'IP. Si Rocky est déjà démarré, **ne pas relancer** `start` : passer à `domifaddr`. `virsh destroy` équivaut à couper l'alimentation : réservé au dépannage. SSH accepte uniquement la clé ; le mot de passe sert à la console et à `sudo`. `virt-manager --connect qemu:///system` reste disponible, mais tout se fait en ligne de commande.
 
 ### Fichiers de la VM dans Nautilus
 

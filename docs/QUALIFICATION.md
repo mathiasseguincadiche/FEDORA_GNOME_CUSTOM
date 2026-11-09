@@ -221,7 +221,12 @@ bash scripts/hardware/ld240-display.sh install
 # reconnecter le périphérique USB, puis :
 bash scripts/hardware/ld240-display.sh start
 bash scripts/hardware/ld240-display.sh status
-bash scripts/hardware/ld240-display.sh remove   # retour arrière
+```
+
+**Retour arrière uniquement, si tu décides de retirer l'intégration** (ne pas l'exécuter à la suite du bloc précédent) :
+
+```bash
+bash scripts/hardware/ld240-display.sh remove
 ```
 
 Une incompatibilité doit rester visible : ne pas désactiver SELinux ni ouvrir l'accès à tous les périphériques HID pour la contourner.

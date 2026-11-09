@@ -1,7 +1,7 @@
 # Performance du poste
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — valeurs relues contre `config/performance-runtime.policy`, scripts relus dans `scripts/performance/` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — valeurs et effets des commandes relus contre `config/performance-runtime.policy` et `scripts/performance/` — matériel : non vérifié
 
 ## Objectif
 
@@ -49,13 +49,13 @@ Valeurs importantes :
 ./control.sh perf status
 ```
 
-Basculer explicitement :
+**Choisir un seul profil** selon le besoin. Pour revenir au mode normal :
 
 ```bash
 ./control.sh perf balanced
-./control.sh perf performance
-./control.sh perf powersave
 ```
+
+Autres choix, **alternatifs** et à exécuter séparément : `./control.sh perf performance` pour une charge ponctuelle, ou `./control.sh perf powersave` pour économiser l'énergie. Après chaque bascule, relancer `./control.sh perf status` et vérifier que le profil affiché correspond à celui demandé.
 
 Ces commandes modifient le système et ne s'exécutent que sur le PC physique. Le projet ne désactive ni SMT, ni C-States et n'applique aucun PBO/overclock automatique.
 
@@ -109,8 +109,9 @@ Aucun scheduler NVMe n'est imposé par défaut.
 
 ```bash
 ./control.sh perf nvme
-./control.sh perf nvme-benchmark
 ```
+
+`perf nvme` sert d'abord à consulter l'état. Pour une **mesure volontaire et distincte**, exécuter `./control.sh perf nvme-benchmark` après avoir vérifié le montage `/data` et les préconditions du script.
 
 Le benchmark, qui modifie temporairement l'ordonnanceur, est réservé au second T705 monté sur `/data`, utilise un fichier scratch, compare uniquement `none` et `mq-deadline` lorsqu'ils sont disponibles, puis restaure toujours le scheduler initial via `trap`.
 

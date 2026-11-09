@@ -66,7 +66,7 @@ Le profil `remote` compte cinq modules, un doctor et un fichier de configuration
 
 ## 3. Activer le profil, pas à pas
 
-**Préconditions :** Gate 3 du poste réussie, sauvegarde pré-APPLY du même commit, et une console physique à portée. La réactivation du profil réseau coupe brièvement la liaison : **ne pas appliquer ce module par SSH sur la même carte réseau.**
+**Préconditions :** Gate 3 **initiale du socle local** réussie avec le profil distant encore désactivé, sauvegarde pré-APPLY valide pour le commit et la configuration à appliquer, et une console physique à portée. Le profil distant étant facultatif, sa qualification réseau, vidéo et Wake-on-LAN vient **après son activation** (section 9) : elle ne peut pas être exigée avant. L'APPLY d'une nouvelle configuration peut rendre les preuves Golden précédentes `STALE` ; reprendre les contrôles concernés et la certification après les essais distants. La réactivation du profil réseau coupe brièvement la liaison : **ne pas appliquer ce module par SSH sur la même carte réseau.**
 
 **Résumé d'exécution — où en est l'activation du profil :** reprendre à la première case non cochée ; un KO de `./control.sh remote status` sur SSH, SELinux ou l'isolation KVM est un arrêt, pas un obstacle à contourner.
 

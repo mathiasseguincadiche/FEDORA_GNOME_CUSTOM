@@ -1,7 +1,7 @@
 # Linux amont officiel stable
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — politique relue contre `config/kernel.conf` et `lib/kernel_lifecycle.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — installation, sélection GRUB et retour à N-1 relus contre `config/kernel.conf` et `lib/kernel_lifecycle.sh` — matériel : non vérifié
 
 Le projet retire le noyau personnalisé et suit uniquement Linux publié par kernel.org, sans patch de distribution. Le canal de paquets est `@kernel-vanilla/stable` ; sa dépendance `@kernel-vanilla/fedora` contient également des noyaux amont sans patch. Ce nom ne désigne pas le noyau Fedora modifié. Les canaux mainline, stable-rc et next sont exclus.
 
@@ -11,12 +11,20 @@ Le projet retire le noyau personnalisé et suit uniquement Linux publié par ker
 
 `./control.sh kernel status` affiche la version stable courante et celle qui est installée. `KERNEL_MIN_VERSION` (`config/kernel.conf`) est un plancher de sécurité, pas une version figée : le projet suit automatiquement chaque nouvelle stable.
 
+Pour une installation **explicite** du dernier noyau, commencer par vérifier l'état et les préconditions de l'hôte. La commande `install-latest` installe directement des RPM et modifie la sélection GRUB : ce n'est pas une simulation et ses gardes d'installation doivent être satisfaits.
+
 ```bash
 ./control.sh kernel status
 ./control.sh kernel install-latest
-sudo reboot
-./diagnostics/kernel-doctor
 ```
+
+**Seulement si l'installation réussit**, relire `./control.sh kernel status` et vérifier que le nouveau noyau est installé et sélectionné par défaut. Enregistrer le travail ouvert et organiser ensuite le redémarrage :
+
+```bash
+sudo reboot
+```
+
+Après avoir démarré sur le noyau visé, vérifier `uname -r`, `./control.sh kernel status` et `./diagnostics/kernel-doctor`. En cas de refus, conserver le noyau actuel et lire les logs ; **ne pas redémarrer en supposant que l'installation a réussi**.
 
 Les RPM sont empaquetés par les mainteneurs Kernel Vanilla : kernel.org ne distribue pas de binaires. Leur cadence est indépendante des noyaux Fedora, mais la compilation et la publication COPR peuvent retarder leur disponibilité.
 
@@ -47,11 +55,17 @@ Le retour aux RPM Fedora retire uniquement ce bloc géré. Un administrateur qui
 
 N désigne la dernière stable effectivement installée et le défaut GRUB. N-1 est la version installée immédiatement précédente, conservée pour revenir au démarrage antérieur. Si une version intermédiaire n'a jamais été installée, elle n'est pas reconstituée artificiellement. N et N-1 ne comptent que les noyaux amont ; un noyau Fedora signé est conservé à part comme secours ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)).
 
+Pour revenir à N-1, vérifier d'abord qu'il existe, puis demander explicitement sa sélection comme prochain noyau de démarrage :
+
 ```bash
+./control.sh kernel status
 ./control.sh kernel rollback
-sudo reboot
-./control.sh kernel prune
+./control.sh kernel status
 ```
+
+**Seulement si `rollback` réussit** et si N-1 est bien sélectionné par défaut, enregistrer le travail puis redémarrer avec `sudo reboot`. Après le démarrage, confirmer `uname -r` et relancer `./diagnostics/kernel-doctor` ; ne pas effacer le noyau N pendant le dépannage.
+
+`./control.sh kernel prune` est une **opération distincte de maintenance**, à décider après avoir retrouvé un démarrage stable et vérifié les versions conservées. Ce n'est pas l'étape automatique d'un rollback : la purge refuse de supprimer le noyau courant et peut demander de redémarrer sur N avant de ramener la rétention à sa cible.
 
 Le projet conserve au maximum deux versions amont et le noyau Fedora de secours. La purge désigne les versions exactes à retirer et ne touche jamais le noyau démarré ; si cela laisse plus de deux versions amont, le contrôle échoue et demande de démarrer sur N avant de relancer la purge. `installonly_limit=4` laisse la place au nouveau N pendant son installation.
 
