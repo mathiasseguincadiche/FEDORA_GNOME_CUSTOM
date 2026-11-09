@@ -46,6 +46,18 @@ checks = (
 )
 for check in checks:
     assert check in source, f"Rocky kernel transaction invariant missing: {check}"
+# Transport retries remain bounded and every upstream artifact is still checked
+# against its pinned hash (or, for AWS CLI, its cryptographic signature).
+for required in (
+    'download_reviewed_artifact "$tool v0.11.0"',
+    '--retry 5 --retry-delay 5 --retry-max-time 240',
+    '--connect-timeout 20 --max-time 90 --remove-on-error',
+    "--proto '=https' --proto-redir '=https'",
+    'return "$rc"',
+    "printf '%s  %s\\n' \"$expected_sha\" \"$kubectx_tmp/$archive\" | sha256sum -c -",
+    'gpgv --keyring "$aws_keyring" "$aws_sig" "$aws_zip"',
+):
+    assert required in source, f"Rocky download protection missing: {required}"
 assert source.index("prepared_kernel=''") < source.index("dnf -y upgrade --refresh")
 assert source.index('rm -f -- "$reboot_pending"') > source.index(
     'mv -f /var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env.tmp')
