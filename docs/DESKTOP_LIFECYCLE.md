@@ -1,7 +1,7 @@
 # Entretien du poste : mises à jour et cycle de vie
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — politiques relues contre `modules/desktop/27_lifecycle.sh`, `config/desktop.conf` et les scripts de sauvegarde — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — politiques relues contre `modules/desktop/27_lifecycle.sh`, `config/desktop.conf`, la couverture des mises à jour et les scripts de sauvegarde — matériel : non vérifié
 
 Cette page décrit comment le poste se maintient au quotidien : mises à jour des RPM et des Flatpak, rôle de GNOME Logiciels, sauvegarde quotidienne et preuves sensibles aux mises à jour. Les commandes elles-mêmes sont dans le [centre de contrôle](CONTROL_CENTER.md).
 
@@ -37,13 +37,15 @@ Politique :
 LIFECYCLE_FLATPAK_UPDATE_POLICY=manual
 ```
 
-Les applications Flatpak sont mises à jour volontairement avec `flatpak update`, `./control.sh update flatpak` ou :
+**Pour mettre à jour seulement les applications Flatpak**, utiliser `./control.sh update flatpak` (ou directement `flatpak update`). Cela ne prépare pas de transaction RPM hors ligne.
+
+**Pour mettre à jour l'ensemble du poste**, la commande est différente :
 
 ```bash
 ./control.sh update all
 ```
 
-Le mode complet met aussi à jour Flatpak lorsque les RPM sont déjà à jour, sans demander de redémarrage dans ce cas. Une transaction RPM préparée reste appliquée et finalisée après le redémarrage prévu.
+Le mode complet exige une sauvegarde Borg préalable et peut préparer une transaction RPM DNF5 : ce n'est **pas** une simple commande Flatpak. Il met aussi à jour Flatpak lorsque les RPM sont déjà à jour, sans demander de redémarrage dans ce cas. Si des RPM ont été préparés, vérifier `./control.sh update status`, puis suivre les étapes conditionnelles de redémarrage et de finalisation de la [procédure complète](UPDATE_COVERAGE.md#3-procédure-de-mise-à-jour-complète).
 
 Le projet ne crée aucun timer ni service qui installerait des Flatpak en silence.
 

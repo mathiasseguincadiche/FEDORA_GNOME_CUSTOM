@@ -224,7 +224,7 @@ Contrat : `/data` est l'EXT4 du second T705, avec `Documents`, `Projets`, `ISO`,
 
 **Le moteur refuse une sauvegarde de VM.** Normal : les exports de VM sont manuels ; `--include-vms` et `BACKUP_VM_DISKS=true` sont refusés.
 
-**Restaurer sans écraser le système.** `scripts/backup/restore.sh list`, `scripts/backup/restore.sh verify`, `scripts/backup/restore.sh restore latest` : la restauration va toujours dans un dossier de staging, à inspecter avant toute copie vers `/etc`, `/boot`, `$HOME` ou `/data`. Détails : [sauvegardes](BACKUP_RESTORE.md).
+**Restaurer sans écraser le système.** Commencer par `scripts/backup/restore.sh list` pour relever l'archive correspondant à l'état recherché, puis `scripts/backup/restore.sh verify` pour vérifier le dépôt. En cas de succès, exécuter `scripts/backup/restore.sh restore NOM_ARCHIVE` avec le **nom exact** choisi dans la liste. `latest` n'est pertinent que si la dernière archive contient réellement l'état à récupérer. La restauration va toujours dans un dossier de staging, à inspecter avant toute copie vers `/etc`, `/boot`, `$HOME` ou `/data`. Détails : [sauvegardes](BACKUP_RESTORE.md).
 
 ## Journaux et incidents
 
@@ -232,11 +232,16 @@ Les exécutions sont dans `logs/<RUN_ID>/main.log` et `modules.log` (horodatage 
 
 Chaque fiche d'incident propose un titre, une explication en français, une action et un niveau d'incertitude : c'est une **hypothèse**, jamais une preuve de cause, et le journal brut reste la référence. `status: open` protège le journal de la purge. Pour clore, passer `status` à `resolved` et remplir `resolution` avec la cause corrigée et le test qui le prouve. Une erreur qui disparaît après un redémarrage ne clôt rien.
 
-Nettoyage (sessions de plus de sept jours seulement ; incidents ouverts, journaux systemd, `state/`, Borg et rapports de certification jamais touchés) :
+Nettoyage (sessions de plus de sept jours seulement ; incidents ouverts, journaux systemd, `state/`, Borg et rapports de certification jamais touchés). **Commencer par la simulation**, lire les dossiers proposés et vérifier qu'aucune trace nécessaire ne serait supprimée :
 
 ```bash
-python3 scripts/maintenance/weekly-log-cleanup.py            # simulation
-python3 scripts/maintenance/weekly-log-cleanup.py --apply    # supprime les sessions éligibles
+python3 scripts/maintenance/weekly-log-cleanup.py
+```
+
+**Seulement après une décision explicite de nettoyer**, lancer séparément l'action qui supprime les sessions éligibles :
+
+```bash
+python3 scripts/maintenance/weekly-log-cleanup.py --apply
 ```
 
 Activation hebdomadaire facultative (lundi 03:00, rattrapage avec `Persistent=true`), si le dépôt est dans `~/FEDORA_GNOME_CUSTOM` ; sinon adapter `ExecStart` et `ConditionPathIsDirectory` :

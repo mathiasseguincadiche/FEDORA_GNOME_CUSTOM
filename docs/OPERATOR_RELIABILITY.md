@@ -1,7 +1,7 @@
 # Comprendre les résultats, les journaux et les réexécutions
 
-> Mise à jour : 2026-11-07 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-07 — diagnostics virtuels, retour firmware et messages du centre de contrôle comparés aux tests isolés — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — diagnostics virtuels, retour firmware et messages du centre de contrôle comparés aux tests isolés ; ordre des mises à jour relu contre `UPDATE_COVERAGE.md` — matériel : non vérifié
 
 Cette page explique **ce que l'opérateur peut réellement conclure**, sans masquer les messages techniques et sans promettre une idempotence générale. Pour les commandes, voir le [centre de contrôle](CONTROL_CENTER.md) ; pour le parcours d'installation, suivre le [guide officiel](INSTALLATION_GUIDE.md).
 
@@ -78,18 +78,23 @@ L'**idempotence** concerne une action précise : répéter une action idempotent
 
 ## 4. Mettre à jour sans confondre noyau, pilotes et firmware matériel
 
+**Commencer par l'observation**, depuis la racine du dépôt. Les trois commandes ci-dessous n'installent pas de mise à jour :
+
 ```bash
 ./control.sh update check      # recherche Fedora / Flatpak / noyau / firmware / périmètre
 ./control.sh update scope      # frontières RPM, Steam, Proton, extensions, AppImage
-./control.sh update all        # sauvegarde Borg puis préparation DNF5 hors ligne
-./control.sh update status     # vérifier l'étape en attente
-./control.sh update reboot     # redémarrage explicite pour la transaction préparée
-./control.sh update finalize   # vérifier RPM, noyau, Flatpak et diagnostics
+./control.sh update status     # état d'une éventuelle transaction DNF5 hors ligne
 ```
 
-Pour le tableau **complet** des domaines (pilotes, codecs, Steam/Proton, GNOME, AppImage, firmware) et les étapes d'exécution, utiliser la [procédure de couverture transversale des mises à jour](UPDATE_COVERAGE.md). Cette page conserve les règles de lecture des logs et des résultats, sans dupliquer cette procédure.
+**Si les contrôles sont acceptables et si tu décides de mettre à jour**, appliquer les étapes **une par une** :
 
-La mise à jour n'est **pas terminée** tant que le redémarrage requis, la finalisation et les diagnostics ne sont pas effectués. Un noyau `DEFERRED` reste en attente ; un échec de consultation Flatpak est `KO`, jamais « aucune mise à jour ».
+1. `./control.sh update all` : sauvegarder avec Borg, puis préparer les RPM disponibles pour DNF5 hors ligne ; cette étape **n'installe pas** les RPM préparés.
+2. `./control.sh update status` : lire le résultat réel avant toute décision. Si une transaction RPM est **préparée**, organiser le redémarrage et lancer `./control.sh update reboot` ; sinon, **ne pas redémarrer pour DNF5**.
+3. Après le redémarrage requis, exécuter `./control.sh update finalize` pour contrôler les RPM, le noyau, Flatpak et les diagnostics. Sans transaction RPM préparée, suivre le bilan retourné par `update all` et sa finalisation éventuelle, sans inventer une étape de reboot.
+
+Pour les prérequis, les états possibles et le tableau **complet** des domaines (pilotes, codecs, Steam/Proton, GNOME, AppImage, firmware), suivre la [procédure de couverture transversale des mises à jour](UPDATE_COVERAGE.md#3-procédure-de-mise-à-jour-complète). Cette page explique avant tout la lecture des logs et des résultats ; elle ne remplace pas cette procédure.
+
+La mise à jour n'est **pas terminée** tant que le redémarrage **s'il est requis**, la finalisation applicable et les diagnostics ne sont pas effectués. Un noyau `DEFERRED` reste en attente ; un échec de consultation Flatpak est `KO`, jamais « aucune mise à jour ».
 
 Une consultation firmware non concluante produit `WARN` et un échec du bilan de **recherche** (`update check`, `rc=20`). Lors de la **finalisation** d'une transaction logicielle effectivement réussie, le contrôle firmware reste consultatif : le résumé annonce « firmware non vérifié » sans annuler ni relancer une transaction RPM déjà appliquée. Le résultat logiciel et l'état du firmware doivent donc être lus séparément.
 

@@ -1,7 +1,7 @@
 # Politique de sécurité de l'hôte — Secure Boot et chiffrement local
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — relu contre `config/golden-host.policy`, `diagnostics/host-security-policy-doctor`, `installer/lib/generate-kickstart.sh` et `config/kernel.conf` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — politique et deux chemins distincts de récupération relus contre les doctors, `lib/kernel_lifecycle.sh` et `scripts/kernel/rollback-to-fedora.sh` — matériel : non vérifié
 
 ## La décision
 
@@ -53,12 +53,13 @@ Le Kickstart généré par `installer/lib/generate-kickstart.sh` contient `autop
 
 ## Secure Boot et noyau
 
-L'installation du noyau Linux amont est bloquée si Secure Boot est actif ou si son état ne peut pas être établi (`KERNEL_BLOCK_SECURE_BOOT` dans `config/kernel.conf`). Seuls les deux retours au noyau Fedora signé restent permis dans ce cas, car ce noyau est alors le seul qui démarre ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)) :
+L'installation du noyau Linux amont est bloquée si Secure Boot est actif ou si son état ne peut pas être établi (`KERNEL_BLOCK_SECURE_BOOT` dans `config/kernel.conf`). Deux **solutions alternatives**, aux effets différents, permettent de sélectionner un noyau Fedora signé ([ADR 0020](adr/0020-fedora-kernel-boot-fallback.md)) :
 
 ```bash
-./control.sh kernel fallback
-./control.sh kernel rollback-fedora
+./control.sh kernel fallback  # sélectionne le noyau Fedora installé comme défaut GRUB
 ```
+
+`fallback` conserve les noyaux amont installés. **En cas de retour durable à l'écosystème de paquets Fedora**, utiliser plutôt `./control.sh kernel rollback-fedora` : cette commande désactive les dépôts Kernel Vanilla, nettoie le verrou de version et lance un `dnf5 distro-sync` après confirmation humaine. **Ne pas exécuter les deux commandes à la suite par automatisme**. Dans les deux cas, vérifier le noyau choisi avec `./control.sh kernel status`, puis décider du redémarrage et de la requalification. Consulter le [guide noyau](UPSTREAM_LINUX.md#n-et-n-1) avant d'agir.
 
 Le projet ne désactive jamais Secure Boot lui-même et ne gère aucune clé MOK : le réglage se fait dans l'UEFI, par le propriétaire.
 
