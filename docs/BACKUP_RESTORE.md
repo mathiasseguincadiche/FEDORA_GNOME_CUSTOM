@@ -1,7 +1,7 @@
 # Sauvegarde, restauration et reprise après sinistre
 
 > Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — conduite à tenir après un échec Borg clarifiée sans changer les commandes ; essais physiques non rejoués — matériel : non vérifié
+> Dernière vérification : 2026-11-09 — options de restauration et écritures du plan de reprise recoupées avec les scripts ; essais physiques non rejoués — matériel : non vérifié
 
 **Une sauvegarde doit permettre de récupérer quelque chose, pas seulement produire un fichier.**
 
@@ -178,7 +178,7 @@ Une restauration passe **toujours** par un dossier d'essai vide (staging), à l'
    - **Diagnostic sans écriture sur les données :** consulter `./control.sh backup check` pour l'état du support, du dépôt et des marqueurs ; `findmnt` et `lsblk -f` pour les montages ; `sudo journalctl -k -b --no-pager` pour les erreurs noyau. Si le support paraît défaillant, arrêter les sollicitations et organiser une récupération sur copie saine.
    - **Ne pas répéter le test aveuglément :** `./control.sh backup deep` relance le même `borg check --verify-data`. Le réserver à une nouvelle vérification justifiée, après diagnostic. Documenter et résoudre les erreurs avant toute restauration.
 
-2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide de la racine de staging. Cette étape écrit seulement dans le staging :
+2. Extraire l'archive choisie, ou la plus récente, dans un dossier vide de la racine de staging. Cette étape écrit seulement dans le staging. **Choisir une seule des trois formes suivantes**, selon le besoin :
 
    ```bash
    scripts/backup/restore.sh restore latest
@@ -210,7 +210,7 @@ Pour obtenir un plan de reconstruction ordonné :
 ./control.sh backup dr-plan
 ```
 
-`scripts/backup/disaster-recovery.sh` exige `borgbackup`, `jq` et Python 3. Il sélectionne la dernière archive **complète**, valide son manifeste de récupération, relit ses données (`borg check --verify-data`), puis écrit dans `state/` un plan : Fedora 45, remontage du second T705 sur `/data` **sans formatage**, dépôt, dry-run, restauration en staging, labels SELinux et diagnostics finaux. Il ne modifie rien.
+`scripts/backup/disaster-recovery.sh` exige `borgbackup`, `jq` et Python 3. Il sélectionne la dernière archive **complète**, valide son manifeste de récupération, relit ses données (`borg check --verify-data`), puis **écrit un fichier de plan dans `state/`** : Fedora 45, remontage du second T705 sur `/data` **sans formatage**, dépôt, dry-run, restauration en staging, labels SELinux et diagnostics finaux. Il ne formate aucun disque, ne restaure aucun fichier en place et ne modifie pas la configuration du système. **Réussite :** le script indique `Recovery repository verified. Plan written to:` suivi du chemin du plan à lire avant toute reconstruction.
 
 ## Exports de VM
 

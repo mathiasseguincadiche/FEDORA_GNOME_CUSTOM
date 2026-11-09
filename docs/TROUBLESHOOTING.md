@@ -1,7 +1,7 @@
 # Dépannage
 
 > Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — tableau des pannes réorganisé sans changer les décisions ni leurs commandes — matériel : non vérifié
+> Dernière vérification : 2026-11-09 — restauration d'urgence et distinction diagnostic/préparation APPLY revues contre les scripts — matériel : non vérifié
 
 Ce guide part d'un **symptôme**. Méthode : observer, diagnostiquer, corriger le minimum, puis revalider. Commencer par l'état réel :
 
@@ -25,7 +25,7 @@ Quand le PC ne démarre plus ou que des données semblent perdues, le but imméd
 | Le PC ne démarre plus après un nouveau noyau | 1. Au démarrage, maintenir **Maj** ou appuyer sur **Échap** pour afficher GRUB. 2. Choisir le noyau amont précédent (N-1), sinon l'entrée Fedora sans `vanilla`. 3. Une fois connecté, conserver les journaux du démarrage raté : `./scripts/collect-boot-failure.sh`. 4. `./control.sh kernel rollback`, ou `./control.sh kernel fallback` si N-1 ne démarre pas non plus *(modifie le système)*. | `./control.sh kernel status` montre le noyau choisi par défaut ; suite dans [Noyau](#noyau) |
 | Le système démarre, mais la session GNOME ne s'ouvre pas | 1. Ouvrir une console texte (**Ctrl+Alt+F3**) et se connecter. 2. `journalctl -b -p err --no-pager` pour lire les erreurs du démarrage en cours. 3. `./control.sh doctor all` pour trouver le premier défaut. | session GNOME ouverte, `doctor all` sans nouveau `KO` ; suite dans [GPU, écran et veille](#gpu-écran-et-veille) |
 | `/data` a disparu | Ne rien formater ni recréer. `findmnt -n -T /data -o SOURCE,FSTYPE` et `lsblk -f`, puis remonter le disque existant. | `./control.sh doctor data` sans `KO` ; suite dans [Données `/data` et Gaming](#données-data-et-gaming) |
-| Des fichiers ont été effacés ou écrasés | Cesser d'écrire dans le dossier concerné. Restaurer dans le staging avec `scripts/backup/restore.sh restore latest`, inspecter, puis recopier à la main. | fichiers relus dans le staging ; suite dans [sauvegardes](BACKUP_RESTORE.md#restaurer) |
+| Des fichiers ont été effacés ou écrasés | Cesser d'écrire dans le dossier concerné. Lister les archives avec `scripts/backup/restore.sh list`, choisir celle qui contient les fichiers recherchés, puis exécuter `scripts/backup/restore.sh verify`. **Si la vérification échoue, arrêter.** Sinon, restaurer l'archive choisie dans le staging, inspecter et recopier à la main. | Fichiers relus dans le staging ; suite dans [sauvegardes](BACKUP_RESTORE.md#restaurer) |
 
 **Pourquoi conserver les journaux d'abord ?** Un redémarrage ou une correction efface la trace qui explique la panne ; sans elle, le défaut reviendra au prochain noyau. Le piège classique est de tenir le problème pour réglé parce que le poste redémarre : une panne qui disparaît après un redémarrage ne prouve rien.
 
@@ -35,7 +35,7 @@ Quand le PC ne démarre plus ou que des données semblent perdues, le but imméd
 
 | Symptôme | Première commande | Section |
 |---|---|---|
-| `install.sh --apply` ou la sauvegarde pré-APPLY refusés | `./install.sh --dry-run` | [Installation et APPLY](#installation-et-apply) |
+| `install.sh --apply` ou la sauvegarde pré-APPLY refusés | `git status --short`, puis lire le message exact du refus | [Installation et APPLY](#installation-et-apply) |
 | `install.sh --apply` a démarré puis échoué | lire le rapport du run en échec, sans relancer l'APPLY | [Installation et APPLY](#installation-et-apply) |
 | Gate 2 Live `NO-GO` ou `A_VERIFIER` | lire le TSV `state/validation/live-preflight.tsv` depuis la session Live | [Préinstallation Live](#préinstallation-live-usb) |
 | Paquet, dépôt, Flatpak ou codec en échec | `dnf repolist`, `./diagnostics/media-doctor` | [Paquets et applications](#paquets-et-applications) |
@@ -55,7 +55,7 @@ Une cause possible reste une hypothèse tant que la vérification ne l'a pas con
 
 | Symptôme et hypothèses à confirmer | Premier diagnostic | Correction et nouvelle vérification |
 |---|---|---|
-| APPLY refusé : dépôt modifié, dry-run périmé, sauvegarde manquante ou Secure Boot actif | `git status --short`, `./install.sh --dry-run` | Corriger le refus indiqué, refaire le dry-run et la sauvegarde ; les gardes de l'APPLY doivent réussir ([détail](#installation-et-apply)). |
+| APPLY refusé : dépôt modifié, dry-run périmé, sauvegarde manquante ou Secure Boot actif | `git status --short`, `./diagnostics/baseline-doctor status` | Corriger le refus indiqué, puis refaire dans l'ordre le dry-run et la sauvegarde ; les gardes de l'APPLY doivent réussir ([détail](#installation-et-apply)). |
 | Arc B580 absente ou rendu instable : carte, ReBAR ou firmware en cause | `lspci -nnk -d 8086:e20b`, `./diagnostics/graphics-doctor` | Vérifier le slot et l'UEFI, sans `force_probe` ; `graphics-doctor` doit être sans `KO` ([détail](#gpu-écran-et-veille)). |
 | Affichage dégradé après une veille : mode d'écran possiblement perdu | `./diagnostics/display-doctor` | `./repair.sh display` *(modifie le système)*, puis `display-doctor` sans `KO`. |
 | Démarrage sur N-1 au lieu de N : entrée par défaut suspectée | `./control.sh kernel status` | `./control.sh kernel install-latest` *(modifie le système)*, puis redémarrer et vérifier que `kernel status` montre N démarré ([détail](#noyau)). |
@@ -80,16 +80,25 @@ La Gate 3 ne s'exécute pas depuis la clé Live : elle qualifie Fedora **après*
 
 ### APPLY refusé
 
-**`install.sh --apply` refusé.** C'est une protection, pas une panne. Vérifier :
+**`install.sh --apply` refusé.** C'est une protection, pas une panne. Commencer par observer l'état et lire le message exact du refus, **sans refaire d'emblée une sauvegarde ou une tentative APPLY** :
 
 ```bash
 git status --short
 ./diagnostics/baseline-doctor status
-./install.sh --dry-run
-./prepare-preapply-backup.sh   # crée l'archive Borg pré-APPLY : écrit sur le support de sauvegarde
+./control.sh validate status
+./diagnostics/backup-doctor --certify-status
 ```
 
 Causes courantes : exécution hors du PC physique (VM, conteneur, WSL), dépôt Git modifié, dry-run absent ou d'un autre état, baseline incomplète, sauvegarde pré-APPLY absente ou illisible, Secure Boot actif ou indéterminé, `REAL_MACHINE_APPROVED=true` absent de `config/local.conf`, phrase de confirmation incorrecte. Changer `config/local.conf` impose de refaire le dry-run puis la sauvegarde.
+
+**Après avoir identifié et corrigé la cause**, et seulement si aucun APPLY n'a encore commencé, reprendre les préparations dans l'ordre :
+
+```bash
+./install.sh --dry-run          # écrit des journaux et une nouvelle preuve locale
+./prepare-preapply-backup.sh    # écrit une archive Borg et peut installer des dépendances
+```
+
+Exiger le succès du dry-run **avant** de lancer la sauvegarde. En cas de modification partielle déjà engagée, suivre la [procédure d'incident](#apply-commencé-puis-interrompu) plutôt que ces deux commandes.
 
 **Sauvegarde pré-APPLY refusée.** Elle exige un dry-run réussi au même état, une cible Borg externe prouvée, un dépôt non chiffré (un dépôt chiffré est refusé), de l'espace libre, `borg check --verify-data` et la restauration réelle d'un canari. Un `borg create` terminé ne suffit pas.
 
