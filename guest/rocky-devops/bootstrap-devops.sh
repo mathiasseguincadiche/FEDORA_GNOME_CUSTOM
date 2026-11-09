@@ -66,6 +66,26 @@ download_reviewed_artifact() {
   return "$rc"
 }
 
+# These IDs are from the upstream GitHub release metadata, and only match the
+# reviewed exact version + digest. An override cannot silently reuse an old ID.
+github_asset_fallback() {
+  local tool="$1" version="$2" sha="$3"
+  case "$tool:$version:$sha" in
+    kubectx:v0.11.0:08e031c54fbffb3f100e904e4eae94bba2730fedf4869921fda79e4d7a8f5d4c)
+      printf '%s' 'https://api.github.com/repos/ahmetb/kubectx/releases/assets/382590978' ;;
+    kubens:v0.11.0:326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09)
+      printf '%s' 'https://api.github.com/repos/ahmetb/kubectx/releases/assets/382591017' ;;
+    kind:v0.33.0:aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d)
+      printf '%s' 'https://api.github.com/repos/kubernetes-sigs/kind/releases/assets/531396433' ;;
+    minikube:v1.38.1:099477eaf248bcb5bcea8ce78a2898e93ac01461c35189da1848c3de82ecd22e)
+      printf '%s' 'https://api.github.com/repos/kubernetes/minikube/releases/assets/358743871' ;;
+    yq:v4.53.3:fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4)
+      printf '%s' 'https://api.github.com/repos/mikefarah/yq/releases/assets/440146735' ;;
+    k9s:v0.51.0:c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7)
+      printf '%s' 'https://api.github.com/repos/derailed/k9s/releases/assets/440224321' ;;
+  esac
+}
+
 write_aws_cli_public_key() {
   cat > "$1" <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -225,7 +245,8 @@ for tool in kubectx kubens; do
     kubens) expected_sha=326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09 ;;
   esac
   archive="$tool"_v0.11.0_linux_x86_64.tar.gz
-  download_reviewed_artifact "$tool v0.11.0" "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/$archive" "$kubectx_tmp/$archive"
+  download_reviewed_artifact "$tool v0.11.0" "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/$archive" "$kubectx_tmp/$archive" \
+    "$(github_asset_fallback "$tool" v0.11.0 "$expected_sha")"
   printf '%s  %s\n' "$expected_sha" "$kubectx_tmp/$archive" | sha256sum -c -
   tar -xzf "$kubectx_tmp/$archive" -C "$kubectx_tmp" "$tool"
   install -m 0755 "$kubectx_tmp/$tool" "/usr/local/bin/$tool"
@@ -287,7 +308,8 @@ aws --version 2>&1 | grep -q '^aws-cli/2[.]' || fail 'AWS CLI v2 required'
 log "install kind ${KIND_VERSION} with its pinned SHA-256"
 kind_version="$KIND_VERSION"
 kind_tmp="$(mktemp -d)"
-download_reviewed_artifact "kind ${kind_version}" "https://github.com/kubernetes-sigs/kind/releases/download/${kind_version}/kind-linux-amd64" "$kind_tmp/kind-linux-amd64"
+download_reviewed_artifact "kind ${kind_version}" "https://github.com/kubernetes-sigs/kind/releases/download/${kind_version}/kind-linux-amd64" "$kind_tmp/kind-linux-amd64" \
+  "$(github_asset_fallback kind "$kind_version" "$KIND_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$KIND_LINUX_AMD64_SHA256" "$kind_tmp/kind-linux-amd64" | sha256sum -c -
 install -m 0755 "$kind_tmp/kind-linux-amd64" /usr/local/bin/kind
 rm -rf "$kind_tmp"
@@ -295,7 +317,8 @@ kind version | grep -Fq "$KIND_VERSION" || fail "kind version mismatch: $(kind v
 
 log "install Minikube ${MINIKUBE_VERSION} with its pinned SHA-256"
 minikube_tmp="$(mktemp -d)"
-download_reviewed_artifact "Minikube ${MINIKUBE_VERSION}" "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" "$minikube_tmp/minikube-linux-amd64"
+download_reviewed_artifact "Minikube ${MINIKUBE_VERSION}" "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" "$minikube_tmp/minikube-linux-amd64" \
+  "$(github_asset_fallback minikube "$MINIKUBE_VERSION" "$MINIKUBE_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$MINIKUBE_LINUX_AMD64_SHA256" "$minikube_tmp/minikube-linux-amd64" | sha256sum -c -
 install -m 0755 "$minikube_tmp/minikube-linux-amd64" /usr/local/bin/minikube
 rm -rf "$minikube_tmp"
@@ -303,7 +326,8 @@ rm -rf "$minikube_tmp"
 
 log "install yq ${YQ_VERSION} with pinned checksum"
 yq_tmp="$(mktemp -d)"
-download_reviewed_artifact "yq ${YQ_VERSION}" "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" "$yq_tmp/yq"
+download_reviewed_artifact "yq ${YQ_VERSION}" "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" "$yq_tmp/yq" \
+  "$(github_asset_fallback yq "$YQ_VERSION" "$YQ_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$YQ_LINUX_AMD64_SHA256" "$yq_tmp/yq" | sha256sum -c -
 install -m 0755 "$yq_tmp/yq" /usr/local/bin/yq
 rm -rf "$yq_tmp"
@@ -311,13 +335,8 @@ rm -rf "$yq_tmp"
 log "install K9s ${K9S_VERSION} with pinned checksum"
 k9s_tmp="$(mktemp -d)"
 k9s_archive="$k9s_tmp/k9s_Linux_amd64.tar.gz"
-k9s_fallback=''
-# The official API asset is bound to this exact upstream release and digest.
-if [[ "$K9S_VERSION" == v0.51.0 &&
-      "$K9S_LINUX_AMD64_SHA256" == c3752ad51a5a4015a113819c4eeb6e55a4d0e4b8e652494797532f6fc8161dd7 ]]; then
-  k9s_fallback='https://api.github.com/repos/derailed/k9s/releases/assets/440224321'
-fi
-download_reviewed_artifact "K9s ${K9S_VERSION}" "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" "$k9s_archive" "$k9s_fallback"
+download_reviewed_artifact "K9s ${K9S_VERSION}" "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" "$k9s_archive" \
+  "$(github_asset_fallback k9s "$K9S_VERSION" "$K9S_LINUX_AMD64_SHA256")"
 printf '%s  %s\n' "$K9S_LINUX_AMD64_SHA256" "$k9s_archive" | sha256sum -c -
 tar -xzf "$k9s_archive" -C "$k9s_tmp" k9s
 install -m 0755 "$k9s_tmp/k9s" /usr/local/bin/k9s
