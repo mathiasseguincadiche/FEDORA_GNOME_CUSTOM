@@ -46,6 +46,22 @@ Avant toute modification du PC, réunir :
 
 Le profil Fedora 45 est `ready` : son média et ses composants sont promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucun des contrôles ci-dessous.
 
+### Choisir et conserver le commit audité
+
+**Pourquoi :** une PR verte ne valide pas automatiquement le commit finalement présent sur `main`. Les preuves Live, le dry-run et l'APPLY doivent correspondre à **un même commit immuable**, même si de nouveaux changements sont fusionnés pendant la préparation du PC.
+
+1. Sur GitHub, ouvrir les [exécutions Actions de `main`](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions?query=branch%3Amain). Choisir une exécution **terminée avec succès** du workflow `Tests`, puis contrôler les autres vérifications requises pour **ce même commit** selon le [guide CI](CI_VALIDATION.md). Ne pas se fier uniquement aux résultats de la PR avant fusion.
+2. Relever le **SHA complet** affiché pour ce commit, ainsi que le lien de l'exécution consultée. Noter ces deux informations avec les preuves de la future installation. Si un contrôle est rouge, en attente ou absent, **arrêter le parcours** et attendre son diagnostic ou son exécution.
+3. Après chaque clonage du dépôt (en Live et sur Fedora installé), remplacer `SHA_DU_COMMIT_AUDITE` par ce SHA, puis vérifier le résultat :
+
+   ```bash
+   git switch --detach SHA_DU_COMMIT_AUDITE  # fixe la version choisie, sans suivre les prochains commits de main
+   git rev-parse HEAD                        # doit afficher exactement le SHA noté
+   git status --short                       # ne doit afficher aucune modification versionnée
+   ```
+
+**Réussite :** le SHA local est identique au commit dont les contrôles de `main` ont été vérifiés. Si `main` avance ensuite, **ne pas changer de SHA au milieu du parcours** : une nouvelle version imposerait de revoir les validations et les preuves liées au commit.
+
 ### Le parcours
 
 | Phase | Sections | Résultat attendu |

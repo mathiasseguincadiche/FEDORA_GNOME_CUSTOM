@@ -43,7 +43,7 @@ git rev-parse HEAD
 ./control.sh validate live plan
 ```
 
-Remplacer `SHA_DU_COMMIT_AUDITE` par le commit réellement retenu après revue et CI. Conserver ce SHA : le système installé devra utiliser **le même commit**, avec le même plan de modules et les mêmes identités matérielles. Ne pas modifier les fichiers versionnés pendant les essais. Si le dépôt a été préparé avant le démarrage Live, vérifier de la même manière le SHA et la propreté de cette copie.
+Remplacer `SHA_DU_COMMIT_AUDITE` par le commit réellement retenu après revue et CI sur `main` : la [procédure de sélection du SHA](INSTALLATION_GUIDE.md#choisir-et-conserver-le-commit-audité) explique où trouver les contrôles et comment éviter de confondre une PR verte avec le commit fusionné. Conserver ce SHA : le système installé devra utiliser **le même commit**, avec le même plan de modules et les mêmes identités matérielles. Ne pas modifier les fichiers versionnés pendant les essais. Si le dépôt a été préparé avant le démarrage Live, vérifier de la même manière le SHA et la propreté de cette copie.
 
 ## 3. Les 16 points observés
 
