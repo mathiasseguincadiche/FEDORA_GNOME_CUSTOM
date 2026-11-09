@@ -1,7 +1,7 @@
 # Environnement Bash de l'hôte
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-shell.txt`, fichiers et alias contre `shell/bash/` et `scripts/shell/install-host-bash-ux.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — paquets et contrôles relus contre `manifests/packages-shell.txt`, fichiers et alias contre `shell/bash/` et `scripts/shell/install-host-bash-ux.sh` — matériel : non vérifié
 
 La machine hôte Fedora 45 conserve Bash comme shell de travail et Ptyxis comme terminal GNOME. La couche gérée fournit une expérience terminal professionnelle sans remplacer Bash par Zsh et sans framework de prompt.
 
@@ -97,13 +97,29 @@ Les aliases restent courts et lisibles :
 
 Aucun alias ne remplace `rm`, `mv`, `cp` ou `sudo`.
 
-## Contrôles
+## Vérifier le profil après l'installation
+
+**Pourquoi :** un prompt qui s'affiche ne prouve pas que les fichiers installés, les complétions et la sauvegarde initiale sont corrects.
+
+**Préparer :** ouvrir un terminal sur le Fedora installé, une fois l'APPLY terminé, puis se placer à la racine du dépôt. Les scripts ci-dessous observent l'état installé : avant l'APPLY, des contrôles peuvent légitimement échouer.
 
 ```bash
 ./diagnostics/shell-doctor
 ./diagnostics/ptyxis-doctor
 ```
 
-`shell-doctor` vérifie paquets, fichiers gérés, unicité du bloc `.bashrc`, sauvegarde initiale, syntaxe Bash et smoke test interactif. `ptyxis-doctor` vérifie séparément le terminal Fedora natif, son desktop entry, son schéma GSettings lorsque disponible et Bash comme login shell.
+- **Succès du shell :** `shell-doctor` affiche les contrôles `OK` puis `BASH UX HEALTHY` / `READY`. Il compare les fichiers gérés avec `shell/bash/`, vérifie l'unicité du bloc `.bashrc`, la copie `bashrc.pre-fgc`, la syntaxe et un essai interactif isolé.
+- **Succès du terminal :** `ptyxis-doctor` affiche `PTYXIS HEALTHY` et aucun `KO`. Certains `WARN` (session ou schéma GNOME indisponible) ne font pas échouer le script, mais **ne prouvent pas** le fonctionnement graphique ; voir [Ptyxis](PTYXIS.md).
+- **Échec :** un `KO` du shell entraîne un code de sortie non nul. Ne pas déclarer le poste qualifié tant que sa cause n'est pas comprise.
 
-Les deux font partie de la certification finale sur le PC physique.
+## Dépannage ciblé
+
+| Symptôme | Vérification en lecture seule | Suite |
+|---|---|---|
+| `package ... KO` | `rpm -q bash-completion fzf zoxide direnv` | Revoir la phase d'installation du shell et ses journaux ; ne pas ajouter des paquets hors du profil pour masquer l'écart. |
+| `managed ... KO` ou `current ... KO` | Comparer le fichier de `shell/bash/` avec `~/.config/fedora-gnome-custom/bash/` | Vérifier le dépôt et la dernière exécution de l'APPLY ; ne pas écraser le fichier à l'aveugle. |
+| `.bashrc managed block invalid` | Inspecter les marqueurs `# >>> fedora-gnome-custom bash ux >>>` et `# <<< fedora-gnome-custom bash ux <<<` dans `~/.bashrc` | Sauvegarder la version actuelle et corriger les marqueurs avec prudence. L'installateur refuse les blocs mal formés. |
+| `pre-FGC .bashrc backup KO` | Vérifier `~/.local/state/fedora-gnome-custom/bash/bashrc.pre-fgc` | Rechercher la sauvegarde de première installation ; ne jamais fabriquer une copie en la présentant comme l'originale. |
+| `interactive managed profile smoke KO` | Examiner les contrôles précédents, puis la syntaxe avec `bash -n ~/.config/fedora-gnome-custom/bash/init.sh` | Corriger la dépendance ou le fichier identifié, relancer le doctor et contrôler une vraie nouvelle session Bash. |
+
+La validation automatique ne remplace ni l'ouverture effective d'un terminal ni la certification finale sur le PC physique.
