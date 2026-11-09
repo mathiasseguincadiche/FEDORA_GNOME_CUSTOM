@@ -12,6 +12,12 @@ POLISH_DOCK_CLICK_ACTION	focus-minimize-or-previews|focus-or-previews|focus-or-a
 POLISH_DOCK_RUNNING_INDICATOR	DOTS|DASHES|SEGMENTED|SQUARES|CILIORA|DEFAULT
 POLISH_COLOR_SCHEME	prefer-dark|default|prefer-light
 BACKUP_ENCRYPTION	none
+# Safety gates are mandatory on the physical machine. Local overrides must
+# not disable the clean-tree, dry-run, baseline or pre-APPLY backup checks.
+REQUIRE_CLEAN_GIT	true
+REQUIRE_SAME_COMMIT_DRYRUN	true
+REQUIRE_HARDWARE_BASELINE_CERTIFIED	true
+REQUIRE_PREAPPLY_BACKUP	true
 ROCKY_SERVER_RELEASE	10.2
 ROCKY_SERVER_CLOUD_IMAGE_VERIFICATION_REQUIRED	true
 REMOTE_WOL_MODE	magic

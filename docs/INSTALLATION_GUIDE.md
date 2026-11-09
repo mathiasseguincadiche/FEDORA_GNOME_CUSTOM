@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-> Mise à jour : 2026-11-08 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-08 — validité de la preuve pré-APPLY et reprise après échec relues contre les moteurs ; opérations physiques non rejouées — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — préconditions de l'APPLY et verrouillage des overrides relus contre `lib/apply_gate.sh` et le schéma de configuration — matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 
@@ -267,6 +267,8 @@ REAL_MACHINE_APPROVED="true"
 ```
 
 Ce drapeau confirme que ce PC est la machine réelle ; il ne contourne aucun verrou. Lancer ensuite :
+
+Les exigences de dépôt Git propre, de dry-run au même état, de baseline certifiée et de sauvegarde pré-APPLY restent **obligatoires**. Le validateur refuse de les désactiver dans `config/local.conf` (`REQUIRE_CLEAN_GIT`, `REQUIRE_SAME_COMMIT_DRYRUN`, `REQUIRE_HARDWARE_BASELINE_CERTIFIED`, `REQUIRE_PREAPPLY_BACKUP`). Si l'une manque, corriger la cause puis refaire les contrôles ; ne pas essayer de la contourner.
 
 ```bash
 ./install.sh --dry-run

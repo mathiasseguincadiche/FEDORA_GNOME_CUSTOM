@@ -17,6 +17,18 @@ cp -a "$ROOT/config" "$tmp/config"
 printf 'DAILY_BACKUP_ENABLED="false"\n' > "$tmp/config/local.conf"
 bash "$validator" "$tmp/config" >/dev/null
 
+# APPLY's mandatory safety gates may not be turned off by a local override.
+# Other optional settings, such as DAILY_BACKUP_ENABLED, remain configurable.
+for key in REQUIRE_CLEAN_GIT REQUIRE_SAME_COMMIT_DRYRUN REQUIRE_HARDWARE_BASELINE_CERTIFIED REQUIRE_PREAPPLY_BACKUP; do
+  printf '%s="false"\n' "$key" > "$tmp/config/local.conf"
+  if bash "$validator" "$tmp/config" >/dev/null 2>&1; then
+    echo "mandatory APPLY gate $key=false was accepted" >&2
+    exit 1
+  fi
+  printf '%s="true"\n' "$key" > "$tmp/config/local.conf"
+  bash "$validator" "$tmp/config" >/dev/null
+done
+
 printf 'UNKNOWN_GOLDEN_KEY="true"\n' > "$tmp/config/local.conf"
 if bash "$validator" "$tmp/config" >/dev/null 2>&1; then
   echo 'unknown local.conf key was accepted' >&2
