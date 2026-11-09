@@ -134,9 +134,23 @@ case("heading jumps from H1 to H3",
      lambda w: append(w / gnome, "\n# Chapitre d'essai\n\n### Sous-section sans H2\n"),
      False, "Markdown heading jumps from H1 to H3")
 case("consecutive heading levels are accepted",
-     lambda w: append(w / gnome, "\n# Chapitre d'essai\n\n## Section\n\n### Sous-section\n"), True)
+     lambda w: append(w / gnome, "\n## Chapitre d'essai\n\n### Section\n\n#### Sous-section\n"), True)
 case("heading examples inside code fences are ignored",
      lambda w: append(w / gnome, "\n```markdown\n# Chapitre fictif\n### Saut fictif\n```\n"), True)
+case("second H1 is rejected",
+     lambda w: append(w / gnome, "\n# Deuxième titre principal\n"),
+     False, "expected exactly one H1 heading, found 2")
+case("missing H1 is rejected",
+     lambda w: edit(w / gnome, "# Le bureau GNOME", "## Le bureau GNOME"),
+     False, "expected exactly one H1 heading, found 0")
+case("unlabelled code fence is rejected",
+     lambda w: append(w / gnome, "\n```\n./control.sh help\n```\n"),
+     False, "code fence without a language")
+case("unclosed code fence is rejected",
+     lambda w: append(w / gnome, "\n```bash\n./control.sh help\n"),
+     False, "unclosed code fence")
+case("tilde code fence with a language is accepted",
+     lambda w: append(w / gnome, "\n~~~bash\n./control.sh help\n~~~\n"), True)
 case("new Mermaid block", lambda w: edit(w / gnome, "## Les six extensions", "```mermaid\nflowchart LR\n  A --> B\n```\n\n## Les six extensions"),
      False, "docs/GNOME.md: Mermaid block")
 case("guide loses its metadata", lambda w: strip_metadata(w / gnome),

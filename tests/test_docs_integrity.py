@@ -3,7 +3,8 @@
 
 Checks what can actually mislead an operator, never phrasing:
 - local Markdown links resolve inside the repository;
-- Markdown headings do not skip an intermediate level outside code fences;
+- current guides have one H1, a coherent heading hierarchy and labelled,
+  properly closed code fences;
 - every guide in docs/ is reachable from README.md;
 - every `./control.sh DOMAIN ACTION` quoted in Markdown is routed by the code;
 - every routed command is listed on the Control Center page, its source of truth;
@@ -94,19 +95,23 @@ def markdown_anchors(path):
     return anchors
 
 
-# 1a. The heading hierarchy must stay navigable for readers and screen readers.
-# Ignore literal examples inside fenced code; archives keep their historical layout.
+# 1a. Enforce the editorial contract on current guides: a single H1, navigable
+# heading hierarchy, and a language for every closed code block. Literal Markdown
+# examples inside fences must not be mistaken for headings or new fences.
 for path in (p for p in CURRENT if "docs/adr/" not in p.as_posix()):
     previous_level = None
     fence_char = None
     fence_length = 0
+    h1_count = 0
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
         if marker:
             token = marker.group(1)
             if fence_char is None:
+                if not marker.group(2).strip():
+                    errors.append(f"{rel(path)}:{line_no}: code fence without a language")
                 fence_char, fence_length = token[0], len(token)
-            elif token[0] == fence_char and len(token) >= fence_length:
+            elif token[0] == fence_char and len(token) >= fence_length and not marker.group(2).strip():
                 fence_char, fence_length = None, 0
             continue
         if fence_char is not None:
@@ -115,9 +120,16 @@ for path in (p for p in CURRENT if "docs/adr/" not in p.as_posix()):
         if heading is None:
             continue
         level = len(heading.group(1))
+        if level == 1:
+            h1_count += 1
         if previous_level is not None and level > previous_level + 1:
             errors.append(f"{rel(path)}:{line_no}: Markdown heading jumps from H{previous_level} to H{level}")
         previous_level = level
+    if fence_char is not None:
+        errors.append(f"{rel(path)}: unclosed code fence")
+    if path == ROOT / "README.md" or path.parent == ROOT / "docs":
+        if h1_count != 1:
+            errors.append(f"{rel(path)}: expected exactly one H1 heading, found {h1_count}")
 
 
 # 1b. A Markdown link can name an existing file yet point to a missing section.
