@@ -1,7 +1,7 @@
 # Multimédia et codecs — Fedora 45
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-multimedia-fedora.txt` et `manifests/packages-rpmfusion.txt`, politique contre `config/gnome.conf` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — paquets et diagnostic relus contre `manifests/packages-multimedia-fedora.txt` et `manifests/packages-rpmfusion.txt`, politique contre `config/gnome.conf` — matériel : non vérifié
 
 ## Objectif
 
@@ -53,15 +53,33 @@ Le mode `rpmfusion-full` force explicitement le fournisseur RPM Fusion. Le mode 
 
 En parallèle, oneVPL reste fourni par Fedora via `libvpl` + `intel-vpl-gpu-rt`. Cette couche n'est pas un remplacement du pilote VA-API : elle complète la pile pour les logiciels utilisant l'API Intel VPL/QSV.
 
-## Diagnostic
+## Vérification et dépannage après l'APPLY
 
-`diagnostics/media-doctor` est en lecture seule et vérifie :
+**Pourquoi :** des codecs présents dans les manifestes ne garantissent pas leur disponibilité réelle ; la liste des décodeurs ne prouve pas non plus que la B580 décode et encode correctement.
 
-- présence des paquets multimédias attendus ;
-- absence de `ffmpeg-free` lorsque le profil RPM Fusion est actif ;
-- disponibilité des décodeurs FFmpeg H.264, HEVC, AV1, VP9, AAC, MP3, Opus et FLAC ;
-- présence dans FFmpeg des chemins d'encodage QSV et VA-API lorsqu'ils sont compilés ;
-- profils VA-API H.264, HEVC, AV1 et VP9 sur l'Arc B580 ;
-- identification du pilote Intel iHD lorsque le probe le permet.
+**Préparer :** depuis la racine du dépôt, sur Fedora installé avec l'APPLY terminé, lancer le diagnostic. Sur un PC doté de la B580, le nœud de rendu DRM doit être accessible pour les tests VA-API ; une VM sans cette carte ne peut pas produire la même preuve.
 
-La pile multimédia n'active pas `libdvdcss`, le déchiffrement Blu-ray protégé ou d'autres composants à usage spécifique par défaut.
+```bash
+./diagnostics/media-doctor
+```
+
+`media-doctor` contrôle :
+
+- les RPM multimédias attendus et la cohérence du fournisseur FFmpeg avec `ENABLE_RPMFUSION` ;
+- les décodeurs FFmpeg H.264, HEVC, AV1, VP9, AAC, MP3, Opus et FLAC ;
+- les encodeurs VA-API H.264, HEVC et AV1 exposés par FFmpeg ;
+- si la B580 est détectée : son nœud DRM, les profils VA-API H.264/HEVC/AV1/VP9 et l'identification du pilote iHD.
+
+Sur **matériel physique** avec B580, il lance également un essai fonctionnel de décodage et d'encodage. Il ne modifie pas les paquets ni les réglages, mais **écrit le rapport de cet essai** dans `reports/` ; ce n'est donc pas une commande sans aucune écriture.
+
+**Interprétation :** zéro `KO` signifie que les contrôles bloquants du script ont réussi. Les `WARN` restent à examiner : un essai GPU différé dans une VM ou un pilote non identifié ne vaut pas certification physique. Un `KO` fait échouer le doctor et interdit de conclure « codecs validés ».
+
+| Échec ou avertissement | Premier diagnostic | Suite |
+|---|---|---|
+| RPM absent ou `ffmpeg-free still installed` | `rpm -q ffmpeg ffmpeg-free` et relire la politique `ENABLE_RPMFUSION` | Corriger la transaction par le parcours de maintenance prévu ; pas de swap manuel aveugle. |
+| `ffmpeg:... decoder not matched` | Vérifier les capacités visibles via `ffmpeg -hide_banner -decoders` | Vérifier les dépôts, paquets et options de compilation avant de conclure à un codec absent. |
+| `required B580 hardware encoder missing` | `ffmpeg -hide_banner -encoders` | Confirmer la disponibilité du chemin VA-API voulu avant de chercher une cause côté GPU. |
+| `no matching /dev/dri/renderD* node` ou profil VA-API manquant | `./diagnostics/graphics-doctor` et journaux du pilote `xe` | Examiner la carte, les permissions et le pilote ; ne pas forcer `renderD128` ni remplacer les pilotes sur supposition. |
+| `VA-API functional` en `KO` | Lire le rapport `reports/<RUN_ID>-vaapi-smoke.txt` indiqué par le doctor | Analyser le codec précis en échec, corriger et relancer le diagnostic sur le PC. |
+
+Le diagnostic logiciel doit être complété par une lecture vidéo et les essais matériels requis en [Gate 3](QUALIFICATION.md). La pile n'active pas `libdvdcss`, le déchiffrement Blu-ray protégé ou d'autres composants à usage spécifique par défaut.
