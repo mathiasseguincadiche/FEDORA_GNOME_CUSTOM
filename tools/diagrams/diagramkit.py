@@ -68,6 +68,9 @@ class Diagram:
     def type_sizes(self):
         # Presentation diagrams appear full-width in README and overview guides.
         # Slightly larger text lets their key message survive that reduction.
+        if self.name.endswith("-mobile"):
+            # 17px on a 360px canvas => 14.2px at an actual 300px insertion.
+            return 20, 17
         if self.name in {"architecture-poste", "chaine-qualification"}:
             return 20, 16
         return LABEL_SIZE, SUB_SIZE
@@ -143,6 +146,7 @@ class Diagram:
     # ---- SVG ----------------------------------------------------------------
     def svg(self):
         label_size, sub_size = self.type_sizes()
+        group_size = sub_size if self.name.endswith("-mobile") else SUB_SIZE + 2
         out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.width} {self.height}" '
                f'width="{self.width}" height="{self.height}" role="img" aria-labelledby="title desc">',
                f'  <title id="title">{escape(self.title)}</title>',
@@ -156,7 +160,7 @@ class Diagram:
                f'  <text x="40" y="57" font-family="{FONT}" font-size="{TITLE_SIZE}" font-weight="bold" fill="{TEXT}">{escape(self.title)}</text>']
         for g in self.groups:
             out.append(f'  <rect x="{g.x}" y="{g.y}" width="{g.w}" height="{g.h}" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>')
-            out.append(f'  <text x="{g.x + 20}" y="{g.y + 33}" font-family="{FONT}" font-size="{SUB_SIZE + 2}" font-weight="bold" fill="#2959B4">{escape(g.title)}</text>')
+            out.append(f'  <text x="{g.x + 20}" y="{g.y + 33}" font-family="{FONT}" font-size="{group_size}" font-weight="bold" fill="#2959B4">{escape(g.title)}</text>')
         for e in self.edges:
             x1, y1, x2, y2 = self._segment(e)
             dash = ' stroke-dasharray="7 5"' if e.dashed else ""
@@ -187,6 +191,7 @@ class Diagram:
     # ---- diagrams.net -------------------------------------------------------
     def drawio(self):
         label_size, sub_size = self.type_sizes()
+        group_size = sub_size if self.name.endswith("-mobile") else SUB_SIZE + 2
         def label(lines):
             first = f"<b>{escape(lines[0])}</b>"
             rest = "".join(f'<br><span style="font-size:{sub_size}px">{escape(l)}</span>' for l in lines[1:])
@@ -198,7 +203,7 @@ class Diagram:
                  f'<mxGeometry x="40" y="23" width="{self.width - 80}" height="46" as="geometry"/></mxCell>']
         for g in self.groups:
             cells.append(f'<mxCell id={quoteattr(g.id)} value={quoteattr(escape(g.title))} style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;'
-                         f'fillColor=#FFFFFF;strokeColor=#D9E3EF;fontColor=#2959B4;fontStyle=1;fontSize={SUB_SIZE + 2};fontFamily=Arial;'
+                         f'fillColor=#FFFFFF;strokeColor=#D9E3EF;fontColor=#2959B4;fontStyle=1;fontSize={group_size};fontFamily=Arial;'
                          f'verticalAlign=top;align=left;spacingLeft=19;spacingTop=10;" vertex="1" parent="1">'
                          f'<mxGeometry x="{g.x}" y="{g.y}" width="{g.w}" height="{g.h}" as="geometry"/></mxCell>')
         for n in self.nodes:

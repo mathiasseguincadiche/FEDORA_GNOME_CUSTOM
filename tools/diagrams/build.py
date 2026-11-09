@@ -1,8 +1,9 @@
-"""Build the seven documentation diagrams into OUT_DIR as .drawio + .svg pairs."""
+"""Build desktop and mobile documentation diagrams as matching .drawio + .svg pairs."""
 import sys
 from pathlib import Path
 
 from diagramkit import Diagram
+from mobile import mobile_counterpart
 
 out = Path(sys.argv[1])
 out.mkdir(parents=True, exist_ok=True)
@@ -182,6 +183,9 @@ d.edge("e2", "ts", "pc", "SSH · flux vidéo", both=True)
 d.edge("e3", "ts", "relay", "réveil")
 d.edge("e4", "relay", "pc", "Magic Packet (LAN)", dashed=True)
 diagrams.append(d)
+
+# Desktop and portrait variants share one semantic model, not two sets of facts.
+diagrams += [mobile_counterpart(original) for original in diagrams]
 
 for d in diagrams:
     d.check()

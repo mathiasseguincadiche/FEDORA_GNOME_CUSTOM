@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1228" width="360" height="1228" role="img" aria-labelledby="title desc">
+  <title id="title">Le poste Fedora</title>
+  <desc id="desc">Le PC cible utilise Fedora 45 avec GNOME 51, DevOps/KVM, jeu et noyau Linux amont. Sur deux SSD Crucial T705 distincts, le système Btrfs peut être réinstallé tandis que /data ext4 est conservé. Sur /data, Documents, Projets et IA sont inclus dans Borg, mais ISO et Jeux ne le sont pas automatiquement ; disques VM exportés manuellement. Borg sauvegarde également des dossiers personnels et réglages décrits dans BACKUP_RESTORE.md. Le SSD Kingston XS1000 est externe. Les contrôles physiques Live USB et Gate 3 restent à réaliser.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#547BB4"/></marker>
+  </defs>
+  <rect width="360" height="1228" fill="#F7F9FC"/>
+  <rect x="0" y="0" width="360" height="7" fill="#346AC4"/>
+  <text x="40" y="57" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1A2C43">Le poste Fedora</text>
+  <rect x="10" y="90" width="340" height="456" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
+  <text x="30" y="123" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">01 · POSTE ET USAGES</text>
+  <rect x="10" y="582" width="340" height="617" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
+  <text x="30" y="615" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">02 · SSD DISTINCTS ET BORG</text>
+  <line x1="180.0" y1="247.0" x2="180.0" y2="280.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="381.0" x2="180.0" y2="414.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="988.0" x2="180.0" y2="1021.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="22" y="146" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="181.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">PC cible</text>
+  <text x="180.0" y="204.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Ryzen 7 7700 · Intel Arc B580</text>
+  <text x="180.0" y="227.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">48 Go DDR5 · Wi-Fi 7 · 5 GbE</text>
+  <rect x="22" y="280" width="316" height="101" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
+  <text x="180.0" y="315.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Fedora 45 Workstation</text>
+  <text x="180.0" y="338.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">GNOME 51 · SELinux · firewalld</text>
+  <text x="180.0" y="361.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Configuration pilotée par Git</text>
+  <rect x="22" y="414" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="449.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Quatre usages</text>
+  <text x="180.0" y="472.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Bureau GNOME · DevOps/KVM</text>
+  <text x="180.0" y="495.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Jeux Vulkan · noyau Linux</text>
+  <rect x="22" y="638" width="316" height="147" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="673.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">SSD 01 · Système Btrfs</text>
+  <text x="180.0" y="696.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Crucial T705 · Fedora et</text>
+  <text x="180.0" y="719.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">logiciels</text>
+  <text x="180.0" y="742.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Fedora réinstallé, profil Git</text>
+  <text x="180.0" y="765.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">rejoué</text>
+  <rect x="22" y="818" width="316" height="170" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
+  <text x="180.0" y="853.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">SSD 02 · Données /data ext4</text>
+  <text x="180.0" y="876.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Crucial T705 · données</text>
+  <text x="180.0" y="899.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">conservées</text>
+  <text x="180.0" y="922.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Borg : Documents, Projets, IA</text>
+  <text x="180.0" y="945.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Hors Borg : ISO, Jeux, disques</text>
+  <text x="180.0" y="968.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">VM</text>
+  <rect x="22" y="1021" width="316" height="147" rx="14" fill="#E8F6EF" stroke="#198263" stroke-width="1.8"/>
+  <text x="180.0" y="1056.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">SSD externe · Borg</text>
+  <text x="180.0" y="1079.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Kingston XS1000 · dépôt non</text>
+  <text x="180.0" y="1102.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">chiffré</text>
+  <text x="180.0" y="1125.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Contrôler, restaurer en zone</text>
+  <text x="180.0" y="1148.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">isolée</text>
+</svg>

@@ -16,13 +16,14 @@ Les deux variantes sont des dépendances du job `contracts` ([CI](CI_VALIDATION.
 
 Le laboratoire natif isole les défauts de GNOME lui-même ; son succès ne remplace pas celui du laboratoire à six extensions. Aucun des deux ne modifie `profiles/fedora45/profile.json` ni le média de production.
 
-![Schéma du laboratoire : sept étapes sur un runner GitHub jetable, de la VM Fedora 45 au rapport](assets/diagrams/laboratoire-gnome.svg)
+<picture>
+  <source media="(min-width: 700px)" srcset="assets/diagrams/laboratoire-gnome.svg">
+  <img src="assets/diagrams/laboratoire-gnome-mobile.svg" alt="Schéma du laboratoire GNOME : sept étapes d'essai de VM, sauvegarde, restauration, reconstruction et rapport sur runner jetable.">
+</picture>
 
 Sur le runner, une VM Fedora 45 démarre depuis l'image Cloud finale vérifiée. Le dépôt est installé, la session GNOME 51 contrôlée, et des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg ; l'original est supprimé et la copie restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
 
-**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/laboratoire-gnome.svg) pour examiner les détails avec le zoom du navigateur.
-
-Source éditable : [`laboratoire-gnome.drawio`](assets/diagrams/laboratoire-gnome.drawio).
+**Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/laboratoire-gnome-mobile.svg) · [version large](assets/diagrams/laboratoire-gnome.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/laboratoire-gnome-mobile.drawio) · [large `.drawio`](assets/diagrams/laboratoire-gnome.drawio).
 
 ## Image et machine virtuelle
 

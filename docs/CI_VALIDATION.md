@@ -30,7 +30,10 @@ Exemple : si `contracts` est rouge parce qu'un laboratoire GNOME a échoué, ouv
 
 ## De la pull request à la release
 
-![Schéma des contrôles : sept jobs du workflow Tests vers contracts, cinq autres contextes, fusion, push sur main puis release](assets/diagrams/ci-fusion-release.svg)
+<picture>
+  <source media="(min-width: 700px)" srcset="assets/diagrams/ci-fusion-release.svg">
+  <img src="assets/diagrams/ci-fusion-release-mobile.svg" alt="Schéma de CI : sept jobs Tests, contracts et cinq autres contrôles, fusion conditionnelle, push main, publication contrôlée.">
+</picture>
 
 Le workflow `Tests` lance sept jobs de contrôle, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main`.
 
@@ -45,9 +48,7 @@ Le workflow `Tests` lance sept jobs de contrôle, et le job `contracts` exige le
 7. `fedora-installer-audit.yml` — audit de l'installateur.
 8. `security-scanning.yml` — contrôles de sécurité.
 
-**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/ci-fusion-release.svg) pour examiner les détails avec le zoom du navigateur.
-
-Source éditable : [`ci-fusion-release.drawio`](assets/diagrams/ci-fusion-release.drawio).
+**Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/ci-fusion-release-mobile.svg) · [version large](assets/diagrams/ci-fusion-release.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/ci-fusion-release-mobile.drawio) · [large `.drawio`](assets/diagrams/ci-fusion-release.drawio).
 
 **Une PR verte ne prouve pas que `main` est vert.** Les workflows de PR testent le commit proposé (`github.event.pull_request.head.sha`) ; GitHub valide ensuite le commit de fusion, qui est un autre SHA. Après une fusion, filtrer la page Actions sur `main` et vérifier `Tests` pour ce SHA.
 

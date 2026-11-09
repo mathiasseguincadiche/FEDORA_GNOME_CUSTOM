@@ -83,13 +83,14 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 
 ## Le système obtenu
 
-![Schéma du poste : le PC et Fedora 45, quatre usages, le système sur le premier T705, /data sur le second et la sauvegarde Borg](assets/diagrams/architecture-poste.svg)
+<picture>
+  <source media="(min-width: 700px)" srcset="assets/diagrams/architecture-poste.svg">
+  <img src="assets/diagrams/architecture-poste-mobile.svg" alt="Schéma du poste : PC Fedora 45, quatre usages, SSD système distinct du SSD de données /data, sauvegarde Borg externe.">
+</picture>
 
 Le PC exécute Fedora 45 Workstation pour quatre usages : GNOME 51, le travail DevOps avec KVM, le jeu vidéo et le noyau Linux amont avec secours Fedora. Le premier T705 reçoit Fedora en Btrfs ; après sa réinstallation, les scripts rejouent le profil du dépôt. Le second T705 conserve `/data` en ext4. Sur ce second disque, Documents, Projets et IA sont couverts par Borg ; ISO et Jeux sont exclus par défaut, et les disques des VM s'exportent manuellement. Le [guide de sauvegarde](BACKUP_RESTORE.md) décrit les autres dossiers personnels et réglages protégés.
 
-**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/architecture-poste.svg) pour examiner les détails avec le zoom du navigateur.
-
-Source éditable : [`architecture-poste.drawio`](assets/diagrams/architecture-poste.drawio).
+**Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/architecture-poste-mobile.svg) · [version large](assets/diagrams/architecture-poste.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/architecture-poste-mobile.drawio) · [large `.drawio`](assets/diagrams/architecture-poste.drawio).
 
 **Deux SSD ne font pas deux sauvegardes.** Le T705 système se reconstruit depuis le dépôt. Le T705 `/data` survit à une réinstallation et n'est jamais formaté par le projet. Il ne protège pas contre sa propre panne, un effacement ou une compromission : c'est le rôle de Borg, sur un support externe non chiffré à ranger comme un document sensible. `ISO` et `Jeux` sont hors Borg par défaut ; les VM s'exportent à la main.
 
