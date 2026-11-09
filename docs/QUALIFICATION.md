@@ -15,6 +15,8 @@ Le profil Fedora 45 est `ready` : le média final signé et les composants stabl
 
 Le parcours comporte **onze étapes opérationnelles** : CI au commit exact, contrôle Live USB, **revue et accord humain**, installation de Fedora avec import de la preuve, baseline matérielle, dry-run, sauvegarde pré-APPLY vérifiée, APPLY protégé, redémarrage sur Linux amont N, Gate 3 et Golden release. Le contrôle Live, l'installation et la qualification ont lieu sur le PC cible ; la décision du propriétaire est obligatoire avant l'installation. Ce point d'arrêt humain ne modifie ni les trois Gates ni les préconditions imposées par le code. Un changement de matériel, de code ou de configuration invalide les preuves concernées.
 
+**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/chaine-qualification.svg) pour examiner les détails avec le zoom du navigateur.
+
 Source éditable : [`chaine-qualification.drawio`](assets/diagrams/chaine-qualification.drawio).
 
 | Résultat | Ce qu'il démontre | Ce qu'il ne démontre pas |

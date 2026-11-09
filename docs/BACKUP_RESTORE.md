@@ -29,6 +29,8 @@ Par les sauvegardes quotidienne et complète, trois familles de sources partent 
 
 La sauvegarde pré-APPLY n'est validée qu'après `borg check --verify-data` et une restauration canari. Une restauration se fait toujours dans `~/Restores` avant inspection et copie manuelle. Restent hors Borg : Téléchargements, ISO, Jeux et tout ce qui concerne les VM ; le système, lui, est reconstruit depuis le dépôt. Les listes exactes viennent de `config/backup.conf`.
 
+**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/sauvegarde-restauration.svg) pour examiner les détails avec le zoom du navigateur.
+
 Source éditable : [`sauvegarde-restauration.drawio`](assets/diagrams/sauvegarde-restauration.drawio).
 
 > [!IMPORTANT]

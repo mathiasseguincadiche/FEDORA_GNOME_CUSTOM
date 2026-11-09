@@ -20,6 +20,8 @@ Le laboratoire natif isole les défauts de GNOME lui-même ; son succès ne remp
 
 Sur le runner, une VM Fedora 45 démarre depuis l'image Cloud finale vérifiée. Le dépôt est installé, la session GNOME 51 contrôlée, et des données témoin doivent survivre à un redémarrage. La VM est ensuite arrêtée et sauvegardée à froid par Borg ; l'original est supprimé et la copie restaurée doit redémarrer. Enfin, une image neuve est reconstruite et redémarrée, et le rapport conserve preuves et journaux. Un plantage, à n'importe quelle étape, fait échouer le laboratoire.
 
+**Sur petit écran :** [ouvrir le schéma SVG séparément](assets/diagrams/laboratoire-gnome.svg) pour examiner les détails avec le zoom du navigateur.
+
 Source éditable : [`laboratoire-gnome.drawio`](assets/diagrams/laboratoire-gnome.drawio).
 
 ## Image et machine virtuelle
