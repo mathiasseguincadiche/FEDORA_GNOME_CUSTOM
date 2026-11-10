@@ -1,7 +1,7 @@
 # Laboratoire Fedora/GNOME de la CI
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — relu contre `.github/workflows/fedora-gnome-vm.yml`, `.github/workflows/fedora45-gnome-vm.yml`, `.github/scripts/fedora-gnome-vm.sh`, `.github/scripts/fedora-gnome-guest.sh` et `scripts/gnome/install-pinned-extension.sh` — matériel : non vérifié
+> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-09 — schéma responsive relu et contrats CI antérieurs conservés ; essais physiques non rejoués — matériel : non vérifié
 
 Le laboratoire démarre une vraie session GNOME 51 dans une VM QEMU, sur un runner GitHub jetable. Il redémarre, sauvegarde, restaure puis reconstruit cette VM. Rien ne s'exécute sur le PC de l'opérateur, et aucun runner n'est à installer chez lui.
 
@@ -17,7 +17,7 @@ Les deux variantes sont des dépendances du job `contracts` ([CI](CI_VALIDATION.
 Le laboratoire natif isole les défauts de GNOME lui-même ; son succès ne remplace pas celui du laboratoire à six extensions. Aucun des deux ne modifie `profiles/fedora45/profile.json` ni le média de production.
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/laboratoire-gnome.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/laboratoire-gnome.svg">
   <img src="assets/diagrams/laboratoire-gnome-mobile.svg" alt="Schéma du laboratoire GNOME : sept étapes d'essai de VM, sauvegarde, restauration, reconstruction et rapport sur runner jetable.">
 </picture>
 

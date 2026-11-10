@@ -1,20 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1686" width="360" height="1686" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1663" width="360" height="1663" role="img" aria-labelledby="title desc">
   <title id="title">CI, fusion et release</title>
   <desc id="desc">Le workflow Tests lance sept jobs : logic-contracts, installer-audit, borg-fedora, fedora-gnome-vm natif, fedora45-gnome-vm avec six extensions, upstream-kernel et rocky-devops-vm. Le job contracts exige leurs sept succès ; sur une pull request qui ne change que la documentation, il accepte seulement que les trois VM soient sautées. La fusion dans main exige contracts et cinq autres contextes : shellcheck, guards, packages, packages-and-integration et nautilus-ptyxis. Après la fusion, les mêmes workflows et le scan de sécurité tournent sur le commit de main. Le workflow release.yml ne démarre que si son manifeste ou ses fichiers de workflow/résolution changent ; il exige alors les contrôles verts du même commit avant publication.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#547BB4"/></marker>
   </defs>
-  <rect width="360" height="1686" fill="#F7F9FC"/>
+  <rect width="360" height="1663" fill="#F7F9FC"/>
   <rect x="0" y="0" width="360" height="7" fill="#346AC4"/>
   <text x="40" y="57" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1A2C43">CI, fusion et release</text>
   <rect x="10" y="90" width="340" height="761" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
   <text x="30" y="123" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">01 · WORKFLOW TESTS : 7 JOBS</text>
-  <rect x="10" y="887" width="340" height="368" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
+  <rect x="10" y="887" width="340" height="345" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
   <text x="30" y="920" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">02 · CONTRATS ET CONTEXTES</text>
   <line x1="180.0" y1="851.0" x2="180.0" y2="887.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1255.0" x2="180.0" y2="1291.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1369.0" x2="180.0" y2="1402.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1503.0" x2="180.0" y2="1536.0" stroke="#547BB4" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1232.0" x2="180.0" y2="1268.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1346.0" x2="180.0" y2="1379.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1480.0" x2="180.0" y2="1513.0" stroke="#547BB4" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
   <rect x="22" y="146" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
   <text x="180.0" y="188.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">logic-contracts</text>
   <rect x="22" y="247" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
@@ -24,7 +24,7 @@
   <rect x="22" y="449" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
   <text x="180.0" y="491.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">fedora-gnome-vm (natif)</text>
   <rect x="22" y="550" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="592.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">fedora45-gnome-vm (6 ext.)</text>
+  <text x="180.0" y="592.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Fedora 45 (6 extensions)</text>
   <rect x="22" y="651" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
   <text x="180.0" y="693.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">upstream-kernel / rpm</text>
   <rect x="22" y="752" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
@@ -33,22 +33,21 @@
   <text x="180.0" y="978.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">contracts</text>
   <text x="180.0" y="1001.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">exige les 7 succès</text>
   <text x="180.0" y="1024.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">PR de doc. : VM sautées</text>
-  <rect x="22" y="1077" width="316" height="147" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="1112.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Autres contrôles</text>
-  <text x="180.0" y="1135.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">obligatoires</text>
-  <text x="180.0" y="1158.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">shellcheck · guards · packages</text>
-  <text x="180.0" y="1181.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">packages-and-integration</text>
-  <text x="180.0" y="1204.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">nautilus-ptyxis</text>
-  <rect x="22" y="1291" width="316" height="78" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="180.0" y="1326.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Fusion autorisée</text>
-  <text x="180.0" y="1349.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">6 contextes obligatoires verts</text>
-  <rect x="22" y="1402" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="1437.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">push sur main</text>
-  <text x="180.0" y="1460.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">mêmes workflows + Security</text>
-  <text x="180.0" y="1483.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">scanning</text>
-  <rect x="22" y="1536" width="316" height="124" rx="14" fill="#E8F6EF" stroke="#198263" stroke-width="1.8"/>
-  <text x="180.0" y="1571.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">release.yml (déclenchement</text>
-  <text x="180.0" y="1594.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">conditionnel)</text>
-  <text x="180.0" y="1617.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">préversion après contrôles verts</text>
-  <text x="180.0" y="1640.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">sur le même commit</text>
+  <rect x="22" y="1077" width="316" height="124" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="1112.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Autres contrôles requis</text>
+  <text x="180.0" y="1135.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">shellcheck · guards · packages</text>
+  <text x="180.0" y="1158.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">packages-and-integration</text>
+  <text x="180.0" y="1181.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">nautilus-ptyxis</text>
+  <rect x="22" y="1268" width="316" height="78" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
+  <text x="180.0" y="1303.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">Fusion autorisée</text>
+  <text x="180.0" y="1326.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">6 contextes obligatoires verts</text>
+  <rect x="22" y="1379" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="1414.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">push sur main</text>
+  <text x="180.0" y="1437.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">mêmes workflows + Security</text>
+  <text x="180.0" y="1460.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">scanning</text>
+  <rect x="22" y="1513" width="316" height="124" rx="14" fill="#E8F6EF" stroke="#198263" stroke-width="1.8"/>
+  <text x="180.0" y="1548.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">release.yml (sous</text>
+  <text x="180.0" y="1571.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">conditions)</text>
+  <text x="180.0" y="1594.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">préversion après contrôles verts</text>
+  <text x="180.0" y="1617.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">sur le même commit</text>
 </svg>

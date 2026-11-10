@@ -24,7 +24,7 @@ Le projet distingue trois moments. Ils n'ont pas le même objectif :
 Le second SSD `/data` sert à séparer les données du système ; le SSD externe Borg sert à disposer d'une autre copie. Ces deux rôles ne sont pas interchangeables.
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/sauvegarde-restauration.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/sauvegarde-restauration.svg">
   <img src="assets/diagrams/sauvegarde-restauration-mobile.svg" alt="Schéma Borg : sources protégées, dépôt externe, contrôles avant restauration, staging puis inspection et copie manuelle.">
 </picture>
 

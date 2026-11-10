@@ -17,7 +17,7 @@ Avant les premiers enrôlements matériels, `./control.sh install prepare-tools`
 ## Une façade, des moteurs spécialisés
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/centre-de-controle.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/centre-de-controle.svg">
   <img src="assets/diagrams/centre-de-controle-mobile.svg" alt="Schéma simplifié du centre de contrôle : opérateur, façade control.sh et exemples de domaines et moteurs spécialisés.">
 </picture>
 

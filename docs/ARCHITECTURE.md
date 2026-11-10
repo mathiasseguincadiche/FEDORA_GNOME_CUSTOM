@@ -84,7 +84,7 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 ## Le système obtenu
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/architecture-poste.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/architecture-poste.svg">
   <img src="assets/diagrams/architecture-poste-mobile.svg" alt="Schéma du poste : PC Fedora 45, quatre usages, SSD système distinct du SSD de données /data, sauvegarde Borg externe.">
 </picture>
 
