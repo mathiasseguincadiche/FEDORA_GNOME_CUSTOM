@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily encrypted Fedora workstation user backup
+Description=Daily unencrypted Fedora workstation user backup
 
 [Timer]
 OnCalendar=daily

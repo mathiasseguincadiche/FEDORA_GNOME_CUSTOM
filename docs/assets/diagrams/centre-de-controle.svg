@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 700" width="1160" height="700" role="img" aria-labelledby="title desc">
   <title id="title">Le centre de contrôle : une façade, des moteurs</title>
-  <desc id="desc">L&#x27;opérateur passe par ./control.sh, une façade sans logique métier. Chaque domaine appelle son moteur : install (install.sh, dry-run et APPLY protégé), update (update-system.sh), kernel (kernel-lifecycle.sh et secours Fedora), backup (backup-now.sh, restore.sh), kvm (création Rocky DevOps et garde réseau), doctor (diagnostics en lecture seule), validate et cert (Live USB, Gate 3, certification), status et logs.</desc>
+  <desc id="desc">L&#x27;opérateur passe par ./control.sh, une façade sans logique métier. Chaque domaine appelle son moteur : install (install.sh, dry-run et APPLY protégé), update (update-system.sh), kernel (kernel-lifecycle.sh et secours Fedora), backup (backup-now.sh, restore.sh), kvm (création Rocky DevOps et garde réseau), doctor (observations et essais actifs explicites), validate et cert (Live USB, Gate 3, certification), status et logs. Les huit blocs représentent des regroupements, pas toutes les routes du centre de contrôle.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#547BB4"/></marker>
   </defs>
@@ -8,7 +8,7 @@
   <rect x="0" y="0" width="1160" height="7" fill="#346AC4"/>
   <text x="40" y="57" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1A2C43">Le centre de contrôle : une façade, des moteurs</text>
   <rect x="620" y="70" width="500" height="610" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
-  <text x="640" y="103" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#2959B4">Domaines et moteurs appelés</text>
+  <text x="640" y="103" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#2959B4">Exemples de domaines et moteurs</text>
   <line x1="220.0" y1="335.0" x2="280.0" y2="335.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="520.0" y1="335.0" x2="620.0" y2="335.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <rect x="40" y="300" width="180" height="70" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
@@ -34,7 +34,7 @@
   <text x="870.0" y="435.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">Rocky DevOps · garde réseau</text>
   <rect x="640" y="460" width="460" height="58" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
   <text x="870.0" y="486.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">doctor</text>
-  <text x="870.0" y="505.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">diagnostics/*-doctor (lecture seule)</text>
+  <text x="870.0" y="505.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">observation · essais actifs explicites</text>
   <rect x="640" y="530" width="460" height="58" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
   <text x="870.0" y="556.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">validate · cert</text>
   <text x="870.0" y="575.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">Live USB · Gate 3 · certification</text>
