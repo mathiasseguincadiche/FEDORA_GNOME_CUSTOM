@@ -12,7 +12,7 @@ Le statut **Golden runtime-certified** exige que `./control.sh validate gate3 ce
 Le profil Fedora 45 est `ready` : le média final signé et les composants stables ont été promus ([fiche Fedora 45](FEDORA45_PRIMARY.md)). Cette promotion ne remplace aucune gate de qualification.
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/chaine-qualification.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/chaine-qualification.svg">
   <img src="assets/diagrams/chaine-qualification-mobile.svg" alt="Qualification du poste en onze étapes : CI, Live USB, accord humain, installation, sauvegarde pré-APPLY, Gate 3 et Golden release.">
 </picture>
 

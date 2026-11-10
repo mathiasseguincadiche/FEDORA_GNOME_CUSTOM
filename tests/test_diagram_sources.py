@@ -30,9 +30,11 @@ check = subprocess.run([sys.executable, "-B", str(TOOLS / "verify.py"), str(COMM
 if check.returncode:
     errors.append("tools/diagrams/verify.py failed:\n" + check.stdout + check.stderr)
 
-# Every guide must have a genuinely legible portrait fallback, without losing
-# its wide layout or either editable source. This checks the *contract*; the
-# rendered pixels at 300px are still reviewed by a person with Inkscape.
+# Every guide must have a legible portrait fallback for intermediary viewports,
+# a readable wide variant on spacious screens, and two editable sources.
+# This checks structural sizing, NOT the final pixels and actual GitHub layout.
+WIDE_VIEWPORT_MIN = 1600
+WIDE_REFERENCE_DISPLAY = 960
 GUIDES = {
     "architecture-poste": "ARCHITECTURE.md",
     "sauvegarde-restauration": "BACKUP_RESTORE.md",
@@ -52,6 +54,7 @@ for slug, guide in GUIDES.items():
     mobile = ET.parse(mobile_svg).getroot()
     desktop = ET.parse(desktop_svg).getroot()
     width = int(mobile.attrib["width"])
+    desktop_width = int(desktop.attrib["width"])
     if width != 360:
         errors.append(f"{slug}: mobile width {width}px, expected 360px")
     desc_mobile = mobile.find(SVG_NS + "desc")
@@ -67,8 +70,18 @@ for slug, guide in GUIDES.items():
         if label.get("fill") == "#2959B4" and int(label.get("font-size", 0)) * 300 / width < 14:
             errors.append(f"{slug}: section title below 14px at 300px")
 
+    # Readable desktop text should not collapse to single-digit pixel sizes
+    # when a 1160–1440px SVG is reduced to a representative 960px content column.
+    # Italic arrow annotations are auxiliary: primary node text is what matters.
+    desktop_body_sizes = [int(label.attrib["font-size"])
+                          for label in desktop.iter(SVG_NS + "text")
+                          if label.get("fill") == "#1A2C43"
+                          and label.get("font-style") != "italic"]
+    if not desktop_body_sizes or min(desktop_body_sizes) * WIDE_REFERENCE_DISPLAY / desktop_width < 12:
+        errors.append(f"{slug}: wide primary text below 12px at a 960px insertion")
+
     page = (ROOT / "docs" / guide).read_text(encoding="utf-8")
-    if (f'<source media="(min-width: 700px)" srcset="assets/diagrams/{slug}.svg">' not in page
+    if (f'<source media="(min-width: {WIDE_VIEWPORT_MIN}px)" srcset="assets/diagrams/{slug}.svg">' not in page
             or f'<img src="assets/diagrams/{slug}-mobile.svg" alt="' not in page):
         errors.append(f"{guide}: responsive image lacks mobile fallback or wide view")
     for extension in ("svg", "drawio"):

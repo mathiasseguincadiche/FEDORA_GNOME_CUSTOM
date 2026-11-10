@@ -19,7 +19,7 @@ STYLES = {
     "warn": ("#FFF3DE", "#AC731B", False),
     "muted": ("#FFFFFF", "#7C8A9C", True),
 }
-TITLE_SIZE, LABEL_SIZE, SUB_SIZE, EDGE_SIZE = 29, 17, 13, 12
+TITLE_SIZE, LABEL_SIZE, SUB_SIZE, EDGE_SIZE = 29, 23, 18, 16
 CHAR = 0.53  # conservative average glyph width / font size, checked at build time
 
 
@@ -72,7 +72,7 @@ class Diagram:
             # 17px on a 360px canvas => 14.2px at an actual 300px insertion.
             return 20, 17
         if self.name in {"architecture-poste", "chaine-qualification"}:
-            return 20, 16
+            return 24, 19
         return LABEL_SIZE, SUB_SIZE
 
     def node(self, *args, **kwargs):
@@ -87,11 +87,16 @@ class Diagram:
     # ---- checks -------------------------------------------------------------
     def check(self):
         label_size, sub_size = self.type_sizes()
+        group_size = sub_size if self.name.endswith("-mobile") else SUB_SIZE + 2
         ids = [n.id for n in self.nodes] + [g.id for g in self.groups]
         assert len(ids) == len(set(ids)), f"{self.name}: duplicate ids"
         known = {n.id for n in self.nodes} | {g.id for g in self.groups}
         for e in self.edges:
             assert e.src in known and e.dst in known, f"{self.name}: edge {e.id} points nowhere"
+        for g in self.groups:
+            title_width = len(g.title) * group_size * CHAR + 40
+            assert title_width <= g.w, \
+                f"{self.name}: group heading '{g.title}' needs {title_width:.0f}px ({g.w}px)"
         for n in self.nodes:
             for i, line in enumerate(n.lines):
                 size = label_size if i == 0 else sub_size

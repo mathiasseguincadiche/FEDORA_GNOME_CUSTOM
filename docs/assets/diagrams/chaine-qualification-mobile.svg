@@ -1,65 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1712" width="360" height="1712" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1597" width="360" height="1597" role="img" aria-labelledby="title desc">
   <title id="title">Qualifier le poste</title>
   <desc id="desc">Onze étapes : 1, CI au commit exact sur GitHub ; 2, contrôle Live USB sur le PC (PREINSTALL_ONLY, preuve exportée) ; 3, analyse des résultats et décision humaine GO ou NO-GO avant installation ; 4, installation de Fedora et import de la preuve ; 5, baseline matérielle ; 6, dry-run ; 7, sauvegarde Borg pré-APPLY vérifiée ; 8, APPLY protégé sur le PC physique ; 9, redémarrage sur Linux amont N ; 10, Gate 3 du système installé ; 11, Golden release. Une évolution du matériel, du code ou de la configuration invalide les preuves concernées.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#547BB4"/></marker>
   </defs>
-  <rect width="360" height="1712" fill="#F7F9FC"/>
+  <rect width="360" height="1597" fill="#F7F9FC"/>
   <rect x="0" y="0" width="360" height="7" fill="#346AC4"/>
   <text x="40" y="57" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1A2C43">Qualifier le poste</text>
-  <rect x="10" y="90" width="340" height="433" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
+  <rect x="10" y="90" width="340" height="410" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
   <text x="30" y="123" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">01 · AVANT INSTALLATION</text>
-  <rect x="10" y="559" width="340" height="655" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
-  <text x="30" y="592" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">02 · INSTALLER ET CONFIGURER</text>
-  <rect x="10" y="1250" width="340" height="433" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
-  <text x="30" y="1283" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">03 · QUALIFIER ET PUBLIER</text>
-  <line x1="180.0" y1="247.0" x2="180.0" y2="280.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="381.0" x2="180.0" y2="414.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="492.0" x2="180.0" y2="559.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="716.0" x2="180.0" y2="749.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="827.0" x2="180.0" y2="860.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="938.0" x2="180.0" y2="971.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1072.0" x2="180.0" y2="1105.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1183.0" x2="180.0" y2="1250.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1384.0" x2="180.0" y2="1417.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <line x1="180.0" y1="1518.0" x2="180.0" y2="1551.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
-  <rect x="22" y="146" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <rect x="10" y="536" width="340" height="609" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
+  <text x="30" y="569" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">02 · INSTALLER ET CONFIGURER</text>
+  <rect x="10" y="1181" width="340" height="387" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
+  <text x="30" y="1214" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">03 · QUALIFIER ET PUBLIER</text>
+  <line x1="180.0" y1="224.0" x2="180.0" y2="257.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="358.0" x2="180.0" y2="391.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="469.0" x2="180.0" y2="536.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="670.0" x2="180.0" y2="703.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="781.0" x2="180.0" y2="814.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="892.0" x2="180.0" y2="925.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1003.0" x2="180.0" y2="1036.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1114.0" x2="180.0" y2="1181.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1315.0" x2="180.0" y2="1348.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="180.0" y1="1426.0" x2="180.0" y2="1459.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="22" y="146" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
   <text x="180.0" y="181.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">1. CI au commit exact</text>
   <text x="180.0" y="204.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Contrats et laboratoires</text>
-  <text x="180.0" y="227.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">logiciels</text>
-  <rect x="22" y="280" width="316" height="101" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="180.0" y="315.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">2. Gate 2 · Live USB</text>
-  <text x="180.0" y="338.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">PREINSTALL_ONLY · preuve</text>
-  <text x="180.0" y="361.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">exportée</text>
-  <rect x="22" y="414" width="316" height="78" rx="14" fill="#FFF3DE" stroke="#AC731B" stroke-width="1.8"/>
-  <text x="180.0" y="449.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">3. Revue et accord humain</text>
-  <text x="180.0" y="472.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">GO / NO-GO avant tout effacement</text>
-  <rect x="22" y="615" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="650.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">4. Installer Fedora</text>
-  <text x="180.0" y="673.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">SSD système et preuve Live</text>
-  <text x="180.0" y="696.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">importée</text>
-  <rect x="22" y="749" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="784.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">5. Certifier la baseline</text>
-  <text x="180.0" y="807.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Contrôles de santé matérielle</text>
-  <rect x="22" y="860" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="895.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">6. Exécuter le dry-run</text>
-  <text x="180.0" y="918.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Plan sans modification réelle</text>
-  <rect x="22" y="971" width="316" height="101" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="1006.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">7. Sauvegarder avec Borg</text>
-  <text x="180.0" y="1029.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Pré-APPLY vérifié et canari</text>
-  <text x="180.0" y="1052.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">restauré</text>
-  <rect x="22" y="1105" width="316" height="78" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="180.0" y="1140.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">8. Exécuter l&#x27;APPLY</text>
-  <text x="180.0" y="1163.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Gardes et confirmation physique</text>
-  <rect x="22" y="1306" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="180.0" y="1341.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">9. Redémarrer</text>
-  <text x="180.0" y="1364.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Linux amont N sur le vrai PC</text>
-  <rect x="22" y="1417" width="316" height="101" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="180.0" y="1452.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">10. Gate 3 · système</text>
-  <text x="180.0" y="1475.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">installé</text>
-  <text x="180.0" y="1498.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Diagnostics et essais physiques</text>
-  <rect x="22" y="1551" width="316" height="101" rx="14" fill="#E8F6EF" stroke="#198263" stroke-width="1.8"/>
-  <text x="180.0" y="1586.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">11. Golden release</text>
-  <text x="180.0" y="1609.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Preuves courantes et</text>
-  <text x="180.0" y="1632.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">certification</text>
+  <rect x="22" y="257" width="316" height="101" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
+  <text x="180.0" y="292.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">2. Gate 2 · Live USB</text>
+  <text x="180.0" y="315.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">PREINSTALL_ONLY · preuve</text>
+  <text x="180.0" y="338.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">exportée</text>
+  <rect x="22" y="391" width="316" height="78" rx="14" fill="#FFF3DE" stroke="#AC731B" stroke-width="1.8"/>
+  <text x="180.0" y="426.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">3. Revue et accord humain</text>
+  <text x="180.0" y="449.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">GO / NO-GO avant tout effacement</text>
+  <rect x="22" y="592" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="627.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">4. Installer Fedora</text>
+  <text x="180.0" y="650.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">SSD et preuve Live importée</text>
+  <rect x="22" y="703" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="738.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">5. Certifier la baseline</text>
+  <text x="180.0" y="761.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Contrôles de santé matérielle</text>
+  <rect x="22" y="814" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="849.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">6. Exécuter le dry-run</text>
+  <text x="180.0" y="872.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Plan sans modification réelle</text>
+  <rect x="22" y="925" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="960.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">7. Sauvegarder avec Borg</text>
+  <text x="180.0" y="983.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Pré-APPLY et canari vérifiés</text>
+  <rect x="22" y="1036" width="316" height="78" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
+  <text x="180.0" y="1071.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">8. Exécuter l&#x27;APPLY</text>
+  <text x="180.0" y="1094.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Gardes et confirmation physique</text>
+  <rect x="22" y="1237" width="316" height="78" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
+  <text x="180.0" y="1272.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">9. Redémarrer</text>
+  <text x="180.0" y="1295.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Linux amont N sur le vrai PC</text>
+  <rect x="22" y="1348" width="316" height="78" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
+  <text x="180.0" y="1383.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">10. Gate 3 sur SSD</text>
+  <text x="180.0" y="1406.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Diagnostics et essais physiques</text>
+  <rect x="22" y="1459" width="316" height="78" rx="14" fill="#E8F6EF" stroke="#198263" stroke-width="1.8"/>
+  <text x="180.0" y="1494.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#1A2C43">11. Golden release</text>
+  <text x="180.0" y="1517.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1A2C43">Preuves valides · certification</text>
 </svg>

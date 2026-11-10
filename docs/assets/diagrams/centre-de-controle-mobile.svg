@@ -8,7 +8,7 @@
   <rect x="0" y="0" width="360" height="7" fill="#346AC4"/>
   <text x="40" y="57" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1A2C43">Le centre de contrôle</text>
   <rect x="10" y="325" width="340" height="1034" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
-  <text x="30" y="358" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">EXEMPLES DE DOMAINES ET MOTEURS</text>
+  <text x="30" y="358" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#2959B4">EXEMPLES DE DOMAINES</text>
   <line x1="180.0" y1="158.0" x2="180.0" y2="191.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="180.0" y1="292.0" x2="180.0" y2="325.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <rect x="22" y="90" width="316" height="68" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>

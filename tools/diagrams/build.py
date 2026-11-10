@@ -21,16 +21,16 @@ d.group("g_work", "01  ENVIRONNEMENT DE TRAVAIL", 40, 94, 1360, 270)
 d.node("pc", ["PC cible", "Ryzen 7 7700 · Intel Arc B580", "48 Go DDR5 · Wi-Fi 7 · 5 GbE"], 65, 163, 360, 138)
 d.node("host", ["Fedora 45 Workstation", "GNOME 51 · SELinux · firewalld", "Configuration pilotée par Git"], 534, 163, 360, 138, "main")
 d.group("g_uses", "Quatre usages", 1005, 145, 350, 173)
-d.node("desktop", ["Bureau GNOME"], 1020, 183, 162, 52)
-d.node("dev", ["DevOps · KVM"], 1188, 183, 162, 52)
-d.node("game", ["Jeux · Vulkan"], 1020, 248, 162, 52)
-d.node("kernel", ["Noyau Linux"], 1188, 248, 162, 52)
+d.node("desktop", ["GNOME"], 1020, 183, 162, 52)
+d.node("dev", ["DevOps"], 1188, 183, 162, 52)
+d.node("game", ["Jeux"], 1020, 248, 162, 52)
+d.node("kernel", ["Linux"], 1188, 248, 162, 52)
 d.edge("pc_to_host", "pc", "host")
 d.edge("host_to_uses", "host", "g_uses")
 d.group("g_storage", "02  STOCKAGE ET PROTECTION DES DONNÉES", 40, 419, 1360, 345)
 d.node("root", ["SSD 01 · Système Btrfs", "Crucial T705 · Fedora et logiciels", "Fedora réinstallé, profil Git rejoué"], 65, 509, 390, 174)
 d.node("data", ["SSD 02 · Données /data ext4", "Crucial T705 · données conservées", "Borg : Documents, Projets, IA", "Hors Borg : ISO, Jeux, disques VM"], 520, 498, 415, 196, "main")
-d.node("borg", ["SSD externe · Borg", "Kingston XS1000 · dépôt non chiffré", "Contrôler, restaurer en zone isolée"], 1005, 509, 350, 174, "data")
+d.node("borg", ["SSD externe · Borg", "XS1000 · dépôt non chiffré", "Restaurer en zone isolée"], 1005, 509, 350, 174, "data")
 d.edge("data_to_borg", "data", "borg")
 diagrams.append(d)
 
@@ -46,10 +46,10 @@ d.group("g_src", "Sources sauvegardées", 40, 80, 420, 420)
 d.node("s1", ["Données de /data", "Documents · Projets · IA/Openclaw"], 60, 126, 380, 86, "data")
 d.node("s2", ["Dossiers personnels", "Bureau · Images · Vidéos · Musique", "~/Development"], 60, 236, 380, 96)
 d.node("s3", ["Réglages", ".config · .mozilla · .var/app", ".local/share", "configuration de l'hôte et du projet"], 60, 356, 380, 124)
-d.node("borg", ["Dépôt Borg", "SSD externe Kingston XS1000", "ext4 · non chiffré (ADR 0014)"], 520, 236, 300, 110, "main")
+d.node("borg", ["Dépôt Borg", "SSD externe Kingston XS1000", "ext4 · sans chiffrement"], 520, 236, 300, 110, "main")
 d.node("c1", ["Contrôles de validation", "borg check --verify-data", "restauration canari"], 960, 96, 320, 96)
 d.node("c2", ["Restauration en staging", "~/Restores/fedora-gnome-custom"], 960, 246, 320, 86)
-d.node("c3", ["Inspection, puis copie manuelle", "jamais d'écrasement en place"], 960, 392, 320, 86)
+d.node("c3", ["Inspection et copie", "sans écrasement en place"], 960, 392, 320, 86)
 d.node("m1", ["Hors Borg", "Téléchargements · ISO · Jeux", "disques, XML et NVRAM des VM : export manuel"], 40, 540, 600, 110, "muted")
 d.node("m2", ["T705 nº1 : système", "reconstruit depuis le dépôt, pas restauré"], 680, 540, 600, 110, "muted")
 for nid in ("s1", "s2", "s3"):
@@ -70,15 +70,15 @@ d = Diagram("ci-fusion-release", "Ce qui doit être vert : fusion puis release",
             1320, 760)
 d.group("g_tests", "Workflow Tests : 7 jobs", 40, 80, 360, 520)
 jobs = ["logic-contracts", "installer-audit", "borg-fedora", "fedora-gnome-vm (natif)",
-        "fedora45-gnome-vm (6 ext.)", "upstream-kernel / rpm", "rocky-devops-vm"]
+        "Fedora 45 (6 extensions)", "upstream-kernel / rpm", "rocky-devops-vm"]
 for i, job in enumerate(jobs):
     d.node(f"j{i}", [job], 60, 122 + i * 66, 320, 52)
 d.node("contracts", ["contracts", "exige les 7 succès", "PR de doc. : VM sautées"], 450, 290, 270, 110, "main")
-d.node("other", ["Autres contrôles obligatoires", "shellcheck · guards · packages", "packages-and-integration",
+d.node("other", ["Autres contrôles requis", "shellcheck · guards · packages", "packages-and-integration",
                  "nautilus-ptyxis"], 900, 110, 360, 124)
 d.node("merge", ["Fusion autorisée", "6 contextes obligatoires verts"], 880, 300, 400, 90, "main")
 d.node("push", ["push sur main", "mêmes workflows + Security scanning"], 880, 460, 400, 80)
-d.node("release", ["release.yml (déclenchement conditionnel)", "préversion après contrôles verts", "sur le même commit"], 880, 610, 400, 100, "data")
+d.node("release", ["release.yml (sous conditions)", "préversion après contrôles verts", "sur le même commit"], 880, 610, 400, 100, "data")
 d.edge("e_c", "g_tests", "contracts")
 d.edge("e_m1", "contracts", "merge")
 d.edge("e_m2", "other", "merge")
@@ -93,10 +93,10 @@ d = Diagram("centre-de-controle", "Le centre de contrôle : une façade, des mot
             "secours Fedora), backup (backup-now.sh, restore.sh), kvm (création Rocky DevOps et garde réseau), doctor "
             "(observations et essais actifs explicites), validate et cert (Live USB, Gate 3, certification), status et logs. "
             "Les huit blocs représentent des regroupements, pas toutes les routes du centre de contrôle.",
-            1160, 700)
+            1160, 795)
 d.node("user", ["Opérateur"], 40, 300, 180, 70)
 d.node("cc", ["./control.sh", "façade mince", "aucune logique métier"], 280, 275, 240, 120, "main")
-d.group("g_dom", "Exemples de domaines et moteurs", 620, 70, 500, 610)
+d.group("g_dom", "Exemples de domaines et moteurs", 620, 70, 500, 700)
 domains = [("install", "install.sh : dry-run, APPLY protégé"),
            ("update", "scripts/maintenance/update-system.sh"),
            ("kernel", "kernel-lifecycle.sh · secours Fedora"),
@@ -106,7 +106,7 @@ domains = [("install", "install.sh : dry-run, APPLY protégé"),
            ("validate · cert", "Live USB · Gate 3 · certification"),
            ("status · logs", "état du poste et journaux")]
 for i, (name, engine) in enumerate(domains):
-    d.node(f"d{i}", [name, engine], 640, 110 + i * 70, 460, 58)
+    d.node(f"d{i}", [name, engine], 640, 110 + i * 82, 460, 76)
 d.edge("e_u", "user", "cc")
 d.edge("e_d", "cc", "g_dom")
 diagrams.append(d)
@@ -146,17 +146,17 @@ d = Diagram("chaine-qualification", "De la CI à la certification du poste",
 d.group("g_before", "01  AVANT INSTALLATION", 40, 90, 408, 715)
 d.group("g_change", "02  INSTALLER ET CONFIGURER", 513, 90, 414, 715)
 d.group("g_after", "03  QUALIFIER ET PUBLIER", 992, 90, 408, 715)
-steps_before = [(["1. CI au commit exact", "Contrats et laboratoires logiciels"], "box"),
+steps_before = [(["1. CI au commit exact", "Contrats et laboratoires"], "box"),
                 (["2. Gate 2 · Live USB", "PREINSTALL_ONLY · preuve exportée"], "main"),
                 (["3. Revue et accord humain", "GO / NO-GO avant tout effacement"], "warn")]
-steps_change = [(["4. Installer Fedora", "SSD système et preuve Live importée"], "box"),
+steps_change = [(["4. Installer Fedora", "SSD et preuve Live importée"], "box"),
                 (["5. Certifier la baseline", "Contrôles de santé matérielle"], "box"),
                 (["6. Exécuter le dry-run", "Plan sans modification réelle"], "box"),
-                (["7. Sauvegarder avec Borg", "Pré-APPLY vérifié et canari restauré"], "box"),
+                (["7. Sauvegarder avec Borg", "Pré-APPLY et canari vérifiés"], "box"),
                 (["8. Exécuter l'APPLY", "Gardes et confirmation physique"], "main")]
 steps_after = [(["9. Redémarrer", "Linux amont N sur le vrai PC"], "box"),
-               (["10. Gate 3 · système installé", "Diagnostics et essais physiques"], "main"),
-               (["11. Golden release", "Preuves courantes et certification"], "data")]
+               (["10. Gate 3 sur SSD", "Diagnostics et essais physiques"], "main"),
+               (["11. Golden release", "Preuves valides · certification"], "data")]
 for i, (lines, style) in enumerate(steps_before):
     d.node(f"b{i}", lines, 63, 162 + i * 175, 362, 114, style)
 for i, (lines, style) in enumerate(steps_change):
@@ -177,8 +177,8 @@ d.node("tablet", ["Tablette Android", "Moonlight · client SSH", "Tailscale"], 4
 d.node("ts", ["Tailscale", "tunnel privé chiffré", "aucun port sur Internet"], 380, 110, 250, 110, "main")
 d.node("pc", ["PC Fedora", "sshd : clés uniquement", "Sunshine, si activé", "repli manuel : GNOME Remote Desktop",
               "zone firewalld fgc-tailnet"], 840, 80, 440, 170, "main")
-d.node("relay", ["Relais toujours allumé", "sur le réseau local"], 380, 330, 250, 100)
-d.node("note", ["Profil désactivé par défaut", "REMOTE_ENABLE=false", "Gate 3 à faire"], 40, 330, 280, 100, "muted")
+d.node("relay", ["Relais permanent", "sur le réseau local"], 380, 330, 250, 100)
+d.node("note", ["Profil inactif", "REMOTE_ENABLE=false", "Gate 3 à faire"], 40, 330, 280, 100, "muted")
 d.edge("e1", "tablet", "ts", both=True)
 d.edge("e2", "ts", "pc", "SSH · flux vidéo", both=True)
 d.edge("e3", "ts", "relay", "réveil")

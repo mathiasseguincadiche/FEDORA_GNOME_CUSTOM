@@ -12,7 +12,7 @@ Ce guide explique **comment atteindre le PC sans l'exposer directement à Intern
 ## Le scénario : un PC puissant, une tablette comme terminal
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/acces-distant.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/acces-distant.svg">
   <img src="assets/diagrams/acces-distant-mobile.svg" alt="Accès distant : connexion tablette–Tailscale–PC et réveil via le relais sur le réseau local ; profil désactivé par défaut.">
 </picture>
 

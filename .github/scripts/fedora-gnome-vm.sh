@@ -282,8 +282,11 @@ provision() {
 }
 shutdown_vm() {
   guest_action end-session
-  # Connection may close before systemctl's reply. The actual process exit is required.
-  guest 'sudo systemctl poweroff' || true
+  # A direct poweroff can terminate sshd before its reply and log a fatal
+  # connection reset. That entry survives in the cold archive and correctly
+  # fails previous-health on restoration. Arm a delayed guest poweroff so SSH
+  # exits cleanly first; the real VM and TPM exits below remain mandatory.
+  guest 'sudo systemd-run --on-active=5s --unit=fgc-lab-poweroff /usr/bin/systemctl poweroff'
   for _ in {1..90}; do
     if ! kill -0 "$VM_PID" 2>/dev/null; then
       wait "$VM_PID"

@@ -151,7 +151,7 @@ def mobile_counterpart(source):
         user = b.card("user")
         facade = b.card("cc")
         b.link(user, facade)
-        b.begin("EXEMPLES DE DOMAINES ET MOTEURS")
+        b.begin("EXEMPLES DE DOMAINES")
         for i in range(8):
             if i == 1:
                 # The full path remains in the desktop source and guide; here

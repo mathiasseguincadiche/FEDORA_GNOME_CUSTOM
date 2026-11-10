@@ -31,7 +31,7 @@ Exemple : si `contracts` est rouge parce qu'un laboratoire GNOME a échoué, ouv
 ## De la pull request à la release
 
 <picture>
-  <source media="(min-width: 700px)" srcset="assets/diagrams/ci-fusion-release.svg">
+  <source media="(min-width: 1600px)" srcset="assets/diagrams/ci-fusion-release.svg">
   <img src="assets/diagrams/ci-fusion-release-mobile.svg" alt="Schéma de CI : sept jobs Tests, contracts et cinq autres contrôles, fusion conditionnelle, push main, publication contrôlée.">
 </picture>
 

@@ -12,30 +12,30 @@
   <line x1="505.0" y1="220.0" x2="505.0" y2="330.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="630.0" y1="331.6" x2="840.6" y2="250.0" stroke="#547BB4" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
   <rect x="40" y="110" width="260" height="110" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="170.0" y="152.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">Tablette Android</text>
-  <text x="170.0" y="171.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">Moonlight · client SSH</text>
-  <text x="170.0" y="190.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">Tailscale</text>
+  <text x="170.0" y="150.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Tablette Android</text>
+  <text x="170.0" y="174.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">Moonlight · client SSH</text>
+  <text x="170.0" y="198.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">Tailscale</text>
   <rect x="380" y="110" width="250" height="110" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="505.0" y="152.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">Tailscale</text>
-  <text x="505.0" y="171.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">tunnel privé chiffré</text>
-  <text x="505.0" y="190.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">aucun port sur Internet</text>
+  <text x="505.0" y="150.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Tailscale</text>
+  <text x="505.0" y="174.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">tunnel privé chiffré</text>
+  <text x="505.0" y="198.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">aucun port sur Internet</text>
   <rect x="840" y="80" width="440" height="170" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="1060.0" y="133.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">PC Fedora</text>
-  <text x="1060.0" y="152.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">sshd : clés uniquement</text>
-  <text x="1060.0" y="171.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">Sunshine, si activé</text>
-  <text x="1060.0" y="190.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">repli manuel : GNOME Remote Desktop</text>
-  <text x="1060.0" y="209.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">zone firewalld fgc-tailnet</text>
+  <text x="1060.0" y="126.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">PC Fedora</text>
+  <text x="1060.0" y="150.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">sshd : clés uniquement</text>
+  <text x="1060.0" y="174.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">Sunshine, si activé</text>
+  <text x="1060.0" y="198.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">repli manuel : GNOME Remote Desktop</text>
+  <text x="1060.0" y="222.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">zone firewalld fgc-tailnet</text>
   <rect x="380" y="330" width="250" height="100" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="505.0" y="377.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">Relais toujours allumé</text>
-  <text x="505.0" y="396.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">sur le réseau local</text>
+  <text x="505.0" y="377.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Relais permanent</text>
+  <text x="505.0" y="401.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">sur le réseau local</text>
   <rect x="40" y="330" width="280" height="100" rx="14" fill="#FFFFFF" stroke="#7C8A9C" stroke-width="1.8" stroke-dasharray="7 5"/>
-  <text x="180.0" y="367.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">Profil désactivé par défaut</text>
-  <text x="180.0" y="386.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">REMOTE_ENABLE=false</text>
-  <text x="180.0" y="405.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">Gate 3 à faire</text>
-  <rect x="678.1" y="154.0" width="113.8" height="20" rx="4" fill="#FFFFFF"/>
-  <text x="735.0" y="169.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#1A2C43">SSH · flux vidéo</text>
-  <rect x="479.9" y="264.0" width="50.2" height="20" rx="4" fill="#FFFFFF"/>
-  <text x="505.0" y="279.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#1A2C43">réveil</text>
-  <rect x="672.1" y="279.8" width="126.5" height="20" rx="4" fill="#FFFFFF"/>
-  <text x="735.3" y="294.8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#1A2C43">Magic Packet (LAN)</text>
+  <text x="180.0" y="365.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Profil inactif</text>
+  <text x="180.0" y="389.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">REMOTE_ENABLE=false</text>
+  <text x="180.0" y="413.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">Gate 3 à faire</text>
+  <rect x="661.2" y="154.0" width="147.7" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="735.0" y="169.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-style="italic" fill="#1A2C43">SSH · flux vidéo</text>
+  <rect x="473.6" y="264.0" width="62.9" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="505.0" y="279.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-style="italic" fill="#1A2C43">réveil</text>
+  <rect x="653.0" y="279.8" width="164.6" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="735.3" y="294.8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-style="italic" fill="#1A2C43">Magic Packet (LAN)</text>
 </svg>

@@ -8,47 +8,47 @@
   <rect x="0" y="0" width="1320" height="7" fill="#346AC4"/>
   <text x="40" y="57" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1A2C43">Ce qui doit être vert : fusion puis release</text>
   <rect x="40" y="80" width="360" height="520" rx="18" fill="#FFFFFF" stroke="#D9E3EF" stroke-width="1.5"/>
-  <text x="60" y="113" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#2959B4">Workflow Tests : 7 jobs</text>
+  <text x="60" y="113" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#2959B4">Workflow Tests : 7 jobs</text>
   <line x1="400.0" y1="345.0" x2="450.0" y2="345.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="720.0" y1="345.0" x2="880.0" y2="345.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="1080.0" y1="234.0" x2="1080.0" y2="300.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="1080.0" y1="390.0" x2="1080.0" y2="460.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <line x1="1080.0" y1="540.0" x2="1080.0" y2="610.0" stroke="#547BB4" stroke-width="2" marker-end="url(#arrow)"/>
   <rect x="60" y="122" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="154.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">logic-contracts</text>
+  <text x="220.0" y="157.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">logic-contracts</text>
   <rect x="60" y="188" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="220.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">installer-audit</text>
+  <text x="220.0" y="223.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">installer-audit</text>
   <rect x="60" y="254" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="286.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">borg-fedora</text>
+  <text x="220.0" y="289.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">borg-fedora</text>
   <rect x="60" y="320" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="352.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">fedora-gnome-vm (natif)</text>
+  <text x="220.0" y="355.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">fedora-gnome-vm (natif)</text>
   <rect x="60" y="386" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="418.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">fedora45-gnome-vm (6 ext.)</text>
+  <text x="220.0" y="421.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Fedora 45 (6 extensions)</text>
   <rect x="60" y="452" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="484.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">upstream-kernel / rpm</text>
+  <text x="220.0" y="487.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">upstream-kernel / rpm</text>
   <rect x="60" y="518" width="320" height="52" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="220.0" y="550.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">rocky-devops-vm</text>
+  <text x="220.0" y="553.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">rocky-devops-vm</text>
   <rect x="450" y="290" width="270" height="110" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="585.0" y="332.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">contracts</text>
-  <text x="585.0" y="351.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">exige les 7 succès</text>
-  <text x="585.0" y="370.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">PR de doc. : VM sautées</text>
+  <text x="585.0" y="330.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">contracts</text>
+  <text x="585.0" y="354.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">exige les 7 succès</text>
+  <text x="585.0" y="378.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">PR de doc. : VM sautées</text>
   <rect x="900" y="110" width="360" height="124" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="1080.0" y="150.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">Autres contrôles obligatoires</text>
-  <text x="1080.0" y="169.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">shellcheck · guards · packages</text>
-  <text x="1080.0" y="188.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">packages-and-integration</text>
-  <text x="1080.0" y="207.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">nautilus-ptyxis</text>
+  <text x="1080.0" y="145.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Autres contrôles requis</text>
+  <text x="1080.0" y="169.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">shellcheck · guards · packages</text>
+  <text x="1080.0" y="193.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">packages-and-integration</text>
+  <text x="1080.0" y="217.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">nautilus-ptyxis</text>
   <rect x="880" y="300" width="400" height="90" rx="14" fill="#EAF2FF" stroke="#346AC4" stroke-width="1.8"/>
-  <text x="1080.0" y="342.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">Fusion autorisée</text>
-  <text x="1080.0" y="361.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">6 contextes obligatoires verts</text>
+  <text x="1080.0" y="342.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">Fusion autorisée</text>
+  <text x="1080.0" y="366.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">6 contextes obligatoires verts</text>
   <rect x="880" y="460" width="400" height="80" rx="14" fill="#FFFFFF" stroke="#C4D5E8" stroke-width="1.8"/>
-  <text x="1080.0" y="497.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">push sur main</text>
-  <text x="1080.0" y="516.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">mêmes workflows + Security scanning</text>
+  <text x="1080.0" y="497.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">push sur main</text>
+  <text x="1080.0" y="521.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">mêmes workflows + Security scanning</text>
   <rect x="880" y="610" width="400" height="100" rx="14" fill="#E8F6EF" stroke="#198263" stroke-width="1.8"/>
-  <text x="1080.0" y="647.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#1A2C43">release.yml (déclenchement conditionnel)</text>
-  <text x="1080.0" y="666.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">préversion après contrôles verts</text>
-  <text x="1080.0" y="685.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1A2C43">sur le même commit</text>
-  <rect x="1026.3" y="414.0" width="107.4" height="20" rx="4" fill="#FFFFFF"/>
-  <text x="1080.0" y="429.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#1A2C43">après la fusion</text>
-  <rect x="985.0" y="564.0" width="190.1" height="20" rx="4" fill="#FFFFFF"/>
-  <text x="1080.0" y="579.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-style="italic" fill="#1A2C43">si fichiers release modifiés</text>
+  <text x="1080.0" y="645.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="bold" fill="#1A2C43">release.yml (sous conditions)</text>
+  <text x="1080.0" y="669.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">préversion après contrôles verts</text>
+  <text x="1080.0" y="693.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1A2C43">sur le même commit</text>
+  <rect x="1010.4" y="414.0" width="139.2" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="1080.0" y="429.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-style="italic" fill="#1A2C43">après la fusion</text>
+  <rect x="955.3" y="564.0" width="249.4" height="20" rx="4" fill="#FFFFFF"/>
+  <text x="1080.0" y="579.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-style="italic" fill="#1A2C43">si fichiers release modifiés</text>
 </svg>
