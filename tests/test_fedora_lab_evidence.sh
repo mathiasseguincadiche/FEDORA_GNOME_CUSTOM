@@ -186,6 +186,16 @@ assert host_reboot.count(scheduled) == 2
 assert "lab@127.0.0.1 'sudo systemctl reboot'" not in host_reboot
 assert host_reboot.count('fedora-qmp-reboot.py') == 2
 assert "guest_action previous-health" in host_reboot
+# Clean shutdown must not kill its own SSH session: a direct poweroff produced
+# an sshd-session critical entry in the archived boot, then previous-health
+# correctly rejected the otherwise healthy restored guest. Keep the strict
+# journal gate and mandatory VM/TPM exits; fix the shutdown ordering instead.
+shutdown = host_reboot.split("shutdown_vm() {", 1)[1].split("\nboot_id()", 1)[0]
+poweroff = "guest 'sudo systemd-run --on-active=5s --unit=fgc-lab-poweroff /usr/bin/systemctl poweroff'"
+assert poweroff in shutdown
+assert "guest 'sudo systemctl poweroff'" not in shutdown
+assert shutdown.index(poweroff) < shutdown.index('for _ in {1..90}')
+assert 'wait "$VM_PID"' in shutdown and 'wait "$TPM_PID"' in shutdown
 # The real Docker probe must exercise an actual pulled BusyBox image. Registry
 # throttling may switch the source, but missing images can never produce PASS.
 workflow = (root / ".github/workflows/tests.yml").read_text()
