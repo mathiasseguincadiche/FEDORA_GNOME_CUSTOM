@@ -325,7 +325,7 @@ state/ = conservé
 state/releases/ = conservé
 ```
 
-Cette politique concerne le **nettoyage manuel**. Un autre mécanisme, hebdomadaire et optionnel, analyse les sessions de plus de **7 jours** : il conserve les incidents non résolus et crée des fiches explicatives lorsqu'il détecte des erreurs. La commande manuelle `logs prune` préserve aussi le dossier d'incidents, les sessions associées à un incident et les journaux où une erreur est détectée. Voir les [deux politiques de rétention](OPERATOR_RELIABILITY.md#rétention--deux-mécanismes-distincts).
+La commande manuelle et le mécanisme hebdomadaire **optionnel** lisent désormais la **même politique** (90 jours pour les sessions par défaut). Ils protègent les incidents non résolus et les journaux d'erreurs ; la purge manuelle préserve également les rapports associés à ces incidents ou à des runs échoués. Voir la [politique commune de rétention](OPERATOR_RELIABILITY.md#rétention--une-politique-deux-façons-de-lappliquer).
 
 ```bash
 ./control.sh logs retention

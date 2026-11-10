@@ -29,7 +29,7 @@ for step in precheck plan apply postcheck; do
 done
 ui_check INFO "$id" "$scope"
 phase=precheck
-"${prefix}_precheck"
+"${prefix}_precheck" >> "$MODULE_LOG" 2>&1
 for phase in plan apply postcheck; do
   "${prefix}_${phase}" >> "$MODULE_LOG" 2>&1
 done
