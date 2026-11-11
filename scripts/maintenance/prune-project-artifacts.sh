@@ -98,7 +98,51 @@ for path in "${old_logs[@]}"; do
   safe_old_logs+=("$path")
   printf '  log: %s\n' "$path"
 done
-for path in "${old_reports[@]}"; do printf '  report: %s\n' "$path"; done
+
+# A report can be the last useful evidence for a failed run even after its logs
+# have gone missing. Keep both TXT and JSON reports until the incident is resolved.
+preserve_run_report() {
+  local path="$1" filename="${1##*/}" run incident json_report
+  [[ "$filename" =~ ^run-(.+)\.(json|txt)$ ]] || return 1
+  run="${BASH_REMATCH[1]}"
+  incident="$LOG_ROOT/incidents/$run.json"
+  if [[ -L "$incident" ]]; then return 0; fi
+  if [[ -e "$incident" ]]; then
+    # Bad/unreadable incident evidence is never permission to delete a report.
+    python3 - "$incident" <<'PY'
+import json
+import sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as stream:
+        record = json.load(stream)
+        status = record.get("status") if isinstance(record, dict) else None
+        resolution = record.get("resolution") if isinstance(record, dict) else None
+except (OSError, ValueError, AttributeError):
+    status = None
+    resolution = None
+sys.exit(1 if status == "resolved" and isinstance(resolution, str) and resolution.strip() else 0)
+PY
+    return "$?"
+  fi
+  json_report="$REPORT_ROOT/run-$run.json"
+  if [[ -f "$json_report" ]] && grep -Eq '"overall"[[:space:]]*:[[:space:]]*"FAIL"' "$json_report"; then
+    return 0
+  fi
+  if [[ -f "$REPORT_ROOT/run-$run.txt" ]] && grep -Eq '^overall=FAIL$' "$REPORT_ROOT/run-$run.txt"; then
+    return 0
+  fi
+  return 1
+}
+
+safe_old_reports=()
+for path in "${old_reports[@]}"; do
+  if preserve_run_report "$path"; then
+    printf '  preserved (incident/failed run): %s\n' "$path"
+    continue
+  fi
+  safe_old_reports+=("$path")
+  printf '  report: %s\n' "$path"
+done
 
 if [[ "$mode" == --check ]]; then
   exit 0
@@ -108,9 +152,9 @@ for path in "${safe_old_logs[@]}"; do
   [[ "$path" == "$LOG_ROOT"/* ]] || { echo "Refusing unexpected log path: $path" >&2; exit "$EXIT_SECURITY_BLOCK"; }
   rm -rf -- "$path"
 done
-for path in "${old_reports[@]}"; do
+for path in "${safe_old_reports[@]}"; do
   [[ "$path" == "$REPORT_ROOT"/* ]] || { echo "Refusing unexpected report path: $path" >&2; exit "$EXIT_SECURITY_BLOCK"; }
   rm -f -- "$path"
 done
 
-printf 'Pruned %d safe old log runs and %d old transient reports.\n' "${#safe_old_logs[@]}" "${#old_reports[@]}"
+printf 'Pruned %d safe old log runs and %d old transient reports.\n' "${#safe_old_logs[@]}" "${#safe_old_reports[@]}"

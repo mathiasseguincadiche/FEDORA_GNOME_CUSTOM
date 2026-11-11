@@ -232,7 +232,7 @@ Les exécutions sont dans `logs/<RUN_ID>/main.log` et `modules.log` (horodatage 
 
 Chaque fiche d'incident propose un titre, une explication en français, une action et un niveau d'incertitude : c'est une **hypothèse**, jamais une preuve de cause, et le journal brut reste la référence. `status: open` protège le journal de la purge. Pour clore, passer `status` à `resolved` et remplir `resolution` avec la cause corrigée et le test qui le prouve. Une erreur qui disparaît après un redémarrage ne clôt rien.
 
-Nettoyage (sessions de plus de sept jours seulement ; incidents ouverts, journaux systemd, `state/`, Borg et rapports de certification jamais touchés). **Commencer par la simulation**, lire les dossiers proposés et vérifier qu'aucune trace nécessaire ne serait supprimée :
+Nettoyage (sessions de plus de **90 jours par défaut**, selon `config/operator-retention.policy` ; incidents ouverts, journaux systemd, `state/`, Borg et preuves de certification jamais touchés). **Commencer par la simulation**, lire les dossiers proposés et vérifier qu'aucune trace nécessaire ne serait supprimée :
 
 ```bash
 python3 scripts/maintenance/weekly-log-cleanup.py
@@ -244,14 +244,16 @@ python3 scripts/maintenance/weekly-log-cleanup.py
 python3 scripts/maintenance/weekly-log-cleanup.py --apply
 ```
 
-Activation hebdomadaire facultative (lundi 03:00, rattrapage avec `Persistent=true`), si le dépôt est dans `~/FEDORA_GNOME_CUSTOM` ; sinon adapter `ExecStart` et `ConditionPathIsDirectory` :
+Installation hebdomadaire facultative (lundi 03:00, rattrapage avec `Persistent=true`). Le script installe une unité systemd utilisateur et un lanceur pointant vers le **chemin réel du dépôt**, même si ce dernier a été renommé ou déplacé. **Il n'active pas le timer** :
 
 ```bash
-mkdir -p ~/.config/systemd/user
-cp systemd/user/fgc-weekly-log-cleanup.{service,timer} ~/.config/systemd/user/
-systemctl --user daemon-reload
+./scripts/maintenance/install-weekly-log-cleanup.sh
+# Vérifier la simulation avant d'activer le nettoyage automatique.
+python3 scripts/maintenance/weekly-log-cleanup.py
 systemctl --user enable --now fgc-weekly-log-cleanup.timer
 ```
+
+Pour vérifier : `systemctl --user list-timers fgc-weekly-log-cleanup.timer`. Pour arrêter : `systemctl --user disable --now fgc-weekly-log-cleanup.timer`. En cas de déplacement ultérieur du dépôt, relancer le script d'installation depuis son nouvel emplacement. Le nettoyage ne s'applique ni au système journalctl ni aux sauvegardes Borg.
 
 ## Avant de demander de l'aide
 

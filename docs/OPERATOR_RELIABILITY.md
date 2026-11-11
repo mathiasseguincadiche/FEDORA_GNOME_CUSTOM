@@ -30,7 +30,7 @@ Chaque moteur initialisé crée une session `logs/<RUN_ID>/` : l'identifiant por
 | --- | --- | --- |
 | `operator.log` | Étapes, contrôles, avertissements, erreurs et bilans émis par les fonctions `ui_*` | **Horodaté**, destiné à comprendre les décisions de l'outil |
 | `main.log` | Événements du logger technique (`INFO`, `WARN`, `ERROR`, domaine) | **Horodaté**, utile pour diagnostiquer |
-| `modules.log` | Sorties natives des phases `plan`, `apply` et `postcheck` | **Brut** ; chaque ligne n'a pas forcément son propre horodatage |
+| `modules.log` | Sorties natives des phases `precheck`, `plan`, `apply` et `postcheck` | **Brut** ; chaque ligne n'a pas forcément son propre horodatage |
 | `reports/run-<RUN_ID>.txt` | Tableau des modules exécutés | Module, phase, retour, durée et détail |
 | `reports/run-<RUN_ID>.json` | Même bilan dans un format structuré | Exploitable pour des vérifications automatisées |
 
@@ -51,11 +51,12 @@ Pour consulter les traces, sans réparer ni mettre à jour :
 
 **Méthode en cas d'échec :** noter la commande, l'heure UTC, le `RUN_ID`, l'état (`WARN` ou `KO`), la phase du module et le code de retour ; consulter `operator.log`, puis `main.log` et `modules.log`. Conserver également `reports/` et les informations du noyau (`journalctl`) lorsque l'incident concerne le système. Ne pas partager publiquement un journal susceptible de contenir chemins personnels, identifiants ou détails réseau.
 
-### Rétention : deux mécanismes distincts
+### Rétention : une politique, deux façons de l'appliquer
 
-- La commande **manuelle** `./control.sh logs retention` prévoit 90 jours pour les runs et 180 jours pour les rapports selon `config/operator-retention.policy` ; `logs prune` applique cette politique après contrôle.
-- Le **nettoyage hebdomadaire**, seulement si son timer utilisateur a été installé et activé, inspecte les sessions de plus de 7 jours. Les erreurs reconnues produisent une fiche d'incident ; les traces avec incident non résolu sont conservées.
-- La rétention manuelle protège également le dossier `logs/incidents/`, tout run associé à une fiche d'incident et les traces où une erreur est encore détectable. **Les preuves `state/` et `state/releases/` ne sont pas ciblées.**
+- La commande **manuelle** `./control.sh logs retention` présente les sessions et rapports éligibles ; `logs prune` applique explicitement la politique de `config/operator-retention.policy` (90 jours pour les logs, 180 jours pour les rapports par défaut).
+- Le **nettoyage hebdomadaire facultatif**, uniquement si son timer utilisateur a été installé et activé, lit **la même politique**. Il inspecte les sessions de plus de 90 jours (valeur actuelle de `logs_days`), génère une fiche pour les erreurs reconnues et préserve les incidents ouverts.
+- Le nettoyage manuel conserve les sessions d'incident, les logs portant des erreurs et les rapports d'incidents ouverts ou de runs échoués. Une fiche résolue ne bloque plus la rétention des rapports correspondants.
+- **Les preuves `state/` et `state/releases/` ainsi que le journal système (`journalctl`) ne sont pas ciblés.** Les sorties brutes de commandes peuvent contenir des informations privées : relire et expurger avant partage.
 
 Pour comprendre ou diagnostiquer une erreur avant le nettoyage, voir le [guide de dépannage](TROUBLESHOOTING.md#journaux-et-incidents).
 
