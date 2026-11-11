@@ -3,13 +3,23 @@ on:
   push:
     paths:
       - 'scripts/maintenance/weekly-log-cleanup.py'
+      - 'scripts/maintenance/prune-project-artifacts.sh'
+      - 'scripts/maintenance/install-weekly-log-cleanup.sh'
+      - 'systemd/user/fgc-weekly-log-cleanup.service'
+      - 'config/operator-retention.policy'
       - 'tests/test_weekly_log_cleanup.py'
+      - 'tests/test_operator_retention_behavior.sh'
       - 'scripts/maintenance/log_explanations.py'
       - '.github/workflows/weekly-log-retention.yml'
   pull_request:
     paths:
       - 'scripts/maintenance/weekly-log-cleanup.py'
+      - 'scripts/maintenance/prune-project-artifacts.sh'
+      - 'scripts/maintenance/install-weekly-log-cleanup.sh'
+      - 'systemd/user/fgc-weekly-log-cleanup.service'
+      - 'config/operator-retention.policy'
       - 'tests/test_weekly_log_cleanup.py'
+      - 'tests/test_operator_retention_behavior.sh'
       - '.github/workflows/weekly-log-retention.yml'
 permissions:
   contents: read
@@ -26,3 +36,5 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Test conservative weekly retention
         run: python3 -m unittest discover -s tests -p 'test_weekly_log_cleanup.py' -v
+      - name: Test manual retention and incident preservation
+        run: bash tests/test_operator_retention_behavior.sh

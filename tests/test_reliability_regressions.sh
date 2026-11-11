@@ -41,6 +41,16 @@ EOF
     [[ ! -e "$REPO_ROOT/continued" && ! -e "$REPO_ROOT/postcheck" ]]
     [[ "${ORCH_RESULTS[-1]}" == KO\|* ]]
   done
+  # Precheck diagnostics must survive a failure before PLAN/APPLY starts.
+  cat > "$REPO_ROOT/module.sh" <<'EOF'
+regression_module_precheck() { echo 'PRECHECK_DIAGNOSTIC_MISSING_DEPENDENCY'; return 42; }
+regression_module_plan() { :; }
+regression_module_apply() { :; }
+regression_module_postcheck() { :; }
+EOF
+  rc=0; orchestrator_run_module regression.module || rc=$?
+  [[ "$rc" == 42 && "${ORCH_RESULTS[-1]}" == KO\|regression.module\|precheck\|* ]]
+  grep -Fq 'PRECHECK_DIAGNOSTIC_MISSING_DEPENDENCY' "$MODULE_LOG"
 )
 
 # Value-only stdout and stable-release syntax; infrastructure failures propagate.

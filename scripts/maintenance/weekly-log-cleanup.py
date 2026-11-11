@@ -19,6 +19,28 @@ CATEGORIES = {
 }
 ERROR = re.compile(r"\[(ERROR|KO|FAIL|FATAL)\]|\b(TRACEBACK|FAILED|SECURITY BLOCK)\b", re.I)
 
+def retention_days(root):
+    """Use the same versioned policy as `control.sh logs retention|prune`."""
+    path = root / "config" / "operator-retention.policy"
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("Politique de rétention absente ou lien symbolique : refus")
+    values = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, separator, value = line.partition("=")
+        if not separator or key in values:
+            raise ValueError("Politique de rétention invalide : refus")
+        values[key] = value.strip()
+    for key in ("logs_days", "reports_days"):
+        value = values.get(key, "")
+        if not value.isascii() or not value.isdecimal() or int(value) < 1:
+            raise ValueError(f"{key} doit être un entier positif")
+    if values.get("preserve_state") != "true" or values.get("preserve_releases") != "true":
+        raise ValueError("Protection de l'état Golden absente : refus")
+    return int(values["logs_days"])
+
 def utc_now():
     return dt.datetime.now(dt.timezone.utc)
 
@@ -29,6 +51,7 @@ def classify(text):
     return "systeme"
 
 def scan(root, now, dry_run):
+    days = retention_days(root)
     logs = root / "logs"
     incidents = logs / "incidents"
     reports = root / "reports"
@@ -38,7 +61,7 @@ def scan(root, now, dry_run):
         raise ValueError("Chemin sensible sous forme de lien symbolique : refus")
     incidents.mkdir(mode=0o700, exist_ok=True)
     reports.mkdir(exist_ok=True)
-    cutoff = now - dt.timedelta(days=7)
+    cutoff = now - dt.timedelta(days=days)
     events = []
     for run in sorted(logs.iterdir()):
         if run.is_symlink() or not run.is_dir() or not RUN_ID.fullmatch(run.name):
@@ -64,7 +87,10 @@ def scan(root, now, dry_run):
                 events.append({"run":run.name,"action":"conserve","reason":"fiche incident non fiable"})
                 continue
             try:
-                state = json.loads(incident.read_text(encoding="utf-8")).get("status")
+                record = json.loads(incident.read_text(encoding="utf-8"))
+                state = "resolved" if (record.get("status") == "resolved" and
+                                       isinstance(record.get("resolution"), str) and
+                                       record["resolution"].strip()) else "open"
             except (ValueError, OSError):
                 state = None
             if state != "resolved":
@@ -90,7 +116,7 @@ def scan(root, now, dry_run):
             entry.unlink()
         run.rmdir()
         events.append({"run":run.name,"action":"supprime","reason":"ancien journal sans incident ouvert"})
-    report = {"date_utc":now.isoformat(),"simulation":dry_run,"events":events}
+    report = {"date_utc":now.isoformat(),"simulation":dry_run,"logs_days":days,"events":events}
     print(json.dumps(report,ensure_ascii=False,indent=2))
     if not dry_run:
         filename = "nettoyage-" + now.strftime("%Y%m%dT%H%M%S%fZ") + "-" + uuid.uuid4().hex[:12] + ".json"
