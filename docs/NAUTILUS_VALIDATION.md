@@ -1,7 +1,7 @@
 # Valider Nautilus après l'installation — parcours fonctionnel
 
-> Version documentaire : V11 · Mise à jour : 2026-11-10 · Responsable : @mathiasseguincadiche
-> État : procédure et tests isolés disponibles ; **aucun essai sur le PC physique n'est revendiqué**.
+> Mise à jour : 2026-11-11 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-11 — procédure et tests isolés de Nautilus relus contre le code — matériel : non vérifié
 
 ## Pourquoi cette validation ?
 
