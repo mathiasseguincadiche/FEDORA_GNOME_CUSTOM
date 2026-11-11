@@ -385,6 +385,8 @@ Le démarrage à froid de Nautilus fait partie de la certification et se mesure 
 
 **Réussite :** les deux doctors réussissent, et le dossier « Documents » de Fichiers pointe vers `/data/Documents`.
 
+Le temps certifiant de `nautilus-coldstart-doctor` concerne la présence sur D-Bus, pas l'instant où la fenêtre est complètement affichée. Pour la fluidité ressentie et les vrais périphériques, utiliser **après ce contrôle** [la procédure fonctionnelle Nautilus](NAUTILUS_VALIDATION.md), avec un nouvel accès à froid pour toute observation manuelle.
+
 ## 11. Qualifier le système installé (Gate 3)
 
 La [qualification](QUALIFICATION.md#4-gate-3--système-installé) fait foi pour cette étape. Elle s'exécute dans la vraie session GNOME, avec l'écran et les périphériques du quotidien, dans cet ordre :

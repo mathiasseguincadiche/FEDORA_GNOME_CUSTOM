@@ -1,7 +1,7 @@
 # Nautilus — gestionnaire de fichiers
 
-> Mise à jour : 2026-11-04 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-04 — paquets relus contre `manifests/packages-nautilus.txt` et `manifests/packages-nautilus-optional.txt`, réglages contre `config/gnome.conf` et `config/performance.conf` — matériel : non vérifié
+> Mise à jour : 2026-11-10 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-10 — paquets et paramètres relus ; contrôles GIO isolés ajoutés — matériel : non vérifié
 
 > Fait partie du bureau GNOME du projet : vue d'ensemble dans [`GNOME.md`](GNOME.md).
 
@@ -85,6 +85,8 @@ Les raccourcis VM gérés sont documentés dans [`KVM_QUICKSTART.md`](KVM_QUICKS
 
 La cible (1200 ms) et la limite (2000 ms) sont définies dans `config/performance.conf`.
 
+Cette mesure prend fin lorsque Nautilus est présent sur D-Bus : elle **ne mesure pas** le premier affichage complet et utilisable de la fenêtre. Un contrôle séparé de perception utilisateur est proposé ci-dessous, sans modifier la preuve Gate 3.
+
 ## Contrôle d'intégration
 
 Le contrôle fonctionnel distinct est :
@@ -103,6 +105,17 @@ Il vérifie notamment :
 - le dossier XDG Desktop lorsque disponible.
 
 Ce contrôle fait partie de `workstation-doctor`, du postcheck du module Nautilus et de la certification finale sur le PC. La mesure du démarrage à froid reste une preuve séparée, pour ne pas confondre fonctionnement et latence.
+
+### Validation après installation : GIO et expérience réelle
+
+```bash
+./diagnostics/nautilus-experience-doctor --local   # canari local GIO, nettoyage automatique
+./diagnostics/nautilus-experience-doctor --manual  # fenêtre visuellement utilisable ; session GNOME et confirmation humaine requises
+```
+
+L'observation `--manual` inclut le temps de réaction de l'utilisateur : son rapport `OBSERVE` n'est **pas** un benchmark automatisé ni une preuve de performance certifiante. Effectuer l'essai lors d'une connexion fraîche, après le test officiel de démarrage à froid. Les essais SMB, MTP, NFS, Sushi et Rocky sont explicitement séparés, avec un état `NON TESTÉ` lorsque le périphérique manque.
+
+Suivre la [procédure complète de validation de Nautilus](NAUTILUS_VALIDATION.md) : préparation, commandes, critères de réussite et dépannage.
 
 ## Hors profil
 

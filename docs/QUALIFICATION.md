@@ -154,6 +154,7 @@ Après les diagnostics de l'hôte, créer Rocky selon le [démarrage KVM](KVM_QU
 - **Applications par défaut** : dossiers → Nautilus, PDF → Papers, images → Loupe, texte → GNOME Text Editor, vidéo → Showtime, archives → File Roller, web → Brave.
 - **Portails** : FileChooser, OpenURI, Notification, ScreenCast et caméra. ScreenCast exige au moins dix images reçues via PipeWire ; annuler ou refuser fait échouer. Aucune image n'est enregistrée.
 - **Fichiers des VM** : aller-retour SFTP réel vers Rocky (liste, écriture, relecture, suppression d'un canari).
+- **Nautilus au quotidien** : une fois les preuves de démarrage à froid enregistrées, exécuter `./diagnostics/nautilus-experience-doctor --local` et suivre [la grille fonctionnelle Nautilus](NAUTILUS_VALIDATION.md). Les périphériques absents restent `NON TESTÉ` ; l'observation visuelle manuelle ne remplace pas la preuve Gate 3.
 - **Usage** : vraies applications ouvertes, une modification enregistrée et un PDF produits, Flatpak effectivement démarrés, confirmations humaines (interfaces, notifications, VS Code → Rocky). Aucun compte cloud ni jeton n'est créé.
 
 ### Veille, puis matrice UX

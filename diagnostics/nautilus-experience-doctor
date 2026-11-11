@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Optional GIO local I/O smoke test or operator-observed Nautilus first-window timing.
+# Human reaction time is included: this is not a Gate 3 latency certificate.
+set -Eeuo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/bootstrap.sh"
+engine_bootstrap
+
+usage() {
+  cat <<'EOF'
+Usage: diagnostics/nautilus-experience-doctor [--local|--manual]
+
+  --local   Test GIO list/copy/read/remove on a temporary local directory (default).
+  --manual  Launch Files and measure until the operator confirms a usable window.
+            Requires an interactive GNOME session and Nautilus not already running.
+            This is an approximate human-observed duration, NOT a Gate 3 proof.
+EOF
+}
+
+mode=local
+case "${1:---local}" in
+  --local) ;;
+  --manual) mode=manual ;;
+  -h|--help) usage; exit 0 ;;
+  *) usage >&2; exit "${EXIT_USAGE:-2}" ;;
+esac
+if (( $# > 1 )); then usage >&2; exit "${EXIT_USAGE:-2}"; fi
+
+report="$REPORT_ROOT/nautilus-experience-$RUN_ID.txt"
+if [[ "$mode" == local ]]; then
+  if ! command -v gio >/dev/null 2>&1; then
+    ui_check KO 'Nautilus local GIO' 'gio unavailable'
+    exit "${EXIT_POSTCHECK_FAILED:-40}"
+  fi
+  temporary="$(mktemp -d "$HOME/.fgc-nautilus-io.XXXXXXXX")"
+  trap 'rm -rf -- "$temporary"' EXIT
+  token="fgc-nautilus-${RUN_ID}-$$"
+  printf '%s\n' "$token" > "$temporary/source.txt"
+  if gio info "$temporary/source.txt" >/dev/null 2>&1 &&
+     gio copy "$temporary/source.txt" "$temporary/copy.txt" >/dev/null 2>&1 &&
+     [[ "$(gio cat "$temporary/copy.txt" 2>/dev/null)" == "$token" ]] &&
+     gio remove "$temporary/copy.txt" >/dev/null 2>&1 &&
+     [[ ! -e "$temporary/copy.txt" ]]; then
+    (umask 077; printf 'mode=local-gio\nstatus=PASS\nrun_id=%s\n' "$RUN_ID" > "$report")
+    ui_check OK 'Nautilus local GIO' 'info, copy, read, remove: PASS (isolated canary)'
+    exit 0
+  fi
+  (umask 077; printf 'mode=local-gio\nstatus=FAIL\nrun_id=%s\n' "$RUN_ID" > "$report")
+  ui_check KO 'Nautilus local GIO' 'local canary failed; check GVfs and file permissions'
+  exit "${EXIT_POSTCHECK_FAILED:-40}"
+fi
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" != *GNOME* || ! -t 0 || ! -t 1 ]]; then
+  ui_check KO 'Nautilus manual observation' 'requires an interactive GNOME terminal'
+  exit "${EXIT_PRECHECK_FAILED:-20}"
+fi
+if ! command -v nautilus >/dev/null 2>&1; then
+  ui_check KO 'Nautilus manual observation' 'nautilus command unavailable'
+  exit "${EXIT_PRECHECK_FAILED:-20}"
+fi
+if pgrep -x nautilus >/dev/null 2>&1; then
+  ui_check KO 'Nautilus manual observation' 'Nautilus is running; use a fresh GNOME login for cold start'
+  exit "${EXIT_PRECHECK_FAILED:-20}"
+fi
+
+printf '%s\n' 'Observation humaine : ouvrez la fenêtre Fichiers, puis appuyez sur Entrée dès que son contenu est affiché et navigable.'
+printf '%s\n' 'La mesure inclut votre délai de réaction ; elle ne doit pas servir de preuve automatique Gate 3.'
+printf '%s' 'Appuyez sur Entrée pour lancer Nautilus : '
+IFS= read -r _
+start_ms=$(( $(date +%s%N) / 1000000 ))
+nautilus --new-window "$HOME" >/dev/null 2>&1 &
+printf '%s' 'Quand la fenêtre est utilisable, appuyez sur Entrée (30 s max) : '
+if ! IFS= read -r -t 30 _; then
+  (umask 077; printf 'mode=manual-observation\nstatus=NON_TESTE\nreason=timeout-or-no-confirmation\n' > "$report")
+  ui_check WARN 'Nautilus manual observation' 'no confirmation; not measured'
+  exit "${EXIT_POSTCHECK_FAILED:-40}"
+fi
+end_ms=$(( $(date +%s%N) / 1000000 ))
+elapsed_ms=$((end_ms - start_ms))
+(umask 077; printf 'mode=manual-observation\nstatus=OBSERVE\nobserved_ms=%s\nprecision=human-reaction-included\nrun_id=%s\n' "$elapsed_ms" "$RUN_ID" > "$report")
+ui_check OK 'Nautilus manual observation' "operator observed ${elapsed_ms} ms (approximate; not a Gate 3 proof)"
