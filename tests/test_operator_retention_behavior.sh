@@ -61,6 +61,7 @@ if (( EUID != 0 )); then
   cp "$ROOT/systemd/user/fgc-weekly-log-cleanup.service" "$timer_root/systemd/user/"
   cp "$ROOT/systemd/user/fgc-weekly-log-cleanup.timer" "$timer_root/systemd/user/"
   cp "$ROOT/config/operator-retention.policy" "$timer_root/config/"
+  # shellcheck disable=SC2016 # This is literal code for a child Bash process.
   printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" >> "$TEST_SYSTEMCTL_CALLS"\n' > "$tmp/bin/systemctl"
   chmod +x "$tmp/bin/systemctl"
   HOME="$tmp/home" PATH="$tmp/bin:$PATH" TEST_SYSTEMCTL_CALLS="$tmp/systemctl-calls" \
@@ -69,7 +70,10 @@ if (( EUID != 0 )); then
   grep -Fq 'renamed\ clone\ with\ spaces/scripts/maintenance/weekly-log-cleanup.py' "$tmp/home/.local/libexec/fgc-weekly-log-cleanup"
   bash -n "$tmp/home/.local/libexec/fgc-weekly-log-cleanup"
   grep -Fq 'daemon-reload' "$tmp/systemctl-calls"
-  ! grep -Eq 'enable|start' "$tmp/systemctl-calls"
+  if grep -Eq 'enable|start' "$tmp/systemctl-calls"; then
+    echo 'installer enabled the optional timer unexpectedly' >&2
+    exit 1
+  fi
   grep -Fq 'ExecStart=%h/.local/libexec/fgc-weekly-log-cleanup' "$tmp/home/.config/systemd/user/fgc-weekly-log-cleanup.service"
 fi
 printf '%s\n' 'operator retention behavior: PASS'
