@@ -5,9 +5,9 @@
   "status": "ready",
   "signing_fingerprint": "4F50A6114CD5C6976A7F1179655A4B02F577861E",
   "media_lock_sha256": "fa07431ede49ab2de0d80cb5ac16f0f728c2ff0305eda7f09c96243226680245",
-  "extensions_lock_sha256": "1909d0a1f58934d50635746b6ef081fcdaa8b0649dc5e2b8ce16ac381429d05c",
+  "extensions_lock_sha256": "eec7751fb67ee6c91319b2e4d5f84a443fde7ddff6af86bc420c03efe75a241e",
   "packages_lock_sha256": "54f0d5a7a52a0ce6f6d1bd20a13916939f2cede15b55cde1971127e3ff652426",
   "gnome_rpms_lock_sha256": "e0c4aefc942b729661a38fd3933320f50debb2676f52505bf879c825eaa2f686",
-  "ding_patch_sha256": "cea5311116b0a3054f078bebd9c075e8bed45f1c63f5cb36b36b32404fcb2f23",
-  "promotion_source_commit": "6f8d19dc767cea9618aa586bcbcf3ee1ded9eb9f"
+  "promotion_source_commit": "6f8d19dc767cea9618aa586bcbcf3ee1ded9eb9f",
+  "ding_verifier_sha256": "66c9c456efae605902c5da4720a6c6ec41783a795370f85068bd6aa21dec7a68"
 }

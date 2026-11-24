@@ -15,12 +15,6 @@ case "$prefix" in DING|SHOW_DESKTOP_PLUS|RESOURCE_MONITOR|TILING_ASSISTANT) ;; *
 # The Python validator rejects shell metacharacters and unexpected assignments.
 # shellcheck disable=SC1091
 source "$repo/profiles/fedora45/gnome-extensions.lock"
-variant="${FGC_LAB_DING_VARIANT:-production}"
-case "$variant" in
-  production) ;;
-  gtk4-v148) source "$repo/.github/gtk4-ding-v148.lab.lock" ;;
-  *) exit 50 ;;
-esac
 sha_var="${prefix}_SHA256"; uuid_var="${prefix}_UUID"
 major_var="${prefix}_SHELL_VERSION"; schema_var="${prefix}_SCHEMA"
 url_var="${prefix}_SOURCE_URL"; version_var="${prefix}_VERSION"
@@ -44,11 +38,9 @@ fi
 python3 "$repo/scripts/gnome/validate-extension-metadata.py" \
   "$dir/metadata.json" "${!uuid_var}" "${!major_var}"
 glib-compile-schemas "$dir/schemas"
-if [[ "$prefix" == DING && "$variant" == production ]]; then
-  # GitLab upstream fix-mutter-crash: never respawn Adw-DING from a queued
-  # callback after extension disable/session teardown. Verify original ZIP
-  # and every byte of the fixed result; shared by the production installer and this QEMU laboratory.
-  python3 "$repo/scripts/gnome/ding-shutdown-fix.py" apply "$zip" "$dir"
+if [[ "$prefix" == DING ]]; then
+  # The promoted upstream v148 manager must remain byte-identical.
+  python3 "$repo/scripts/gnome/verify-ding-source.py" verify-archive "$zip" "$dir"
 fi
 printf 'source_url=%s\nshell_version=%s\nsha256=%s\nsite_version=%s\n' \
   "${!url_var}" "${!major_var}" "${!sha_var}" "${!version_var}" \

@@ -87,7 +87,7 @@ def validate(root, release):
         raise ValueError("reviewed Fedora 45 package manifest digest mismatch")
     for key, path in (("media_lock_sha256", media_path), ("extensions_lock_sha256", extensions_path),
                       ("gnome_rpms_lock_sha256", root / "profiles/fedora45/gnome-rpms.json"),
-                      ("ding_patch_sha256", root / "scripts/gnome/ding-shutdown-fix.py")):
+                      ("ding_verifier_sha256", root / "scripts/gnome/verify-ding-source.py")):
         if hashlib.sha256(path.read_bytes()).hexdigest() != profile.get(key):
             raise ValueError("reviewed profile digest mismatch: " + key)
     media = assignments(media_path)

@@ -123,7 +123,7 @@ def promote(root, iso, checksum, keyring, commit, now=None):
             "extensions_lock_sha256": sha256_file(extensions_path),
             "packages_lock_sha256": sha256_file(packages_path),
             "gnome_rpms_lock_sha256": sha256_file(root / "profiles/fedora45/gnome-rpms.json"),
-            "ding_patch_sha256": sha256_file(root / "scripts/gnome/ding-shutdown-fix.py"),
+            "ding_verifier_sha256": sha256_file(root / "scripts/gnome/verify-ding-source.py"),
             # This SHA predates the new media lock: it is NOT CI evidence on the promoted tree.
             "promotion_source_commit": commit,
         }
