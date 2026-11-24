@@ -211,7 +211,9 @@ def inspect_ding_review(record, transport=fetch):
                 "lifecycle_lines": [
                     {"line": index, "source": line.strip()}
                     for index, line in enumerate(source.splitlines(), 1)
-                    if re.search(r"isEnabled|_doRelaunch|_launchDesktop|startupPrepare|waylandClient|disable\\(|enable\\(", line)
+                    if any(token in line for token in (
+                        "isEnabled", "_doRelaunch", "_launchDesktop", "startupPrepare",
+                        "waylandClient", "disable(", "enable("))
                 ][:200],
                 "patch_probe": patch_status, "experimental_patched_sha256": patched_digest,
                 "verdict": "STATIC_REVIEW_ONLY", "runtime": "NOT_TESTED", "production": "UNCHANGED"}

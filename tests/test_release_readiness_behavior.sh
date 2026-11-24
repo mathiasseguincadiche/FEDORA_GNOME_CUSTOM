@@ -115,6 +115,7 @@ good=ding_archive()
 review=m.inspect_ding_review(ding_record(good),lambda url: good)
 assert review["verdict"]=="STATIC_REVIEW_ONLY" and review["runtime"]=="NOT_TESTED" and review["production"]=="UNCHANGED"
 assert len(review["desktop_boolean_keys"])==4 and review["manager_sha256"]==hashlib.sha256(b"disable() { this.isEnabled = false; }").hexdigest()
+assert review["lifecycle_lines"]==[{"line":1,"source":"disable() { this.isEnabled = false; }"}]
 for record,data in ((ding_record(good),b"tampered"),(ding_record(ding_archive(False)),ding_archive(False)),
                     (ding_record(ding_archive(duplicate=True)),ding_archive(duplicate=True))):
     try: m.inspect_ding_review(record,lambda url: data)
