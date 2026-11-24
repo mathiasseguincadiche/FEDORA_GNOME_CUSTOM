@@ -31,11 +31,11 @@ Une règle pour tout ce qui suit : ne jamais désactiver SELinux, firewalld ou l
 
 ## 2. Créer Rocky DevOps
 
-Placer l'image, `CHECKSUM` et `CHECKSUM.asc` de la même release dans `/data/libvirt/iso` (détails dans la [référence](VIRTUALIZATION.md#image-source-authentifiée)), puis :
+Télécharger l'image et ses deux fichiers `<nom-image>.CHECKSUM` et `<nom-image>.CHECKSUM.asc` depuis la même release, puis renommer les fichiers de contrôle en `CHECKSUM` et `CHECKSUM.asc` et les placer avec l'image dans `/data/libvirt/iso` (détails dans la [référence](VIRTUALIZATION.md#image-source-authentifiée)), puis :
 
 ```bash
 ./control.sh kvm create-rocky \
-  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2
 ```
 
 `CHECKSUM` et `CHECKSUM.asc` sont cherchés à côté de l'image ; sinon, les passer avec `--sha256sums` et `--signature`. Une clé Rocky obtenue par un canal de confiance se passe avec `--rocky-key-file`, une autre clé SSH publique avec `--ssh-key`. Pour vérifier l'image seule avant création : `bash scripts/kvm/verify_rocky_cloud_image.sh --image … --sha256sums … --signature …`.
@@ -126,7 +126,7 @@ Si la reconstruction échoue, garder le mode d'urgence et diagnostiquer ; ne pas
 
 **Bootstrap incomplet.** Dans l'invité : `sudo cloud-init status --long`, `sudo systemctl status fgc-devops-bootstrap.service`, `sudo cat /var/log/devops-bootstrap.log`, `sudo /usr/local/sbin/devops-verify.sh`. Distinguer panne réseau/DNS, dépôt éditeur indisponible, signature ou checksum externe modifié, et outil réellement absent (le laboratoire Rocky de la CI tourne aussi périodiquement pour repérer ces ruptures). Ne recréer la VM qu'après avoir sauvé les données utiles et compris l'échec.
 
-**Image refusée.** Image, `CHECKSUM` et `CHECKSUM.asc` doivent venir de la même release Rocky 10.2. Autres causes : image corrompue, signature invalide, serveur de clés indisponible (fournir alors une clé obtenue par un canal de confiance avec `--rocky-key-file`), clé locale incorrecte. Ne jamais contourner la signature ni la comparaison SHA-256 ; ne relancer la création que si le domaine et son disque n'existent pas encore.
+**Image refusée.** Image, `CHECKSUM` et `CHECKSUM.asc` doivent venir de la même release Rocky 10.3. Autres causes : image corrompue, signature invalide, serveur de clés indisponible (fournir alors une clé obtenue par un canal de confiance avec `--rocky-key-file`), clé locale incorrecte. Ne jamais contourner la signature ni la comparaison SHA-256 ; ne relancer la création que si le domaine et son disque n'existent pas encore.
 
 **Nautilus ne voit plus Rocky.** `./control.sh kvm nautilus-refresh`, puis vérifier le service SSH de l'invité.
 

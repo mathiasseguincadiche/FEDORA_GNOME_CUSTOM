@@ -125,7 +125,7 @@ EOF
 # shellcheck disable=SC1091
 source /etc/os-release
 [[ "${ID:-}" == "rocky" ]] || fail "expected Rocky Linux, got ${ID:-unknown}"
-[[ "${VERSION_ID:-}" == 10.2 ]] || fail "expected Rocky Linux 10.2, got ${VERSION_ID:-unknown}"
+[[ "${VERSION_ID:-}" == 10.3 ]] || fail "expected Rocky Linux 10.3, got ${VERSION_ID:-unknown}"
 [[ "$(uname -m)" == x86_64 ]] || fail 'this VM profile currently requires Rocky Linux x86_64'
 [[ "$KUBERNETES_MINOR" =~ ^v[0-9]+[.][0-9]+$ ]] || fail "invalid Kubernetes minor: $KUBERNETES_MINOR"
 [[ "$KIND_VERSION" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail "invalid kind version: $KIND_VERSION"
@@ -236,7 +236,7 @@ dnf -y install "${kernel_dnf_options[@]}" \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
   gh terraform azure-cli kubectl
 
-# EPEL 10.2 has no kubectx RPM; preserve kubectx/kubens with reviewed
+# Preserve kubectx/kubens with reviewed
 # upstream v0.11.0 assets. Digests come from ahmetb/kubectx release metadata.
 kubectx_tmp="$(mktemp -d)"
 for tool in kubectx kubens; do

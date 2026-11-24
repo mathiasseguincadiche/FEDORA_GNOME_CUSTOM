@@ -153,7 +153,7 @@ cc_kvm_create_rocky_interactive() {
   local rocky_key=''
   local -a args=()
 
-  read -r -p 'Image Rocky Linux 10.2 cloud (.qcow2) : ' cloud_image
+  read -r -p 'Image Rocky Linux 10.3 cloud (.qcow2) : ' cloud_image
   if [[ -z "$cloud_image" ]]; then
     printf 'Chemin image obligatoire.\n'
     cc_pause

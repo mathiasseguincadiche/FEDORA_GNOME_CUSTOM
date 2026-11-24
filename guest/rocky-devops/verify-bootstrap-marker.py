@@ -11,7 +11,7 @@ FIELDS = {"completed_at", "kubernetes_minor", "kubernetes_release", "kind_versio
           "k9s_version", "rpm_release", "helm_version"}
 SEMVER = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.+-]+)?")
 
-def verify(text: str, *, minor="v1.37", kind="v0.33.0", minikube="v1.38.1", os_release="10.2"):
+def verify(text: str, *, minor="v1.37", kind="v0.33.0", minikube="v1.38.1", os_release="10.3"):
     values = {}
     for line in text.splitlines():
         if "=" not in line:
@@ -55,7 +55,7 @@ def main(argv=None):
     parser.add_argument("--kubernetes-minor", default="v1.37")
     parser.add_argument("--kind-version", default="v0.33.0")
     parser.add_argument("--minikube-version", default="v1.38.1")
-    parser.add_argument("--os-release", default="10.2")
+    parser.add_argument("--os-release", default="10.3")
     args = parser.parse_args(argv)
     try:
         if args.marker.is_symlink() or not args.marker.is_file():

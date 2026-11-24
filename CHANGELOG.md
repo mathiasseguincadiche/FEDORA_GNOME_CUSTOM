@@ -1,5 +1,10 @@
 # Changelog
 
+## Non publié — migration Rocky Linux 10.3
+
+- Actualisation du profil invité, du laboratoire QEMU et des contrôles Rocky 10.3 ; image versionnée et fichiers CHECKSUM individuels authentifiés avant utilisation.
+- Le résultat CI et les Gates physiques restent à démontrer.
+
 ## Unreleased
 
 - **Fiabilité opérateur et mise en qualité V10** : `doctor all` retourne désormais un code d'échec en VM ou conteneur quand il affiche `KO` ; les consultations firmware indéterminées ne sont plus présentées comme des vérifications réussies, sans invalider une transaction logicielle déjà appliquée. Les validations d'applications nomment le paquet/Flatpak ou le doctor défaillant. Le centre de contrôle n'a plus de définitions concurrentes de ses cinq fonctions de présentation ; son aide couvre `upgrade status` sans ligne dupliquée. Les bibliothèques de validation applicative et de baseline sont réorganisées pour la lecture sans changer leurs contrats ; les guides concernés et le schéma CI/release reflètent les routes et déclencheurs effectifs. Les Gate 2 et Gate 3 sur le PC physique restent à faire.

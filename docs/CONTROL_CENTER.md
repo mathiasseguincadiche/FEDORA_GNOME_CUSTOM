@@ -258,7 +258,7 @@ CLI :
 
 ```bash
 ./control.sh kvm create-rocky \
-  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+  --cloud-image /data/libvirt/iso/Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2
 ```
 
 `CHECKSUM` et `CHECKSUM.asc` sont attendus à côté de l'image par défaut et sont authentifiés avant création du disque.

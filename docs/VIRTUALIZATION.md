@@ -30,7 +30,7 @@ Fedora 45 (hôte)
 Un seul invité de référence, déclaratif, jamais créé pendant `install.sh --apply`.
 
 ```text
-OS                 Rocky Linux 10.2
+OS                 Rocky Linux 10.3
 vCPU               6 (host-passthrough)
 RAM                16 Gio
 disque             160 Gio qcow2, VirtIO
@@ -49,13 +49,15 @@ Sur l'hôte de 8 cœurs / 16 threads et 48 Gio, il reste environ 32 Gio avant la
 
 ## Image source authentifiée
 
-Préparer dans le même dossier, depuis la [release officielle Rocky 10.2](https://dl.rockylinux.org/pub/rocky/10.2/images/x86_64/) :
+Préparer dans le même dossier, depuis la [release officielle Rocky 10.3](https://dl.rockylinux.org/pub/rocky/10/images/x86_64/) :
 
 ```text
-Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2
 CHECKSUM
 CHECKSUM.asc
 ```
+
+Le miroir officiel fournit les fichiers `<nom-image>.CHECKSUM` et `<nom-image>.CHECKSUM.asc` : télécharger ceux de cette image précise et les renommer localement `CHECKSUM` et `CHECKSUM.asc` (sans modifier leurs octets). Le laboratoire utilise `profiles/rocky10/cloud-image.lock` et effectue ce même téléchargement.
 
 `scripts/kvm/verify_rocky_cloud_image.sh` récupère la clé Rocky 10, compare son empreinte à la valeur épinglée (`FC226859C0860BF0DDB95B085B106C736FEDFC85`, [page officielle des clés](https://rockylinux.org/resources/gpg-key-info)), vérifie la signature de `CHECKSUM`, exige une seule ligne SHA-256 pour l'image choisie, puis vérifie l'image. Les alias `latest`, les autres variantes et versions sont refusés : une image n'est jamais acceptée sur son seul nom. `create_rocky_devops_vm.sh` fait ce contrôle avant `qemu-img convert`.
 
@@ -76,15 +78,15 @@ Le seed embarque le bootstrap et le verify **exacts** du checkout qui crée la V
 - Node.js ≥ 22, OpenJDK 21, Maven, Python 3, pip, venv, pipx ;
 - SSH, QEMU Guest Agent, rsync, ShellCheck, jq, ripgrep, tmux, outils réseau.
 
-Provenance : dépôts RPM signés pour Rocky/EPEL 10/CRB, Docker, GitHub CLI, HashiCorp, Microsoft et `pkgs.k8s.io`, sur le canal EL10 natif sans repli EL8/EL9 ; archives versionnées avec SHA-256 pour Helm, kind, Minikube, yq, K9s et kubectx (absent d'EPEL 10.2) ; AWS CLI avec signature détachée vérifiée. Aucun `curl | bash`, SELinux Enforcing. Aucun identifiant GitHub/GitLab/AWS/Azure n'est embarqué : ils se saisissent à la main. Voir la [provenance des logiciels](SUPPLY_CHAIN.md).
+Provenance : dépôts RPM signés pour Rocky/EPEL 10/CRB, Docker, GitHub CLI, HashiCorp, Microsoft et `pkgs.k8s.io`, sur le canal EL10 natif sans repli EL8/EL9 ; archives versionnées avec SHA-256 pour Helm, kind, Minikube, yq, K9s et kubectx (version et empreinte contrôlées) ; AWS CLI avec signature détachée vérifiée. Aucun `curl | bash`, SELinux Enforcing. Aucun identifiant GitHub/GitLab/AWS/Azure n'est embarqué : ils se saisissent à la main. Voir la [provenance des logiciels](SUPPLY_CHAIN.md).
 
 **Noyau de l'invité.** L'image Cloud Base a un noyau minimal ; le bootstrap installe le noyau Rocky complet avant Docker. Si le noyau par défaut diffère du noyau chargé, le bootstrap sort en 75 sans marqueur de réussite et `fgc-devops-bootstrap.service` redémarre l'invité puis reprend. Un noyau qui ne démarre pas bloque la reprise au lieu de boucler. `cloud-init status` seul ne prouve donc rien : vérifier `systemctl status fgc-devops-bootstrap.service`, `/var/log/devops-bootstrap.log`, puis `devops-verify.sh`.
 
-**Marqueur de provisioning.** `/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env` est écrit atomiquement à la fin. `devops-verify-bootstrap-marker.py` exige tous ses champs, refuse doublons, clés inattendues et dates invalides, et recoupe Rocky 10.2, la version Kubernetes, kind et Minikube avec le contrat. Le fichier n'est jamais exécuté ni sourcé ; binaires, services et réseau Docker sont vérifiés à part.
+**Marqueur de provisioning.** `/var/lib/fedora-gnome-custom/rocky-devops-bootstrap.env` est écrit atomiquement à la fin. `devops-verify-bootstrap-marker.py` exige tous ses champs, refuse doublons, clés inattendues et dates invalides, et recoupe Rocky 10.3, la version Kubernetes, kind et Minikube avec le contrat. Le fichier n'est jamais exécuté ni sourcé ; binaires, services et réseau Docker sont vérifiés à part.
 
 ## Réseau Docker
 
-Docker 29 stable utilise son backend iptables, qui charge `nft_compat` et `ip_set`. Le noyau EL10 signale ces modules par « Warning: Unmaintained driver is detected » en priorité critique. Le laboratoire garde ces notices et les marque `kernel_compatibility=WARNING` ; seules les quatre notices exactes (origine noyau, priorité 2) sont acceptées, tout autre message, erreur critique ou coredump bloque. Le backend nftables natif reste [expérimental selon Docker](https://docs.docker.com/engine/network/firewall-nftables/) et n'est pas activé ([notes RHEL 10.2](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html-single/10.2_release_notes/index)).
+Docker 29 stable utilise son backend iptables, qui charge `nft_compat` et `ip_set`. Le noyau EL10 signale ces modules par « Warning: Unmaintained driver is detected » en priorité critique. Le laboratoire garde ces notices et les marque `kernel_compatibility=WARNING` ; seules les quatre notices exactes (origine noyau, priorité 2) sont acceptées, tout autre message, erreur critique ou coredump bloque. Le backend nftables natif reste [expérimental selon Docker](https://docs.docker.com/engine/network/firewall-nftables/) et n'est pas activé ([notes RHEL 10.3](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html-single/10.3_release_notes/index)).
 
 ### Qualification réseau Docker
 
@@ -106,7 +108,7 @@ Le script n'utilise que le socket Docker local avec `--pull=never` et journalise
 | `diagnostics/kvm-domain-doctor` | XML Rocky conforme au profil ci-dessus, aucun `hostdev` |
 | `devops-verify.sh` (dans l'invité) | stack, services, `PasswordAuthentication no` effectif |
 | `scripts/kvm/runtime_certification.sh` | domaine, Guest Agent, XML VirtIO/RNG/balloon, IP, SSH, stack, DNS/HTTPS, garde réseau et isolement LAN |
-| CI « Rocky Linux 10.2 real VM pretest » | image authentifiée, bootstrap exact, smoke tests, reboot, sauvegarde Borg de qcow2/NVRAM/seed, restauration et redémarrage isolé (`restrict=on`) |
+| CI « Rocky Linux 10.3 real VM pretest » | image authentifiée, bootstrap exact, smoke tests, reboot, sauvegarde Borg de qcow2/NVRAM/seed, restauration et redémarrage isolé (`restrict=on`) |
 
 Une preuve complète LAN → VM demande un second appareil du LAN ([réseau KVM](KVM_NETWORK.md)). La CI ne certifie aucun périphérique physique ; la qualification Rocky précède la [Gate 3](QUALIFICATION.md).
 

@@ -11,7 +11,7 @@ gpg --batch --passphrase '' --quick-add-key "$pin" rsa2048 sign 0 >/dev/null 2>&
 gpg --batch --armor --export "$pin" >"$tmp/key.asc"
 # Only the fixture copy gets its ephemeral key. Production has no pin override.
 sed "s/FC226859C0860BF0DDB95B085B106C736FEDFC85/$pin/g" "$ROOT/scripts/kvm/verify_rocky_cloud_image.sh" >"$tmp/verify.sh"
-name=Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+name=Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2
 printf 'fixture image\n' >"$tmp/$name"
 hash="$(sha256sum "$tmp/$name" | awk '{print $1}')"
 sign() { gpg --batch --yes --passphrase '' --local-user "$pin" --armor --detach-sign --output "$tmp/CHECKSUM.asc" "$tmp/CHECKSUM" >/dev/null 2>&1; }

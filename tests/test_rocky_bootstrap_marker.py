@@ -19,17 +19,17 @@ node_version=v22.19.1
 java_version=javac 21.0.8
 yq_version=v4.53.3
 k9s_version=v0.51.0
-rpm_release=10.2
+rpm_release=10.3
 helm_version=v4.3.0
 """
 
 class EvidenceTests(unittest.TestCase):
     def test_valid_marker(self):
-        self.assertEqual(tool.verify(BASE)["rpm_release"], "10.2")
+        self.assertEqual(tool.verify(BASE)["rpm_release"], "10.3")
 
     def test_refuse_fake_or_stale(self):
         modified = [
-            BASE.replace("rpm_release=10.2", "rpm_release=9.6"),
+            BASE.replace("rpm_release=10.3", "rpm_release=9.6"),
             BASE.replace("kind_version=v0.33.0", "kind_version=v0.32.0"),
             BASE.replace("kubernetes_release=v1.37.3", "kubernetes_release=v1.36.8"),
             BASE.replace("node_version=v22.19.1", "node_version=v20.0.0"),

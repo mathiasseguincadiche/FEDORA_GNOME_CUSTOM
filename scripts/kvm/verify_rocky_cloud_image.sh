@@ -7,7 +7,7 @@ usage() {
   cat <<'TXT'
 Usage: verify_rocky_cloud_image.sh --image IMAGE --sha256sums CHECKSUM
        --signature CHECKSUM.asc [--key-file RPM-GPG-KEY-Rocky-10]
-Accepts only versioned Rocky Linux 10.2 GenericCloud Base x86_64 qcow2 images.
+Accepts only versioned Rocky Linux 10.3 GenericCloud Base x86_64 qcow2 images.
 The detached signature must bind the checksum to the pinned production key;
 the filename and SHA-256 must occur together on exactly one authenticated row.
 TXT
@@ -31,7 +31,7 @@ for cmd in gpg gpgv sha256sum python3; do command -v "$cmd" >/dev/null || fail "
 [[ -f "$image" && -r "$image" && ! -L "$image" ]] || fail 'readable regular image required'
 [[ -f "$sums" && -r "$sums" && -f "$signature" && -r "$signature" ]] || fail 'CHECKSUM and detached CHECKSUM.asc required'
 image_name="$(basename "$image")"
-[[ "$image_name" =~ ^Rocky-10-GenericCloud-Base-10[.]2-[0-9]{8}[.][0-9]+[.]x86_64[.]qcow2$ ]] || fail 'expected versioned Rocky Linux 10.2 GenericCloud Base x86_64 image'
+[[ "$image_name" =~ ^Rocky-10-GenericCloud-Base-10[.]3-[0-9]{8}[.][0-9]+[.]x86_64[.]qcow2$ ]] || fail 'expected versioned Rocky Linux 10.3 GenericCloud Base x86_64 image'
 tmpdir="$(mktemp -d)"
 chmod 0700 "$tmpdir"
 trap 'rm -rf "$tmpdir"' EXIT

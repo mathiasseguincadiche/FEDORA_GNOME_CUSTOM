@@ -45,7 +45,7 @@ for cli in virt-admin virt-host-validate virt-xml-validate virt-xml qemu-io qemu
 done
 
 for expected in \
-  'ROCKY_SERVER_RELEASE="10.2"' \
+  'ROCKY_SERVER_RELEASE="10.3"' \
   'ROCKY_SERVER_VCPU="6"' \
   'ROCKY_SERVER_RAM_MB="16384"' \
   'ROCKY_SERVER_DISK_GB="160"' \

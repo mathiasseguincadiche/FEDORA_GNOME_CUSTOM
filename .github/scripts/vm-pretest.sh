@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# CI laboratory: boots the pinned Rocky Linux 10.2 cloud image in a throw-away QEMU VM on
+# CI laboratory: boots the pinned Rocky Linux 10.3 cloud image in a throw-away QEMU VM on
 # the runner and runs the DevOps guest checks; writes .vm-pretest/report.txt.
 set -Eeuo pipefail
 
 ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 LAB="$ROOT/.vm-pretest"
-IMAGE_BASE_URL="https://dl.rockylinux.org/pub/rocky/10.2/images/x86_64"
-IMAGE_NAME="Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2"
+# shellcheck source=/dev/null
+source "$ROOT/profiles/rocky10/cloud-image.lock"
 SSH_PORT="2222"
 VM_USER="mathias"
 REPORT="$LAB/report.txt"
@@ -29,7 +29,7 @@ cleanup() {
   rm -f "$QGA_SOCKET"
 }
 trap cleanup EXIT
-report '=== FEDORA_GNOME_CUSTOM REAL ROCKY LINUX 10.2 VM PRE-TEST ==='
+report '=== FEDORA_GNOME_CUSTOM REAL ROCKY LINUX 10.3 VM PRE-TEST ==='
 report "commit=$(git -C "$ROOT" rev-parse HEAD)"
 
 report '[1/10] Host VM dependencies'
@@ -59,9 +59,9 @@ report 'Host VM dependencies installed (minimal headless set)'
 
 report '[2/10] Authenticate Rocky production cloud image'
 cd "$LAB"
-curl -fL --retry 4 --retry-delay 3 -o "$IMAGE_NAME" "$IMAGE_BASE_URL/$IMAGE_NAME"
-curl -fL --retry 4 --retry-delay 3 -o CHECKSUM "$IMAGE_BASE_URL/CHECKSUM"
-curl -fL --retry 4 --retry-delay 3 -o CHECKSUM.asc "$IMAGE_BASE_URL/CHECKSUM.asc"
+curl --proto '=https' --proto-redir '=https' -fL --retry 4 --retry-delay 3 -o "$IMAGE_NAME" "$IMAGE_BASE_URL/$IMAGE_NAME"
+curl --proto '=https' --proto-redir '=https' -fL --retry 4 --retry-delay 3 -o CHECKSUM "$IMAGE_BASE_URL/$IMAGE_NAME.CHECKSUM"
+curl --proto '=https' --proto-redir '=https' -fL --retry 4 --retry-delay 3 -o CHECKSUM.asc "$IMAGE_BASE_URL/$IMAGE_NAME.CHECKSUM.asc"
 bash "$ROOT/scripts/kvm/verify_rocky_cloud_image.sh" --image "$LAB/$IMAGE_NAME" --sha256sums "$LAB/CHECKSUM" --signature "$LAB/CHECKSUM.asc" | tee -a "$REPORT"
 
 report '[3/10] cloud-init + disk'
@@ -138,9 +138,9 @@ if (( ready != 1 )); then
 fi
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo cloud-init status --wait --long'
 
-report '[6/10] Rocky Linux 10.2 + network'
+report '[6/10] Rocky Linux 10.3 + network'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'test "$(uname -m)" = x86_64 && test "$(getenforce)" = Enforcing && grep -q "^ID=\"rocky\"" /etc/os-release'
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -q '^VERSION_ID=\"10.2\"' /etc/os-release"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -q '^VERSION_ID=\"10.3\"' /etc/os-release"
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'getent hosts github.com >/dev/null && curl -fsSI --max-time 20 https://github.com >/dev/null'
 
 report '[7/10] Copy exact repository guest bootstrap'
@@ -273,4 +273,4 @@ HEALTH
 if grep -q '^WARN EL10 Docker compatibility:' "$LAB/guest-health.log"; then
   report 'kernel_compatibility=WARNING stable Docker uses documented unmaintained EL10 compatibility modules; see guest-health.log'
 fi
-report 'VERDICT: REAL ROCKY LINUX 10.2 READY-TO-WORK DEVOPS VM PRE-TEST PASS'
+report 'VERDICT: REAL ROCKY LINUX 10.3 READY-TO-WORK DEVOPS VM PRE-TEST PASS'

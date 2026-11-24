@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Rocky DevOps guest specification. The bootstrap and its tools run for real in
-# the Rocky 10.2 lab (.github/workflows/vm-pretest.yml, verify-devops.sh) and
+# the Rocky 10.3 lab (.github/workflows/vm-pretest.yml, verify-devops.sh) and
 # the VM creation in test_rocky_vm_creation_behavior.sh; this file keeps the
 # supply-chain and security rules a successful install would not reveal.
 set -Eeuo pipefail

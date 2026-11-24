@@ -12,7 +12,7 @@ EXPECTED_MINIKUBE_VERSION="${EXPECTED_MINIKUBE_VERSION:-v1.38.1}"
 [[ -r /etc/os-release ]] || exit 1
 # shellcheck disable=SC1091
 source /etc/os-release
-[[ "$ID" == rocky && "$VERSION_ID" == 10.2 && "$(uname -m)" == x86_64 ]] || { echo 'Rocky Linux 10.2 x86_64 required' >&2; exit 1; }
+[[ "$ID" == rocky && "$VERSION_ID" == 10.3 && "$(uname -m)" == x86_64 ]] || { echo 'Rocky Linux 10.3 x86_64 required' >&2; exit 1; }
 [[ "$(getenforce)" == Enforcing ]] || { echo 'SELinux enforcing required' >&2; exit 1; }
 ok=0
 ko=0

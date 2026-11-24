@@ -67,10 +67,12 @@ Une entrée classée `community-unverified` n'est installable que si son identif
 La création de `rocky-devops` n'accepte pas une image locale sur son seul nom. L'image est conservée avec sa liste d'empreintes signée :
 
 ```text
-Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2
+Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2
 CHECKSUM
 CHECKSUM.asc
 ```
+
+Les deux fichiers de contrôle sont publiés sous les noms `<nom-image>.CHECKSUM` et `<nom-image>.CHECKSUM.asc` ; les renommer localement sans modifier leur contenu.
 
 `scripts/kvm/verify_rocky_cloud_image.sh` :
 
@@ -85,7 +87,7 @@ CHECKSUM.asc
 ## Outils de la VM Rocky DevOps
 
 - `kubectl` vient de `pkgs.k8s.io`, limité à la branche `v1.37` ; les correctifs de cette branche sont acceptés.
-- kind, Minikube, Helm, yq, K9s, kubectx et kubens ont une version et un SHA-256 versionnés dans `guest/rocky-devops/bootstrap-devops.sh`. L'empreinte n'est jamais lue à côté du binaire : un serveur qui changerait à la fois le binaire et son empreinte serait refusé. EPEL 10.2 ne fournit pas de RPM kubectx, d'où l'archive officielle.
+- kind, Minikube, Helm, yq, K9s, kubectx et kubens ont une version et un SHA-256 versionnés dans `guest/rocky-devops/bootstrap-devops.sh`. L'empreinte n'est jamais lue à côté du binaire : un serveur qui changerait à la fois le binaire et son empreinte serait refusé. Le choix de l'archive officielle conserve un couple version/empreinte vérifié.
 - AWS CLI v2 est téléchargé avec sa signature détachée, vérifiée par la clé AWS dont l'empreinte est versionnée.
 
 Les versions sont dans l'[inventaire](SOFTWARE_INVENTORY.md#23-outils-hors-paquets-versions-épinglées).
