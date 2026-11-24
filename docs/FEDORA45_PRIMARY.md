@@ -39,11 +39,13 @@ La promotion exige :
 | Dock | Dash to Dock, RPM Fedora épinglé |
 | Indicateurs d'applications | AppIndicator, RPM Fedora épinglé |
 | Bureau et Corbeille | Gtk4 DING v145, review 75162 |
-| Afficher le bureau | Show Desktop Button v59, review 75965 |
-| CPU, RAM, réseau | Vitals v85, review 74743 |
+| Afficher le bureau | Show Desktop Button v63, review 77273 |
+| CPU, RAM, réseau | Vitals v86, review 76696 |
 | Tuilage | Tiling Assistant v56 |
 
 `config/gnome-extensions.lock` et le verrou du profil Fedora 45 doivent rester identiques. Même règle pour les manifestes Nautilus : Fedora 45 utilise File Roller et son extension Nautilus, sans `gvfs-archive` supprimé en amont. Le validateur détecte toute divergence avant promotion.
+
+Les archives Show Desktop Button v63 et Vitals v86 proviennent du [rapport de préparation du 24 novembre 2026](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45336822006), qui a téléchargé les ZIP et calculé leurs empreintes. La validation en session Wayland doit être refaite sur le commit de mise à jour. Gtk4-DING reste en v145 avec son correctif verrouillé : les versions plus récentes et le DING rastersoft v105 désormais compatible GNOME 51 nécessitent une qualification distincte (cycle de vie, schémas, bureau, déconnexion). Le noyau vanilla reste sélectionné dynamiquement ; 7.3.6 a été observé par ce rapport, sans relever artificiellement le seuil de secours.
 
 Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l'interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME.md](GNOME.md).
 

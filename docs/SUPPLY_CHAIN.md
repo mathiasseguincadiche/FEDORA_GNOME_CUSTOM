@@ -31,8 +31,8 @@ Dash to Dock et AppIndicator viennent des dépôts Fedora, aux versions exactes 
 | Extension | Source | SHA-256 |
 |---|---|---|
 | Gtk4 DING v145 | GNOME Extensions, review 75162 | `4a884fa3976aeb814726fd96428c09cfeca2da01aec3ac8629ddd6cd22bff2c1` |
-| Show Desktop Button v59 | GNOME Extensions, review 75965 | `76411e57bf5402c54bc04e5a94700c62dfb71b094ed6eac48509f609c07f6000` |
-| Vitals v85 | GNOME Extensions, review 74743 | `899e5ffe27d1793cf13db069d835c11136cec816717e4e450a56f08bcf976b2f` |
+| Show Desktop Button v63 | GNOME Extensions, review 77273 | `8602dd3cdfd624b5aa57fddb8352e26561a0365c22f8c0465d731b173865048a` |
+| Vitals v86 | GNOME Extensions, review 76696 | `0c7df95d7ad2ab509d9bd892622e8df501f9f719cc079af28b29c936d1d8b97a` |
 | Tiling Assistant v56 | release GitHub officielle | `961da0c6b8e5960770e68a06d71205765870435dbe8fe0ccc1ec50d4cc78265a` |
 
 Une archive dont le contenu change derrière la même URL est refusée **avant** `gnome-extensions install`. Le correctif d'arrêt de DING modifie un seul fichier, avec sa propre empreinte inscrite dans le profil ([laboratoire](FEDORA_GNOME_CI_LAB.md#correctif-darrêt-de-gtk4-ding)). Les verrous Fedora 44 ne servent qu'au [parcours historique](history/HISTORICAL_FEDORA44.md).

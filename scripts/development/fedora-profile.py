@@ -8,8 +8,8 @@ import sys
 
 PREFIXES = ("DING", "SHOW_DESKTOP_PLUS", "RESOURCE_MONITOR", "TILING_ASSISTANT")
 
-# DING, Show Desktop Plus and Resource Monitor publish no GNOME 51 build. The prefix stays a role
-# name; the Fedora 45 lock selects exactly the reviewed GNOME 51 replacement.
+# The original GNOME 51 qualification chose these replacements. A newer native build
+# does not change the reviewed role identity without a separate qualification.
 REPLACEMENTS = {
     "DING": ("gtk4-ding@smedius.gitlab.com", "org.gnome.shell.extensions.gtk4-ding"),
     "SHOW_DESKTOP_PLUS": ("show-desktop-button@amivaleo", "org.gnome.shell.extensions.show-desktop-button"),

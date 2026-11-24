@@ -1,6 +1,8 @@
 # Changelog
 
-## Non publié — migration Rocky Linux 10.3
+## Non publié — GNOME 51 et migration Rocky Linux 10.3
+
+- Show Desktop Button v63 et Vitals v86 : actualisation des archives et empreintes d'après le rapport CI du 24 novembre ; nouvelle qualification Wayland requise. Gtk4-DING et son correctif restent verrouillés.
 
 - Actualisation du profil invité, du laboratoire QEMU et des contrôles Rocky 10.3 ; image versionnée et fichiers CHECKSUM individuels authentifiés avant utilisation.
 - Le résultat CI et les Gates physiques restent à démontrer.
