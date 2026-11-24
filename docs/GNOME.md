@@ -28,14 +28,14 @@ Chaque extension remplit une fonction précise. Les identités et archives exact
 |---|---|---|
 | Dock | Dash to Dock / `dash-to-dock@micxgx.gmail.com` | RPM Fedora, version exacte dans `profiles/fedora45/gnome-rpms.json` |
 | Indicateurs d'applications | AppIndicator / `appindicatorsupport@rgcjonas.gmail.com` | RPM Fedora, même verrou |
-| Bureau et Corbeille | Gtk4 Desktop Icons NG / `gtk4-ding@smedius.gitlab.com` | version 145, review 75162 |
+| Bureau et Corbeille | Gtk4 Desktop Icons NG / `gtk4-ding@smedius.gitlab.com` | version 148, review 78597 |
 | Afficher le bureau | Show Desktop Button / `show-desktop-button@amivaleo` | version 63, review 77273 |
 | CPU, mémoire, réseau | Vitals / `Vitals@CoreCoding.com` | version 86, review 76696 |
 | Tuilage | Tiling Assistant / `tiling-assistant@leleat-on-github` | release GitHub v56 |
 
 URL, version, UUID, compatibilité GNOME 51 et SHA-256 des quatre archives téléchargées sont dans `config/gnome-extensions.lock`, qui doit rester identique à `profiles/fedora45/gnome-extensions.lock`. Chaque installateur refuse une archive dont l'un de ces éléments diffère, compile les schémas et garde la provenance dans `.fedora-gnome-custom-source`.
 
-Gtk4 DING, Show Desktop Button et Vitals remplacent Desktop Icons NG, Show Desktop Plus et Resource Monitor, qui n'ont pas de version GNOME 51. Les préfixes de configuration `DING_*`, `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` sont conservés comme noms de rôle. Les réglages propres aux anciennes extensions (actions de clic, badge, style d'icône de Show Desktop Plus) ne sont pas appliqués. Les sources GNOME 50 restent dans le [profil Fedora 44 historique](history/HISTORICAL_FEDORA44.md).
+Gtk4 DING, Show Desktop Button et Vitals remplacent Desktop Icons NG, Show Desktop Plus et Resource Monitor, lors de la qualification initiale GNOME 51. Les préfixes de configuration `DING_*`, `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` sont conservés comme noms de rôle. Les réglages propres aux anciennes extensions (actions de clic, badge, style d'icône de Show Desktop Plus) ne sont pas appliqués. Les sources GNOME 50 restent dans le [profil Fedora 44 historique](history/HISTORICAL_FEDORA44.md).
 
 ### Bureau et Corbeille (Gtk4 DING)
 
@@ -48,7 +48,7 @@ show-volumes           false
 show-network-volumes   false
 ```
 
-Le correctif d'arrêt de Gtk4 DING versionné dans le dépôt est vérifié en CI ; il ne vaut pas validation sur le PC réel.
+Gtk4 DING v148 fonctionne sans correctif local dans le laboratoire QEMU. Le gestionnaire amont est contrôlé par SHA-256 à l'installation et pendant l'audit ; la Gate 3 sur le PC reste à réaliser.
 
 ### Afficher le bureau (Show Desktop Button)
 

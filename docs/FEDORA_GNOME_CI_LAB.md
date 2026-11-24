@@ -59,9 +59,7 @@ Le laboratoire exige les six rôles `ACTIVE` et `enabled`, des métadonnées dé
 
 ### Correctif d'arrêt de Gtk4 DING
 
-À la déconnexion, Gtk4 DING v145 pouvait relancer son processus d'icônes pendant sa propre désactivation, et faire planter la session. `scripts/gnome/ding-shutdown-fix.py` applique la correction explorée en amont (branche `fix-mutter-crash`) : ne plus relancer ce processus pendant la désactivation.
-
-L'archive officielle reste intacte, épinglée et revérifiée ; seul `dingManager.js` est modifié, et le fichier installé doit être exactement le résultat attendu. Si l'amont change ce fichier, le correctif refuse de s'appliquer et demande une nouvelle revue. L'empreinte du correctif est inscrite dans le profil promu (`ding_patch_sha256`), et `scripts/gnome/install-pinned-extension.sh` l'applique aussi sur le PC. Un passage vert ne prouve pas à lui seul la disparition d'une panne intermittente : la Gate 3 l'observe sur le matériel.
+La v145 nécessitait un correctif local de fermeture. Les deux essais QEMU de la v148 amont (45351762196 et 45495888501) ont réussi avec les six extensions actives, les réglages du bureau, les déconnexions, redémarrages et restaurations. La v148 est donc retenue sans patch. Le script `scripts/gnome/verify-ding-source.py` vérifie l'archive et l'empreinte du gestionnaire amont ; son empreinte est inscrite dans le profil (`ding_verifier_sha256`). Le laboratoire standard exerce la même vérification et les réglages du bureau. L'ancien correctif v145 reste uniquement une référence historique pour l'analyse statique. La Gate 3 matérielle reste à effectuer.
 
 ## Exercices et critères
 

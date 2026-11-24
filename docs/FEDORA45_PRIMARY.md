@@ -38,14 +38,14 @@ La promotion exige :
 |---|---|
 | Dock | Dash to Dock, RPM Fedora épinglé |
 | Indicateurs d'applications | AppIndicator, RPM Fedora épinglé |
-| Bureau et Corbeille | Gtk4 DING v145, review 75162 |
+| Bureau et Corbeille | Gtk4 DING v148, review 78597 |
 | Afficher le bureau | Show Desktop Button v63, review 77273 |
 | CPU, RAM, réseau | Vitals v86, review 76696 |
 | Tuilage | Tiling Assistant v56 |
 
 `config/gnome-extensions.lock` et le verrou du profil Fedora 45 doivent rester identiques. Même règle pour les manifestes Nautilus : Fedora 45 utilise File Roller et son extension Nautilus, sans `gvfs-archive` supprimé en amont. Le validateur détecte toute divergence avant promotion.
 
-Les archives Show Desktop Button v63 et Vitals v86 proviennent du [rapport de préparation du 24 novembre 2026](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45336822006), qui a téléchargé les ZIP et calculé leurs empreintes. La validation en session Wayland doit être refaite sur le commit de mise à jour. Gtk4-DING reste en v145 avec son correctif verrouillé : les versions plus récentes et le DING rastersoft v105 désormais compatible GNOME 51 nécessitent une qualification distincte (cycle de vie, schémas, bureau, déconnexion). Le rapport `ding-candidate-review.json` du workflow de préparation compare les ZIP épinglés v148 (Gtk4) et v105 (original) : empreinte, UUID, GNOME 51, quatre clés booléennes, source de gestion du processus et compatibilité des ancres de l'ancien correctif. Il est strictement statique et ne peut ni promouvoir un profil, ni valider la fermeture de session. La qualification QEMU de la variante retenue reste obligatoire. Le workflow expérimental `gtk4-ding-candidate.yml` exerce Gtk4-DING v148 non patché avec les cinq autres extensions, les quatre réglages du bureau, les redémarrages, la restauration et les déconnexions du laboratoire existant. Son verrou est exclusivement CI ; un échec du candidat ne justifie ni le retrait du correctif v145, ni une promotion. Le DING original v105 reste non qualifié : le rapport du 24 novembre ne retrouve pas son gestionnaire de processus attendu. Le noyau vanilla reste sélectionné dynamiquement ; 7.3.6 a été observé par ce rapport, sans relever artificiellement le seuil de secours.
+Show Desktop Button v63 et Vitals v86 ont été qualifiés dans la PR #230. Gtk4-DING v148 est retenu après deux essais QEMU amont sans correctif local ([premier essai](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45351762196), [second essai](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45495888501)). Le rapport statique 45348084592 fournit l'empreinte exacte de dingManager.js ; l'installateur et les audits la vérifient sans modifier le fichier. Le laboratoire standard doit requalifier le commit de promotion. Le DING original v105 reste non qualifié : son gestionnaire attendu n'a pas été identifié. Le noyau vanilla reste sélectionné dynamiquement ; 7.3.6 a été observé le 24 novembre sans relever artificiellement le seuil de secours.
 
 Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l'interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME.md](GNOME.md).
 
