@@ -1,0 +1,4 @@
+# Reviewed candidate from Rocky's official release directory; authenticate in CI before use.
+# The image is immutable by name; never select the moving latest alias.
+IMAGE_BASE_URL="https://dl.rockylinux.org/pub/rocky/10/images/x86_64"
+IMAGE_NAME="Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2"

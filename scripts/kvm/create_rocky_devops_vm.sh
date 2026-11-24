@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the rocky-devops VM from an authenticated Rocky 10.2 cloud image (--cloud-image),
+# Creates the rocky-devops VM from an authenticated Rocky 10.3 cloud image (--cloud-image),
 # with cloud-init and the operator SSH key. Refuses to overwrite an existing domain.
 set -Eeuo pipefail
 
@@ -12,7 +12,7 @@ usage() {
   cat <<'TXT'
 Usage:
   create_rocky_devops_vm.sh \
-    --cloud-image /path/to/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2 \
+    --cloud-image /path/to/Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2 \
     [--ssh-key /path/to/key.pub] \
     [--sha256sums /path/to/CHECKSUM] \
     [--signature /path/to/CHECKSUM.asc] \
@@ -98,7 +98,7 @@ sudo virsh --connect "$uri" net-info "$network" >/dev/null || fail "libvirt netw
 sudo virsh --connect "$uri" dominfo "$name" >/dev/null 2>&1 && fail "domain already exists: $name"
 [[ ! -e "$disk" ]] || fail "disk already exists: $disk"
 [[ ! -e "$seed_dir" ]] || fail "cloud-init seed directory already exists: $seed_dir"
-[[ "$name" == rocky-devops && "${ROCKY_SERVER_RELEASE:-}" == 10.2 ]] || fail 'only the Rocky Linux 10.2 rocky-devops profile is supported'
+[[ "$name" == rocky-devops && "${ROCKY_SERVER_RELEASE:-}" == 10.3 ]] || fail 'only the Rocky Linux 10.3 rocky-devops profile is supported'
 [[ "$username" =~ ^[a-z_][a-z0-9_-]*$ ]] || fail 'invalid guest username'
 ssh-keygen -l -f "$ssh_key" >/dev/null || fail 'invalid SSH public key'
 # Conversion must never follow an unexpected external qcow2 backing file.

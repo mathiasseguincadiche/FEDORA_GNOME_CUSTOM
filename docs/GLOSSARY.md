@@ -154,7 +154,7 @@ Un même concept porte le même nom dans tous les guides. Les variantes anglaise
 
 ## Provisionnement VM
 
-**Cloud image** — image disque préinstallée destinée à être personnalisée au démarrage. `rocky-devops` part d'une image officielle Rocky Linux 10.2.
+**Cloud image** — image disque préinstallée destinée à être personnalisée au démarrage. `rocky-devops` part d'une image officielle Rocky Linux 10.3.
 
 **cloud-init** — système de configuration initiale d'une image cloud : utilisateur, clé SSH, fichiers, commandes de premier démarrage, etc.
 

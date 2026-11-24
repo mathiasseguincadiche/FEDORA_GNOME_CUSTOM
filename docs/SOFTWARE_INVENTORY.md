@@ -430,7 +430,7 @@ Installé seulement avec `REMOTE_ENABLE="true"`.
 
 Voir [accès distant](REMOTE_ACCESS.md) et l'[ADR 0017](adr/0017-remote-access.md).
 
-## 2. VM Rocky Linux 10.2 DevOps
+## 2. VM Rocky Linux 10.3 DevOps
 
 La VM `rocky-devops` est un poste DevOps en ligne de commande : cloner, construire, tester, conteneuriser, déployer. Tout est installé par `guest/rocky-devops/bootstrap-devops.sh`, puis contrôlé par `guest/rocky-devops/verify-devops.sh`.
 
@@ -473,7 +473,7 @@ Chaque dépôt vérifie les signatures (`gpgcheck=1`) ; aucun repli EL9, `--nogp
 | Minikube | v1.38.1 | release GitHub, SHA-256 versionné ; pilote Docker par défaut |
 | yq | v4.53.3 | release GitHub, SHA-256 versionné |
 | K9s | v0.51.0 | release GitHub, SHA-256 versionné |
-| kubectx et kubens | v0.11.0 | release GitHub, SHA-256 versionné (EPEL 10.2 n'en fournit pas de RPM) |
+| kubectx et kubens | v0.11.0 | release GitHub, SHA-256 versionné |
 | AWS CLI v2 | dernière | ZIP officiel et signature GPG vérifiée contre l'empreinte versionnée |
 
 Changer une version impose de changer son empreinte dans le même commit ([provenance](SUPPLY_CHAIN.md#outils-de-la-vm-rocky-devops)).

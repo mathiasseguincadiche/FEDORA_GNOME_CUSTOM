@@ -40,7 +40,7 @@ recorder findmnt 'case "$*" in *TARGET*) echo "$T_TMP/data" ;; *FSTYPE*) echo ex
 chmod +x "$tmp/bin/"*
 export PATH="$tmp/bin:$PATH"
 
-image="$tmp/iso/Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2"
+image="$tmp/iso/Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2"
 touch "$image" "$tmp/iso/CHECKSUM" "$tmp/iso/CHECKSUM.asc"
 ssh-keygen -q -t ed25519 -N '' -C fixture -f "$tmp/key"
 password='S3cret-console-pass'

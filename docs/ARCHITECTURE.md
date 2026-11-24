@@ -61,7 +61,7 @@ Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvel
 - **aucun chiffrement** des disques (ADR 0002) ni des sauvegardes (ADR 0014), mais jamais de clé SSH ou GnuPG dans Borg (ADR 0021) ;
 - **Secure Boot désactivé** (ADR 0002) ; le projet ne le désactive ni ne gère de clé MOK lui-même ;
 - **noyau** : Linux amont officiel stable (ADR 0015), avec un noyau Fedora signé en secours (ADR 0020) ; un retard de publication du noyau ne bloque jamais les autres mises à jour ;
-- **laboratoire DevOps** : Rocky Linux 10.2 en VM KVM, créée uniquement à la demande ;
+- **laboratoire DevOps** : Rocky Linux 10.3 en VM KVM, créée uniquement à la demande ;
 - **pas de nouvelle fonctionnalité avant la Gate 3** : la priorité est la première installation réelle certifiée. On améliore par petites étapes vérifiées, et chaque ajout sert un pilier.
 
 ## Ce que contient le dépôt

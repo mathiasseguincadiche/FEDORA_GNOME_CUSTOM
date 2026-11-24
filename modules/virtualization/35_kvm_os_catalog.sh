@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Catalogue d'OS invités : métadonnées osinfo-db Fedora, détection des médias tolérante pour une version plus récente que la base, Rocky Linux 10.2 invité explicite ; aucun média d'installation téléchargé automatiquement.
+# Catalogue d'OS invités : métadonnées osinfo-db Fedora, détection des médias tolérante pour une version plus récente que la base, Rocky Linux 10.3 invité explicite ; aucun média d'installation téléchargé automatiquement.
 # Contrat de module : precheck, plan, apply, postcheck (docs/ARCHITECTURE.md, section « Contrat d'exécution »).
 
 kvm_catalog_precheck() {
@@ -16,7 +16,7 @@ GUEST OS CATALOG:
 - use Fedora osinfo-db/libosinfo metadata instead of a project-maintained stale OS database
 - validate osinfo-query and virt-install OS detection support
 - allow install media detection with require=off when a brand-new release is newer than packaged osinfo-db
-- keep Rocky Linux 10.2 as the explicit project guest; Fedora remains a workstation qualification target
+- keep Rocky Linux 10.3 as the explicit project guest; Fedora remains a workstation qualification target
 - never download installation media automatically from this module
 EOF
 }

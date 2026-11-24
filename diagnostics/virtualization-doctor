@@ -190,12 +190,12 @@ if rpm -q libvirt-nss >/dev/null 2>&1; then record OK 'libvirt NSS' installed; e
 if rpm -q cloud-utils-cloud-localds >/dev/null 2>&1; then record OK 'cloud-init seed tooling' cloud-localds; else record KO 'cloud-init seed tooling' missing; fi
 if rpm -q openssl >/dev/null 2>&1; then record OK 'password hash tooling' openssl; else record KO 'password hash tooling' missing; fi
 
-if [[ "${ROCKY_SERVER_RELEASE:-}" == 10.2 \
+if [[ "${ROCKY_SERVER_RELEASE:-}" == 10.3 \
    && "${ROCKY_SERVER_VCPU:-}" == 6 \
    && "${ROCKY_SERVER_RAM_MB:-}" == 16384 \
    && "${ROCKY_SERVER_DISK_GB:-}" == 160 \
    && -z "${FEDORA_VM_NAME:-}" ]]; then
-  record OK 'VM profiles' 'Rocky Linux 10.2 profile'
+  record OK 'VM profiles' 'Rocky Linux 10.3 profile'
 else
   record KO 'VM profiles' 'profile resources or guest set mismatch'
 fi
