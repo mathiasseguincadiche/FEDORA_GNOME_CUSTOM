@@ -16,6 +16,7 @@ source "$REPO_ROOT/lib/install_lock.sh"
 install_lock_acquire
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
+source "$REPO_ROOT/lib/apply_incident.sh"
 module_catalog_load "$REPO_ROOT/manifests/module-plan.conf"
 module_catalog_validate
 
@@ -37,9 +38,12 @@ fi
 
 DRY_RUN=false; export DRY_RUN
 ui_banner 'FEDORA WORKSTATION CONTROL' 'PROTECTED REAL APPLY'
+apply_incident_require_clear || exit "$EXIT_SECURITY_BLOCK"
 apply_gate_open
+apply_incident_begin || { ui_error "Cannot persist APPLY incident and original Borg point; no modules started"; exit "$EXIT_SECURITY_BLOCK"; }
 if orchestrator_run_all; then
   report="$(orchestrator_report)"
+  apply_incident_close completed || { ui_error 'Cannot finalize persistent APPLY record; inspect incident before retry'; exit "$EXIT_SECURITY_BLOCK"; }
   ui_summary 'REAL APPLY COMPLETED' 'RUN ./diagnostic.sh AND REBOOT WHEN REQUESTED' "$report" "$LOG_DIR"
   exit 0
 else
