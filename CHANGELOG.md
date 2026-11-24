@@ -2,6 +2,8 @@
 
 ## Non publié — GNOME 51 et migration Rocky Linux 10.3
 
+- APPLY : Gate 2 importée obligatoire et revérifiée (commit, plan, matériel et intégrité du JSON). Import interrompu ou empreinte absente : refus avant confirmation.
+
 - Gtk4-DING v148 : promotion après deux laboratoires QEMU réussis sans correctif local ; empreinte du gestionnaire amont vérifiée sans mutation. Gate 3 physique non réalisée.
 - Show Desktop Button v63 et Vitals v86 : actualisation des archives et empreintes d'après le rapport CI du 24 novembre ; nouvelle qualification Wayland requise. Qualification Wayland réussie dans la PR #230.
 

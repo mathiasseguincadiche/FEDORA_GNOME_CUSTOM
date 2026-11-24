@@ -25,7 +25,7 @@ live_run() {
   local report proof
   validation_require_live_runtime || return $?
   # Invalidate both local forms before a new attempt, including failed prechecks.
-  rm -f "$(validation_gate_proof_path 2)" "$(validation_imported_proof_path 2)"
+  rm -f "$(validation_gate_proof_path 2)" "$(validation_imported_proof_path 2)" "$(validation_imported_proof_path 2).sha256"
   validation_require_clean_source || return $?
   report="$(validation_root)/live-preflight.tsv"
   mkdir -p "$(dirname "$report")"
