@@ -147,7 +147,13 @@ source "$fixture/modules/desktop/26_desktop_integration.sh"
 ibus() (
   local assignment count rc=0
   rm -f "$T_LOG" || return 1
-  for assignment in "$@"; do export "$assignment" || return 1; done
+  for assignment in "$@"; do
+    case "$assignment" in
+      T_INSTALLED=*) export T_INSTALLED="${assignment#*=}" ;;
+      REMOVE_IBUS_TYPING_BOOSTER=*) export REMOVE_IBUS_TYPING_BOOSTER="${assignment#*=}" ;;
+      *) printf 'Unknown IBus fixture override: %s\n' "$assignment" >&2; return 1 ;;
+    esac
+  done
   DRY_RUN=false desktop_integration_apply || return $?
   [[ -s "$T_LOG" ]] || return 1
   grep -Fxq 'packages packages-desktop-integration.txt' "$T_LOG" || return 1
