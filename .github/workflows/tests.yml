@@ -37,6 +37,9 @@ jobs:
           bash -n .github/scripts/fedora45-ci-install-extension.sh
 
       - name: Install real Borg integration-test dependency
+        # Keep independent integration tests meaningful even after an earlier failure.
+        # The failed earlier step still fails logic-contracts; never suppress its result.
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -48,6 +51,9 @@ jobs:
             sleep 10
           done
           timeout 600 sudo apt-get "${apt_opts[@]}" install -y borgbackup jq nftables
+          borg --version
+          jq --version
+          nft --version
       - name: CI assertions and recovery regressions
         run: |
           bash tests/test_gnome_telemetry_behavior.sh
