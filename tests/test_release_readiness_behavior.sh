@@ -97,5 +97,31 @@ for needle in ('blocked = any(x["status"]', 'print("OVERALL="', 'for label, pk i
     assert source.count(needle) == 1, "duplicated report block: " + needle
 assert '"status": "BLOCKED" if blocked else "READY"' in source
 assert "candidate-gnome-extensions.lock" in source
+# DING review is pinned, read-only, and cannot claim runtime qualification.
+def ding_archive(keys=True, duplicate=False):
+    result=io.BytesIO()
+    with zipfile.ZipFile(result,"w") as z:
+        z.writestr("metadata.json",json.dumps({"uuid":"ding@rastersoft.com","shell-version":["51"]}))
+        names=("show-trash","show-home","show-volumes","show-network-volumes") if keys else ("show-trash",)
+        xml='<schemalist><schema id="org.gnome.shell.extensions.ding">'+''.join(
+            '<key name="'+name+'" type="b"><default>false</default></key>' for name in names)+'</schema></schemalist>'
+        z.writestr("schemas/org.gnome.shell.extensions.ding.gschema.xml",xml)
+        z.writestr("dingManager.js","disable() { this.isEnabled = false; }")
+        if duplicate: z.writestr("other/dingManager.js","different")
+    return result.getvalue()
+def ding_record(data):
+    return ("original","ding@rastersoft.com","105","78123",hashlib.sha256(data).hexdigest(),"org.gnome.shell.extensions.ding")
+good=ding_archive()
+review=m.inspect_ding_review(ding_record(good),lambda url: good)
+assert review["verdict"]=="STATIC_REVIEW_ONLY" and review["runtime"]=="NOT_TESTED" and review["production"]=="UNCHANGED"
+assert len(review["desktop_boolean_keys"])==4 and review["manager_sha256"]==hashlib.sha256(b"disable() { this.isEnabled = false; }").hexdigest()
+assert review["lifecycle_lines"]==[{"line":1,"source":"disable() { this.isEnabled = false; }"}]
+for record,data in ((ding_record(good),b"tampered"),(ding_record(ding_archive(False)),ding_archive(False)),
+                    (ding_record(ding_archive(duplicate=True)),ding_archive(duplicate=True))):
+    try: m.inspect_ding_review(record,lambda url: data)
+    except ValueError: pass
+    else: raise AssertionError("invalid DING review input accepted")
+blocked=m.ding_review_report(lambda url: b"tampered")
+assert all(x["verdict"]=="BLOCKED" for x in blocked["candidates"]) and blocked["production"]=="UNCHANGED"
 print("release readiness behavior: PASS")
 PY

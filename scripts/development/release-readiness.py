@@ -10,6 +10,7 @@ import json
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import urllib.parse
@@ -148,6 +149,89 @@ def latest_status(prefix, pins, shell, transport=fetch):
     return "NEWER", detail + " sha256=" + latest["SHA256"], latest
 
 
+# Independent identities from the downloaded 2026-11-24 readiness evidence.
+# These are review inputs, NEVER production locks or installation authorization.
+DING_REVIEW_INPUTS = (
+    ("gtk4", "gtk4-ding@smedius.gitlab.com", "148", "78597",
+     "c695a52a8719209daa2c9e83e510e36618dbe201c357a58d8b2d6d5a5aadfd22",
+     "org.gnome.shell.extensions.gtk4-ding"),
+    ("original", "ding@rastersoft.com", "105", "78123",
+     "84d9bf55afc5d050bd1eb10fa19019b23625e69b86c347d6ec3355e1708d4896",
+     "org.gnome.shell.extensions.ding"),
+)
+
+
+def inspect_ding_review(record, transport=fetch):
+    """Read the exact reviewed ZIP, not GitLab main; never execute its JS."""
+    label, uuid, version, review, expected, schema = record
+    url = "https://extensions.gnome.org/review/download/" + review + ".shell-extension.zip"
+    data = transport(url)
+    if hashlib.sha256(data).hexdigest() != expected:
+        raise ValueError("DING candidate archive digest mismatch")
+    inspect_zip(data, uuid, 51)
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        infos = archive.infolist()
+        names = [entry.filename for entry in infos]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate DING archive member")
+        if any(stat.S_ISLNK(entry.external_attr >> 16) for entry in infos):
+            raise ValueError("symlink in DING candidate")
+        schema_name = "schemas/" + schema + ".gschema.xml"
+        tree = ET.fromstring(archive.read(schema_name))
+        selected = [node for node in tree.iter("schema") if node.get("id") == schema]
+        if len(selected) != 1:
+            raise ValueError("DING candidate schema identity mismatch")
+        keys = [node.get("name") for node in selected[0].iter("key")]
+        required = {"show-trash", "show-home", "show-volumes", "show-network-volumes"}
+        boolean = {node.get("name") for node in selected[0].iter("key") if node.get("type") == "b"}
+        if len(keys) != len(set(keys)) or not required <= boolean:
+            raise ValueError("DING candidate does not preserve four boolean desktop settings")
+        managers = [name for name in names if pathlib.PurePosixPath(name).name == "dingManager.js"]
+        if len(managers) != 1:
+            raise ValueError("DING manager source missing or ambiguous")
+        manager = archive.read(managers[0])
+        source = manager.decode("utf-8")
+        # The exact old patch is useful as a review probe, not as a generic patch.
+        patch_status = "NOT_APPLICABLE_TO_ORIGINAL"
+        patched_digest = None
+        if label == "gtk4":
+            patch_spec = importlib.util.spec_from_file_location(
+                "current_ding_patch", ROOT / "scripts/gnome/ding-shutdown-fix.py")
+            patch = importlib.util.module_from_spec(patch_spec)
+            patch_spec.loader.exec_module(patch)
+            try:
+                patched_digest = hashlib.sha256(patch.patched_source(manager)).hexdigest()
+                patch_status = "OLD_ANCHORS_MATCH_REVIEW_REQUIRED"
+            except ValueError as error:
+                patch_status = "OLD_ANCHORS_CHANGED_REVIEW_REQUIRED: " + str(error)
+        return {"candidate": label, "uuid": uuid, "version": version, "review_id": review,
+                "source_url": url, "archive_sha256": expected, "schema": schema,
+                "desktop_boolean_keys": sorted(required),
+                "manager_path": managers[0], "manager_sha256": hashlib.sha256(manager).hexdigest(),
+                "lifecycle_lines": [
+                    {"line": index, "source": line.strip()}
+                    for index, line in enumerate(source.splitlines(), 1)
+                    if any(token in line for token in (
+                        "isEnabled", "_doRelaunch", "_launchDesktop", "startupPrepare",
+                        "waylandClient", "disable(", "enable("))
+                ][:200],
+                "patch_probe": patch_status, "experimental_patched_sha256": patched_digest,
+                "verdict": "STATIC_REVIEW_ONLY", "runtime": "NOT_TESTED", "production": "UNCHANGED"}
+
+
+def ding_review_report(transport=fetch):
+    entries = []
+    for record in DING_REVIEW_INPUTS:
+        try:
+            entries.append(inspect_ding_review(record, transport))
+        except (ValueError, KeyError, OSError, zipfile.BadZipFile, ET.ParseError) as error:
+            entries.append({"candidate": record[0], "version": record[2], "review_id": record[3],
+                            "verdict": "BLOCKED", "detail": str(error),
+                            "runtime": "NOT_TESTED", "production": "UNCHANGED"})
+    return {"scope": "static source review only; no GNOME runtime qualification",
+            "candidates": entries, "production": "UNCHANGED", "physical_gate3": "DEFERRED"}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fedora", type=int, default=45)
@@ -156,6 +240,8 @@ def main():
     parser.add_argument("--report-only", action="store_true", help="collect blockers, exit zero; never means qualified")
     parser.add_argument("--latest", action="store_true",
                         help="also compare every pin with the newest published build (release-day check)")
+    parser.add_argument("--ding-review", action="store_true",
+                        help="inspect exact DING candidate ZIPs without installing or promoting")
     parser.add_argument("--output", type=pathlib.Path)
     args = parser.parse_args()
     if (args.fedora, args.shell) != (45, 51):
@@ -253,6 +339,15 @@ def main():
         probes.append({"candidate": label, "pk": pk, **found})
         print("PROBE", label, json.dumps(found, sort_keys=True), sep="\t")
     report["replacement_probes"] = probes
+    if args.ding_review:
+        review = ding_review_report()
+        report["ding_candidate_review"] = review
+        for item in review["candidates"]:
+            print("DING_REVIEW", item["candidate"], item["verdict"],
+                  item.get("patch_probe", item.get("detail", "")), sep="\t")
+        if args.output:
+            args.output.mkdir(parents=True, exist_ok=True)
+            (args.output / "ding-candidate-review.json").write_text(json.dumps(review, indent=2) + "\n")
     if args.latest:
         newest = dict(lock)
         report["latest"] = []
