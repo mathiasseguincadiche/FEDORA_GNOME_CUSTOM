@@ -23,6 +23,16 @@ verify >/dev/null
 printf '%s  %s\n' "$hash" "$name" >"$tmp/CHECKSUM"
 sign
 verify >/dev/null
+# A valid signature for an obsolete minor must never authorize it.
+old_name="Rocky-10-GenericCloud-Base-10.2-20260525.0.x86_64.qcow2"
+cp "$tmp/$name" "$tmp/$old_name"
+printf '%s  %s\n' "$hash" "$old_name" >"$tmp/CHECKSUM"
+sign
+if bash "$tmp/verify.sh" --image "$tmp/$old_name" --sha256sums "$tmp/CHECKSUM" --signature "$tmp/CHECKSUM.asc" --key-file "$tmp/key.asc" >/dev/null 2>&1; then
+  echo 'obsolete Rocky minor unexpectedly accepted' >&2; exit 1
+fi
+printf '%s  %s\n' "$hash" "$name" >"$tmp/CHECKSUM"
+sign
 printf 'tampered\n' >>"$tmp/$name"
 reject 'tampered image'
 printf 'fixture image\n' >"$tmp/$name"

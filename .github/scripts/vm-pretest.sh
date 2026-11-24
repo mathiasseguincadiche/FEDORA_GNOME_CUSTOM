@@ -140,7 +140,7 @@ ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'sudo cloud-init status --wait --long'
 
 report '[6/10] Rocky Linux 10.3 + network'
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'test "$(uname -m)" = x86_64 && test "$(getenforce)" = Enforcing && grep -q "^ID=\"rocky\"" /etc/os-release'
-ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -q '^VERSION_ID=\"10.3\"' /etc/os-release"
+ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" "grep -Fxq 'VERSION_ID=\"10.3\"' /etc/os-release"
 ssh "${SSH_OPTS[@]}" "$VM_USER@127.0.0.1" 'getent hosts github.com >/dev/null && curl -fsSI --max-time 20 https://github.com >/dev/null'
 
 report '[7/10] Copy exact repository guest bootstrap'

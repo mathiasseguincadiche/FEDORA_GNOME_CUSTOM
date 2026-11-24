@@ -86,7 +86,7 @@ Provenance : dépôts RPM signés pour Rocky/EPEL 10/CRB, Docker, GitHub CLI, Ha
 
 ## Réseau Docker
 
-Docker 29 stable utilise son backend iptables, qui charge `nft_compat` et `ip_set`. Le noyau EL10 signale ces modules par « Warning: Unmaintained driver is detected » en priorité critique. Le laboratoire garde ces notices et les marque `kernel_compatibility=WARNING` ; seules les quatre notices exactes (origine noyau, priorité 2) sont acceptées, tout autre message, erreur critique ou coredump bloque. Le backend nftables natif reste [expérimental selon Docker](https://docs.docker.com/engine/network/firewall-nftables/) et n'est pas activé ([notes RHEL 10.3](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html-single/10.3_release_notes/index)).
+Docker 29 stable utilise son backend iptables, qui charge `nft_compat` et `ip_set`. Le noyau EL10 signale ces modules par « Warning: Unmaintained driver is detected » en priorité critique. Le laboratoire garde ces notices et les marque `kernel_compatibility=WARNING` ; seules les quatre notices exactes (origine noyau, priorité 2) sont acceptées, tout autre message, erreur critique ou coredump bloque. Le backend nftables natif reste [expérimental selon Docker](https://docs.docker.com/engine/network/firewall-nftables/) et n'est pas activé ([notes RHEL 10.2, référence historique](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html-single/10.2_release_notes/index)).
 
 ### Qualification réseau Docker
 

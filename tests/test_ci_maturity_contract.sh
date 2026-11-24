@@ -93,6 +93,8 @@ grep -Fq 'bash .github/scripts/dnf-retry.sh dnf -y --refresh --disablerepo=fedor
 grep -Fq 'Validate multimedia provider convergence' "$ROOT/.github/workflows/fedora-host-pretest.yml"
 grep -Fq 'Rocky-10-GenericCloud-Base-10.3-20261112.0.x86_64.qcow2' "$ROOT/profiles/rocky10/cloud-image.lock"
 grep -Fq 'source "$ROOT/profiles/rocky10/cloud-image.lock"' "$ROOT/.github/scripts/vm-pretest.sh"
+grep -Fq '$IMAGE_BASE_URL/$IMAGE_NAME.CHECKSUM"' "$ROOT/.github/scripts/vm-pretest.sh"
+grep -Fq '$IMAGE_BASE_URL/$IMAGE_NAME.CHECKSUM.asc"' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'scripts/kvm/verify_rocky_cloud_image.sh' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'guest/rocky-devops/bootstrap-devops.sh' "$ROOT/.github/scripts/vm-pretest.sh"
 grep -Fq 'docker run --rm hello-world' "$ROOT/.github/scripts/vm-pretest.sh"
