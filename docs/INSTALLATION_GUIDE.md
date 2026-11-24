@@ -186,7 +186,7 @@ git switch --detach SHA_DU_COMMIT_AUDITE
 ./control.sh validate status
 ```
 
-L'import vérifie le commit, le plan de modules et les identités physiques du PC ; il ne compare pas le noyau du Live à celui du système installé.
+L'import vérifie le commit, le plan de modules et les identités physiques du PC ; il ne compare pas le noyau du Live à celui du système installé. Il publie le JSON et son empreinte SHA-256 locale. L'APPLY revalide obligatoirement les deux et les identités courantes avant de demander la confirmation. Une importation incomplète est refusée ; relancer `validate import`. Cette empreinte contrôle l'intégrité des octets, pas une signature indépendante de la preuve.
 
 **Réussite :** `validate status` montre la preuve Live importée pour ce PC et ce commit. Une preuve d'un autre commit ou d'un autre PC est refusée : refaire alors le contrôle Live au bon commit.
 
@@ -339,6 +339,7 @@ L'APPLY vérifie toutes les préconditions, puis demande de taper exactement `AP
 - une exécution hors du PC physique (VM, conteneur, CI, session Live) ;
 - un dépôt Git modifié ;
 - un dry-run ou une baseline périmés ;
+- une preuve Gate 2 importée absente, altérée, incomplète ou périmée pour le commit, le plan ou le matériel ;
 - une sauvegarde pré-APPLY absente ou inaccessible ;
 - Secure Boot actif ou indéterminé.
 

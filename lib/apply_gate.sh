@@ -28,6 +28,8 @@ apply_gate_require_clean_git() {
   [[ -z "$status" ]]
 }
 
+apply_gate_require_live_proof() { validation_require_imported_gate 2; }
+
 apply_gate_require_dryrun() {
   is_true "${REQUIRE_SAME_COMMIT_DRYRUN:-true}" || return 0
   local proof
@@ -66,6 +68,7 @@ apply_gate_open() {
   is_true "${REAL_MACHINE_APPROVED:-false}" || { ui_error 'REAL_MACHINE_APPROVED=false; use config/local.conf after reviewing the target machine'; return "$EXIT_SECURITY_BLOCK"; }
   [[ -t 0 && -t 1 ]] || { ui_error 'interactive TTY required'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_clean_git || { ui_error 'Git working tree must be clean'; return "$EXIT_SECURITY_BLOCK"; }
+  apply_gate_require_live_proof || { ui_error 'Gate 2 imported Live USB proof missing, incomplete, altered or stale for the current commit, module plan or physical hardware; run validate import with the matching proof'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_dryrun || { ui_error 'dry-run proof is missing/stale for the current commit, effective configuration, module plan or hardware fingerprint'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_baseline || { ui_error 'hardware baseline certification missing or invalid for the current hardware/BIOS fingerprint'; return "$EXIT_SECURITY_BLOCK"; }
   apply_gate_require_backup || { ui_error 'pre-APPLY Borg archive is missing, stale, no longer readable, or does not match current commit/config/hardware'; return "$EXIT_SECURITY_BLOCK"; }

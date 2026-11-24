@@ -28,6 +28,7 @@ cp "$fixture_root/repo/manifests/module-plan.conf" "$fixture_root/original-plan"
   source "$ROOT/lib/constants.sh"
   source "$ROOT/lib/evidence.sh"
   source "$ROOT/lib/validation_gates.sh"
+  source "$ROOT/lib/apply_gate.sh"
 
   repo_commit() { printf '%s\n' "$FIXTURE_COMMIT"; }
   runtime_environment() { printf '%s\n' "$RUNTIME_ENVIRONMENT"; }
@@ -130,6 +131,20 @@ PY_VALIDATE
   check_sidecar "$imported"
   validation_require_imported_gate 2 || fail 'current imported Live proof rejected'
   validation_require_chain || fail 'installed qualification did not find its matching Live proof'
+  apply_gate_require_live_proof || fail 'real APPLY prerequisite refused valid imported proof'
+  cp "$imported.sha256" "$fixture_root/valid-sidecar"
+  rm -f "$imported.sha256"
+  assert_fails 'missing imported checksum' validation_require_imported_gate 2
+  assert_fails 'APPLY with missing Gate 2 checksum' apply_gate_require_live_proof
+  [[ "$(validation_gate_state 2)" == PENDING ]] || fail 'missing checksum displayed PASS'
+  printf '%s  %s\n' "$(printf '%064d' 0)" live.json > "$imported.sha256"
+  assert_fails 'incorrect imported checksum' apply_gate_require_live_proof
+  cp "$fixture_root/valid-sidecar" "$imported.sha256"
+  cp "$imported" "$fixture_root/valid-import"
+  printf '\n' >> "$imported"
+  assert_fails 'modified imported JSON even with same semantic content' apply_gate_require_live_proof
+  cp "$fixture_root/valid-import" "$imported"
+  apply_gate_require_live_proof || fail 'restored exact proof refused'
   assert_fails 'obsolete gate 1 import requirement' validation_require_imported_gate 1
   second_export="$(validation_export_proof 2 "$fixture_root/re-export")" || fail 'export did not fall back to the imported Live proof'
   cmp -s "$imported" "$second_export" || fail 're-export changed the proof bytes'
@@ -138,12 +153,15 @@ PY_VALIDATE
 
   FIXTURE_COMMIT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
   assert_fails 'different source commit' validation_verify_proof "$imported" 2
+  assert_fails 'APPLY with stale commit' apply_gate_require_live_proof
   FIXTURE_COMMIT=1111111111111111111111111111111111111111
   printf 'different module plan\n' > "$REPO_ROOT/manifests/module-plan.conf"
   assert_fails 'different module plan' validation_verify_proof "$imported" 2
+  assert_fails 'APPLY with stale plan' apply_gate_require_live_proof
   cp "$fixture_root/original-plan" "$REPO_ROOT/manifests/module-plan.conf"
   FIXTURE_HARDWARE=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
   assert_fails 'different physical hardware' validation_verify_proof "$imported" 2
+  assert_fails 'APPLY with mismatched hardware' apply_gate_require_live_proof
   FIXTURE_HARDWARE=3333333333333333333333333333333333333333333333333333333333333333
   validation_verify_proof "$imported" 2 || fail 'matching identities were not restored'
   FIXTURE_CLEAN=false
@@ -193,12 +211,15 @@ PY_FORGE
   assert_fails 'import JSON write failure' validation_import_proof "$exported"
   FIXTURE_FAIL_WRITE="$(validation_imported_proof_path 2).sha256"
   assert_fails 'import checksum write failure' validation_import_proof "$exported"
+  assert_fails 'partial import must not authorize APPLY' apply_gate_require_live_proof
   FIXTURE_FAIL_WRITE=''
   imported="$(validation_import_proof "$exported")" || fail 'import failed after restoring the writer'
   check_sidecar "$imported"
   FIXTURE_FAIL_HASH="$(validation_imported_proof_path 2)"
   assert_fails 'import checksum calculation failure' validation_import_proof "$exported"
   FIXTURE_FAIL_HASH=''
+  assert_fails 'hash failure invalidates incomplete import' apply_gate_require_live_proof
+  imported="$(validation_import_proof "$exported")" || fail 'reimport after hash failure failed'
   FIXTURE_INSTALL_FAIL=true
   assert_fails 'export JSON install failure' validation_export_proof 2 "$fixture_root/export-json-failure"
   FIXTURE_INSTALL_FAIL=false

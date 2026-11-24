@@ -31,6 +31,7 @@ source "$ROOT/lib/apply_gate.sh"
 fedora_require_install_target() { [[ "${T_TARGET_READY:-true}" == true ]]; }
 # Git and the two heavier proofs are isolated here; the dry-run proof is real.
 apply_gate_require_clean_git() { [[ "${T_CLEAN:-true}" == true ]]; }
+validation_require_imported_gate() { [[ "$1" == 2 && "${T_LIVE_PROOF:-true}" == true ]]; }
 apply_gate_require_baseline() { [[ "${T_BASELINE:-true}" == true ]]; }
 apply_gate_require_backup() { [[ "${T_BACKUP:-true}" == true ]]; }
 REAL_APPLY_FEATURE_ENABLED="${T_FEATURE:-true}"
@@ -63,6 +64,9 @@ expect_block 'Production APPLY requires running Fedora 45' T_TARGET_READY=false
 expect_block 'REAL APPLY feature disabled' T_FEATURE=false
 expect_block 'REAL_MACHINE_APPROVED=false' T_APPROVED=false
 expect_block 'Git working tree must be clean' T_CLEAN=false
+expect_block 'Gate 2 imported Live USB proof missing' T_LIVE_PROOF=false
+# No confirmation prompt can be reached when the imported proof is refused.
+if grep -Fq 'Type exactly' <<<"$out"; then fail 'missing Gate 2 reached confirmation'; fi
 expect_block 'hardware baseline certification missing' T_BASELINE=false
 expect_block 'pre-APPLY Borg archive is missing' T_BACKUP=false
 

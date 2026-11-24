@@ -68,16 +68,33 @@ validation_verify_proof() {
   python3 "$REPO_ROOT/lib/live_validation.py" verify --file "$file" --catalog "$(live_check_catalog)" \
     --commit "$(repo_commit)" --module-plan "$(module_plan_sha256)" --hardware "$hardware"
 }
-validation_require_imported_gate() { [[ "$1" == 2 ]] || return 1; validation_verify_proof "$(validation_imported_proof_path 2)" 2; }
+validation_require_imported_gate() {
+  local file checksum recorded
+  [[ "$1" == 2 ]] || return 1
+  file="$(validation_imported_proof_path 2)" || return 1
+  [[ -f "$file" && ! -L "$file" && -s "$file" &&
+     -f "$file.sha256" && ! -L "$file.sha256" && -s "$file.sha256" ]] || return 1
+  checksum="$(validation_file_sha256 "$file")" || return 1
+  [[ "$checksum" =~ ^[0-9a-f]{64}$ ]] || return 1
+  # Compare the exact canonical sidecar, never follow a filename from it.
+  recorded="$(cat -- "$file.sha256")" || return 1
+  [[ "$recorded" == "$checksum  $(basename "$file")" ]] || return 1
+  validation_verify_proof "$file" 2
+}
 validation_import_proof() {
   local source="$1" destination checksum
   [[ -s "$source" ]] || { ui_error "Live proof missing: $source"; return "$EXIT_PRECHECK_FAILED"; }
   validation_verify_proof "$source" 2 || { ui_error 'Live proof is incomplete, stale or belongs to another source/hardware'; return "$EXIT_SECURITY_BLOCK"; }
   destination="$(validation_imported_proof_path 2)"
-  mkdir -p "$(dirname "$destination")"
+  mkdir -p "$(dirname "$destination")" || return "$EXIT_PRECHECK_FAILED"
+  # A valid source may replace the previous import. Invalidate the completion
+  # marker first so an interrupted JSON/hash/sidecar write cannot authorize APPLY.
+  rm -f -- "$destination.sha256" || return "$EXIT_PRECHECK_FAILED"
   evidence_atomic_write "$destination" 0600 < "$source" || return "$EXIT_PRECHECK_FAILED"
+  validation_verify_proof "$destination" 2 || return "$EXIT_SECURITY_BLOCK"
   checksum="$(validation_file_sha256 "$destination")" || return "$EXIT_PRECHECK_FAILED"
   printf '%s  %s\n' "$checksum" "$(basename "$destination")" | evidence_atomic_write "$destination.sha256" 0600 || return "$EXIT_PRECHECK_FAILED"
+  validation_require_imported_gate 2 || return "$EXIT_SECURITY_BLOCK"
   printf '%s\n' "$destination"
 }
 # Kept as a common internal predicate: Live observations -> installed qualification.
@@ -105,7 +122,7 @@ validation_export_proof() {
   source="$(validation_gate_proof_path "$gate")"
   if ! validation_verify_proof "$source" "$gate"; then
     source="$(validation_imported_proof_path "$gate")"
-    validation_verify_proof "$source" "$gate" || return "$EXIT_PRECHECK_FAILED"
+    validation_require_imported_gate "$gate" || return "$EXIT_PRECHECK_FAILED"
   fi
   mkdir -p "$destination_dir"
   destination="$destination_dir/$(basename "$source")"
@@ -116,9 +133,8 @@ validation_export_proof() {
 }
 
 validation_gate_state() {
-  local gate="$1" proof
-  proof="$(validation_imported_proof_path "$gate")"
-  if validation_verify_proof "$proof" "$gate" || validation_verify_proof "$(validation_gate_proof_path "$gate")" "$gate"; then
+  local gate="$1"
+  if validation_require_imported_gate "$gate" || { validation_runtime_is_live && validation_verify_proof "$(validation_gate_proof_path "$gate")" "$gate"; }; then
     printf 'PASS\n'
   else
     printf 'PENDING\n'

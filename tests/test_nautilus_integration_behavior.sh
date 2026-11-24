@@ -141,10 +141,37 @@ doctor || fail 'restored Nautilus stack refused'
 # The IBus workaround is opt-in, separate from Nautilus, and only removes an installed package.
 source "$fixture/modules/desktop/26_desktop_integration.sh"
 [[ "$REMOVE_IBUS_TYPING_BOOSTER" == false ]] || fail 'IBus workaround enabled by default'
-ibus() { rm -f "$T_LOG"; env "$@" bash -c "$(declare -f); DRY_RUN=false desktop_integration_apply"; grep -c 'remove ibus-typing-booster' "$T_LOG" || true; }
-[[ "$(ibus T_INSTALLED=ibus-typing-booster)" == 0 ]] || fail 'IBus removed without the opt-in'
-[[ "$(ibus REMOVE_IBUS_TYPING_BOOSTER=true)" == 0 ]] || fail 'IBus removal attempted while not installed'
-[[ "$(ibus REMOVE_IBUS_TYPING_BOOSTER=true T_INSTALLED=ibus-typing-booster)" == 1 ]] || fail 'opt-in IBus removal not applied'
+# A subshell inherits the fixture functions without serializing the entire
+# engine into a single execve argument (Linux MAX_ARG_STRLEN). Explicitly
+# propagate a failed apply: an absent log is never evidence of zero removals.
+ibus() (
+  local assignment count rc=0
+  rm -f "$T_LOG" || return 1
+  for assignment in "$@"; do
+    case "$assignment" in
+      T_INSTALLED=*) export T_INSTALLED="${assignment#*=}" ;;
+      REMOVE_IBUS_TYPING_BOOSTER=*) export REMOVE_IBUS_TYPING_BOOSTER="${assignment#*=}" ;;
+      *) printf 'Unknown IBus fixture override: %s\n' "$assignment" >&2; return 1 ;;
+    esac
+  done
+  DRY_RUN=false desktop_integration_apply || return $?
+  [[ -s "$T_LOG" ]] || return 1
+  grep -Fxq 'packages packages-desktop-integration.txt' "$T_LOG" || return 1
+  count="$(grep -c 'remove ibus-typing-booster' "$T_LOG")" || rc=$?
+  (( rc <= 1 )) || return "$rc"
+  printf '%s\n' "$count"
+)
+# Exceed the old single-argument size limit with an unrelated function. The
+# isolated fixture must remain independent of the total function definitions.
+eval "large_unused_fixture() { : $(printf '%0132000d' 0); }"
+
+count="$(ibus T_INSTALLED=ibus-typing-booster)" || fail 'IBus default fixture failed'
+[[ "$count" == 0 ]] || fail 'IBus removed without the opt-in'
+count="$(ibus REMOVE_IBUS_TYPING_BOOSTER=true)" || fail 'IBus absent package fixture failed'
+[[ "$count" == 0 ]] || fail 'IBus removal attempted while not installed'
+count="$(ibus REMOVE_IBUS_TYPING_BOOSTER=true T_INSTALLED=ibus-typing-booster)" || fail 'IBus opt-in fixture failed'
+[[ "$count" == 1 ]] || fail 'opt-in IBus removal not applied'
+unset -f large_unused_fixture
 rm -f "$T_LOG"; T_INSTALLED='gnome-terminal-nautilus ibus-typing-booster' REMOVE_IBUS_TYPING_BOOSTER=true DRY_RUN=false gnome_nautilus_apply
 grep -q ibus "$T_LOG" && fail 'Nautilus apply touched the IBus workaround'
 
