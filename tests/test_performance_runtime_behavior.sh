@@ -93,10 +93,22 @@ import signal
 import sys
 import time
 
+def trace(message):
+    with open(os.environ["T_LOG"], "a", encoding="utf-8") as log:
+        print(message, file=log, flush=True)
+
+
+def stop(_signum, _frame):
+    trace("fixture: SIGINT received")
+    sys.exit(130)
+
+
 if os.environ.get("T_SCX_IGNORE_INT") == "1":
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 else:
-    signal.signal(signal.SIGINT, lambda *_: sys.exit(130))
+    signal.signal(signal.SIGINT, stop)
+signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGINT})
+trace("fixture: scheduler started")
 print("scx_rusty: " + os.environ.get("T_SCX_OUTPUT", "scheduler attached"), flush=True)
 time.sleep(30)
 PY
@@ -166,12 +178,22 @@ sed -i 's/^sched_ext_smoke_seconds=.*/sched_ext_smoke_seconds=1/' config/perform
 
 # sched_ext smoke: bounded run, load failures and non-bare-metal refused.
 scx() { rm -f "$T_LOG"; env "$@" bash diagnostics/sched-ext-doctor --smoke > "$tmp/out" 2>&1; }
-start="$(date +%s)"; scx || { cat "$tmp/out" >&2; fail 'sched_ext smoke failed'; }
+start="$(date +%s)"; scx || {
+  cat "$tmp/out" >&2
+  cat "$T_LOG" >&2
+  find "$fixture/reports" -name '*-sched-ext-smoke.log' -exec cat {} + >&2
+  fail 'sched_ext smoke failed'
+}
 (( $(date +%s) - start < 10 )) || fail 'sched_ext smoke was not bounded'
+grep -Fxq 'fixture: SIGINT received' "$T_LOG" || fail 'scheduler never received SIGINT'
 grep -q '^sudo timeout --signal=INT --kill-after=2s 1s .*scx_rusty$' "$T_LOG" || fail "sched_ext smoke not run under a bounded timeout: $(cat "$T_LOG")"
-rc=0; scx T_SCX_OUTPUT='libbpf: failed to load BPF program' || rc=$?; [[ "$rc" != 0 ]] || fail 'sched_ext load failure accepted'
+rc=0; scx T_SCX_OUTPUT='libbpf: failed to load BPF program' || rc=$?
+[[ "$rc" != 0 ]] && grep -Fq 'scheduler emitted a load/runtime failure' "$tmp/out" || fail 'sched_ext load failure accepted or not identified'
+grep -Fxq 'fixture: SIGINT received' "$T_LOG" || fail 'load-failure fixture never received SIGINT'
 rc=0; scx T_SCX_IGNORE_INT=1 || rc=$?
 [[ "$rc" != 0 ]] && grep -Fq 'scheduler rc=137' "$tmp/out" || fail 'forced scheduler kill accepted or not reported'
+grep -Fxq 'fixture: scheduler started' "$T_LOG" || fail 'forced-kill fixture never started'
+if grep -Fxq 'fixture: SIGINT received' "$T_LOG"; then fail 'forced-kill fixture did not ignore SIGINT'; fi
 rc=0; scx T_RUNTIME=vm || rc=$?; [[ "$rc" != 0 && ! -e "$T_LOG" ]] || fail 'sched_ext smoke ran outside bare metal'
 bash diagnostics/sched-ext-doctor --quiet || fail 'optional sched_ext must not fail without a smoke'
 
