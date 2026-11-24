@@ -29,8 +29,8 @@ Chaque extension remplit une fonction précise. Les identités et archives exact
 | Dock | Dash to Dock / `dash-to-dock@micxgx.gmail.com` | RPM Fedora, version exacte dans `profiles/fedora45/gnome-rpms.json` |
 | Indicateurs d'applications | AppIndicator / `appindicatorsupport@rgcjonas.gmail.com` | RPM Fedora, même verrou |
 | Bureau et Corbeille | Gtk4 Desktop Icons NG / `gtk4-ding@smedius.gitlab.com` | version 145, review 75162 |
-| Afficher le bureau | Show Desktop Button / `show-desktop-button@amivaleo` | version 59, review 75965 |
-| CPU, mémoire, réseau | Vitals / `Vitals@CoreCoding.com` | version 85, review 74743 |
+| Afficher le bureau | Show Desktop Button / `show-desktop-button@amivaleo` | version 63, review 77273 |
+| CPU, mémoire, réseau | Vitals / `Vitals@CoreCoding.com` | version 86, review 76696 |
 | Tuilage | Tiling Assistant / `tiling-assistant@leleat-on-github` | release GitHub v56 |
 
 URL, version, UUID, compatibilité GNOME 51 et SHA-256 des quatre archives téléchargées sont dans `config/gnome-extensions.lock`, qui doit rester identique à `profiles/fedora45/gnome-extensions.lock`. Chaque installateur refuse une archive dont l'un de ces éléments diffère, compile les schémas et garde la provenance dans `.fedora-gnome-custom-source`.
