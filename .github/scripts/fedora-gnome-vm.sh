@@ -9,11 +9,6 @@ ROOT="$GITHUB_WORKSPACE"
 bash -n "$ROOT/.github/scripts/fedora-gnome-guest.sh"
 LAB_RELEASE="${FGC_LAB_RELEASE:-45}"
 LAB_EXTENSION_MODE="${FGC_LAB_EXTENSION_MODE:-curated}"
-LAB_DING_VARIANT="${FGC_LAB_DING_VARIANT:-production}"
-case "$LAB_RELEASE:$LAB_EXTENSION_MODE:$LAB_DING_VARIANT" in
-  44:curated:production|45:native:production|45:curated:production|45:curated:gtk4-v148) ;;
-  *) echo 'Unsupported DING laboratory variant' >&2; exit 50;;
-esac
 case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native|45:curated) ;; *) echo 'Unsupported lab profile' >&2; exit 50;; esac
 
 LAB="$ROOT/.fedora-gnome-lab"
@@ -49,7 +44,7 @@ guest() { ssh "${SSH_OPTS[@]}" lab@127.0.0.1 "$@"; }
 # COMMIT is validated by initialize(), and the command is fixed in this file.
 guest_action() {
   # shellcheck disable=SC2029
-  guest "sudo bash /opt/fgc-lab/repo/.github/scripts/fedora-gnome-guest.sh $1 $COMMIT $LAB_RELEASE $LAB_EXTENSION_MODE $LAB_DING_VARIANT"
+  guest "sudo bash /opt/fgc-lab/repo/.github/scripts/fedora-gnome-guest.sh $1 $COMMIT $LAB_RELEASE $LAB_EXTENSION_MODE"
 }
 mark() { python3 "$REPORTER" "$REPORT" pass "$1"; printf 'PASS: %s\n' "$1"; }
 evidence() { python3 "$REPORTER" "$REPORT" evidence "$1" "$2"; }
@@ -110,7 +105,6 @@ mark image
 evidence fedora_release "$LAB_RELEASE"
 evidence gnome_major "$((LAB_RELEASE+6))"
 evidence extension_mode "$LAB_EXTENSION_MODE"
-evidence ding_variant "$LAB_DING_VARIANT"
 if [[ "$LAB_EXTENSION_MODE" == native ]]; then evidence curated_extensions DEFERRED; else evidence curated_extensions six-active; fi
 evidence image_sha256 "$FEDORA_CLOUD_SHA256"
 # Fetch reviewed bytes on the runner and transfer them to the guest. Both
@@ -121,9 +115,6 @@ if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
   # native GNOME 51 preview must remain independent from curated ZIPs.
   python3 "$ROOT/.github/scripts/fedora45-ci-validate-candidate.py" "$ROOT"
   source "$ROOT/profiles/fedora45/gnome-extensions.lock"
-  if [[ "$LAB_DING_VARIANT" == gtk4-v148 ]]; then
-    source "$ROOT/.github/gtk4-ding-v148.lab.lock"
-  fi
 elif [[ "$LAB_RELEASE" == 44 ]]; then
   source "$ROOT/profiles/fedora44/gnome-extensions.lock"
 fi

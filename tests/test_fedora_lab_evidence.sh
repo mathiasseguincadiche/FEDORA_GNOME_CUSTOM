@@ -143,19 +143,15 @@ assert "for attempt in {1..60}; do" in guest
 assert "as_user timeout --signal=TERM --kill-after=5s 20s gnome-extensions info" in guest
 assert "if (( attempt < 60 )); then sleep 2; fi" in guest
 assert 'echo "GNOME extension $uuid not confirmed enabled and ACTIVE' in guest
-# The GTK4-DING subprocess race must be fixed inside the signed-archive
-# descendant, not by disabling any extension during logout or silencing cores.
-ding_fix = (root / "scripts/gnome/ding-shutdown-fix.py").read_text()
-ding_wrapper = (root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py").read_text()
-assert 'def patched_source(original: bytes)' in ding_fix
-assert '"    disable() {\\n        this.isEnabled = false;' in ding_fix
-assert 'if (!this.isEnabled || !client || this.waylandClient !== client)' in ding_fix
-assert 'if (!this.isEnabled)\\n            return;' in ding_fix
-assert 'hashlib.sha256(archive.read_bytes()).hexdigest() != profile["DING_SHA256"]' in ding_wrapper
-assert 'if current != expected:' in ding_wrapper
-assert 'scripts/gnome/ding-shutdown-fix.py" apply' in candidate_installer
-assert 'scripts/gnome/ding-shutdown-fix.py" apply' in (root/'scripts/gnome/install-pinned-extension.sh').read_text()
-assert 'fedora45-ci-ding-shutdown-fix.py"), "verify"' in (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
+# Upstream-only v148 must use the same immutable manager verifier in every path.
+ding_verify = (root / "scripts/gnome/verify-ding-source.py").read_text()
+assert 'MANAGER_SHA256 = "4c950afe935cde34e86c83cd4ed12ff30fcbdc19ec454930c0086523f9fd6d21"' in ding_verify
+assert 'ARCHIVE_SHA256 = "c695a52a8719209daa2c9e83e510e36618dbe201c357a58d8b2d6d5a5aadfd22"' in ding_verify
+assert 'write_bytes' not in ding_verify
+assert 'scripts/gnome/verify-ding-source.py" verify-archive' in candidate_installer
+assert 'scripts/gnome/verify-ding-source.py" verify-archive' in (root/'scripts/gnome/install-pinned-extension.sh').read_text()
+assert 'verify-ding-source.py"), "verify-archive"' in extension_audit
+assert 'verify-ding-source.py' in (root/'scripts/validation/gnome51-extension-audit.py').read_text()
 assert 'source "$REPO/profiles/fedora45/gnome-extensions.lock"' in guest
 assert 'source "$ROOT/profiles/fedora45/gnome-extensions.lock"' in host
 # The real GNOME lab must close CI-owned GUI clients before logging out.
@@ -285,16 +281,3 @@ for event in ({}, {"event": "SHUTDOWN", "data": {"guest": True, "reason": "guest
 print("Fedora lab evidence: PASS (missing exercises, stale boots, archive identity, isolation, encryption, deferred gates)")
 PY
 
-# Experimental overlay must never replace the default production lock or patch.
-python3 - "$ROOT" <<'PY'
-import pathlib, sys
-root = pathlib.Path(sys.argv[1])
-lock = (root / ".github/gtk4-ding-v148.lab.lock").read_text()
-assert 'DING_VERSION="148"' in lock and 'DING_SHA256="c695a52a8719209daa2c9e83e510e36618dbe201c357a58d8b2d6d5a5aadfd22"' in lock
-assert 'DING_VERSION="145"' in (root / "profiles/fedora45/gnome-extensions.lock").read_text()
-assert "gtk4-ding-v148.lab.lock" not in (root / "scripts/gnome/install-pinned-extension.sh").read_text()
-for path in (".github/scripts/fedora-gnome-vm.sh", ".github/scripts/fedora-gnome-guest.sh"):
-    source = (root / path).read_text()
-    assert "45:curated:gtk4-v148" in source and "gtk4-ding-v148.lab.lock" in source
-assert 'ding_variant=variant' in (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
-PY

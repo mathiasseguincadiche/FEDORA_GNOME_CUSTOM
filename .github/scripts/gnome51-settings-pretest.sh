@@ -28,7 +28,7 @@ for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
   python3 "$ROOT/scripts/gnome/validate-extension-metadata.py" "$dir/metadata.json" "${!uuid}" 51
   glib-compile-schemas "$dir/schemas"
   if [[ "$prefix" == DING ]]; then
-    python3 "$ROOT/scripts/gnome/ding-shutdown-fix.py" apply "$zip" "$dir"
+    python3 "$ROOT/scripts/gnome/verify-ding-source.py" verify-archive "$zip" "$dir"
   fi
 done
 run_mutating() { shift; "$@"; }

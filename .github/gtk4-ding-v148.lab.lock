@@ -1,5 +1,0 @@
-# Candidate-only overlay; never sourced by production.
-DING_SOURCE_URL="https://extensions.gnome.org/review/download/78597.shell-extension.zip"
-DING_REVIEW_ID="78597"
-DING_VERSION="148"
-DING_SHA256="c695a52a8719209daa2c9e83e510e36618dbe201c357a58d8b2d6d5a5aadfd22"

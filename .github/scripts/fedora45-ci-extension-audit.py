@@ -41,14 +41,6 @@ list_spec.loader.exec_module(extension_list)
 active = extension_list.list_extensions("--active")
 enabled = extension_list.list_extensions("--enabled")
 lock = audit.load_profile_module(root).assignments(root / "profiles/fedora45/gnome-extensions.lock")
-variant = os.environ.get("FGC_LAB_DING_VARIANT", "production")
-if variant == "gtk4-v148":
-    candidate = audit.load_profile_module(root).assignments(root / ".github/gtk4-ding-v148.lab.lock")
-    if set(candidate) != {"DING_SOURCE_URL", "DING_REVIEW_ID", "DING_VERSION", "DING_SHA256"}:
-        raise SystemExit("Unexpected DING candidate lock fields")
-    lock.update(candidate)
-elif variant != "production":
-    raise SystemExit("Unsupported DING laboratory variant")
 user_dir = Path.home() / ".local/share/gnome-shell/extensions"
 system_dir = Path("/usr/share/gnome-shell/extensions")
 metadata, provenance = {}, {}
@@ -65,34 +57,16 @@ for role, uuid in roles.items():
             hashes = [line.removeprefix("sha256=") for line in marker.read_text().splitlines() if line.startswith("sha256=")]
             if len(hashes) == 1:
                 provenance[uuid] = hashes[0]
-# A nominal ACTIVE state cannot prove this crash-race correction. Reconstruct
-# dingManager.js from the reviewed ZIP and compare every byte after patching.
-if variant == "production":
-    subprocess.run(
-        [sys.executable, str(root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py"), "verify"],
-        check=True, stdout=subprocess.DEVNULL,
-    )
-else:
-    # Candidate is upstream-only. Verify the pinned archive and every byte of
-    # the installed manager against it, never treat the v145 patch as applicable.
-    import hashlib
-    import zipfile
-    archive = Path("/opt/fgc-lab/extensions/DING.zip")
-    if hashlib.sha256(archive.read_bytes()).hexdigest() != lock["DING_SHA256"]:
-        raise SystemExit("DING candidate ZIP mismatch")
-    directory = user_dir / roles["desktop_icons"]
-    with zipfile.ZipFile(archive) as z:
-        managers = [name for name in z.namelist() if Path(name).name == "dingManager.js"]
-        if len(managers) != 1:
-            raise SystemExit("DING candidate manager ambiguous")
-        manager = directory / managers[0]
-        if directory.is_symlink() or manager.is_symlink() or not manager.is_file() or manager.read_bytes() != z.read(managers[0]):
-            raise SystemExit("DING candidate manager differs from upstream ZIP")
+# ACTIVE alone is insufficient: compare installed manager with the reviewed ZIP.
+subprocess.run(
+    [sys.executable, str(root / "scripts/gnome/verify-ding-source.py"), "verify-archive",
+     "/opt/fgc-lab/extensions/DING.zip", str(user_dir / roles["desktop_icons"])],
+    check=True, stdout=subprocess.DEVNULL,
+)
 subprocess.run([sys.executable, str(root / "scripts/gnome/fedora45-rpm-extensions.py"), "--verify"], check=True)
 result = audit.assess(roles, active, enabled, metadata, provenance, lock)
 profile_status = json.loads((root / "profiles/fedora45/profile.json").read_text())["status"]
 result.update(lab_scope="disposable-qemu-only", profile_status=profile_status,
-              ding_variant=variant, ding_archive_sha256=lock["DING_SHA256"],
               production_apply="BLOCKED", physical_gate3="DEFERRED")
 print(json.dumps(result, indent=2))
 if result["verdict"] != "PASS":

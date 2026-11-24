@@ -12,11 +12,6 @@ LAB_UID="$(id -u "$LAB_USER")"
 EXPECTED_COMMIT="${2:-}"
 LAB_RELEASE="${3:-45}"
 LAB_EXTENSION_MODE="${4:-curated}"
-LAB_DING_VARIANT="${5:-production}"
-case "$LAB_RELEASE:$LAB_EXTENSION_MODE:$LAB_DING_VARIANT" in
-  44:curated:production|45:native:production|45:curated:production|45:curated:gtk4-v148) ;;
-  *) echo 'Unsupported DING laboratory variant' >&2; exit 50;;
-esac
 printf 'Guest profile release=%s extensions=%s action=%s\n' "$LAB_RELEASE" "$LAB_EXTENSION_MODE" "${1:-missing}"
 case "$LAB_RELEASE:$LAB_EXTENSION_MODE" in 44:curated|45:native|45:curated) ;; *) echo 'Unsupported guest profile' >&2; exit 50;; esac
 EXPECTED_GNOME_MAJOR="$((LAB_RELEASE+6))"
@@ -32,9 +27,6 @@ if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
   # Reviewed GNOME 51 candidate is read only for the isolated curated lab.
   # The native preview intentionally has no candidate dependency.
   source "$REPO/profiles/fedora45/gnome-extensions.lock"
-  if [[ "$LAB_DING_VARIANT" == gtk4-v148 ]]; then
-    source "$REPO/.github/gtk4-ding-v148.lab.lock"
-  fi
 elif [[ "$LAB_RELEASE" == 44 ]]; then
   source "$REPO/profiles/fedora44/gnome-extensions.lock"
 fi
@@ -161,16 +153,14 @@ check_extensions() {
       return 1
     fi
   done
-  if [[ "$LAB_DING_VARIANT" == gtk4-v148 ]]; then
+  if [[ "$LAB_RELEASE" == 45 ]]; then
     local schema_dir="$LAB_HOME/.local/share/gnome-shell/extensions/$DING_UUID/schemas" pair
     for pair in show-trash:true show-home:false show-volumes:false show-network-volumes:false; do
       [[ "$(as_user gsettings --schemadir "$schema_dir" get "$DING_SCHEMA" "${pair%:*}")" == "${pair#*:}" ]] || return 1
     done
     [[ "$(as_user xdg-user-dir DESKTOP)" == "$LAB_HOME/Bureau" ]] || return 1
-  fi
-  if [[ "$LAB_RELEASE" == 45 ]]; then
     require_session
-    as_user env FGC_LAB_DING_VARIANT="$LAB_DING_VARIANT" python3 "$REPO/.github/scripts/fedora45-ci-extension-audit.py" \
+    as_user python3 "$REPO/.github/scripts/fedora45-ci-extension-audit.py" \
       | tee /var/lib/fgc-lab/gnome51-curated-runtime.json
   fi
 }
@@ -284,7 +274,7 @@ CONF
     if [[ "$LAB_EXTENSION_MODE" == curated ]]; then
     for prefix in DING SHOW_DESKTOP_PLUS RESOURCE_MONITOR TILING_ASSISTANT; do
       if [[ "$LAB_RELEASE" == 45 ]]; then
-        as_user env FGC_LAB_DING_VARIANT="$LAB_DING_VARIANT" bash "$REPO/.github/scripts/fedora45-ci-install-extension.sh" "$prefix"
+        as_user bash "$REPO/.github/scripts/fedora45-ci-install-extension.sh" "$prefix"
       else
         as_user env HOST_RELEASE="$LAB_RELEASE" FGC_EXTENSION_ARTIFACT_CACHE=/opt/fgc-lab/extensions \
           bash "$REPO/scripts/gnome/install-pinned-extension.sh" "$prefix"
@@ -304,7 +294,7 @@ CONF
     as_user gsettings set org.gnome.desktop.session idle-delay 0
     as_user gsettings set org.gnome.desktop.screensaver lock-enabled false
     as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
-    if [[ "$LAB_DING_VARIANT" == gtk4-v148 ]]; then
+    if [[ "$LAB_RELEASE:$LAB_EXTENSION_MODE" == 45:curated ]]; then
       schema_dir="$LAB_HOME/.local/share/gnome-shell/extensions/$DING_UUID/schemas"
       as_user mkdir -p "$LAB_HOME/Bureau"
       as_user xdg-user-dirs-update --set DESKTOP "$LAB_HOME/Bureau"

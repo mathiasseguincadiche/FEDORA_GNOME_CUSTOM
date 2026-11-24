@@ -50,7 +50,7 @@ for lock in "$REPO_ROOT/config/gnome-extensions.lock" "$REPO_ROOT/profiles/fedor
 done
 if python3 "$REPO_ROOT/scripts/development/fedora-profile.py" candidate "$REPO_ROOT" 45 >/dev/null 2>&1; then fail 'unknown keys accepted in both locks'; fi
 for lock in "$REPO_ROOT/config/gnome-extensions.lock" "$REPO_ROOT/profiles/fedora45/gnome-extensions.lock"; do sed -i '/^PATH=/d' "$lock"; done
-sed -i 's/DING_VERSION="145"/DING_VERSION="999"/' "$REPO_ROOT/config/gnome-extensions.lock"
+sed -i 's/DING_VERSION="148"/DING_VERSION="999"/' "$REPO_ROOT/config/gnome-extensions.lock"
 if python3 "$REPO_ROOT/scripts/development/fedora-profile.py" candidate "$REPO_ROOT" 45 >/dev/null 2>&1; then fail 'divergent extension locks accepted'; fi
 [[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$REPO_ROOT/profiles/fedora45/profile.json")" == pending ]] || fail 'candidate check promoted profile'
 python3 - "$ROOT" <<'PY_CI'

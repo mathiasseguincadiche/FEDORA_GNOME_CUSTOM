@@ -5,7 +5,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location(
-    "ding_shutdown_fix", root / ".github/scripts/fedora45-ci-ding-shutdown-fix.py"
+    "ding_shutdown_fix", root / "scripts/gnome/ding-shutdown-fix.py"
 )
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
@@ -115,3 +115,52 @@ else:
     raise AssertionError("Double-patching the reviewed candidate must fail")
 
 print("Gtk4-DING v145 shutdown/relaunch guard: PASS")
+
+# The promoted verifier is read-only, rejects archive/manager tampering and symlinks.
+import hashlib
+import tempfile
+import zipfile
+verify_spec = importlib.util.spec_from_file_location(
+    "ding_source_verify", root / "scripts/gnome/verify-ding-source.py")
+verify = importlib.util.module_from_spec(verify_spec)
+verify_spec.loader.exec_module(verify)
+with tempfile.TemporaryDirectory() as tmp:
+    directory = Path(tmp) / "extension"
+    directory.mkdir()
+    manager = directory / "dingManager.js"
+    content = b"upstream manager fixture"
+    manager.write_bytes(content)
+    archive = Path(tmp) / "ding.zip"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("dingManager.js", content)
+    verify.ARCHIVE_SHA256 = hashlib.sha256(archive.read_bytes()).hexdigest()
+    verify.MANAGER_SHA256 = hashlib.sha256(content).hexdigest()
+    verify.verify_archive(archive, directory)
+    assert manager.read_bytes() == content
+    manager.write_bytes(b"tampered")
+    try:
+        verify.verify(directory)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("modified manager accepted")
+    manager.unlink()
+    target = Path(tmp) / "elsewhere"
+    target.write_bytes(content)
+    manager.symlink_to(target)
+    try:
+        verify.verify(directory)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("symlinked manager accepted")
+    manager.unlink()
+    manager.write_bytes(content)
+    archive.write_bytes(b"tampered archive")
+    try:
+        verify.verify_archive(archive, directory)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unreviewed archive accepted")
+print("Gtk4-DING upstream manager verification: PASS")

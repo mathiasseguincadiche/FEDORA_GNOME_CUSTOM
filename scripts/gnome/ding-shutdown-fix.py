@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Reviewed Gtk4-DING v145 shutdown fix shared by installer and laboratory.
+"""Historical Gtk4-DING v145 patch retained for static source comparison.
 
 The downloaded upstream ZIP stays immutable and SHA256-pinned. Only the exact
 reviewed dingManager.js is transformed; the installed result has its own digest.
-Revisit this patch when the upstream lifecycle and client ownership guards land.
+Not used by the production installer or runtime laboratory after v148 promotion.
 """
 import hashlib
 from pathlib import Path
