@@ -10,7 +10,7 @@ TEMP="$(mktemp -d)"
 trap 'rm -rf -- "$TEMP"' EXIT
 STATE_FILE="$TEMP/count"
 LOG="$TEMP/output"
-export LAB_EXTENSION_MODE=curated LAB_RELEASE=44
+export LAB_EXTENSION_MODE=curated LAB_RELEASE=44 LAB_DING_VARIANT=production
 export DASH_TO_DOCK_UUID='dash@test' APPINDICATOR_UUID='indicator@test'
 export DING_UUID='ding@test' SHOW_DESKTOP_PLUS_UUID='desktop@test'
 export RESOURCE_MONITOR_UUID='vitals@test' TILING_ASSISTANT_UUID='tiling@test'
@@ -40,7 +40,7 @@ as_user() {
 
 SCENARIO=transient
 printf '0\n' > "$STATE_FILE"
-check_extensions > "$LOG" 2>&1
+check_extensions > "$LOG" 2>&1 || { cat "$LOG" >&2; exit 1; }
 grep -Fq 'info query failed (1/60, exit=2)' "$LOG"
 [[ "$(cat "$STATE_FILE")" == 7 ]]
 
