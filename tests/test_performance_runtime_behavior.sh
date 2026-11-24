@@ -58,7 +58,24 @@ fake fio 'printf "fio %s scheduler=%s\n" "$*" "$(cat "$T_SYS/block/nvme1n1/queue
 for arg; do case "$arg" in --output=*) out="${arg#*=}" ;; --filename=*) : > "${arg#*=}" ;; esac; done
 [[ -z "${T_FIO_RC:-}" ]] || exit "$T_FIO_RC"
 echo "{\"jobs\": [{\"read\": {\"iops\": 1000, \"bw\": 4000}, \"write\": {\"iops\": 400, \"bw\": 1600}}]}" > "$out"'
-fake scx_rusty 'echo "scx_rusty: ${T_SCX_OUTPUT:-scheduler attached}"; exec sleep 30'
+# Explicitly install a SIGINT handler: a sleep inherited from a CI shell can
+# ignore SIGINT and force timeout to send SIGKILL, falsely failing the fixture.
+# Exercise the real GNU timeout and keep SIGKILL a negative case.
+cat > "$tmp/bin/scx_rusty" <<'PY'
+#!/usr/bin/env python3
+import os
+import signal
+import sys
+import time
+
+if os.environ.get("T_SCX_IGNORE_INT") == "1":
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+else:
+    signal.signal(signal.SIGINT, lambda *_: sys.exit(130))
+print("scx_rusty: " + os.environ.get("T_SCX_OUTPUT", "scheduler attached"), flush=True)
+time.sleep(30)
+PY
+chmod +x "$tmp/bin/scx_rusty"
 export PATH="$tmp/bin:$PATH"
 echo balanced > "$tmp/tuned"
 cd "$fixture"
@@ -128,6 +145,8 @@ start="$(date +%s)"; scx || { cat "$tmp/out" >&2; fail 'sched_ext smoke failed';
 (( $(date +%s) - start < 10 )) || fail 'sched_ext smoke was not bounded'
 grep -q '^sudo timeout --signal=INT --kill-after=2s 1s .*scx_rusty$' "$T_LOG" || fail "sched_ext smoke not run under a bounded timeout: $(cat "$T_LOG")"
 rc=0; scx T_SCX_OUTPUT='libbpf: failed to load BPF program' || rc=$?; [[ "$rc" != 0 ]] || fail 'sched_ext load failure accepted'
+rc=0; scx T_SCX_IGNORE_INT=1 || rc=$?
+[[ "$rc" != 0 ]] && grep -Fq 'scheduler rc=137' "$tmp/out" || fail 'forced scheduler kill accepted or not reported'
 rc=0; scx T_RUNTIME=vm || rc=$?; [[ "$rc" != 0 && ! -e "$T_LOG" ]] || fail 'sched_ext smoke ran outside bare metal'
 bash diagnostics/sched-ext-doctor --quiet || fail 'optional sched_ext must not fail without a smoke'
 
