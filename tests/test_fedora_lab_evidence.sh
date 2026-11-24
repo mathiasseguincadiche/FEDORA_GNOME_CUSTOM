@@ -284,3 +284,17 @@ for event in ({}, {"event": "SHUTDOWN", "data": {"guest": True, "reason": "guest
     assert not qmp.guest_reset(event)
 print("Fedora lab evidence: PASS (missing exercises, stale boots, archive identity, isolation, encryption, deferred gates)")
 PY
+
+# Experimental overlay must never replace the default production lock or patch.
+python3 - "$ROOT" <<'PY'
+import pathlib, sys
+root = pathlib.Path(sys.argv[1])
+lock = (root / ".github/gtk4-ding-v148.lab.lock").read_text()
+assert 'DING_VERSION="148"' in lock and 'DING_SHA256="c695a52a8719209daa2c9e83e510e36618dbe201c357a58d8b2d6d5a5aadfd22"' in lock
+assert 'DING_VERSION="145"' in (root / "profiles/fedora45/gnome-extensions.lock").read_text()
+assert "gtk4-ding-v148.lab.lock" not in (root / "scripts/gnome/install-pinned-extension.sh").read_text()
+for path in (".github/scripts/fedora-gnome-vm.sh", ".github/scripts/fedora-gnome-guest.sh"):
+    source = (root / path).read_text()
+    assert "45:curated:gtk4-v148" in source and "gtk4-ding-v148.lab.lock" in source
+assert 'ding_variant=variant' in (root / ".github/scripts/fedora45-ci-extension-audit.py").read_text()
+PY
