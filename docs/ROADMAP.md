@@ -1,7 +1,7 @@
 # Feuille de route
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — fusions et CI de PR confirmées, état physique inchangé — matériel : non vérifié
+> Dernière vérification : 2026-11-25 — fusions et résultats de PR confirmés, préversion préparée sans certification physique — matériel : non vérifié
 
 Cette page dit où en est le projet et ce qui vient ensuite. Elle ne promet pas de date : chaque étape commence quand la précédente est prouvée. L'état détaillé, preuve par preuve, est dans le [README](../README.md#état-réel).
 
@@ -15,7 +15,8 @@ Cette page dit où en est le projet et ce qui vient ensuite. Elle ne promet pas 
 | Actualisation Rocky 10.3 et GNOME 51 | Intégré | PR [#229](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/229) à [#233](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/233) ; tests CI réussis |
 | Protections APPLY et sauvegarde | Intégré | PR [#234](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/234) à [#237](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/237) ; tests CI réussis |
 | Modernisation GitHub Actions / Dependabot | Intégré | PR [#238](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/238) et [#239](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/239) ; contrôles post-fusion à consulter |
-| Préversion 0.25.0 | Prévu | revue documentaire, CI du commit exact avant publication |
+| Revue documentaire et schémas | Intégré | PR [#240](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/pull/240) ; intégrité documentaire et 14 paires Draw.io/SVG reproductibles ; recette visuelle native complète non exécutée |
+| Préversion 0.25.0 | Candidate | manifeste de release préparé ; publication soumise à la CI du commit exact de `main` |
 | Contrôle du PC depuis le Live USB | Prévu | [contrôle Live](FEDORA45_LIVE_PREFLIGHT.md) |
 | Installation, APPLY et Gate 3 sur le PC | Prévu | [guide d'installation](INSTALLATION_GUIDE.md), [qualification](QUALIFICATION.md) |
 | Version 1.0 | Prévu | Gate 3 réussie puis période d'usage réel stable |

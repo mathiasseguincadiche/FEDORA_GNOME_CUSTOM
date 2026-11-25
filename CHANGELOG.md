@@ -1,6 +1,12 @@
 # Changelog
 
-## Non publié — GNOME 51 et migration Rocky Linux 10.3
+## Non publié
+
+Aucun changement après la préparation de la RC ci-dessous.
+
+## 0.25.0-rc.1 — Actualisation GNOME 51, Rocky 10.3 et fiabilité avant installation
+
+Préversion logicielle, sans certification physique. Publication soumise aux huit workflows de validation réussis sur le commit exact de `main`. Gate 2, installation réelle, APPLY, Gate 3 et recette visuelle native complète restent à réaliser.
 
 - Documentation : aligner les parcours, le contrat APPLY, la feuille de route et le schéma CI sur les protections et le déclenchement de release actuels ; distinguer les preuves CI des essais physiques.
 
@@ -20,9 +26,10 @@
 - Show Desktop Button v63 et Vitals v86 : actualisation des archives et empreintes d'après le rapport CI du 24 novembre ; nouvelle qualification Wayland requise. Qualification Wayland réussie dans la PR #230.
 
 - Actualisation du profil invité, du laboratoire QEMU et des contrôles Rocky 10.3 ; image versionnée et fichiers CHECKSUM individuels authentifiés avant utilisation.
-- Le résultat CI et les Gates physiques restent à démontrer.
+- Les PR #229 à #240 ont été validées par leurs workflows respectifs. Le commit de release doit encore être contrôlé sur `main` ; les Gates physiques restent à démontrer.
+- Rapport du laboratoire GNOME natif : préciser que sa portée ne couvre pas les six extensions ni le matériel physique, sans réintroduire un statut de promotion périmé.
 
-## Unreleased
+### Autres changements depuis 0.24.1
 
 - **Fiabilité opérateur et mise en qualité V10** : `doctor all` retourne désormais un code d'échec en VM ou conteneur quand il affiche `KO` ; les consultations firmware indéterminées ne sont plus présentées comme des vérifications réussies, sans invalider une transaction logicielle déjà appliquée. Les validations d'applications nomment le paquet/Flatpak ou le doctor défaillant. Le centre de contrôle n'a plus de définitions concurrentes de ses cinq fonctions de présentation ; son aide couvre `upgrade status` sans ligne dupliquée. Les bibliothèques de validation applicative et de baseline sont réorganisées pour la lecture sans changer leurs contrats ; les guides concernés et le schéma CI/release reflètent les routes et déclencheurs effectifs. Les Gate 2 et Gate 3 sur le PC physique restent à faire.
 - **Laboratoire Rocky CI (PR #202)** : installation des dépendances du runner limitée aux dépôts Ubuntu officiels et aux paquets strictement nécessaires, comme pour ShellCheck ; journal APT conservé en artefact lors d'un échec. La qualification réelle de Rocky, ses preuves et ses critères de succès restent obligatoires.

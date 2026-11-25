@@ -34,7 +34,7 @@ jobs:
       - name: Explain preview scope
         if: always()
         run: |
-          echo 'Native Fedora 45/GNOME 51 preview only. Curated extensions remain DEFERRED; production profile remains pending.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Native Fedora 45/GNOME 51 VM scope only. This run does not qualify curated extensions or physical hardware and does not change production profile status.' >> "$GITHUB_STEP_SUMMARY"
       - name: Preserve signed preview and boot evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
