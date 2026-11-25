@@ -1,7 +1,7 @@
 # Vision et architecture
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — contrat d'exécution et politique de sauvegarde relus contre les bibliothèques ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — contrat d'exécution et politique de sauvegarde relus contre les bibliothèques — matériel : non vérifié
 
 **Comprendre le poste avant d'en modifier la configuration.** Cette page présente le matériel, les composants logiciels et les raisons de leur séparation. Elle sert à répondre à « pourquoi ce choix ? » et à « quel composant en est responsable ? ».
 

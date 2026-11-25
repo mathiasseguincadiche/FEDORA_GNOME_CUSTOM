@@ -1,7 +1,7 @@
 # Fedora Golden Workstation
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — statuts et protections récentes relus contre le code et les guides ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — statuts et protections récentes relus contre le code et les guides — matériel : non vérifié
 
 **Préparer, personnaliser et entretenir une workstation Fedora depuis un centre de contrôle.**
 

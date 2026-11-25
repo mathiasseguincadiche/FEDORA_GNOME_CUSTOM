@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — points d'arrêt APPLY et ordre des preuves ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — points d'arrêt APPLY et ordre des preuves — matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 

@@ -1,7 +1,7 @@
 # Feuille de route
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — fusions et CI de PR confirmées, état physique inchangé ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — fusions et CI de PR confirmées, état physique inchangé — matériel : non vérifié
 
 Cette page dit où en est le projet et ce qui vient ensuite. Elle ne promet pas de date : chaque étape commence quand la précédente est prouvée. L'état détaillé, preuve par preuve, est dans le [README](../README.md#état-réel).
 

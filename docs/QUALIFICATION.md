@@ -1,7 +1,7 @@
 # Qualifier la workstation
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — préconditions et cycle de vie des preuves, sans essai physique ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — préconditions et cycle de vie des preuves, sans essai physique — matériel : non vérifié
 
 **Une machine n'est pas certifiée parce que son code passe les tests.** Une CI verte concerne un commit ; la Gate 2 observe le PC avant installation ; la Gate 3 vérifie le système effectivement installé, dans son environnement réel.
 

@@ -1,7 +1,7 @@
 # Les notions clés du projet
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — exemples de preuves et limites de confidentialité ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — exemples de preuves et limites de confidentialité — matériel : non vérifié
 
 Le projet repose sur sept idées, qui reviennent dans tous les guides. Cette page les explique une à une : le problème qu'elles règlent, leur principe, leur place dans le projet, comment les vérifier et ce qu'elles ne garantissent pas.
 

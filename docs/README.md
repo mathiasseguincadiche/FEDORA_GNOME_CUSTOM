@@ -1,7 +1,7 @@
 # Documentation — Fedora Golden Workstation
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — renvois du parcours opérateur et protections APPLY ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — renvois du parcours opérateur et protections APPLY — matériel : non vérifié
 
 **Une bibliothèque technique que l'on peut parcourir à son rythme.** Ici, les guides ne sont pas rangés selon l'ordre des fichiers du dépôt, mais selon ce que l'on cherche à comprendre ou à réaliser.
 

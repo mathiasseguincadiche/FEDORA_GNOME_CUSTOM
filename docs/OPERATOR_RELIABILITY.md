@@ -1,7 +1,7 @@
 # Comprendre les résultats, les journaux et les réexécutions
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — sémantique de répétition du dry-run et de l'APPLY ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — sémantique de répétition du dry-run et de l'APPLY — matériel : non vérifié
 
 Cette page explique **ce que l'opérateur peut réellement conclure**, sans masquer les messages techniques et sans promettre une idempotence générale. Pour les commandes, voir le [centre de contrôle](CONTROL_CENTER.md) ; pour le parcours d'installation, suivre le [guide officiel](INSTALLATION_GUIDE.md).
 

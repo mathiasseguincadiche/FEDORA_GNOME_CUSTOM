@@ -1,7 +1,7 @@
 # Centre de contrôle
 
 > Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-25 — effets des commandes d'installation et protections actuelles ; matériel : non vérifié
+> Dernière vérification : 2026-11-25 — effets des commandes d'installation et protections actuelles — matériel : non vérifié
 
 `./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
