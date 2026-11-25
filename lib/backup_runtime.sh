@@ -165,6 +165,26 @@ PY
 # never archived, at any depth and whatever the configured sources (ADR 0021).
 BACKUP_PRIVATE_KEY_EXCLUDES=('*/.ssh' '*/.gnupg')
 
+# Known credential and infrastructure-state paths, independently of source
+# roots (including nested projects and Flatpak app config). Borg regex patterns
+# match whole path components, not similarly named notes. Keep conventional
+# dotenv templates; they must contain placeholders only. This is not a
+# content-based secret scanner.
+BACKUP_DEVOPS_SECRET_EXCLUDES=(
+  're:(^|/)\.(aws|azure|kube|terraform)(/|$)'
+  're:(^|/)\.(git-credentials|netrc|npmrc|pypirc)$'
+  're:(^|/)\.env(?:\.(?!(?:example|sample|template|dist)$)[^/]+)?$'
+  're:(^|/)[^/]+\.tfstate(?:\.[^/]+)?$'
+  're:(^|/)\.docker/config\.json$'
+  're:(^|/)(?:\.config|config)/containers/auth\.json$'
+  're:(^|/)(?:\.config|config)/gh/hosts\.yml$'
+  're:(^|/)(?:\.config|config)/glab-cli/config\.yml$'
+  're:(^|/)(?:\.config|config)/gcloud(/|$)'
+  're:(^|/)(?:\.config|config)/fedora-gnome-custom/secrets(/|$)'
+  're:(^|/)\.local/share/keyrings(/|$)'
+  're:(^|/)\.local/share/flatpak/secrets(/|$)'
+)
+
 # Borg only sees fedora-system-config.tar.gz after it has been created: its
 # --exclude rules cannot remove sensitive files *inside* that tarball. Apply
 # these restrictions at tar creation time for BOTH preapply and full backups.
@@ -194,6 +214,15 @@ BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES=(
   --exclude='etc/openvpn/*'
   --exclude='etc/krb5.keytab'
   --exclude='etc/containers/auth.json'
+  --exclude='etc/letsencrypt'
+  --exclude='etc/credstore'
+  --exclude='etc/credstore.encrypted'
+  --exclude='etc/git-credentials'
+  --exclude='etc/pki/private'
+  --exclude='*/.env'
+  --exclude='*/.env.*'
+  --exclude='*.tfstate'
+  --exclude='*.tfstate.*'
   --exclude='etc/fedora-gnome-custom/secrets'
   --exclude='etc/fedora-gnome-custom/secrets/*'
 )
@@ -203,7 +232,7 @@ backup_engine_create() {
   shift
   backup_engine_kind_valid "$kind" || return 2
   local -a opts=()
-  for pattern in "${BACKUP_PRIVATE_KEY_EXCLUDES[@]}"; do opts+=(--exclude "$pattern"); done
+  for pattern in "${BACKUP_PRIVATE_KEY_EXCLUDES[@]}" "${BACKUP_DEVOPS_SECRET_EXCLUDES[@]}"; do opts+=(--exclude "$pattern"); done
   while (($#)) && [[ "$1" != -- ]]; do
     [[ ( "$1" == --exclude || "$1" == --comment ) && -n "${2:-}" ]] || return 2
     if [[ "$1" == --comment ]]; then
