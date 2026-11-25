@@ -225,41 +225,41 @@ Fedora 45 / GNOME 51 devient la référence de l'installation neuve et de la CI 
 - Sauvegardes : les dossiers `.ssh` et `.gnupg`, à toute profondeur, sont toujours exclus des archives Borg non chiffrées (pré-APPLY, complète, quotidienne), même si la configuration locale les liste (ADR 0021). Le guide de sauvegarde explique comment conserver ces clés à part, dans Bitwarden ou sur un support chiffré. Test avec un vrai dépôt Borg et test sans Borg pour chaque type d'archive.
 
 - Noyau : un noyau Fedora signé est conservé comme entrée GRUB de secours à côté de Linux amont N / N-1 (ADR 0020), jamais par défaut ni supprimé par la rétention. La purge retire des versions exactes au lieu de `--oldinstallonly`, qui aurait retiré le secours en premier ; `installonly_limit=4`. Nouvelles commandes `./control.sh kernel fallback` (secours en défaut GRUB, sans suppression) et `kernel refresh-fallback` ; `kernel-doctor` et le contrôle GRUB vérifient la présence du secours.
-- Kickstart : Fedora refuse un Kickstart depuis une image Live ; le générateur déclare maintenant les miroirs officiels `fedora` et `updates` pour que `%packages` (dont le manifeste baseline) soit réellement installé depuis le média Everything netinstall, et retire `bootloader --location=boot`, sans effet en UEFI. Le guide d’installation précise le média requis.
-- Centre de contrôle : `kernel rollback` sélectionne N-1 sur toutes les routes (l’ancienne branche interne lançait la récupération Fedora) ; `rollback-fedora`, `install-latest` et `prune` y sont routés explicitement.
-- `repair.sh` : une commande inconnue affiche l’aide sur stderr et sort en code 2 au lieu de 0.
+- Kickstart : Fedora refuse un Kickstart depuis une image Live ; le générateur déclare maintenant les miroirs officiels `fedora` et `updates` pour que `%packages` (dont le manifeste baseline) soit réellement installé depuis le média Everything netinstall, et retire `bootloader --location=boot`, sans effet en UEFI. Le guide d'installation précise le média requis.
+- Centre de contrôle : `kernel rollback` sélectionne N-1 sur toutes les routes (l'ancienne branche interne lançait la récupération Fedora) ; `rollback-fedora`, `install-latest` et `prune` y sont routés explicitement.
+- `repair.sh` : une commande inconnue affiche l'aide sur stderr et sort en code 2 au lieu de 0.
 - Nettoyage : imports Python inutilisés ; ADR 0001 marquée « remplacée par ADR 0018 ».
 
 - Validation : parcours natif Live USB Fedora 45 / GNOME 51, puis installation sur SSD et qualification Gate 3 ; retrait des étapes opérateur WSL2 et VirtualBox. Rapport portable à 16 points, export avant redémarrage et import sur le même PC/commit après installation ; aucune certification des services installés depuis le Live.
-- Preuves : propagation explicite des erreurs d’écriture et de checksum, refus d’une source modifiée et invalidation de l’ancien résultat avant un nouvel essai Live ou une nouvelle qualification GNOME.
+- Preuves : propagation explicite des erreurs d'écriture et de checksum, refus d'une source modifiée et invalidation de l'ancien résultat avant un nouvel essai Live ou une nouvelle qualification GNOME.
 
-- Fiabilité de l’installation Fedora 45 / GNOME 51 : reconnaître l’état réel `ACTIVE` de Tiling Assistant et réutiliser le helper commun dans les contrôles ; conserver CPU/RAM/réseau sans imposer de faux compteurs de charge à la B580 `xe`.
+- Fiabilité de l'installation Fedora 45 / GNOME 51 : reconnaître l'état réel `ACTIVE` de Tiling Assistant et réutiliser le helper commun dans les contrôles ; conserver CPU/RAM/réseau sans imposer de faux compteurs de charge à la B580 `xe`.
 - Préparer les outils matériels avant leur premier usage via `control.sh install prepare-tools` et le manifeste inclus dans Kickstart ; fournir `semanage` dans le socle système avant `/data`.
 - Maintenance : mettre aussi à jour Flatpak si DNF ne prépare aucune transaction, sans redémarrage artificiel ; conserver la propagation des échecs.
 - KVM : détecter un LAN de même CIDR que le réseau invité et conserver le profil Rocky DevOps avec accès SFTP. Le profil Windows 11, ses scripts invités et ses obligations de certification sont retirés.
-- Sauvegardes : appliquer au pré-APPLY l’exclusion du dossier `secrets` déjà utilisée en daily/full ; conserver Borg non chiffré et les exports VM manuels.
-- CI : rendre les assertions d’absence réellement bloquantes, y compris en cas d’erreur de lecture, et couvrir les défauts par des scénarios de comportement.
-- Documentation : README concis, portail par parcours, guides canoniques alignés et installation neuve Fedora 45 clairement séparée de l’historique Fedora 44. Le profil reste `pending` jusqu’à la qualification du média final signé et des composants stables.
+- Sauvegardes : appliquer au pré-APPLY l'exclusion du dossier `secrets` déjà utilisée en daily/full ; conserver Borg non chiffré et les exports VM manuels.
+- CI : rendre les assertions d'absence réellement bloquantes, y compris en cas d'erreur de lecture, et couvrir les défauts par des scénarios de comportement.
+- Documentation : README concis, portail par parcours, guides canoniques alignés et installation neuve Fedora 45 clairement séparée de l'historique Fedora 44. Le profil reste `pending` jusqu'à la qualification du média final signé et des composants stables.
 
-- Fermeture GNOME 51 : appliquer `KillMode=mixed` au service utilisateur Shell pour laisser Mutter terminer ses enfants Xwayland avant le nettoyage final. Installation et laboratoire partagent le même drop-in et sa vérification effective ; test de l’ordre d’arrêt avec un vrai systemd et témoin négatif, sans changement du délai ni des contrôles de coredump.
+- Fermeture GNOME 51 : appliquer `KillMode=mixed` au service utilisateur Shell pour laisser Mutter terminer ses enfants Xwayland avant le nettoyage final. Installation et laboratoire partagent le même drop-in et sa vérification effective ; test de l'ordre d'arrêt avec un vrai systemd et témoin négatif, sans changement du délai ni des contrôles de coredump.
 
 - Documentation : orienter l'installation neuve vers le profil Fedora 45, harmoniser `pending`/`ready`, corriger le nom du verrou média dans le bundle et documenter Rocky après installation du host. Retirer l'ancienne commande de sauvegarde des VM des guides et de l'aide ; les exports restent manuels. Le README renvoie aux guides pour les procédures détaillées.
 
-- Laboratoire GNOME : fermer l’instance D-Bus réelle de Nautilus et vérifier la fin des processus avant déconnexion ; conserver les diagnostics de fermeture et refuser les clients bloqués. L’essai interactif avec applications ouvertes reste requis.
+- Laboratoire GNOME : fermer l'instance D-Bus réelle de Nautilus et vérifier la fin des processus avant déconnexion ; conserver les diagnostics de fermeture et refuser les clients bloqués. L'essai interactif avec applications ouvertes reste requis.
 - Détection de la définition Steam déplacée dans `/usr/share/dnf5/repos.d/` sur Fedora 45, avec vérification du propriétaire RPM, compatibilité du chemin historique et test de comportement.
 
-- Fedora 45 / GNOME 51 devient la référence d’installation neuve, de configuration et de CI principale. Les entrées Kickstart et de vérification de média restent bloquées sur un profil non promu.
+- Fedora 45 / GNOME 51 devient la référence d'installation neuve, de configuration et de CI principale. Les entrées Kickstart et de vérification de média restent bloquées sur un profil non promu.
 - Verrous canoniques Gtk4 DING, Show Desktop Button, Vitals et Tiling Assistant alignés sur le profil 45 ; manifestes Nautilus sans le backend `gvfs-archive` supprimé.
 - Préférences GNOME 51 vérifiées sur les vrais schémas ; laboratoires principaux natif et personnalisé sous Fedora 45. Fedora 44 reste disponible par lancement manuel historique.
-- Guides d’installation neuve, migration facultative et statut de promotion séparés ; données `/data/IA/Openclaw` et politique Borg conservées.
+- Guides d'installation neuve, migration facultative et statut de promotion séparés ; données `/data/IA/Openclaw` et politique Borg conservées.
 
 ### Corrections avant installation
 
-- Installation : préserver la configuration Kickstart et placer l’approbation définitive avant le dernier dry-run et le backup vérifié.
+- Installation : préserver la configuration Kickstart et placer l'approbation définitive avant le dernier dry-run et le backup vérifié.
 - Stockage : lier `/` et `/data` à deux T705 physiques distincts, avec approbation explicite du numéro de série et revalidation des UUID, modèles, séries et WWN.
 - Données : préparer `/data/IA/Openclaw` avec les droits et labels utilisateur ; le protéger par Borg daily/full comme `/data/Projets`, sans modifier les exclusions VM.
-- Sauvegardes : accepter les URI SSH Borg, inclure la configuration locale ignorée par Git et vérifier sa restauration ; embarquer l’identité approuvée dans le runtime quotidien immuable.
-- Maintenance et certification : exiger un nouveau démarrage et l’historique de la transaction DNF5 exacte ; refuser les mesures SMART absentes et les cycles de veille liés à une ancienne configuration ou chaîne de preuves.
+- Sauvegardes : accepter les URI SSH Borg, inclure la configuration locale ignorée par Git et vérifier sa restauration ; embarquer l'identité approuvée dans le runtime quotidien immuable.
+- Maintenance et certification : exiger un nouveau démarrage et l'historique de la transaction DNF5 exacte ; refuser les mesures SMART absentes et les cycles de veille liés à une ancienne configuration ou chaîne de preuves.
 - KVM : fusionner les intervalles réseau chevauchants dans nftables et charger les overrides locaux dans les assistants publics.
 - GNOME 51 : partager le correctif de fermeture Gtk4-DING et les versions RPM entre CI et installation. La promotion reste bloquée tant que les RPM exacts ne sont pas disponibles en stable et que le média final signé manque.
 
@@ -495,7 +495,7 @@ PR #69 — fiabilité après audit :
 - Sauvegarde liée à la configuration, restauration vérifiée et couverture NVRAM/TPM.
 - Identification PCI, fio non privilégié, réseau par interface et disque Kickstart stable.
 - Reprise écran préservant la disposition et HDR ; nouveaux tests comportementaux et Restic réel.
-- Parcours d’installation vierge et qualification physique explicitement distincts des preuves CI.
+- Parcours d'installation vierge et qualification physique explicitement distincts des preuves CI.
 
 ## 0.16.0 — 2026-09-26
 
