@@ -37,7 +37,7 @@ Exemple : si `contracts` est rouge parce qu'un laboratoire GNOME a échoué, ouv
 
 Le workflow `Tests` lance sept jobs de contrôle, et le job `contracts` exige leurs sept succès. La fusion dans `main` exige six contextes : `contracts`, `shellcheck`, `guards`, `packages`, `packages-and-integration` et `nautilus-ptyxis`. Le ruleset de `main` impose aussi une branche à jour avant fusion, et interdit la suppression et la réécriture de l'historique. Après la fusion, les workflows tournent à nouveau sur le commit de `main`.
 
-**La release n'est pas déclenchée par chaque push** : `release.yml` ne s'exécute que si `.github/release-manifest.env`, le workflow ou son résolveur change. Lorsqu'il se déclenche, il ne publie la préversion que si **huit workflows distincts** ont réussi sur **ce même commit** de `main` (liste exacte dans `scripts/ci/check-release-gate.py`) :
+**La release n'est pas déclenchée par chaque push** : `release.yml` ne s'exécute que si `.github/release-manifest.env` change sur `main`. Une maintenance du workflow ou du résolveur seul ne doit pas tenter de republier une ancienne RC sur un nouveau SHA. La publication d'une nouvelle RC reste une décision explicite dans le manifeste. Lorsqu'il se déclenche, il ne publie la préversion que si **huit workflows distincts** ont réussi sur **ce même commit** de `main` (liste exacte dans `scripts/ci/check-release-gate.py`) :
 
 1. `tests.yml` — contrats et laboratoires.
 2. `shell-quality.yml` — qualité des scripts shell.
@@ -49,6 +49,8 @@ Le workflow `Tests` lance sept jobs de contrôle, et le job `contracts` exige le
 8. `security-scanning.yml` — contrôles de sécurité.
 
 **Schémas :** [version mobile (lecture à 300 px)](assets/diagrams/ci-fusion-release-mobile.svg) · [version large](assets/diagrams/ci-fusion-release.svg). Sources éditables : [mobile `.drawio`](assets/diagrams/ci-fusion-release-mobile.drawio) · [large `.drawio`](assets/diagrams/ci-fusion-release.drawio).
+
+**Dépendances GitHub Actions.** Les actions externes sont épinglées sur des SHA de commits vérifiés, et non sur des tags mobiles : checkout [v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1), upload-artifact [v7.0.2](https://github.com/actions/upload-artifact/releases/tag/v7.0.2), CodeQL [v4.39.5](https://github.com/github/codeql-action/releases/tag/v4.39.5), Gitleaks [v3.0.0](https://github.com/gitleaks/gitleaks-action/releases/tag/v3.0.0). Toutes utilisent Node.js 24. Pour une mise à jour future, vérifier le tag, son commit, les notes de migration et le runtime sur le dépôt officiel ; modifier les workflows et la liste approuvée de `tests/test_ci_maturity_contract.sh` dans la même PR. Ne pas fusionner une mise à jour automatique qui contourne cette revue.
 
 **Une PR verte ne prouve pas que `main` est vert.** Les workflows de PR testent le commit proposé (`github.event.pull_request.head.sha`) ; GitHub valide ensuite le commit de fusion, qui est un autre SHA. Après une fusion, filtrer la page Actions sur `main` et vérifier `Tests` pour ce SHA.
 

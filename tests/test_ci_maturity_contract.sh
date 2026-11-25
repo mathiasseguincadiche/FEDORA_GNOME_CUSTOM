@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CHECKOUT_SHA="11d5960a326750d5838078e36cf38b85af677262"
-UPLOAD_ARTIFACT_SHA="ea165f8d65b6e75b540449e92b4886f43607fa02"
+CHECKOUT_SHA="3d3c42e5aac5ba805825da76410c181273ba90b1"
+UPLOAD_ARTIFACT_SHA="cf430e030ddbb5b0abf93d22962f4752f3646cd9"
 
 for file in .github/workflows/non-regression.yml .github/workflows/fedora-host-pretest.yml .github/workflows/fedora-package-preflight.yml .github/workflows/desktop-integration-pretest.yml .github/workflows/vm-pretest.yml .github/workflows/shell-quality.yml .github/scripts/vm-pretest.sh; do
   [[ -f "$ROOT/$file" ]] || { echo "missing CI maturity file: $file" >&2; exit 1; }
@@ -179,6 +179,38 @@ done < <(find "$ROOT/.github/workflows" -maxdepth 1 -type f -name '*.yml' -print
 [[ "$write_workflows" -eq 1 ]] || { echo "expected exactly one contents: write workflow, found $write_workflows" >&2; exit 1; }
 
 if grep -RInE 'uses:[[:space:]]+[^[:space:]#]+@v[0-9]+' "$ROOT/.github/workflows"; then echo 'mutable major-version GitHub Action reference found' >&2; exit 1; fi
+
+# All remote actions, including every occurrence of upload and security
+# actions, must match the reviewed immutable SHA. No unknown action or
+# floating tag can silently enter the trust boundary.
+python3 - "$ROOT/.github/workflows" "$CHECKOUT_SHA" "$UPLOAD_ARTIFACT_SHA" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+approved = {
+    "actions/checkout": sys.argv[2],
+    "actions/upload-artifact": sys.argv[3],
+    "github/codeql-action/init": "915412ff23e8b7659517e607487dbeae018f2934",
+    "github/codeql-action/analyze": "915412ff23e8b7659517e607487dbeae018f2934",
+    "gitleaks/gitleaks-action": "e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e",
+}
+seen = set()
+for path in sorted(Path(sys.argv[1]).glob("*.yml")):
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^\s*(?:-\s+)?uses:\s*([^\s#]+)", line)
+        if not match:
+            continue
+        value = match.group(1)
+        if value.startswith("./"):
+            continue
+        name, sep, sha = value.partition("@")
+        if not sep or approved.get(name) != sha:
+            raise SystemExit(f"{path}: unreviewed action reference: {value}")
+        seen.add(name)
+if seen != set(approved):
+    raise SystemExit(f"Missing expected actions: {set(approved) - seen}")
+PY
 
 # Every test file must actually be executed by a workflow; a test that CI
 # never runs gives false confidence.

@@ -71,4 +71,17 @@ if grep -Fq 'resolve_tag_commit || true' "$ROOT/.github/workflows/release.yml"; 
   exit 1
 fi
 
+# Maintenance of the publishing machinery must not re-publish an old tag.
+python3 - "$ROOT/.github/workflows/release.yml" <<'PY'
+from pathlib import Path
+import re
+import sys
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+trigger = text.split("\npermissions:", 1)[0]
+paths = re.findall(r"(?m)^      - '([^']+)'$", trigger)
+assert paths == [".github/release-manifest.env"], paths
+assert "branches: [main]" in trigger
+assert "head_sha=$GITHUB_SHA&event=push" in text
+PY
+
 echo 'release workflow contract: PASS'
