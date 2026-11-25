@@ -11,7 +11,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [[ "$version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
-grep -Fq "## $version —" "$ROOT/CHANGELOG.md"
+grep -Fq "## $version —" "$ROOT/CHANGELOG.md" || {
+  echo "Missing changelog heading for VERSION=$version (expected: ## $version — ...)" >&2
+  exit 1
+}
 
 # Config is schema-validated before sourcing and remains declarative.
 bash "$ROOT/scripts/config/validate-config.sh" "$ROOT/config" >/dev/null

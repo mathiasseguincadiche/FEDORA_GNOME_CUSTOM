@@ -1,13 +1,13 @@
 # Installation neuve Fedora 45 / GNOME 51 : référence du projet
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — média et profil relus contre `installer/fedora45-media.lock` et `profiles/fedora45/` ; ordre de préinstallation relu contre le guide Live — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — préconditions APPLY et résultat CI du commit de promotion vérifiés — matériel : non vérifié
 
 Fedora 45 Workstation et GNOME 51 sont la cible unique de l'installation neuve : `config/workstation.conf` sélectionne `HOST_RELEASE="45"`. Le [guide d'installation](INSTALLATION_GUIDE.md) est le parcours principal. Aucun Fedora 44 préalable et aucune commande de migration ne sont nécessaires.
 
 ## Configuration sélectionnée et installation autorisée
 
-La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l'APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
+La sélection du profil est distincte de sa promotion. `profiles/fedora45/profile.json` est `ready` depuis le 3 novembre 2026 : l'APPLY et les générateurs Kickstart de production ne sont plus bloqués par le profil, mais restent soumis à leurs autres gardes (bare metal, preuve Gate 2 importée pour l'APPLY, baseline, dry-run, sauvegarde pré-APPLY, Secure Boot).
 
 Le média final a été publié par Fedora ([page officielle Workstation](https://fedoraproject.org/workstation/download/)) et authentifié avant la création du verrou. L'image Cloud utilisée par les laboratoires CI est un support de test ; elle ne sert jamais à installer le PC.
 
@@ -45,7 +45,7 @@ La promotion exige :
 
 `config/gnome-extensions.lock` et le verrou du profil Fedora 45 doivent rester identiques. Même règle pour les manifestes Nautilus : Fedora 45 utilise File Roller et son extension Nautilus, sans `gvfs-archive` supprimé en amont. Le validateur détecte toute divergence avant promotion.
 
-Show Desktop Button v63 et Vitals v86 ont été qualifiés dans la PR #230. Gtk4-DING v148 est retenu après deux essais QEMU amont sans correctif local ([premier essai](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45351762196), [second essai](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45495888501)). Le rapport statique 45348084592 fournit l'empreinte exacte de dingManager.js ; l'installateur et les audits la vérifient sans modifier le fichier. Le laboratoire standard doit requalifier le commit de promotion. Le DING original v105 reste non qualifié : son gestionnaire attendu n'a pas été identifié. Le noyau vanilla reste sélectionné dynamiquement ; 7.3.6 a été observé le 24 novembre sans relever artificiellement le seuil de secours.
+Show Desktop Button v63 et Vitals v86 ont été qualifiés dans la PR #230. Gtk4-DING v148 est retenu après deux essais QEMU amont sans correctif local ([premier essai](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45351762196), [second essai](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45495888501)). Le rapport statique 45348084592 fournit l'empreinte exacte de dingManager.js ; l'installateur et les audits la vérifient sans modifier le fichier. Le laboratoire standard avec les six extensions a réussi sur le commit de promotion dans la [CI de la PR #233](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions/runs/45500299713) ; cela ne prouve pas le comportement du PC physique. Le DING original v105 reste non qualifié : son gestionnaire attendu n'a pas été identifié. Le noyau vanilla reste sélectionné dynamiquement ; 7.3.6 a été observé le 24 novembre sans relever artificiellement le seuil de secours.
 
 Les noms internes `SHOW_DESKTOP_PLUS_*` et `RESOURCE_MONITOR_*` restent des rôles de configuration pour conserver l'interface existante. Ils sélectionnent respectivement Show Desktop Button et Vitals sur Fedora 45. Voir [GNOME.md](GNOME.md).
 

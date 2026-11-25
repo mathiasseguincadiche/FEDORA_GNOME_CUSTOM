@@ -1,7 +1,7 @@
 # CI et validation
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — périmètre du contrôle documentaire revu contre `tests/test_docs_integrity.py` — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — déclencheurs release, dépendances CI et contrôle exact main relus — matériel : non vérifié
 
 La CI de GitHub vérifie le logiciel : contrats statiques, paquets Fedora 45 réels, sessions GNOME 51 et VM Rocky dans des machines jetables. Elle ne touche jamais le PC et ne le certifie pas : seule la [Gate 3](QUALIFICATION.md) le fait.
 
@@ -146,10 +146,10 @@ Ces workflows ne sont pas des contextes obligatoires. Un échec reste à corrige
 | `fedora45-package-preflight.yml` | PR, hebdomadaire | toutes les résolutions Fedora 45, espace utilisateur Intel Arc (Vulkan, VA-API), transaction du noyau amont |
 | `release-readiness.yml` | PR sur les profils, hebdomadaire | état réel des dépôts Fedora et des verrous candidats ; l'activation de RPM Fusion, des deux COPR et le rafraîchissement des métadonnées y tolèrent l'échec (`\|\| true`), car ce workflow fait un état des lieux, sans rien valider |
 | `external-links.yml` | hebdomadaire, manuel | les liens externes de tous les fichiers Markdown (`scripts/ci/check-external-links.py`) : une page disparue (404, 410) ou un nom introuvable échoue ; un refus anti-robot (401, 403, 429) ou une erreur serveur n'est qu'un avertissement |
-| `fedora45-gnome-preview.yml` | PR, hebdomadaire | laboratoire GNOME natif, rapport de prévisualisation |
+| `fedora45-gnome-preview.yml` | PR, hebdomadaire, manuel | laboratoire GNOME natif, hors qualification des six extensions et du matériel |
 | `weekly-log-retention.yml` | push, PR | purge prudente des journaux (`scripts/maintenance/weekly-log-cleanup.py`) |
 | `security-scanning.yml` | push, PR, hebdomadaire | CodeQL pour Python, Gitleaks sur chaque commit de la PR |
-| `release.yml` | push sur `main` | publication de la préversion, seulement si tout est vert sur ce commit |
+| `release.yml` | push sur `main` modifiant le manifeste de release | publication de la préversion, seulement si les huit workflows requis sont verts sur ce commit |
 | `fedora44-legacy-lab.yml` | manuel | laboratoire Fedora 44 historique |
 
 ## Fournisseurs externes
