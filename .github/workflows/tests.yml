@@ -332,6 +332,8 @@ jobs:
         run: bash tests/test_module_catalog_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_apply_gate_behavior.sh
+      - name: Preserve original APPLY rollback point across interrupted runs
+        run: bash tests/test_apply_incident_behavior.sh
       - if: ${{ !cancelled() }}
         run: bash tests/test_update_kernel_deferral_behavior.sh
       - if: ${{ !cancelled() }}

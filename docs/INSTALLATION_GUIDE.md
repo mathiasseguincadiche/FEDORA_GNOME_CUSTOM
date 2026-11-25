@@ -348,7 +348,7 @@ Parmi les modules appliqués :
 - **Noyau** : le dernier Linux amont stable, comparé à kernel.org, devient le défaut GRUB ; le noyau amont précédent est conservé, et un noyau Fedora signé reste disponible en secours (`installonly_limit` réglé en conséquence).
 - **Données** : `/data` est contrôlé, l'arborescence de la section 4 est créée avec ses droits et labels SELinux, et XDG Documents pointe vers `/data/Documents`.
 
-**Réussite :** l'APPLY se termine sans erreur. Un refus désigne la précondition à corriger ; ne jamais le contourner.
+**Réussite :** l'APPLY se termine sans erreur. Un refus désigne la précondition à corriger ; ne jamais le contourner. Le registre persistant conserve la référence Borg d'origine ; si l'APPLY est interrompu, les nouvelles tentatives et la création d'une autre sauvegarde pré-APPLY sont bloquées jusqu'à la revue explicite décrite dans [le diagnostic d'incident](TROUBLESHOOTING.md#apply-commencé-puis-interrompu).
 
 ## 9. Redémarrer sur Linux amont N
 

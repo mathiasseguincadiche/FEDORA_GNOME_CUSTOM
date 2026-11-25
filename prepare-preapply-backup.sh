@@ -10,6 +10,8 @@ install_lock_acquire || exit $?
 source "$REPO_ROOT/lib/bootstrap.sh"; engine_bootstrap
 
 fail() { printf 'BACKUP BLOCKED: %s\n' "$*" >&2; exit 20; }
+source "$REPO_ROOT/lib/apply_incident.sh"
+apply_incident_require_clear || exit "$EXIT_SECURITY_BLOCK"
 if is_true "${BACKUP_VM_DISKS:-false}" || is_true "${BACKUP_LIBVIRT_METADATA:-false}" ||
    is_true "${BACKUP_VM_CLOUD_INIT_METADATA:-false}"; then
   fail 'VM exports are manual-only; Borg must not archive VM files or metadata'

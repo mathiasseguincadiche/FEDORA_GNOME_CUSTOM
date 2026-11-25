@@ -310,6 +310,8 @@ backup_engine_extract() {
 backup_engine_prune() {
   local kind="$1"
   backup_engine_kind_valid "$kind" || return 2
+  # Pre-APPLY archives are permanent rollback points, never automatic retention.
+  [[ "$kind" != preapply ]] || return 2
   borg prune --glob-archives "${BACKUP_ARCHIVE_PREFIX}-${kind}-*" \
     --keep-daily "${BACKUP_KEEP_DAILY:-7}" \
     --keep-weekly "${BACKUP_KEEP_WEEKLY:-4}" \
