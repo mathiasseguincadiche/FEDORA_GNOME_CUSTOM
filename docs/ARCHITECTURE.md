@@ -1,7 +1,7 @@
 # Vision et architecture
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — contrat et chemin de validation relus contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `config/kernel.conf` et les modes actifs des diagnostics ; matériel cible non testé — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — contrat d'exécution et politique de sauvegarde relus contre les bibliothèques — matériel : non vérifié
 
 **Comprendre le poste avant d'en modifier la configuration.** Cette page présente le matériel, les composants logiciels et les raisons de leur séparation. Elle sert à répondre à « pourquoi ce choix ? » et à « quel composant en est responsable ? ».
 
@@ -58,7 +58,7 @@ La colonne de droite décrit ce que le code contrôle, pas un résultat obtenu :
 
 Ces choix sont volontaires. Une maintenance ne les « corrige » pas sans nouvelle décision écrite (ADR) :
 
-- **aucun chiffrement** des disques (ADR 0002) ni des sauvegardes (ADR 0014), mais jamais de clé SSH ou GnuPG dans Borg (ADR 0021) ;
+- **aucun chiffrement** des disques (ADR 0002) ni des sauvegardes (ADR 0014), avec exclusion des emplacements connus de clés SSH/GnuPG, d'identifiants DevOps et d'états Terraform dans Borg (ADR 0021) ;
 - **Secure Boot désactivé** (ADR 0002) ; le projet ne le désactive ni ne gère de clé MOK lui-même ;
 - **noyau** : Linux amont officiel stable (ADR 0015), avec un noyau Fedora signé en secours (ADR 0020) ; un retard de publication du noyau ne bloque jamais les autres mises à jour ;
 - **laboratoire DevOps** : Rocky Linux 10.3 en VM KVM, créée uniquement à la demande ;
@@ -99,16 +99,17 @@ Le PC exécute Fedora 45 Workstation pour quatre usages : GNOME 51, le travail D
 ## Contrat d'exécution
 
 - `./diagnostic.sh` et les modes d'**observation** des doctors n'appliquent pas de correction au système. Ils peuvent cependant écrire des journaux ou rapports. Certains modes **explicitement actifs** réalisent des essais : par exemple, `diagnostics/nautilus-vm-live-doctor --certify` écrit, relit et supprime un fichier canari SFTP et peut actualiser un signet ; les opérations `snapshot` et `run-memory-test` de `diagnostics/baseline-doctor` constituent aussi des actions distinctes. Consulter la [qualification](QUALIFICATION.md) et l'aide du doctor concerné avant toute certification : ne pas assimiler « diagnostic » à « absence totale d'écriture ».
-- `./install.sh --dry-run` exécute precheck, plan, apply et postcheck avec toutes les mutations neutralisées, et écrit une preuve liée au commit, à la configuration effective, au plan de modules et à l'empreinte matérielle. Hors du PC physique, il peut s'arrêter sur une preuve matérielle indisponible : ce refus n'autorise jamais l'APPLY.
-- `./install.sh --apply` exige : Fedora 45 installé et démarré sur le PC physique (jamais une VM, WSL, un conteneur, la CI ni la session Live) ; un profil `ready` ; `REAL_MACHINE_APPROVED=true` dans `config/local.conf` ; un terminal interactif ; un dépôt Git propre ; un dry-run réussi au même état ; une baseline valide pour l'empreinte courante ; une sauvegarde pré-APPLY récente, vérifiée et liée au même état ; la phrase exacte `APPLY FEDORA 45 WORKSTATION`.
-- Le Live USB observe le matériel sans installer de paquet ni toucher aux SSD ; sa preuve est exportée puis importée sur le système installé.
+- `./install.sh --dry-run` exécute precheck, plan, apply et postcheck avec toutes les mutations neutralisées, et révoque la preuve précédente avant le catalogue. Une nouvelle preuve n'est écrite qu'après le rapport réussi et la vérification de l'identité de départ et de fin (commit, configuration effective, plan de modules, empreinte matérielle). `--collect-all` ne délivre aucune autorisation d'APPLY. Hors du PC physique, il peut s'arrêter sur une preuve matérielle indisponible : ce refus n'autorise jamais l'APPLY.
+- `./install.sh --apply` exige : Fedora 45 installé et démarré sur le PC physique (jamais une VM, WSL, un conteneur, la CI ni la session Live) ; un profil `ready` ; `REAL_MACHINE_APPROVED=true` dans `config/local.conf` ; un terminal interactif ; un dépôt Git propre ; la preuve Gate 2 importée et valide pour le commit, le plan et le PC ; un dry-run réussi au même état ; une baseline valide pour l'empreinte courante ; une sauvegarde pré-APPLY récente, vérifiée et liée au même état ; la phrase exacte `APPLY FEDORA 45 WORKSTATION`.
+- Le Live USB observe le matériel sans installer de paquet ni toucher aux SSD ; sa preuve est exportée puis importée sur le système installé. L'APPLY contrôle le JSON importé et son empreinte avant confirmation.
+- Après confirmation et avant le premier module, le moteur crée un registre d'incident persistant par utilisateur, conserve la référence du point Borg initial et consomme le dry-run. Une interruption bloque le nouvel APPLY et la nouvelle sauvegarde pré-APPLY jusqu'à revue explicite. Voir [le dépannage](TROUBLESHOOTING.md#apply-commencé-puis-interrompu).
 
 **Interdits, sans exception** : formatage ou partitionnement automatique ; `force_probe` GPU ou dépôt Mesa expérimental ; désactivation de SELinux ou firewalld ; changement automatique de C-State, ASPM, APST ou mode de veille (`pcie_aspm=off`, `mem_sleep_default`…) ; VFIO de la B580 ; contournement de la barrière du système installé.
 
 ## Chaîne de confiance
 
 ```text
-Fedora 45 neuve → baseline matérielle → dry-run → sauvegarde Borg + restauration canari
+Fedora 45 neuve + preuve Gate 2 importée → baseline matérielle → dry-run → sauvegarde Borg + restauration canari
   → APPLY protégé → redémarrage sur Linux amont N → doctors (matériel, bureau, KVM, sauvegarde)
   → 5 cycles de veille → certification → matrice logicielle de référence
 ```

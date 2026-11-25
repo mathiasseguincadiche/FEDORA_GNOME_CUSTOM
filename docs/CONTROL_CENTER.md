@@ -1,7 +1,7 @@
 # Centre de contrôle
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — aide, routes et modes de diagnostic relus contre les moteurs — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — effets des commandes d'installation et protections actuelles — matériel : non vérifié
 
 `./control.sh` est le point d'entrée unique de l'opérateur. C'est une façade mince : l'installation, les sauvegardes Borg, les mises à jour DNF5, le cycle de vie du noyau, KVM et les diagnostics restent implémentés dans leurs moteurs dédiés. Cette page fait foi pour la liste des commandes `./control.sh`.
 
@@ -32,10 +32,10 @@ L'opérateur peut passer par `./control.sh`, une façade sans logique métier. L
 | Comprendre l'état | `./control.sh status` | lecture du système et des preuves existantes |
 | Diagnostiquer | `./control.sh doctor all` | observations ; ne répare pas le système |
 | Collecter une preuve | `./control.sh logs boot-failure` | **écrit un rapport** dans `reports/`, sans réparer le démarrage |
-| Préparer une installation | `./control.sh install dry-run` | n'applique pas les modules ; **écrit une preuve et des journaux** |
+| Préparer une installation | `./control.sh install dry-run` | n'applique pas les mutations des modules ; **révoque l'ancienne preuve et écrit des journaux**, publie une nouvelle preuve si le contrôle complet réussit |
 | Modifier un profil courant | `./control.sh perf balanced` | **bascule TuneD** sur le PC physique ; pas d'APPLY, ni de sauvegarde pré-APPLY obligatoire pour cette action |
 | Préparer une mise à jour | `./control.sh update all` | sauvegarde complète Borg, puis préparation de la transaction DNF5 hors ligne |
-| Installer la configuration | `./control.sh install apply` | **mutation protégée** : baseline, dry-run, sauvegarde pré-APPLY, confirmation et PC physique |
+| Installer la configuration | `./control.sh install apply` | **mutation protégée** : preuve Gate 2 importée, baseline, dry-run, sauvegarde pré-APPLY, confirmation et PC physique |
 | Nettoyer des artefacts transitoires | `./control.sh logs prune` | **suppression explicite**, limitée par la politique de rétention ; les preuves Golden restent protégées |
 
 Un garde-fou se décrit **par opération**, pas par une promesse globale. Les commandes de consultation peuvent créer un **rapport** sans modifier la configuration du système ; les commandes de maintenance disposent de leurs préconditions spécifiques. Les opérations manuelles de partitionnement du [guide d'installation](INSTALLATION_GUIDE.md) ne passent pas par la façade.
@@ -108,7 +108,7 @@ prepare-preapply-backup.sh
 install.sh --apply
 ```
 
-Le chemin APPLY conserve ses protections : PC physique, Git propre, baseline, cohérence entre dry-run, configuration et plan, sauvegarde pré-APPLY relue depuis le dépôt Borg, et phrase de confirmation.
+Le chemin APPLY conserve ses protections : PC physique, Git propre, preuve Gate 2 importée et courante, baseline, cohérence entre dry-run, configuration et plan, sauvegarde pré-APPLY relue depuis le dépôt Borg, et phrase de confirmation. Au démarrage de l'APPLY, la preuve de dry-run est consommée. Après une interruption, la revue du registre d'incident est obligatoire avant une nouvelle tentative ([dépannage](TROUBLESHOOTING.md#apply-commencé-puis-interrompu)).
 
 ## Mises à jour
 

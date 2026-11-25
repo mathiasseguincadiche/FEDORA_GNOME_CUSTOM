@@ -2,6 +2,8 @@
 
 ## Non publié — GNOME 51 et migration Rocky Linux 10.3
 
+- Documentation : aligner les parcours, le contrat APPLY, la feuille de route et le schéma CI sur les protections et le déclenchement de release actuels ; distinguer les preuves CI des essais physiques.
+
 - CI : Dependabot hebdomadaire pour les GitHub Actions, sans fusion automatique ; commande de vérification en lecture seule des huit workflows requis sur le SHA exact de main.
 
 - CI : checkout 7.0.1, upload-artifact 7.0.2, CodeQL 4.39.5 et Gitleaks 3.0.0 sur Node.js 24, SHA immuables vérifiés et contrôlés pour chaque action externe. La publication RC est déclenchée uniquement par le manifeste de release, pas par la maintenance du workflow.

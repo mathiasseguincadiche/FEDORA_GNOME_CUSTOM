@@ -1,7 +1,7 @@
 # Les notions clés du projet
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — notions relues contre `lib/apply_gate.sh`, `lib/validation_gates.sh`, `lib/backup_runtime.sh`, `scripts/kvm/kvm_network_guard.sh` et le parcours d'installation — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — exemples de preuves et limites de confidentialité — matériel : non vérifié
 
 Le projet repose sur sept idées, qui reviennent dans tous les guides. Cette page les explique une à une : le problème qu'elles règlent, leur principe, leur place dans le projet, comment les vérifier et ce qu'elles ne garantissent pas.
 
@@ -27,7 +27,7 @@ Le projet repose sur sept idées, qui reviennent dans tous les guides. Cette pag
 
 **Principe.** Chaque preuve enregistre l'état qu'elle atteste, sous forme d'empreintes : commit, configuration effective, plan des modules, empreinte matérielle. Elle n'est acceptée que si cet état n'a pas changé.
 
-**Dans le projet.** Le dry-run, la sauvegarde pré-APPLY, le compte rendu Live et la certification portent ces empreintes. Changer `config/local.conf` impose de refaire le dry-run puis la sauvegarde ; une preuve Live d'un autre commit est refusée à l'import. Une certification devient `STALE` quand la matrice logicielle change.
+**Dans le projet.** Le dry-run, la sauvegarde pré-APPLY, le compte rendu Live et la certification portent ces empreintes. Changer `config/local.conf` impose de refaire le dry-run puis la sauvegarde ; une preuve Live d'un autre commit est refusée à l'import. Une certification devient `STALE` quand la matrice logicielle change. Un nouveau dry-run révoque la preuve précédente et un APPLY commencé la consomme. Ainsi, un ancien succès ne suffit pas à autoriser une nouvelle tentative.
 
 **Le vérifier.** `./diagnostics/software-matrix-doctor diff` montre ce qui a changé depuis la certification ; `./control.sh validate status` montre les preuves en place.
 
@@ -49,7 +49,7 @@ Le projet repose sur sept idées, qui reviennent dans tous les guides. Cette pag
 
 La suite est volontairement humaine : exporter le rapport, relire les résultats et les points `NOT_TESTED`, puis demander au propriétaire s'il autorise l'installation. Un assistant peut expliquer les résultats et recommander une décision, mais l'accord appartient au propriétaire. La [procédure Live USB](FEDORA45_LIVE_PREFLIGHT.md#6-décider-avant-toute-installation) décrit ce point d'arrêt.
 
-**Dans le projet.** Le Live USB ne déverrouille jamais l'APPLY, et la CI ne certifie jamais le matériel. Le détail technique des niveaux se trouve dans la [qualification](QUALIFICATION.md) et la [page CI](CI_VALIDATION.md).
+**Dans le projet.** Le Live USB ne suffit jamais à déverrouiller l'APPLY : sa preuve valide et importée est une précondition parmi plusieurs. La CI ne certifie jamais le matériel. Le détail technique des niveaux se trouve dans la [qualification](QUALIFICATION.md) et la [page CI](CI_VALIDATION.md).
 
 **Limites.** Même la Gate 3 qualifie un état donné ; une évolution du code ou du matériel la rend `STALE`.
 
@@ -69,7 +69,7 @@ La suite est volontairement humaine : exporter le rapport, relire les résultats
 
 **Principe.** Une sauvegarde compte seulement après une vérification intégrale des données et la restauration réelle d'un fichier témoin (le canari). Une restauration se fait toujours d'abord dans un dossier d'essai (staging), jamais en place.
 
-**Dans le projet.** Les sauvegardes pré-APPLY et complètes exécutent `borg check --verify-data` puis restaurent le canari. Le dépôt Borg n'est pas chiffré, par choix du propriétaire ([ADR 0014](adr/0014-borg-unencrypted-backups.md)) : il se range donc comme un document sensible, et ne contient jamais de clé privée ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)).
+**Dans le projet.** Les sauvegardes pré-APPLY et complètes exécutent `borg check --verify-data` puis restaurent le canari. Le dépôt Borg n'est pas chiffré, par choix du propriétaire ([ADR 0014](adr/0014-borg-unencrypted-backups.md)) : il se range donc comme un document sensible, et exclut les emplacements connus de clés privées et d'identifiants DevOps, sans garantie de détecter tous les secrets ([ADR 0021](adr/0021-no-private-keys-in-unencrypted-backups.md)).
 
 **Le vérifier.** `./control.sh backup check` et la procédure de [restauration](BACKUP_RESTORE.md#restaurer).
 

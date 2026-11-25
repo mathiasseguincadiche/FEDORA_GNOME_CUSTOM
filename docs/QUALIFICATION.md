@@ -1,7 +1,7 @@
 # Qualifier la workstation
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — parcours Gate 3 et ordre des cycles de veille précisés contre les scripts ; essais physiques non exécutés — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — préconditions et cycle de vie des preuves, sans essai physique — matériel : non vérifié
 
 **Une machine n'est pas certifiée parce que son code passe les tests.** Une CI verte concerne un commit ; la Gate 2 observe le PC avant installation ; la Gate 3 vérifie le système effectivement installé, dans son environnement réel.
 
@@ -27,7 +27,7 @@ Le parcours comporte **onze étapes opérationnelles** : CI au commit exact, con
 | Baseline certifiée | un matériel assez sain pour autoriser l'APPLY | la veille, le bureau, les applications |
 | Gate 3 `PASS` courant | le contrat Golden sur la machine installée | l'état futur : une évolution peut le rendre `STALE` |
 
-Une preuve `STALE` se rejoue après le changement concerné ; ne jamais recréer ni éditer un marqueur à la main. Un nouveau commit ou plan de modules invalide la preuve Live ; un changement de configuration, de noyau ou de pilote invalide les preuves installées concernées.
+Une preuve `STALE` se rejoue après le changement concerné ; le dry-run précédent est révoqué lors d'un nouvel essai et consommé au démarrage de l'APPLY. Après un APPLY interrompu, suivre la [revue d'incident](TROUBLESHOOTING.md#apply-commencé-puis-interrompu) avant de refaire les contrôles autorisés ; ne jamais recréer ni éditer un marqueur à la main. Un nouveau commit ou plan de modules invalide la preuve Live ; un changement de configuration, de noyau ou de pilote invalide les preuves installées concernées.
 
 ## 1. CI au commit exact
 
@@ -55,7 +55,7 @@ Le [guide d'installation](INSTALLATION_GUIDE.md#5-certifier-la-baseline-matérie
 
 L'empreinte enregistrée couvre carte mère, BIOS, UUID plateforme, CPU, B580 et pilote, classe mémoire testée, NVMe (modèle, série, firmware) et EDID. Un changement significatif (mise à jour BIOS, vitesse mémoire, écran) invalide la baseline : refaire les essais concernés.
 
-L'APPLY n'est autorisé qu'avec : baseline certifiée, dry-run au même état, sauvegarde Borg pré-APPLY vérifiée et confirmation opérateur ([installation](INSTALLATION_GUIDE.md), [contrat d'exécution](ARCHITECTURE.md#contrat-dexécution)).
+L'APPLY n'est autorisé qu'avec : preuve Gate 2 importée et valide, baseline certifiée, dry-run au même état, sauvegarde Borg pré-APPLY vérifiée et confirmation opérateur ([installation](INSTALLATION_GUIDE.md), [contrat d'exécution](ARCHITECTURE.md#contrat-dexécution)).
 
 ## 4. Gate 3 — système installé
 

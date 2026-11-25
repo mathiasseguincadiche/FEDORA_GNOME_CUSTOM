@@ -1,7 +1,7 @@
 # Fedora Golden Workstation
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — premiers pas relus contre `control.sh`, les guides et les limites des Gates — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — statuts et protections récentes relus contre le code et les guides — matériel : non vérifié
 
 **Préparer, personnaliser et entretenir une workstation Fedora depuis un centre de contrôle.**
 
@@ -53,7 +53,7 @@ Suivez les étapes dans l'ordre. Le README indique **où commencer et ce que cha
 | **Gate 3 — après installation** | Tester le vrai système, son bureau, ses périphériques, ses sauvegardes et les fonctions du profil avant toute certification. | [Qualification du système installé](docs/QUALIFICATION.md) |
 
 > [!CAUTION]
-> **Point d'arrêt impératif :** la Gate 2 n'autorise jamais, à elle seule, l'effacement d'un disque. L'installation demande un accord humain explicite. L'APPLY exige ensuite ses propres préconditions, notamment une sauvegarde pré-APPLY vérifiée. **Ne contournez pas un refus de sécurité.**
+> **Point d'arrêt impératif :** la Gate 2 n'autorise jamais, à elle seule, l'effacement d'un disque. L'installation demande un accord humain explicite. L'APPLY exige ensuite ses propres préconditions, notamment la preuve Gate 2 importée et valide, une baseline certifiée, un dry-run réussi et une sauvegarde pré-APPLY vérifiée. La preuve de dry-run est consommée au démarrage de l'APPLY. En cas d'interruption, le registre d'incident protège le point de retour Borg initial. **Ne contournez pas un refus de sécurité.**
 
 **À retenir :** Gate 1 = *le code* ; Gate 2 = *le PC avant installation* ; Gate 3 = *le PC réellement installé et configuré*. Ces validations ne se remplacent pas. Une certification n'est valable que pour l'état effectivement testé.
 
@@ -69,11 +69,13 @@ Le même centre de contrôle accompagne l'exploitation quotidienne. Cliquez sur 
 | **Diagnostiquer un échec et consulter les journaux** | [Guide de dépannage](docs/TROUBLESHOOTING.md) · [commandes de diagnostic](docs/CONTROL_CENTER.md) |
 | **Vérifier ou renouveler la qualification** | [Critères de qualification](docs/QUALIFICATION.md) · [fiche de tests physiques](docs/PHYSICAL_QUALIFICATION_CHECKLIST.md) |
 
-Les sauvegardes ont des **périmètres et des exclusions** ; les restaurations commencent dans une zone isolée, sans écraser automatiquement les fichiers en place. Les procédures expliquent ces précautions et les vérifications à réaliser.
+Les sauvegardes Borg sont **non chiffrées** par décision du propriétaire et excluent les emplacements connus de clés privées, d'identifiants DevOps et d'états Terraform. Elles ne détectent pas tous les secrets arbitraires ; les restaurations commencent dans une zone isolée, sans écraser automatiquement les fichiers en place. Les procédures expliquent ces précautions et les vérifications à réaliser.
 
 ## État réel
 
 Le profil Fedora 45 / GNOME 51 est déclaré `ready`, et le dépôt dispose de contrôles logiciels en CI. **Cela ne signifie pas que le poste physique est installé ou certifié.** La Gate 2 sur clé USB, l'installation et l'APPLY réels, puis la Gate 3 restent à effectuer et à prouver sur le matériel cible.
+
+Les laboratoires Fedora/GNOME et Rocky Linux 10.3 utilisent des VM jetables. Ils ne certifient pas le PC. Pour contrôler le SHA actuel de `main`, utiliser `bash scripts/development/check-main-ci.sh` avec GitHub CLI authentifié et Python 3.
 
 Consulter les [résultats GitHub Actions](https://github.com/mathiasseguincadiche/FEDORA_GNOME_CUSTOM/actions?query=branch%3Amain), la [feuille de route](docs/ROADMAP.md) et les [règles de qualification](docs/QUALIFICATION.md) pour connaître la portée exacte de chaque validation.
 
