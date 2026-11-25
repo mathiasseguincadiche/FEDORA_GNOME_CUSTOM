@@ -26,7 +26,7 @@ for kind in preapply full daily; do
   rm -f "$FAKE_ARGS"
   backup_engine_create "$kind" -- "$HOME" >/dev/null 2>&1 || true
   [[ -s "$FAKE_ARGS" ]] || { echo "borg create not reached for $kind" >&2; exit 1; }
-  for pattern in '*/.ssh' '*/.gnupg'; do
+  for pattern in "${BACKUP_PRIVATE_KEY_EXCLUDES[@]}" "${BACKUP_DEVOPS_SECRET_EXCLUDES[@]}"; do
     grep -Fxq -- "$pattern" "$FAKE_ARGS" || { echo "$kind archive does not exclude $pattern" >&2; exit 1; }
   done
 done
@@ -36,7 +36,8 @@ done
 system_fixture="$tmp/system-root"
 mkdir -p "$system_fixture/etc/ssh" "$system_fixture/etc/NetworkManager/system-connections" \
   "$system_fixture/etc/ssl/private" "$system_fixture/etc/wireguard" \
-  "$system_fixture/etc/libvirt" "$system_fixture/boot"
+  "$system_fixture/etc/libvirt" "$system_fixture/boot" "$system_fixture/etc/letsencrypt/live" \
+  "$system_fixture/etc/credstore" "$system_fixture/etc/credstore.encrypted" "$system_fixture/etc/demo"
 for safe in etc/hostname etc/ssh/sshd_config boot/vmlinuz-fixture; do
   printf 'safe fixture\n' > "$system_fixture/$safe"
 done
@@ -44,7 +45,8 @@ for secret in etc/shadow etc/shadow- etc/gshadow etc/gshadow- \
   etc/ssh/ssh_host_ed25519_key etc/ssh/ssh_host_ed25519_key.old \
   etc/NetworkManager/system-connections/private.nmconnection \
   etc/ssl/private/server.key etc/wireguard/wg0.conf \
-  etc/libvirt/private-domain.xml; do
+  etc/libvirt/private-domain.xml etc/letsencrypt/live/key.pem \
+  etc/credstore/token etc/credstore.encrypted/token etc/demo/.env etc/demo/infra.tfstate; do
   printf 'dummy secret fixture\n' > "$system_fixture/$secret"
 done
 tar -C "$system_fixture" "${BACKUP_SYSTEM_CONFIG_TAR_EXCLUDES[@]}" \
@@ -59,7 +61,8 @@ for secret in etc/shadow etc/shadow- etc/gshadow etc/gshadow- \
   etc/ssh/ssh_host_ed25519_key etc/ssh/ssh_host_ed25519_key.old \
   etc/NetworkManager/system-connections/private.nmconnection \
   etc/ssl/private/server.key etc/wireguard/wg0.conf \
-  etc/libvirt/private-domain.xml; do
+  etc/libvirt/private-domain.xml etc/letsencrypt/live/key.pem \
+  etc/credstore/token etc/credstore.encrypted/token etc/demo/.env etc/demo/infra.tfstate; do
   if grep -Fxq "$secret" "$tmp/system-members"; then
     echo "Sensitive system fixture was archived: $secret" >&2; exit 1;
   fi

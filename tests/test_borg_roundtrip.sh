@@ -40,6 +40,33 @@ printf 'PRIVATE-SSH\n' > "$HOME/.ssh/id_ed25519"
 printf 'PRIVATE-GPG\n' > "$HOME/.gnupg/private-keys-v1.d/key.key"
 printf 'PRIVATE-NESTED\n' > "$HOME/Documents/projet/.ssh/id_rsa"
 printf 'kept\n' > "$HOME/Documents/.ssh-notes.txt"
+# Synthetic placeholders only; validate real Borg pattern semantics and that
+# similarly named documents / templates are retained.
+secret_files=(
+  'Documents/projet/.env' 'Documents/projet/.env.production'
+  'Documents/projet/terraform.tfstate' 'Documents/projet/terraform.tfstate.backup'
+  'Documents/projet/.terraform/cache' 'Documents/projet/.aws/credentials'
+  'Documents/projet/.azure/token.json' 'Documents/projet/.kube/config'
+  'Documents/projet/.git-credentials' 'Documents/projet/.netrc'
+  'Documents/projet/.npmrc' 'Documents/projet/.pypirc'
+  'Documents/projet/.docker/config.json'
+  '.config/gh/hosts.yml' '.config/glab-cli/config.yml'
+  '.config/containers/auth.json' '.config/gcloud/credentials.db'
+  '.local/share/keyrings/login.keyring'
+  '.var/app/demo/config/gh/hosts.yml'
+  'Documents/projet/.config/fedora-gnome-custom/secrets/token'
+)
+safe_files=(
+  'Documents/projet/.env.example' 'Documents/projet/.env.sample'
+  'Documents/projet/.env.template' 'Documents/projet/.env.dist'
+  'Documents/projet/.env-notes.txt' 'Documents/projet/main.tf'
+  'Documents/projet/terraform.tfvars.example' 'Documents/projet/.aws-notes.txt'
+  '.config/gh/config.yml' '.config/containers/containers.conf'
+)
+for file in "${secret_files[@]}" "${safe_files[@]}"; do
+  mkdir -p "$(dirname "$HOME/$file")"
+  printf 'synthetic fixture\n' > "$HOME/$file"
+done
 ln -s test.conf "$HOME/.config/link"
 cat > "$fixture/lib/bootstrap.sh" <<'BOOT'
 engine_bootstrap() { :; }
@@ -85,6 +112,30 @@ if borg list --short "::$archive" | grep -Eq '(^|/)[.](ssh|gnupg)(/|$)'; then
   echo 'private key material listed in the archive' >&2; exit 1
 fi
 cmp "$HOME/Documents/.ssh-notes.txt" "$restored$HOME/Documents/.ssh-notes.txt"
+check_secret_listing() {
+  local name="$1" file
+  borg list --short "::$name" > "$tmp/secret-list"
+  for file in "${secret_files[@]}"; do
+    if grep -Fxq "${HOME#/}/$file" "$tmp/secret-list"; then
+      echo "Known secret path archived: $file ($name)" >&2; return 1
+    fi
+  done
+  for file in "${safe_files[@]}"; do
+    grep -Fxq "${HOME#/}/$file" "$tmp/secret-list" || {
+      echo "Safe path unexpectedly excluded: $file ($name)" >&2; return 1
+    }
+  done
+}
+check_secret_listing "$archive"
+for file in "${secret_files[@]}"; do [[ ! -e "$restored$HOME/$file" ]]; done
+for file in "${safe_files[@]}"; do cmp "$HOME/$file" "$restored$HOME/$file"; done
+# The same mandatory filter must apply to all archive kinds and even a
+# directly supplied sensitive file. Test the real shared create helper.
+for kind in preapply full; do
+  read -r checked_archive checked_id < <(backup_engine_create "$kind" -- "$HOME/Documents" "$HOME/.config" "$HOME/.local/share" "$HOME/.var/app" "$HOME/Documents/projet/.env")
+  [[ "$checked_id" =~ ^[0-9a-f]{64}$ ]]
+  check_secret_listing "$checked_archive"
+done
 if bash "$fixture/scripts/backup/restore.sh" restore "$archive" "$restored" >/dev/null 2>&1; then
   echo 'nonempty restore destination accepted' >&2; exit 1
 fi
