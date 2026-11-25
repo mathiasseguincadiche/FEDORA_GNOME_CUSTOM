@@ -5,7 +5,10 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 repo="${1:-mathiasseguincadiche/FEDORA_GNOME_CUSTOM}"
 [[ $# -le 1 && "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo 'Usage: check-main-ci.sh [owner/repo]' >&2; exit 2; }
-command -v gh >/dev/null && command -v python3 >/dev/null || { echo 'gh and python3 required' >&2; exit 2; }
+if ! command -v gh >/dev/null || ! command -v python3 >/dev/null; then
+  echo 'gh and python3 required' >&2
+  exit 2
+fi
 main_sha() {
   local sha
   sha="$(gh api "repos/$repo/git/ref/heads/main" --jq '.object.sha')" || return 1
