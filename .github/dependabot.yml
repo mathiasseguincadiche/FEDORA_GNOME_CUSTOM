@@ -1,0 +1,9 @@
+# Proposals only: reviewed immutable SHA contract must also be updated manually.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 4

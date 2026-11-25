@@ -62,6 +62,53 @@ for run in changed:
 assert gate.check({"workflow_runs":changed},sha,repo)==1
 assert gate.check({"workflow_runs":[r for r in runs if r["path"]!=security]},sha,repo)==3
 
+# Read-only operator command reuses the exact same gate and rechecks main
+# after collecting the evidence. A PR run or stale SHA must never pass.
+with tempfile.TemporaryDirectory() as temp:
+    fixture = pathlib.Path(temp)
+    fake = fixture / "gh"
+    fake.write_text("""#!/usr/bin/env bash
+set -Eeuo pipefail
+case "$*" in
+  'api repos/owner/repo/git/ref/heads/main --jq .object.sha')
+    if [[ -e "$TEST_SEEN" && "${TEST_MOVED:-false}" == true ]]; then
+      printf '%040d\\n' 2
+    else
+      printf '%s\\n' "$TEST_SHA"
+    fi
+    touch "$TEST_SEEN"
+    ;;
+  "api repos/owner/repo/actions/runs?head_sha=$TEST_SHA&event=push&per_page=100")
+    cat "$TEST_RUNS"
+    ;;
+  *) exit 91 ;;
+esac
+""")
+    fake.chmod(0o755)
+    payload = fixture / "runs.json"
+    seen = fixture / "seen"
+    def verify_main(data, moved=False):
+        payload.write_text(json.dumps({"workflow_runs": data}))
+        seen.unlink(missing_ok=True)
+        env = dict(os.environ, PATH=str(fixture)+os.pathsep+os.environ["PATH"],
+                   TEST_SHA=sha, TEST_RUNS=str(payload), TEST_SEEN=str(seen),
+                   TEST_MOVED=str(moved).lower())
+        result = subprocess.run(["bash", str(root/"scripts/development/check-main-ci.sh"), repo],
+                                env=env, capture_output=True, text=True)
+        return result.returncode
+    assert verify_main(runs) == 0
+    assert verify_main(runs, moved=True) == 3
+    assert verify_main([]) == 3
+    assert verify_main([dict(r, head_sha="b"*40) for r in runs]) == 3
+    assert verify_main([dict(r, event="pull_request") for r in runs]) == 3
+    assert verify_main([dict(runs[0], conclusion="failure")]+runs[1:]) == 1
+
+# Dependabot proposes GitHub Actions updates only, with no automatic approval.
+dependabot = (root/".github/dependabot.yml").read_text(encoding="utf-8")
+assert re.search(r'(?m)^version: 2$', dependabot)
+assert re.findall(r'(?m)^  - package-ecosystem: "([^"]+)"$', dependabot) == ["github-actions"]
+assert 'directory: "/"' in dependabot and 'interval: "weekly"' in dependabot
+
 # Every workflow that runs on each push to main gates the release. A paths
 # filter, a branch filter that excludes main, or a tags-only trigger means the
 # workflow does not run on every main commit, so it cannot gate the release.
