@@ -1,7 +1,7 @@
 # Documentation — Fedora Golden Workstation
 
-> Mise à jour : 2026-11-06 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-06 — parcours de lecture et renvois relus contre les guides ; liens et ancres contrôlés par `tests/test_docs_integrity.py` — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — renvois du parcours opérateur et protections APPLY ; matériel : non vérifié
 
 **Une bibliothèque technique que l'on peut parcourir à son rythme.** Ici, les guides ne sont pas rangés selon l'ordre des fichiers du dépôt, mais selon ce que l'on cherche à comprendre ou à réaliser.
 
@@ -21,7 +21,7 @@ Le projet cible **Fedora 45 Workstation / GNOME 51** sur un matériel précis. L
 | **Contribuer** au dépôt | [Guide du contributeur](../CONTRIBUTING.md) | [Décisions (ADR)](adr/README.md) |
 
 > [!IMPORTANT]
-> **Les références ne sont pas interchangeables.** Le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours) fixe l'ordre des opérations, la [qualification](QUALIFICATION.md) définit les preuves, et le [centre de contrôle](CONTROL_CENTER.md) décrit les commandes. Après la Gate 2 en Live USB, l'installation exige une **revue et un accord humain**, même si le script calcule `GO`. La Gate 3 n'intervient qu'après l'installation sur le PC réel.
+> **Les références ne sont pas interchangeables.** Le [guide d'installation](INSTALLATION_GUIDE.md#le-parcours) fixe l'ordre des opérations, la [qualification](QUALIFICATION.md) définit les preuves, et le [centre de contrôle](CONTROL_CENTER.md) décrit les commandes. Après la Gate 2 en Live USB, l'installation exige une **revue et un accord humain**, même si le script calcule `GO`. L'APPLY exige ensuite la preuve Gate 2 importée et courante, la baseline, le dry-run et la sauvegarde vérifiée. Si l'APPLY est interrompu, consulter [la procédure d'incident](TROUBLESHOOTING.md#apply-commencé-puis-interrompu) avant toute nouvelle tentative. La Gate 3 n'intervient qu'après l'installation et la configuration sur le PC réel.
 
 ## Tous les guides
 

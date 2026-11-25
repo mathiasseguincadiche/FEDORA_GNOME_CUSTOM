@@ -1,7 +1,7 @@
 # Guide d'installation neuve — Fedora 45 Workstation / GNOME 51
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — préconditions APPLY, préparation des outils et parcours d'échec relus contre les scripts ; essais physiques non rejoués — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — points d'arrêt APPLY et ordre des preuves ; matériel : non vérifié
 
 Installer une workstation ne se résume pas à lancer un script. Avant chaque modification, ce projet demande de **vérifier le point de départ**, **prévoir un retour arrière** et **conserver une preuve du résultat**.
 
@@ -80,7 +80,9 @@ Le parcours échoue fermé : **ne pas continuer** quand une précondition, un do
 
 - le média n'est pas authentifié ou le profil n'est pas `ready` ;
 - `/data` ne désigne pas, sans ambiguïté, le second T705 ;
+- la preuve Gate 2 importée est absente, altérée ou périmée ;
 - la baseline n'est pas certifiée, ou le dry-run est périmé ;
+- un incident APPLY antérieur reste ouvert ;
 - la sauvegarde pré-APPLY n'est plus vérifiable ;
 - Secure Boot est actif ou indéterminé ;
 - le dépôt Git contient des modifications.

@@ -1,7 +1,7 @@
 # Comprendre les résultats, les journaux et les réexécutions
 
-> Mise à jour : 2026-11-09 · Responsable : @mathiasseguincadiche
-> Dernière vérification : 2026-11-09 — diagnostics virtuels, retour firmware et messages du centre de contrôle comparés aux tests isolés ; ordre des mises à jour relu contre `UPDATE_COVERAGE.md` — matériel : non vérifié
+> Mise à jour : 2026-11-25 · Responsable : @mathiasseguincadiche
+> Dernière vérification : 2026-11-25 — sémantique de répétition du dry-run et de l'APPLY ; matériel : non vérifié
 
 Cette page explique **ce que l'opérateur peut réellement conclure**, sans masquer les messages techniques et sans promettre une idempotence générale. Pour les commandes, voir le [centre de contrôle](CONTROL_CENTER.md) ; pour le parcours d'installation, suivre le [guide officiel](INSTALLATION_GUIDE.md).
 
@@ -66,7 +66,7 @@ L'**idempotence** concerne une action précise : répéter une action idempotent
 
 | Action | Comportement attendu et limite | Statut de preuve |
 | --- | --- | --- |
-| `install dry-run` | N'applique pas les mutations ; crée néanmoins un nouveau journal et des preuves | Comportement testé, pas une opération totalement sans écriture |
+| `install dry-run` | N'applique pas les mutations ; révoque la preuve précédente, crée un journal et publie une preuve en cas de succès complet | Comportement testé, pas une opération totalement sans écriture |
 | `install apply` | Modules conçus pour converger ; peut modifier des fichiers et s'arrêter en cours d'exécution | **Idempotence globale non certifiée** ; réexécution uniquement après diagnostic et gardes |
 | `update check` | Recherche des mises à jour, sans installer de RPM ni de firmware | Consultation ; crée une session de journalisation |
 | `update all` | Crée une nouvelle sauvegarde Borg et prépare une transaction ; refuse une nouvelle préparation si une transaction est déjà en attente | **Non idempotent au niveau de l'historique** ; garde de transaction présent |
@@ -75,7 +75,7 @@ L'**idempotence** concerne une action précise : répéter une action idempotent
 | `backup restore` | Restauration dirigée vers une zone de staging | Destination à vérifier avant reprise ; ne pas supposer une répétition sans effet |
 | `kernel install-latest` / `kvm create-rocky` | Changements sensibles du système ou de la VM | Pas de promesse de réexécution aveugle ; respecter préconditions et diagnostics |
 
-**Tests complémentaires à réaliser avant certification complète :** sur un hôte isolé autorisé, comparer le système après deux APPLY successifs, vérifier qu'aucun fichier n'est dupliqué, que les timers et unités restent uniques, que les paramètres sont inchangés et que les preuves ne sont pas confondues avec un nouvel état matériel. Les tests automatisés actuels protègent certains contrats et cas de répétition, **pas l'ensemble du déploiement sur ton poste physique**.
+**Tests complémentaires à réaliser avant certification complète :** sur un hôte isolé autorisé, comparer le système après deux APPLY successifs, chacun précédé de ses propres contrôles et d'une nouvelle sauvegarde vérifiée, vérifier qu'aucun fichier n'est dupliqué, que les timers et unités restent uniques, que les paramètres sont inchangés et que les preuves ne sont pas confondues avec un nouvel état matériel. Les tests automatisés actuels protègent certains contrats et cas de répétition, **pas l'ensemble du déploiement sur ton poste physique**.
 
 ## 4. Mettre à jour sans confondre noyau, pilotes et firmware matériel
 
