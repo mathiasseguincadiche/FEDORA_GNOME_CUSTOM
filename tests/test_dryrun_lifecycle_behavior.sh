@@ -11,11 +11,13 @@ cp "$ROOT/lib/apply_gate.sh" "$ROOT/lib/evidence.sh" "$fixture/lib/"
 printf 'install_lock_acquire() { :; }\n' > "$fixture/lib/install_lock.sh"
 printf 'apply_incident_require_clear() { :; }\napply_incident_begin() { :; }\napply_incident_close() { :; }\n' > "$fixture/lib/apply_incident.sh"
 cat > "$fixture/lib/bootstrap.sh" <<'BOOT'
+# Load real libraries before defining fixture overrides: sourcing during
+# engine_bootstrap would replace the test's identity and APPLY callbacks.
+source "$REPO_ROOT/lib/evidence.sh"
+source "$REPO_ROOT/lib/apply_gate.sh"
 engine_bootstrap() {
   STATE_ROOT="$REPO_ROOT/state"; LOG_DIR="$STATE_ROOT"; RUN_ID=fixture
   EXIT_SECURITY_BLOCK=50
-  source "$REPO_ROOT/lib/evidence.sh"
-  source "$REPO_ROOT/lib/apply_gate.sh"
 }
 repo_commit() { printf '%040d\n' 1; }
 effective_config_sha256() { printf '%064d\n' "$(cat "$REPO_ROOT/state/config")"; }
