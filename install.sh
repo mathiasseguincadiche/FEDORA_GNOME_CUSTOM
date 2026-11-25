@@ -4,6 +4,7 @@
 # writing it. --apply opens the apply gate (lib/apply_gate.sh) first, then converges the
 # system. Reference: docs/ARCHITECTURE.md#contrat-dexécution.
 set -Eeuo pipefail
+shopt -s inherit_errexit
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="${1:---dry-run}"
 [[ "$MODE" == '--dry-run' || "$MODE" == '--apply' ]] || { echo "Usage: $0 [--dry-run|--apply] [--collect-all]" >&2; exit 2; }
@@ -17,16 +18,29 @@ install_lock_acquire
 source "$REPO_ROOT/lib/bootstrap.sh"
 engine_bootstrap
 source "$REPO_ROOT/lib/apply_incident.sh"
+if [[ "$MODE" == --dry-run ]]; then
+  apply_gate_invalidate_dryrun || { ui_error "Cannot invalidate previous dry-run proof"; exit "$EXIT_SECURITY_BLOCK"; }
+fi
 module_catalog_load "$REPO_ROOT/manifests/module-plan.conf"
 module_catalog_validate
 
 if [[ "$MODE" == '--dry-run' ]]; then
   DRY_RUN=true; export DRY_RUN
   ui_banner 'FEDORA WORKSTATION CONTROL' 'NON-MUTATING PREFLIGHT / CONVERGENCE PLAN'
+  dryrun_identity=''
+  if [[ "$ORCH_COLLECT_ALL" != true ]]; then
+    dryrun_identity="$(apply_gate_dryrun_identity)" || { ui_error 'Cannot capture initial dry-run identity'; exit "$EXIT_SECURITY_BLOCK"; }
+  fi
   if orchestrator_run_all; then
-    if [[ "$ORCH_COLLECT_ALL" != true ]]; then apply_gate_write_dryrun_proof; fi
     report="$(orchestrator_report)"
-    ui_summary 'PREFLIGHT PASS' 'NO MUTATIONS EXECUTED — PREPARE VERIFIED BACKUP, THEN APPLY' "$report" "$LOG_DIR"
+    if [[ "$ORCH_COLLECT_ALL" != true ]]; then
+      apply_gate_complete_dryrun "$dryrun_identity" || { ui_error 'Dry-run identity changed or evidence publication failed; no APPLY proof'; exit "$EXIT_SECURITY_BLOCK"; }
+    fi
+    if [[ "$ORCH_COLLECT_ALL" == true ]]; then
+      ui_summary 'DIAGNOSTIC PASS' 'NO MUTATIONS EXECUTED — RUN FULL DRY-RUN BEFORE APPLY' "$report" "$LOG_DIR"
+    else
+      ui_summary 'PREFLIGHT PASS' 'NO MUTATIONS EXECUTED — PREPARE VERIFIED BACKUP, THEN APPLY' "$report" "$LOG_DIR"
+    fi
     exit 0
   else
     rc=$?
@@ -41,6 +55,7 @@ ui_banner 'FEDORA WORKSTATION CONTROL' 'PROTECTED REAL APPLY'
 apply_incident_require_clear || exit "$EXIT_SECURITY_BLOCK"
 apply_gate_open
 apply_incident_begin || { ui_error "Cannot persist APPLY incident and original Borg point; no modules started"; exit "$EXIT_SECURITY_BLOCK"; }
+apply_gate_invalidate_dryrun || { ui_error "Cannot consume dry-run proof; no modules started"; exit "$EXIT_SECURITY_BLOCK"; }
 if orchestrator_run_all; then
   report="$(orchestrator_report)"
   apply_incident_close completed || { ui_error 'Cannot finalize persistent APPLY record; inspect incident before retry'; exit "$EXIT_SECURITY_BLOCK"; }

@@ -4,6 +4,45 @@
 
 apply_gate_dryrun_proof_path() { printf '%s/dryrun-%s.ok' "$STATE_ROOT" "$(repo_commit)"; }
 
+# An attempted recheck invalidates the old proof before visiting any module.
+# A diagnostic-only collect-all run never publishes an APPLY authorization.
+apply_gate_invalidate_dryrun() {
+  local proof
+  proof="$(apply_gate_dryrun_proof_path)" || return 1
+  rm -f -- "$proof" || return 1
+  [[ ! -e "$proof" && ! -L "$proof" ]]
+}
+
+apply_gate_dryrun_identity() {
+  local commit config plan hardware
+  commit="$(repo_commit)" || return 1
+  config="$(effective_config_sha256)" || return 1
+  plan="$(module_plan_sha256)" || return 1
+  hardware="$(evidence_hardware_fingerprint)" || return 1
+  [[ "$commit" =~ ^[0-9a-f]{40}$ && "$config" =~ ^[0-9a-f]{64}$ &&
+     "$plan" =~ ^[0-9a-f]{64}$ && -n "$hardware" ]] || return 1
+  printf 'commit=%s\neffective_config_sha256=%s\nmodule_plan_sha256=%s\nhardware_fingerprint=%s\n' \
+    "$commit" "$config" "$plan" "$hardware"
+}
+
+apply_gate_complete_dryrun() {
+  local before="$1" after proof commit
+  after="$(apply_gate_dryrun_identity)" || return 1
+  [[ -n "$before" && "$after" == "$before" ]] || return 1
+  apply_gate_require_clean_git || return 1
+  commit="$(repo_commit)" || return 1
+  [[ "$commit" =~ ^[0-9a-f]{40}$ && "$before" == "commit=$commit"$'\n'* ]] || return 1
+  proof="$STATE_ROOT/dryrun-$commit.ok"
+  {
+    printf 'verdict=PASS\nrun_id=%s\nutc=%s\n' "$RUN_ID" "$(date -u +%FT%TZ)"
+    printf '%s\n' "$before"
+  } | evidence_atomic_write "$proof" 0600 || return 1
+  if ! apply_gate_require_dryrun; then
+    rm -f -- "$proof" || return 1
+    return 1
+  fi
+}
+
 apply_gate_write_dryrun_proof() {
   local proof
   proof="$(apply_gate_dryrun_proof_path)"
@@ -34,7 +73,7 @@ apply_gate_require_dryrun() {
   is_true "${REQUIRE_SAME_COMMIT_DRYRUN:-true}" || return 0
   local proof
   proof="$(apply_gate_dryrun_proof_path)"
-  [[ -s "$proof" ]] || return 1
+  [[ -f "$proof" && ! -L "$proof" && -s "$proof" ]] || return 1
   grep -Fxq 'verdict=PASS' "$proof" || return 1
   evidence_require_current_identity "$proof"
 }

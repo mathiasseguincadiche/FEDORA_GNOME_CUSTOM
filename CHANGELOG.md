@@ -2,6 +2,8 @@
 
 ## Non publié — GNOME 51 et migration Rocky Linux 10.3
 
+- Dry-run : révoquer la preuve précédente avant le catalogue, vérifier l'identité avant/après et publier uniquement après le rapport ; consommer la preuve avant tout APPLY réel. Aucun PASS de diagnostic `--collect-all` n'autorise APPLY.
+
 - APPLY : registre d'incident persistant par utilisateur, référence Borg d'origine préservée avant mutations, blocage de la reprise et de la nouvelle sauvegarde jusqu'à revue explicite. Les points pré-APPLY ne sont jamais éligibles à la purge automatique.
 
 - APPLY : Gate 2 importée obligatoire et revérifiée (commit, plan, matériel et intégrité du JSON). Import interrompu ou empreinte absente : refus avant confirmation.
