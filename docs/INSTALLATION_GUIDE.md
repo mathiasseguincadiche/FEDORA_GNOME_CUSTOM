@@ -277,6 +277,8 @@ Les essais mémoire et CPU durent environ deux heures et demie, d'après les dur
 
 ## 6. Lancer le dry-run final
 
+Chaque nouveau dry-run révoque d'abord la preuve précédente du commit courant. Une exécution interrompue, un rapport impossible à publier, un changement d'identité ou un diagnostic `--collect-all` ne peut pas réautoriser l'APPLY. La preuve n'est publiée qu'après le rapport réussi et la comparaison de l'identité de départ et de fin. Un APPLY commencé consomme cette preuve : toute nouvelle tentative exige un nouveau dry-run, sans effacer le point de retour Borg d'origine.
+
 **But :** exécuter le plan **sans appliquer de modifications à la configuration cible**, et produire une preuve liée à l'état exact qui sera appliqué. Le dry-run **écrit des journaux et une preuve locale** ; ce n'est pas une commande sans aucune écriture.
 
 Fixer d'abord la configuration définitive dans `config/local.conf` :
