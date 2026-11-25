@@ -2,6 +2,8 @@
 
 ## Non publié — GNOME 51 et migration Rocky Linux 10.3
 
+- CI : checkout 7.0.1, upload-artifact 7.0.2, CodeQL 4.39.5 et Gitleaks 3.0.0 sur Node.js 24, SHA immuables vérifiés et contrôlés pour chaque action externe. La publication RC est déclenchée uniquement par le manifeste de release, pas par la maintenance du workflow.
+
 - Borg : filtre commun des emplacements d'identifiants DevOps, dotenv et états Terraform ; exclusions du tar système renforcées ; tests de restauration réels et modèles factices préservés. ADR 0014 inchangée.
 
 - Dry-run : révoquer la preuve précédente avant le catalogue, vérifier l'identité avant/après et publier uniquement après le rapport ; consommer la preuve avant tout APPLY réel. Aucun PASS de diagnostic `--collect-all` n'autorise APPLY.
