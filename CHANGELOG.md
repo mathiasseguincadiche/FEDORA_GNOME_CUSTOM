@@ -4,7 +4,7 @@
 
 Aucun changement après la préparation de la RC ci-dessous.
 
-## 0.25.0-rc.1 — Actualisation GNOME 51, Rocky 10.3 et fiabilité avant installation
+## 0.25.0 — Actualisation GNOME 51, Rocky 10.3 et fiabilité avant installation (RC1)
 
 Préversion logicielle, sans certification physique. Publication soumise aux huit workflows de validation réussis sur le commit exact de `main`. Gate 2, installation réelle, APPLY, Gate 3 et recette visuelle native complète restent à réaliser.
 
